@@ -1,0 +1,15 @@
+# cargo-features = ["edition2024"]
+
+[package]
+name = "actor_macro"
+version = "0.1.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "derive"] }
+quote = "1.0"
+proc-macro2 = "1.0"

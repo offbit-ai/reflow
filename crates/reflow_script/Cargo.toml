@@ -1,0 +1,39 @@
+# cargo-features = ["edition2024"]
+[package]
+name = "reflow_script"
+version = "0.1.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+doctest = false
+
+[dependencies]
+reflow_network = { path = "../reflow_network" }
+actor_macro = { path = "../actor_macro" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+parking_lot = "0.12.3"
+once_cell = "1.19.0"
+futures = "0.3"
+bitcode = { version = "0.6.4", features = ["serde"] }
+flume = "0.11.0"
+async-trait = "0.1.88"
+
+# JavaScript runtime
+quickjs_runtime = "0.14.5"
+# Python runtime
+pyo3 = { version = "0.24.0", features = ["extension-module"] }
+
+# Extism plugin support
+extism = "1.0.0"
+
+[dev-dependencies]
+tokio = { version = "1.36.0", features = ["full"] }
+wasm-bindgen-test = "0.3.50"
+
+[features]
+default = []

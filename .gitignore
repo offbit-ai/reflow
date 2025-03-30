@@ -1,0 +1,3 @@
+## git ignore the rustc-ice files
+rustc-*
+target

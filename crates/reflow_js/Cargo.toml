@@ -1,0 +1,28 @@
+[package]
+name = "reflow_js"
+version = "0.1.0"
+edition = "2021"
+description = "A lightweight JavaScript runtime built on top of the Boa JavaScript engine"
+license = "MIT"
+repository = "https://github.com/reflow/reflow_js"
+readme = "README.md"
+
+[dependencies]
+boa_engine = "0.17.0"
+async-trait = "0.1.68"
+tokio = { version = "1.28.0", features = ["full"] }
+futures = "0.3.28"
+thiserror = "1.0.40"
+serde = { version = "1.0.160", features = ["derive"] }
+serde_json = "1.0.96"
+url = "2.3.1"
+reqwest = { version = "0.11.17", features = ["json"] }
+tokio-tungstenite = "0.19.0"
+chrono = "0.4.24"
+
+[dev-dependencies]
+tokio-test = "0.4.2"
+
+[features]
+default = []
+wasm = []
