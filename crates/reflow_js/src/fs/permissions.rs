@@ -1,179 +1,146 @@
 use std::path::{Path, PathBuf};
-use crate::security::{PermissionManager, Permission, PermissionScope, PermissionResult, FileSystemPermissionScope};
+use crate::security::{Permission, PermissionManager, PermissionState};
+use std::sync::Arc;
+
+/// File system permission scope
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum FileSystemPermissionScope {
+    /// Read permission
+    Read(PathBuf),
+    
+    /// Write permission
+    Write(PathBuf),
+}
+
+/// File system permission error
+#[derive(Debug, Clone)]
+pub enum FileSystemPermissionError {
+    /// Permission denied
+    PermissionDenied(String),
+    
+    /// Invalid path
+    InvalidPath(String),
+    
+    /// Other error
+    Other(String),
+}
+
+impl std::fmt::Display for FileSystemPermissionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FileSystemPermissionError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+            FileSystemPermissionError::InvalidPath(msg) => write!(f, "Invalid path: {}", msg),
+            FileSystemPermissionError::Other(msg) => write!(f, "Error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for FileSystemPermissionError {}
+
+/// File system permission result
+pub type FileSystemPermissionResult<T> = Result<T, FileSystemPermissionError>;
 
 /// File system permissions
-#[derive(Debug, Clone)]
 pub struct FileSystemPermissions {
-    /// Allow read operations
-    pub allow_read: bool,
+    /// Permission manager
+    permission_manager: PermissionManager,
     
-    /// Allow write operations
-    pub allow_write: bool,
-    
-    /// Allow directory operations
-    pub allow_directory: bool,
-    
-    /// Allowed paths
-    pub allowed_paths: Vec<PathBuf>,
+    /// Root directory
+    root_dir: PathBuf,
 }
 
 impl FileSystemPermissions {
-    /// Create new file system permissions
-    pub fn new(allow_read: bool, allow_write: bool, allow_directory: bool, allowed_paths: Vec<PathBuf>) -> Self {
+    /// Create a new file system permissions
+    pub fn new(permission_manager: PermissionManager, root_dir: PathBuf) -> Self {
         FileSystemPermissions {
-            allow_read,
-            allow_write,
-            allow_directory,
-            allowed_paths,
+            permission_manager,
+            root_dir,
         }
     }
     
-    /// Check if a path is allowed
-    pub fn is_path_allowed(&self, path: &Path) -> bool {
-        // If no paths are specified, nothing is allowed
-        if self.allowed_paths.is_empty() {
-            return false;
-        }
-        
-        // Check if the path is in the allowed paths
-        for allowed_path in &self.allowed_paths {
-            if path.starts_with(allowed_path) {
-                return true;
-            }
-        }
-        
-        false
-    }
-    
-    /// Check if read operations are allowed for a path
-    pub fn check_read(&self, path: &Path) -> PermissionResult<()> {
-        if !self.allow_read {
-            return Err(crate::security::PermissionError::Denied(
-                format!("Read operations are not allowed: {}", path.display())
-            ));
-        }
-        
-        if !self.is_path_allowed(path) {
-            return Err(crate::security::PermissionError::Denied(
-                format!("Path is not allowed for reading: {}", path.display())
-            ));
-        }
-        
-        Ok(())
-    }
-    
-    /// Check if write operations are allowed for a path
-    pub fn check_write(&self, path: &Path) -> PermissionResult<()> {
-        if !self.allow_write {
-            return Err(crate::security::PermissionError::Denied(
-                format!("Write operations are not allowed: {}", path.display())
-            ));
-        }
-        
-        if !self.is_path_allowed(path) {
-            return Err(crate::security::PermissionError::Denied(
-                format!("Path is not allowed for writing: {}", path.display())
-            ));
-        }
-        
-        Ok(())
-    }
-    
-    /// Check if directory operations are allowed for a path
-    pub fn check_directory(&self, path: &Path) -> PermissionResult<()> {
-        if !self.allow_directory {
-            return Err(crate::security::PermissionError::Denied(
-                format!("Directory operations are not allowed: {}", path.display())
-            ));
-        }
-        
-        if !self.is_path_allowed(path) {
-            return Err(crate::security::PermissionError::Denied(
-                format!("Path is not allowed for directory operations: {}", path.display())
-            ));
-        }
-        
-        Ok(())
-    }
-    
-    /// Register permissions with the permission manager
-    pub fn register_with_manager(&self, manager: &PermissionManager) -> PermissionResult<()> {
-        // Create file system permission
-        let scope = match self.allowed_paths.is_empty() {
-            true => FileSystemPermissionScope::All,
-            false => FileSystemPermissionScope::Directories(self.allowed_paths.clone()),
+    /// Check if a path is allowed for reading
+    pub fn check_read_permission(&self, path: &Path) -> FileSystemPermissionResult<()> {
+        // Check if the path is within the root directory
+        let absolute_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            self.root_dir.join(path)
         };
         
-        let permission = Permission::new(
-            "fs".to_string(),
-            PermissionScope::FileSystem(scope),
-            true,
-        );
+        // Canonicalize the path
+        let canonical_path = match absolute_path.canonicalize() {
+            Ok(path) => path,
+            Err(_) => {
+                return Err(FileSystemPermissionError::InvalidPath(
+                    format!("Failed to canonicalize path: {}", path.display())
+                ));
+            }
+        };
         
-        // Add permission to manager
-        manager.add_permission(permission)
+        // Check if the path is within the root directory
+        if !canonical_path.starts_with(&self.root_dir) {
+            return Err(FileSystemPermissionError::PermissionDenied(
+                format!("Path is outside of the root directory: {}", path.display())
+            ));
+        }
+        
+        // Check if the permission is granted
+        if !self.permission_manager.is_granted(Permission::FileSystemRead) {
+            return Err(FileSystemPermissionError::PermissionDenied(
+                format!("Read permission denied for path: {}", path.display())
+            ));
+        }
+        
+        Ok(())
     }
     
-    /// Check if two permission scopes are compatible
-    pub fn is_compatible(scope1: &FileSystemPermissionScope, scope2: &FileSystemPermissionScope) -> bool {
-        match (scope1, scope2) {
-            (FileSystemPermissionScope::All, _) => true,
-            (_, FileSystemPermissionScope::All) => true,
-            (FileSystemPermissionScope::Directories(dirs1), FileSystemPermissionScope::Directories(dirs2)) => {
-                // Check if any directory in dirs1 is a parent of any directory in dirs2
-                for dir1 in dirs1 {
-                    for dir2 in dirs2 {
-                        if dir2.starts_with(dir1) {
-                            return true;
-                        }
-                    }
-                }
-                false
-            },
-            (FileSystemPermissionScope::Directories(dirs), FileSystemPermissionScope::Files(files)) => {
-                // Check if any file is in any directory
-                for dir in dirs {
-                    for file in files {
-                        if file.starts_with(dir) {
-                            return true;
-                        }
-                    }
-                }
-                false
-            },
-            (FileSystemPermissionScope::Files(files), FileSystemPermissionScope::Directories(dirs)) => {
-                // Check if any file is in any directory
-                for file in files {
-                    for dir in dirs {
-                        if file.starts_with(dir) {
-                            return true;
-                        }
-                    }
-                }
-                false
-            },
-            (FileSystemPermissionScope::Files(files1), FileSystemPermissionScope::Files(files2)) => {
-                // Check if any file is the same
-                for file1 in files1 {
-                    for file2 in files2 {
-                        if file1 == file2 {
-                            return true;
-                        }
-                    }
-                }
-                false
-            },
+    /// Check if a path is allowed for writing
+    pub fn check_write_permission(&self, path: &Path) -> FileSystemPermissionResult<()> {
+        // Check if the path is within the root directory
+        let absolute_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            self.root_dir.join(path)
+        };
+        
+        // Canonicalize the path
+        let canonical_path = match absolute_path.canonicalize() {
+            Ok(path) => path,
+            Err(_) => {
+                return Err(FileSystemPermissionError::InvalidPath(
+                    format!("Failed to canonicalize path: {}", path.display())
+                ));
+            }
+        };
+        
+        // Check if the path is within the root directory
+        if !canonical_path.starts_with(&self.root_dir) {
+            return Err(FileSystemPermissionError::PermissionDenied(
+                format!("Path is outside of the root directory: {}", path.display())
+            ));
+        }
+        
+        // Check if the permission is granted
+        if !self.permission_manager.is_granted(Permission::FileSystemWrite) {
+            return Err(FileSystemPermissionError::PermissionDenied(
+                format!("Write permission denied for path: {}", path.display())
+            ));
+        }
+        
+        Ok(())
+    }
+    
+    /// Normalize a path
+    pub fn normalize_path(&self, path: &Path) -> PathBuf {
+        if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            self.root_dir.join(path)
         }
     }
-}
-
-impl Default for FileSystemPermissions {
-    fn default() -> Self {
-        FileSystemPermissions {
-            allow_read: true,
-            allow_write: false,
-            allow_directory: true,
-            allowed_paths: vec![],
-        }
+    
+    /// Get the root directory
+    pub fn root_dir(&self) -> &Path {
+        &self.root_dir
     }
 }

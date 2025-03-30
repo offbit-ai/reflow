@@ -1,396 +1,407 @@
+use crate::security::PermissionManager;
+use boa_engine::builtins::function::Function;
+use boa_engine::js_string;
+use boa_engine::{
+    native_function::NativeFunction, object::ObjectInitializer, Context, JsError, JsResult, JsValue,
+};
 use std::collections::HashMap;
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
-use std::io::{self, ErrorKind};
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// File metadata
 #[derive(Debug, Clone)]
 pub struct FileMetadata {
-    /// File size in bytes
+    /// File size
     pub size: usize,
-    
-    /// Creation time
-    pub created: SystemTime,
-    
-    /// Last modified time
-    pub modified: SystemTime,
-    
-    /// Last accessed time
-    pub accessed: SystemTime,
-    
+
     /// Is directory
     pub is_dir: bool,
+
+    /// Creation time
+    pub created: SystemTime,
+
+    /// Last modified time
+    pub modified: SystemTime,
+
+    /// Last accessed time
+    pub accessed: SystemTime,
 }
 
-impl FileMetadata {
-    /// Create new file metadata
-    pub fn new(size: usize, is_dir: bool) -> Self {
+impl Default for FileMetadata {
+    fn default() -> Self {
         let now = SystemTime::now();
-        
         FileMetadata {
-            size,
+            size: 0,
+            is_dir: false,
             created: now,
             modified: now,
             accessed: now,
-            is_dir,
         }
-    }
-    
-    /// Update the file size
-    pub fn update_size(&mut self, size: usize) {
-        self.size = size;
-        self.modified = SystemTime::now();
-        self.accessed = SystemTime::now();
-    }
-    
-    /// Update the access time
-    pub fn update_access(&mut self) {
-        self.accessed = SystemTime::now();
     }
 }
 
 /// Virtual file system
-#[derive(Debug)]
 pub struct VirtualFileSystem {
+    /// Permission manager
+    permissions: PermissionManager,
+
     /// Files
-    files: HashMap<PathBuf, Vec<u8>>,
-    
+    files: Arc<Mutex<HashMap<PathBuf, Vec<u8>>>>,
+
     /// Directories
-    directories: HashMap<PathBuf, Vec<PathBuf>>,
-    
+    directories: Arc<Mutex<HashMap<PathBuf, Vec<PathBuf>>>>,
+
     /// Metadata
-    metadata: HashMap<PathBuf, FileMetadata>,
+    metadata: Arc<Mutex<HashMap<PathBuf, FileMetadata>>>,
+}
+
+// Global storage for file system data
+static mut FILES: Option<Arc<Mutex<HashMap<PathBuf, Vec<u8>>>>> = None;
+static mut DIRECTORIES: Option<Arc<Mutex<HashMap<PathBuf, Vec<PathBuf>>>>> = None;
+static mut METADATA: Option<Arc<Mutex<HashMap<PathBuf, FileMetadata>>>> = None;
+
+// Function pointers for file system operations
+fn read_file_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "readFileSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the files
+    let files = unsafe { FILES.as_ref().unwrap().lock().unwrap() };
+
+    // Check if the file exists
+    let path_buf = PathBuf::from(path);
+    if let Some(content) = files.get(&path_buf) {
+        // Return the content
+        let content_str = String::from_utf8_lossy(content).to_string();
+        Ok(JsValue::from(content_str))
+    } else {
+        // Return an error
+        Err(JsError::from_opaque("File not found".into()))
+    }
+}
+
+fn write_file_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.len() < 2 {
+        return Err(JsError::from_opaque(
+            "writeFileSync requires path and data arguments".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the data
+    let data = args[1].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the files and metadata
+    let mut files = unsafe { FILES.as_ref().unwrap().lock().unwrap() };
+    let mut metadata = unsafe { METADATA.as_ref().unwrap().lock().unwrap() };
+
+    // Write the file
+    let path_buf = PathBuf::from(path);
+    files.insert(path_buf.clone(), data.as_bytes().to_vec());
+
+    // Update the metadata
+    let mut file_metadata = FileMetadata::default();
+    file_metadata.size = data.len();
+    file_metadata.modified = SystemTime::now();
+    metadata.insert(path_buf, file_metadata);
+
+    // Return undefined
+    Ok(JsValue::undefined())
+}
+
+fn exists_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "existsSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the files and directories
+    let files = unsafe { FILES.as_ref().unwrap().lock().unwrap() };
+    let directories = unsafe { DIRECTORIES.as_ref().unwrap().lock().unwrap() };
+
+    // Check if the file or directory exists
+    let path_buf = PathBuf::from(path);
+    let exists = files.contains_key(&path_buf) || directories.contains_key(&path_buf);
+
+    // Return the result
+    Ok(JsValue::from(exists))
+}
+
+fn mkdir_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "mkdirSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the directories and metadata
+    let mut directories = unsafe { DIRECTORIES.as_ref().unwrap().lock().unwrap() };
+    let mut metadata = unsafe { METADATA.as_ref().unwrap().lock().unwrap() };
+
+    // Create the directory
+    let path_buf = PathBuf::from(path);
+    directories.insert(path_buf.clone(), Vec::new());
+
+    // Update the metadata
+    let mut dir_metadata = FileMetadata::default();
+    dir_metadata.is_dir = true;
+    metadata.insert(path_buf, dir_metadata);
+
+    // Return undefined
+    Ok(JsValue::undefined())
+}
+
+fn rmdir_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "rmdirSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the directories and metadata
+    let mut directories = unsafe { DIRECTORIES.as_ref().unwrap().lock().unwrap() };
+    let mut metadata = unsafe { METADATA.as_ref().unwrap().lock().unwrap() };
+
+    // Remove the directory
+    let path_buf = PathBuf::from(path);
+    if let Some(entries) = directories.get(&path_buf) {
+        if !entries.is_empty() {
+            return Err(JsError::from_opaque("Directory not empty".into()));
+        }
+
+        directories.remove(&path_buf);
+        metadata.remove(&path_buf);
+
+        // Return undefined
+        Ok(JsValue::undefined())
+    } else {
+        // Return an error
+        Err(JsError::from_opaque("Directory not found".into()))
+    }
+}
+
+fn unlink_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "unlinkSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the files and metadata
+    let mut files = unsafe { FILES.as_ref().unwrap().lock().unwrap() };
+    let mut metadata = unsafe { METADATA.as_ref().unwrap().lock().unwrap() };
+
+    // Remove the file
+    let path_buf = PathBuf::from(path);
+    if files.contains_key(&path_buf) {
+        files.remove(&path_buf);
+        metadata.remove(&path_buf);
+
+        // Return undefined
+        Ok(JsValue::undefined())
+    } else {
+        // Return an error
+        Err(JsError::from_opaque("File not found".into()))
+    }
+}
+
+fn stat_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "statSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the files, directories, and metadata
+    let files = unsafe { FILES.as_ref().unwrap().lock().unwrap() };
+    let directories = unsafe { DIRECTORIES.as_ref().unwrap().lock().unwrap() };
+    let metadata = unsafe { METADATA.as_ref().unwrap().lock().unwrap() };
+
+    // Get the file or directory metadata
+    let path_buf = PathBuf::from(path);
+    if let Some(meta) = metadata.get(&path_buf) {
+        // Create a stats object
+        let stats_obj = ObjectInitializer::new(ctx).build();
+
+        // Add the stats properties
+        stats_obj.set("size", meta.size as u32, true, ctx)?;
+        stats_obj.set("isFile", !meta.is_dir, true, ctx)?;
+        stats_obj.set("isDirectory", meta.is_dir, true, ctx)?;
+
+        // Return the stats object
+        Ok(stats_obj.into())
+    } else if files.contains_key(&path_buf) || directories.contains_key(&path_buf) {
+        // Create a stats object with default values
+        let stats_obj = ObjectInitializer::new(ctx).build();
+
+        // Add the stats properties
+        let is_dir = directories.contains_key(&path_buf);
+        stats_obj.set("size", 0, true, ctx)?;
+        stats_obj.set("isFile", !is_dir, true, ctx)?;
+        stats_obj.set("isDirectory", is_dir, true, ctx)?;
+
+        // Return the stats object
+        Ok(stats_obj.into())
+    } else {
+        // Return an error
+        Err(JsError::from_opaque("File or directory not found".into()))
+    }
+}
+
+fn read_dir_sync(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+    // Check arguments
+    if args.is_empty() {
+        return Err(JsError::from_opaque(
+            "readdirSync requires a path argument".into(),
+        ));
+    }
+
+    // Get the path
+    let path = args[0].to_string(ctx)?.to_std_string_escaped();
+
+    // Get the directories
+    let directories = unsafe { DIRECTORIES.as_ref().unwrap().lock().unwrap() };
+
+    // Get the directory entries
+    let path_buf = PathBuf::from(path);
+    if let Some(entries) = directories.get(&path_buf) {
+        // Create an array to hold the entries
+        let entries_obj = ObjectInitializer::new(ctx).build();
+
+        // Add the entries to the array
+        for (i, entry) in entries.iter().enumerate() {
+            // Get the file name
+            let file_name = entry.file_name().unwrap().to_string_lossy().to_string();
+
+            // Add the file name to the array
+            entries_obj.set(i as u32, file_name, true, ctx)?;
+        }
+
+        // Return the array
+        Ok(entries_obj.into())
+    } else {
+        // Return an error
+        Err(JsError::from_opaque("Directory not found".into()))
+    }
 }
 
 impl VirtualFileSystem {
     /// Create a new virtual file system
-    pub fn new() -> Self {
-        let mut vfs = VirtualFileSystem {
-            files: HashMap::new(),
-            directories: HashMap::new(),
-            metadata: HashMap::new(),
-        };
-        
-        // Create root directory
-        vfs.directories.insert(PathBuf::from("/"), Vec::new());
-        vfs.metadata.insert(PathBuf::from("/"), FileMetadata::new(0, true));
-        
-        vfs
-    }
-    
-    /// Normalize a path
-    fn normalize_path(&self, path: &Path) -> PathBuf {
-        let path_str = path.to_string_lossy().to_string();
-        let path_str = path_str.replace("\\", "/");
-        
-        PathBuf::from(path_str)
-    }
-    
-    /// Get the parent directory of a path
-    fn parent_dir(&self, path: &Path) -> Option<PathBuf> {
-        let path = self.normalize_path(path);
-        path.parent().map(|p| self.normalize_path(p))
-    }
-    
-    /// Check if a path exists
-    pub fn exists(&self, path: &Path) -> bool {
-        let path = self.normalize_path(path);
-        self.files.contains_key(&path) || self.directories.contains_key(&path)
-    }
-    
-    /// Check if a path is a directory
-    pub fn is_dir(&self, path: &Path) -> bool {
-        let path = self.normalize_path(path);
-        self.directories.contains_key(&path)
-    }
-    
-    /// Check if a path is a file
-    pub fn is_file(&self, path: &Path) -> bool {
-        let path = self.normalize_path(path);
-        self.files.contains_key(&path)
-    }
-    
-    /// Get file metadata
-    pub fn metadata(&self, path: &Path) -> io::Result<FileMetadata> {
-        let path = self.normalize_path(path);
-        
-        if let Some(metadata) = self.metadata.get(&path) {
-            Ok(metadata.clone())
-        } else {
-            Err(io::Error::new(ErrorKind::NotFound, "File not found"))
-        }
-    }
-    
-    /// Create a directory
-    pub fn create_dir(&mut self, path: &Path) -> io::Result<()> {
-        let path = self.normalize_path(path);
-        
-        // Check if the directory already exists
-        if self.directories.contains_key(&path) {
-            return Err(io::Error::new(ErrorKind::AlreadyExists, "Directory already exists"));
-        }
-        
-        // Check if the parent directory exists
-        if let Some(parent) = self.parent_dir(&path) {
-            if !self.directories.contains_key(&parent) {
-                return Err(io::Error::new(ErrorKind::NotFound, "Parent directory not found"));
-            }
-            
-            // Add the directory to the parent
-            if let Some(parent_entries) = self.directories.get_mut(&parent) {
-                parent_entries.push(path.clone());
-            }
-        }
-        
-        // Create the directory
-        self.directories.insert(path.clone(), Vec::new());
-        self.metadata.insert(path, FileMetadata::new(0, true));
-        
-        Ok(())
-    }
-    
-    /// Create a directory and all parent directories
-    pub fn create_dir_all(&mut self, path: &Path) -> io::Result<()> {
-        let path = self.normalize_path(path);
-        
-        // Check if the directory already exists
-        if self.directories.contains_key(&path) {
-            return Ok(());
-        }
-        
-        // Create parent directories
-        if let Some(parent) = self.parent_dir(&path) {
-            if !self.directories.contains_key(&parent) {
-                self.create_dir_all(&parent)?;
-            }
-        }
-        
-        // Create the directory
-        self.create_dir(&path)?;
-        
-        Ok(())
-    }
-    
-    /// Remove a directory
-    pub fn remove_dir(&mut self, path: &Path) -> io::Result<()> {
-        let path = self.normalize_path(path);
-        
-        // Check if the directory exists
-        if !self.directories.contains_key(&path) {
-            return Err(io::Error::new(ErrorKind::NotFound, "Directory not found"));
-        }
-        
-        // Check if the directory is empty
-        if let Some(entries) = self.directories.get(&path) {
-            if !entries.is_empty() {
-                return Err(io::Error::new(ErrorKind::Other, "Directory not empty"));
-            }
-        }
-        
-        // Remove the directory from the parent
-        if let Some(parent) = self.parent_dir(&path) {
-            if let Some(parent_entries) = self.directories.get_mut(&parent) {
-                parent_entries.retain(|p| p != &path);
-            }
-        }
-        
-        // Remove the directory
-        self.directories.remove(&path);
-        self.metadata.remove(&path);
-        
-        Ok(())
-    }
-    
-    /// Remove a directory and all its contents
-    pub fn remove_dir_all(&mut self, path: &Path) -> io::Result<()> {
-        let path = self.normalize_path(path);
-        
-        // Check if the directory exists
-        if !self.directories.contains_key(&path) {
-            return Err(io::Error::new(ErrorKind::NotFound, "Directory not found"));
-        }
-        
-        // Get all entries in the directory
-        let entries = if let Some(entries) = self.directories.get(&path) {
-            entries.clone()
-        } else {
-            Vec::new()
-        };
-        
-        // Remove all entries
-        for entry in entries {
-            if self.is_dir(&entry) {
-                self.remove_dir_all(&entry)?;
-            } else {
-                self.remove_file(&entry)?;
-            }
-        }
-        
-        // Remove the directory
-        self.remove_dir(&path)?;
-        
-        Ok(())
-    }
-    
-    /// Read a directory
-    pub fn read_dir(&self, path: &Path) -> io::Result<Vec<String>> {
-        let path = self.normalize_path(path);
-        
-        // Check if the directory exists
-        if !self.directories.contains_key(&path) {
-            return Err(io::Error::new(ErrorKind::NotFound, "Directory not found"));
-        }
-        
-        // Get all entries in the directory
-        let entries = if let Some(entries) = self.directories.get(&path) {
-            entries.clone()
-        } else {
-            Vec::new()
-        };
-        
-        // Convert entries to strings
-        let mut result = Vec::new();
-        for entry in entries {
-            if let Some(file_name) = entry.file_name() {
-                result.push(file_name.to_string_lossy().to_string());
-            }
-        }
-        
-        Ok(result)
-    }
-    
-    /// Write a file
-    pub fn write_file(&mut self, path: &Path, data: &[u8]) -> io::Result<()> {
-        let path = self.normalize_path(path);
-        
-        // Create parent directories if they don't exist
-        if let Some(parent) = self.parent_dir(&path) {
-            if !self.directories.contains_key(&parent) {
-                self.create_dir_all(&parent)?;
-            }
-        }
-        
-        // Add the file to the parent directory
-        if let Some(parent) = self.parent_dir(&path) {
-            if let Some(parent_entries) = self.directories.get_mut(&parent) {
-                if !parent_entries.contains(&path) {
-                    parent_entries.push(path.clone());
-                }
-            }
-        }
-        
-        // Write the file
-        self.files.insert(path.clone(), data.to_vec());
-        
-        // Update metadata
-        if let Some(metadata) = self.metadata.get_mut(&path) {
-            metadata.update_size(data.len());
-        } else {
-            self.metadata.insert(path, FileMetadata::new(data.len(), false));
-        }
-        
-        Ok(())
-    }
-    
-    /// Read a file
-    pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
-        let path = self.normalize_path(path);
-        
-        // Check if the file exists
-        if !self.files.contains_key(&path) {
-            return Err(io::Error::new(ErrorKind::NotFound, "File not found"));
-        }
-        
-        // Read the file
-        let data = self.files.get(&path).unwrap().clone();
-        
-        // Update access time
-        if let Some(metadata) = self.metadata.get_mut(&path) {
-            metadata.update_access();
-        }
-        
-        Ok(data)
-    }
-    
-    /// Remove a file
-    pub fn remove_file(&mut self, path: &Path) -> io::Result<()> {
-        let path = self.normalize_path(path);
-        
-        // Check if the file exists
-        if !self.files.contains_key(&path) {
-            return Err(io::Error::new(ErrorKind::NotFound, "File not found"));
-        }
-        
-        // Remove the file from the parent directory
-        if let Some(parent) = self.parent_dir(&path) {
-            if let Some(parent_entries) = self.directories.get_mut(&parent) {
-                parent_entries.retain(|p| p != &path);
-            }
-        }
-        
-        // Remove the file
-        self.files.remove(&path);
-        self.metadata.remove(&path);
-        
-        Ok(())
-    }
-    
-    /// Rename a file or directory
-    pub fn rename(&mut self, from: &Path, to: &Path) -> io::Result<()> {
-        let from = self.normalize_path(from);
-        let to = self.normalize_path(to);
-        
-        // Check if the source exists
-        if !self.exists(&from) {
-            return Err(io::Error::new(ErrorKind::NotFound, "Source not found"));
-        }
-        
-        // Check if the destination already exists
-        if self.exists(&to) {
-            return Err(io::Error::new(ErrorKind::AlreadyExists, "Destination already exists"));
-        }
-        
-        // Create parent directories if they don't exist
-        if let Some(parent) = self.parent_dir(&to) {
-            if !self.directories.contains_key(&parent) {
-                self.create_dir_all(&parent)?;
-            }
-        }
-        
-        // Remove the source from the parent directory
-        if let Some(parent) = self.parent_dir(&from) {
-            if let Some(parent_entries) = self.directories.get_mut(&parent) {
-                parent_entries.retain(|p| p != &from);
-            }
-        }
-        
-        // Add the destination to the parent directory
-        if let Some(parent) = self.parent_dir(&to) {
-            if let Some(parent_entries) = self.directories.get_mut(&parent) {
-                parent_entries.push(to.clone());
-            }
-        }
-        
-        // Move the file or directory
-        if self.is_file(&from) {
-            let data = self.files.remove(&from).unwrap();
-            self.files.insert(to.clone(), data);
-        } else {
-            let entries = self.directories.remove(&from).unwrap();
-            self.directories.insert(to.clone(), entries);
-        }
-        
-        // Move the metadata
-        if let Some(metadata) = self.metadata.remove(&from) {
-            self.metadata.insert(to, metadata);
-        }
-        
-        Ok(())
-    }
-}
+    pub fn new(permissions: PermissionManager) -> Self {
+        // Create the root directory
+        let mut directories = HashMap::new();
+        directories.insert(PathBuf::from("/"), Vec::new());
 
-impl Default for VirtualFileSystem {
-    fn default() -> Self {
-        Self::new()
+        // Create the root directory metadata
+        let mut metadata = HashMap::new();
+        let mut root_metadata = FileMetadata::default();
+        root_metadata.is_dir = true;
+        metadata.insert(PathBuf::from("/"), root_metadata);
+
+        let files = Arc::new(Mutex::new(HashMap::new()));
+        let directories = Arc::new(Mutex::new(directories));
+        let metadata = Arc::new(Mutex::new(metadata));
+
+        // Store the file system data in the global storage
+        unsafe {
+            FILES = Some(files.clone());
+            DIRECTORIES = Some(directories.clone());
+            METADATA = Some(metadata.clone());
+        }
+
+        VirtualFileSystem {
+            permissions,
+            files,
+            directories,
+            metadata,
+        }
+    }
+
+    /// Register the virtual file system with a JavaScript context
+    pub fn register(&self, context: &mut Context) -> JsResult<()> {
+        // Create the vfs object
+        let vfs_obj = ObjectInitializer::new(context)
+            .function(
+                NativeFunction::from_fn_ptr(read_file_sync),
+                js_string!("readFileSync"),
+                1,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(write_file_sync),
+                js_string!("writeFileSync"),
+                2,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(exists_sync),
+                js_string!("existsSync"),
+                1,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(mkdir_sync),
+                js_string!("mkdirSync"),
+                1,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(rmdir_sync),
+                js_string!("rmdirSync"),
+                1,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(unlink_sync),
+                js_string!("unlinkSync"),
+                1,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(stat_sync),
+                js_string!("statSync"),
+                1,
+            )
+            .function(
+                NativeFunction::from_fn_ptr(read_dir_sync),
+                js_string!("readdirSync"),
+                1,
+            )
+            .build();
+
+       
+
+        // Add the vfs object to the global object
+        let global = context.global_object();
+        global.set("vfs", vfs_obj, true, context)?;
+
+        Ok(())
     }
 }

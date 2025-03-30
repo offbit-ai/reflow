@@ -1,278 +1,423 @@
-use boa_engine::{Context, JsValue, JsError, JsResult, NativeFunction};
-use crate::runtime::{Extension, ExtensionError};
-use crate::security::PermissionManager;
 use crate::async_runtime::{AsyncRuntime, Task};
-use async_trait::async_trait;
-use std::sync::{Arc, Mutex};
+use crate::state::{GlobalState, TimerCallbackId, store_js_value, get_js_value, remove_js_value};
+use boa_engine::object::FunctionObjectBuilder;
+use boa_engine::{
+    native_function::NativeFunction, object::ObjectInitializer, Context, JsError, JsResult, JsValue,
+};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread;
 use std::time::{Duration, Instant};
-use tokio::time::sleep;
 
-/// Timer module
-#[derive(Debug)]
-pub struct TimerModule {
-    /// Async runtime
-    async_runtime: Option<Arc<AsyncRuntime>>,
+/// Timer ID
+type TimerId = u32;
+
+/// Timer event
+enum TimerEvent {
+    /// Execute a timeout
+    Timeout(TimerId),
     
-    /// Timeout IDs
-    timeout_ids: Arc<Mutex<HashMap<u32, tokio::task::JoinHandle<()>>>>,
-    
-    /// Interval IDs
-    interval_ids: Arc<Mutex<HashMap<u32, tokio::task::JoinHandle<()>>>>,
-    
-    /// Next timer ID
-    next_id: Arc<Mutex<u32>>,
+    /// Execute an interval
+    Interval(TimerId),
 }
 
-impl TimerModule {
-    /// Create a new timer module
-    pub fn new() -> Self {
-        TimerModule {
-            async_runtime: None,
-            timeout_ids: Arc::new(Mutex::new(HashMap::new())),
-            interval_ids: Arc::new(Mutex::new(HashMap::new())),
-            next_id: Arc::new(Mutex::new(1)),
-        }
-    }
+/// Timer
+#[derive(Clone)]
+struct Timer {
+    /// Timer ID
+    id: TimerId,
+
+    /// Callback ID
+    callback_id: u32,
+
+    /// Interval
+    interval: Option<Duration>,
+
+    /// Next execution time
+    next_execution: Instant,
+}
+
+// Global storage for timers module
+static mut TIMERS_MODULE: Option<Arc<TimersModule>> = None;
+
+/// Timers module
+pub struct TimersModule {
+    /// Async runtime
+    async_runtime: Arc<AsyncRuntime>,
+
+    /// Timers
+    timers: Arc<Mutex<HashMap<TimerId, Timer>>>,
+
+    /// Next timer ID
+    next_timer_id: Arc<Mutex<TimerId>>,
     
-    /// Set the async runtime
-    pub fn set_async_runtime(&mut self, async_runtime: Arc<AsyncRuntime>) {
-        self.async_runtime = Some(async_runtime);
-    }
+    /// Next callback ID
+    next_callback_id: Arc<Mutex<u32>>,
     
-    /// Get the next timer ID
-    fn next_id(&self) -> u32 {
-        let mut id = self.next_id.lock().unwrap();
-        let current = *id;
-        *id = id.wrapping_add(1);
-        current
-    }
+    /// Timer event sender
+    event_sender: Sender<TimerEvent>,
     
-    /// Create a timeout
-    fn set_timeout(&self, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
-        if args.len() < 2 {
-            return Err(JsError::from_opaque("setTimeout requires at least 2 arguments".into()));
-        }
+    /// Timer event receiver
+    event_receiver: Arc<Mutex<Receiver<TimerEvent>>>,
+    
+    /// Global state
+    state: GlobalState,
+}
+
+impl TimersModule {
+    /// Create a new timers module
+    pub fn new(async_runtime: Arc<AsyncRuntime>) -> Self {
+        // Create a channel for timer events
+        let (sender, receiver) = channel();
         
-        let callback = args[0].clone();
-        if !callback.is_function() {
-            return Err(JsError::from_opaque("setTimeout requires a function as the first argument".into()));
-        }
-        
-        let delay_ms = args[1].to_number(context)?;
-        let delay = Duration::from_millis(delay_ms as u64);
-        
-        // Get the arguments to pass to the callback
-        let callback_args = if args.len() > 2 {
-            args[2..].to_vec()
-        } else {
-            vec![]
+        let module = TimersModule {
+            async_runtime,
+            timers: Arc::new(Mutex::new(HashMap::new())),
+            next_timer_id: Arc::new(Mutex::new(1)),
+            next_callback_id: Arc::new(Mutex::new(1)),
+            event_sender: sender,
+            event_receiver: Arc::new(Mutex::new(receiver)),
+            state: GlobalState::new(),
         };
         
-        // Get the async runtime
-        let async_runtime = match &self.async_runtime {
-            Some(runtime) => runtime.clone(),
-            None => return Err(JsError::from_opaque("Async runtime not available".into())),
+        // Store the timers module in the global storage
+        unsafe {
+            TIMERS_MODULE = Some(Arc::new(module.clone()));
+        }
+        
+        // Start the timer event processor
+        let module_clone = module.clone();
+        thread::spawn(move || {
+            module_clone.process_timer_events();
+        });
+        
+        module
+    }
+    
+    /// Process timer events
+    fn process_timer_events(&self) {
+        let receiver = self.event_receiver.lock().unwrap();
+        
+        while let Ok(event) = receiver.recv() {
+            match event {
+                TimerEvent::Timeout(timer_id) => {
+                    // Schedule a task to execute the timer
+                    self.schedule_timer_task(timer_id, true);
+                }
+                TimerEvent::Interval(timer_id) => {
+                    // Schedule a task to execute the timer
+                    self.schedule_timer_task(timer_id, false);
+                }
+            }
+        }
+    }
+    
+    /// Schedule a task to execute a timer
+    fn schedule_timer_task(&self, timer_id: TimerId, is_timeout: bool) {
+        // Get the timer
+        let timer_opt = {
+            let mut timers = self.timers.lock().unwrap();
+            if is_timeout {
+                timers.remove(&timer_id)
+            } else {
+                timers.get(&timer_id).cloned()
+            }
         };
         
-        // Get the timer ID
-        let id = self.next_id();
-        
-        // Create the timeout task
-        let timeout_ids = self.timeout_ids.clone();
-        let handle = tokio::spawn(async move {
-            // Wait for the specified delay
-            sleep(delay).await;
+        if let Some(timer) = timer_opt {
+            // Get the callback ID
+            let callback_id = timer.callback_id;
             
-            // Create a task to execute the callback
+            // Create a task that will execute the timer
             let task = Task::new(move |ctx| {
-                // Call the callback
-                let result = ctx.call(&callback, &JsValue::undefined(), &callback_args);
-                
-                // Remove the timeout ID
-                let mut ids = timeout_ids.lock().unwrap();
-                ids.remove(&id);
-                
-                result
+                // Get the callback from thread-local storage
+                if let Some(callback) = get_js_value(callback_id) {
+                    // Call the callback
+                    let undefined = JsValue::undefined();
+                    let args = [];
+                    if let Some(callback_obj) = callback.as_object() {
+                        callback_obj.call(&undefined, &args, ctx)
+                    } else {
+                        Ok(JsValue::undefined())
+                    }
+                } else {
+                    Ok(JsValue::undefined())
+                }
             });
             
             // Schedule the task
-            async_runtime.schedule_task(task);
-        });
-        
-        // Store the timeout ID
-        let mut ids = self.timeout_ids.lock().unwrap();
-        ids.insert(id, handle);
-        
-        // Return the timeout ID
-        Ok(JsValue::from(id))
+            self.async_runtime.schedule_task(task);
+        }
     }
     
-    /// Clear a timeout
-    fn clear_timeout(&self, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
-        if args.is_empty() {
-            return Err(JsError::from_opaque("clearTimeout requires a timeout ID".into()));
+    /// Get the timers module from the global storage
+    fn get_instance() -> Arc<TimersModule> {
+        unsafe {
+            TIMERS_MODULE.as_ref().unwrap().clone()
         }
-        
-        let id = args[0].to_number(context)? as u32;
-        
-        // Remove the timeout ID
-        let mut ids = self.timeout_ids.lock().unwrap();
-        if let Some(handle) = ids.remove(&id) {
-            // Cancel the timeout
-            handle.abort();
-        }
-        
-        Ok(JsValue::undefined())
     }
-    
-    /// Create an interval
-    fn set_interval(&self, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
-        if args.len() < 2 {
-            return Err(JsError::from_opaque("setInterval requires at least 2 arguments".into()));
-        }
-        
-        let callback = args[0].clone();
-        if !callback.is_function() {
-            return Err(JsError::from_opaque("setInterval requires a function as the first argument".into()));
-        }
-        
-        let delay_ms = args[1].to_number(context)?;
-        let delay = Duration::from_millis(delay_ms as u64);
-        
-        // Get the arguments to pass to the callback
-        let callback_args = if args.len() > 2 {
-            args[2..].to_vec()
-        } else {
-            vec![]
-        };
-        
-        // Get the async runtime
-        let async_runtime = match &self.async_runtime {
-            Some(runtime) => runtime.clone(),
-            None => return Err(JsError::from_opaque("Async runtime not available".into())),
-        };
-        
-        // Get the timer ID
-        let id = self.next_id();
-        
-        // Create the interval task
-        let handle = tokio::spawn(async move {
-            loop {
-                // Wait for the specified delay
-                sleep(delay).await;
-                
-                // Create a task to execute the callback
-                let callback_clone = callback.clone();
-                let callback_args_clone = callback_args.clone();
-                let task = Task::new(move |ctx| {
-                    // Call the callback
-                    ctx.call(&callback_clone, &JsValue::undefined(), &callback_args_clone)
-                });
-                
-                // Schedule the task
-                async_runtime.schedule_task(task);
-            }
-        });
-        
-        // Store the interval ID
-        let mut ids = self.interval_ids.lock().unwrap();
-        ids.insert(id, handle);
-        
-        // Return the interval ID
-        Ok(JsValue::from(id))
-    }
-    
-    /// Clear an interval
-    fn clear_interval(&self, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
-        if args.is_empty() {
-            return Err(JsError::from_opaque("clearInterval requires an interval ID".into()));
-        }
-        
-        let id = args[0].to_number(context)? as u32;
-        
-        // Remove the interval ID
-        let mut ids = self.interval_ids.lock().unwrap();
-        if let Some(handle) = ids.remove(&id) {
-            // Cancel the interval
-            handle.abort();
-        }
-        
-        Ok(JsValue::undefined())
-    }
-}
 
-#[async_trait]
-impl Extension for TimerModule {
-    fn name(&self) -> &str {
-        "timers"
-    }
-    
-    async fn initialize(&self, context: &mut Context) -> Result<(), ExtensionError> {
-        // Create the setTimeout function
-        let set_timeout_fn = {
-            let timer_module = self.clone();
-            move |_this: &JsValue, args: &[JsValue], ctx: &mut Context| {
-                timer_module.set_timeout(args, ctx)
-            }
-        };
-        
-        // Create the clearTimeout function
-        let clear_timeout_fn = {
-            let timer_module = self.clone();
-            move |_this: &JsValue, args: &[JsValue], ctx: &mut Context| {
-                timer_module.clear_timeout(args, ctx)
-            }
-        };
-        
-        // Create the setInterval function
-        let set_interval_fn = {
-            let timer_module = self.clone();
-            move |_this: &JsValue, args: &[JsValue], ctx: &mut Context| {
-                timer_module.set_interval(args, ctx)
-            }
-        };
-        
-        // Create the clearInterval function
-        let clear_interval_fn = {
-            let timer_module = self.clone();
-            move |_this: &JsValue, args: &[JsValue], ctx: &mut Context| {
-                timer_module.clear_interval(args, ctx)
-            }
-        };
-        
-        // Add the functions to the global object
+    /// Register the timers module with a JavaScript context
+    pub fn register(&self, context: &mut Context) -> JsResult<()> {
+        // Add the setTimeout function
         let global = context.global_object();
-        
-        global.set("setTimeout", set_timeout_fn, true, context)
-            .map_err(|e| ExtensionError::InitializationFailed(e.to_string()))?;
-        
-        global.set("clearTimeout", clear_timeout_fn, true, context)
-            .map_err(|e| ExtensionError::InitializationFailed(e.to_string()))?;
-        
-        global.set("setInterval", set_interval_fn, true, context)
-            .map_err(|e| ExtensionError::InitializationFailed(e.to_string()))?;
-        
-        global.set("clearInterval", clear_interval_fn, true, context)
-            .map_err(|e| ExtensionError::InitializationFailed(e.to_string()))?;
-        
+        global.set(
+            "setTimeout",
+            FunctionObjectBuilder::new(context, NativeFunction::from_fn_ptr(Self::set_timeout))
+                .build(),
+            true,
+            context,
+        )?;
+
+        // Add the clearTimeout function
+        global.set(
+            "clearTimeout",
+            FunctionObjectBuilder::new(context, NativeFunction::from_fn_ptr(Self::clear_timeout))
+                .build(),
+            true,
+            context,
+        )?;
+
+        // Add the setInterval function
+        global.set(
+            "setInterval",
+            FunctionObjectBuilder::new(context, NativeFunction::from_fn_ptr(Self::set_interval))
+                .build(),
+            true,
+            context,
+        )?;
+
+        // Add the clearInterval function
+        global.set(
+            "clearInterval",
+            FunctionObjectBuilder::new(context, NativeFunction::from_fn_ptr(Self::clear_interval))
+                .build(),
+            true,
+            context,
+        )?;
+
         Ok(())
     }
-}
 
-impl Clone for TimerModule {
-    fn clone(&self) -> Self {
-        TimerModule {
-            async_runtime: self.async_runtime.clone(),
-            timeout_ids: self.timeout_ids.clone(),
-            interval_ids: self.interval_ids.clone(),
-            next_id: self.next_id.clone(),
+    /// Set timeout
+    fn set_timeout(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+        if args.is_empty() {
+            return Err(JsError::from_opaque(
+                "setTimeout requires at least one argument".into(),
+            ));
         }
+
+        let callback = args[0].clone();
+        if !callback.is_callable() {
+            return Err(JsError::from_opaque(
+                "setTimeout callback must be a function".into(),
+            ));
+        }
+
+        let delay = if args.len() > 1 {
+            args[1].to_number(ctx)? as u64
+        } else {
+            0
+        };
+
+        // Get the timers module from the global storage
+        let timers_module = Self::get_instance();
+
+        // Create a new callback ID
+        let callback_id = {
+            let mut next_callback_id = timers_module.next_callback_id.lock().unwrap();
+            let id = *next_callback_id;
+            *next_callback_id = next_callback_id.wrapping_add(1);
+            id
+        };
+
+        // Store the callback in thread-local storage
+        store_js_value(callback_id, callback);
+
+        // Store the callback ID in the state
+        timers_module.state.set(TimerCallbackId(callback_id));
+
+        // Create a new timer
+        let timer_id = {
+            let mut next_timer_id = timers_module.next_timer_id.lock().unwrap();
+            let id = *next_timer_id;
+            *next_timer_id = next_timer_id.wrapping_add(1);
+            id
+        };
+
+        let timer = Timer {
+            id: timer_id,
+            callback_id,
+            interval: None,
+            next_execution: Instant::now() + Duration::from_millis(delay),
+        };
+
+        // Add the timer to the timers map
+        {
+            let mut timers = timers_module.timers.lock().unwrap();
+            timers.insert(timer_id, timer);
+        }
+
+        // Schedule the timer
+        let event_sender = timers_module.event_sender.clone();
+        thread::spawn(move || {
+            thread::sleep(Duration::from_millis(delay));
+            let _ = event_sender.send(TimerEvent::Timeout(timer_id));
+        });
+
+        Ok(JsValue::from(timer_id))
+    }
+
+    /// Clear timeout
+    fn clear_timeout(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+        if args.is_empty() {
+            return Ok(JsValue::undefined());
+        }
+
+        let timer_id = args[0].to_number(ctx)? as u32;
+
+        // Get the timers module from the global storage
+        let timers_module = Self::get_instance();
+
+        // Remove the timer from the timers map
+        let callback_id = {
+            let mut timers = timers_module.timers.lock().unwrap();
+            timers.remove(&timer_id).map(|timer| timer.callback_id)
+        };
+
+        // Remove the callback from thread-local storage
+        if let Some(callback_id) = callback_id {
+            remove_js_value(callback_id);
+        }
+
+        Ok(JsValue::undefined())
+    }
+
+    /// Set interval
+    fn set_interval(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+        if args.is_empty() {
+            return Err(JsError::from_opaque(
+                "setInterval requires at least one argument".into(),
+            ));
+        }
+
+        let callback = args[0].clone();
+        if !callback.is_callable() {
+            return Err(JsError::from_opaque(
+                "setInterval callback must be a function".into(),
+            ));
+        }
+
+        let delay = if args.len() > 1 {
+            args[1].to_number(ctx)? as u64
+        } else {
+            0
+        };
+
+        // Get the timers module from the global storage
+        let timers_module = Self::get_instance();
+
+        // Create a new callback ID
+        let callback_id = {
+            let mut next_callback_id = timers_module.next_callback_id.lock().unwrap();
+            let id = *next_callback_id;
+            *next_callback_id = next_callback_id.wrapping_add(1);
+            id
+        };
+
+        // Store the callback in thread-local storage
+        store_js_value(callback_id, callback);
+
+        // Store the callback ID in the state
+        timers_module.state.set(TimerCallbackId(callback_id));
+
+        // Create a new timer
+        let timer_id = {
+            let mut next_timer_id = timers_module.next_timer_id.lock().unwrap();
+            let id = *next_timer_id;
+            *next_timer_id = next_timer_id.wrapping_add(1);
+            id
+        };
+
+        let timer = Timer {
+            id: timer_id,
+            callback_id,
+            interval: Some(Duration::from_millis(delay)),
+            next_execution: Instant::now() + Duration::from_millis(delay),
+        };
+
+        // Add the timer to the timers map
+        {
+            let mut timers = timers_module.timers.lock().unwrap();
+            timers.insert(timer_id, timer);
+        }
+
+        // Schedule the timer
+        let event_sender = timers_module.event_sender.clone();
+        let timers_clone = timers_module.timers.clone();
+        thread::spawn(move || {
+            let mut running = true;
+            while running {
+                thread::sleep(Duration::from_millis(delay));
+                
+                // Check if the timer still exists
+                let timer_exists = {
+                    let timers = timers_clone.lock().unwrap();
+                    timers.contains_key(&timer_id)
+                };
+                
+                if !timer_exists {
+                    running = false;
+                    continue;
+                }
+                
+                // Send the timer event
+                if event_sender.send(TimerEvent::Interval(timer_id)).is_err() {
+                    running = false;
+                }
+            }
+        });
+
+        Ok(JsValue::from(timer_id))
+    }
+
+    /// Clear interval
+    fn clear_interval(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
+        if args.is_empty() {
+            return Ok(JsValue::undefined());
+        }
+
+        let timer_id = args[0].to_number(ctx)? as u32;
+
+        // Get the timers module from the global storage
+        let timers_module = Self::get_instance();
+
+        // Remove the timer from the timers map
+        let callback_id = {
+            let mut timers = timers_module.timers.lock().unwrap();
+            timers.remove(&timer_id).map(|timer| timer.callback_id)
+        };
+
+        // Remove the callback from thread-local storage
+        if let Some(callback_id) = callback_id {
+            remove_js_value(callback_id);
+        }
+
+        Ok(JsValue::undefined())
     }
 }
 
-impl Default for TimerModule {
-    fn default() -> Self {
-        Self::new()
+impl Clone for TimersModule {
+    fn clone(&self) -> Self {
+        TimersModule {
+            async_runtime: self.async_runtime.clone(),
+            timers: self.timers.clone(),
+            next_timer_id: self.next_timer_id.clone(),
+            next_callback_id: self.next_callback_id.clone(),
+            event_sender: self.event_sender.clone(),
+            event_receiver: self.event_receiver.clone(),
+            state: self.state.clone(),
+        }
     }
 }

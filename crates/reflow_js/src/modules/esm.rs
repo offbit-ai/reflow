@@ -1,6 +1,7 @@
+use boa_engine::{NativeFunction, Source};
 use boa_engine::{
     Context, JsValue, JsError, JsResult, object::ObjectInitializer,
-    property::Attribute,
+    property::Attribute, object::FunctionObjectBuilder,
 };
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -50,17 +51,22 @@ impl EsModule {
                 
                 // In a real implementation, this would resolve and load the module
                 // For now, just return a promise that resolves to an empty object
-                let promise = ctx.realm().intrinsics().promise_constructor().constructor();
+                let promise_obj = ObjectInitializer::new(ctx).build();
                 let mock_exports = ObjectInitializer::new(ctx).build();
-                promise.resolve(mock_exports, ctx);
                 
-                Ok(promise.into())
+                // Set the promise state and value
+                promise_obj.set("__state", "fulfilled", true, ctx)?;
+                promise_obj.set("__value", mock_exports, true, ctx)?;
+                
+                Ok(promise_obj.into())
             }
         };
         
         // Create the import function object
-        let import_obj = ObjectInitializer::new(context)
-            .function("import", 1, import)
+        let import_fn = NativeFunction::from_fn_ptr(import);
+        let import_obj = FunctionObjectBuilder::new(context, import_fn)
+            .name("import")
+            .length(1)
             .build();
         
         // Create the meta object
@@ -75,7 +81,7 @@ impl EsModule {
         );
         
         // Evaluate the wrapper function
-        let wrapper = context.eval(wrapper_source)?;
+        let wrapper = context.eval(Source::from_bytes(wrapper_source.as_str()))?;
         
         // Call the wrapper function with the module context
         let args = [
@@ -83,7 +89,9 @@ impl EsModule {
             meta.into(),
         ];
         
-        let result = context.call(&wrapper, &JsValue::undefined(), &args)?;
+        // Call the wrapper function
+        let wrapper_obj = wrapper.as_object().ok_or_else(|| JsError::from_opaque("Wrapper is not an object".into()))?;
+        let result = wrapper_obj.call(&JsValue::undefined(), &args, context)?;
         
         // Store the exports
         *self.exports.lock().unwrap() = Some(result.clone());

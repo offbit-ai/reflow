@@ -1,11 +1,12 @@
+use boa_engine::Source;
 use boa_engine::{
     Context, JsValue, JsError, JsResult, object::ObjectInitializer,
-    property::Attribute,
+    property::Attribute, native_function::NativeFunction,
 };
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use crate::modules::Module;
-use crate::modules::ModuleType;
+use crate::modules::{Module, ModuleType};
+use std::fs;
 
 /// CommonJS module
 #[derive(Debug)]
@@ -16,8 +17,8 @@ pub struct CommonJsModule {
     /// Module source code
     source: String,
     
-    /// Module exports
-    exports: Arc<Mutex<Option<JsValue>>>,
+    /// Module evaluated flag
+    evaluated: Arc<Mutex<bool>>,
 }
 
 impl CommonJsModule {
@@ -26,8 +27,14 @@ impl CommonJsModule {
         CommonJsModule {
             path,
             source,
-            exports: Arc::new(Mutex::new(None)),
+            evaluated: Arc::new(Mutex::new(false)),
         }
+    }
+    
+    /// Create a new CommonJS module from a file
+    pub fn from_file(path: PathBuf) -> Result<Self, std::io::Error> {
+        let source = fs::read_to_string(&path)?;
+        Ok(Self::new(path, source))
     }
     
     /// Create the module wrapper
@@ -42,29 +49,10 @@ impl CommonJsModule {
         
         // Create the require function
         let require = {
-            // In a real implementation, this would use the module system to resolve and load modules
-            move |_this: &JsValue, args: &[JsValue], ctx: &mut Context| {
-                if args.is_empty() {
-                    return Err(JsError::from_opaque("require requires a module specifier".into()));
-                }
-                
-                let specifier = match args[0].as_string() {
-                    Some(s) => s.to_std_string_escaped(),
-                    None => return Err(JsError::from_opaque("require requires a string module specifier".into())),
-                };
-                
-                // In a real implementation, this would resolve and load the module
-                // For now, just return an empty object
-                let mock_exports = ObjectInitializer::new(ctx).build();
-                
-                Ok(mock_exports.into())
-            }
+            // Get the require function from the global object
+            let global = context.global_object();
+            global.get("require", context)?
         };
-        
-        // Create the require function object
-        let require_obj = ObjectInitializer::new(context)
-            .function("require", 1, require)
-            .build();
         
         // Create the wrapper function
         let wrapper_source = format!(
@@ -73,7 +61,7 @@ impl CommonJsModule {
         );
         
         // Evaluate the wrapper function
-        let wrapper = context.eval(wrapper_source)?;
+        let wrapper = context.eval(Source::from_bytes(&wrapper_source))?;
         
         // Create the __filename and __dirname values
         let filename = JsValue::from(self.path.to_string_lossy().to_string());
@@ -86,18 +74,25 @@ impl CommonJsModule {
         // Call the wrapper function with the module context
         let args = [
             exports.clone().into(),
-            require_obj.into(),
-            module.into(),
+            require,
+            module.clone().into(),
             filename,
             dirname,
         ];
         
-        let _result = context.call(&wrapper, &JsValue::undefined(), &args)?;
+        let _result = if let Some(wrapper_obj) = wrapper.as_object() {
+            wrapper_obj.call(&JsValue::undefined(), &args, context)?
+        } else {
+            return Err(JsError::from_opaque("Wrapper is not a function".into()));
+        };
         
-        // Store the exports
-        *self.exports.lock().unwrap() = Some(exports.clone().into());
+        // Get the exports from the module object
+        let module_exports = module.get("exports", context)?;
         
-        Ok(exports.into())
+        // Mark the module as evaluated
+        *self.evaluated.lock().unwrap() = true;
+        
+        Ok(module_exports)
     }
 }
 
@@ -111,17 +106,17 @@ impl Module for CommonJsModule {
     }
     
     fn exports(&self) -> JsResult<JsValue> {
-        if let Some(exports) = &*self.exports.lock().unwrap() {
-            Ok(exports.clone())
-        } else {
-            Err(JsError::from_opaque("Module not evaluated".into()))
-        }
+        // We can't actually return the exports here since we don't store them
+        // Instead, we'll return an error indicating that the module needs to be evaluated
+        Err(JsError::from_opaque("Module exports can only be accessed during evaluation".into()))
     }
     
     fn evaluate(&self, context: &mut Context) -> JsResult<JsValue> {
         // Check if the module has already been evaluated
-        if let Some(exports) = &*self.exports.lock().unwrap() {
-            return Ok(exports.clone());
+        if *self.evaluated.lock().unwrap() {
+            // Re-evaluate the module to get the exports
+            // This is not ideal, but it's a workaround for the thread safety issue
+            return self.create_wrapper(context);
         }
         
         // Evaluate the module
