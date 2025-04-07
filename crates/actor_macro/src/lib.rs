@@ -202,7 +202,17 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             impl Actor for #struct_name {
 
                 fn get_behavior(&self) -> ActorBehavior {
-                    Box::new(#fn_name)
+                    
+                    Box::new(|inports: std::collections::HashMap<String, Message>, actor_state: std::sync::Arc<parking_lot::Mutex<dyn ActorState>>, outports: Port| {
+                        Box::pin(async move {
+                            match tokio::task::spawn_blocking(move || {
+                                futures::executor::block_on(#fn_name(inports, actor_state, outports))
+                            }).await {
+                                Ok(result) => result,
+                                Err(_) => Ok(std::collections::HashMap::new()),
+                            }
+                        })
+                    })
                 }
 
                 fn get_outports(&self) -> Port {
@@ -243,13 +253,18 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                                         all_inports.extend(packet.iter().map(|(k, v)| {(k.clone(), v.clone())}));
                                         if all_inports.keys().len() == inports_size  {
                                             // Run the behavior function
-                                            if let Ok(result) = (behavior_func)(all_inports.clone(), actor_state.clone(), outports.clone())
-                                            {
-                                                if !result.is_empty() {
-                                                    let _ = outports.0.send(result)
-                                                        .expect("Expected to send message via outport");
+                                            match (behavior_func)(all_inports.clone(), actor_state.clone(), outports.clone()).await {
+                                                Ok(result) => {
+                                                    if !result.is_empty() {
+                                                        let _ = outports.0.send(result)
+                                                            .expect("Expected to send message via outport");
+                                                    }
+                                                },
+                                                Err(e) => {
+                                                    eprintln!("Error in behavior function: {:?}", e);
                                                 }
                                             }
+                                            all_inports.clear();
                                         }
                                         continue;
                                     }
@@ -258,11 +273,15 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 
                                 if(!await_all_inports) {
                                     // Run the behavior function
-                                    if let Ok(result) = (behavior_func)(packet, actor_state.clone(), outports.clone())
-                                    {
-                                        if !result.is_empty() {
-                                            let _ = outports.0.send(result)
-                                                .expect("Expected to send message via outport");
+                                    match (behavior_func)(packet, actor_state.clone(), outports.clone()).await {
+                                        Ok(result) => {
+                                            if !result.is_empty() {
+                                                let _ = outports.0.send(result)
+                                                    .expect("Expected to send message via outport");
+                                            }
+                                        },
+                                        Err(e) => {
+                                            eprintln!("Error in behavior function: {:?}", e);
                                         }
                                     }
                                 }

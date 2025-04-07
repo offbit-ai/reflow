@@ -20,7 +20,7 @@ pub struct ScriptContext {
 }
 
 /// Serializable representation of the context for passing to script engines
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SerializableContext {
     /// The method/port name being called
     pub method: String,

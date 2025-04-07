@@ -1,2 +1,45 @@
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"
+
+[build]
+# Enable incremental compilation
+incremental = false
+# Configure the number of parallel jobs
+jobs = 8
+
+rustc-wrapper = "sccache"
+
+
+[target.'cfg(all())'] 
+# Use the faster linker
+rustflags = ["-C", "target-cpu=native"]
+
+# macOS specific configuration
+[target.aarch64-apple-darwin]
+linker = "/opt/homebrew/opt/llvm/bin/clang"
+rustflags = ["-C", "link-arg=--ld-path=/opt/homebrew/bin/ld64.lld"]
+
+# Profile-specific optimization settings
+[profile.dev]
+opt-level = 0            # Basic optimizations without slowing compilation too much
+debug = true             # Full debug info
+debug-assertions = true  # Enable debug assertions
+overflow-checks = true   # Enable integer overflow checks
+
+[profile.release]
+opt-level = 3            # Maximum optimization
+debug = false            # No debug info
+lto = "thin"             # Enable Link Time Optimization (thin mode is faster)
+codegen-units = 1        # Maximize optimization by using a single codegen unit
+panic = "abort"          # Abort on panic for smaller binary size
+strip = true             # Strip symbols from binary
+
+[cargo-new]
+name = "Damilare Akinlaja"
+email = "damilare@zenturi.co"
+
+[registries.crates-io]
+protocol = "sparse"
+
+[net]
+git-fetch-with-cli = true

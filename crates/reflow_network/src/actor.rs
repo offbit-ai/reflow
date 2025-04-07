@@ -1,7 +1,5 @@
 use std::{
-    any::Any,
-    collections::HashMap,
-    rc::Rc, sync::Arc
+    any::Any, collections::HashMap, pin::Pin, rc::Rc, sync::Arc
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -23,13 +21,14 @@ use crate::{message::Message, network::Network};
 
 // #[cfg(not(target_arch = "wasm32"))]
 pub type ActorBehavior = Box<
-    dyn (Fn(
+    dyn Fn(
             ActorPayload,
             Arc<Mutex<dyn ActorState>>,
             Port,
-        ) -> Result<HashMap<String, Message>, anyhow::Error>)
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<HashMap<String, Message>, anyhow::Error>> + Send + 'static>>
         + Send
         + Sync
+       
         + 'static,
 >;
 

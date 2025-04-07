@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use parking_lot::RwLock;
 use ::extism::*;
@@ -15,7 +15,7 @@ impl ScriptEngine for ExtismEngine {
         todo!()
     }
 
-    async fn call(&self, context: &crate::context::ScriptContext) -> Result<Message> {
+    async fn call(&mut self, context: &crate::context::ScriptContext) -> Result<HashMap<String, Message>> {
         // Execute plugin function with context
         // This will allow access to inputs, state, and output ports
         todo!()

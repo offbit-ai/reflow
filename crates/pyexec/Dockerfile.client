@@ -1,0 +1,22 @@
+FROM node:18-alpine
+
+# Create app directory
+WORKDIR /app
+
+# Install a simple HTTP server
+RUN npm install -g http-server
+
+# Copy client files
+COPY test-client.html /app/
+
+
+# Add a startup script to replace SERVER_HOST environment variable
+COPY start.sh /app/
+
+RUN chmod +x /app/start.sh
+
+# Expose the client port
+EXPOSE 3000
+
+# Set the entry point
+CMD ["/bin/sh", "/app/start.sh"]

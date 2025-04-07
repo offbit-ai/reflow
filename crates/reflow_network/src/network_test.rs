@@ -1,9 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::Arc,
-    thread::sleep,
-    time::Duration,
-};
+use std::{collections::HashMap, pin::Pin, sync::Arc, thread::sleep, time::Duration};
 
 use crate::{
     actor::ActorPayload,
@@ -25,7 +20,7 @@ use crate::{
     outports::<100>(Out),
     await_all_inports
 )]
-fn sum_actor(
+async fn sum_actor(
     payload: ActorPayload,
     _state: Arc<Mutex<dyn ActorState>>,
     _outport_channels: Port,
@@ -51,7 +46,7 @@ fn sum_actor(
     inports::<100>(In),
     outports::<50>(Out)
 )]
-fn square_actor(
+async fn square_actor(
     payload: ActorPayload,
     _state: Arc<Mutex<dyn ActorState>>,
     _outport_channels: Port,
@@ -72,7 +67,7 @@ fn square_actor(
     outports(Out),
     await_all_inports
 )]
-fn _assert_eq(
+async fn _assert_eq(
     payload: ActorPayload,
     _state: Arc<Mutex<dyn ActorState>>,
     _outport_channels: Port,
@@ -174,7 +169,7 @@ fn test_network() -> Result<(), anyhow::Error> {
     outports::<50>(Output),
     state(MemoryState)
 )]
-fn transform_actor(
+async fn transform_actor(
     payload: ActorPayload,
     state: Arc<Mutex<dyn ActorState>>,
     _outport_channels: Port,
@@ -209,11 +204,11 @@ fn transform_actor(
     inports::<100>(In),
     outports::<50>(Passed, Failed)
 )]
-fn filter_actor(
+async fn filter_actor(
     payload: ActorPayload,
     _state: Arc<Mutex<dyn ActorState>>,
     _outport_channels: Port,
-) -> Result<HashMap<String, Message>, anyhow::Error> {
+) -> Result<HashMap<std::string::String, Message>, anyhow::Error> {
     let input = payload.get("In").expect("expected input");
 
     match input {
@@ -229,7 +224,7 @@ fn filter_actor(
     outports::<50>(Sum, Count),
     state(MemoryState)
 )]
-fn aggregator_actor(
+async fn aggregator_actor(
     payload: ActorPayload,
     state: Arc<Mutex<dyn ActorState>>,
     _outport_channels: Port,

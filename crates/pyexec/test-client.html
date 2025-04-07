@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python Execution Environment</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 97vh;
+      color: #333;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+      min-height: 500px;
+    }
+
+    .left-panel {
+      display: flex;
+      width: 50%;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .right-panel {
+      display: flex;
+      width: 50%;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .code-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .code-editor {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+      padding: 10px;
+      resize: none;
+      background-color: #f8f8f8;
+      min-height: 300px;
+    }
+
+    .packages-container {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .inputs-container {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .result-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-tabs {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 5px;
+    }
+
+    .result-tab {
+      padding: 8px 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+      background-color: #f8f8f8;
+    }
+
+    .result-tab.active {
+      background-color: #fff;
+      border-color: #ccc;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -1px;
+      font-weight: bold;
+    }
+
+    .result-panel {
+      flex: 1;
+      display: none;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 0 0 5px 5px;
+      overflow: auto;
+      background-color: #fff;
+    }
+
+    .result-panel.active {
+      display: block;
+    }
+
+    #output,
+    #error {
+      font-family: 'Consolas', 'Monaco', monospace;
+      white-space: pre-wrap;
+      flex: 1;
+      overflow: auto;
+    }
+
+    #output {
+      color: #333;
+    }
+
+    #error {
+      color: #e74c3c;
+    }
+
+    .json-result {
+      font-family: 'Consolas', 'Monaco', monospace;
+      margin: 0;
+      padding: 10px;
+      background-color: #f8f8f8;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      overflow: auto;
+    }
+
+    .packages-list,
+    .inputs-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .package-item {
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      background-color: #f1f1f1;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .input-item {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      padding: 10px;
+      background-color: #f8f8f8;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
+
+    .input-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .input-name {
+      font-weight: bold;
+    }
+
+    .input-description {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+
+    .input-data {
+      width: 100%;
+      min-height: 80px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .package-item button,
+    .input-item button {
+      margin-left: 5px;
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      padding: 0 5px;
+    }
+
+    .package-item button:hover,
+    .input-item button:hover {
+      color: #e74c3c;
+    }
+
+    .server-status {
+      display: flex;
+      align-items: center;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .status-disconnected {
+      background-color: #e74c3c;
+    }
+
+    .status-connected {
+      background-color: #2ecc71;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #2980b9;
+    }
+
+    .btn-secondary {
+      background-color: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #7f8c8d;
+    }
+
+    .btn-danger {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #c0392b;
+    }
+
+    .btn-success {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background-color: #27ae60;
+    }
+
+    .btn-disabled {
+      background-color: #95a5a6;
+      color: white;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .input-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .message-log {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      height: 150px;
+      overflow-y: auto;
+      background-color: #fff;
+      padding: 10px;
+    }
+
+    .log-message {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 3px;
+    }
+
+    .log-info {
+      background-color: #f8f9fa;
+      border-left: 3px solid #17a2b8;
+    }
+
+    .log-success {
+      background-color: #f1f9f7;
+      border-left: 3px solid #28a745;
+    }
+
+    .log-error {
+      background-color: #fdf7f7;
+      border-left: 3px solid #dc3545;
+    }
+
+    .log-warning {
+      background-color: #fff9f0;
+      border-left: 3px solid #ffc107;
+    }
+
+    .log-time {
+      font-size: 0.8em;
+      color: #6c757d;
+    }
+
+    .log-content {
+      margin-top: 2px;
+    }
+
+    #execution-time {
+      font-size: 0.85em;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+
+    .execution-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85em;
+      color: #6c757d;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+
+    .loading {
+      color: #3498db;
+      display: none;
+      margin-left: 10px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+
+    .accordion {
+      margin-bottom: 10px;
+    }
+
+    .accordion-header {
+      background-color: #f5f5f5;
+      padding: 10px 15px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .accordion-content {
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 15px;
+      display: none;
+    }
+
+    .accordion-header:after {
+      content: '+';
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .accordion-header.active:after {
+      content: '-';
+    }
+
+    .accordion-content.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Python Execution Environment</h1>
+    <div class="server-status">
+      <div class="status-indicator status-disconnected" id="status-indicator"></div>
+      <span id="connection-status">Disconnected</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="left-panel">
+      <div class="code-container">
+        <div class="code-header">
+          <h3>Python Code</h3>
+          <div>
+            <label for="timeout">Timeout (sec):</label>
+            <input type="number" id="timeout" min="1" max="300" value="30" style="width: 60px;">
+          </div>
+        </div>
+        <textarea id="code-editor" class="code-editor" placeholder="Enter your Python code here...">
+import numpy as np
+import pandas as pd
+import time
+import random
+import json
+from datetime import datetime
+
+# Get input parameters
+inputs = Context.get_inputs()
+
+input_params = inputs.get("input_params")
+config_data = input_params.data
+
+
+# Set configuration from inputs or use defaults
+config = {
+    "random_seed": 42,
+    "data_points": 100,
+    "start_date": "2023-01-01",
+    "ma_window": 7,
+    "anomaly_threshold": 1.5,
+    "simulate_delay": 0.5
+}
+
+# Override defaults with any provided inputs
+if config_data.get("random_seed"):
+    config["random_seed"] = config_data.get("random_seed")
+if config_data.get("data_points"):
+    config["data_points"] = config_data.get("data_points")
+if config_data.get("start_date"):
+    config["start_date"] = config_data.get("start_date")
+if config_data.get("ma_window"):
+    config["ma_window"] = config_data.get("ma_window")
+if config_data.get("anomaly_threshold"):
+    config["anomaly_threshold"] = config_data.get("anomaly_threshold")
+if config_data.get("simulate_delay"):
+    config["simulate_delay"] = config_data.get("simulate_delay")
+
+# Print configuration for debugging
+print("Analysis configuration:")
+for key, value in config.items():
+    print(f"- {key}: {value}")
+
+# Set random seed for reproducibility
+np.random.seed(config["random_seed"])
+
+# Custom JSON encoder to handle non-serializable types
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, pd.Timestamp):
+            return obj.strftime('%Y-%m-%d')
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif hasattr(obj, 'to_dict'):
+            return obj.to_dict()
+        return super().default(obj)
+
+# Function to safely send JSON messages
+def safe_send_json(data):
+    try:
+        return Context.send_output(data)
+    except Exception as e:
+        print(f"Error sending message: {e}")
+        return False
+
+# Function to send progress updates
+def update_progress(step, total_steps, message):
+    progress = int(step / total_steps * 100)
+    safe_send_json({
+        "type": "progress",
+        "step": step,
+        "total_steps": total_steps,
+        "progress": progress,
+        "message": message
+    })
+    time.sleep(config["simulate_delay"])  # Slow it down to see the updates
+
+# Indicate the start of processing
+safe_send_json({
+    "type": "status",
+    "status": "started",
+    "message": "Starting data analysis pipeline",
+    "config": config
+})
+
+# Step 1: Generate synthetic data
+update_progress(1, 5, "Generating synthetic data")
+
+# Create a time series dataset
+dates = pd.date_range(start=config["start_date"], periods=config["data_points"], freq='D')
+values = np.cumsum(np.random.randn(config["data_points"])) + 100  # Random walk with upward trend
+
+# Create a DataFrame
+df = pd.DataFrame({'date': dates, 'value': values})
+
+# Convert dates to strings for JSON serialization
+preview_df = df.head().copy()
+preview_df['date'] = preview_df['date'].dt.strftime('%Y-%m-%d')
+
+# Send the first few rows as a preview
+safe_send_json({
+    "type": "data_preview",
+    "preview": preview_df.to_dict(orient='records'),
+    "message": "Data preview available"
+})
+
+# Step 2: Perform statistical analysis
+update_progress(2, 5, "Performing statistical analysis")
+
+# Calculate some statistics
+stats = {
+    "mean": float(df['value'].mean()),
+    "median": float(df['value'].median()),
+    "std": float(df['value'].std()),
+    "min": float(df['value'].min()),
+    "max": float(df['value'].max()),
+    "correlation": float(np.random.rand())  # Simulated correlation value
+}
+
+# Send the statistics
+safe_send_json({
+    "type": "statistics",
+    "stats": stats,
+    "message": "Statistical analysis complete"
+})
+
+# Step 3: Perform data transformation
+update_progress(3, 5, "Transforming data")
+
+# Add a moving average column
+ma_window = config["ma_window"]
+df[f'ma_{ma_window}'] = df['value'].rolling(window=ma_window).mean()
+
+# Add percent change
+df['pct_change'] = df['value'].pct_change() * 100
+
+# Send an update with the transformation details
+safe_send_json({
+    "type": "transformation",
+    "transformations": [
+        {"name": f"{ma_window}-day Moving Average", "column": f"ma_{ma_window}"},
+        {"name": "Percent Change", "column": "pct_change"}
+    ],
+    "message": f"Added {ma_window}-day moving average and percent change calculations"
+})
+
+# Step 4: Detect anomalies
+update_progress(4, 5, "Detecting anomalies")
+
+# Find anomalies based on the configured threshold
+threshold = config["anomaly_threshold"]
+df['is_anomaly'] = np.abs(df['pct_change']) > threshold
+
+# Find anomalies
+anomalies = df[df['is_anomaly']].copy()
+anomalies['date'] = anomalies['date'].dt.strftime('%Y-%m-%d')  # Convert to string for JSON
+
+if not anomalies.empty:
+    safe_send_json({
+        "type": "anomalies",
+        "count": len(anomalies),
+        "anomalies": anomalies.head(5).to_dict(orient='records'),
+        "message": f"Found {len(anomalies)} potential anomalies (threshold: {threshold}%)"
+    })
+else:
+    safe_send_json({
+        "type": "anomalies",
+        "count": 0,
+        "message": "No anomalies detected"
+    })
+
+# Step 5: Final results and recommendations
+update_progress(5, 5, "Generating insights and recommendations")
+
+# Create some simulated insights
+insights = [
+    "The time series shows an overall positive trend",
+    f"Average value is {stats['mean']:.2f} with standard deviation {stats['std']:.2f}",
+    f"Detected {len(anomalies)} potential anomalies with changes exceeding {threshold}%",
+    f"The {ma_window}-day moving average smooths out daily fluctuations"
+]
+
+# Generate recommendations based on inputs
+recommendations = [
+    "Consider investigating the causes of identified anomalies",
+    "The trend suggests continued monitoring is worthwhile"
+]
+
+# Add extra recommendation if anomalies are high
+if len(anomalies) > config["data_points"] * 0.1:  # More than 10% anomalies
+    recommendations.append("Consider increasing the anomaly threshold as current value may be too sensitive")
+elif len(anomalies) == 0:
+    recommendations.append("Consider decreasing the anomaly threshold as no anomalies were detected")
+
+# Add recommendation about moving average window
+if config["ma_window"] < 5:
+    recommendations.append("Consider using a larger moving average window for smoother trend visualization")
+elif config["ma_window"] > 14:
+    recommendations.append("Consider using a smaller moving average window to capture more short-term patterns")
+
+# Send final insights
+safe_send_json({
+    "type": "insights",
+    "insights": insights,
+    "recommendations": recommendations,
+    "message": "Analysis complete"
+})
+
+# Final completion message
+safe_send_json({
+    "type": "status",
+    "status": "completed",
+    "message": "Data analysis pipeline completed successfully"
+})
+
+# Return the final results - ensure everything is JSON serializable
+__return_value = {
+    "dataset_size": len(df),
+    "time_range": {
+        "start": df['date'].min().strftime('%Y-%m-%d'),
+        "end": df['date'].max().strftime('%Y-%m-%d')
+    },
+    "statistics": stats,
+    "anomaly_count": int(len(anomalies)),
+    "insights": insights,
+    "recommendations": recommendations,
+    "input_parameters_used": {k: v for k, v in config.items()}
+}
+
+
+</textarea>
+        <div class="controls">
+          <button id="run-btn" class="btn-primary">Run</button>
+          <button id="clear-btn" class="btn-secondary">Clear</button>
+          <span id="loading" class="loading">Running script...</span>
+        </div>
+      </div>
+
+      <div class="accordion">
+        <div class="accordion-header" id="input-params-header">Input Parameters</div>
+        <div class="accordion-content" id="input-params-content">
+          <div class="inputs-container">
+            <div class="input-form">
+              <input type="text" id="input-name" placeholder="Parameter name (e.g., name, data, config)">
+              <input type="text" id="input-description" placeholder="Description (optional)">
+              <button id="add-input-btn" class="btn-primary">Add</button>
+            </div>
+            <div class="inputs-list" id="inputs-list">
+              <!-- Input items will be added here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion">
+        <div class="accordion-header" id="packages-header">Package Management</div>
+        <div class="accordion-content" id="packages-content">
+          <div class="packages-container">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <input type="text" id="package-input"
+                placeholder="Enter package name (e.g., numpy==1.21.0 or just numpy)">
+              <button id="add-package-btn" class="btn-primary">Add</button>
+            </div>
+            <div class="packages-list" id="packages-list">
+              <!-- Package items will be added here -->
+            </div>
+            <div class="controls" style="margin-top: 10px;">
+              <button id="install-packages-btn" class="btn-success" disabled>Install Packages</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="result-container">
+        <div class="result-tabs">
+          <div class="result-tab active" data-target="output-panel">Output</div>
+          <div class="result-tab" data-target="error-panel">Errors</div>
+          <div class="result-tab" data-target="result-panel">Result</div>
+        </div>
+        <div class="result-panel active" id="output-panel">
+          <pre id="output"></pre>
+        </div>
+        <div class="result-panel" id="error-panel">
+          <pre id="error"></pre>
+        </div>
+        <div class="result-panel" id="result-panel">
+          <div id="json-result" class="json-result"></div>
+        </div>
+        <div class="execution-stats">
+          <div id="execution-time"></div>
+          <div id="execution-status"></div>
+        </div>
+      </div>
+
+      <div class="message-log" id="message-log">
+        <!-- Log messages will be added here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let socket = null;
+    let requestsMap = new Map();
+    let packages = new Set();
+    let inputs = new Map();
+    let isConnected = false;
+    let isExecuting = false;
+
+    const codeEditor = document.getElementById('code-editor');
+    const runBtn = document.getElementById('run-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const outputElement = document.getElementById('output');
+    const errorElement = document.getElementById('error');
+    const jsonResultElement = document.getElementById('json-result');
+    const packageInput = document.getElementById('package-input');
+    const addPackageBtn = document.getElementById('add-package-btn');
+    const packagesListElement = document.getElementById('packages-list');
+    const installPackagesBtn = document.getElementById('install-packages-btn');
+    const inputNameElement = document.getElementById('input-name');
+    const inputDescriptionElement = document.getElementById('input-description');
+    const addInputBtn = document.getElementById('add-input-btn');
+    const inputsListElement = document.getElementById('inputs-list');
+    const connectionStatusElement = document.getElementById('connection-status');
+    const statusIndicatorElement = document.getElementById('status-indicator');
+    const executionTimeElement = document.getElementById('execution-time');
+    const executionStatusElement = document.getElementById('execution-status');
+    const messageLogElement = document.getElementById('message-log');
+    const loadingElement = document.getElementById('loading');
+    const timeoutInput = document.getElementById('timeout');
+
+    // Connect to the WebSocket server
+    function connectWebSocket() {
+      // Use the value from environment variable in Docker or fall back to localhost
+      const wsUrl = 'WS_SERVER_HOST' || 'ws://localhost:8080';
+
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+
+      logMessage('info', `Connecting to server at ${wsUrl}...`);
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = function () {
+        isConnected = true;
+        updateConnectionStatus(true);
+        logMessage('success', 'Connected to server');
+        enableUI();
+      };
+
+      socket.onclose = function () {
+        isConnected = false;
+        updateConnectionStatus(false);
+        logMessage('error', 'Disconnected from server');
+        disableUI();
+
+        // Try to reconnect after 5 seconds
+        setTimeout(connectWebSocket, 5000);
+      };
+
+      socket.onerror = function (error) {
+        logMessage('error', `WebSocket error: ${error.message || 'Unknown error'}`);
+      };
+
+      socket.onmessage = function (event) {
+        handleSocketMessage(event.data);
+      };
+    }
+
+    // Handle incoming WebSocket messages
+    function handleSocketMessage(data) {
+      try {
+        const message = JSON.parse(data);
+
+        // Check if this is an RPC response
+        if (message.id && requestsMap.has(message.id)) {
+          const request = requestsMap.get(message.id);
+          requestsMap.delete(message.id);
+
+          if (message.error) {
+            logMessage('error', `Error: ${message.error.message}`);
+            if (request.method === 'execute_script') {
+              displayResults('', message.error.message, null, false, 0);
+              isExecuting = false;
+              updateExecutionStatus();
+            }
+          } else if (message.result) {
+            if (request.method === 'execute_script') {
+              handleExecutionResult(message.result);
+              isExecuting = false;
+              updateExecutionStatus();
+            } else if (request.method === 'install_packages') {
+              handlePackageInstallResult(message.result);
+            } else if (request.method === 'ping') {
+              logMessage('info', `Ping response: ${message.result.message}`);
+            }
+          }
+        }
+        // Check if this is a message from a Python script
+        else if (message.session_id && message.message) {
+          logMessage('info', `Message from Python: ${JSON.stringify(message.message)}`);
+
+          // Check if it's a package installation progress message
+          if (typeof message.message === 'object' && message.message.type === 'package_install') {
+            handlePackageInstallProgress(message.message);
+          }
+        }
+      } catch (error) {
+        logMessage('error', `Error parsing message: ${error.message}`);
+        console.error('Error parsing message:', error, data);
+      }
+    }
+
+    // Handle execution result
+    function handleExecutionResult(result) {
+      const { stdout, stderr, result: jsonResult, success, execution_time_ms, packages_installed } = result;
+
+      // Display the results
+      displayResults(stdout, stderr, jsonResult, success, execution_time_ms);
+
+      // Log installed packages if any
+      if (packages_installed && packages_installed.length > 0) {
+        logMessage('success', `Installed packages: ${packages_installed.join(', ')}`);
+      }
+
+      // Hide loading indicator
+      loadingElement.style.display = 'none';
+    }
+
+    // Handle package installation result
+    function handlePackageInstallResult(result) {
+      const { success, message, packages_installed } = result;
+
+      if (success) {
+        logMessage('success', message);
+        if (packages_installed && packages_installed.length > 0) {
+          logMessage('success', `Installed packages: ${packages_installed.join(', ')}`);
+        }
+      } else {
+        logMessage('error', message);
+      }
+
+      // Clear the packages list
+      packages.clear();
+      updatePackagesList();
+      updateInstallButton();
+    }
+
+    // Handle package installation progress
+    function handlePackageInstallProgress(message) {
+      const { status, package: pkg, message: msg } = message;
+
+      switch (status) {
+        case 'start':
+          logMessage('info', msg);
+          break;
+        case 'progress':
+          logMessage('info', msg);
+          break;
+        case 'success':
+          logMessage('success', msg);
+          break;
+        case 'error':
+          logMessage('error', msg);
+          break;
+        case 'complete':
+          logMessage('success', msg);
+          break;
+        default:
+          logMessage('info', msg);
+      }
+    }
+
+    // Display execution results
+    function displayResults(stdout, stderr, jsonResult, success, executionTime) {
+      outputElement.textContent = stdout || 'No output';
+      errorElement.textContent = stderr || 'No errors';
+
+      if (jsonResult) {
+        jsonResultElement.innerHTML = `<pre>${JSON.stringify(jsonResult, null, 2)}</pre>`;
+      } else {
+        jsonResultElement.textContent = 'No result value returned';
+      }
+
+      // Update execution time
+      if (executionTime > 0) {
+        executionTimeElement.textContent = `Execution time: ${(executionTime / 1000).toFixed(3)} seconds`;
+      } else {
+        executionTimeElement.textContent = '';
+      }
+
+      // Update execution status
+      executionStatusElement.textContent = success ? 'Success' : 'Failed';
+      executionStatusElement.style.color = success ? '#2ecc71' : '#e74c3c';
+
+      // Show appropriate tab based on content
+      if (stderr && stderr.length > 0) {
+        showTab('error-panel');
+      } else if (stdout && stdout.length > 0) {
+        showTab('output-panel');
+      } else if (jsonResult) {
+        showTab('result-panel');
+      }
+    }
+
+    // Execute a Python script
+    function executeScript() {
+      if (!isConnected || isExecuting) {
+        return;
+      }
+
+      isExecuting = true;
+      updateExecutionStatus();
+
+      // Clear previous results
+      outputElement.textContent = '';
+      errorElement.textContent = '';
+      jsonResultElement.textContent = '';
+      executionTimeElement.textContent = '';
+      executionStatusElement.textContent = 'Executing...';
+
+      // Get the code from the editor
+      const code = codeEditor.value.trim();
+
+      if (code === '') {
+        logMessage('warning', 'Please enter some code to execute');
+        isExecuting = false;
+        updateExecutionStatus();
+        return;
+      }
+
+      // Get the timeout value
+      const timeout = parseInt(timeoutInput.value, 10) || 30;
+
+      // Show loading indicator
+      loadingElement.style.display = 'inline';
+
+      // Create the request ID
+      const requestId = generateUUID();
+
+      // Create the request object
+      const request = {
+        id: requestId,
+        method: 'execute_script',
+        params: {
+          code: code,
+          timeout_seconds: timeout
+        }
+      };
+
+      // Add any packages if present
+      if (packages.size > 0) {
+        request.params.requirements = Array.from(packages);
+      }
+
+      // Add any inputs if present
+      if (inputs.size > 0) {
+        const inputParams = [];
+        inputs.forEach((input, name) => {
+          try {
+            // Try to parse as JSON first
+            let parsedData;
+            try {
+              parsedData = JSON.parse(input.data);
+            } catch (e) {
+              // If not valid JSON, use as string
+              parsedData = input.data;
+            }
+
+            inputParams.push({
+              name: input.name,
+              data: parsedData,
+              description: input.description
+            });
+          } catch (e) {
+            logMessage('error', `Error parsing input ${name}: ${e.message}`);
+          }
+        });
+
+        if (inputParams.length > 0) {
+          request.params.inputs = inputParams;
+        }
+      }
+
+      // Store the request for response handling
+      requestsMap.set(requestId, {
+        method: 'execute_script',
+        timestamp: Date.now()
+      });
+
+      // Send the request
+      socket.send(JSON.stringify(request));
+
+      logMessage('info', 'Executing script...');
+    }
+
+    // Install packages
+    function installPackages() {
+      if (!isConnected || packages.size === 0) {
+        return;
+      }
+
+      // Create the request ID
+      const requestId = generateUUID();
+
+      // Create the request object
+      const request = {
+        id: requestId,
+        method: 'install_packages',
+        params: {
+          packages: Array.from(packages)
+        }
+      };
+
+      // Store the request for response handling
+      requestsMap.set(requestId, {
+        method: 'install_packages',
+        timestamp: Date.now()
+      });
+
+      // Send the request
+      socket.send(JSON.stringify(request));
+
+      logMessage('info', `Installing packages: ${Array.from(packages).join(', ')}`);
+    }
+
+    // Add a package to the list
+    function addPackage() {
+      const packageName = packageInput.value.trim();
+
+      if (packageName === '') {
+        return;
+      }
+
+      packages.add(packageName);
+      packageInput.value = '';
+
+      updatePackagesList();
+      updateInstallButton();
+    }
+
+    // Remove a package from the list
+    function removePackage(packageName) {
+      packages.delete(packageName);
+
+      updatePackagesList();
+      updateInstallButton();
+    }
+
+    // Add an input parameter
+    function addInput() {
+      const name = inputNameElement.value.trim();
+      const description = inputDescriptionElement.value.trim();
+
+      if (name === '') {
+        logMessage('warning', 'Please enter a parameter name');
+        return;
+      }
+
+      // Add new input with empty data
+      inputs.set(name, {
+        name: name,
+        data: '',
+        description: description || null
+      });
+
+      // Clear input fields
+      inputNameElement.value = '';
+      inputDescriptionElement.value = '';
+
+      // Update the UI
+      updateInputsList();
+    }
+
+    // Update input data
+    function updateInputData(name, data) {
+      if (inputs.has(name)) {
+        const input = inputs.get(name);
+        input.data = data;
+        inputs.set(name, input);
+      }
+    }
+
+    // Remove an input parameter
+    function removeInput(name) {
+      inputs.delete(name);
+      updateInputsList();
+    }
+
+
+    // Update the packages list UI
+    function updatePackagesList() {
+      packagesListElement.innerHTML = '';
+
+      for (const packageName of packages) {
+        const packageElement = document.createElement('div');
+        packageElement.className = 'package-item';
+        packageElement.textContent = packageName;
+
+        const removeButton = document.createElement('button');
+        removeButton.innerHTML = '&times;';
+        removeButton.title = 'Remove package';
+        removeButton.onclick = function () {
+          removePackage(packageName);
+        };
+
+        packageElement.appendChild(removeButton);
+        packagesListElement.appendChild(packageElement);
+      }
+    }
+
+
+    // Update the inputs list UI
+    function updateInputsList() {
+      inputsListElement.innerHTML = '';
+
+      inputs.forEach((input, name) => {
+        const inputElement = document.createElement('div');
+        inputElement.className = 'input-item';
+
+        const inputHeader = document.createElement('div');
+        inputHeader.className = 'input-header';
+
+        const inputName = document.createElement('div');
+        inputName.className = 'input-name';
+        inputName.textContent = input.name;
+
+        const removeButton = document.createElement('button');
+        removeButton.innerHTML = '&times;';
+        removeButton.title = 'Remove input parameter';
+        removeButton.onclick = function () {
+          removeInput(name);
+        };
+
+        inputHeader.appendChild(inputName);
+        inputHeader.appendChild(removeButton);
+
+        inputElement.appendChild(inputHeader);
+
+        if (input.description) {
+          const inputDescription = document.createElement('div');
+          inputDescription.className = 'input-description';
+          inputDescription.textContent = input.description;
+          inputElement.appendChild(inputDescription);
+        }
+
+        const inputData = document.createElement('textarea');
+        inputData.className = 'input-data';
+        inputData.placeholder = 'Enter value as JSON or plain text';
+        inputData.value = input.data;
+        inputData.onchange = function () {
+          updateInputData(name, this.value);
+        };
+
+        inputElement.appendChild(inputData);
+        inputsListElement.appendChild(inputElement);
+      });
+    }
+
+    // Update the install button state
+    function updateInstallButton() {
+      installPackagesBtn.disabled = packages.size === 0;
+    }
+
+    // Toggle accordion sections
+    function toggleAccordion(header) {
+      header.classList.toggle('active');
+      const content = document.getElementById(header.id.replace('header', 'content'));
+      content.classList.toggle('active');
+    }
+
+    // Update execution status and UI
+    function updateExecutionStatus() {
+      runBtn.disabled = !isConnected || isExecuting;
+      codeEditor.disabled = !isConnected || isExecuting;
+
+      if (isExecuting) {
+        runBtn.classList.add('btn-disabled');
+        runBtn.classList.remove('btn-primary');
+      } else {
+        runBtn.classList.remove('btn-disabled');
+        runBtn.classList.add('btn-primary');
+      }
+    }
+
+    // Update connection status UI
+    function updateConnectionStatus(connected) {
+      if (connected) {
+        connectionStatusElement.textContent = 'Connected';
+        statusIndicatorElement.classList.remove('status-disconnected');
+        statusIndicatorElement.classList.add('status-connected');
+      } else {
+        connectionStatusElement.textContent = 'Disconnected';
+        statusIndicatorElement.classList.remove('status-connected');
+        statusIndicatorElement.classList.add('status-disconnected');
+      }
+    }
+
+    // Enable UI elements
+    function enableUI() {
+      runBtn.disabled = false;
+      codeEditor.disabled = false;
+      packageInput.disabled = false;
+      addPackageBtn.disabled = false;
+      inputNameElement.disabled = false;
+      inputDescriptionElement.disabled = false;
+      addInputBtn.disabled = false;
+      updateInstallButton();
+    }
+
+    // Disable UI elements
+    function disableUI() {
+      runBtn.disabled = true;
+      codeEditor.disabled = true;
+      packageInput.disabled = true;
+      addPackageBtn.disabled = true;
+      inputNameElement.disabled = true;
+      inputDescriptionElement.disabled = true;
+      addInputBtn.disabled = true;
+      installPackagesBtn.disabled = true;
+    }
+
+    // Add a message to the log
+    function logMessage(type, message) {
+      const logElement = document.createElement('div');
+      logElement.className = `log-message log-${type}`;
+
+      const timestamp = new Date().toLocaleTimeString();
+
+      logElement.innerHTML = `
+                <div class="log-time">${timestamp}</div>
+                <div class="log-content">${message}</div>
+            `;
+
+      messageLogElement.appendChild(logElement);
+      messageLogElement.scrollTop = messageLogElement.scrollHeight;
+    }
+
+    // Clear the editor and results
+    function clearEditor() {
+      codeEditor.value = '';
+      outputElement.textContent = '';
+      errorElement.textContent = '';
+      jsonResultElement.textContent = '';
+      executionTimeElement.textContent = '';
+      executionStatusElement.textContent = '';
+    }
+
+    // Show a specific result tab
+    function showTab(tabId) {
+      // Update tab buttons
+      document.querySelectorAll('.result-tab').forEach(tab => {
+        if (tab.dataset.target === tabId) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      // Update tab panels
+      document.querySelectorAll('.result-panel').forEach(panel => {
+        if (panel.id === tabId) {
+          panel.classList.add('active');
+        } else {
+          panel.classList.remove('active');
+        }
+      });
+    }
+
+    // Generate a UUID for requests
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+      // Connect to WebSocket server
+      connectWebSocket();
+
+      // Set up button event handlers
+      runBtn.addEventListener('click', executeScript);
+      clearBtn.addEventListener('click', clearEditor);
+      addPackageBtn.addEventListener('click', addPackage);
+      installPackagesBtn.addEventListener('click', installPackages);
+      addInputBtn.addEventListener('click', addInput);
+
+      // Set up accordion toggles
+      document.getElementById('input-params-header').addEventListener('click', function () {
+        toggleAccordion(this);
+      });
+      document.getElementById('packages-header').addEventListener('click', function () {
+        toggleAccordion(this);
+      });
+
+      // Allow Enter key to add packages
+      packageInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+          addPackage();
+        }
+      });
+
+      // Allow Enter key to add inputs
+      inputNameElement.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+          addInput();
+        }
+      });
+
+
+
+      // Set up tab click handlers
+      document.querySelectorAll('.result-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+          showTab(this.dataset.target);
+        });
+      });
+
+      // Disable UI until connected
+      disableUI();
+
+      // Log startup
+      logMessage('info', 'Python Execution Environment initialized');
+
+      // Expand the Input Parameters accordion by default
+      toggleAccordion(document.getElementById('input-params-header'));
+      toggleAccordion(document.getElementById('packages-header'));
+
+      inputs.set("input_params", {
+        name: "input_params",
+        data: JSON.stringify({
+          "random_seed": 42,
+          "data_points": 365,
+          "start_date": "2023-01-01",
+          "ma_window": 14,
+          "anomaly_threshold": 2.5,
+          "simulate_delay": 0.2
+        }),
+        description: null
+      });
+
+      // Update the inputs list UI
+      updateInputsList();
+
+      packages.add("numpy");
+      packages.add("pandas");
+      updatePackagesList();
+      updateInstallButton();
+    });
+  </script>
+</body>
+
+</html>

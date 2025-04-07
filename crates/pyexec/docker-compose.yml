@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pyexec-server
+    ports:
+      - "8080:8080"
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - python-venvs:/app/venvs
+    restart: unless-stopped
+    networks:
+      - pyexec-network
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: pyexec-client
+    ports:
+      - "3000:3000"
+    environment:
+      - SERVER_HOST=ws://localhost:8080
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - pyexec-network
+
+networks:
+  pyexec-network:
+    driver: bridge
+
+volumes:
+  python-venvs:
+    # This volume stores Python virtual environments
+    # to persist installed packages between container restarts
