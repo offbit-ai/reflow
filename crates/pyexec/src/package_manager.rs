@@ -36,13 +36,15 @@ static SHARED_VENV_DIR: Lazy<PathBuf> = Lazy::new(|| {
     }else {
       base = base.join(".pyexec_shared_venv")
     }
-    std::fs::create_dir_all(&base).expect("Failed to create shared venv directory");
+    if !base.exists() {
+        std::fs::create_dir_all(&base).expect("Failed to create shared venv directory");
+    }
     base
 });
 
 // Track packages installed in the shared environment
-static SHARED_INSTALLED_PACKAGES: Lazy<Arc<Mutex<HashSet<String>>>> = 
-    Lazy::new(|| Arc::new(Mutex::new(HashSet::new())));
+static SHARED_INSTALLED_PACKAGES: Lazy<Arc<std::sync::Mutex<HashSet<String>>>> = 
+    Lazy::new(|| Arc::new(std::sync::Mutex::new(HashSet::new())));
 
 // Flag to determine if we should use the shared environment or session-specific
 static USE_SHARED_VENV: Lazy<std::sync::Mutex<bool>> = Lazy::new(|| std::sync::Mutex::new(std::env::var("USE_SHARED_VENV").is_ok()));
@@ -61,10 +63,10 @@ pub fn is_using_shared_environment() -> bool {
 }
 
 /// Initialize a virtual environment for a session
-pub fn initialize_venv(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
+pub  fn initialize_venv(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
     // Check if we should use the shared environment
     if is_using_shared_environment() {
-        return initialize_shared_venv();
+        return initialize_shared_venv()
     }
     
     // Otherwise use the session-specific environment
@@ -81,11 +83,7 @@ pub fn initialize_venv(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
     if !venv_path.exists() {
         std::fs::create_dir_all(&venv_path)
             .map_err(|e| ServiceError::Internal(format!("Failed to create venv directory: {}", e)))?;
-        
-       
-    }
-
-     // Initialize virtual environment using Python's venv module
+           // Initialize virtual environment using Python's venv module
      let status = Command::new("python3")
      .args(&["-m", "venv", venv_path.to_str().unwrap()])
      .status()
@@ -96,12 +94,19 @@ pub fn initialize_venv(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
          "Failed to create virtual environment".to_string(),
      ));
  }
+       
+    }
+
+  
     
     // Store the venv path for this session
     SESSION_VENVS.insert(*session_id, venv_path.clone());
     
     Ok(venv_path)
 }
+
+// Add this static flag near your other static variables
+static PACKAGES_SCANNED: Lazy<std::sync::Mutex<bool>> = Lazy::new(|| std::sync::Mutex::new(false));
 
 /// Initialize the shared virtual environment if it doesn't exist
 pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
@@ -111,31 +116,129 @@ pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
     if !venv_path.exists() {
         std::fs::create_dir_all(&venv_path)
             .map_err(|e| ServiceError::Internal(format!("Failed to create shared venv directory: {}", e)))?;
-        
-       
-    }
 
-     // Initialize virtual environment using Python's venv module
+         // Initialize virtual environment using Python's venv module
      let status = Command::new("python3")
      .args(&["-m", "venv", venv_path.to_str().unwrap()])
      .status()
      .map_err(|e| ServiceError::Internal(format!("Failed to create shared virtual environment: {}", e)))?;
      
- if !status.success() {
-     return Err(ServiceError::Internal(
-         "Failed to create shared virtual environment".to_string(),
-     ));
- }
- 
- info!("Initialized shared virtual environment at: {}", venv_path.display());
+        if !status.success() {
+            return Err(ServiceError::Internal(
+                "Failed to create shared virtual environment".to_string(),
+            ));
+        }
+    }
+
+    // Check if we've already scanned packages
+    let already_scanned = {
+        let scanned = PACKAGES_SCANNED.lock().unwrap();
+        *scanned
+    };
+    
+    // Only scan packages if we haven't done so already
+    if !already_scanned {
+        // Find the Python lib directory and version
+        let lib_dir = venv_path.join("lib");
+        if !lib_dir.exists() {
+            return Err(ServiceError::Internal(
+                format!("Lib directory not found in venv: {}", lib_dir.display())
+            ));
+        }
+        
+        // Find the Python version directory (e.g., python3.8, python3.9, etc.)
+        let entries = std::fs::read_dir(&lib_dir)
+            .map_err(|e| ServiceError::Internal(format!("Failed to read venv lib directory: {}", e)))?;
+            
+        let mut python_dir = None;
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let name = entry.file_name();
+                let name_str = name.to_string_lossy();
+                if name_str.starts_with("python") {
+                    python_dir = Some(name);
+                    break;
+                }
+            }
+        }
+        
+        let site_packages_dir = match python_dir {
+            Some(dir) => lib_dir.join(dir).join("site-packages"),
+            None => return Err(ServiceError::Internal("Python directory not found in venv".to_string())),
+        };
+        
+        if !site_packages_dir.exists() {
+            return Err(ServiceError::Internal(
+                format!("site-packages directory not found: {}", site_packages_dir.display())
+            ));
+        }
+        
+        info!("Scanning for installed packages in: {}", site_packages_dir.display());
+        
+        // Read the directory entries
+        let entries = std::fs::read_dir(&site_packages_dir)
+            .map_err(|e| ServiceError::Internal(format!("Failed to read site-packages directory: {}", e)))?;
+            
+        let mut shared_packages = SHARED_INSTALLED_PACKAGES.lock().map_err(|err| ServiceError::Internal(err.to_string()))?;
+        let initial_count = shared_packages.len();
+        
+        // Process each entry in the directory
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                
+                // Check if it's a directory and looks like a package
+                if path.is_dir() {
+                    let file_name = path.file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or("");
+                        
+                    // Skip if it starts with . or _ (hidden or special directories)
+                    if !file_name.starts_with('.') && !file_name.starts_with('_') {
+                        // Check if it's a dist-info directory
+                        if file_name.ends_with(".dist-info") {
+                            if let Some(pkg_name) = file_name.split('-').next() {
+                                if !shared_packages.contains(pkg_name) {
+                                    shared_packages.insert(pkg_name.to_string());
+                                    info!("Found installed package from dist-info: {}", pkg_name);
+                                }
+                            }
+                        } else {
+                            // Regular package directory
+                            if !shared_packages.contains(file_name) {
+                                shared_packages.insert(file_name.to_string());
+                                info!("Found installed package: {}", file_name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        let new_packages_count = shared_packages.len() - initial_count;
+        info!("Added {} new packages to shared environment registry (total: {})", 
+              new_packages_count, shared_packages.len());
+              
+        // Mark that we've scanned packages
+        let mut scanned = PACKAGES_SCANNED.lock().unwrap();
+        *scanned = true;
+    }
+    
+    info!("Initialized shared virtual environment at: {}", venv_path.display());
     
     Ok(venv_path)
+}
+
+pub fn force_rescan_packages() -> Result<(), ServiceError> {
+    let mut scanned = PACKAGES_SCANNED.lock().unwrap();
+    *scanned = false;
+    Ok(())
 }
 
 /// Determine if a package is already installed in the appropriate environment
 async fn is_package_installed(package: &str, session_id: &Uuid) -> bool {
     if is_using_shared_environment() {
-        let installed = SHARED_INSTALLED_PACKAGES.lock().await;
+        let installed = SHARED_INSTALLED_PACKAGES.lock().map_err(|err| ServiceError::Internal(err.to_string())).unwrap();
         installed.contains(package)
     } else {
         let installed = INSTALLED_PACKAGES.lock().await;
@@ -174,7 +277,7 @@ pub async fn install_packages(
     let packages_to_install: Vec<String>;
     
     if is_using_shared_environment() {
-        let installed = SHARED_INSTALLED_PACKAGES.lock().await;
+        let installed = SHARED_INSTALLED_PACKAGES.lock().map_err(|err| ServiceError::Internal(err.to_string()))?;
         packages_to_install = requirements
             .iter()
             .filter(|pkg| !installed.contains(*pkg))
@@ -266,7 +369,7 @@ pub async fn install_packages(
                         } else {
                             // Mark package as installed in the appropriate registry
                             if using_shared {
-                                let mut installed = SHARED_INSTALLED_PACKAGES.lock().await;
+                                let mut installed = SHARED_INSTALLED_PACKAGES.lock().map_err(|err| ServiceError::Internal(err.to_string()))?;
                                 installed.insert(pkg.clone());
                                 info!("Package {} installed in shared environment", pkg);
                             } else {
@@ -338,7 +441,7 @@ pub async fn install_packages(
 }
 
 /// Get the Python executable path for a session's virtual environment
-pub fn get_python_path(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
+pub async  fn get_python_path(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
     let venv_path = if is_using_shared_environment() {
         initialize_shared_venv()?
     } else {
@@ -380,7 +483,7 @@ pub fn cleanup_venv(session_id: &Uuid) -> Result<(), ServiceError> {
 }
 
 /// Setup the Python interpreter to use the appropriate virtual environment
-pub fn setup_venv_for_interpreter(py: Python, globals: &PyDict, session_id: &Uuid) -> Result<(), ServiceError> {
+pub fn setup_venv_for_interpreter<'a>(py: Python<'a>, globals: &PyDict, session_id: &Uuid) -> Result<(), ServiceError> {
     // Get the virtual environment path
     let venv_path = if is_using_shared_environment() {
         initialize_shared_venv()?
@@ -446,12 +549,12 @@ if site_packages not in sys.path:
 
 /// Get a list of all packages installed in the shared environment
 pub async fn list_shared_packages() -> Vec<String> {
-    let installed = SHARED_INSTALLED_PACKAGES.lock().await;
+    let installed = SHARED_INSTALLED_PACKAGES.lock().map_err(|err| ServiceError::Internal(err.to_string())).expect("Failed to lock shared installed packages");
     installed.iter().cloned().collect()
 }
 
 /// Check if a package is installed in the shared environment
 pub async fn is_shared_package_installed(package: &str) -> bool {
-    let installed = SHARED_INSTALLED_PACKAGES.lock().await;
+    let installed = SHARED_INSTALLED_PACKAGES.lock().map_err(|err| ServiceError::Internal(err.to_string())).expect("Failed to lock shared installed packages");
     installed.contains(package)
 }

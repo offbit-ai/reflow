@@ -3066,6 +3066,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "extism-pdk"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07c7ffaedeefc29864b8afb37b74c19c80566a0d27c7df73c0812fa108699981"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "extism-convert",
+ "extism-manifest",
+ "extism-pdk-derive",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "extism-pdk-derive"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96183aea58f51ac883fe7f626c31362561564591d7bfb79d00b0a51211a0cf03"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
+]
+
+[[package]]
 name = "fallible-iterator"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6373,6 +6399,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_wasm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "extism-pdk",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "regalloc2"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8776,6 +8812,16 @@ name = "wasite"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8dad83b4f25e74f184f64c43b150b91efe7647395b42289f38e50566d82855b"
+
+[[package]]
+name = "wasm-actor"
+version = "0.1.0"
+dependencies = [
+ "extism-pdk",
+ "reflow_wasm",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "wasm-bindgen"

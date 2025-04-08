@@ -63,7 +63,7 @@ pub trait ActorState: Send + Sync + 'static {
     fn as_mut_any(&mut self) -> &mut dyn Any;
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct MemoryState(pub HashMap<String, Value>);
 impl ActorState for MemoryState {
     fn as_any(&self) -> &dyn Any {

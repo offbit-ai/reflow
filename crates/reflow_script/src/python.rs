@@ -52,7 +52,7 @@ impl ScriptEngine for PythonEngine {
             .await?;
         info!("Initialized python runtime");
         self.runtimes.insert(session_id, runtime);
-        self.sources.insert(session_id, config.source.clone());
+        self.sources.insert(session_id, String::from_utf8_lossy(&config.source).to_string());
         self.messenger.insert(session_id, flume::unbounded());
         Ok(())
     }

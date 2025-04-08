@@ -11,7 +11,7 @@ use std::{collections::HashMap, sync::Arc};
 pub struct ScriptConfig {
     pub environment: ScriptEnvironment,
     pub runtime: ScriptRuntime,
-    pub source: String,
+    pub source: Vec<u8>,
     pub packages: Option<Vec<String>>,
     pub entry_point: String,
 }
@@ -83,9 +83,7 @@ impl ScriptActor {
                 )))
             }
             #[cfg(feature = "extism")]
-            ScriptRuntime::Extism => Arc::new(Mutex::new(extism::ExtismEngine {
-                plugin: Arc::new(RwLock::new(None)),
-            })),
+            ScriptRuntime::Extism => Arc::new(Mutex::new(extism::ExtismEngine::new())),
         };
 
         Self { config, engine }
@@ -178,7 +176,7 @@ mod tests {
         let config = ScriptConfig {
             environment: ScriptEnvironment::SYSTEM,
             runtime: ScriptRuntime::JavaScript,
-            source: r#"function process(inputs, context) { return inputs.packet.data; }"#
+            source: r#"function process(inputs, context) { return inputs.packet.data; }"#.into?()
                 .to_string(),
             entry_point: "process".to_string(),
             packages: None,
@@ -229,6 +227,9 @@ mod tests {
     #[tokio::test]
     async fn test_python_actor() -> Result<()>  {
         use std::vec;
+        use serde_json::json;
+        use tracing::Level;
+        use tracing_subscriber::FmtSubscriber;
 
         let subscriber = FmtSubscriber::builder()
             .with_max_level(Level::INFO)
@@ -245,8 +246,7 @@ mod tests {
 import numpy as np
 inputs=Context.get_inputs()
 __return_value=np.array(inputs.get("packet").data).sum()
-"#
-            .to_string(),
+"#.as_bytes().to_vec(),
             entry_point: uuid::Uuid::new_v4().to_string(),
             packages: Some(vec!["numpy".to_string()]),
         };
@@ -270,9 +270,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let outports = actor.get_outports();
         // Create a test payload with the correct port name
         let mut payload = HashMap::new();
-        use serde_json::json;
-        use tracing::Level;
-        use tracing_subscriber::FmtSubscriber;
+       
         payload.insert(
             "packet".to_string(),
             Message::Array(vec![json!(1).into(), json!(2).into(), json!(3).into()]),

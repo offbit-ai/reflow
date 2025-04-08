@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "crates/*",
+  "examples/wasm_actor",
 ]
 
 [workspace.dependencies]

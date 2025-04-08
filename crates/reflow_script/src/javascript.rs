@@ -157,7 +157,7 @@ impl ScriptEngine for JavaScriptEngine {
             let runtime = Arc::new(Mutex::new(JavascriptRuntime::new()?));
             // Initialize the worker with the source code
             let runtime_clone = runtime.clone();
-            let source_clone = config.source.clone();
+            let source_clone = String::from_utf8_lossy(&config.source).to_string();
             {
                 let mut runtime = runtime_clone.lock();
                 let _ = block_on(runtime.execute("worker", &source_clone));
@@ -176,7 +176,7 @@ impl ScriptEngine for JavaScriptEngine {
                 .as_ref()
                 .unwrap()
                 .send_async(WorkerMessage::Execute {
-                    source: config.source.clone(),
+                    source: String::from_utf8_lossy(&config.source).to_string(),
                     response_id: None,
                 })
                 .await?;
