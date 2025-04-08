@@ -225,9 +225,9 @@ mod tests {
 
     #[cfg(feature = "python")]
     #[tokio::test]
-    async fn test_python_actor() -> Result<()>  {
-        use std::vec;
+    async fn test_python_actor() -> Result<()> {
         use serde_json::json;
+        use std::vec;
         use tracing::Level;
         use tracing_subscriber::FmtSubscriber;
 
@@ -246,7 +246,9 @@ mod tests {
 import numpy as np
 inputs=Context.get_inputs()
 __return_value=np.array(inputs.get("packet").data).sum()
-"#.as_bytes().to_vec(),
+"#
+            .as_bytes()
+            .to_vec(),
             entry_point: uuid::Uuid::new_v4().to_string(),
             packages: Some(vec!["numpy".to_string()]),
         };
@@ -261,7 +263,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
             config: config.clone(),
             engine: Arc::new(Mutex::new(engine)),
         };
-     
+
         // Get behavior function
         let behavior = actor.get_behavior();
 
@@ -270,7 +272,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let outports = actor.get_outports();
         // Create a test payload with the correct port name
         let mut payload = HashMap::new();
-       
+
         payload.insert(
             "packet".to_string(),
             Message::Array(vec![json!(1).into(), json!(2).into(), json!(3).into()]),
@@ -292,10 +294,62 @@ __return_value=np.array(inputs.get("packet").data).sum()
     }
 
     #[cfg(feature = "extism")]
-    #[test]
-    fn test_extism_actor() {
-        // Test Extism plugin actor - currently unimplemented
-        // This test is a placeholder for when Extism support is fully implemented
-        // The implementation would follow a similar pattern to the JavaScript test
+    #[tokio::test]
+    async fn test_extism_actor() {
+        // Initialize the extism engine first
+        let mut engine = extism::ExtismEngine::new();
+        // Create an extism script config
+        let config = ScriptConfig {
+            environment: ScriptEnvironment::SYSTEM,
+            runtime: ScriptRuntime::Extism,
+            source: include_bytes!("../../../examples/wasm_actor/build/wasm_actor.wasm").to_vec(),
+            entry_point: "process".to_string(),
+            packages: None,
+        };
+        // Initialize the engine with the config
+        let _ = engine
+            .init(&config)
+            .await
+            .expect("Failed to initialize engine");
+        // Create the script actor with the initialized engine
+        let actor = ScriptActor {
+            config: config.clone(),
+            engine: Arc::new(Mutex::new(engine)),
+        };
+        // Get behavior function
+        let behavior = actor.get_behavior();
+        // Create state and ports
+        let state: Arc<Mutex<dyn ActorState>> = Arc::new(Mutex::new(MemoryState::default()));
+        let outports = actor.get_outports();
+        // Create a test payload with the correct port name
+        let mut payload = HashMap::new();
+        payload.insert(
+            "operation".to_string(),
+            Message::String("increment".to_string()),
+        );
+        // Call the behavior function
+        let result = behavior(payload, state, outports.clone()).await;
+        // Verify the result
+        assert!(result.is_ok());
+        if let Ok(output) = result {
+            assert!(
+                output.contains_key("value"),
+                "Result should contain 'value' key"
+            );
+            assert_eq!(output["value"], Message::Integer(1));
+            assert!(
+                output.contains_key("previous"),
+                "Result should contain 'previous' key"
+            );
+            assert_eq!(output["previous"], Message::Integer(0));
+            assert!(
+                output.contains_key("operation"),
+                "Result should contain 'operation' key"
+            );
+            assert_eq!(
+                output["operation"],
+                Message::String("increment".to_string())
+            );
+        }
     }
 }

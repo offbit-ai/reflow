@@ -129,15 +129,14 @@ impl ExtismEngine {
 }
 
 // Implement Clone for ExtismEngine
-// impl Clone for ExtismEngine {
-//     fn clone(&self) -> Self {
-//         Self {
-//             plugin: self.plugin.clone(),
-//             config: self.config.clone(),
-//             context_senders: self.context_senders.clone(),
-//         }
-//     }
-// }
+impl Clone for ExtismEngine {
+    fn clone(&self) -> Self {
+        Self {
+            manifest: self.manifest.clone(),
+            config: self.config.clone(),
+        }
+    }
+}
 
 unsafe impl Send for ExtismEngine {}
 unsafe impl Sync for ExtismEngine {}
@@ -292,9 +291,12 @@ mod tests {
             assert_eq!(msg["operation"], Message::String("increment".to_string()));
         }
 
-        // Print state 
+        // Print state
         let state_guard = state.lock();
-        assert_eq!(state_guard.0, HashMap::from_iter([("counter".to_string(), json!(1))]));
+        assert_eq!(
+            state_guard.0,
+            HashMap::from_iter([("counter".to_string(), json!(1))])
+        );
 
         engine.cleanup().await?;
         Ok(())
