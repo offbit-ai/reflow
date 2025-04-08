@@ -80,20 +80,20 @@ pub  fn initialize_venv(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
     let venv_path = VENV_BASE_DIR.join(session_id.to_string());
     
     // Create the venv directory if it doesn't exist
-    if !venv_path.exists() {
+    if !venv_path.join("bin").exists() {
         std::fs::create_dir_all(&venv_path)
             .map_err(|e| ServiceError::Internal(format!("Failed to create venv directory: {}", e)))?;
            // Initialize virtual environment using Python's venv module
-     let status = Command::new("python3")
-     .args(&["-m", "venv", venv_path.to_str().unwrap()])
-     .status()
-     .map_err(|e| ServiceError::Internal(format!("Failed to create virtual environment: {}", e)))?;
-     
- if !status.success() {
-     return Err(ServiceError::Internal(
-         "Failed to create virtual environment".to_string(),
-     ));
- }
+            let status = Command::new("python3")
+            .args(&["-m", "venv", venv_path.to_str().unwrap()])
+            .status()
+            .map_err(|e| ServiceError::Internal(format!("Failed to create virtual environment: {}", e)))?;
+            
+            if !status.success() {
+                return Err(ServiceError::Internal(
+                    "Failed to create virtual environment".to_string(),
+                ));
+            }
        
     }
 
@@ -111,9 +111,10 @@ static PACKAGES_SCANNED: Lazy<std::sync::Mutex<bool>> = Lazy::new(|| std::sync::
 /// Initialize the shared virtual environment if it doesn't exist
 pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
     let venv_path = SHARED_VENV_DIR.clone();
-    
+    info!("Shared venv path: {}", venv_path.display());
     // Create the venv directory if it doesn't exist
-    if !venv_path.exists() {
+    if !venv_path.join("bin").exists() {
+        info!("Initializing shared virtual environment at: {}", venv_path.display());
         std::fs::create_dir_all(&venv_path)
             .map_err(|e| ServiceError::Internal(format!("Failed to create shared venv directory: {}", e)))?;
 
@@ -141,9 +142,9 @@ pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
         // Find the Python lib directory and version
         let lib_dir = venv_path.join("lib");
         if !lib_dir.exists() {
-            return Err(ServiceError::Internal(
-                format!("Lib directory not found in venv: {}", lib_dir.display())
-            ));
+            info!("Initialized shared virtual environment at: {}", venv_path.display());
+    
+           return Ok(venv_path)
         }
         
         // Find the Python version directory (e.g., python3.8, python3.9, etc.)
