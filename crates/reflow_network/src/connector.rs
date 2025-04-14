@@ -53,7 +53,7 @@ impl Connector {
         use crate::network::FlowStub;
         use crate::network::NetworkEvent;
         use futures::{task::Poll, Stream, StreamExt};
-
+        
         let network_event_emitter = network.network_event_emitter.clone();
         let from_process = network
             .nodes

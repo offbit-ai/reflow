@@ -3,24 +3,24 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
-use syn::{parse::Parse, parse::ParseStream, parse_macro_input, ItemFn, LitInt, Token};
+use syn::{ItemFn, LitInt, Token, parse::Parse, parse::ParseStream, parse_macro_input};
 
 #[derive(Debug, Default)]
 struct PortsDefinition {
-    capacity: usize,
+    capacity: Option<usize>,
     ports: Vec<String>,
 }
 
 impl Parse for PortsDefinition {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        // Parse the capacity in angle brackets, default to <50> if not provided
-        let mut capacity = 50;
+        // Parse the capacity in angle brackets, default to 0 if not provided
+        let mut capacity = None;
         if input.peek(syn::token::Colon) {
             input.parse::<syn::token::Colon>()?;
             input.parse::<syn::token::Colon>()?;
 
             let _lt = input.parse::<Token![<]>()?;
-            capacity = input.parse::<LitInt>()?.base10_parse()?;
+            capacity = Some(input.parse::<LitInt>()?.base10_parse()?);
             let _gt = input.parse::<Token![>]>()?;
         }
 
@@ -86,7 +86,7 @@ impl Parse for ActorArgs {
                     return Err(syn::Error::new(
                         ident.span(),
                         "Expected 'inports' or 'outports'",
-                    ))
+                    ));
                 }
             }
 
@@ -152,147 +152,164 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     let in_ports_cap = args.inports.capacity;
     let await_all_inports = args.await_all_inports;
 
+    let out_ports_channel = if let Some(out_ports_cap) = out_ports_cap {
+        if out_ports_cap < 1 {
+            panic!("Outports capacity must be greater than 0");
+        }
+        quote! {flume::bounded(#out_ports_cap)}
+    } else {
+        quote! {flume::unbounded()}
+    };
+    let in_ports_channel = if let Some(in_ports_cap) = in_ports_cap {
+        if in_ports_cap < 1 {
+            panic!("Inports capacity must be greater than 0");
+        }
+        quote! {flume::bounded(#in_ports_cap)}
+    } else {
+        quote! {flume::unbounded()}
+    };
+
     let expanded = quote! {
 
-            // Keep the original function
-            #input_fn
+        // Keep the original function
+        #input_fn
 
-            #fn_vis struct #struct_name {
-                inports: Vec<String>,
-                outports: Vec<String>,
-                inports_channel: Port,
-                outports_channel: Port,
-                await_all_inports: bool,
-            }
+        #fn_vis struct #struct_name {
+            inports: Vec<String>,
+            outports: Vec<String>,
+            inports_channel: Port,
+            outports_channel: Port,
+            await_all_inports: bool,
+        }
 
-            impl #struct_name {
-                pub fn new() -> Self {
-                    Self {
-                        inports: vec![#(#init_inports),*],
-                        outports: vec![#(#init_outports),*],
-                        inports_channel: flume::bounded(#in_ports_cap),
-                        outports_channel: flume::bounded(#out_ports_cap),
-                        await_all_inports: #await_all_inports
-                    }
-                }
-
-                /// Get a list of available input ports
-                pub fn input_ports(&self) -> Vec<String> {
-                    self.inports.clone()
-                }
-
-                /// Get a list of available output ports
-                pub fn output_ports(&self) -> Vec<String> {
-                    self.outports.clone()
+        impl #struct_name {
+            pub fn new() -> Self {
+                Self {
+                    inports: vec![#(#init_inports),*],
+                    outports: vec![#(#init_outports),*],
+                    inports_channel: #out_ports_channel,
+                    outports_channel: #in_ports_channel,
+                    await_all_inports: #await_all_inports
                 }
             }
 
-            impl Clone for #struct_name {
-                fn clone(&self) -> Self {
-                    Self {
-                        inports: self.inports.clone(),
-                        outports: self.outports.clone(),
-                        inports_channel: self.inports_channel.clone(),
-                        outports_channel: self.outports_channel.clone(),
-                        await_all_inports: self.await_all_inports
-                    }
-                }
+            /// Get a list of available input ports
+            pub fn input_ports(&self) -> Vec<String> {
+                self.inports.clone()
             }
 
-            impl Actor for #struct_name {
+            /// Get a list of available output ports
+            pub fn output_ports(&self) -> Vec<String> {
+                self.outports.clone()
+            }
+        }
 
-                fn get_behavior(&self) -> ActorBehavior {
-                    
-                    Box::new(|inports: std::collections::HashMap<String, Message>, actor_state: std::sync::Arc<parking_lot::Mutex<dyn ActorState>>, outports: Port| {
-                        Box::pin(async move {
-                            match tokio::task::spawn_blocking(move || {
-                                futures::executor::block_on(#fn_name(inports, actor_state, outports))
-                            }).await {
-                                Ok(result) => result,
-                                Err(_) => Ok(std::collections::HashMap::new()),
-                            }
-                        })
-                    })
+        impl Clone for #struct_name {
+            fn clone(&self) -> Self {
+                Self {
+                    inports: self.inports.clone(),
+                    outports: self.outports.clone(),
+                    inports_channel: self.inports_channel.clone(),
+                    outports_channel: self.outports_channel.clone(),
+                    await_all_inports: self.await_all_inports
                 }
+            }
+        }
 
-                fn get_outports(&self) -> Port {
-                    self.outports_channel.clone()
-                }
+        impl Actor for #struct_name {
 
-                fn get_inports(&self) -> Port {
-                    self.inports_channel.clone()
-                }
+            fn get_behavior(&self) -> ActorBehavior {
 
-                fn create_process(&self) ->  std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
-
-                    let await_all_inports = self.await_all_inports;
-                    let outports = self.get_outports();
-                    let behavior = self.get_behavior();
-                    let actor_state = std::sync::Arc::new(parking_lot::Mutex::new(#state_name::default()));
-
-                    // let mut all_inports:std::rc::Rc<HashMap<String, Message>> =std::rc::Rc::new(HashMap::new());
-                    let inports_size = self.input_ports().len();
-
-                    let (_, receiver) = self.get_inports();
-
+                Box::new(|inports: std::collections::HashMap<String, Message>, actor_state: std::sync::Arc<parking_lot::Mutex<dyn ActorState>>, outports: Port| {
                     Box::pin(async move {
-                        use futures::Stream;
-                        use futures::StreamExt;
-                        use serde_json::json;
-                        use std::borrow::BorrowMut;
-
-                        let behavior_func = behavior;
-                        let mut all_inports = std::collections::HashMap::new();
-
-                        loop {
-                     
-                            if let Some(packet) = receiver.clone().stream().next().await {
-                                
-                                if await_all_inports {
-                                    if all_inports.keys().len() < inports_size  {
-                                        all_inports.extend(packet.iter().map(|(k, v)| {(k.clone(), v.clone())}));
-                                        if all_inports.keys().len() == inports_size  {
-                                            // Run the behavior function
-                                            match (behavior_func)(all_inports.clone(), actor_state.clone(), outports.clone()).await {
-                                                Ok(result) => {
-                                                    if !result.is_empty() {
-                                                        let _ = outports.0.send(result)
-                                                            .expect("Expected to send message via outport");
-                                                    }
-                                                },
-                                                Err(e) => {
-                                                    eprintln!("Error in behavior function: {:?}", e);
-                                                }
-                                            }
-                                            all_inports.clear();
-                                        }
-                                        continue;
-                                    }
-                                }
-
-                                
-                                if(!await_all_inports) {
-                                    // Run the behavior function
-                                    match (behavior_func)(packet, actor_state.clone(), outports.clone()).await {
-                                        Ok(result) => {
-                                            if !result.is_empty() {
-                                                let _ = outports.0.send(result)
-                                                    .expect("Expected to send message via outport");
-                                            }
-                                        },
-                                        Err(e) => {
-                                            eprintln!("Error in behavior function: {:?}", e);
-                                        }
-                                    }
-                                }
-                                
-                            }
+                        match tokio::task::spawn_blocking(move || {
+                            futures::executor::block_on(#fn_name(inports, actor_state, outports))
+                        }).await {
+                            Ok(result) => result,
+                            Err(_) => Ok(std::collections::HashMap::new()),
                         }
                     })
-                }
-
+                })
             }
-        };
+
+            fn get_outports(&self) -> Port {
+                self.outports_channel.clone()
+            }
+
+            fn get_inports(&self) -> Port {
+                self.inports_channel.clone()
+            }
+
+            fn create_process(&self) ->  std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
+
+                let await_all_inports = self.await_all_inports;
+                let outports = self.get_outports();
+                let behavior = self.get_behavior();
+                let actor_state = std::sync::Arc::new(parking_lot::Mutex::new(#state_name::default()));
+
+                // let mut all_inports:std::rc::Rc<HashMap<String, Message>> =std::rc::Rc::new(HashMap::new());
+                let inports_size = self.input_ports().len();
+
+                let (_, receiver) = self.get_inports();
+
+                Box::pin(async move {
+                    use futures::Stream;
+                    use futures::StreamExt;
+                    use serde_json::json;
+                    use std::borrow::BorrowMut;
+
+                    let behavior_func = behavior;
+                    let mut all_inports = std::collections::HashMap::new();
+
+                    loop {
+
+                        if let Some(packet) = receiver.clone().stream().next().await {
+
+                            if await_all_inports {
+                                if all_inports.keys().len() < inports_size  {
+                                    all_inports.extend(packet.iter().map(|(k, v)| {(k.clone(), v.clone())}));
+                                    if all_inports.keys().len() == inports_size  {
+                                        // Run the behavior function
+                                        match (behavior_func)(all_inports.clone(), actor_state.clone(), outports.clone()).await {
+                                            Ok(result) => {
+                                                if !result.is_empty() {
+                                                    let _ = outports.0.send(result)
+                                                        .expect("Expected to send message via outport");
+                                                }
+                                            },
+                                            Err(e) => {
+                                                eprintln!("Error in behavior function: {:?}", e);
+                                            }
+                                        }
+                                        all_inports.clear();
+                                    }
+                                    continue;
+                                }
+                            }
+
+
+                            if(!await_all_inports) {
+                                // Run the behavior function
+                                match (behavior_func)(packet, actor_state.clone(), outports.clone()).await {
+                                    Ok(result) => {
+                                        if !result.is_empty() {
+                                            let _ = outports.0.send(result)
+                                                .expect("Expected to send message via outport");
+                                        }
+                                    },
+                                    Err(e) => {
+                                        eprintln!("Error in behavior function: {:?}", e);
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                })
+            }
+
+        }
+    };
 
     TokenStream::from(expanded)
 }

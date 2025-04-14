@@ -61,6 +61,13 @@ pub mod extism;
 /// Context for script execution
 pub mod context;
 
+pub mod db_pool;
+/// Database connection pool
+pub mod db_manager;
+
+/// Database actor for executing database operations
+pub mod db_actor;
+
 /// Script actor that wraps a script engine
 pub struct ScriptActor {
     config: ScriptConfig,

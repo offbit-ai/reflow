@@ -87,6 +87,19 @@ impl MemoryState {
     pub fn insert(&mut self, key: &str, value: Value) {
         self.0.insert(key.to_string(), value);
     }
+
+    pub fn has_key(&self, key: &str) -> bool {
+        self.0.contains_key(key)
+    }
+    pub fn remove(&mut self, key: &str) {
+        self.0.remove(key);
+    }
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
 }
 
 #[cfg(target_arch = "wasm32")]

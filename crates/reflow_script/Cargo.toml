@@ -28,6 +28,13 @@ dashmap = "6.1.0"
 env_logger = "0.11"
 tracing = "0.1.41"
 tracing-subscriber = "0.3"
+lazy_static = "1.4.0"
+base64 = "0.22.1"
+
+# Database support
+rusqlite = { version = "0.34.0", optional = true }
+tokio-postgres = { version = "0.7.10", optional = true }
+deadpool-postgres = { version = "0.14.1", optional = true }
 
 # Optional runtimes
 reflow_js = { path = "../reflow_js", optional = true }
@@ -41,8 +48,10 @@ extism = {version = "1.10.0", optional = true}
 wasm-bindgen-test = "0.3.50"
 
 [features]
-default = ["python", "extism"]
+default = ["python", "extism", "sqlite", "postgres"]
 python = ["reflow_py"]
 deno = ["reflow_js", "deno_runtime"]
 extism = ["dep:extism"]
 webworker = []
+sqlite = ["dep:rusqlite"]
+postgres = ["dep:tokio-postgres", "dep:deadpool-postgres"]
