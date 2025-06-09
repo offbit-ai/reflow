@@ -8,7 +8,7 @@ use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
 
-use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message, Network, Port};
+use crate::{Actor, ActorBehavior, ActorContext, ActorLoad, MemoryState, Message, Network, Port};
 
 /// Logs messages for debugging purposes.
 ///
@@ -25,10 +25,10 @@ use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message
     state(MemoryState)
 )]
 async fn log_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     if !payload.contains_key("In") {
         return Ok([].into()); // No input, no output
     }
@@ -81,10 +81,11 @@ async fn log_actor(
     state(MemoryState)
 )]
 async fn delay_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
     if !payload.contains_key("In") {
         return Ok([].into()); // No input, no output
     }
@@ -167,10 +168,11 @@ async fn delay_actor(
     state(MemoryState)
 )]
 async fn uuid_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
     // Check if triggered
     if !payload.contains_key("Trigger") {
         return Ok([].into()); // No trigger, no output
@@ -224,10 +226,11 @@ async fn uuid_actor(
     state(MemoryState)
 )]
 async fn counter_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
     // Check for reset signal
     if payload.contains_key("Reset") {
         let reset = payload
@@ -311,10 +314,11 @@ async fn counter_actor(
     state(MemoryState)
 )]
 async fn convert_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    
     let input = match payload.get("In") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output

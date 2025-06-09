@@ -49,7 +49,7 @@ impl Connector {
 }
 
 impl Connector {
-    pub fn init(&self, network: &Network) {
+    pub async fn init(&self, network: &Network) {
         use crate::network::FlowStub;
         use crate::network::NetworkEvent;
         use futures::{task::Poll, Stream, StreamExt};
@@ -79,9 +79,9 @@ impl Connector {
         let out_ports = from_actor.get_outports();
         let in_ports = to_actor.get_inports();
 
-        let routine = async move {
-            if let Some(mut outport_packet) = out_ports.1.clone().stream().next().await {
-                
+        let mut routine = Box::pin(async move {
+
+            while let Some(mut outport_packet) = out_ports.1.clone().stream().next().await {
                 in_ports
                     .clone()
                     .0
@@ -112,11 +112,12 @@ impl Connector {
                     });
                 }
             }
-        };
+        });
 
         // Start a loop to recieve messages from the first and send to second actor
         #[cfg(not(target_arch = "wasm32"))]
-        network.thread_pool.lock().unwrap().spawn(routine);
+       let _ =  tokio::spawn(async move {(&mut routine).await});
+        // network.thread_pool.lock().unwrap().spawn(routine);
 
         #[cfg(target_arch = "wasm32")]
         spawn_local(routine);

@@ -7609,6 +7609,7 @@ dependencies = [
  "actor_macro",
  "anyhow",
  "bitcode",
+ "chrono",
  "criterion",
  "flate2",
  "flume",
@@ -7689,6 +7690,23 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "wasm-bindgen-test",
+]
+
+[[package]]
+name = "reflow_server"
+version = "0.1.0"
+dependencies = [
+ "actor_macro",
+ "anyhow",
+ "chrono",
+ "dashmap 6.1.0",
+ "futures-util",
+ "reflow_network",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite 0.20.1",
+ "uuid",
 ]
 
 [[package]]

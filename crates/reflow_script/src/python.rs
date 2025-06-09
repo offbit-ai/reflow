@@ -3,10 +3,8 @@ use crate::ScriptRuntime;
 use super::{Message, ScriptConfig, ScriptEngine};
 use anyhow::Result;
 use dashmap::DashMap;
-use once_cell::sync::OnceCell;
-use parking_lot::RwLock;
 use tracing::info;
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct PythonEngine {

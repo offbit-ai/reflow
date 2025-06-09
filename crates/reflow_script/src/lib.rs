@@ -1,7 +1,7 @@
 use anyhow::Result;
 use parking_lot::{Mutex, RwLock};
 use reflow_network::{
-    actor::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Port},
+    actor::{Actor, ActorBehavior, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port},
     message::Message,
 };
 use serde::{Deserialize, Serialize};
@@ -61,9 +61,9 @@ pub mod extism;
 /// Context for script execution
 pub mod context;
 
-pub mod db_pool;
 /// Database connection pool
 pub mod db_manager;
+pub mod db_pool;
 
 /// Database actor for executing database operations
 pub mod db_actor;
@@ -72,6 +72,8 @@ pub mod db_actor;
 pub struct ScriptActor {
     config: ScriptConfig,
     engine: Arc<Mutex<dyn ScriptEngine>>,
+    inports_channel: Port,
+    outports_channel: Port,
 }
 
 impl ScriptActor {
@@ -93,7 +95,12 @@ impl ScriptActor {
             ScriptRuntime::Extism => Arc::new(Mutex::new(extism::ExtismEngine::new())),
         };
 
-        Self { config, engine }
+        Self {
+            config,
+            engine,
+            inports_channel: flume::unbounded(),
+            outports_channel: flume::unbounded(),
+        }
     }
 }
 
@@ -103,26 +110,21 @@ impl Actor for ScriptActor {
         let entry_point = self.config.entry_point.clone();
 
         Box::new(
-            move |payload: ActorPayload, state: Arc<Mutex<dyn ActorState>>, outports: Port| {
+            move |context:ActorContext| {
                 let engine = engine.clone();
                 let entry_point = entry_point.clone();
-                let payload = payload.clone();
+                let payload = context.get_payload();
 
                 // Create the context
                 let context =
-                    context::ScriptContext::new(entry_point, payload, state, outports.clone());
+                    context::ScriptContext::new(entry_point, payload.clone(), context.get_state(), context.get_outports());
 
                 // Return a future that owns all its data
                 Box::pin(async move {
-                    // Spawn a new task to handle the engine call
-                    let result = tokio::task::spawn_blocking(move || {
-                        // This runs in a separate thread where blocking is fine
-                        let mut engine_guard = engine.lock();
+                    let mut engine_guard = engine.lock();
 
-                        // We need to block on the future since we're in a blocking context
-                        futures::executor::block_on(engine_guard.call(&context))
-                    })
-                    .await??; // Double ? to handle both JoinError and the Result from call
+                    // We need to block on the future since we're in a blocking context
+                    let result = futures::executor::block_on(engine_guard.call(&context))?;
 
                     Ok(result)
                 })
@@ -131,13 +133,11 @@ impl Actor for ScriptActor {
     }
 
     fn get_outports(&self) -> Port {
-        let (sender, receiver) = flume::unbounded();
-        (sender, receiver)
+        self.outports_channel.clone()
     }
 
     fn get_inports(&self) -> Port {
-        let (sender, receiver) = flume::unbounded();
-        (sender, receiver)
+        self.inports_channel.clone()
     }
 
     fn create_process(
@@ -148,9 +148,15 @@ impl Actor for ScriptActor {
         let state: Arc<Mutex<dyn ActorState>> = Arc::new(Mutex::new(MemoryState::default()));
         let outports = self.get_outports();
         Box::pin(async move {
-            let (_, receiver) = inports;
-            while let Ok(payload) = receiver.recv_async().await {
-                let result = behavior(payload, state.clone(), outports.clone()).await;
+            while let Ok(payload) = inports.1.recv_async().await {
+                let context = ActorContext::new(
+                    payload,
+                    outports.clone(),
+                    state.clone(),
+                    HashMap::new(),
+                    Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+                );
+                let result = behavior(context).await;
 
                 if result.is_err() {
                     outports
@@ -183,8 +189,9 @@ mod tests {
         let config = ScriptConfig {
             environment: ScriptEnvironment::SYSTEM,
             runtime: ScriptRuntime::JavaScript,
-            source: r#"function process(inputs, context) { return inputs.packet.data; }"#.into?()
-                .to_string(),
+            source: r#"function process(inputs, context) { return inputs.packet.data; }"#
+                .as_bytes()
+                .to_vec(),
             entry_point: "process".to_string(),
             packages: None,
         };
@@ -199,6 +206,8 @@ mod tests {
         let actor = ScriptActor {
             config: config.clone(),
             engine: Arc::new(Mutex::new(engine)),
+            inports_channel: flume::unbounded(),
+            outports_channel: flume::unbounded(),
         };
 
         // Get behavior function
@@ -233,6 +242,7 @@ mod tests {
     #[cfg(feature = "python")]
     #[tokio::test]
     async fn test_python_actor() -> Result<()> {
+        use reflow_network::actor::{ActorContext, ActorLoad};
         use serde_json::json;
         use std::vec;
         use tracing::Level;
@@ -269,6 +279,8 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let actor = ScriptActor {
             config: config.clone(),
             engine: Arc::new(Mutex::new(engine)),
+            inports_channel: flume::unbounded(),
+            outports_channel: flume::unbounded(),
         };
 
         // Get behavior function
@@ -284,8 +296,16 @@ __return_value=np.array(inputs.get("packet").data).sum()
             "packet".to_string(),
             Message::Array(vec![json!(1).into(), json!(2).into(), json!(3).into()]),
         );
+
+        let context = ActorContext::new(
+            payload,
+            outports.clone(),
+            state.clone(),
+            HashMap::new(),
+            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        );
         // Call the behavior function
-        let result = behavior(payload, state, outports.clone()).await;
+        let result = behavior(context).await;
         // Verify the result
         assert!(result.is_ok());
         if let Ok(output) = result {
@@ -322,12 +342,14 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let actor = ScriptActor {
             config: config.clone(),
             engine: Arc::new(Mutex::new(engine)),
+            inports_channel: flume::unbounded(),
+            outports_channel: flume::unbounded(),
         };
         // Get behavior function
-        let behavior = actor.get_behavior();
+        // let behavior = actor.get_behavior();
         // Create state and ports
-        let state: Arc<Mutex<dyn ActorState>> = Arc::new(Mutex::new(MemoryState::default()));
-        let outports = actor.get_outports();
+        // let state: Arc<Mutex<dyn ActorState>> = Arc::new(Mutex::new(MemoryState::default()));
+
         // Create a test payload with the correct port name
         let mut payload = HashMap::new();
         payload.insert(
@@ -335,7 +357,14 @@ __return_value=np.array(inputs.get("packet").data).sum()
             Message::String("increment".to_string()),
         );
         // Call the behavior function
-        let result = behavior(payload, state, outports.clone()).await;
+        // let result = behavior(payload, state, outports.clone()).await;
+        let _ = tokio::spawn(actor.create_process());
+
+        let outports = actor.get_outports();
+        let _ = actor.get_inports().0.send_async(payload.clone()).await;
+
+        let result = outports.1.recv_async().await;
+
         // Verify the result
         assert!(result.is_ok());
         if let Ok(output) = result {

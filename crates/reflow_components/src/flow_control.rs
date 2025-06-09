@@ -7,10 +7,10 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-use reflow_network::message::EncodableValue;
+use reflow_network::{actor::ActorContext, message::EncodableValue};
 
 use crate::{
-    Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message,  Port,
+    Actor, ActorBehavior, ActorLoad, MemoryState, Message,  Port,
 };
 
 /// Routes the input message to one of two outputs based on a condition.
@@ -29,10 +29,10 @@ use crate::{
     await_all_inports
 )]
 async fn branch_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    
     let condition = payload.get("Condition").expect("Expected Condition input");
     let value = payload.get("Value").expect("Expected Value input");
     
@@ -74,10 +74,10 @@ async fn branch_actor(
     await_all_inports
 )]
 async fn switch_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let case = payload.get("Case").expect("Expected Case input");
     let value = payload.get("Value").expect("Expected Value input");
     
@@ -132,10 +132,9 @@ async fn switch_actor(
     outports::<50>(Out)
 )]
 async fn fork_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
     if let Some(input) = payload.get("In") {
         // Simply send the same message to the Out port
         // The Network handles distributing to all connections
@@ -164,10 +163,10 @@ async fn fork_actor(
     await_all_inports
 )]
 async fn join_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     // Get mode from state or use default
     let mode = {
         let state = state.lock();
@@ -226,10 +225,9 @@ async fn join_actor(
     outports::<50>(Out)
 )]
 async fn merge_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
     // Forward the first available message
     for (_, message) in payload.iter() {
         return Ok([("Out".to_owned(), message.clone())].into());
@@ -254,10 +252,10 @@ async fn merge_actor(
     state(MemoryState)
 )]
 async fn filter_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let input = match payload.get("In") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output
@@ -322,10 +320,10 @@ async fn filter_actor(
     state(MemoryState)
 )]
 async fn loop_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     // Check if we're starting a new loop or continuing an iteration
     let is_initial = payload.contains_key("Initial");
     let has_iteration = payload.contains_key("Iteration");

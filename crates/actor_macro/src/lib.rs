@@ -180,6 +180,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             inports_channel: Port,
             outports_channel: Port,
             await_all_inports: bool,
+            load: Arc<parking_lot::Mutex<ActorLoad>>,
         }
 
         impl #struct_name {
@@ -189,7 +190,8 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     outports: vec![#(#init_outports),*],
                     inports_channel: #out_ports_channel,
                     outports_channel: #in_ports_channel,
-                    await_all_inports: #await_all_inports
+                    await_all_inports: #await_all_inports,
+                    load: Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
                 }
             }
 
@@ -202,6 +204,10 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             pub fn output_ports(&self) -> Vec<String> {
                 self.outports.clone()
             }
+
+            pub fn load(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
+                self.load.clone()
+            }
         }
 
         impl Clone for #struct_name {
@@ -211,7 +217,8 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     outports: self.outports.clone(),
                     inports_channel: self.inports_channel.clone(),
                     outports_channel: self.outports_channel.clone(),
-                    await_all_inports: self.await_all_inports
+                    await_all_inports: self.await_all_inports,
+                    load: self.load.clone(),
                 }
             }
         }
@@ -220,14 +227,11 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn get_behavior(&self) -> ActorBehavior {
 
-                Box::new(|inports: std::collections::HashMap<String, Message>, actor_state: std::sync::Arc<parking_lot::Mutex<dyn ActorState>>, outports: Port| {
+                Box::new(|context:ActorContext| {
                     Box::pin(async move {
-                        match tokio::task::spawn_blocking(move || {
-                            futures::executor::block_on(#fn_name(inports, actor_state, outports))
-                        }).await {
-                            Ok(result) => result,
-                            Err(_) => Ok(std::collections::HashMap::new()),
-                        }
+                        futures::executor::block_on(async move {
+                            #fn_name(context).await
+                        })
                     })
                 })
             }
@@ -240,12 +244,17 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.inports_channel.clone()
             }
 
+            fn load_count(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
+                self.load().clone()
+            }
+
             fn create_process(&self) ->  std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
 
                 let await_all_inports = self.await_all_inports;
                 let outports = self.get_outports();
                 let behavior = self.get_behavior();
                 let actor_state = std::sync::Arc::new(parking_lot::Mutex::new(#state_name::default()));
+                let mut load_count = self.load_count();
 
                 // let mut all_inports:std::rc::Rc<HashMap<String, Message>> =std::rc::Rc::new(HashMap::new());
                 let inports_size = self.input_ports().len();
@@ -260,24 +269,52 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
                     let behavior_func = behavior;
                     let mut all_inports = std::collections::HashMap::new();
+                    let mut load_count = load_count.clone();
+
 
                     loop {
-
                         if let Some(packet) = receiver.clone().stream().next().await {
-
+                        // Increment the load count
+                        {
+                            let load_count_guard = load_count.clone();
+                            let mut load = load_count_guard .lock();
+                            load.inc();
+                        }
+                          
                             if await_all_inports {
                                 if all_inports.keys().len() < inports_size  {
                                     all_inports.extend(packet.iter().map(|(k, v)| {(k.clone(), v.clone())}));
                                     if all_inports.keys().len() == inports_size  {
+
+                                        let context = ActorContext::new(
+                                            all_inports.clone(),
+                                             outports.clone(),
+                                            actor_state.clone(),
+                                           HashMap::new(),
+                                            load_count.clone(),
+                                        );
+                                        
                                         // Run the behavior function
-                                        match (behavior_func)(all_inports.clone(), actor_state.clone(), outports.clone()).await {
+                                        match (behavior_func)(context).await {
                                             Ok(result) => {
                                                 if !result.is_empty() {
                                                     let _ = outports.0.send(result)
                                                         .expect("Expected to send message via outport");
+                                                     // Decrease the load count
+                                                    {
+                                                        let load_count_guard = load_count.clone();
+                                                        let mut load = load_count_guard.lock();
+                                                        load.dec();
+                                                    }
                                                 }
                                             },
                                             Err(e) => {
+                                                  // Decrease the load count
+                                                    {
+                                                        let load_count_guard = load_count.clone();
+                                                        let mut load = load_count_guard.lock();
+                                                        load.dec();
+                                                    }
                                                 eprintln!("Error in behavior function: {:?}", e);
                                             }
                                         }
@@ -289,15 +326,36 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 
                             if(!await_all_inports) {
+
+                                let context = ActorContext::new(
+                                            packet,
+                                             outports.clone(),
+                                            actor_state.clone(),
+                                            HashMap::new(),
+                                            load_count.clone(),
+                                        );
+                                
                                 // Run the behavior function
-                                match (behavior_func)(packet, actor_state.clone(), outports.clone()).await {
+                                match (behavior_func)(context).await {
                                     Ok(result) => {
                                         if !result.is_empty() {
                                             let _ = outports.0.send(result)
                                                 .expect("Expected to send message via outport");
+                                              // Decrease the load count
+                                                    {
+                                                        let load_count_guard = load_count.clone();
+                                                        let mut load = load_count_guard.lock();
+                                                        load.dec();
+                                                    }
                                         }
                                     },
                                     Err(e) => {
+                                          // Decrease the load count
+                                                    {
+                                                        let load_count_guard = load_count.clone();
+                                                        let mut load = load_count_guard.lock();
+                                                        load.dec();
+                                                    }
                                         eprintln!("Error in behavior function: {:?}", e);
                                     }
                                 }

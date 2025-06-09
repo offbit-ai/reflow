@@ -22,9 +22,7 @@ use crate::{message::Message, network::Network};
 // #[cfg(not(target_arch = "wasm32"))]
 pub type ActorBehavior = Box<
     dyn Fn(
-            ActorPayload,
-            Arc<Mutex<dyn ActorState>>,
-            Port,
+           ActorContext
         ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<HashMap<String, Message>, anyhow::Error>> + Send + 'static>>
         + Send
         + Sync
@@ -53,9 +51,91 @@ pub trait Actor: Send + Sync + 'static {
     /// Access all input ports
     fn get_inports(&self) -> Port;
 
+    fn load_count(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
+        Arc::new(Mutex::new(ActorLoad::new(0)))
+    }
+
     fn create_process(
         &self,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>;
+}
+
+pub struct ActorLoad(pub usize);
+impl ActorLoad {
+    pub fn new(load: usize) -> Self {
+        ActorLoad(load)
+    }
+
+    pub fn inc(&mut self) {
+        self.0 += 1;
+    }
+    pub fn dec(&mut self) {
+        if self.0 > 0 {
+            self.0 -= 1;
+        }
+    }
+    pub fn get(&self) -> usize {
+        self.0
+    }
+    pub fn reset(&mut self) {
+        self.0 = 0;
+    }
+    pub fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
+}
+
+pub struct ActorContext {
+    // pub id: String,
+    pub payload: ActorPayload,
+    pub outports: Port,
+    pub state: Arc<Mutex<dyn ActorState>>,
+    pub config: HashMap<String, Value>,
+    load: Arc<Mutex<ActorLoad>>,
+}
+
+impl ActorContext {
+    pub fn new(
+        // id: String,
+        payload: ActorPayload,
+        outports: Port,
+        state: Arc<Mutex<dyn ActorState>>,
+        config: HashMap<String, Value>,
+        load: Arc<Mutex<ActorLoad>>,
+    ) -> Self {
+        ActorContext {
+            // id,
+            payload,
+            outports,
+            state,
+            config,
+            load,
+        }
+    }
+
+    pub fn get_state(&self) -> Arc<Mutex<dyn ActorState>> {
+        self.state.clone()
+    }
+
+    pub fn get_config(&self) -> &HashMap<String, Value> {
+        &self.config
+    }
+
+    pub fn get_load(&self) -> Arc<Mutex<ActorLoad>> {
+        self.load.clone()
+    }
+    // pub fn get_id(&self) -> &str {
+    //     &self.id
+    // }
+    pub fn get_payload(&self) -> &ActorPayload {
+        &self.payload
+    }
+    pub fn get_outports(&self) -> Port {
+        self.outports.clone()
+    }
+    pub fn done(&self) {
+        self.load.lock().reset();
+    }
 }
 
 pub trait ActorState: Send + Sync + 'static {

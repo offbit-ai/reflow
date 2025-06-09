@@ -14,7 +14,7 @@ pub mod state_management;
 
 /// Re-export common types and traits used by components
 pub use reflow_network::{
-    actor::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Port},
+    actor::{Actor, ActorContext, ActorLoad, ActorBehavior, ActorPayload, ActorState, MemoryState, Port},
     message::Message,
     network::Network,
 };

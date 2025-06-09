@@ -254,6 +254,8 @@ pub fn get_db_pool_manager() -> &'static DbPoolManager {
     &DB_POOL_MANAGER
 }
 
+
+#[cfg(feature = "db")]
 #[cfg(test)]
 mod tests {
     use super::*;

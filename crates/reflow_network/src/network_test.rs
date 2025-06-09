@@ -1,7 +1,13 @@
-use std::{collections::HashMap, pin::Pin, sync::Arc, thread::sleep, time::Duration};
+use std::{
+    collections::HashMap,
+    pin::Pin,
+    sync::Arc,
+    thread::{self, sleep},
+    time::Duration,
+};
 
 use crate::{
-    actor::ActorPayload,
+    actor::{ActorContext, ActorPayload},
     connector::{ConnectionPoint, Connector, InitialPacket},
     network::{Network, NetworkConfig},
 };
@@ -10,7 +16,7 @@ use parking_lot::Mutex;
 use serde_json::{Map, Value};
 
 use crate::{
-    actor::{Actor, ActorBehavior, ActorState, MemoryState, Port},
+    actor::{Actor, ActorBehavior, ActorLoad, ActorState, MemoryState, Port},
     message::Message,
 };
 
@@ -20,11 +26,9 @@ use crate::{
     outports::<100>(Out),
     await_all_inports
 )]
-async fn sum_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
-) -> Result<HashMap<String, Message>, anyhow::Error> {
+async fn sum_actor(context: ActorContext) -> Result<HashMap<String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
+
     let _a = payload.get("A").expect("expected to get data from port A");
     let _b = payload.get("B").expect("expected to get data from port B");
 
@@ -46,11 +50,8 @@ async fn sum_actor(
     inports::<100>(In),
     outports::<50>(Out)
 )]
-async fn square_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
-) -> Result<HashMap<String, Message>, anyhow::Error> {
+async fn square_actor(context: ActorContext) -> Result<HashMap<String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
     let message = payload.get("In").unwrap();
     let input = match message {
         Message::Integer(value) => *value,
@@ -67,11 +68,8 @@ async fn square_actor(
     outports(Out),
     await_all_inports
 )]
-async fn _assert_eq(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
-) -> Result<HashMap<String, Message>, anyhow::Error> {
+async fn _assert_eq(context: ActorContext) -> Result<HashMap<String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
     let data_a = payload.get("A").expect("expected to get data from port A");
     let data_b = payload.get("B").expect("expected to get data from port B");
     let a = match data_a {
@@ -92,8 +90,8 @@ async fn _assert_eq(
     Ok([].into())
 }
 
-#[test]
-fn test_network() -> Result<(), anyhow::Error> {
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_network() -> Result<(), anyhow::Error> {
     let mut network = Network::new(NetworkConfig::default());
 
     let sum_id = "Sum";
@@ -157,8 +155,7 @@ fn test_network() -> Result<(), anyhow::Error> {
     });
 
     // Start the network
-    network.start()?;
-
+    network.start().await?;
     Ok(())
 }
 
@@ -169,11 +166,9 @@ fn test_network() -> Result<(), anyhow::Error> {
     outports::<50>(Output),
     state(MemoryState)
 )]
-async fn transform_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
-) -> Result<HashMap<String, Message>, anyhow::Error> {
+async fn transform_actor(context: ActorContext) -> Result<HashMap<String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let input = payload.get("Input").expect("expected Input data");
     let count = {
         let mut count = 0;
@@ -205,10 +200,9 @@ async fn transform_actor(
     outports::<50>(Passed, Failed)
 )]
 async fn filter_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context: ActorContext,
 ) -> Result<HashMap<std::string::String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
     let input = payload.get("In").expect("expected input");
 
     match input {
@@ -225,10 +219,10 @@ async fn filter_actor(
     state(MemoryState)
 )]
 async fn aggregator_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context: ActorContext,
 ) -> Result<HashMap<String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let value = payload.get("Value").expect("expected Value");
     let mut result = HashMap::new();
     let mut sum = 0;
@@ -260,8 +254,8 @@ async fn aggregator_actor(
     Ok(result)
 }
 
-#[test]
-fn test_complex_network() -> Result<(), anyhow::Error> {
+#[tokio::test]
+async fn test_complex_network() -> Result<(), anyhow::Error> {
     let mut network = Network::new(NetworkConfig::default());
 
     // Register actors
@@ -313,8 +307,6 @@ fn test_complex_network() -> Result<(), anyhow::Error> {
     }
 
     // Start network
-    network.start()?;
-    sleep(Duration::from_millis(100));
-
+    network.start().await?;
     Ok(())
 }

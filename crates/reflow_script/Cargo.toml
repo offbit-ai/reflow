@@ -48,7 +48,8 @@ extism = {version = "1.10.0", optional = true}
 wasm-bindgen-test = "0.3.50"
 
 [features]
-default = ["python", "extism", "sqlite", "postgres"]
+default = ["python", "extism", "db"]
+db = ["sqlite", "postgres"]
 python = ["reflow_py"]
 deno = ["reflow_js", "deno_runtime"]
 extism = ["dep:extism"]

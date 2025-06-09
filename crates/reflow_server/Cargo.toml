@@ -1,0 +1,18 @@
+[package]
+name = "reflow_server"
+version = "0.1.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+
+[dependencies]
+reflow_network = { path = "../reflow_network" }
+actor_macro = { path = "../actor_macro" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+dashmap = "6.1.0"
+tokio = { version = "1.32", features = ["full"] }
+tokio-tungstenite = "0.20"
+futures-util = "0.3"
+uuid = { version = "1.4", features = ["v4", "serde"] }
+chrono = "0.4"

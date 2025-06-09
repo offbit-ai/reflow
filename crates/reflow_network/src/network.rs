@@ -1,8 +1,8 @@
 #[cfg(target_arch = "wasm32")]
-use futures::future::lazy;
-#[cfg(target_arch = "wasm32")]
 use futures::Future;
 use futures::StreamExt;
+#[cfg(target_arch = "wasm32")]
+use futures::future::lazy;
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 #[cfg(not(target_arch = "wasm32"))]
@@ -32,8 +32,8 @@ use crate::actor::{Actor, ActorState, MemoryState, Port};
 
 #[cfg(target_arch = "wasm32")]
 use crate::actor::ActorChannel;
-use crate::graph::types::{GraphConnection, GraphEdge, GraphEvents, GraphIIP, GraphNode};
 use crate::graph::Graph;
+use crate::graph::types::{GraphConnection, GraphEdge, GraphEvents, GraphIIP, GraphNode};
 use crate::message::{CompressionConfig, EncodedMessage, Message, MessageError};
 
 use crate::connector::{ConnectionPoint, Connector, InitialPacket};
@@ -251,34 +251,42 @@ impl Network {
         }
     }
 
-    pub fn start(&self) -> Result<(), anyhow::Error> {
+    pub async fn start(&self) -> Result<(), anyhow::Error> {
         // Warm up all processes
         #[cfg(not(target_arch = "wasm32"))]
         {
-            use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-            self.actors
-                .par_iter()
-                .for_each(|(_, actor)| Self::init_process(actor, self.thread_pool.clone()));
+            // use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+            //  self
+            //     .actors
+            //     .iter()
+            //     .for_each(|(_, actor)| async {
+            //         Self::init_process(actor, self.thread_pool.clone()).await
+            //     });
+
+            for actor in &self.actors {
+                Self::init_process(actor.1, self.thread_pool.clone()).await;
+            }
         }
         #[cfg(target_arch = "wasm32")]
         {
             for (id, actor) in &self.actors {
-                Self::init_process(actor, &self.thread_pool)
+                Self::init_process(actor, &self.thread_pool).await;
             }
         }
 
         // Warm up all connectors to begin to recieve messages
         #[cfg(not(target_arch = "wasm32"))]
         {
-            use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-            self.connectors
-                .par_iter()
-                .for_each(|connector| connector.init(self));
+            // use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
+            for connector in &self.connectors {
+                connector.init(self).await;
+            }
         }
         #[cfg(target_arch = "wasm32")]
         {
             for connector in &self.connectors {
-                connector.init(self)
+                connector.init(self);
             }
         }
 
@@ -363,10 +371,18 @@ impl Network {
         Ok(())
     }
 
-    pub(crate) fn init_process(actor: &Box<dyn Actor>, thread_pool: Arc<Mutex<ThreadPool>>) {
+    pub(crate) async fn init_process(actor: &Box<dyn Actor>, thread_pool: Arc<Mutex<ThreadPool>>) {
+       
         let process = actor.create_process();
+       
+
         #[cfg(not(target_arch = "wasm32"))]
-        thread_pool.lock().unwrap().spawn(process);
+        //thread_pool.lock().unwrap().spawn(process);
+        let _ = tokio::spawn(async move {
+            process.await;
+        });
+
+        // thread_pool.lock().unwrap().spawn();
 
         #[cfg(target_arch = "wasm32")]
         spawn_local(process);
@@ -586,6 +602,39 @@ impl Network {
             .unwrap()
             .clone()
             .shutdown_join_timeout(Duration::from_millis(2500));
+    }
+
+    pub fn actor_count(&self) -> usize {
+       self.actors.len()
+    }
+
+    pub async fn execute_actor(&self, actor_id: &str, message: Message) -> Result<Message, anyhow::Error> {
+
+
+        println!(
+            "🎭 Executing actor: {} with message type: {:?}",
+            actor_id,
+            std::mem::discriminant(&message)
+        );
+
+        // Placeholder implementation
+        Ok(Message::Object(
+            serde_json::json!({
+                "status": "success",
+                "actor_id": actor_id,
+                "timestamp": chrono::Utc::now().timestamp_millis()
+            })
+            .into(),
+        ))
+    }
+
+    pub fn get_active_actors(&self) -> Vec<String> {
+        self.actors.iter().filter(|(_, actor)| actor.load_count().lock().get() > 0 ).map(|(id, _)| id.clone()).collect()
+    }
+
+    pub fn get_message_queue_size(&self) -> usize {
+        // Return current message queue size
+        0 // Placeholder
     }
 }
 

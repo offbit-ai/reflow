@@ -13,7 +13,7 @@ use reqwest::header::HeaderName;
 use serde::de::value;
 use serde_json::json;
 
-use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message, Network, Port};
+use crate::{Actor, ActorContext, ActorLoad, ActorBehavior, MemoryState, Message, Network, Port};
 
 /// Makes HTTP requests to external services.
 ///
@@ -34,10 +34,10 @@ use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message
     state(MemoryState)
 )]
 async fn http_request_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+
     let url = match payload.get("URL") {
         Some(Message::String(u)) => u.clone(),
         _ => {
@@ -126,10 +126,10 @@ async fn http_request_actor(
     state(MemoryState)
 )]
 async fn http_stream_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let outport_channels = context.get_outports();
     let url = match payload.get("URL") {
         Some(Message::String(u)) => u.clone(),
         _ => {
@@ -238,11 +238,10 @@ async fn http_stream_actor(
     state(MemoryState)
 )]
 async fn file_io_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     use std::fs;
+    let payload = context.get_payload();
     let path = match payload.get("Path") {
         Some(Message::String(p)) => p.clone(),
         _ => {
@@ -331,9 +330,7 @@ async fn file_io_actor(
     state(MemoryState)
 )]
 async fn nushell_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     
     use nu_engine::eval_block;
@@ -345,6 +342,8 @@ async fn nushell_actor(
     };
     use anyhow::Result;
     use std::path::PathBuf;
+
+    let payload = context.get_payload();
 
     let mut engine_state = EngineState::new();
     let mut working_set = StateWorkingSet::new(&engine_state);
@@ -463,10 +462,9 @@ async fn nushell_actor(
     state(MemoryState)
 )]
 async fn database_actor(
-    payload: ActorPayload,
-    _state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
     let connection_string = match payload.get("ConnectionString") {
         Some(Message::String(c)) => c.clone(),
         _ => {
@@ -555,13 +553,15 @@ async fn database_actor(
     state(MemoryState)
 )]
 async fn message_queue_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     use uuid::Uuid;
     use tokio::sync::mpsc;
     use std::time::Duration;
+
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
     
     let topic = match payload.get("Topic") {
         Some(Message::String(t)) => t.clone(),

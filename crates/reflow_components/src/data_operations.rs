@@ -7,9 +7,9 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-use reflow_network::message::EncodableValue;
+use reflow_network::{actor::ActorContext, message::EncodableValue};
 
-use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message, Port};
+use crate::{Actor, ActorLoad, ActorBehavior, MemoryState, Message, Port};
 
 /// Applies a transformation function to input data.
 ///
@@ -29,10 +29,10 @@ use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message
     state(MemoryState)
 )]
 async fn transform_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let input = match payload.get("In") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output
@@ -153,10 +153,10 @@ async fn transform_actor(
     state(MemoryState)
 )]
 async fn map_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let collection = match payload.get("Collection") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output
@@ -300,10 +300,10 @@ async fn map_actor(
     state(MemoryState)
 )]
 async fn reduce_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let collection = match payload.get("Collection") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output
@@ -581,10 +581,11 @@ async fn reduce_actor(
     state(MemoryState)
 )]
 async fn group_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
+
     let collection = match payload.get("Collection") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output
@@ -668,10 +669,10 @@ async fn group_actor(
     state(MemoryState)
 )]
 async fn sort_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
     let collection = match payload.get("Collection") {
         Some(msg) => msg,
         None => return Ok([].into()), // No input, no output

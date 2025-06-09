@@ -1,19 +1,21 @@
 //! Database actor implementation
-//! 
+//!
 //! This module provides an actor implementation for database operations
 //! that uses the database connection pool.
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
+use parking_lot::Mutex;
 use reflow_network::{
-    actor::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Port},
+    actor::{
+        Actor, ActorBehavior, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
+    },
     message::Message,
 };
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
-use parking_lot::Mutex;
-use tokio::sync::mpsc;
 
-use crate::db_manager::{get_db_pool_manager, ConnectionStatus};
+
+use crate::db_manager::{ConnectionStatus, get_db_pool_manager};
 
 /// Database actor for executing queries and commands
 pub struct DatabaseActor {
@@ -34,7 +36,8 @@ impl DatabaseActor {
 
     /// Convert a Message to a JSON Value
     fn message_to_value(message: &Message) -> Result<Value> {
-        serde_json::to_value(message).map_err(|e| anyhow!("Could not convert message to JSON: {}", e))
+        serde_json::to_value(message)
+            .map_err(|e| anyhow!("Could not convert message to JSON: {}", e))
     }
 
     /// Convert a JSON Value to a Message
@@ -48,7 +51,10 @@ impl DatabaseActor {
 
         // Check if the connection exists
         if !pool.has_connection(&self.connection_id) {
-            return Err(anyhow!("Database connection '{}' not found", self.connection_id));
+            return Err(anyhow!(
+                "Database connection '{}' not found",
+                self.connection_id
+            ));
         }
 
         // Check connection status
@@ -56,12 +62,15 @@ impl DatabaseActor {
         if status != ConnectionStatus::Connected {
             return Err(anyhow!(
                 "Database connection '{}' is not connected (status: {:?})",
-                self.connection_id, status
+                self.connection_id,
+                status
             ));
         }
 
         // Execute the query
-        let results = pool.execute_query(&self.connection_id, query, params).await?;
+        let results = pool
+            .execute_query(&self.connection_id, query, params)
+            .await?;
 
         // Convert results to Message format
         let mut rows = Vec::new();
@@ -78,7 +87,10 @@ impl DatabaseActor {
 
         // Check if the connection exists
         if !pool.has_connection(&self.connection_id) {
-            return Err(anyhow!("Database connection '{}' not found", self.connection_id));
+            return Err(anyhow!(
+                "Database connection '{}' not found",
+                self.connection_id
+            ));
         }
 
         // Check connection status
@@ -86,12 +98,15 @@ impl DatabaseActor {
         if status != ConnectionStatus::Connected {
             return Err(anyhow!(
                 "Database connection '{}' is not connected (status: {:?})",
-                self.connection_id, status
+                self.connection_id,
+                status
             ));
         }
 
         // Execute the command
-        let affected_rows = pool.execute_command(&self.connection_id, command, params).await?;
+        let affected_rows = pool
+            .execute_command(&self.connection_id, command, params)
+            .await?;
 
         Ok(Message::Integer(affected_rows as i64))
     }
@@ -101,86 +116,87 @@ impl Actor for DatabaseActor {
     fn get_behavior(&self) -> ActorBehavior {
         let connection_id = self.connection_id.clone();
 
-        Box::new(
-            move |payload: ActorPayload, state: Arc<Mutex<dyn ActorState>>, outports: Port| {
-                let connection_id = connection_id.clone();
-                let payload = payload.clone();
+        Box::new(move |context: ActorContext| {
+            let payload: &ActorPayload = context.get_payload();
+            let _state: Arc<Mutex<dyn ActorState>> = context.get_state();
+            let _outports = context.get_outports();
+            let connection_id = connection_id.clone();
+            let payload = payload.clone();
 
-                Box::pin(async move {
-                    let mut results = HashMap::new();
+            Box::pin(async move {
+                let mut results = HashMap::new();
 
-                    // Get the query or command from the payload
-                    let query = match payload.get("query") {
-                        Some(Message::String(q)) => q.clone(),
-                        _ => match payload.get("command") {
-                            Some(Message::String(c)) => c.clone(),
-                            _ => {
-                                results.insert(
-                                    "error".to_string(),
-                                    Message::Error("Missing query or command".to_string()),
-                                );
-                                return Ok(results);
-                            }
-                        },
-                    };
-
-                    // Get the parameters
-                    let params = match payload.get("params") {
-                        Some(Message::Array(p)) => {
-                            let mut param_values = Vec::new();
-                            for param in p {
-                                let param_value:serde_json::Value = param.clone().into();
-                                param_values.push(param_value);
-                            }
-                            param_values
-                        }
-                        Some(Message::Object(obj)) => {
-                            let mut param_values = Vec::new();
-                            let obj_value:serde_json::Value = obj.clone().into();
-                            param_values.push(obj_value);
-                            
-                            param_values
-                        }
-                        _ => Vec::new(),
-                    };
-
-                    // Determine if this is a query or a command
-                    let is_query = payload.contains_key("query");
-
-                    // Create a database actor instance
-                    let db_actor = DatabaseActor::new("temp", &connection_id);
-
-                    // Execute the query or command
-                    let result = if is_query {
-                        db_actor.execute_query(&query, params).await
-                    } else {
-                        db_actor.execute_command(&query, params).await
-                    };
-
-                    // Process the result
-                    match result {
-                        Ok(message) => {
-                            if is_query {
-                                results.insert("rows".to_string(), message);
-                                results.insert("success".to_string(), Message::Boolean(true));
-                            } else {
-                                results.insert("affectedRows".to_string(), message);
-                                results.insert("success".to_string(), Message::Boolean(true));
-                            }
-                        }
-                        Err(e) => {
+                // Get the query or command from the payload
+                let query = match payload.get("query") {
+                    Some(Message::String(q)) => q.clone(),
+                    _ => match payload.get("command") {
+                        Some(Message::String(c)) => c.clone(),
+                        _ => {
                             results.insert(
                                 "error".to_string(),
-                                Message::Error(format!("Database error: {}", e)),
+                                Message::Error("Missing query or command".to_string()),
                             );
-                            results.insert("success".to_string(), Message::Boolean(false));
+                            return Ok(results);
+                        }
+                    },
+                };
+
+                // Get the parameters
+                let params = match payload.get("params") {
+                    Some(Message::Array(p)) => {
+                        let mut param_values = Vec::new();
+                        for param in p {
+                            let param_value: serde_json::Value = param.clone().into();
+                            param_values.push(param_value);
+                        }
+                        param_values
+                    }
+                    Some(Message::Object(obj)) => {
+                        let mut param_values = Vec::new();
+                        let obj_value: serde_json::Value = obj.clone().into();
+                        param_values.push(obj_value);
+
+                        param_values
+                    }
+                    _ => Vec::new(),
+                };
+
+                // Determine if this is a query or a command
+                let is_query = payload.contains_key("query");
+
+                // Create a database actor instance
+                let db_actor = DatabaseActor::new("temp", &connection_id);
+
+                // Execute the query or command
+                let result = if is_query {
+                    db_actor.execute_query(&query, params).await
+                } else {
+                    db_actor.execute_command(&query, params).await
+                };
+
+                // Process the result
+                match result {
+                    Ok(message) => {
+                        if is_query {
+                            results.insert("rows".to_string(), message);
+                            results.insert("success".to_string(), Message::Boolean(true));
+                        } else {
+                            results.insert("affectedRows".to_string(), message);
+                            results.insert("success".to_string(), Message::Boolean(true));
                         }
                     }
+                    Err(e) => {
+                        results.insert(
+                            "error".to_string(),
+                            Message::Error(format!("Database error: {}", e)),
+                        );
+                        results.insert("success".to_string(), Message::Boolean(false));
+                    }
+                }
 
-                    Ok(results)
-                })
-            },
-        )
+                Ok(results)
+            })
+        })
     }
 
     fn get_outports(&self) -> Port {
@@ -204,12 +220,22 @@ impl Actor for DatabaseActor {
         Box::pin(async move {
             let (_, receiver) = inports;
             while let Ok(payload) = receiver.recv_async().await {
-                let result = behavior(payload, state.clone(), outports.clone()).await;
+                let context = ActorContext::new(
+                    payload,
+                    outports.clone(),
+                    state.clone(),
+                    HashMap::new(),
+                    Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+                );
+                let result = behavior(context).await;
 
                 if let Err(e) = result {
                     outports
                         .0
-                        .send_async(HashMap::from_iter([("error".to_string(), Message::Error(e.to_string()))]))
+                        .send_async(HashMap::from_iter([(
+                            "error".to_string(),
+                            Message::Error(e.to_string()),
+                        )]))
                         .await
                         .unwrap();
                 } else if let Ok(result) = result {
@@ -221,7 +247,7 @@ impl Actor for DatabaseActor {
 }
 
 #[cfg(test)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "db")]
 mod tests {
     use serde_json::json;
 
@@ -254,7 +280,14 @@ mod tests {
             Message::String("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)".to_string()),
         );
 
-        let result = behavior(create_payload, state.clone(), outports.clone()).await?;
+        let context = ActorContext::new(
+            create_payload,
+            outports.clone(),
+            state.clone(),
+            HashMap::new(),
+            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        );
+        let result = behavior(context).await?;
         assert!(result.contains_key("affectedRows"));
         assert_eq!(result["success"], Message::Boolean(true));
 
@@ -269,7 +302,14 @@ mod tests {
             Message::Array(vec![json!(1).into(), json!("test").into()]),
         );
 
-        let result = behavior(insert_payload, state.clone(), outports.clone()).await?;
+        let context = ActorContext::new(
+            insert_payload,
+            outports.clone(),
+            state.clone(),
+            HashMap::new(),
+            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        );
+        let result = behavior(context).await?;
         assert!(result.contains_key("affectedRows"));
         assert_eq!(result["success"], Message::Boolean(true));
 
@@ -279,8 +319,14 @@ mod tests {
             "query".to_string(),
             Message::String("SELECT * FROM test".to_string()),
         );
-
-        let result = behavior(query_payload, state.clone(), outports.clone()).await?;
+        let context = ActorContext::new(
+            query_payload,
+            outports.clone(),
+            state.clone(),
+            HashMap::new(),
+            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        );
+        let result = behavior(context).await?;
         assert!(result.contains_key("rows"));
         assert_eq!(result["success"], Message::Boolean(true));
 

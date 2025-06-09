@@ -20,7 +20,7 @@ pub struct SQLiteConnection {
     #[cfg(feature = "sqlite")]
     connection: Arc<Mutex<Option<rusqlite::Connection>>>,
     #[cfg(not(feature = "sqlite"))]
-    connection: RwLock<Option<()>>,
+    connection: Arc<Mutex<Option<()>>>,
     /// Last activity timestamp
     last_activity: RwLock<Instant>,
     /// Whether the connection is initialized

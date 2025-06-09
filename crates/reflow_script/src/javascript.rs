@@ -390,7 +390,7 @@ mod tests {
         ScriptConfig {
             environment: ScriptEnvironment::SYSTEM,
             runtime: ScriptRuntime::JavaScript,
-            source: source.to_string(),
+            source: source.as_bytes().to_vec(),
             entry_point: "main".to_string(),
             packages: None,
         }

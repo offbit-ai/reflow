@@ -61,7 +61,66 @@ pub enum Message {
     // Generic(EncodableValue),
     Any(EncodableValue),
     Error(String),
+
+    // // SQL Extensions 
+    // SQLQuery {
+    //     sql: String,
+    //     dialect: CloudDialect,
+    //     connection_id: String,
+    //     parameters: Vec<EncodableValue>,
+    //     execution_options: SQLExecutionOptions,
+    // },
+    // ArrowBatch {
+    //     schema: Vec<u8>, // Serialized Arrow schema
+    //     data: Vec<u8>,   // Serialized Arrow data
+    //     row_count: usize,
+    // },
+    // SQLError {
+    //     error_type: String,
+    //     message: String,
+    //     sql_context: Option<String>,
+    //     line_number: Option<u32>,
+    // },
+    
+    // CloudSQLResult {
+    //     data: Vec<EncodableValue>,
+    //     schema: CloudSQLSchema,
+    //     execution_stats: CloudSQLExecutionStats,
+    //     cost_info: Option<CostInfo>,
+    // },
+    
+    // TranspilationResult {
+    //     original_sql: String,
+    //     transpiled_sql: String,
+    //     source_dialect: CloudDialect,
+    //     target_dialect: CloudDialect,
+    //     confidence_score: f64,
+    //     validation_status: ValidationStatus,
+    // },
+    
+    // MigrationPlan {
+    //     batches: Vec<MigrationBatch>,
+    //     total_queries: usize,
+    //     estimated_duration: Duration,
+    //     risk_assessment: RiskAssessment,
+    // },
 }
+
+
+// #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Encode, Decode)]
+// pub enum CloudDialect {
+//     Snowflake,
+//     BigQuery,
+//     Databricks,
+//     Redshift,
+//     AzureSynapse,
+//     OracleAutonomous,
+
+//     // built-in dialects
+//     PostgreSQL,
+//     MySQL,
+//     SQLite,
+// }
 
 /// Compression configuration
 #[derive(Clone)]

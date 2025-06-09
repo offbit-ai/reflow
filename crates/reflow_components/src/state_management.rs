@@ -9,7 +9,7 @@ use anyhow::Error;
 use parking_lot::Mutex;
 use reflow_network::message::EncodableValue;
 
-use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message, Port};
+use crate::{Actor, ActorContext, ActorLoad, ActorBehavior, MemoryState, Message, Port};
 
 /// Stores and retrieves values from persistent state.
 ///
@@ -31,11 +31,13 @@ use crate::{Actor, ActorBehavior, ActorPayload, ActorState, MemoryState, Message
     state(MemoryState)
 )]
 async fn store_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     let mut result = HashMap::new();
+
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
 
     // Handle Set operation
     if payload.contains_key("Set") && payload.contains_key("Key") {
@@ -124,11 +126,13 @@ async fn store_actor(
     state(MemoryState)
 )]
 async fn state_machine_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     let mut result = HashMap::new();
+
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
 
     // Handle Transition definition
     if payload.contains_key("Transition") {
@@ -277,10 +281,11 @@ async fn state_machine_actor(
     state(MemoryState)
 )]
 async fn accumulator_actor(
-    payload: ActorPayload,
-    state: Arc<Mutex<dyn ActorState>>,
-    _outport_channels: Port,
+   context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let outport_channels = context.get_outports();
     // Check for reset signal
     if payload.contains_key("Reset") {
         let reset = payload
