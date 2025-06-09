@@ -1,0 +1,1599 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ReactFlow Integration - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="building-a-reactflow-editor-with-reflow-engine-in-a-web-worker"><a class="header" href="#building-a-reactflow-editor-with-reflow-engine-in-a-web-worker">Building a ReactFlow Editor with Reflow Engine in a Web Worker</a></h1>
+<p>This tutorial demonstrates how to build a modern visual workflow editor using <strong>ReactFlow</strong> for the user interface and <strong>Reflow engine</strong> running in a Web Worker for graph execution and state management.</p>
+<h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h2>
+<ol>
+<li><a href="#architecture-overview">Architecture Overview</a></li>
+<li><a href="#project-setup">Project Setup</a></li>
+<li><a href="#worker-integration">Worker Integration</a></li>
+<li><a href="#reactflow-integration">ReactFlow Integration</a></li>
+<li><a href="#custom-node-components">Custom Node Components</a></li>
+<li><a href="#real-time-communication">Real-time Communication</a></li>
+<li><a href="#advanced-features">Advanced Features</a></li>
+<li><a href="#complete-example">Complete Example</a></li>
+<li><a href="#performance-optimization">Performance Optimization</a></li>
+</ol>
+<h2 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h2>
+<p>Our architecture separates concerns between the UI layer (ReactFlow) and the execution engine (Reflow WebAssembly):</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                    React Application                            │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   ReactFlow     │  │  Component      │  │   Execution     │ │
+│  │     Editor      │  │    Palette      │  │    Controls     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│            │                    │                    │         │
+│            └────────────────────┼────────────────────┘         │
+│                                 │                              │
+└─────────────────────────────────┼──────────────────────────────┘
+                                  │ PostMessage API
+┌─────────────────────────────────┼──────────────────────────────┐
+│                          Web Worker                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Reflow WebAssm  │  │  Graph State    │  │   Persistence   │ │
+│  │     Engine      │  │   Management    │  │   (IndexedDB)   │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul>
+<li><strong>Performance</strong>: Heavy graph operations don't block the UI thread</li>
+<li><strong>Scalability</strong>: Can handle large, complex workflows</li>
+<li><strong>Persistence</strong>: Graph state maintained separately from UI state</li>
+<li><strong>Modularity</strong>: Clear separation between presentation and logic</li>
+</ul>
+<h2 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h2>
+<h3 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h3>
+<ul>
+<li>Node.js 18+ and npm/yarn</li>
+<li>Rust toolchain with <code>wasm-pack</code> installed</li>
+<li>Basic knowledge of React and TypeScript</li>
+</ul>
+<h3 id="1-initialize-react-project"><a class="header" href="#1-initialize-react-project">1. Initialize React Project</a></h3>
+<pre><code class="language-bash"># Create new React TypeScript project
+npm create react-app@latest reflow-editor --template typescript
+cd reflow-editor
+
+# Install ReactFlow and dependencies
+npm install reactflow
+npm install @types/web
+</code></pre>
+<h3 id="2-install-reflow-webassembly-package"><a class="header" href="#2-install-reflow-webassembly-package">2. Install Reflow WebAssembly Package</a></h3>
+<pre><code class="language-bash"># Build the Reflow WebAssembly package (from Reflow repo root)
+cd crates/reflow_network
+wasm-pack build --target web --out-dir pkg
+
+# Copy the generated package to your React project
+cp -r pkg/ /path/to/reflow-editor/src/reflow-wasm/
+</code></pre>
+<h3 id="3-project-structure"><a class="header" href="#3-project-structure">3. Project Structure</a></h3>
+<pre><code>reflow-editor/
+├── src/
+│   ├── components/
+│   │   ├── Editor/
+│   │   │   ├── ReactFlowEditor.tsx
+│   │   │   ├── CustomNodes/
+│   │   │   └── CustomEdges/
+│   │   ├── Palette/
+│   │   │   └── ComponentPalette.tsx
+│   │   └── Controls/
+│   │       └── ExecutionControls.tsx
+│   ├── workers/
+│   │   └── reflow-worker.ts
+│   ├── hooks/
+│   │   ├── useReflowWorker.ts
+│   │   └── useGraphSync.ts
+│   ├── types/
+│   │   └── reflow.ts
+│   ├── reflow-wasm/          # Copied from Reflow build
+│   └── App.tsx
+</code></pre>
+<h2 id="worker-integration"><a class="header" href="#worker-integration">Worker Integration</a></h2>
+<h3 id="1-create-the-reflow-worker"><a class="header" href="#1-create-the-reflow-worker">1. Create the Reflow Worker</a></h3>
+<p>First, let's create the Web Worker that manages the Reflow engine:</p>
+<pre><code class="language-typescript">// src/workers/reflow-worker.ts
+import { Graph, GraphHistory, StorageManager, initSync } from '../reflow-wasm/reflow_network.js';
+
+// Worker state
+let graph: Graph | null = null;
+let history: GraphHistory | null = null;
+let storage: StorageManager | null = null;
+
+// Message types for type safety
+export interface WorkerMessage {
+  type: 'INIT' | 'ADD_NODE' | 'ADD_EDGE' | 'UPDATE_NODE' | 'ADD_GROUP' | 'EXECUTE';
+  payload?: any;
+}
+
+export interface WorkerResponse {
+  type: 'READY' | 'GRAPH_LOADED' | 'NODE_ADDED' | 'EDGE_ADDED' | 'ERROR';
+  payload?: any;
+}
+
+// Initialize WebAssembly
+fetch('/reflow_network_bg.wasm').then(async (res) =&gt; {
+  initSync(await res.arrayBuffer());
+  self.postMessage({ type: 'READY' } as WorkerResponse);
+});
+
+// Auto-save functionality
+let saveTimeout: NodeJS.Timeout;
+const autoSave = () =&gt; {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() =&gt; saveGraphState(), 1000);
+};
+
+// Message handler
+self.addEventListener('message', async (event: MessageEvent&lt;WorkerMessage&gt;) =&gt; {
+  const { type, payload } = event.data;
+
+  try {
+    switch (type) {
+      case 'INIT':
+        await initializeGraph(payload.name);
+        break;
+
+      case 'ADD_NODE':
+        if (!graph) throw new Error('Graph not initialized');
+        addNode(payload);
+        break;
+
+      case 'ADD_EDGE':
+        if (!graph) throw new Error('Graph not initialized');
+        addEdge(payload);
+        break;
+
+      case 'UPDATE_NODE':
+        if (!graph) throw new Error('Graph not initialized');
+        updateNode(payload);
+        break;
+
+      case 'ADD_GROUP':
+        if (!graph) throw new Error('Graph not initialized');
+        addGroup(payload);
+        break;
+
+      case 'EXECUTE':
+        if (!graph) throw new Error('Graph not initialized');
+        executeGraph();
+        break;
+
+      default:
+        console.warn('Unknown message type:', type);
+    }
+  } catch (error) {
+    self.postMessage({
+      type: 'ERROR',
+      payload: { message: error.message }
+    } as WorkerResponse);
+  }
+});
+
+// Initialize graph with persistence
+async function initializeGraph(name: string) {
+  [graph, history] = Graph.withHistory();
+  storage = GraphHistory.createStorageManager(name, 'history');
+  
+  await storage.initDatabase();
+
+  // Load existing state
+  try {
+    const snapshot = await storage.loadFromIndexedDB('latest');
+    if (snapshot) {
+      history = GraphHistory.loadFromSnapshot(snapshot, graph);
+    }
+  } catch (error) {
+    console.warn('No previous state found:', error);
+  }
+
+  // Subscribe to graph events
+  graph.subscribe((graphEvent) =&gt; {
+    self.postMessage({
+      type: 'GRAPH_EVENT',
+      payload: graphEvent
+    } as WorkerResponse);
+  });
+
+  self.postMessage({
+    type: 'GRAPH_LOADED',
+    payload: { graph: graph.toJSON() }
+  } as WorkerResponse);
+}
+
+// Graph operation functions
+function addNode(nodeData: any) {
+  if (!graph || !history) return;
+
+  graph.addNode(nodeData.id, nodeData.process, nodeData.metadata);
+  history.processEvents(graph);
+  autoSave();
+
+  self.postMessage({
+    type: 'NODE_ADDED',
+    payload: nodeData
+  } as WorkerResponse);
+}
+
+function addEdge(edgeData: any) {
+  if (!graph || !history) return;
+
+  const { from, to } = edgeData;
+  
+  // Add ports if they don't exist
+  graph.addOutport(from.port.id, from.actor, from.port.name, true, from.port.metadata);
+  graph.addInport(to.port.id, to.actor, to.port.name, true, to.port.metadata);
+  
+  // Add connection
+  graph.addConnection(from.actor, from.port.id, to.actor, to.port.id, edgeData.metadata);
+  
+  history.processEvents(graph);
+  autoSave();
+
+  self.postMessage({
+    type: 'EDGE_ADDED',
+    payload: edgeData
+  } as WorkerResponse);
+}
+
+function updateNode(nodeData: any) {
+  if (!graph || !history) return;
+
+  graph.setNodeMetadata(nodeData.id, nodeData.metadata);
+  history.processEvents(graph);
+  autoSave();
+}
+
+function addGroup(groupData: any) {
+  if (!graph || !history) return;
+
+  graph.addGroup(groupData.id, groupData.nodes, groupData.metadata);
+  history.processEvents(graph);
+  autoSave();
+}
+
+function executeGraph() {
+  if (!graph) return;
+  
+  // Implement graph execution logic here
+  console.log('Executing graph:', graph.toJSON());
+}
+
+// Save graph state
+async function saveGraphState() {
+  if (!graph || !history || !storage) return;
+
+  try {
+    await storage.saveToIndexedDB('latest', graph, history);
+  } catch (error) {
+    console.warn('Failed to save to IndexedDB:', error);
+    try {
+      storage.saveToLocalStorage('latest', graph, history);
+    } catch (storageError) {
+      console.error('Failed to save state:', storageError);
+    }
+  }
+}
+</code></pre>
+<h3 id="2-create-worker-hook"><a class="header" href="#2-create-worker-hook">2. Create Worker Hook</a></h3>
+<p>Create a React hook to manage the worker communication:</p>
+<pre><code class="language-typescript">// src/hooks/useReflowWorker.ts
+import { useEffect, useRef, useCallback, useState } from 'react';
+import type { WorkerMessage, WorkerResponse } from '../workers/reflow-worker';
+
+export interface ReflowWorkerHook {
+  isReady: boolean;
+  sendMessage: (message: WorkerMessage) =&gt; void;
+  addEventListener: (listener: (event: WorkerResponse) =&gt; void) =&gt; void;
+  removeEventListener: (listener: (event: WorkerResponse) =&gt; void) =&gt; void;
+}
+
+export function useReflowWorker(): ReflowWorkerHook {
+  const workerRef = useRef&lt;Worker | null&gt;(null);
+  const [isReady, setIsReady] = useState(false);
+  const listenersRef = useRef&lt;Set&lt;(event: WorkerResponse) =&gt; void&gt;&gt;(new Set());
+
+  useEffect(() =&gt; {
+    // Create worker
+    workerRef.current = new Worker('/src/workers/reflow-worker.ts', {
+      type: 'module'
+    });
+
+    // Handle worker messages
+    const handleMessage = (event: MessageEvent&lt;WorkerResponse&gt;) =&gt; {
+      const message = event.data;
+      
+      if (message.type === 'READY') {
+        setIsReady(true);
+      }
+
+      // Notify all listeners
+      listenersRef.current.forEach(listener =&gt; listener(message));
+    };
+
+    workerRef.current.addEventListener('message', handleMessage);
+
+    return () =&gt; {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  const sendMessage = useCallback((message: WorkerMessage) =&gt; {
+    if (workerRef.current &amp;&amp; isReady) {
+      workerRef.current.postMessage(message);
+    }
+  }, [isReady]);
+
+  const addEventListener = useCallback((listener: (event: WorkerResponse) =&gt; void) =&gt; {
+    listenersRef.current.add(listener);
+  }, []);
+
+  const removeEventListener = useCallback((listener: (event: WorkerResponse) =&gt; void) =&gt; {
+    listenersRef.current.delete(listener);
+  }, []);
+
+  return {
+    isReady,
+    sendMessage,
+    addEventListener,
+    removeEventListener
+  };
+}
+</code></pre>
+<h2 id="reactflow-integration"><a class="header" href="#reactflow-integration">ReactFlow Integration</a></h2>
+<h3 id="1-main-editor-component"><a class="header" href="#1-main-editor-component">1. Main Editor Component</a></h3>
+<pre><code class="language-typescript">// src/components/Editor/ReactFlowEditor.tsx
+import React, { useCallback, useEffect, useState } from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  Connection,
+  ReactFlowProvider,
+  Controls,
+  Background,
+  Panel,
+} from 'reactflow';
+
+import 'reactflow/dist/style.css';
+
+import { useReflowWorker } from '../../hooks/useReflowWorker';
+import { useGraphSync } from '../../hooks/useGraphSync';
+import { ReflowNode } from './CustomNodes/ReflowNode';
+import { ComponentPalette } from '../Palette/ComponentPalette';
+import { ExecutionControls } from '../Controls/ExecutionControls';
+
+// Custom node types
+const nodeTypes = {
+  reflow: ReflowNode,
+};
+
+export function ReactFlowEditor() {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const worker = useReflowWorker();
+
+  // Sync ReactFlow state with Reflow worker
+  const { syncToWorker, syncFromWorker } = useGraphSync(worker, setNodes, setEdges);
+
+  useEffect(() =&gt; {
+    if (worker.isReady) {
+      // Initialize the graph in the worker
+      worker.sendMessage({
+        type: 'INIT',
+        payload: { name: 'ReactFlow Graph' }
+      });
+    }
+  }, [worker.isReady]);
+
+  const onConnect = useCallback(
+    (params: Edge | Connection) =&gt; {
+      // Update ReactFlow state
+      setEdges((eds) =&gt; addEdge(params, eds));
+      
+      // Sync to worker
+      syncToWorker.addEdge({
+        from: {
+          actor: params.source,
+          port: {
+            id: `${params.source}-${params.sourceHandle}`,
+            name: params.sourceHandle || 'output',
+          }
+        },
+        to: {
+          actor: params.target,
+          port: {
+            id: `${params.target}-${params.targetHandle}`,
+            name: params.targetHandle || 'input',
+          }
+        }
+      });
+    },
+    [setEdges, syncToWorker]
+  );
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) =&gt; {
+      event.preventDefault();
+
+      const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+      const type = event.dataTransfer.getData('application/reactflow');
+      const position = {
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      };
+
+      const newNode: Node = {
+        id: `${type}-${Date.now()}`,
+        type: 'reflow',
+        position,
+        data: {
+          label: type,
+          process: type,
+          inports: getDefaultInports(type),
+          outports: getDefaultOutports(type),
+        },
+      };
+
+      // Update ReactFlow state
+      setNodes((nds) =&gt; nds.concat(newNode));
+      
+      // Sync to worker
+      syncToWorker.addNode({
+        id: newNode.id,
+        process: type,
+        metadata: {
+          position,
+          name: type,
+          inports: newNode.data.inports,
+          outports: newNode.data.outports,
+        }
+      });
+    },
+    [setNodes, syncToWorker]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) =&gt; {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  return (
+    &lt;div style={{ width: '100vw', height: '100vh', display: 'flex' }}&gt;
+      {/* Component Palette */}
+      &lt;ComponentPalette /&gt;
+      
+      {/* Main ReactFlow Editor */}
+      &lt;div style={{ flex: 1 }} onDrop={onDrop} onDragOver={onDragOver}&gt;
+        &lt;ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+        &gt;
+          &lt;Controls /&gt;
+          &lt;Background /&gt;
+          
+          {/* Execution Controls Panel */}
+          &lt;Panel position="top-right"&gt;
+            &lt;ExecutionControls 
+              onExecute={() =&gt; worker.sendMessage({ type: 'EXECUTE' })}
+              isReady={worker.isReady}
+            /&gt;
+          &lt;/Panel&gt;
+        &lt;/ReactFlow&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+// Helper functions for default port configurations
+function getDefaultInports(nodeType: string) {
+  const configs = {
+    'DataSource': [],
+    'MapActor': [{ id: 'input', name: 'input', trait: 'data' }],
+    'Logger': [{ id: 'input', name: 'input', trait: 'data' }],
+    'FilterActor': [{ id: 'input', name: 'input', trait: 'data' }],
+  };
+  return configs[nodeType] || [{ id: 'input', name: 'input', trait: 'data' }];
+}
+
+function getDefaultOutports(nodeType: string) {
+  const configs = {
+    'DataSource': [{ id: 'output', name: 'output', trait: 'data' }],
+    'MapActor': [{ id: 'output', name: 'output', trait: 'data' }],
+    'Logger': [],
+    'FilterActor': [{ id: 'output', name: 'output', trait: 'data' }],
+  };
+  return configs[nodeType] || [{ id: 'output', name: 'output', trait: 'data' }];
+}
+</code></pre>
+<h2 id="custom-node-components"><a class="header" href="#custom-node-components">Custom Node Components</a></h2>
+<h3 id="1-reflow-node-component"><a class="header" href="#1-reflow-node-component">1. Reflow Node Component</a></h3>
+<pre><code class="language-typescript">// src/components/Editor/CustomNodes/ReflowNode.tsx
+import React, { memo } from 'react';
+import { Handle, Position } from 'reactflow';
+
+interface ReflowNodeData {
+  label: string;
+  process: string;
+  inports: Array&lt;{ id: string; name: string; trait: string }&gt;;
+  outports: Array&lt;{ id: string; name: string; trait: string }&gt;;
+}
+
+interface ReflowNodeProps {
+  data: ReflowNodeData;
+  isConnectable: boolean;
+}
+
+export const ReflowNode = memo(({ data, isConnectable }: ReflowNodeProps) =&gt; {
+  return (
+    &lt;div className="reflow-node"&gt;
+      {/* Input Handles */}
+      {data.inports.map((port, index) =&gt; (
+        &lt;Handle
+          key={port.id}
+          type="target"
+          position={Position.Left}
+          id={port.id}
+          isConnectable={isConnectable}
+          style={{
+            top: `${20 + (index * 25)}px`,
+            background: getPortColor(port.trait),
+          }}
+        /&gt;
+      ))}
+
+      {/* Node Content */}
+      &lt;div className="node-content"&gt;
+        &lt;div className="node-header"&gt;
+          &lt;strong&gt;{data.label}&lt;/strong&gt;
+        &lt;/div&gt;
+        &lt;div className="node-type"&gt;
+          {data.process}
+        &lt;/div&gt;
+        
+        {/* Port Labels */}
+        &lt;div className="port-labels"&gt;
+          &lt;div className="input-labels"&gt;
+            {data.inports.map((port) =&gt; (
+              &lt;div key={port.id} className="port-label"&gt;
+                {port.name}
+              &lt;/div&gt;
+            ))}
+          &lt;/div&gt;
+          &lt;div className="output-labels"&gt;
+            {data.outports.map((port) =&gt; (
+              &lt;div key={port.id} className="port-label"&gt;
+                {port.name}
+              &lt;/div&gt;
+            ))}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      {/* Output Handles */}
+      {data.outports.map((port, index) =&gt; (
+        &lt;Handle
+          key={port.id}
+          type="source"
+          position={Position.Right}
+          id={port.id}
+          isConnectable={isConnectable}
+          style={{
+            top: `${20 + (index * 25)}px`,
+            background: getPortColor(port.trait),
+          }}
+        /&gt;
+      ))}
+    &lt;/div&gt;
+  );
+});
+
+// Utility function for port colors
+function getPortColor(trait: string): string {
+  const colors = {
+    data: '#3b82f6',      // Blue for data
+    control: '#ef4444',   // Red for control
+    event: '#10b981',     // Green for events
+    config: '#f59e0b',    // Yellow for configuration
+  };
+  return colors[trait] || '#6b7280'; // Gray as default
+}
+</code></pre>
+<h3 id="2-node-styles"><a class="header" href="#2-node-styles">2. Node Styles</a></h3>
+<pre><code class="language-css">/* src/components/Editor/CustomNodes/ReflowNode.css */
+.reflow-node {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 150px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.reflow-node:hover {
+  border-color: #3b82f6;
+}
+
+.node-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.node-header {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.node-type {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.port-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.input-labels,
+.output-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.port-label {
+  line-height: 1.2;
+}
+
+/* ReactFlow handle overrides */
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  border: 2px solid #ffffff;
+}
+
+.react-flow__handle-left {
+  left: -6px;
+}
+
+.react-flow__handle-right {
+  right: -6px;
+}
+</code></pre>
+<h2 id="real-time-communication"><a class="header" href="#real-time-communication">Real-time Communication</a></h2>
+<h3 id="1-graph-synchronization-hook"><a class="header" href="#1-graph-synchronization-hook">1. Graph Synchronization Hook</a></h3>
+<pre><code class="language-typescript">// src/hooks/useGraphSync.ts
+import { useCallback, useEffect } from 'react';
+import { Node, Edge } from 'reactflow';
+import type { ReflowWorkerHook } from './useReflowWorker';
+
+export function useGraphSync(
+  worker: ReflowWorkerHook,
+  setNodes: React.Dispatch&lt;React.SetStateAction&lt;Node[]&gt;&gt;,
+  setEdges: React.Dispatch&lt;React.SetStateAction&lt;Edge[]&gt;&gt;
+) {
+  
+  // Listen to worker events and sync to ReactFlow
+  useEffect(() =&gt; {
+    const handleWorkerMessage = (message: any) =&gt; {
+      switch (message.type) {
+        case 'GRAPH_LOADED':
+          syncGraphFromWorker(message.payload.graph);
+          break;
+          
+        case 'NODE_ADDED':
+          // Handle real-time node additions from other sources
+          break;
+          
+        case 'EDGE_ADDED':
+          // Handle real-time edge additions from other sources
+          break;
+          
+        case 'GRAPH_EVENT':
+          // Handle live graph execution events
+          console.log('Graph event:', message.payload);
+          break;
+      }
+    };
+
+    worker.addEventListener(handleWorkerMessage);
+    
+    return () =&gt; {
+      worker.removeEventListener(handleWorkerMessage);
+    };
+  }, [worker]);
+
+  // Convert Reflow graph to ReactFlow format
+  const syncGraphFromWorker = useCallback((reflowGraph: any) =&gt; {
+    const reactFlowNodes: Node[] = [];
+    const reactFlowEdges: Edge[] = [];
+
+    // Convert Reflow processes to ReactFlow nodes
+    if (reflowGraph.processes) {
+      Array.from(reflowGraph.processes.values()).forEach((process: any) =&gt; {
+        const metadata = Object.fromEntries(process.metadata);
+        const position = Object.fromEntries(metadata.position || new Map());
+        
+        reactFlowNodes.push({
+          id: process.id,
+          type: 'reflow',
+          position: position,
+          data: {
+            label: metadata.name || process.component,
+            process: process.component,
+            inports: metadata.inports || [],
+            outports: metadata.outports || [],
+          },
+        });
+      });
+    }
+
+    // Convert Reflow connections to ReactFlow edges
+    if (reflowGraph.connections) {
+      reflowGraph.connections.forEach((connection: any) =&gt; {
+        reactFlowEdges.push({
+          id: `${connection.from.node_id}-${connection.from.port_name}-to-${connection.to.node_id}-${connection.to.port_name}`,
+          source: connection.from.node_id,
+          target: connection.to.node_id,
+          sourceHandle: connection.from.port_name,
+          targetHandle: connection.to.port_name,
+        });
+      });
+    }
+
+    setNodes(reactFlowNodes);
+    setEdges(reactFlowEdges);
+  }, [setNodes, setEdges]);
+
+  // Functions to sync ReactFlow changes to worker
+  const syncToWorker = {
+    addNode: useCallback((nodeData: any) =&gt; {
+      worker.sendMessage({
+        type: 'ADD_NODE',
+        payload: nodeData
+      });
+    }, [worker]),
+
+    addEdge: useCallback((edgeData: any) =&gt; {
+      worker.sendMessage({
+        type: 'ADD_EDGE',
+        payload: edgeData
+      });
+    }, [worker]),
+
+    updateNode: useCallback((nodeData: any) =&gt; {
+      worker.sendMessage({
+        type: 'UPDATE_NODE',
+        payload: nodeData
+      });
+    }, [worker]),
+  };
+
+  return {
+    syncToWorker,
+    syncFromWorker: syncGraphFromWorker,
+  };
+}
+</code></pre>
+<h2 id="advanced-features"><a class="header" href="#advanced-features">Advanced Features</a></h2>
+<h3 id="1-component-palette"><a class="header" href="#1-component-palette">1. Component Palette</a></h3>
+<pre><code class="language-typescript">// src/components/Palette/ComponentPalette.tsx
+import React from 'react';
+
+const COMPONENT_CATEGORIES = {
+  'Data Sources': [
+    { type: 'DataSource', label: 'Data Source', description: 'Generate or load data' },
+    { type: 'FileReader', label: 'File Reader', description: 'Read files from disk' },
+    { type: 'APISource', label: 'API Source', description: 'Fetch data from REST APIs' },
+  ],
+  'Processors': [
+    { type: 'MapActor', label: 'Map', description: 'Transform data elements' },
+    { type: 'FilterActor', label: 'Filter', description: 'Filter data elements' },
+    { type: 'ReduceActor', label: 'Reduce', description: 'Aggregate data' },
+    { type: 'SortActor', label: 'Sort', description: 'Sort data elements' },
+  ],
+  'Outputs': [
+    { type: 'Logger', label: 'Logger', description: 'Log data to console' },
+    { type: 'FileWriter', label: 'File Writer', description: 'Write data to file' },
+    { type: 'ChartDisplay', label: 'Chart Display', description: 'Visualize data' },
+  ],
+};
+
+export function ComponentPalette() {
+  const onDragStart = (event: React.DragEvent, nodeType: string) =&gt; {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  return (
+    &lt;div className="component-palette"&gt;
+      &lt;div className="palette-header"&gt;
+        &lt;h3&gt;Components&lt;/h3&gt;
+      &lt;/div&gt;
+      
+      &lt;div className="palette-content"&gt;
+        {Object.entries(COMPONENT_CATEGORIES).map(([category, components]) =&gt; (
+          &lt;div key={category} className="component-category"&gt;
+            &lt;h4&gt;{category}&lt;/h4&gt;
+            &lt;div className="component-list"&gt;
+              {components.map((component) =&gt; (
+                &lt;div
+                  key={component.type}
+                  className="component-item"
+                  draggable
+                  onDragStart={(event) =&gt; onDragStart(event, component.type)}
+                &gt;
+                  &lt;div className="component-label"&gt;{component.label}&lt;/div&gt;
+                  &lt;div className="component-description"&gt;{component.description}&lt;/div&gt;
+                &lt;/div&gt;
+              ))}
+            &lt;/div&gt;
+          &lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h3 id="2-execution-controls"><a class="header" href="#2-execution-controls">2. Execution Controls</a></h3>
+<pre><code class="language-typescript">// src/components/Controls/ExecutionControls.tsx
+import React, { useState } from 'react';
+
+interface ExecutionControlsProps {
+  onExecute: () =&gt; void;
+  isReady: boolean;
+}
+
+export function ExecutionControls({ onExecute, isReady }: ExecutionControlsProps) {
+  const [isExecuting, setIsExecuting] = useState(false);
+
+  const handleExecute = async () =&gt; {
+    setIsExecuting(true);
+    try {
+      onExecute();
+      // You can add execution status monitoring here
+      setTimeout(() =&gt; setIsExecuting(false), 2000); // Simulate execution time
+    } catch (error) {
+      console.error('Execution failed:', error);
+      setIsExecuting(false);
+    }
+  };
+
+  return (
+    &lt;div className="execution-controls"&gt;
+      &lt;button
+        onClick={handleExecute}
+        disabled={!isReady || isExecuting}
+        className={`execute-button ${isExecuting ? 'executing' : ''}`}
+      &gt;
+        {isExecuting ? 'Executing...' : 'Execute Workflow'}
+      &lt;/button&gt;
+      
+      &lt;div className="status-indicator"&gt;
+        &lt;div className={`status-dot ${isReady ? 'ready' : 'not-ready'}`} /&gt;
+        &lt;span&gt;{isReady ? 'Ready' : 'Initializing...'}&lt;/span&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h2 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h2>
+<h3 id="1-main-app-component"><a class="header" href="#1-main-app-component">1. Main App Component</a></h3>
+<pre><code class="language-typescript">// src/App.tsx
+import React from 'react';
+import { ReactFlowProvider } from 'reactflow';
+import { ReactFlowEditor } from './components/Editor/ReactFlowEditor';
+
+import './App.css';
+
+function App() {
+  return (
+    &lt;div className="App"&gt;
+      &lt;ReactFlowProvider&gt;
+        &lt;ReactFlowEditor /&gt;
+      &lt;/ReactFlowProvider&gt;
+    &lt;/div&gt;
+  );
+}
+
+export default App;
+</code></pre>
+<h3 id="2-complete-styling"><a class="header" href="#2-complete-styling">2. Complete Styling</a></h3>
+<pre><code class="language-css">/* src/App.css */
+.App {
+  height: 100vh;
+  width: 100vw;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Component Palette Styles */
+.component-palette {
+  width: 300px;
+  height: 100vh;
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.palette-header {
+  padding: 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.palette-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.palette-content {
+  flex: 1;
+  padding: 16px;
+}
+
+.component-category {
+  margin-bottom: 24px;
+}
+
+.component-category h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.component-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.component-item {
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.component-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.component-item:active {
+  cursor: grabbing;
+  transform: translateY(0);
+}
+
+.component-label {
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 4px;
+}
+
+.component-description {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+/* Execution Controls Styles */
+.execution-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+}
+
+.execute-button {
+  padding: 10px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.execute-button:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.execute-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.execute-button.executing {
+  background: #f59e0b;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.status-dot.ready {
+  background: #10b981;
+}
+
+.status-dot.not-ready {
+  background: #ef4444;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ReactFlow Customizations */
+.react-flow__node.react-flow__node-reflow {
+  background: transparent;
+  border: none;
+}
+
+.react-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 2;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #1d4ed8;
+  stroke-width: 3;
+}
+
+.react-flow__controls {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__controls button {
+  background: #ffffff;
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.react-flow__controls button:hover {
+  background: #f8f9fa;
+}
+</code></pre>
+<h3 id="3-typescript-type-definitions"><a class="header" href="#3-typescript-type-definitions">3. TypeScript Type Definitions</a></h3>
+<pre><code class="language-typescript">// src/types/reflow.ts
+export interface ReflowPort {
+  id: string;
+  name: string;
+  trait: 'data' | 'control' | 'event' | 'config';
+  position?: { x: number; y: number };
+  metadata?: Record&lt;string, any&gt;;
+}
+
+export interface ReflowNodeMetadata {
+  position: { x: number; y: number };
+  name: string;
+  inports: ReflowPort[];
+  outports: ReflowPort[];
+  [key: string]: any;
+}
+
+export interface ReflowConnectionPoint {
+  actor: string;
+  port: {
+    id: string;
+    name: string;
+    metadata?: Record&lt;string, any&gt;;
+  };
+}
+
+export interface ReflowConnection {
+  from: ReflowConnectionPoint;
+  to: ReflowConnectionPoint;
+  metadata?: Record&lt;string, any&gt;;
+}
+
+export interface ReflowGraphEvent {
+  type: 'node_added' | 'edge_added' | 'node_updated' | 'execution_started' | 'execution_completed';
+  data: any;
+  timestamp: number;
+}
+</code></pre>
+<h3 id="4-packagejson-configuration"><a class="header" href="#4-packagejson-configuration">4. Package.json Configuration</a></h3>
+<pre><code class="language-json">{
+  "name": "reflow-editor",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/web": "^0.0.99",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "reactflow": "^11.10.0",
+    "typescript": "^4.9.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      "&gt;0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+</code></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="1-memory-management"><a class="header" href="#1-memory-management">1. Memory Management</a></h3>
+<pre><code class="language-typescript">// Optimize large graphs with virtualization
+import { useCallback, useMemo } from 'react';
+
+function useOptimizedNodes(nodes: Node[], viewport: { x: number; y: number; zoom: number }) {
+  const visibleNodes = useMemo(() =&gt; {
+    // Only render nodes in viewport to improve performance
+    const padding = 200; // Extra padding around viewport
+    const viewportBounds = {
+      left: -viewport.x - padding,
+      top: -viewport.y - padding,
+      right: (-viewport.x + window.innerWidth) / viewport.zoom + padding,
+      bottom: (-viewport.y + window.innerHeight) / viewport.zoom + padding,
+    };
+
+    return nodes.filter(node =&gt; {
+      return (
+        node.position.x &gt;= viewportBounds.left &amp;&amp;
+        node.position.x &lt;= viewportBounds.right &amp;&amp;
+        node.position.y &gt;= viewportBounds.top &amp;&amp;
+        node.position.y &lt;= viewportBounds.bottom
+      );
+    });
+  }, [nodes, viewport]);
+
+  return visibleNodes;
+}
+</code></pre>
+<h3 id="2-worker-optimization"><a class="header" href="#2-worker-optimization">2. Worker Optimization</a></h3>
+<pre><code class="language-typescript">// Batch worker messages to reduce overhead
+class WorkerMessageBatcher {
+  private batchedMessages: WorkerMessage[] = [];
+  private batchTimeout: NodeJS.Timeout | null = null;
+  private worker: Worker;
+
+  constructor(worker: Worker) {
+    this.worker = worker;
+  }
+
+  sendMessage(message: WorkerMessage) {
+    this.batchedMessages.push(message);
+    
+    if (this.batchTimeout) {
+      clearTimeout(this.batchTimeout);
+    }
+
+    this.batchTimeout = setTimeout(() =&gt; {
+      this.flushBatch();
+    }, 16); // Batch messages for ~60fps
+  }
+
+  private flushBatch() {
+    if (this.batchedMessages.length &gt; 0) {
+      this.worker.postMessage({
+        type: 'BATCH',
+        payload: this.batchedMessages
+      });
+      this.batchedMessages = [];
+    }
+    this.batchTimeout = null;
+  }
+}
+</code></pre>
+<h3 id="3-state-management-optimization"><a class="header" href="#3-state-management-optimization">3. State Management Optimization</a></h3>
+<pre><code class="language-typescript">// Use React.memo and useMemo for expensive operations
+import { memo, useMemo } from 'react';
+
+export const OptimizedReflowNode = memo(({ data, isConnectable }: ReflowNodeProps) =&gt; {
+  const portColors = useMemo(() =&gt; {
+    return {
+      inports: data.inports.map(port =&gt; getPortColor(port.trait)),
+      outports: data.outports.map(port =&gt; getPortColor(port.trait))
+    };
+  }, [data.inports, data.outports]);
+
+  return (
+    &lt;div className="reflow-node"&gt;
+      {/* Optimized rendering with memoized colors */}
+    &lt;/div&gt;
+  );
+}, (prevProps, nextProps) =&gt; {
+  // Custom comparison for better performance
+  return (
+    prevProps.data.label === nextProps.data.label &amp;&amp;
+    prevProps.data.process === nextProps.data.process &amp;&amp;
+    prevProps.isConnectable === nextProps.isConnectable &amp;&amp;
+    JSON.stringify(prevProps.data.inports) === JSON.stringify(nextProps.data.inports) &amp;&amp;
+    JSON.stringify(prevProps.data.outports) === JSON.stringify(nextProps.data.outports)
+  );
+});
+</code></pre>
+<h3 id="4-webassembly-loading-optimization"><a class="header" href="#4-webassembly-loading-optimization">4. WebAssembly Loading Optimization</a></h3>
+<pre><code class="language-typescript">// Pre-load and cache WebAssembly modules
+class WasmCache {
+  private static instance: WasmCache;
+  private wasmModule: WebAssembly.Module | null = null;
+  private loading: Promise&lt;WebAssembly.Module&gt; | null = null;
+
+  static getInstance() {
+    if (!WasmCache.instance) {
+      WasmCache.instance = new WasmCache();
+    }
+    return WasmCache.instance;
+  }
+
+  async getModule(): Promise&lt;WebAssembly.Module&gt; {
+    if (this.wasmModule) {
+      return this.wasmModule;
+    }
+
+    if (this.loading) {
+      return this.loading;
+    }
+
+    this.loading = this.loadModule();
+    this.wasmModule = await this.loading;
+    return this.wasmModule;
+  }
+
+  private async loadModule(): Promise&lt;WebAssembly.Module&gt; {
+    const response = await fetch('/reflow_network_bg.wasm');
+    const bytes = await response.arrayBuffer();
+    return WebAssembly.compile(bytes);
+  }
+}
+</code></pre>
+<h2 id="best-practices--tips"><a class="header" href="#best-practices--tips">Best Practices &amp; Tips</a></h2>
+<h3 id="1-error-handling"><a class="header" href="#1-error-handling">1. Error Handling</a></h3>
+<ul>
+<li>Always wrap worker communication in try-catch blocks</li>
+<li>Implement proper error boundaries in React components</li>
+<li>Provide meaningful error messages to users</li>
+<li>Log errors for debugging but don't expose sensitive information</li>
+</ul>
+<h3 id="2-state-synchronization"><a class="header" href="#2-state-synchronization">2. State Synchronization</a></h3>
+<ul>
+<li>Keep ReactFlow state as the source of truth for UI</li>
+<li>Use the worker for business logic and persistence</li>
+<li>Implement debouncing for frequent updates</li>
+<li>Handle race conditions in async operations</li>
+</ul>
+<h3 id="3-performance"><a class="header" href="#3-performance">3. Performance</a></h3>
+<ul>
+<li>Use React.memo for components that render frequently</li>
+<li>Implement virtualization for large graphs (&gt;1000 nodes)</li>
+<li>Batch worker messages to reduce overhead</li>
+<li>Optimize WebAssembly loading and initialization</li>
+</ul>
+<h3 id="4-user-experience"><a class="header" href="#4-user-experience">4. User Experience</a></h3>
+<ul>
+<li>Show loading states during initialization</li>
+<li>Provide feedback for long-running operations</li>
+<li>Implement undo/redo functionality</li>
+<li>Add keyboard shortcuts for common operations</li>
+</ul>
+<h2 id="conclusion"><a class="header" href="#conclusion">Conclusion</a></h2>
+<p>This tutorial demonstrated how to build a modern, high-performance visual workflow editor by combining ReactFlow's excellent UI capabilities with Reflow's powerful WebAssembly engine running in a Web Worker.</p>
+<h3 id="key-benefits-achieved"><a class="header" href="#key-benefits-achieved">Key Benefits Achieved</a></h3>
+<ul>
+<li><strong>Performance</strong>: UI remains responsive during heavy graph operations</li>
+<li><strong>Scalability</strong>: Can handle complex workflows with hundreds of nodes</li>
+<li><strong>Persistence</strong>: Automatic saving and loading of graph state</li>
+<li><strong>Type Safety</strong>: Full TypeScript integration for better development experience</li>
+<li><strong>Modularity</strong>: Clean separation between UI and business logic</li>
+</ul>
+<h3 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h3>
+<ul>
+<li><strong>Custom Components</strong>: Extend the component palette with domain-specific actors</li>
+<li><strong>Real-time Collaboration</strong>: Add WebSocket support for multi-user editing</li>
+<li><strong>Advanced Debugging</strong>: Implement step-through execution and breakpoints</li>
+<li><strong>Plugin System</strong>: Create an extensible architecture for custom functionality</li>
+<li><strong>Cloud Integration</strong>: Add support for cloud storage and sharing</li>
+</ul>
+<p>The architecture presented here provides a solid foundation for building production-ready workflow editors that can scale to enterprise requirements while maintaining excellent user experience.</p>
+<p>For more advanced topics and examples, explore the <a href="../README.html">main Reflow documentation</a> and the <a href="../../examples/audio-flow/">audio-flow example</a> which demonstrates many of these concepts in action.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tutorials/building-visual-editor.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../tutorials/performance-optimization.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tutorials/building-visual-editor.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../tutorials/performance-optimization.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

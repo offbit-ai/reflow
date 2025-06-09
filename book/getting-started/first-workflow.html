@@ -1,0 +1,730 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Your First Workflow - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="your-first-workflow"><a class="header" href="#your-first-workflow">Your First Workflow</a></h1>
+<p>This tutorial will guide you through creating and running your first Reflow workflow using the actual implementation patterns. We'll build a simple data processing pipeline that demonstrates the core concepts.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>We'll create a workflow that:</p>
+<ol>
+<li>Processes input numbers (Sum Actor)</li>
+<li>Squares the result (Square Actor)</li>
+<li>Validates the output (Assert Actor)</li>
+</ol>
+<pre><code>┌─────────┐    ┌─────────┐    ┌─────────┐
+│   Sum   │───▶│ Square  │───▶│ Assert  │
+│ Actor   │    │ Actor   │    │ Actor   │
+└─────────┘    └─────────┘    └─────────┘
+</code></pre>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<p>Before starting, make sure you have:</p>
+<ul>
+<li>Completed the <a href="./installation.html">Installation</a> guide</li>
+<li>Set up your <a href="./development-setup.html">Development Environment</a></li>
+<li>Understanding of <a href="./basic-concepts.html">Basic Concepts</a></li>
+</ul>
+<h2 id="step-1-create-a-new-project"><a class="header" href="#step-1-create-a-new-project">Step 1: Create a New Project</a></h2>
+<pre><code class="language-bash"># Create a new Rust project
+cargo new hello-reflow
+cd hello-reflow
+
+# Add Reflow dependencies
+cargo add reflow_network
+cargo add actor_macro
+cargo add tokio --features full
+cargo add serde --features derive
+cargo add serde_json anyhow
+cargo add parking_lot
+</code></pre>
+<p>Your <code>Cargo.toml</code> should look like this:</p>
+<pre><code class="language-toml">[package]
+name = "hello-reflow"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reflow_network = { path = "../path/to/reflow/crates/reflow_network" }
+actor_macro = { path = "../path/to/reflow/crates/actor_macro" }
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+parking_lot = "0.12"
+</code></pre>
+<h2 id="step-2-create-your-first-actors"><a class="header" href="#step-2-create-your-first-actors">Step 2: Create Your First Actors</a></h2>
+<p>Create <code>src/main.rs</code> with the correct actor patterns:</p>
+<pre><pre class="playground"><code class="language-rust">use std::collections::HashMap;
+use reflow_network::{
+    actor::{ActorContext, MemoryState},
+    network::{Network, NetworkConfig},
+    connector::{ConnectionPoint, Connector, InitialPacket},
+    message::Message,
+};
+use actor_macro::actor;
+
+// Sum Actor - adds two input numbers
+#[actor(
+    SumActor,
+    inports::&lt;100&gt;(A, B),
+    outports::&lt;100&gt;(Out),
+    await_all_inports
+)]
+async fn sum_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+
+    let a_msg = payload.get("A").expect("expected to get data from port A");
+    let b_msg = payload.get("B").expect("expected to get data from port B");
+
+    let a = match a_msg {
+        Message::Integer(value) =&gt; *value,
+        _ =&gt; 0,
+    };
+
+    let b = match b_msg {
+        Message::Integer(value) =&gt; *value,
+        _ =&gt; 0,
+    };
+
+    let result = a + b;
+    println!("Sum Actor: {} + {} = {}", a, b, result);
+
+    Ok([("Out".to_owned(), Message::Integer(result))].into())
+}
+
+// Square Actor - squares the input number
+#[actor(
+    SquareActor,
+    inports::&lt;100&gt;(In),
+    outports::&lt;50&gt;(Out)
+)]
+async fn square_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let message = payload.get("In").expect("expected input");
+    
+    let input = match message {
+        Message::Integer(value) =&gt; *value,
+        _ =&gt; 0,
+    };
+
+    let result = input * input;
+    println!("Square Actor: {} squared = {}", input, result);
+
+    Ok([("Out".to_owned(), Message::Integer(result))].into())
+}
+
+// Print Actor - displays the final result
+#[actor(
+    PrintActor,
+    inports::&lt;100&gt;(Value),
+    outports::&lt;50&gt;(Done)
+)]
+async fn print_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let message = payload.get("Value").expect("expected value");
+    
+    match message {
+        Message::Integer(value) =&gt; {
+            println!("🎉 Final Result: {}", value);
+        },
+        _ =&gt; {
+            println!("📄 Final Result: {:?}", message);
+        }
+    }
+
+    Ok([("Done".to_owned(), Message::Boolean(true))].into())
+}
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), anyhow::Error&gt; {
+    println!("🚀 Starting Hello Reflow workflow...");
+    
+    // Create network with default configuration
+    let mut network = Network::new(NetworkConfig::default());
+
+    // Register actor types
+    network.register_actor("sum_process", SumActor::new())?;
+    network.register_actor("square_process", SquareActor::new())?;
+    network.register_actor("print_process", PrintActor::new())?;
+
+    // Add actor instances (nodes)
+    network.add_node("sum", "sum_process")?;
+    network.add_node("square", "square_process")?;
+    network.add_node("print", "print_process")?;
+
+    // Connect the workflow: sum -&gt; square -&gt; print
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "sum".to_owned(),
+            port: "Out".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "square".to_owned(),
+            port: "In".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "square".to_owned(),
+            port: "Out".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "print".to_owned(),
+            port: "Value".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    // Add initial data to start the workflow
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "sum".to_owned(),
+            port: "A".to_owned(),
+            initial_data: Some(Message::Integer(5)),
+        },
+    });
+
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "sum".to_owned(),
+            port: "B".to_owned(),
+            initial_data: Some(Message::Integer(3)),
+        },
+    });
+
+    // Start the network
+    network.start().await?;
+
+    // Give the workflow time to complete
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    println!("✅ Workflow completed!");
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="step-3-run-the-workflow"><a class="header" href="#step-3-run-the-workflow">Step 3: Run the Workflow</a></h2>
+<pre><code class="language-bash">cargo run
+</code></pre>
+<p>You should see output like:</p>
+<pre><code>🚀 Starting Hello Reflow workflow...
+Sum Actor: 5 + 3 = 8
+Square Actor: 8 squared = 64
+🎉 Final Result: 64
+✅ Workflow completed!
+</code></pre>
+<h2 id="step-4-understanding-the-code"><a class="header" href="#step-4-understanding-the-code">Step 4: Understanding the Code</a></h2>
+<h3 id="actor-macro-usage"><a class="header" href="#actor-macro-usage">Actor Macro Usage</a></h3>
+<p>The <code>#[actor]</code> macro simplifies actor creation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[actor(
+    SumActor,                    // Generated struct name
+    inports::&lt;100&gt;(A, B),        // Input ports with capacity
+    outports::&lt;100&gt;(Out),        // Output ports with capacity
+    await_all_inports            // Wait for all inputs before processing
+)]
+async fn sum_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="function-signature"><a class="header" href="#function-signature">Function Signature</a></h3>
+<p>All actor functions must have this exact signature:</p>
+<ul>
+<li><code>async fn</code> - Asynchronous function</li>
+<li><code>context: ActorContext</code> - Single parameter containing payload, state, config</li>
+<li><code>Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt;</code> - Return type</li>
+</ul>
+<h3 id="network-api-pattern"><a class="header" href="#network-api-pattern">Network API Pattern</a></h3>
+<ol>
+<li><strong>Register</strong> actor types: <code>network.register_actor("name", ActorStruct::new())</code></li>
+<li><strong>Add</strong> node instances: <code>network.add_node("instance_id", "actor_type")</code></li>
+<li><strong>Connect</strong> with <code>Connector</code> structs</li>
+<li><strong>Initialize</strong> with <code>InitialPacket</code> structs</li>
+</ol>
+<h2 id="step-5-add-state-management"><a class="header" href="#step-5-add-state-management">Step 5: Add State Management</a></h2>
+<p>Let's create a stateful actor that counts operations:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Counter Actor - keeps track of how many values it has processed
+#[actor(
+    CounterActor,
+    state(MemoryState),
+    inports::&lt;100&gt;(Value),
+    outports::&lt;50&gt;(Count, Total)
+)]
+async fn counter_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let input = payload.get("Value").expect("expected value");
+    
+    let value = match input {
+        Message::Integer(n) =&gt; *n,
+        _ =&gt; 0,
+    };
+
+    // Update state
+    let (count, total) = {
+        let mut state_guard = state.lock();
+        let memory_state = state_guard
+            .as_mut_any()
+            .downcast_mut::&lt;MemoryState&gt;()
+            .expect("Expected MemoryState");
+        
+        // Get current count and total
+        let current_count = memory_state
+            .get("count")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        
+        let current_total = memory_state
+            .get("total")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        
+        // Update values
+        let new_count = current_count + 1;
+        let new_total = current_total + value;
+        
+        memory_state.insert("count", serde_json::json!(new_count));
+        memory_state.insert("total", serde_json::json!(new_total));
+        
+        (new_count, new_total)
+    };
+
+    println!("Counter Actor: processed {} values, total sum: {}", count, total);
+
+    Ok([
+        ("Count".to_owned(), Message::Integer(count)),
+        ("Total".to_owned(), Message::Integer(total)),
+    ].into())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="step-6-multiple-input-example"><a class="header" href="#step-6-multiple-input-example">Step 6: Multiple Input Example</a></h2>
+<p>Create an actor that waits for multiple inputs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Multiply Actor - multiplies two inputs
+#[actor(
+    MultiplyActor,
+    inports::&lt;100&gt;(X, Y),
+    outports::&lt;50&gt;(Result),
+    await_all_inports  // This makes it wait for both X and Y
+)]
+async fn multiply_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+
+    let x = match payload.get("X").expect("expected X") {
+        Message::Integer(value) =&gt; *value,
+        _ =&gt; 1,
+    };
+
+    let y = match payload.get("Y").expect("expected Y") {
+        Message::Integer(value) =&gt; *value,
+        _ =&gt; 1,
+    };
+
+    let result = x * y;
+    println!("Multiply Actor: {} × {} = {}", x, y, result);
+
+    Ok([("Result".to_owned(), Message::Integer(result))].into())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="step-7-complex-workflow-example"><a class="header" href="#step-7-complex-workflow-example">Step 7: Complex Workflow Example</a></h2>
+<p>Here's a more complex workflow that demonstrates multiple patterns:</p>
+<pre><pre class="playground"><code class="language-rust">#[tokio::main]
+async fn main() -&gt; Result&lt;(), anyhow::Error&gt; {
+    println!("🚀 Starting Complex Reflow workflow...");
+    
+    let mut network = Network::new(NetworkConfig::default());
+
+    // Register all actor types
+    network.register_actor("sum_process", SumActor::new())?;
+    network.register_actor("multiply_process", MultiplyActor::new())?;
+    network.register_actor("counter_process", CounterActor::new())?;
+    network.register_actor("print_process", PrintActor::new())?;
+
+    // Create network topology
+    network.add_node("sum1", "sum_process")?;
+    network.add_node("multiply1", "multiply_process")?;
+    network.add_node("counter1", "counter_process")?;
+    network.add_node("print1", "print_process")?;
+
+    // Connect workflow
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "sum1".to_owned(),
+            port: "Out".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "multiply1".to_owned(),
+            port: "X".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "multiply1".to_owned(),
+            port: "Result".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "counter1".to_owned(),
+            port: "Value".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "counter1".to_owned(),
+            port: "Total".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "print1".to_owned(),
+            port: "Value".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    // Initial data
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "sum1".to_owned(),
+            port: "A".to_owned(),
+            initial_data: Some(Message::Integer(10)),
+        },
+    });
+
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "sum1".to_owned(),
+            port: "B".to_owned(),
+            initial_data: Some(Message::Integer(5)),
+        },
+    });
+
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "multiply1".to_owned(),
+            port: "Y".to_owned(),
+            initial_data: Some(Message::Integer(3)),
+        },
+    });
+
+    // Start the network
+    network.start().await?;
+    
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    
+    println!("✅ Complex workflow completed!");
+    
+    Ok(())
+}</code></pre></pre>
+<p>Expected output:</p>
+<pre><code>🚀 Starting Complex Reflow workflow...
+Sum Actor: 10 + 5 = 15
+Multiply Actor: 15 × 3 = 45
+Counter Actor: processed 1 values, total sum: 45
+🎉 Final Result: 45
+✅ Complex workflow completed!
+</code></pre>
+<h2 id="key-concepts-demonstrated"><a class="header" href="#key-concepts-demonstrated">Key Concepts Demonstrated</a></h2>
+<h3 id="actor-macro-features"><a class="header" href="#actor-macro-features">Actor Macro Features</a></h3>
+<ul>
+<li><strong>Port Definitions</strong>: <code>inports::&lt;capacity&gt;(Port1, Port2)</code></li>
+<li><strong>State Management</strong>: <code>state(MemoryState)</code> for stateful actors</li>
+<li><strong>Input Synchronization</strong>: <code>await_all_inports</code> waits for all inputs</li>
+</ul>
+<h3 id="network-configuration"><a class="header" href="#network-configuration">Network Configuration</a></h3>
+<ul>
+<li><strong>Registration</strong>: Register actor types before use</li>
+<li><strong>Instantiation</strong>: Create specific instances with unique IDs</li>
+<li><strong>Connection</strong>: Use structured <code>Connector</code> objects</li>
+<li><strong>Initialization</strong>: Send initial data with <code>InitialPacket</code></li>
+</ul>
+<h3 id="message-flow"><a class="header" href="#message-flow">Message Flow</a></h3>
+<ul>
+<li>Messages flow through typed ports</li>
+<li>Actors process inputs and produce outputs</li>
+<li>State is maintained per actor instance</li>
+</ul>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<p>Actors can return errors that will be logged:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[actor(
+    ValidatorActor,
+    inports::&lt;100&gt;(Input),
+    outports::&lt;50&gt;(Valid, Invalid)
+)]
+async fn validator_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let input = payload.get("Input").expect("expected input");
+    
+    match input {
+        Message::Integer(n) if *n &gt; 0 =&gt; {
+            Ok([("Valid".to_owned(), input.clone())].into())
+        },
+        Message::Integer(n) if *n &lt;= 0 =&gt; {
+            Ok([("Invalid".to_owned(), input.clone())].into())
+        },
+        _ =&gt; {
+            Err(anyhow::anyhow!("Expected integer input, got {:?}", input))
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>Now that you understand the basic patterns:</p>
+<ol>
+<li><strong>Learn more actor patterns</strong>: <a href="../api/actors/creating-actors.html">Creating Actors</a></li>
+<li><strong>Explore message types</strong>: <a href="../architecture/message-passing.html">Message Passing</a></li>
+<li><strong>Add scripting</strong>: <a href="../scripting/javascript/deno-runtime.html">JavaScript Integration</a></li>
+<li><strong>Use pre-built components</strong>: <a href="../components/standard-library.html">Standard Library</a></li>
+<li><strong>See more examples</strong>: <a href="../examples/README.html">Examples</a></li>
+</ol>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
+<p><strong>Compilation errors with actor macro</strong>: Make sure <code>actor_macro</code> is in your dependencies</p>
+<p><strong>Port connection errors</strong>: Verify port names match exactly between connections</p>
+<p><strong>Runtime panics</strong>: Check that initial data types match what actors expect</p>
+<p><strong>Deadlocks</strong>: Ensure <code>await_all_inports</code> actors receive all required inputs</p>
+<p>For more help, see the <a href="../reference/troubleshooting-guide.html">Troubleshooting Guide</a>.</p>
+<h2 id="complete-example-code"><a class="header" href="#complete-example-code">Complete Example Code</a></h2>
+<p>The complete working examples are available in the <a href="../examples/tutorials/hello-reflow/">examples directory</a>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../getting-started/development-setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../architecture/overview.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../getting-started/development-setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../architecture/overview.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

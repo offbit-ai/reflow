@@ -1,0 +1,802 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Message Passing - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="message-passing"><a class="header" href="#message-passing">Message Passing</a></h1>
+<p>This document details Reflow's message passing system, which is the primary communication mechanism between actors.</p>
+<h2 id="message-types"><a class="header" href="#message-types">Message Types</a></h2>
+<p>Reflow uses a strongly-typed message system with built-in serialization support:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone, Debug, Serialize, Deserialize, Encode, Decode, PartialEq)]
+pub enum Message {
+    Flow,
+    Event(EncodableValue),
+    Boolean(bool),
+    Integer(i64),
+    Float(f64),
+    String(String),
+    Object(EncodableValue),
+    Array(Vec&lt;EncodableValue&gt;),
+    Stream(Vec&lt;u8&gt;),
+    Encoded(Vec&lt;u8&gt;),
+    Optional(Option&lt;EncodableValue&gt;),
+    Any(EncodableValue),
+    Error(String),
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="encodablevalue"><a class="header" href="#encodablevalue">EncodableValue</a></h3>
+<p>Reflow uses <code>EncodableValue</code> as a wrapper for complex data types:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone, Debug, Serialize, Deserialize, Encode, Decode, PartialEq, Eq)]
+pub struct EncodableValue {
+    pub(crate) data: Vec&lt;u8&gt;,
+}
+
+impl EncodableValue {
+    pub fn new&lt;T: Encode&gt;(value: &amp;T) -&gt; Self {
+        Self {
+            data: bitcode::encode(value),
+        }
+    }
+
+    pub fn decode&lt;'a, T: Decode&lt;'a&gt;&gt;(&amp;'a self) -&gt; Option&lt;T&gt; {
+        bitcode::decode(&amp;self.data).ok()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="message-conversion"><a class="header" href="#message-conversion">Message Conversion</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde_json::Value;
+
+// From JSON values
+let msg = Message::from(serde_json::json!(42));
+
+// To JSON values  
+let json: Value = message.into();
+
+// Type checking
+if let Message::Integer(n) = message {
+    println!("Number: {}", n);
+}
+
+// Working with EncodableValue
+let data = serde_json::json!({"key": "value"});
+let encodable = EncodableValue::from(data);
+let object_msg = Message::Object(encodable);
+
+// Create arrays with EncodableValue
+let array_items = vec![
+    EncodableValue::from(serde_json::json!("hello")),
+    EncodableValue::from(serde_json::json!(42)),
+];
+let array_msg = Message::Array(array_items);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="communication-channels"><a class="header" href="#communication-channels">Communication Channels</a></h2>
+<h3 id="ports"><a class="header" href="#ports">Ports</a></h3>
+<p>Ports are the communication endpoints for actors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub type Port = (
+    flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;,
+    flume::Receiver&lt;HashMap&lt;String, Message&gt;&gt;,
+);
+
+// Actor payload format
+pub type ActorPayload = HashMap&lt;String, Message&gt;;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="channel-properties"><a class="header" href="#channel-properties">Channel Properties</a></h3>
+<ul>
+<li><strong>Asynchronous</strong>: Non-blocking send/receive operations</li>
+<li><strong>Bounded</strong>: Configurable buffer sizes for backpressure</li>
+<li><strong>Multi-producer, Single-consumer</strong>: Multiple senders, one receiver per port</li>
+<li><strong>Type-safe</strong>: Compile-time message type checking</li>
+</ul>
+<h2 id="message-flow-patterns"><a class="header" href="#message-flow-patterns">Message Flow Patterns</a></h2>
+<h3 id="point-to-point"><a class="header" href="#point-to-point">Point-to-Point</a></h3>
+<p>Direct communication between two actors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Actor A sends to Actor B
+let message = HashMap::from([
+    ("data".to_string(), Message::String("hello".to_string()))
+]);
+sender.send_async(message).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="broadcast"><a class="header" href="#broadcast">Broadcast</a></h3>
+<p>One actor sends to multiple receivers:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Using actor macro for broadcast
+#[actor(
+    BroadcastActor,
+    inports::&lt;100&gt;(input),
+    outports::&lt;50&gt;(output1, output2, output3)
+)]
+async fn broadcast_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    if let Some(input_msg) = payload.get("input") {
+        // Broadcast to all output ports
+        Ok([
+            ("output1".to_owned(), input_msg.clone()),
+            ("output2".to_owned(), input_msg.clone()),
+            ("output3".to_owned(), input_msg.clone()),
+        ].into())
+    } else {
+        Err(anyhow::anyhow!("No input to broadcast"))
+    }
+}
+
+// Manual implementation for dynamic outputs
+struct ManualBroadcastActor {
+    inports: Port,
+    outports: Port,
+    outputs: Vec&lt;flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;&gt;,
+    load: Arc&lt;Mutex&lt;ActorLoad&gt;&gt;,
+}
+
+impl ManualBroadcastActor {
+    async fn broadcast(&amp;self, message: HashMap&lt;String, Message&gt;) -&gt; Result&lt;(), anyhow::Error&gt; {
+        for output in &amp;self.outputs {
+            output.send_async(message.clone()).await?;
+        }
+        Ok(())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="fan-in-merge"><a class="header" href="#fan-in-merge">Fan-In (Merge)</a></h3>
+<p>Multiple actors send to one receiver:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct MergeActor {
+    inputs: Vec&lt;flume::Receiver&lt;HashMap&lt;String, Message&gt;&gt;&gt;,
+    output: flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;,
+}
+
+impl MergeActor {
+    async fn merge_loop(&amp;self) {
+        use futures::stream::{FuturesUnordered, StreamExt};
+        
+        let mut streams: FuturesUnordered&lt;_&gt; = self.inputs
+            .iter()
+            .map(|rx| rx.recv_async())
+            .collect();
+            
+        while let Some(result) = streams.next().await {
+            if let Ok(message) = result {
+                let _ = self.output.send_async(message).await;
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="serialization-and-transport"><a class="header" href="#serialization-and-transport">Serialization and Transport</a></h2>
+<h3 id="local-serialization"><a class="header" href="#local-serialization">Local Serialization</a></h3>
+<p>For local communication, messages use efficient in-memory representation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Zero-copy for simple types
+let msg = Message::Integer(42); // No allocation
+
+// Reference counting for complex types
+let complex = Message::Object(data); // Rc&lt;HashMap&lt;String, Message&gt;&gt;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="network-serialization"><a class="header" href="#network-serialization">Network Serialization</a></h3>
+<p>For distributed communication:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use bitcode;
+use flate2::Compression;
+
+// Compress and serialize
+let compressed = compress_message(&amp;message, Compression::default())?;
+let bytes = bitcode::serialize(&amp;compressed)?;
+
+// Send over network
+network_send(bytes).await?;
+
+// Receive and deserialize
+let received = network_receive().await?;
+let message = bitcode::deserialize(&amp;received)?;
+let decompressed = decompress_message(&amp;message)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="message-routing"><a class="header" href="#message-routing">Message Routing</a></h2>
+<h3 id="router-actor"><a class="header" href="#router-actor">Router Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct RouterActor {
+    routes: HashMap&lt;String, flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;&gt;,
+    default_route: Option&lt;flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;&gt;,
+}
+
+impl RouterActor {
+    pub fn route_message(&amp;self, key: &amp;str, message: HashMap&lt;String, Message&gt;) -&gt; Result&lt;()&gt; {
+        if let Some(sender) = self.routes.get(key) {
+            sender.try_send(message)?;
+        } else if let Some(default) = &amp;self.default_route {
+            default.try_send(message)?;
+        }
+        Ok(())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="content-based-routing"><a class="header" href="#content-based-routing">Content-Based Routing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl RouterActor {
+    fn route_by_content(&amp;self, message: &amp;HashMap&lt;String, Message&gt;) -&gt; Option&lt;&amp;str&gt; {
+        // Route based on message content
+        if let Some(Message::String(msg_type)) = message.get("type") {
+            match msg_type.as_str() {
+                "user_event" =&gt; Some("user_handler"),
+                "system_event" =&gt; Some("system_handler"),
+                "error" =&gt; Some("error_handler"),
+                _ =&gt; None,
+            }
+        } else {
+            None
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="error-message-format"><a class="header" href="#error-message-format">Error Message Format</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Standard error message structure
+let error_msg = HashMap::from([
+    ("error".to_string(), Message::Error("Processing failed".to_string())),
+    ("code".to_string(), Message::Integer(500)),
+    ("source".to_string(), Message::String("database_actor".to_string())),
+    ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
+    ("details".to_string(), Message::Object(error_details)),
+]);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="dead-letter-queue"><a class="header" href="#dead-letter-queue">Dead Letter Queue</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct DeadLetterQueue {
+    storage: Arc&lt;Mutex&lt;Vec&lt;(String, HashMap&lt;String, Message&gt;)&gt;&gt;&gt;,
+    max_size: usize,
+}
+
+impl DeadLetterQueue {
+    pub async fn store_failed_message(
+        &amp;self, 
+        reason: String, 
+        message: HashMap&lt;String, Message&gt;
+    ) {
+        let mut storage = self.storage.lock();
+        if storage.len() &gt;= self.max_size {
+            storage.remove(0); // Remove oldest
+        }
+        storage.push((reason, message));
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="backpressure-management"><a class="header" href="#backpressure-management">Backpressure Management</a></h2>
+<h3 id="flow-control"><a class="header" href="#flow-control">Flow Control</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct FlowControlActor {
+    input: flume::Receiver&lt;HashMap&lt;String, Message&gt;&gt;,
+    output: flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;,
+    buffer_size: usize,
+    current_load: Arc&lt;AtomicUsize&gt;,
+}
+
+impl FlowControlActor {
+    async fn process_with_backpressure(&amp;self) {
+        while let Ok(message) = self.input.recv_async().await {
+            // Check current load
+            let load = self.current_load.load(Ordering::Relaxed);
+            
+            if load &gt; self.buffer_size {
+                // Apply backpressure - slow down
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            
+            self.current_load.fetch_add(1, Ordering::Relaxed);
+            
+            // Process message
+            if let Err(_) = self.output.try_send(message) {
+                // Output buffer full, apply backpressure
+                tokio::time::sleep(Duration::from_millis(1)).await;
+            }
+            
+            self.current_load.fetch_sub(1, Ordering::Relaxed);
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="message-ordering"><a class="header" href="#message-ordering">Message Ordering</a></h2>
+<h3 id="ordered-delivery"><a class="header" href="#ordered-delivery">Ordered Delivery</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct OrderedDeliveryActor {
+    sequence_number: AtomicU64,
+    expected_sequence: AtomicU64,
+    buffer: Arc&lt;Mutex&lt;BTreeMap&lt;u64, HashMap&lt;String, Message&gt;&gt;&gt;&gt;,
+}
+
+impl OrderedDeliveryActor {
+    fn add_sequence_number(&amp;self, mut message: HashMap&lt;String, Message&gt;) -&gt; HashMap&lt;String, Message&gt; {
+        let seq = self.sequence_number.fetch_add(1, Ordering::Relaxed);
+        message.insert("sequence".to_string(), Message::Integer(seq as i64));
+        message
+    }
+    
+    async fn deliver_in_order(&amp;self, message: HashMap&lt;String, Message&gt;) {
+        if let Some(Message::Integer(seq)) = message.get("sequence") {
+            let seq = *seq as u64;
+            let expected = self.expected_sequence.load(Ordering::Relaxed);
+            
+            if seq == expected {
+                // Deliver immediately
+                self.deliver_message(message).await;
+                self.expected_sequence.fetch_add(1, Ordering::Relaxed);
+                
+                // Check buffer for next messages
+                self.deliver_buffered_messages().await;
+            } else {
+                // Buffer out-of-order message
+                self.buffer.lock().insert(seq, message);
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="message-batching"><a class="header" href="#message-batching">Message Batching</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use crate::message::{Message, EncodableValue};
+
+pub struct BatchingActor {
+    batch_size: usize,
+    batch_timeout: Duration,
+    current_batch: Vec&lt;HashMap&lt;String, Message&gt;&gt;,
+    input: flume::Receiver&lt;HashMap&lt;String, Message&gt;&gt;,
+    output: flume::Sender&lt;HashMap&lt;String, Message&gt;&gt;,
+}
+
+impl BatchingActor {
+    async fn process_with_batching(&amp;mut self) {
+        let mut interval = tokio::time::interval(self.batch_timeout);
+        
+        loop {
+            tokio::select! {
+                // Receive new message
+                Ok(message) = self.input.recv_async() =&gt; {
+                    self.current_batch.push(message);
+                    
+                    if self.current_batch.len() &gt;= self.batch_size {
+                        self.flush_batch().await;
+                    }
+                }
+                
+                // Timeout - flush partial batch
+                _ = interval.tick() =&gt; {
+                    if !self.current_batch.is_empty() {
+                        self.flush_batch().await;
+                    }
+                }
+            }
+        }
+    }
+    
+    async fn flush_batch(&amp;mut self) {
+        if !self.current_batch.is_empty() {
+            // Convert to EncodableValue for proper serialization
+            let batch_items: Vec&lt;EncodableValue&gt; = self.current_batch
+                .drain(..)
+                .map(|msg| EncodableValue::from(serde_json::to_value(msg).unwrap()))
+                .collect();
+            
+            let batch = Message::Array(batch_items);
+            
+            let batch_message = HashMap::from([
+                ("batch".to_string(), batch)
+            ]);
+            
+            let _ = self.output.send_async(batch_message).await;
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="zero-copy-optimization"><a class="header" href="#zero-copy-optimization">Zero-Copy Optimization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use bytes::Bytes;
+
+// Use Bytes for zero-copy binary data
+let data = Bytes::from(vec![1, 2, 3, 4]);
+let message = Message::Binary(data.to_vec());
+
+// Reference counting for large objects
+use std::sync::Arc;
+
+struct LargeData {
+    content: Vec&lt;u8&gt;,
+}
+
+let large_data = Arc::new(LargeData { content: vec![0; 1000000] });
+// Pass Arc around instead of cloning large data
+<span class="boring">}</span></code></pre></pre>
+<h2 id="message-validation"><a class="header" href="#message-validation">Message Validation</a></h2>
+<h3 id="schema-validation"><a class="header" href="#schema-validation">Schema Validation</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde_json::Value;
+
+pub struct MessageValidator {
+    schemas: HashMap&lt;String, Value&gt;, // JSON Schema
+}
+
+impl MessageValidator {
+    pub fn validate_message(
+        &amp;self, 
+        message_type: &amp;str, 
+        message: &amp;HashMap&lt;String, Message&gt;
+    ) -&gt; Result&lt;(), ValidationError&gt; {
+        if let Some(schema) = self.schemas.get(message_type) {
+            let json_value: Value = message.clone().into();
+            validate_json_schema(&amp;json_value, schema)?;
+        }
+        Ok(())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="type-safety"><a class="header" href="#type-safety">Type Safety</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Type-safe message builders
+pub struct UserEventBuilder {
+    user_id: Option&lt;String&gt;,
+    event_type: Option&lt;String&gt;,
+    timestamp: Option&lt;String&gt;,
+}
+
+impl UserEventBuilder {
+    pub fn user_id(mut self, id: String) -&gt; Self {
+        self.user_id = Some(id);
+        self
+    }
+    
+    pub fn event_type(mut self, event_type: String) -&gt; Self {
+        self.event_type = Some(event_type);
+        self
+    }
+    
+    pub fn build(self) -&gt; Result&lt;HashMap&lt;String, Message&gt;, BuildError&gt; {
+        let user_id = self.user_id.ok_or(BuildError::MissingUserId)?;
+        let event_type = self.event_type.ok_or(BuildError::MissingEventType)?;
+        
+        Ok(HashMap::from([
+            ("user_id".to_string(), Message::String(user_id)),
+            ("event_type".to_string(), Message::String(event_type)),
+            ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
+        ]))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="testing-message-passing"><a class="header" href="#testing-message-passing">Testing Message Passing</a></h2>
+<h3 id="mock-channels"><a class="header" href="#mock-channels">Mock Channels</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct MockChannel {
+    sent_messages: Arc&lt;Mutex&lt;Vec&lt;HashMap&lt;String, Message&gt;&gt;&gt;&gt;,
+    responses: Arc&lt;Mutex&lt;VecDeque&lt;HashMap&lt;String, Message&gt;&gt;&gt;&gt;,
+}
+
+impl MockChannel {
+    pub fn new() -&gt; Self {
+        Self {
+            sent_messages: Arc::new(Mutex::new(Vec::new())),
+            responses: Arc::new(Mutex::new(VecDeque::new())),
+        }
+    }
+    
+    pub fn expect_message(&amp;self, message: HashMap&lt;String, Message&gt;) {
+        self.responses.lock().push_back(message);
+    }
+    
+    pub fn verify_sent(&amp;self, expected: &amp;HashMap&lt;String, Message&gt;) -&gt; bool {
+        self.sent_messages.lock().contains(expected)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="integration-testing"><a class="header" href="#integration-testing">Integration Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn test_message_pipeline() {
+    let (tx1, rx1) = flume::unbounded();
+    let (tx2, rx2) = flume::unbounded();
+    
+    // Create test actors
+    let source = TestSourceActor::new(tx1);
+    let processor = TestProcessorActor::new(rx1, tx2);
+    let sink = TestSinkActor::new(rx2);
+    
+    // Start actors
+    tokio::spawn(source.run());
+    tokio::spawn(processor.run());
+    tokio::spawn(sink.run());
+    
+    // Test message flow
+    let test_message = HashMap::from([
+        ("data".to_string(), Message::String("test".to_string()))
+    ]);
+    
+    source.send(test_message.clone()).await;
+    
+    // Verify message received
+    let received = sink.receive_next().await;
+    assert_eq!(received.get("data"), test_message.get("data"));
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="message-design"><a class="header" href="#message-design">Message Design</a></h3>
+<ol>
+<li><strong>Keep messages immutable</strong> - Never modify after creation</li>
+<li><strong>Use appropriate granularity</strong> - Not too fine, not too coarse</li>
+<li><strong>Include enough context</strong> - Messages should be self-contained</li>
+<li><strong>Design for evolution</strong> - Use versioned message formats</li>
+</ol>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<ol>
+<li><strong>Batch when possible</strong> - Reduce overhead</li>
+<li><strong>Use appropriate data types</strong> - Binary for large data</li>
+<li><strong>Implement backpressure</strong> - Prevent resource exhaustion</li>
+<li><strong>Monitor message rates</strong> - Track performance metrics</li>
+</ol>
+<h3 id="error-handling-1"><a class="header" href="#error-handling-1">Error Handling</a></h3>
+<ol>
+<li><strong>Use structured errors</strong> - Include error codes and context</li>
+<li><strong>Implement dead letter queues</strong> - Don't lose failed messages</li>
+<li><strong>Design for retry</strong> - Make operations idempotent</li>
+<li><strong>Log message failures</strong> - Enable debugging</li>
+</ol>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="./graph-system.html">Graph System</a> - Workflow composition</li>
+<li><a href="./multi-language-support.html">Multi-Language Support</a> - Script integration</li>
+<li><a href="./performance-considerations.html">Performance Considerations</a> - Optimization</li>
+<li><a href="../api/actors/creating-actors.html">Creating Actors</a> - Practical implementation</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../architecture/actor-model.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../architecture/graph-system.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../architecture/actor-model.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../architecture/graph-system.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>JavaScript &amp; Deno Runtime - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="deno-runtime"><a class="header" href="#deno-runtime">Deno Runtime</a></h1>
+<p>Reflow's Deno runtime enables JavaScript and TypeScript actors with secure, sandboxed execution.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>The Deno runtime provides:</p>
+<ul>
+<li><strong>Secure sandbox</strong> with configurable permissions</li>
+<li><strong>TypeScript support</strong> out of the box</li>
+<li><strong>NPM package</strong> ecosystem access</li>
+<li><strong>Modern JavaScript</strong> features (ES2022+)</li>
+<li><strong>Async/await</strong> support for non-blocking operations</li>
+</ul>
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<h3 id="creating-a-javascript-actor"><a class="header" href="#creating-a-javascript-actor">Creating a JavaScript Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_script::{ScriptActor, LanguageEngine};
+use reflow_network::{Network, NetworkConfig};
+use reflow_network::connector::{Connector, ConnectionPoint, InitialPacket};
+use reflow_network::message::Message;
+
+// Create script actor with JavaScript/Deno engine
+let script_content = r#"
+function process(inputs, context) {
+    const data = inputs.data;
+    
+    if (typeof data === 'string') {
+        return {
+            result: data.toUpperCase(),
+            length: data.length,
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    return { error: 'Expected string input' };
+}
+"#;
+
+let actor = ScriptActor::new(LanguageEngine::JavaScript, script_content.to_string());
+
+// Register and use in network
+let mut network = Network::new(NetworkConfig::default());
+network.register_actor("js_processor", actor)?;
+network.add_node("script1", "js_processor")?;
+
+// Connect to other actors
+network.add_connection(Connector {
+    from: ConnectionPoint {
+        actor: "source_actor".to_owned(),
+        port: "output".to_owned(),
+        ..Default::default()
+    },
+    to: ConnectionPoint {
+        actor: "script1".to_owned(),
+        port: "data".to_owned(),
+        ..Default::default()
+    },
+});
+<span class="boring">}</span></code></pre></pre>
+<h3 id="javascript-actor-script"><a class="header" href="#javascript-actor-script">JavaScript Actor Script</a></h3>
+<pre><code class="language-javascript">// script.js - Simple transformation actor
+function process(inputs, context) {
+    const data = inputs.data;
+    
+    if (typeof data === 'string') {
+        return {
+            result: data.toUpperCase(),
+            length: data.length,
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    return { error: 'Expected string input' };
+}
+
+// Export for Reflow
+exports.process = process;
+</code></pre>
+<h2 id="actor-function-signature"><a class="header" href="#actor-function-signature">Actor Function Signature</a></h2>
+<h3 id="input-parameters"><a class="header" href="#input-parameters">Input Parameters</a></h3>
+<pre><code class="language-javascript">function process(inputs, context) {
+    // inputs: Object containing input port data
+    // context: Actor execution context
+}
+</code></pre>
+<h3 id="context-object"><a class="header" href="#context-object">Context Object</a></h3>
+<pre><code class="language-javascript">const context = {
+    // Actor configuration
+    config: {
+        // Custom configuration values
+    },
+    
+    // Utility functions
+    log: (level, message) =&gt; {},
+    
+    // State management
+    getState: () =&gt; {},
+    setState: (state) =&gt; {},
+    
+    // Metrics
+    incrementCounter: (name) =&gt; {},
+    recordTimer: (name, duration) =&gt; {},
+};
+</code></pre>
+<h3 id="return-values"><a class="header" href="#return-values">Return Values</a></h3>
+<pre><code class="language-javascript">// Success - return output object
+return {
+    output1: "value1",
+    output2: 42,
+    status: "success"
+};
+
+// Error - return error object
+return {
+    error: "Something went wrong",
+    code: 500
+};
+
+// Async operations
+async function process(inputs, context) {
+    const result = await fetchData(inputs.url);
+    return { data: result };
+}
+</code></pre>
+<h2 id="data-types"><a class="header" href="#data-types">Data Types</a></h2>
+<h3 id="supported-types"><a class="header" href="#supported-types">Supported Types</a></h3>
+<pre><code class="language-javascript">// Primitive types
+return {
+    string: "hello",
+    number: 42,
+    boolean: true,
+    null: null,
+};
+
+// Complex types
+return {
+    array: [1, 2, 3],
+    object: { key: "value" },
+    nested: {
+        array: [{ id: 1 }, { id: 2 }],
+        metadata: { timestamp: Date.now() }
+    }
+};
+
+// Binary data
+return {
+    buffer: new Uint8Array([1, 2, 3, 4])
+};
+</code></pre>
+<h2 id="state-management"><a class="header" href="#state-management">State Management</a></h2>
+<h3 id="persistent-state"><a class="header" href="#persistent-state">Persistent State</a></h3>
+<pre><code class="language-javascript">function process(inputs, context) {
+    // Get current state
+    const state = context.getState() || { counter: 0 };
+    
+    // Update state
+    state.counter += 1;
+    state.lastInput = inputs.data;
+    
+    // Save state
+    context.setState(state);
+    
+    return {
+        count: state.counter,
+        data: state.lastInput
+    };
+}
+</code></pre>
+<h2 id="async-operations"><a class="header" href="#async-operations">Async Operations</a></h2>
+<h3 id="http-requests"><a class="header" href="#http-requests">HTTP Requests</a></h3>
+<pre><code class="language-javascript">async function process(inputs, context) {
+    try {
+        const response = await fetch(inputs.url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            return { error: `HTTP ${response.status}` };
+        }
+        
+        const data = await response.json();
+        return { result: data };
+        
+    } catch (error) {
+        return { error: error.message };
+    }
+}
+</code></pre>
+<h3 id="file-operations"><a class="header" href="#file-operations">File Operations</a></h3>
+<pre><code class="language-javascript">async function process(inputs, context) {
+    try {
+        // Read file (requires --allow-read permission)
+        const content = await Deno.readTextFile(inputs.filename);
+        
+        // Process content
+        const lines = content.split('\n').length;
+        
+        return {
+            content: content,
+            lineCount: lines
+        };
+        
+    } catch (error) {
+        return { error: `File error: ${error.message}` };
+    }
+}
+</code></pre>
+<h2 id="npm-package-support"><a class="header" href="#npm-package-support">NPM Package Support</a></h2>
+<h3 id="using-external-packages"><a class="header" href="#using-external-packages">Using External Packages</a></h3>
+<pre><code class="language-javascript">// Import from NPM
+import { format } from "https://deno.land/x/date_fns/index.js";
+import _ from "https://cdn.skypack.dev/lodash";
+
+function process(inputs, context) {
+    const now = new Date();
+    const formatted = format(now, 'yyyy-MM-dd HH:mm:ss');
+    
+    const processed = _.map(inputs.data, item =&gt; ({
+        ...item,
+        timestamp: formatted
+    }));
+    
+    return { result: processed };
+}
+</code></pre>
+<h3 id="package-configuration"><a class="header" href="#package-configuration">Package Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = ScriptConfig {
+    environment: ScriptEnvironment::SYSTEM,
+    runtime: ScriptRuntime::JavaScript,
+    source: script_source,
+    entry_point: "process".to_string(),
+    packages: Some(vec![
+        "https://deno.land/x/date_fns@v2.29.3/index.js".to_string(),
+        "https://cdn.skypack.dev/lodash@4.17.21".to_string(),
+    ]),
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="error-patterns"><a class="header" href="#error-patterns">Error Patterns</a></h3>
+<pre><code class="language-javascript">function process(inputs, context) {
+    try {
+        // Validate inputs
+        if (!inputs.data) {
+            return { error: "Missing required 'data' input" };
+        }
+        
+        if (typeof inputs.data !== 'string') {
+            return { 
+                error: "Invalid input type",
+                expected: "string",
+                received: typeof inputs.data
+            };
+        }
+        
+        // Process data
+        const result = inputs.data.toLowerCase();
+        
+        if (result.length === 0) {
+            return { 
+                error: "Empty result",
+                warning: "Input data was empty after processing"
+            };
+        }
+        
+        return { result: result };
+        
+    } catch (error) {
+        // Log error for debugging
+        context.log('error', `Processing failed: ${error.message}`);
+        
+        return {
+            error: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+</code></pre>
+<h2 id="security-and-permissions"><a class="header" href="#security-and-permissions">Security and Permissions</a></h2>
+<h3 id="permission-configuration"><a class="header" href="#permission-configuration">Permission Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_script::PermissionConfig;
+
+let config = ScriptConfig {
+    // ... other fields
+    permissions: Some(PermissionConfig {
+        allow_net: vec!["https://api.example.com".to_string()],
+        allow_read: vec!["/tmp/data".to_string()],
+        allow_write: vec!["/tmp/output".to_string()],
+        allow_run: false,
+        allow_env: false,
+    }),
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="safe-practices"><a class="header" href="#safe-practices">Safe Practices</a></h3>
+<pre><code class="language-javascript">function process(inputs, context) {
+    // Validate and sanitize inputs
+    const sanitized = sanitizeInput(inputs.userInput);
+    
+    // Use try-catch for external operations
+    try {
+        return processData(sanitized);
+    } catch (error) {
+        // Don't expose internal details
+        return { error: "Processing failed" };
+    }
+}
+
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return '';
+    
+    // Remove potentially dangerous characters
+    return input
+        .replace(/[&lt;&gt;]/g, '')
+        .trim()
+        .substring(0, 1000); // Limit length
+}
+</code></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="efficient-processing"><a class="header" href="#efficient-processing">Efficient Processing</a></h3>
+<pre><code class="language-javascript">// Use streaming for large data
+async function process(inputs, context) {
+    const results = [];
+    
+    // Process in chunks to avoid memory issues
+    const chunkSize = 100;
+    const data = inputs.data || [];
+    
+    for (let i = 0; i &lt; data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        const processed = await processChunk(chunk);
+        results.push(...processed);
+        
+        // Allow other actors to run
+        if (i % 1000 === 0) {
+            await new Promise(resolve =&gt; setTimeout(resolve, 0));
+        }
+    }
+    
+    return { results: results };
+}
+
+async function processChunk(chunk) {
+    return chunk.map(item =&gt; ({
+        ...item,
+        processed: true,
+        timestamp: Date.now()
+    }));
+}
+</code></pre>
+<h3 id="caching"><a class="header" href="#caching">Caching</a></h3>
+<pre><code class="language-javascript">// Simple in-memory cache
+const cache = new Map();
+
+function process(inputs, context) {
+    const key = inputs.cacheKey;
+    
+    // Check cache first
+    if (cache.has(key)) {
+        context.log('info', `Cache hit for key: ${key}`);
+        return { result: cache.get(key), fromCache: true };
+    }
+    
+    // Expensive computation
+    const result = expensiveOperation(inputs.data);
+    
+    // Store in cache with TTL
+    cache.set(key, result);
+    setTimeout(() =&gt; cache.delete(key), 60000); // 1 minute TTL
+    
+    return { result: result, fromCache: false };
+}
+</code></pre>
+<h2 id="testing-javascript-actors"><a class="header" href="#testing-javascript-actors">Testing JavaScript Actors</a></h2>
+<h3 id="unit-testing"><a class="header" href="#unit-testing">Unit Testing</a></h3>
+<pre><code class="language-javascript">// test_actor.js
+import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+
+// Import your actor function
+import { process } from "./my_actor.js";
+
+Deno.test("actor processes string input", () =&gt; {
+    const inputs = { data: "hello world" };
+    const context = { 
+        log: () =&gt; {},
+        getState: () =&gt; ({}),
+        setState: () =&gt; {}
+    };
+    
+    const result = process(inputs, context);
+    
+    assertEquals(result.result, "HELLO WORLD");
+    assertEquals(result.length, 11);
+});
+
+Deno.test("actor handles missing input", () =&gt; {
+    const inputs = {};
+    const context = { log: () =&gt; {} };
+    
+    const result = process(inputs, context);
+    
+    assertEquals(result.error, "Expected string input");
+});
+</code></pre>
+<h3 id="integration-testing"><a class="header" href="#integration-testing">Integration Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn test_javascript_actor_integration() {
+    let script = include_str!("test_script.js");
+    let config = ScriptConfig {
+        environment: ScriptEnvironment::SYSTEM,
+        runtime: ScriptRuntime::JavaScript,
+        source: script.as_bytes().to_vec(),
+        entry_point: "process".to_string(),
+        packages: None,
+    };
+    
+    let actor = ScriptActor::new(config);
+    
+    // Test actor behavior
+    let inputs = HashMap::from([
+        ("data".to_string(), Message::String("test".to_string()))
+    ]);
+    
+    let result = test_actor_behavior(actor, inputs).await;
+    assert!(result.is_ok());
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h3 id="data-transformation"><a class="header" href="#data-transformation">Data Transformation</a></h3>
+<pre><code class="language-javascript">// Transform JSON data
+function process(inputs, context) {
+    const data = inputs.json_data;
+    
+    if (!Array.isArray(data)) {
+        return { error: "Expected array input" };
+    }
+    
+    const transformed = data.map(item =&gt; ({
+        id: item.id,
+        name: item.name?.toUpperCase(),
+        email: item.email?.toLowerCase(),
+        createdAt: new Date(item.created_at).toISOString(),
+        tags: item.tags?.map(tag =&gt; tag.toLowerCase()) || []
+    }));
+    
+    return {
+        data: transformed,
+        count: transformed.length,
+        processedAt: new Date().toISOString()
+    };
+}
+</code></pre>
+<h3 id="api-integration"><a class="header" href="#api-integration">API Integration</a></h3>
+<pre><code class="language-javascript">async function process(inputs, context) {
+    const { endpoint, payload, authToken } = inputs;
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        
+        return {
+            status: response.status,
+            data: result,
+            success: response.ok
+        };
+        
+    } catch (error) {
+        return {
+            error: error.message,
+            success: false
+        };
+    }
+}
+</code></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="code-organization"><a class="header" href="#code-organization">Code Organization</a></h3>
+<pre><code class="language-javascript">// Separate concerns into functions
+function process(inputs, context) {
+    try {
+        const validated = validateInputs(inputs);
+        const processed = processData(validated);
+        const formatted = formatOutput(processed);
+        
+        return { result: formatted };
+    } catch (error) {
+        return handleError(error, context);
+    }
+}
+
+function validateInputs(inputs) {
+    if (!inputs.data) throw new Error("Missing data");
+    return inputs;
+}
+
+function processData(inputs) {
+    // Main processing logic
+    return inputs.data.map(transform);
+}
+
+function formatOutput(data) {
+    return {
+        items: data,
+        timestamp: new Date().toISOString()
+    };
+}
+
+function handleError(error, context) {
+    context.log('error', error.message);
+    return { error: "Processing failed" };
+}
+</code></pre>
+<h3 id="resource-management"><a class="header" href="#resource-management">Resource Management</a></h3>
+<pre><code class="language-javascript">// Clean up resources
+function process(inputs, context) {
+    const resources = [];
+    
+    try {
+        // Acquire resources
+        const db = openDatabase(inputs.connectionString);
+        resources.push(db);
+        
+        const file = openFile(inputs.filename);
+        resources.push(file);
+        
+        // Use resources
+        const result = processWithResources(db, file);
+        
+        return { result: result };
+        
+    } finally {
+        // Always clean up
+        resources.forEach(resource =&gt; {
+            try {
+                resource.close();
+            } catch (e) {
+                // Log but don't throw
+                console.error("Cleanup error:", e);
+            }
+        });
+    }
+}
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="../python/python-engine.html">Python Runtime</a> - Python scripting support</li>
+<li><a href="../wasm/wasm-plugins.html">WebAssembly Runtime</a> - WASM plugin system</li>
+<li><a href="./script-configuration.html">Script Configuration</a> - Advanced configuration</li>
+<li><a href="../../api/actors/creating-actors.html">Creating Actors</a> - Actor development guide</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../components/standard-library.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../tutorials/building-visual-editor.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../components/standard-library.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../tutorials/building-visual-editor.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

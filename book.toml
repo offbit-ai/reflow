@@ -1,0 +1,14 @@
+[book]
+authors = ["Reflow Team"]
+language = "en"
+multilingual = false
+src = "docs"
+title = "Reflow Documentation"
+description = "Comprehensive documentation for the Reflow workflow automation platform"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+
+[output.html.search]
+enable = true

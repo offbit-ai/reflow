@@ -1,0 +1,1052 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Performance Optimization - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="performance-optimization-guide"><a class="header" href="#performance-optimization-guide">Performance Optimization Guide</a></h1>
+<p>Advanced techniques for optimizing Reflow workflows and applications.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>This guide covers comprehensive performance optimization strategies for Reflow applications, from basic configuration tweaks to advanced architectural patterns.</p>
+<h2 id="performance-analysis"><a class="header" href="#performance-analysis">Performance Analysis</a></h2>
+<h3 id="1-profiling-your-application"><a class="header" href="#1-profiling-your-application">1. Profiling Your Application</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::profiling::{ProfileConfig, Profiler, PerformanceMetrics};
+use std::time::Instant;
+
+// Enable comprehensive profiling
+let profile_config = ProfileConfig {
+    enable_memory_tracking: true,
+    enable_cpu_profiling: true,
+    enable_network_monitoring: true,
+    sample_rate: 1000, // Sample every 1000 operations
+    output_format: OutputFormat::Json,
+};
+
+let profiler = Profiler::new(profile_config);
+profiler.start();
+
+// Run your workflow
+let start = Instant::now();
+network.execute().await?;
+let duration = start.elapsed();
+
+// Collect profiling data
+let metrics = profiler.stop_and_collect();
+println!("Execution time: {:?}", duration);
+println!("Memory peak: {:.2} MB", metrics.peak_memory_mb);
+println!("CPU utilization: {:.1}%", metrics.avg_cpu_percent);
+
+// Save detailed report
+metrics.save_report("performance_report.json")?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-benchmarking-workflows"><a class="header" href="#2-benchmarking-workflows">2. Benchmarking Workflows</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+
+fn benchmark_workflow_variants(c: &amp;mut Criterion) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    
+    let mut group = c.benchmark_group("workflow_comparison");
+    
+    // Test different configurations
+    for batch_size in [10, 50, 100, 500].iter() {
+        group.bench_with_input(
+            BenchmarkId::new("batched_workflow", batch_size),
+            batch_size,
+            |b, &amp;batch_size| {
+                b.iter(|| {
+                    rt.block_on(async {
+                        let network = create_batched_workflow(batch_size).await;
+                        black_box(network.execute().await)
+                    })
+                })
+            },
+        );
+    }
+    
+    group.finish();
+}
+
+criterion_group!(benches, benchmark_workflow_variants);
+criterion_main!(benches);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="memory-optimization"><a class="header" href="#memory-optimization">Memory Optimization</a></h2>
+<h3 id="1-memory-pool-configuration"><a class="header" href="#1-memory-pool-configuration">1. Memory Pool Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{MemoryPool, PoolConfig};
+
+// Configure memory pools for different object types
+let pool_config = PoolConfig {
+    message_pool_size: 10000,
+    node_pool_size: 1000, 
+    connection_pool_size: 5000,
+    enable_auto_scaling: true,
+    max_pool_size: 50000,
+    cleanup_threshold: 0.8,
+};
+
+let memory_pool = MemoryPool::new(pool_config);
+
+// Use pooled objects
+let network = Network::with_memory_pool(memory_pool);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-message-optimization"><a class="header" href="#2-message-optimization">2. Message Optimization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{Message, MessageBuilder, CompactMessage};
+
+// Use compact message format for large data
+fn create_efficient_message(data: &amp;[u8]) -&gt; Message {
+    if data.len() &gt; 1024 {
+        // Use compressed format for large payloads
+        MessageBuilder::new()
+            .compress_payload(true)
+            .use_binary_format(true)
+            .build_from_bytes(data)
+    } else {
+        // Use standard format for small payloads
+        Message::Binary(data.to_vec())
+    }
+}
+
+// Implement message recycling
+struct MessageCache {
+    cache: Vec&lt;Message&gt;,
+    max_size: usize,
+}
+
+impl MessageCache {
+    fn get_or_create(&amp;mut self) -&gt; Message {
+        self.cache.pop().unwrap_or_else(|| Message::Null)
+    }
+    
+    fn return_message(&amp;mut self, mut msg: Message) {
+        if self.cache.len() &lt; self.max_size {
+            // Reset message and return to cache
+            msg.clear();
+            self.cache.push(msg);
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-zero-copy-optimizations"><a class="header" href="#3-zero-copy-optimizations">3. Zero-Copy Optimizations</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::sync::Arc;
+use bytes::Bytes;
+
+// Use reference counting for large shared data
+#[derive(Clone)]
+struct SharedData {
+    inner: Arc&lt;Bytes&gt;,
+}
+
+impl SharedData {
+    fn new(data: Vec&lt;u8&gt;) -&gt; Self {
+        Self {
+            inner: Arc::new(Bytes::from(data))
+        }
+    }
+    
+    fn as_slice(&amp;self) -&gt; &amp;[u8] {
+        &amp;self.inner
+    }
+}
+
+// Actor implementation with zero-copy semantics
+impl Actor for OptimizedProcessor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        let mut outputs = HashMap::new();
+        
+        if let Some(Message::Binary(data)) = inputs.get("input") {
+            // Process without copying the data
+            let shared_data = SharedData::new(data.clone());
+            
+            // Pass reference to multiple outputs
+            outputs.insert("output1".to_string(), 
+                          Message::Custom(Box::new(shared_data.clone())));
+            outputs.insert("output2".to_string(), 
+                          Message::Custom(Box::new(shared_data)));
+        }
+        
+        Ok(outputs)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="cpu-optimization"><a class="header" href="#cpu-optimization">CPU Optimization</a></h2>
+<h3 id="1-parallel-processing"><a class="header" href="#1-parallel-processing">1. Parallel Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use rayon::prelude::*;
+use tokio::task;
+
+// Parallel data processing
+impl Actor for ParallelProcessor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        if let Some(Message::Array(items)) = inputs.get("input") {
+            // Process items in parallel
+            let results: Vec&lt;Message&gt; = items
+                .par_iter()
+                .map(|item| self.process_item(item))
+                .collect();
+            
+            let mut outputs = HashMap::new();
+            outputs.insert("output".to_string(), Message::Array(results));
+            Ok(outputs)
+        } else {
+            Err(ActorError::InvalidInput)
+        }
+    }
+}
+
+// Async parallel processing
+async fn process_batch_async(items: Vec&lt;Message&gt;) -&gt; Result&lt;Vec&lt;Message&gt;, ActorError&gt; {
+    let tasks: Vec&lt;_&gt; = items.into_iter()
+        .map(|item| task::spawn(async move { process_item_async(item).await }))
+        .collect();
+    
+    let mut results = Vec::new();
+    for task in tasks {
+        results.push(task.await??);
+    }
+    
+    Ok(results)
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-cpu-affinity-and-thread-management"><a class="header" href="#2-cpu-affinity-and-thread-management">2. CPU Affinity and Thread Management</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{ThreadConfig, CpuAffinity};
+
+// Configure thread affinity for specific actors
+let thread_config = ThreadConfig {
+    worker_threads: num_cpus::get(),
+    enable_work_stealing: true,
+    cpu_affinity: CpuAffinity::Balanced,
+    thread_priority: ThreadPriority::High,
+};
+
+// Pin specific actors to dedicated threads
+let high_priority_executor = ThreadPoolBuilder::new()
+    .num_threads(2)
+    .thread_name(|i| format!("high-priority-{}", i))
+    .build()?;
+
+network.set_actor_executor("critical_processor", high_priority_executor);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-simd-optimizations"><a class="header" href="#3-simd-optimizations">3. SIMD Optimizations</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::simd::{f32x8, SimdFloat};
+
+// SIMD-optimized data processing
+fn process_array_simd(data: &amp;mut [f32]) {
+    let chunks = data.chunks_exact_mut(8);
+    let remainder = chunks.remainder();
+    
+    for chunk in chunks {
+        let vec = f32x8::from_slice(chunk);
+        let processed = vec * f32x8::splat(2.0) + f32x8::splat(1.0);
+        processed.copy_to_slice(chunk);
+    }
+    
+    // Handle remainder
+    for item in remainder {
+        *item = *item * 2.0 + 1.0;
+    }
+}
+
+impl Actor for SIMDProcessor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        if let Some(Message::Array(items)) = inputs.get("input") {
+            let mut float_data: Vec&lt;f32&gt; = items.iter()
+                .filter_map(|item| {
+                    if let Message::Float(f) = item {
+                        Some(*f as f32)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            
+            process_array_simd(&amp;mut float_data);
+            
+            let results: Vec&lt;Message&gt; = float_data.into_iter()
+                .map(|f| Message::Float(f as f64))
+                .collect();
+            
+            let mut outputs = HashMap::new();
+            outputs.insert("output".to_string(), Message::Array(results));
+            Ok(outputs)
+        } else {
+            Err(ActorError::InvalidInput)
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="network-optimization"><a class="header" href="#network-optimization">Network Optimization</a></h2>
+<h3 id="1-connection-pooling"><a class="header" href="#1-connection-pooling">1. Connection Pooling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{ConnectionPool, PooledConnection};
+
+// HTTP client with connection pooling
+struct OptimizedHttpClient {
+    pool: ConnectionPool,
+    config: HttpConfig,
+}
+
+impl OptimizedHttpClient {
+    fn new() -&gt; Self {
+        let pool = ConnectionPool::builder()
+            .max_connections(100)
+            .idle_timeout(Duration::from_secs(30))
+            .connection_timeout(Duration::from_secs(5))
+            .keepalive(true)
+            .build();
+            
+        Self {
+            pool,
+            config: HttpConfig::default(),
+        }
+    }
+    
+    async fn request(&amp;self, url: &amp;str) -&gt; Result&lt;Response, HttpError&gt; {
+        let connection = self.pool.get_connection(url).await?;
+        let response = connection.request(url).await?;
+        
+        // Connection is automatically returned to pool
+        Ok(response)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-batch-network-operations"><a class="header" href="#2-batch-network-operations">2. Batch Network Operations</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::integration::BatchHttpActor;
+
+// Batch multiple HTTP requests
+let batch_http = BatchHttpActor::new()
+    .batch_size(10)
+    .batch_timeout(Duration::from_millis(100))
+    .max_concurrent_batches(5)
+    .retry_config(RetryConfig {
+        max_attempts: 3,
+        backoff: BackoffStrategy::Exponential,
+        ..Default::default()
+    });
+
+// Configure request batching
+impl Actor for BatchHttpActor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        if let Some(Message::Array(urls)) = inputs.get("urls") {
+            // Batch requests automatically
+            let batched_requests = self.create_batches(urls);
+            let futures: Vec&lt;_&gt; = batched_requests.into_iter()
+                .map(|batch| self.execute_batch(batch))
+                .collect();
+            
+            // Execute batches concurrently
+            let results = futures::future::join_all(futures).await;
+            
+            let mut outputs = HashMap::new();
+            outputs.insert("responses".to_string(), Message::Array(results));
+            Ok(outputs)
+        } else {
+            Err(ActorError::InvalidInput)
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-websocket-optimization"><a class="header" href="#3-websocket-optimization">3. WebSocket Optimization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tokio_tungstenite::{WebSocketStream, MaybeTlsStream};
+
+// Optimized WebSocket handling
+struct OptimizedWebSocket {
+    stream: WebSocketStream&lt;MaybeTlsStream&lt;TcpStream&gt;&gt;,
+    send_buffer: VecDeque&lt;Message&gt;,
+    batch_size: usize,
+}
+
+impl OptimizedWebSocket {
+    async fn send_batched(&amp;mut self) -&gt; Result&lt;(), WebSocketError&gt; {
+        if self.send_buffer.len() &gt;= self.batch_size {
+            let batch: Vec&lt;_&gt; = self.send_buffer.drain(..).collect();
+            let combined_message = self.combine_messages(batch);
+            self.stream.send(combined_message).await?;
+        }
+        Ok(())
+    }
+    
+    fn combine_messages(&amp;self, messages: Vec&lt;Message&gt;) -&gt; tungstenite::Message {
+        // Combine multiple messages into a single frame
+        let combined_data = messages.into_iter()
+            .map(|msg| msg.to_bytes())
+            .collect::&lt;Vec&lt;_&gt;&gt;()
+            .concat();
+        
+        tungstenite::Message::Binary(combined_data)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="io-optimization"><a class="header" href="#io-optimization">I/O Optimization</a></h2>
+<h3 id="1-async-io-best-practices"><a class="header" href="#1-async-io-best-practices">1. Async I/O Best Practices</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tokio::fs::File;
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
+
+// Efficient file processing
+async fn process_large_file(path: &amp;str) -&gt; Result&lt;(), std::io::Error&gt; {
+    let file = File::open(path).await?;
+    let mut reader = BufReader::with_capacity(64 * 1024, file); // 64KB buffer
+    
+    let output_file = File::create("output.txt").await?;
+    let mut writer = BufWriter::with_capacity(64 * 1024, output_file);
+    
+    let mut buffer = vec![0; 8192]; // 8KB read buffer
+    
+    loop {
+        let bytes_read = reader.read(&amp;mut buffer).await?;
+        if bytes_read == 0 {
+            break;
+        }
+        
+        // Process data in chunks
+        let processed = process_chunk(&amp;buffer[..bytes_read]).await;
+        writer.write_all(&amp;processed).await?;
+    }
+    
+    writer.flush().await?;
+    Ok(())
+}
+
+// Parallel file processing
+async fn process_files_parallel(file_paths: Vec&lt;String&gt;) -&gt; Result&lt;(), std::io::Error&gt; {
+    let semaphore = Arc::new(Semaphore::new(10)); // Limit concurrent file operations
+    
+    let tasks: Vec&lt;_&gt; = file_paths.into_iter()
+        .map(|path| {
+            let sem = semaphore.clone();
+            tokio::spawn(async move {
+                let _permit = sem.acquire().await.unwrap();
+                process_large_file(&amp;path).await
+            })
+        })
+        .collect();
+    
+    futures::future::try_join_all(tasks).await?;
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-database-optimization"><a class="header" href="#2-database-optimization">2. Database Optimization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sqlx::{Pool, Postgres, Row};
+
+// Optimized database operations
+struct OptimizedDbActor {
+    pool: Pool&lt;Postgres&gt;,
+    prepared_statements: HashMap&lt;String, String&gt;,
+}
+
+impl OptimizedDbActor {
+    async fn new(database_url: &amp;str) -&gt; Result&lt;Self, sqlx::Error&gt; {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(20)
+            .min_connections(5)
+            .acquire_timeout(Duration::from_secs(3))
+            .idle_timeout(Duration::from_secs(600))
+            .max_lifetime(Duration::from_secs(1800))
+            .connect(database_url)
+            .await?;
+        
+        Ok(Self {
+            pool,
+            prepared_statements: HashMap::new(),
+        })
+    }
+    
+    async fn batch_insert(&amp;self, records: Vec&lt;Record&gt;) -&gt; Result&lt;(), sqlx::Error&gt; {
+        let mut tx = self.pool.begin().await?;
+        
+        for chunk in records.chunks(1000) { // Process in batches of 1000
+            let query = self.build_batch_insert_query(chunk);
+            sqlx::query(&amp;query).execute(&amp;mut *tx).await?;
+        }
+        
+        tx.commit().await?;
+        Ok(())
+    }
+    
+    async fn execute_prepared(&amp;self, statement_name: &amp;str, params: &amp;[&amp;dyn sqlx::Encode&lt;'_, Postgres&gt;]) -&gt; Result&lt;Vec&lt;Row&gt;, sqlx::Error&gt; {
+        if let Some(sql) = self.prepared_statements.get(statement_name) {
+            let mut query = sqlx::query(sql);
+            for param in params {
+                query = query.bind(param);
+            }
+            query.fetch_all(&amp;self.pool).await
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="workflow-specific-optimizations"><a class="header" href="#workflow-specific-optimizations">Workflow-Specific Optimizations</a></h2>
+<h3 id="1-pipeline-optimization"><a class="header" href="#1-pipeline-optimization">1. Pipeline Optimization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Optimized pipeline with backpressure
+use tokio::sync::mpsc;
+
+struct OptimizedPipeline {
+    stages: Vec&lt;Box&lt;dyn Actor&gt;&gt;,
+    buffer_sizes: Vec&lt;usize&gt;,
+    channels: Vec&lt;mpsc::Sender&lt;Message&gt;&gt;,
+}
+
+impl OptimizedPipeline {
+    fn new() -&gt; Self {
+        Self {
+            stages: Vec::new(),
+            buffer_sizes: Vec::new(),
+            channels: Vec::new(),
+        }
+    }
+    
+    fn add_stage(&amp;mut self, actor: Box&lt;dyn Actor&gt;, buffer_size: usize) {
+        self.stages.push(actor);
+        self.buffer_sizes.push(buffer_size);
+        
+        let (tx, rx) = mpsc::channel(buffer_size);
+        self.channels.push(tx);
+    }
+    
+    async fn execute_with_backpressure(&amp;mut self, input: Message) -&gt; Result&lt;Message, ActorError&gt; {
+        let mut current_message = input;
+        
+        for (i, stage) in self.stages.iter_mut().enumerate() {
+            // Apply backpressure using channel capacity
+            if let Some(tx) = self.channels.get(i) {
+                tx.send(current_message.clone()).await
+                    .map_err(|_| ActorError::ChannelClosed)?;
+            }
+            
+            let inputs = HashMap::from([("input".to_string(), current_message)]);
+            let outputs = stage.process(inputs)?;
+            
+            current_message = outputs.get("output")
+                .ok_or(ActorError::MissingOutput)?
+                .clone();
+        }
+        
+        Ok(current_message)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-dynamic-load-balancing"><a class="header" href="#2-dynamic-load-balancing">2. Dynamic Load Balancing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::sync::atomic::{AtomicUsize, Ordering};
+
+struct LoadBalancer {
+    workers: Vec&lt;Box&lt;dyn Actor&gt;&gt;,
+    load_counters: Vec&lt;AtomicUsize&gt;,
+    strategy: LoadBalanceStrategy,
+}
+
+impl LoadBalancer {
+    fn select_worker(&amp;self) -&gt; usize {
+        match self.strategy {
+            LoadBalanceStrategy::RoundRobin =&gt; {
+                static COUNTER: AtomicUsize = AtomicUsize::new(0);
+                COUNTER.fetch_add(1, Ordering::Relaxed) % self.workers.len()
+            }
+            LoadBalanceStrategy::LeastLoaded =&gt; {
+                self.load_counters
+                    .iter()
+                    .enumerate()
+                    .min_by_key(|(_, counter)| counter.load(Ordering::Relaxed))
+                    .map(|(index, _)| index)
+                    .unwrap_or(0)
+            }
+            LoadBalanceStrategy::WeightedRoundRobin =&gt; {
+                // Implement weighted selection based on worker capacity
+                self.select_weighted_worker()
+            }
+        }
+    }
+    
+    fn update_load_metrics(&amp;self, worker_index: usize, processing_time: Duration) {
+        // Update load metrics for adaptive load balancing
+        let load_score = self.calculate_load_score(processing_time);
+        self.load_counters[worker_index].store(load_score, Ordering::Relaxed);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="monitoring-and-optimization"><a class="header" href="#monitoring-and-optimization">Monitoring and Optimization</a></h2>
+<h3 id="1-real-time-metrics"><a class="header" href="#1-real-time-metrics">1. Real-time Metrics</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use prometheus::{Counter, Histogram, Gauge, register_counter, register_histogram, register_gauge};
+
+struct PerformanceMonitor {
+    message_counter: Counter,
+    processing_time: Histogram,
+    memory_usage: Gauge,
+    active_connections: Gauge,
+}
+
+impl PerformanceMonitor {
+    fn new() -&gt; Self {
+        Self {
+            message_counter: register_counter!("reflow_messages_total", "Total messages processed").unwrap(),
+            processing_time: register_histogram!("reflow_processing_duration_seconds", "Processing time in seconds").unwrap(),
+            memory_usage: register_gauge!("reflow_memory_usage_bytes", "Memory usage in bytes").unwrap(),
+            active_connections: register_gauge!("reflow_active_connections", "Number of active connections").unwrap(),
+        }
+    }
+    
+    fn record_message_processed(&amp;self, processing_time: Duration) {
+        self.message_counter.inc();
+        self.processing_time.observe(processing_time.as_secs_f64());
+    }
+    
+    fn update_memory_usage(&amp;self, bytes: u64) {
+        self.memory_usage.set(bytes as f64);
+    }
+    
+    async fn collect_system_metrics(&amp;self) {
+        if let Some(usage) = memory_stats::memory_stats() {
+            self.update_memory_usage(usage.physical_mem as u64);
+        }
+        
+        // Collect other system metrics
+        let cpu_usage = get_cpu_usage().await;
+        // ... record other metrics
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-adaptive-optimization"><a class="header" href="#2-adaptive-optimization">2. Adaptive Optimization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct AdaptiveOptimizer {
+    performance_history: VecDeque&lt;PerformanceSnapshot&gt;,
+    optimization_strategies: Vec&lt;Box&lt;dyn OptimizationStrategy&gt;&gt;,
+    current_config: OptimizationConfig,
+}
+
+impl AdaptiveOptimizer {
+    async fn optimize_based_on_metrics(&amp;mut self, current_metrics: &amp;PerformanceMetrics) {
+        let snapshot = PerformanceSnapshot {
+            timestamp: std::time::Instant::now(),
+            metrics: current_metrics.clone(),
+            config: self.current_config.clone(),
+        };
+        
+        self.performance_history.push_back(snapshot);
+        if self.performance_history.len() &gt; 100 {
+            self.performance_history.pop_front();
+        }
+        
+        // Analyze trends and apply optimizations
+        if let Some(optimization) = self.analyze_and_suggest_optimization() {
+            self.apply_optimization(optimization).await;
+        }
+    }
+    
+    fn analyze_and_suggest_optimization(&amp;self) -&gt; Option&lt;OptimizationAction&gt; {
+        // Machine learning-based optimization suggestions
+        let trend_analyzer = TrendAnalyzer::new(&amp;self.performance_history);
+        
+        if trend_analyzer.detect_memory_pressure() {
+            Some(OptimizationAction::ReduceMemoryUsage)
+        } else if trend_analyzer.detect_cpu_bottleneck() {
+            Some(OptimizationAction::IncreaseParallelism)
+        } else if trend_analyzer.detect_io_bottleneck() {
+            Some(OptimizationAction::OptimizeIo)
+        } else {
+            None
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="platform-specific-optimizations"><a class="header" href="#platform-specific-optimizations">Platform-Specific Optimizations</a></h2>
+<h3 id="1-linux-specific-optimizations"><a class="header" href="#1-linux-specific-optimizations">1. Linux-Specific Optimizations</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(target_os = "linux")]
+mod linux_optimizations {
+    use libc::{sched_setaffinity, cpu_set_t, CPU_SET, CPU_ZERO};
+    
+    pub fn set_cpu_affinity(thread_id: u32, cpu_cores: &amp;[usize]) -&gt; Result&lt;(), std::io::Error&gt; {
+        unsafe {
+            let mut cpuset: cpu_set_t = std::mem::zeroed();
+            CPU_ZERO(&amp;mut cpuset);
+            
+            for &amp;core in cpu_cores {
+                CPU_SET(core, &amp;mut cpuset);
+            }
+            
+            let result = sched_setaffinity(
+                thread_id, 
+                std::mem::size_of::&lt;cpu_set_t&gt;(), 
+                &amp;cpuset
+            );
+            
+            if result == 0 {
+                Ok(())
+            } else {
+                Err(std::io::Error::last_os_error())
+            }
+        }
+    }
+    
+    pub fn configure_memory_policy() {
+        // Configure NUMA memory policy for optimal performance
+        use libc::{mbind, MPOL_BIND};
+        // Implementation details...
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-macos-specific-optimizations"><a class="header" href="#2-macos-specific-optimizations">2. macOS-Specific Optimizations</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(target_os = "macos")]
+mod macos_optimizations {
+    use std::ffi::CString;
+    use libc::{pthread_t, pthread_self, thread_policy_set, THREAD_PRECEDENCE_POLICY};
+    
+    pub fn set_thread_priority(priority: i32) -&gt; Result&lt;(), std::io::Error&gt; {
+        unsafe {
+            let thread = pthread_self();
+            let policy = THREAD_PRECEDENCE_POLICY;
+            
+            let result = thread_policy_set(
+                thread as *mut _,
+                policy,
+                &amp;priority as *const _ as *const _,
+                1
+            );
+            
+            if result == 0 {
+                Ok(())
+            } else {
+                Err(std::io::Error::last_os_error())
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices-summary"><a class="header" href="#best-practices-summary">Best Practices Summary</a></h2>
+<h3 id="1-general-optimization-principles"><a class="header" href="#1-general-optimization-principles">1. General Optimization Principles</a></h3>
+<ul>
+<li><strong>Measure First</strong>: Always profile before optimizing</li>
+<li><strong>Optimize Bottlenecks</strong>: Focus on the slowest components</li>
+<li><strong>Cache Wisely</strong>: Cache expensive computations, not cheap ones</li>
+<li><strong>Batch Operations</strong>: Group similar operations together</li>
+<li><strong>Use Appropriate Data Structures</strong>: Choose the right tool for the job</li>
+</ul>
+<h3 id="2-memory-management"><a class="header" href="#2-memory-management">2. Memory Management</a></h3>
+<ul>
+<li><strong>Pool Resources</strong>: Use object pools for frequently allocated items</li>
+<li><strong>Minimize Allocations</strong>: Reuse buffers and data structures</li>
+<li><strong>Compress Large Data</strong>: Use compression for large payloads</li>
+<li><strong>Monitor Memory Usage</strong>: Track allocation patterns</li>
+</ul>
+<h3 id="3-concurrency-and-parallelism"><a class="header" href="#3-concurrency-and-parallelism">3. Concurrency and Parallelism</a></h3>
+<ul>
+<li><strong>Match Threading to Workload</strong>: CPU-bound vs I/O-bound considerations</li>
+<li><strong>Avoid Lock Contention</strong>: Use lock-free data structures when possible</li>
+<li><strong>Balance Load</strong>: Distribute work evenly across threads</li>
+<li><strong>Handle Backpressure</strong>: Prevent memory exhaustion in pipelines</li>
+</ul>
+<h3 id="4-network-and-io"><a class="header" href="#4-network-and-io">4. Network and I/O</a></h3>
+<ul>
+<li><strong>Connection Pooling</strong>: Reuse network connections</li>
+<li><strong>Batch Network Operations</strong>: Reduce round-trip overhead</li>
+<li><strong>Async I/O</strong>: Use non-blocking I/O operations</li>
+<li><strong>Buffer Sizing</strong>: Optimize buffer sizes for your workload</li>
+</ul>
+<h2 id="troubleshooting-performance-issues"><a class="header" href="#troubleshooting-performance-issues">Troubleshooting Performance Issues</a></h2>
+<h3 id="common-performance-problems"><a class="header" href="#common-performance-problems">Common Performance Problems</a></h3>
+<ol>
+<li><strong>Memory Leaks</strong>: Use memory profilers to identify leaks</li>
+<li><strong>CPU Hotspots</strong>: Profile CPU usage to find bottlenecks</li>
+<li><strong>Lock Contention</strong>: Monitor lock wait times</li>
+<li><strong>I/O Blocking</strong>: Identify blocking I/O operations</li>
+<li><strong>Network Latency</strong>: Measure network round-trip times</li>
+</ol>
+<h3 id="performance-testing"><a class="header" href="#performance-testing">Performance Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod performance_tests {
+    use super::*;
+    use criterion::{criterion_group, criterion_main, Criterion};
+    
+    fn benchmark_workflow_throughput(c: &amp;mut Criterion) {
+        c.bench_function("workflow_1000_messages", |b| {
+            b.iter(|| {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(async {
+                    let network = create_test_network().await;
+                    let messages = create_test_messages(1000);
+                    
+                    let start = std::time::Instant::now();
+                    for message in messages {
+                        network.process_message(message).await.unwrap();
+                    }
+                    start.elapsed()
+                })
+            })
+        });
+    }
+    
+    criterion_group!(benches, benchmark_workflow_throughput);
+    criterion_main!(benches);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="../architecture/overview.html">Architecture Overview</a> - Understanding Reflow's architecture</li>
+<li><a href="../api/graph/advanced.html">Advanced Features</a> - Advanced graph operations</li>
+<li><a href="../reference/troubleshooting-guide.html">Troubleshooting Guide</a> - Common issues and solutions</li>
+<li><a href="../deployment/native-deployment.html">Deployment Guide</a> - Production deployment strategies</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tutorials/reactflow-reflow-integration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../deployment/native-deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tutorials/reactflow-reflow-integration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../deployment/native-deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

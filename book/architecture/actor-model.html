@@ -1,0 +1,759 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Actor Model - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="actor-model"><a class="header" href="#actor-model">Actor Model</a></h1>
+<p>This document provides an in-depth look at how Reflow implements the Actor Model of computation.</p>
+<h2 id="introduction"><a class="header" href="#introduction">Introduction</a></h2>
+<p>The Actor Model is a mathematical model of concurrent computation that treats "actors" as the universal primitives of concurrent computation. In Reflow, actors are isolated computational units that communicate exclusively through message passing.</p>
+<h2 id="core-principles"><a class="header" href="#core-principles">Core Principles</a></h2>
+<h3 id="1-everything-is-an-actor"><a class="header" href="#1-everything-is-an-actor">1. Everything is an Actor</a></h3>
+<p>In Reflow's actor system:</p>
+<ul>
+<li>Data processing units are actors</li>
+<li>Message routers are actors</li>
+<li>Database connections are actors</li>
+<li>Network services are actors</li>
+</ul>
+<h3 id="2-actors-communicate-via-messages"><a class="header" href="#2-actors-communicate-via-messages">2. Actors Communicate via Messages</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Messages are immutable and serializable
+pub enum Message {
+    String(String),
+    Integer(i64),
+    Float(f64),
+    Boolean(bool),
+    Array(Vec&lt;Message&gt;),
+    Object(HashMap&lt;String, Message&gt;),
+    Binary(Vec&lt;u8&gt;),
+    Null,
+    Error(String),
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-actors-have-private-state"><a class="header" href="#3-actors-have-private-state">3. Actors Have Private State</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait ActorState: Send + Sync + 'static {
+    fn as_any(&amp;self) -&gt; &amp;dyn Any;
+    fn as_mut_any(&amp;mut self) -&gt; &amp;mut dyn Any;
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct MemoryState(pub HashMap&lt;String, Value&gt;);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-actors-process-messages-sequentially"><a class="header" href="#4-actors-process-messages-sequentially">4. Actors Process Messages Sequentially</a></h3>
+<p>Each actor processes one message at a time, ensuring thread safety without locks.</p>
+<h2 id="actor-implementation"><a class="header" href="#actor-implementation">Actor Implementation</a></h2>
+<h3 id="actor-trait"><a class="header" href="#actor-trait">Actor Trait</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait Actor: Send + Sync + 'static {
+    /// Defines how the actor processes messages
+    fn get_behavior(&amp;self) -&gt; ActorBehavior;
+    
+    /// Access to input ports
+    fn get_inports(&amp;self) -&gt; Port;
+    
+    /// Access to output ports
+    fn get_outports(&amp;self) -&gt; Port;
+    
+    /// Create the actor's execution process
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt;;
+    
+    /// Load counting for backpressure (optional)
+    fn load_count(&amp;self) -&gt; Arc&lt;Mutex&lt;ActorLoad&gt;&gt; {
+        Arc::new(Mutex::new(ActorLoad::new(0)))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="actor-behavior"><a class="header" href="#actor-behavior">Actor Behavior</a></h3>
+<p>The behavior function defines how an actor responds to messages:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub type ActorBehavior = Box&lt;
+    dyn Fn(ActorContext) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt;&gt; + Send + 'static&gt;&gt;
+        + Send + Sync + 'static,
+&gt;;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="actor-context"><a class="header" href="#actor-context">Actor Context</a></h3>
+<p>The context provides access to the actor's environment:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ActorContext {
+    pub payload: ActorPayload,
+    pub outports: Port,
+    pub state: Arc&lt;Mutex&lt;dyn ActorState&gt;&gt;,
+    pub config: HashMap&lt;String, Value&gt;,
+    load: Arc&lt;Mutex&lt;ActorLoad&gt;&gt;,
+}
+
+impl ActorContext {
+    pub fn get_state(&amp;self) -&gt; Arc&lt;Mutex&lt;dyn ActorState&gt;&gt;;
+    pub fn get_config(&amp;self) -&gt; &amp;HashMap&lt;String, Value&gt;;
+    pub fn get_payload(&amp;self) -&gt; &amp;ActorPayload;
+    pub fn get_outports(&amp;self) -&gt; Port;
+    pub fn done(&amp;self);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="actor-types"><a class="header" href="#actor-types">Actor Types</a></h2>
+<h3 id="1-native-actors"><a class="header" href="#1-native-actors">1. Native Actors</a></h3>
+<p>Written directly in Rust for maximum performance:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::{Actor, ActorBehavior, ActorContext, Port, MemoryState};
+use reflow_network::message::Message;
+use std::collections::HashMap;
+
+pub struct FilterActor {
+    threshold: f64,
+    inports: Port,
+    outports: Port,
+}
+
+impl FilterActor {
+    pub fn new(threshold: f64) -&gt; Self {
+        Self {
+            threshold,
+            inports: flume::unbounded(),
+            outports: flume::unbounded(),
+        }
+    }
+}
+
+impl Actor for FilterActor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior {
+        let threshold = self.threshold;
+        
+        Box::new(move |context: ActorContext| {
+            Box::pin(async move {
+                let payload = context.get_payload();
+                let mut results = HashMap::new();
+                
+                if let Some(Message::Float(value)) = payload.get("input") {
+                    if *value &gt; threshold {
+                        results.insert("output".to_string(), Message::Float(*value));
+                    }
+                }
+                
+                Ok(results)
+            })
+        })
+    }
+    
+    fn get_inports(&amp;self) -&gt; Port { self.inports.clone() }
+    fn get_outports(&amp;self) -&gt; Port { self.outports.clone() }
+    
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt; {
+        // Implementation details...
+        todo!()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-script-actors"><a class="header" href="#2-script-actors">2. Script Actors</a></h3>
+<p>Execute scripts in various languages:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_script::{ScriptActor, ScriptConfig, ScriptRuntime, ScriptEnvironment};
+
+// JavaScript Actor
+let js_config = ScriptConfig {
+    environment: ScriptEnvironment::SYSTEM,
+    runtime: ScriptRuntime::JavaScript,
+    source: include_bytes!("script.js").to_vec(),
+    entry_point: "process".to_string(),
+    packages: None,
+};
+
+let js_actor = ScriptActor::new(js_config);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-component-actors"><a class="header" href="#3-component-actors">3. Component Actors</a></h3>
+<p>Pre-built components from the library:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::flow_control::ConditionalActor;
+use reflow_components::data_operations::MapActor;
+
+let conditional = ConditionalActor::new(|msg| {
+    if let Message::Integer(n) = msg {
+        *n &gt; 0
+    } else {
+        false
+    }
+});
+
+let mapper = MapActor::new(|msg| {
+    if let Message::Integer(n) = msg {
+        Message::Integer(n * 2)
+    } else {
+        msg.clone()
+    }
+});
+<span class="boring">}</span></code></pre></pre>
+<h2 id="message-passing-semantics"><a class="header" href="#message-passing-semantics">Message Passing Semantics</a></h2>
+<h3 id="asynchronous-messaging"><a class="header" href="#asynchronous-messaging">Asynchronous Messaging</a></h3>
+<p>Messages are sent asynchronously without blocking:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Send message without waiting
+outport.send_async(message).await?;
+
+// Receive message when available
+let message = inport.recv_async().await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="message-ordering"><a class="header" href="#message-ordering">Message Ordering</a></h3>
+<ul>
+<li>Messages between the same pair of actors maintain order</li>
+<li>No global ordering guarantees across different actor pairs</li>
+<li>Use synchronization actors for coordination when needed</li>
+</ul>
+<h3 id="message-delivery"><a class="header" href="#message-delivery">Message Delivery</a></h3>
+<ul>
+<li><strong>At-most-once</strong>: Messages may be lost but never duplicated</li>
+<li><strong>Best-effort</strong>: System attempts delivery but doesn't guarantee it</li>
+<li><strong>Backpressure</strong>: Slow consumers cause senders to block</li>
+</ul>
+<h2 id="actor-lifecycle-management"><a class="header" href="#actor-lifecycle-management">Actor Lifecycle Management</a></h2>
+<h3 id="creation-and-initialization"><a class="header" href="#creation-and-initialization">Creation and Initialization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Create actor
+let actor = MyActor::new(config);
+
+// Initialize ports and state
+let inports = actor.get_inports();
+let outports = actor.get_outports();
+
+// Start actor process
+let process = actor.create_process();
+tokio::spawn(process);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="message-processing-loop"><a class="header" href="#message-processing-loop">Message Processing Loop</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt; {
+    let inports = self.get_inports();
+    let behavior = self.get_behavior();
+    let state = Arc::new(Mutex::new(MemoryState::default()));
+    let outports = self.get_outports();
+    
+    Box::pin(async move {
+        while let Ok(payload) = inports.1.recv_async().await {
+            let context = ActorContext::new(
+                payload,
+                outports.clone(),
+                state.clone(),
+                HashMap::new(),
+                Arc::new(Mutex::new(ActorLoad::new(0))),
+            );
+            
+            match behavior(context).await {
+                Ok(result) =&gt; {
+                    if !result.is_empty() {
+                        let _ = outports.0.send_async(result).await;
+                    }
+                },
+                Err(e) =&gt; {
+                    let error_msg = HashMap::from([
+                        ("error".to_string(), Message::Error(e.to_string()))
+                    ]);
+                    let _ = outports.0.send_async(error_msg).await;
+                }
+            }
+        }
+    })
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="termination"><a class="header" href="#termination">Termination</a></h3>
+<p>Actors terminate when:</p>
+<ul>
+<li>Input ports are closed (no more messages)</li>
+<li>Explicit shutdown signal</li>
+<li>Unrecoverable error occurs</li>
+</ul>
+<h2 id="state-management"><a class="header" href="#state-management">State Management</a></h2>
+<h3 id="actor-state-types"><a class="header" href="#actor-state-types">Actor State Types</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Simple memory state
+let state = MemoryState::default();
+
+// Custom state implementation
+struct CounterState {
+    count: AtomicU64,
+}
+
+impl ActorState for CounterState {
+    fn as_any(&amp;self) -&gt; &amp;dyn Any { self }
+    fn as_mut_any(&amp;mut self) -&gt; &amp;mut dyn Any { self }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="state-persistence"><a class="header" href="#state-persistence">State Persistence</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Access state in behavior
+fn get_behavior(&amp;self) -&gt; ActorBehavior {
+    Box::new(|context: ActorContext| {
+        Box::pin(async move {
+            let state = context.get_state();
+            let mut state_guard = state.lock();
+            
+            // Read/modify state
+            if let Some(memory_state) = state_guard.as_mut_any().downcast_mut::&lt;MemoryState&gt;() {
+                memory_state.insert("counter", serde_json::json!(42));
+            }
+            
+            Ok(HashMap::new())
+        })
+    })
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="actor-level-errors"><a class="header" href="#actor-level-errors">Actor-Level Errors</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Return error from behavior
+Err(anyhow::anyhow!("Processing failed: {}", reason))
+
+// Handle errors in message processing
+match behavior(context).await {
+    Ok(result) =&gt; send_result(result).await,
+    Err(e) =&gt; send_error(e).await,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="error-propagation"><a class="header" href="#error-propagation">Error Propagation</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Error message format
+let error_message = HashMap::from([
+    ("error".to_string(), Message::Error("Database connection failed".to_string())),
+    ("code".to_string(), Message::Integer(500)),
+    ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
+]);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="supervision-strategies"><a class="header" href="#supervision-strategies">Supervision Strategies</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Supervisor actor monitors children
+struct SupervisorActor {
+    children: Vec&lt;ActorRef&gt;,
+    restart_policy: RestartPolicy,
+}
+
+enum RestartPolicy {
+    OneForOne,    // Restart only failed actor
+    OneForAll,    // Restart all actors
+    RestForOne,   // Restart failed and subsequent actors
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="concurrency-and-parallelism"><a class="header" href="#concurrency-and-parallelism">Concurrency and Parallelism</a></h2>
+<h3 id="actor-isolation"><a class="header" href="#actor-isolation">Actor Isolation</a></h3>
+<ul>
+<li>Each actor runs in isolation</li>
+<li>No shared mutable state</li>
+<li>Communication only via messages</li>
+<li>Thread-safe by design</li>
+</ul>
+<h3 id="parallel-execution"><a class="header" href="#parallel-execution">Parallel Execution</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Multiple actors can run simultaneously
+tokio::spawn(actor1.create_process());
+tokio::spawn(actor2.create_process());
+tokio::spawn(actor3.create_process());
+
+// Actors on different CPU cores
+let rt = tokio::runtime::Builder::new_multi_thread()
+    .worker_threads(num_cpus::get())
+    .build()?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="load-balancing"><a class="header" href="#load-balancing">Load Balancing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Round-robin message distribution
+struct LoadBalancerActor {
+    workers: Vec&lt;Port&gt;,
+    current: AtomicUsize,
+}
+
+impl LoadBalancerActor {
+    fn next_worker(&amp;self) -&gt; &amp;Port {
+        let index = self.current.fetch_add(1, Ordering::Relaxed) % self.workers.len();
+        &amp;self.workers[index]
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-considerations"><a class="header" href="#performance-considerations">Performance Considerations</a></h2>
+<h3 id="memory-usage"><a class="header" href="#memory-usage">Memory Usage</a></h3>
+<ul>
+<li>Actors have minimal overhead (~1KB per actor)</li>
+<li>Messages are reference-counted when possible</li>
+<li>State is lazily allocated</li>
+</ul>
+<h3 id="message-throughput"><a class="header" href="#message-throughput">Message Throughput</a></h3>
+<ul>
+<li>Local messages: &gt;1M messages/second</li>
+<li>Network messages: 10K-100K messages/second</li>
+<li>Batch processing for high throughput</li>
+</ul>
+<h3 id="backpressure-handling"><a class="header" href="#backpressure-handling">Backpressure Handling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Check actor load before sending
+let load = actor.load_count();
+if load.lock().get() &gt; MAX_LOAD {
+    // Apply backpressure
+    tokio::time::sleep(Duration::from_millis(10)).await;
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="advanced-patterns"><a class="header" href="#advanced-patterns">Advanced Patterns</a></h2>
+<h3 id="actor-pooling"><a class="header" href="#actor-pooling">Actor Pooling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct ActorPool&lt;T: Actor&gt; {
+    actors: Vec&lt;T&gt;,
+    distributor: LoadBalancerActor,
+}
+
+impl&lt;T: Actor&gt; ActorPool&lt;T&gt; {
+    pub fn new(size: usize, factory: impl Fn() -&gt; T) -&gt; Self {
+        let actors: Vec&lt;T&gt; = (0..size).map(|_| factory()).collect();
+        // ... setup distributor
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="hot-swapping"><a class="header" href="#hot-swapping">Hot Swapping</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Replace actor behavior without stopping
+actor.update_behavior(new_behavior).await?;
+
+// Migrate state to new actor version
+let old_state = old_actor.get_state();
+new_actor.set_state(old_state).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="circuit-breaker"><a class="header" href="#circuit-breaker">Circuit Breaker</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct CircuitBreakerActor {
+    target: ActorRef,
+    failure_count: AtomicU32,
+    state: AtomicU8, // Open, Closed, HalfOpen
+}
+
+impl CircuitBreakerActor {
+    fn should_allow_request(&amp;self) -&gt; bool {
+        match self.state.load(Ordering::Relaxed) {
+            0 =&gt; true,  // Closed
+            1 =&gt; false, // Open
+            2 =&gt; true,  // HalfOpen
+            _ =&gt; false,
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="testing-actors"><a class="header" href="#testing-actors">Testing Actors</a></h2>
+<h3 id="unit-testing"><a class="header" href="#unit-testing">Unit Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn test_filter_actor() {
+    let actor = FilterActor::new(5.0);
+    let behavior = actor.get_behavior();
+    
+    // Create test context
+    let payload = HashMap::from([
+        ("input".to_string(), Message::Float(10.0))
+    ]);
+    
+    let context = create_test_context(payload);
+    let result = behavior(context).await.unwrap();
+    
+    assert!(result.contains_key("output"));
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="integration-testing"><a class="header" href="#integration-testing">Integration Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn test_actor_pipeline() {
+    let source = SourceActor::new();
+    let filter = FilterActor::new(5.0);
+    let sink = SinkActor::new();
+    
+    // Connect actors
+    connect_actors(&amp;source, &amp;filter).await;
+    connect_actors(&amp;filter, &amp;sink).await;
+    
+    // Start pipeline
+    let handles = vec![
+        tokio::spawn(source.create_process()),
+        tokio::spawn(filter.create_process()),
+        tokio::spawn(sink.create_process()),
+    ];
+    
+    // Test data flow
+    // ... assertions
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="actor-design"><a class="header" href="#actor-design">Actor Design</a></h3>
+<ol>
+<li><strong>Keep actors small and focused</strong> - Single responsibility principle</li>
+<li><strong>Avoid blocking operations</strong> - Use async/await for I/O</li>
+<li><strong>Handle errors gracefully</strong> - Don't let actors crash</li>
+<li><strong>Design for failure</strong> - Expect message loss and actor failures</li>
+</ol>
+<h3 id="message-design"><a class="header" href="#message-design">Message Design</a></h3>
+<ol>
+<li><strong>Keep messages immutable</strong> - Never modify messages after sending</li>
+<li><strong>Use appropriate message sizes</strong> - Balance between batching and latency</li>
+<li><strong>Include context</strong> - Messages should carry enough information</li>
+<li><strong>Handle malformed messages</strong> - Validate input gracefully</li>
+</ol>
+<h3 id="state-management-1"><a class="header" href="#state-management-1">State Management</a></h3>
+<ol>
+<li><strong>Minimize state</strong> - Less state means fewer bugs</li>
+<li><strong>Make state serializable</strong> - Enable persistence and distribution</li>
+<li><strong>Avoid shared state</strong> - Each actor owns its state</li>
+<li><strong>Design for recovery</strong> - State should be reconstructible</li>
+</ol>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="./message-passing.html">Message Passing</a> - Detailed message system</li>
+<li><a href="./graph-system.html">Graph System</a> - Workflow composition</li>
+<li><a href="../api/actors/creating-actors.html">Creating Actors</a> - Practical guide</li>
+<li><a href="./performance-considerations.html">Performance Optimization</a> - Tuning guidelines</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../architecture/overview.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../architecture/message-passing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../architecture/overview.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../architecture/message-passing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

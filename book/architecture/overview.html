@@ -1,0 +1,625 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Architecture Overview - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h1>
+<p>This document provides a high-level overview of Reflow's architecture, covering its core components, design principles, and system interactions.</p>
+<h2 id="system-architecture"><a class="header" href="#system-architecture">System Architecture</a></h2>
+<p>Reflow follows a modular, actor-based architecture designed for scalability, reliability, and multi-language support.</p>
+<pre><code class="language-mermaid">graph TB
+    subgraph "Application Layer"
+        WF[Workflows]
+        SC[Scripts]
+        CP[Components]
+    end
+    
+    subgraph "Actor System"
+        AC[Actor Core]
+        MSG[Message System]
+        NET[Network Layer]
+    end
+    
+    subgraph "Runtime Layer"
+        DR[Deno Runtime]
+        PR[Python Runtime]
+        WR[WASM Runtime]
+        NR[Native Runtime]
+    end
+    
+    subgraph "Infrastructure"
+        THR[Thread Pool]
+        SER[Serialization]
+        NET_IO[Network I/O]
+        FS[File System]
+    end
+    
+    WF --&gt; AC
+    SC --&gt; DR
+    SC --&gt; PR
+    SC --&gt; WR
+    CP --&gt; NR
+    
+    AC --&gt; MSG
+    MSG --&gt; NET
+    
+    NET --&gt; THR
+    NET --&gt; SER
+    NET --&gt; NET_IO
+    NET --&gt; FS
+</code></pre>
+<h2 id="core-components"><a class="header" href="#core-components">Core Components</a></h2>
+<h3 id="1-actor-system-reflow_network"><a class="header" href="#1-actor-system-reflow_network">1. Actor System (<code>reflow_network</code>)</a></h3>
+<p>The foundation of Reflow, implementing the actor model for concurrent computation:</p>
+<ul>
+<li><strong>Actors</strong>: Isolated units of computation</li>
+<li><strong>Messages</strong>: Immutable data passed between actors</li>
+<li><strong>Ports</strong>: Communication channels (input/output)</li>
+<li><strong>Network</strong>: Manages actor lifecycle and message routing</li>
+</ul>
+<h3 id="2-script-runtime-reflow_script"><a class="header" href="#2-script-runtime-reflow_script">2. Script Runtime (<code>reflow_script</code>)</a></h3>
+<p>Multi-language execution environment supporting:</p>
+<ul>
+<li><strong>Deno Runtime</strong>: JavaScript/TypeScript execution</li>
+<li><strong>Python Engine</strong>: Python script execution (with optional Docker isolation)</li>
+<li><strong>WebAssembly</strong>: WASM plugin system via Extism</li>
+<li><strong>Script Context</strong>: Execution environment and state management</li>
+</ul>
+<h3 id="3-component-library-reflow_components"><a class="header" href="#3-component-library-reflow_components">3. Component Library (<code>reflow_components</code>)</a></h3>
+<p>Pre-built, reusable workflow components:</p>
+<ul>
+<li><strong>Flow Control</strong>: Conditional logic, loops, branching</li>
+<li><strong>Data Operations</strong>: Transformations, aggregations, validation</li>
+<li><strong>Integration</strong>: External API connectivity</li>
+<li><strong>Synchronization</strong>: Coordination primitives</li>
+</ul>
+<h3 id="4-network-layer-reflow_network"><a class="header" href="#4-network-layer-reflow_network">4. Network Layer (<code>reflow_network</code>)</a></h3>
+<p>Handles distributed execution and communication:</p>
+<ul>
+<li><strong>Message Routing</strong>: Efficient message delivery</li>
+<li><strong>Graph Management</strong>: Workflow topology and execution</li>
+<li><strong>Connection Management</strong>: Inter-actor connectivity</li>
+<li><strong>Load Balancing</strong>: Work distribution</li>
+</ul>
+<h2 id="design-principles"><a class="header" href="#design-principles">Design Principles</a></h2>
+<h3 id="actor-model"><a class="header" href="#actor-model">Actor Model</a></h3>
+<p>Reflow is built on the <strong>Actor Model</strong> of computation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait Actor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior;
+    fn get_inports(&amp;self) -&gt; Port;
+    fn get_outports(&amp;self) -&gt; Port;
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt;;
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key Properties:</strong></p>
+<ul>
+<li><strong>Isolation</strong>: No shared state between actors</li>
+<li><strong>Concurrency</strong>: Actors run concurrently</li>
+<li><strong>Message Passing</strong>: Communication via immutable messages</li>
+<li><strong>Location Transparency</strong>: Actors can be local or remote</li>
+</ul>
+<h3 id="immutable-messages"><a class="header" href="#immutable-messages">Immutable Messages</a></h3>
+<p>All communication uses immutable message types:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum Message {
+    String(String),
+    Integer(i64),
+    Float(f64),
+    Boolean(bool),
+    Array(Vec&lt;Message&gt;),
+    Object(HashMap&lt;String, Message&gt;),
+    Binary(Vec&lt;u8&gt;),
+    Null,
+    Error(String),
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="async-first-design"><a class="header" href="#async-first-design">Async-First Design</a></h3>
+<p>Built on Rust's async/await system using Tokio:</p>
+<ul>
+<li>Non-blocking I/O operations</li>
+<li>Efficient resource utilization</li>
+<li>Scalable concurrent execution</li>
+<li>Backpressure handling</li>
+</ul>
+<h2 id="execution-model"><a class="header" href="#execution-model">Execution Model</a></h2>
+<h3 id="actor-lifecycle"><a class="header" href="#actor-lifecycle">Actor Lifecycle</a></h3>
+<pre><code class="language-mermaid">stateDiagram-v2
+    [*] --&gt; Created
+    Created --&gt; Initialized
+    Initialized --&gt; Running
+    Running --&gt; Processing
+    Processing --&gt; Running
+    Running --&gt; Stopping
+    Stopping --&gt; Stopped
+    Stopped --&gt; [*]
+    
+    Processing --&gt; Error
+    Error --&gt; Running
+    Error --&gt; Stopping
+</code></pre>
+<ol>
+<li><strong>Creation</strong>: Actor instance created with configuration</li>
+<li><strong>Initialization</strong>: Resources allocated, connections established</li>
+<li><strong>Running</strong>: Actor ready to process messages</li>
+<li><strong>Processing</strong>: Executing behavior function on incoming messages</li>
+<li><strong>Stopping</strong>: Graceful shutdown initiated</li>
+<li><strong>Stopped</strong>: All resources cleaned up</li>
+</ol>
+<h3 id="message-flow"><a class="header" href="#message-flow">Message Flow</a></h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant S as Source Actor
+    participant M as Message Bus
+    participant T as Target Actor
+    
+    S-&gt;&gt;M: Send Message
+    M-&gt;&gt;M: Route Message
+    M-&gt;&gt;T: Deliver Message
+    T-&gt;&gt;T: Process Message
+    T-&gt;&gt;M: Send Response
+    M-&gt;&gt;S: Deliver Response
+</code></pre>
+<h3 id="graph-execution"><a class="header" href="#graph-execution">Graph Execution</a></h3>
+<p>Workflows are executed as directed acyclic graphs (DAGs):</p>
+<ul>
+<li><strong>Topological Ordering</strong>: Ensures correct execution sequence</li>
+<li><strong>Parallel Execution</strong>: Independent branches run concurrently</li>
+<li><strong>Backpressure</strong>: Prevents resource exhaustion</li>
+<li><strong>Error Propagation</strong>: Failures are handled gracefully</li>
+</ul>
+<h2 id="runtime-architecture"><a class="header" href="#runtime-architecture">Runtime Architecture</a></h2>
+<h3 id="native-runtime-rust"><a class="header" href="#native-runtime-rust">Native Runtime (Rust)</a></h3>
+<p>Direct Rust implementation for maximum performance:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct NativeActor {
+    behavior: Box&lt;dyn Fn(ActorContext) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = Result&lt;HashMap&lt;String, Message&gt;, Error&gt;&gt; + Send&gt;&gt;&gt;,
+    // ... other fields
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="script-runtimes"><a class="header" href="#script-runtimes">Script Runtimes</a></h3>
+<h4 id="deno-runtime"><a class="header" href="#deno-runtime">Deno Runtime</a></h4>
+<ul>
+<li><strong>Sandbox</strong>: Secure execution environment</li>
+<li><strong>Permissions</strong>: Fine-grained access control</li>
+<li><strong>TypeScript</strong>: Full TypeScript support</li>
+<li><strong>NPM</strong>: Package ecosystem access</li>
+</ul>
+<h4 id="python-runtime"><a class="header" href="#python-runtime">Python Runtime</a></h4>
+<ul>
+<li><strong>Isolation</strong>: Process-level or Docker isolation</li>
+<li><strong>Libraries</strong>: Full Python ecosystem support</li>
+<li><strong>Async</strong>: Async/await support</li>
+<li><strong>Error Handling</strong>: Exception propagation</li>
+</ul>
+<h4 id="webassembly-runtime"><a class="header" href="#webassembly-runtime">WebAssembly Runtime</a></h4>
+<ul>
+<li><strong>Portability</strong>: Cross-platform execution</li>
+<li><strong>Security</strong>: Sandboxed execution</li>
+<li><strong>Performance</strong>: Near-native speed</li>
+<li><strong>Multi-language</strong>: Support for multiple source languages</li>
+</ul>
+<h2 id="memory-management"><a class="header" href="#memory-management">Memory Management</a></h2>
+<h3 id="ownership-model"><a class="header" href="#ownership-model">Ownership Model</a></h3>
+<p>Follows Rust's ownership principles:</p>
+<ul>
+<li><strong>Single Ownership</strong>: Each value has a single owner</li>
+<li><strong>Borrowing</strong>: Temporary access without ownership transfer</li>
+<li><strong>Lifetimes</strong>: Compile-time memory safety guarantees</li>
+<li><strong>Reference Counting</strong>: Shared ownership where needed</li>
+</ul>
+<h3 id="message-serialization"><a class="header" href="#message-serialization">Message Serialization</a></h3>
+<p>Efficient serialization for message passing:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Compressed serialization for performance
+let compressed = compress_message(&amp;message)?;
+let serialized = bitcode::serialize(&amp;compressed)?;
+
+// Network transmission
+send_over_network(serialized).await?;
+
+// Deserialization
+let message = bitcode::deserialize(&amp;received_data)?;
+let decompressed = decompress_message(&amp;message)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="networking-architecture"><a class="header" href="#networking-architecture">Networking Architecture</a></h2>
+<h3 id="local-communication"><a class="header" href="#local-communication">Local Communication</a></h3>
+<pre><code class="language-mermaid">graph LR
+    A1[Actor 1] --&gt; C1[Channel]
+    C1 --&gt; A2[Actor 2]
+    A2 --&gt; C2[Channel]
+    C2 --&gt; A3[Actor 3]
+</code></pre>
+<p><strong>Local Channels:</strong></p>
+<ul>
+<li><strong>Flume</strong>: High-performance async channels</li>
+<li><strong>Zero-copy</strong>: Direct memory access where possible</li>
+<li><strong>Backpressure</strong>: Flow control mechanisms</li>
+</ul>
+<h3 id="distributed-communication"><a class="header" href="#distributed-communication">Distributed Communication</a></h3>
+<pre><code class="language-mermaid">graph TB
+    subgraph "Node 1"
+        A1[Actor A]
+        A2[Actor B]
+    end
+    
+    subgraph "Network Layer"
+        N1[Network Bridge]
+        N2[Network Bridge]
+    end
+    
+    subgraph "Node 2"
+        A3[Actor C]
+        A4[Actor D]
+    end
+    
+    A1 --&gt; N1
+    N1 --&gt; N2
+    N2 --&gt; A3
+</code></pre>
+<p><strong>Network Features:</strong></p>
+<ul>
+<li><strong>WebSocket</strong>: Real-time communication</li>
+<li><strong>Compression</strong>: Efficient data transfer</li>
+<li><strong>Encryption</strong>: Secure communication</li>
+<li><strong>Discovery</strong>: Automatic node discovery</li>
+</ul>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="hierarchical-error-management"><a class="header" href="#hierarchical-error-management">Hierarchical Error Management</a></h3>
+<pre><code class="language-mermaid">graph TD
+    A[Actor Error] --&gt; B[Network Error Handler]
+    B --&gt; C[Workflow Error Handler]
+    C --&gt; D[Application Error Handler]
+    
+    B --&gt; E[Circuit Breaker]
+    C --&gt; F[Retry Logic]
+    D --&gt; G[Dead Letter Queue]
+</code></pre>
+<p><strong>Error Strategies:</strong></p>
+<ul>
+<li><strong>Isolation</strong>: Errors don't affect other actors</li>
+<li><strong>Propagation</strong>: Structured error reporting</li>
+<li><strong>Recovery</strong>: Automatic retry and fallback</li>
+<li><strong>Monitoring</strong>: Error tracking and alerting</li>
+</ul>
+<h2 id="security-model"><a class="header" href="#security-model">Security Model</a></h2>
+<h3 id="sandboxing"><a class="header" href="#sandboxing">Sandboxing</a></h3>
+<p>Each runtime environment provides isolation:</p>
+<ul>
+<li><strong>Deno</strong>: V8 isolates with permission system</li>
+<li><strong>Python</strong>: Process isolation or containerization</li>
+<li><strong>WASM</strong>: Memory-safe execution environment</li>
+<li><strong>Native</strong>: Rust's memory safety guarantees</li>
+</ul>
+<h3 id="permission-system"><a class="header" href="#permission-system">Permission System</a></h3>
+<p>Fine-grained access control:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Permissions {
+    pub file_system: FileSystemPermissions,
+    pub network: NetworkPermissions,
+    pub environment: EnvironmentPermissions,
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-characteristics"><a class="header" href="#performance-characteristics">Performance Characteristics</a></h2>
+<h3 id="throughput"><a class="header" href="#throughput">Throughput</a></h3>
+<ul>
+<li><strong>Message Rate</strong>: &gt;1M messages/second (local)</li>
+<li><strong>Latency</strong>: &lt;1ms (local), &lt;10ms (network)</li>
+<li><strong>Memory</strong>: ~1KB per actor overhead</li>
+<li><strong>CPU</strong>: Scales with core count</li>
+</ul>
+<h3 id="scalability"><a class="header" href="#scalability">Scalability</a></h3>
+<ul>
+<li><strong>Horizontal</strong>: Distribute across machines</li>
+<li><strong>Vertical</strong>: Utilize all CPU cores</li>
+<li><strong>Elastic</strong>: Dynamic resource allocation</li>
+<li><strong>Backpressure</strong>: Graceful degradation under load</li>
+</ul>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<h3 id="runtime-configuration"><a class="header" href="#runtime-configuration">Runtime Configuration</a></h3>
+<pre><code class="language-toml">[actor_system]
+thread_pool_size = 8
+max_actors_per_node = 10000
+message_buffer_size = 1000
+
+[networking]
+bind_address = "0.0.0.0:8080"
+compression_enabled = true
+encryption_enabled = true
+
+[runtimes.deno]
+permissions = ["--allow-net", "--allow-read"]
+memory_limit = "512MB"
+
+[runtimes.python]
+use_docker = false
+shared_environment = true
+</code></pre>
+<h2 id="monitoring-and-observability"><a class="header" href="#monitoring-and-observability">Monitoring and Observability</a></h2>
+<h3 id="metrics"><a class="header" href="#metrics">Metrics</a></h3>
+<ul>
+<li><strong>Actor Performance</strong>: Processing time, message rates</li>
+<li><strong>Network Statistics</strong>: Bandwidth, latency, errors</li>
+<li><strong>Resource Usage</strong>: Memory, CPU, disk I/O</li>
+<li><strong>Error Rates</strong>: Failure frequencies and patterns</li>
+</ul>
+<h3 id="tracing"><a class="header" href="#tracing">Tracing</a></h3>
+<p>Distributed tracing support:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tracing::{info, span, Level};
+
+let span = span!(Level::INFO, "actor_processing", actor_id = %actor.id());
+let _enter = span.enter();
+
+info!("Processing message: {:?}", message);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="extension-points"><a class="header" href="#extension-points">Extension Points</a></h2>
+<h3 id="custom-actors"><a class="header" href="#custom-actors">Custom Actors</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Actor for CustomActor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior {
+        Box::new(|context| {
+            Box::pin(async move {
+                // Custom processing logic
+                Ok(HashMap::new())
+            })
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-runtimes"><a class="header" href="#custom-runtimes">Custom Runtimes</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[async_trait]
+impl ScriptEngine for CustomEngine {
+    async fn init(&amp;mut self, config: &amp;ScriptConfig) -&gt; Result&lt;()&gt;;
+    async fn call(&amp;mut self, context: &amp;ScriptContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;&gt;;
+    async fn cleanup(&amp;mut self) -&gt; Result&lt;()&gt;;
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>For detailed information on specific components:</p>
+<ul>
+<li><a href="./actor-model.html">Actor Model</a> - Deep dive into actor implementation</li>
+<li><a href="./message-passing.html">Message Passing</a> - Message system details</li>
+<li><a href="./graph-system.html">Graph System</a> - Workflow graph management</li>
+<li><a href="./multi-language-support.html">Multi-Language Support</a> - Runtime integration</li>
+<li><a href="./performance-considerations.html">Performance Considerations</a> - Optimization strategies</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../getting-started/first-workflow.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../architecture/actor-model.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../getting-started/first-workflow.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../architecture/actor-model.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

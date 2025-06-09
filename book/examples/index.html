@@ -1,0 +1,846 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Example Projects - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="examples-and-tutorials"><a class="header" href="#examples-and-tutorials">Examples and Tutorials</a></h1>
+<p>This section provides practical examples and tutorials for building workflows with Reflow.</p>
+<h2 id="quick-reference"><a class="header" href="#quick-reference">Quick Reference</a></h2>
+<h3 id="tutorials"><a class="header" href="#tutorials">Tutorials</a></h3>
+<ul>
+<li><strong><a href="./tutorials/audio-processing-flow.html">Audio Processing Flow</a></strong> - Real-time audio processing pipeline</li>
+<li><strong><a href="./tutorials/data-etl-pipeline.html">Data ETL Pipeline</a></strong> - Extract, transform, load workflow</li>
+<li><strong><a href="./tutorials/web-api-integration.html">Web API Integration</a></strong> - REST API consumption and processing</li>
+<li><strong><a href="./tutorials/real-time-analytics.html">Real-time Analytics</a></strong> - Stream processing and aggregation</li>
+</ul>
+<h3 id="use-cases"><a class="header" href="#use-cases">Use Cases</a></h3>
+<ul>
+<li><strong><a href="./use-cases/iot-data-processing.html">IoT Data Processing</a></strong> - Sensor data collection and analysis</li>
+<li><strong><a href="./use-cases/log-processing.html">Log Processing</a></strong> - Log aggregation and monitoring</li>
+<li><strong><a href="./use-cases/image-processing.html">Image Processing</a></strong> - Computer vision workflows</li>
+<li><strong><a href="./use-cases/financial-trading.html">Financial Trading</a></strong> - Trading algorithms and risk management</li>
+</ul>
+<h3 id="code-samples"><a class="header" href="#code-samples">Code Samples</a></h3>
+<ul>
+<li><strong><a href="./code-samples/simple-examples.html">Simple Examples</a></strong> - Basic workflow patterns</li>
+<li><strong><a href="./code-samples/advanced-patterns.html">Advanced Patterns</a></strong> - Complex workflow compositions</li>
+<li><strong><a href="./code-samples/error-handling.html">Error Handling</a></strong> - Robust error management</li>
+<li><strong><a href="./code-samples/performance-optimization.html">Performance Optimization</a></strong> - High-throughput workflows</li>
+</ul>
+<h2 id="getting-started-examples"><a class="header" href="#getting-started-examples">Getting Started Examples</a></h2>
+<h3 id="hello-world-workflow"><a class="header" href="#hello-world-workflow">Hello World Workflow</a></h3>
+<p>The simplest possible workflow:</p>
+<pre><pre class="playground"><code class="language-rust">use reflow_network::Network;
+use reflow_components::{utility::LoggerActor, data_operations::MapActor};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut network = Network::new();
+    
+    // Create a simple transformer
+    let transformer = MapActor::new(|payload| {
+        let mut result = HashMap::new();
+        result.insert("message".to_string(), 
+                     Message::String("Hello, World!".to_string()));
+        Ok(result)
+    });
+    
+    // Create a logger
+    let logger = LoggerActor::new()
+        .level(LogLevel::Info)
+        .format(LogFormat::Pretty);
+    
+    // Add to network
+    network.add_actor("transformer", Box::new(transformer)).await?;
+    network.add_actor("logger", Box::new(logger)).await?;
+    
+    // Connect them
+    network.connect("transformer", "output", "logger", "input").await?;
+    
+    // Start the network
+    network.start().await?;
+    
+    Ok(())
+}</code></pre></pre>
+<h3 id="basic-data-processing"><a class="header" href="#basic-data-processing">Basic Data Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::*;
+
+async fn create_basic_pipeline() -&gt; Result&lt;Network, Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut network = Network::new();
+    
+    // 1. Data source (HTTP endpoint)
+    let source = integration::HttpRequestActor::new()
+        .timeout(Duration::from_secs(30));
+    
+    // 2. Data validation
+    let validator = data_operations::ValidatorActor::new()
+        .add_rule("required", |v| !matches!(v, Message::Null))
+        .add_rule("positive", |v| {
+            if let Message::Integer(n) = v { *n &gt; 0 } else { true }
+        });
+    
+    // 3. Data transformation
+    let transformer = data_operations::MapActor::new(|payload| {
+        let mut result = HashMap::new();
+        
+        // Transform each field
+        for (key, value) in payload {
+            let transformed = match value {
+                Message::String(s) =&gt; Message::String(s.to_uppercase()),
+                Message::Integer(n) =&gt; Message::Integer(n * 2),
+                other =&gt; other.clone(),
+            };
+            result.insert(format!("transformed_{}", key), transformed);
+        }
+        
+        Ok(result)
+    });
+    
+    // 4. Output logging
+    let logger = utility::LoggerActor::new();
+    
+    // Build network
+    network.add_actor("source", Box::new(source)).await?;
+    network.add_actor("validator", Box::new(validator)).await?;
+    network.add_actor("transformer", Box::new(transformer)).await?;
+    network.add_actor("logger", Box::new(logger)).await?;
+    
+    // Connect pipeline
+    network.connect("source", "output", "validator", "input").await?;
+    network.connect("validator", "valid", "transformer", "input").await?;
+    network.connect("transformer", "output", "logger", "input").await?;
+    
+    Ok(network)
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="javascript-integration"><a class="header" href="#javascript-integration">JavaScript Integration</a></h2>
+<h3 id="deno-script-actor"><a class="header" href="#deno-script-actor">Deno Script Actor</a></h3>
+<pre><code class="language-javascript">// scripts/data_processor.js
+function process(inputs, context) {
+    const data = inputs.data;
+    
+    if (!Array.isArray(data)) {
+        return { error: "Expected array input" };
+    }
+    
+    // Process data
+    const processed = data
+        .filter(item =&gt; item.value &gt; 0)
+        .map(item =&gt; ({
+            ...item,
+            processed: true,
+            timestamp: new Date().toISOString(),
+            hash: calculateHash(item)
+        }))
+        .sort((a, b) =&gt; b.value - a.value);
+    
+    return {
+        processed_data: processed,
+        count: processed.length,
+        max_value: processed[0]?.value || 0
+    };
+}
+
+function calculateHash(item) {
+    // Simple hash function
+    return btoa(JSON.stringify(item)).slice(0, 8);
+}
+
+exports.process = process;
+</code></pre>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Rust integration
+use reflow_script::{ScriptActor, ScriptConfig, ScriptRuntime, ScriptEnvironment};
+
+let script_config = ScriptConfig {
+    environment: ScriptEnvironment::SYSTEM,
+    runtime: ScriptRuntime::JavaScript,
+    source: std::fs::read("scripts/data_processor.js")?,
+    entry_point: "process".to_string(),
+    packages: None,
+};
+
+let script_actor = ScriptActor::new(script_config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="real-world-patterns"><a class="header" href="#real-world-patterns">Real-World Patterns</a></h2>
+<h3 id="error-handling-with-retry"><a class="header" href="#error-handling-with-retry">Error Handling with Retry</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::{flow_control::ConditionalActor, utility::RetryActor};
+
+async fn create_robust_pipeline() -&gt; Result&lt;Network, Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut network = Network::new();
+    
+    // Main processor (might fail)
+    let processor = data_operations::MapActor::new(|payload| {
+        // Simulate occasional failures
+        if payload.contains_key("trigger_error") {
+            return Err(anyhow::anyhow!("Simulated processing error"));
+        }
+        
+        // Normal processing
+        Ok(payload.clone())
+    });
+    
+    // Error detector
+    let error_detector = ConditionalActor::new(|payload| {
+        payload.contains_key("error")
+    });
+    
+    // Retry actor
+    let retry_actor = RetryActor::new()
+        .max_attempts(3)
+        .backoff_strategy(BackoffStrategy::Exponential)
+        .base_delay(Duration::from_millis(100));
+    
+    // Success logger
+    let success_logger = utility::LoggerActor::new()
+        .level(LogLevel::Info);
+    
+    // Error logger
+    let error_logger = utility::LoggerActor::new()
+        .level(LogLevel::Error);
+    
+    // Build network
+    network.add_actor("processor", Box::new(processor)).await?;
+    network.add_actor("error_detector", Box::new(error_detector)).await?;
+    network.add_actor("retry_actor", Box::new(retry_actor)).await?;
+    network.add_actor("success_logger", Box::new(success_logger)).await?;
+    network.add_actor("error_logger", Box::new(error_logger)).await?;
+    
+    // Connect main flow
+    network.connect("processor", "output", "error_detector", "input").await?;
+    network.connect("error_detector", "false", "success_logger", "input").await?;
+    network.connect("error_detector", "true", "retry_actor", "input").await?;
+    
+    // Retry loop
+    network.connect("retry_actor", "retry", "processor", "input").await?;
+    network.connect("retry_actor", "failed", "error_logger", "input").await?;
+    
+    Ok(network)
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="high-throughput-processing"><a class="header" href="#high-throughput-processing">High-Throughput Processing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::{flow_control::LoadBalancerActor, synchronization::BatchActor};
+
+async fn create_high_throughput_pipeline() -&gt; Result&lt;Network, Box&lt;dyn std::error::Error&gt;&gt; {
+    let mut network = Network::new();
+    
+    // Input batching
+    let batcher = BatchActor::new()
+        .batch_size(100)
+        .timeout(Duration::from_millis(50));
+    
+    // Load balancer
+    let load_balancer = LoadBalancerActor::new()
+        .strategy(LoadBalanceStrategy::RoundRobin)
+        .worker_count(4);
+    
+    // Worker actors (parallel processing)
+    for i in 0..4 {
+        let worker = data_operations::MapActor::new(|payload| {
+            // CPU-intensive processing
+            process_batch(payload)
+        });
+        
+        network.add_actor(&amp;format!("worker_{}", i), Box::new(worker)).await?;
+        network.connect("load_balancer", &amp;format!("output_{}", i),
+                       &amp;format!("worker_{}", i), "input").await?;
+    }
+    
+    // Result aggregator
+    let aggregator = data_operations::AggregateActor::new()
+        .window_size(4) // Collect from all workers
+        .timeout(Duration::from_secs(1))
+        .aggregation_fn(|results| {
+            // Combine results from all workers
+            combine_worker_results(results)
+        });
+    
+    // Connect workers to aggregator
+    for i in 0..4 {
+        network.connect(&amp;format!("worker_{}", i), "output",
+                       "aggregator", "input").await?;
+    }
+    
+    network.add_actor("batcher", Box::new(batcher)).await?;
+    network.add_actor("load_balancer", Box::new(load_balancer)).await?;
+    network.add_actor("aggregator", Box::new(aggregator)).await?;
+    
+    network.connect("batcher", "output", "load_balancer", "input").await?;
+    
+    Ok(network)
+}
+
+fn process_batch(payload: &amp;HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    // Simulate CPU-intensive work
+    thread::sleep(Duration::from_millis(10));
+    Ok(payload.clone())
+}
+
+fn combine_worker_results(results: &amp;[HashMap&lt;String, Message&gt;]) -&gt; HashMap&lt;String, Message&gt; {
+    let mut combined = HashMap::new();
+    
+    let total_processed = results.len() as i64;
+    combined.insert("total_processed".to_string(), Message::Integer(total_processed));
+    combined.insert("timestamp".to_string(), 
+                   Message::String(chrono::Utc::now().to_rfc3339()));
+    
+    combined
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="testing-workflows"><a class="header" href="#testing-workflows">Testing Workflows</a></h2>
+<h3 id="unit-testing"><a class="header" href="#unit-testing">Unit Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::time::{timeout, Duration};
+    
+    #[tokio::test]
+    async fn test_data_pipeline() {
+        let network = create_basic_pipeline().await.unwrap();
+        
+        // Send test data
+        let test_data = HashMap::from([
+            ("value".to_string(), Message::Integer(42)),
+            ("name".to_string(), Message::String("test".to_string())),
+        ]);
+        
+        // Get input port and send data
+        let input_port = network.get_actor_input("source").unwrap();
+        input_port.send_async(test_data).await.unwrap();
+        
+        // Wait for processing
+        timeout(Duration::from_secs(5), async {
+            // Check that data was processed
+            // This would require network introspection capabilities
+        }).await.unwrap();
+    }
+    
+    #[tokio::test]
+    async fn test_error_handling() {
+        let network = create_robust_pipeline().await.unwrap();
+        
+        // Send data that triggers error
+        let error_data = HashMap::from([
+            ("trigger_error".to_string(), Message::Boolean(true)),
+        ]);
+        
+        // Verify error handling works correctly
+        // Implementation depends on network monitoring capabilities
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="integration-testing"><a class="header" href="#integration-testing">Integration Testing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::sync::Arc;
+use tokio::sync::Mutex;
+
+#[tokio::test]
+async fn test_full_workflow_integration() {
+    // Shared state for test validation
+    let results = Arc::new(Mutex::new(Vec::new()));
+    let results_clone = results.clone();
+    
+    // Create custom sink actor for testing
+    let test_sink = TestSinkActor::new(move |payload| {
+        let results = results_clone.clone();
+        Box::pin(async move {
+            let mut results_guard = results.lock().await;
+            results_guard.push(payload.clone());
+            Ok(HashMap::new())
+        })
+    });
+    
+    let mut network = Network::new();
+    
+    // Build test network
+    let source = create_test_source();
+    let processor = create_test_processor();
+    
+    network.add_actor("source", Box::new(source)).await.unwrap();
+    network.add_actor("processor", Box::new(processor)).await.unwrap();
+    network.add_actor("sink", Box::new(test_sink)).await.unwrap();
+    
+    network.connect("source", "output", "processor", "input").await.unwrap();
+    network.connect("processor", "output", "sink", "input").await.unwrap();
+    
+    // Start network
+    let handle = tokio::spawn(async move {
+        network.start().await
+    });
+    
+    // Send test data
+    // ... implementation details
+    
+    // Wait and verify results
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    
+    let final_results = results.lock().await;
+    assert!(!final_results.is_empty());
+    assert_eq!(final_results.len(), 3); // Expected number of processed messages
+    
+    handle.abort();
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-examples"><a class="header" href="#performance-examples">Performance Examples</a></h2>
+<h3 id="benchmarking"><a class="header" href="#benchmarking">Benchmarking</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+fn benchmark_message_processing(c: &amp;mut Criterion) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    
+    c.bench_function("process_1000_messages", |b| {
+        b.iter(|| {
+            rt.block_on(async {
+                let network = create_high_throughput_pipeline().await.unwrap();
+                
+                // Send 1000 messages
+                for i in 0..1000 {
+                    let message = HashMap::from([
+                        ("id".to_string(), Message::Integer(i)),
+                        ("data".to_string(), Message::String(format!("data_{}", i))),
+                    ]);
+                    
+                    // Send message
+                    black_box(send_message(&amp;network, message).await);
+                }
+                
+                // Wait for completion
+                wait_for_completion(&amp;network).await;
+            })
+        })
+    });
+}
+
+criterion_group!(benches, benchmark_message_processing);
+criterion_main!(benches);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="memory-profiling"><a class="header" href="#memory-profiling">Memory Profiling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use memory_stats::memory_stats;
+
+async fn profile_memory_usage() {
+    let initial_memory = memory_stats().unwrap().physical_mem;
+    println!("Initial memory: {} bytes", initial_memory);
+    
+    // Create large workflow
+    let network = create_memory_intensive_workflow().await.unwrap();
+    
+    let after_creation = memory_stats().unwrap().physical_mem;
+    println!("After creation: {} bytes", after_creation);
+    println!("Creation overhead: {} bytes", after_creation - initial_memory);
+    
+    // Process data
+    for batch in 0..10 {
+        process_large_batch(&amp;network, batch).await;
+        
+        let current_memory = memory_stats().unwrap().physical_mem;
+        println!("After batch {}: {} bytes", batch, current_memory);
+    }
+    
+    // Cleanup
+    drop(network);
+    tokio::time::sleep(Duration::from_secs(1)).await; // Allow GC
+    
+    let final_memory = memory_stats().unwrap().physical_mem;
+    println!("Final memory: {} bytes", final_memory);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="configuration-examples"><a class="header" href="#configuration-examples">Configuration Examples</a></h2>
+<h3 id="environment-based-configuration"><a class="header" href="#environment-based-configuration">Environment-Based Configuration</a></h3>
+<pre><code class="language-toml"># config/development.toml
+[runtime]
+thread_pool_size = 2
+log_level = "debug"
+hot_reload = true
+
+[performance]
+batch_size = 10
+timeout_ms = 1000
+
+[scripts]
+enable_deno = true
+enable_python = false
+</code></pre>
+<pre><code class="language-toml"># config/production.toml
+[runtime]
+thread_pool_size = 16
+log_level = "info"
+hot_reload = false
+
+[performance]
+batch_size = 1000
+timeout_ms = 5000
+
+[scripts]
+enable_deno = true
+enable_python = true
+</code></pre>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Configuration loading
+use config::{Config, Environment, File};
+
+#[derive(Debug, Deserialize)]
+struct AppConfig {
+    runtime: RuntimeConfig,
+    performance: PerformanceConfig,
+    scripts: ScriptConfig,
+}
+
+fn load_configuration() -&gt; Result&lt;AppConfig, config::ConfigError&gt; {
+    let env = std::env::var("REFLOW_ENV").unwrap_or_else(|_| "development".into());
+    
+    let settings = Config::builder()
+        .add_source(File::with_name("config/default"))
+        .add_source(File::with_name(&amp;format!("config/{}", env)).required(false))
+        .add_source(File::with_name("config/local").required(false))
+        .add_source(Environment::with_prefix("REFLOW").separator("__"))
+        .build()?;
+    
+    settings.try_deserialize()
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="deployment-examples"><a class="header" href="#deployment-examples">Deployment Examples</a></h2>
+<h3 id="docker-composition"><a class="header" href="#docker-composition">Docker Composition</a></h3>
+<pre><code class="language-yaml"># docker-compose.yml
+version: '3.8'
+
+services:
+  reflow-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - REFLOW_ENV=production
+      - RUST_LOG=info
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: reflow
+      POSTGRES_USER: reflow
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+  redis:
+    image: redis:6-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+</code></pre>
+<h3 id="kubernetes-deployment"><a class="header" href="#kubernetes-deployment">Kubernetes Deployment</a></h3>
+<pre><code class="language-yaml"># k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reflow-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: reflow-app
+  template:
+    metadata:
+      labels:
+        app: reflow-app
+    spec:
+      containers:
+      - name: reflow-app
+        image: reflow:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REFLOW_ENV
+          value: "production"
+        - name: RUST_LOG
+          value: "info"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>Explore specific tutorials and use cases:</p>
+<ul>
+<li><strong><a href="./tutorials/audio-processing-flow.html">Audio Processing Tutorial</a></strong> - Build a real-time audio pipeline</li>
+<li><strong><a href="./tutorials/data-etl-pipeline.html">Data ETL Tutorial</a></strong> - Create a data processing workflow</li>
+<li><strong><a href="./tutorials/web-api-integration.html">API Integration Tutorial</a></strong> - Connect to external services</li>
+<li><strong><a href="./use-cases/iot-data-processing.html">IoT Use Case</a></strong> - Process sensor data streams</li>
+</ul>
+<p>For more advanced topics:</p>
+<ul>
+<li><strong><a href="../architecture/performance-considerations.html">Performance Optimization</a></strong></li>
+<li><strong><a href="./code-samples/advanced-patterns.html">Advanced Patterns</a></strong></li>
+<li><strong><a href="../components/custom-components.html">Custom Components</a></strong></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../deployment/native-deployment.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../reference/api-reference.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../deployment/native-deployment.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../reference/api-reference.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

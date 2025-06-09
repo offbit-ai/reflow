@@ -1,0 +1,924 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Graph Layout - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="graph-layout-system"><a class="header" href="#graph-layout-system">Graph Layout System</a></h1>
+<p>Reflow's layout system provides intelligent automatic positioning and manual positioning capabilities for graph nodes. The system supports multiple layout algorithms, custom positioning, and integration with visual editors.</p>
+<h2 id="automatic-layout"><a class="header" href="#automatic-layout">Automatic Layout</a></h2>
+<h3 id="basic-auto-layout"><a class="header" href="#basic-auto-layout">Basic Auto-Layout</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::Position;
+
+// Calculate optimal positions using default algorithm
+let positions = graph.calculate_layout();
+
+for (node_id, position) in positions {
+    println!("Node {}: x={:.1}, y={:.1}", node_id, position.x, position.y);
+}
+
+// Apply calculated layout to graph metadata
+graph.auto_layout()?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="layout-algorithms"><a class="header" href="#layout-algorithms">Layout Algorithms</a></h3>
+<p>The system supports multiple layout algorithms optimized for different graph types:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{LayoutAlgorithm, LayoutConfig};
+
+// Hierarchical layout for DAGs (default)
+let hierarchical_config = LayoutConfig {
+    algorithm: LayoutAlgorithm::Hierarchical,
+    node_spacing: 120.0,
+    layer_spacing: 80.0,
+    edge_spacing: 40.0,
+    ..Default::default()
+};
+
+let positions = graph.calculate_layout_with_config(&amp;hierarchical_config);
+
+// Force-directed layout for general graphs
+let force_config = LayoutConfig {
+    algorithm: LayoutAlgorithm::ForceDirected,
+    iterations: 100,
+    spring_strength: 0.5,
+    repulsion_strength: 1000.0,
+    ..Default::default()
+};
+
+let positions = graph.calculate_layout_with_config(&amp;force_config);
+
+// Grid layout for structured workflows
+let grid_config = LayoutConfig {
+    algorithm: LayoutAlgorithm::Grid,
+    grid_size: 150.0,
+    columns: 5,
+    align_to_grid: true,
+    ..Default::default()
+};
+
+let positions = graph.calculate_layout_with_config(&amp;grid_config);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="hierarchical-layout"><a class="header" href="#hierarchical-layout">Hierarchical Layout</a></h3>
+<p>Best for directed acyclic graphs (DAGs) and workflow diagrams:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::HierarchicalConfig;
+
+let hierarchical = HierarchicalConfig {
+    direction: LayoutDirection::TopToBottom,
+    layer_spacing: 100.0,
+    node_spacing: 80.0,
+    edge_routing: EdgeRouting::Orthogonal,
+    minimize_crossings: true,
+    balance_nodes: true,
+};
+
+let positions = graph.hierarchical_layout(&amp;hierarchical);
+
+// Apply with automatic layer detection
+graph.auto_layout_hierarchical()?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="force-directed-layout"><a class="header" href="#force-directed-layout">Force-Directed Layout</a></h3>
+<p>Ideal for general graphs with cycles and complex interconnections:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::ForceDirectedConfig;
+
+let force_config = ForceDirectedConfig {
+    iterations: 150,
+    cooling_factor: 0.95,
+    initial_temperature: 100.0,
+    spring_strength: 0.3,
+    spring_length: 100.0,
+    repulsion_strength: 800.0,
+    gravity_strength: 0.1,
+    node_charge: -30.0,
+};
+
+let positions = graph.force_directed_layout(&amp;force_config);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="organic-layout"><a class="header" href="#organic-layout">Organic Layout</a></h3>
+<p>Creates natural, flowing layouts:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::OrganicConfig;
+
+let organic_config = OrganicConfig {
+    preferred_edge_length: 120.0,
+    edge_length_cost_factor: 0.0001,
+    node_distribution_cost_factor: 20000.0,
+    edge_crossing_cost_factor: 6000.0,
+    edge_distance_cost_factor: 15000.0,
+    border_line_cost_factor: 100.0,
+    max_iterations: 200,
+};
+
+let positions = graph.organic_layout(&amp;organic_config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="manual-positioning"><a class="header" href="#manual-positioning">Manual Positioning</a></h2>
+<h3 id="setting-node-positions"><a class="header" href="#setting-node-positions">Setting Node Positions</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::Position;
+
+// Set specific position
+graph.set_node_position("input_node", 0.0, 0.0)?;
+graph.set_node_position("processor", 200.0, 100.0)?;
+graph.set_node_position("output_node", 400.0, 0.0)?;
+
+// Set position with custom anchor point
+let position = Position {
+    x: 150.0,
+    y: 75.0,
+    anchor: Some(Anchor { x: 0.5, y: 0.5 }), // Center anchor
+};
+graph.set_node_position_with_anchor("centered_node", position)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="position-metadata-structure"><a class="header" href="#position-metadata-structure">Position Metadata Structure</a></h3>
+<p>Positions are stored in node metadata following this convention:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde_json::json;
+use std::collections::HashMap;
+
+// Standard position metadata
+let position_metadata = HashMap::from([
+    ("x".to_string(), json!(100)),
+    ("y".to_string(), json!(150)),
+    ("width".to_string(), json!(120)),
+    ("height".to_string(), json!(80)),
+    ("anchor".to_string(), json!({
+        "x": 0.5,  // Horizontal anchor (0.0 = left, 0.5 = center, 1.0 = right)
+        "y": 0.5   // Vertical anchor (0.0 = top, 0.5 = middle, 1.0 = bottom)
+    }))
+]);
+
+graph.set_node_metadata("positioned_node", position_metadata);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="retrieving-positions"><a class="header" href="#retrieving-positions">Retrieving Positions</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Get position for a specific node
+if let Some(position) = graph.get_node_position("processor") {
+    println!("Node position: ({}, {})", position.x, position.y);
+}
+
+// Get all node positions
+let all_positions = graph.get_all_positions();
+for (node_id, position) in all_positions {
+    println!("{}: ({:.1}, {:.1})", node_id, position.x, position.y);
+}
+
+// Get positions within a bounding box
+let bbox = BoundingBox {
+    min_x: 0.0,
+    min_y: 0.0,
+    max_x: 500.0,
+    max_y: 300.0,
+};
+let nodes_in_area = graph.get_nodes_in_area(bbox);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="layout-constraints"><a class="header" href="#layout-constraints">Layout Constraints</a></h2>
+<h3 id="alignment-constraints"><a class="header" href="#alignment-constraints">Alignment Constraints</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{AlignmentConstraint, ConstraintType};
+
+// Horizontal alignment
+let horizontal_alignment = AlignmentConstraint {
+    nodes: vec!["node1".to_string(), "node2".to_string(), "node3".to_string()],
+    constraint_type: ConstraintType::HorizontalAlignment,
+    offset: 0.0,
+};
+
+// Vertical alignment
+let vertical_alignment = AlignmentConstraint {
+    nodes: vec!["input1".to_string(), "input2".to_string()],
+    constraint_type: ConstraintType::VerticalAlignment,
+    offset: 50.0, // 50 pixels apart
+};
+
+// Apply constraints during layout
+let config = LayoutConfig {
+    algorithm: LayoutAlgorithm::Hierarchical,
+    constraints: vec![horizontal_alignment, vertical_alignment],
+    ..Default::default()
+};
+
+graph.apply_layout_with_constraints(&amp;config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="distance-constraints"><a class="header" href="#distance-constraints">Distance Constraints</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{DistanceConstraint, DistanceType};
+
+// Minimum distance constraint
+let min_distance = DistanceConstraint {
+    from_node: "source".to_string(),
+    to_node: "sink".to_string(),
+    distance_type: DistanceType::Minimum,
+    distance: 200.0,
+};
+
+// Maximum distance constraint
+let max_distance = DistanceConstraint {
+    from_node: "processor1".to_string(),
+    to_node: "processor2".to_string(),
+    distance_type: DistanceType::Maximum,
+    distance: 300.0,
+};
+
+// Fixed distance constraint
+let fixed_distance = DistanceConstraint {
+    from_node: "controller".to_string(),
+    to_node: "display".to_string(),
+    distance_type: DistanceType::Fixed,
+    distance: 150.0,
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="boundary-constraints"><a class="header" href="#boundary-constraints">Boundary Constraints</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::BoundaryConstraint;
+
+// Keep nodes within bounds
+let boundary = BoundaryConstraint {
+    min_x: 0.0,
+    min_y: 0.0,
+    max_x: 1000.0,
+    max_y: 600.0,
+    enforce_during_layout: true,
+};
+
+// Apply boundary constraint
+graph.set_layout_boundary(boundary);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="layout-optimization"><a class="header" href="#layout-optimization">Layout Optimization</a></h2>
+<h3 id="minimize-edge-crossings"><a class="header" href="#minimize-edge-crossings">Minimize Edge Crossings</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Optimize layout to reduce edge crossings
+let optimized_positions = graph.minimize_edge_crossings()?;
+
+// Apply optimization with maximum iterations
+let crossings_config = EdgeCrossingConfig {
+    max_iterations: 50,
+    improvement_threshold: 0.01,
+    use_barycenter_heuristic: true,
+};
+
+graph.optimize_edge_crossings(&amp;crossings_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="edge-bundling"><a class="header" href="#edge-bundling">Edge Bundling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::EdgeBundling;
+
+// Enable edge bundling for cleaner layouts
+let bundling_config = EdgeBundling {
+    enable: true,
+    strength: 0.8,
+    step_size: 0.1,
+    iterations: 60,
+    min_distance: 10.0,
+};
+
+graph.apply_edge_bundling(&amp;bundling_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="compact-layout"><a class="header" href="#compact-layout">Compact Layout</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Create compact layout by minimizing overall area
+let compact_config = CompactLayoutConfig {
+    preserve_aspect_ratio: true,
+    min_node_spacing: 20.0,
+    pack_components: true,
+};
+
+graph.create_compact_layout(&amp;compact_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="layer-based-layout"><a class="header" href="#layer-based-layout">Layer-Based Layout</a></h2>
+<h3 id="automatic-layer-detection"><a class="header" href="#automatic-layer-detection">Automatic Layer Detection</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{LayerAnalysis, LayerDirection};
+
+// Detect natural layers in the graph
+let layer_analysis = graph.analyze_layers();
+
+println!("Detected {} layers:", layer_analysis.layers.len());
+for (level, nodes) in layer_analysis.layers.iter().enumerate() {
+    println!("  Layer {}: {:?}", level, nodes);
+}
+
+// Apply layer-based layout
+let layer_config = LayerLayoutConfig {
+    direction: LayerDirection::LeftToRight,
+    layer_spacing: 150.0,
+    node_spacing: 100.0,
+    center_nodes_in_layer: true,
+};
+
+graph.apply_layer_layout(&amp;layer_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="manual-layer-assignment"><a class="header" href="#manual-layer-assignment">Manual Layer Assignment</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Manually assign nodes to layers
+let layer_assignments = HashMap::from([
+    ("input1".to_string(), 0),
+    ("input2".to_string(), 0),
+    ("processor1".to_string(), 1),
+    ("processor2".to_string(), 1),
+    ("output".to_string(), 2),
+]);
+
+graph.set_layer_assignments(layer_assignments);
+graph.apply_layer_layout(&amp;layer_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="group-based-layout"><a class="header" href="#group-based-layout">Group-Based Layout</a></h2>
+<h3 id="layout-node-groups"><a class="header" href="#layout-node-groups">Layout Node Groups</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::GroupLayoutConfig;
+
+// Layout nodes within groups
+let group_config = GroupLayoutConfig {
+    group_spacing: 200.0,
+    internal_spacing: 50.0,
+    group_padding: 20.0,
+    layout_algorithm: LayoutAlgorithm::Grid,
+};
+
+// Apply group-aware layout
+graph.layout_groups(&amp;group_config)?;
+
+// Layout specific group
+graph.layout_group("data_processing", &amp;group_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="group-boundaries"><a class="header" href="#group-boundaries">Group Boundaries</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Calculate group boundaries
+let group_bounds = graph.calculate_group_bounds("data_processing");
+if let Some(bounds) = group_bounds {
+    println!("Group bounds: ({}, {}) to ({}, {})", 
+        bounds.min_x, bounds.min_y, bounds.max_x, bounds.max_y);
+}
+
+// Set custom group boundary
+let custom_bounds = BoundingBox {
+    min_x: 100.0,
+    min_y: 50.0,
+    max_x: 400.0,
+    max_y: 250.0,
+};
+graph.set_group_bounds("data_processing", custom_bounds);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="advanced-layout-features"><a class="header" href="#advanced-layout-features">Advanced Layout Features</a></h2>
+<h3 id="multi-level-layout"><a class="header" href="#multi-level-layout">Multi-Level Layout</a></h3>
+<p>For very large graphs, use multi-level layout:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::MultiLevelConfig;
+
+let multilevel_config = MultiLevelConfig {
+    coarsening_factor: 0.7,
+    max_levels: 5,
+    uncoarsening_iterations: 10,
+    finest_level_iterations: 20,
+};
+
+let positions = graph.multilevel_layout(&amp;multilevel_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="incremental-layout"><a class="header" href="#incremental-layout">Incremental Layout</a></h3>
+<p>Update layout incrementally when nodes are added/removed:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Add node with incremental layout update
+graph.add_node("new_processor", "DataProcessor", None);
+graph.add_connection("source", "out", "new_processor", "in", None);
+
+// Update layout incrementally
+let incremental_config = IncrementalLayoutConfig {
+    stabilization_iterations: 10,
+    affected_nodes_only: true,
+    preserve_existing_positions: true,
+};
+
+graph.incremental_layout_update(&amp;incremental_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="layout-animation-support"><a class="header" href="#layout-animation-support">Layout Animation Support</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{LayoutAnimation, AnimationFrame};
+
+// Generate animation frames for smooth transitions
+let from_positions = graph.get_all_positions();
+let to_positions = graph.calculate_layout();
+
+let animation = LayoutAnimation::new(from_positions, to_positions, 30); // 30 frames
+
+// Get animation frames
+for (frame_idx, frame) in animation.frames().enumerate() {
+    println!("Frame {}: {} position updates", frame_idx, frame.positions.len());
+    
+    // Apply frame in UI
+    for (node_id, position) in frame.positions {
+        // Update UI node position
+        ui.set_node_position(&amp;node_id, position.x, position.y);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="layout-quality-metrics"><a class="header" href="#layout-quality-metrics">Layout Quality Metrics</a></h2>
+<h3 id="measuring-layout-quality"><a class="header" href="#measuring-layout-quality">Measuring Layout Quality</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{LayoutMetrics, LayoutQuality};
+
+let metrics = graph.calculate_layout_metrics();
+
+println!("Layout Quality Metrics:");
+println!("  Edge crossings: {}", metrics.edge_crossings);
+println!("  Average edge length: {:.2}", metrics.average_edge_length);
+println!("  Node distribution score: {:.2}", metrics.node_distribution_score);
+println!("  Aspect ratio: {:.2}", metrics.aspect_ratio);
+println!("  Overall score: {:.2}", metrics.overall_quality_score);
+
+// Detailed metrics
+println!("\nDetailed Metrics:");
+println!("  Minimum edge length: {:.2}", metrics.min_edge_length);
+println!("  Maximum edge length: {:.2}", metrics.max_edge_length);
+println!("  Edge length variance: {:.2}", metrics.edge_length_variance);
+println!("  Node overlap count: {}", metrics.node_overlaps);
+println!("  Angular resolution: {:.2}°", metrics.angular_resolution);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="layout-comparison"><a class="header" href="#layout-comparison">Layout Comparison</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Compare different layout algorithms
+let algorithms = vec![
+    LayoutAlgorithm::Hierarchical,
+    LayoutAlgorithm::ForceDirected,
+    LayoutAlgorithm::Organic,
+];
+
+let mut best_layout = None;
+let mut best_score = 0.0;
+
+for algorithm in algorithms {
+    let config = LayoutConfig {
+        algorithm: algorithm.clone(),
+        ..Default::default()
+    };
+    
+    let positions = graph.calculate_layout_with_config(&amp;config);
+    graph.apply_positions(positions);
+    
+    let metrics = graph.calculate_layout_metrics();
+    let score = metrics.overall_quality_score;
+    
+    println!("{:?}: score {:.2}", algorithm, score);
+    
+    if score &gt; best_score {
+        best_score = score;
+        best_layout = Some(algorithm);
+    }
+}
+
+if let Some(best) = best_layout {
+    println!("Best layout algorithm: {:?} (score: {:.2})", best, best_score);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="custom-layout-algorithms"><a class="header" href="#custom-layout-algorithms">Custom Layout Algorithms</a></h2>
+<h3 id="implementing-custom-layout"><a class="header" href="#implementing-custom-layout">Implementing Custom Layout</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::{CustomLayout, LayoutContext};
+
+struct CircularLayout {
+    radius: f64,
+    start_angle: f64,
+}
+
+impl CustomLayout for CircularLayout {
+    fn calculate_positions(&amp;self, context: &amp;LayoutContext) -&gt; HashMap&lt;String, Position&gt; {
+        let mut positions = HashMap::new();
+        let node_count = context.nodes.len();
+        let angle_step = 2.0 * std::f64::consts::PI / node_count as f64;
+        
+        for (i, node_id) in context.nodes.iter().enumerate() {
+            let angle = self.start_angle + i as f64 * angle_step;
+            let x = self.radius * angle.cos();
+            let y = self.radius * angle.sin();
+            
+            positions.insert(node_id.clone(), Position { x, y, anchor: None });
+        }
+        
+        positions
+    }
+}
+
+// Use custom layout
+let circular = CircularLayout {
+    radius: 200.0,
+    start_angle: 0.0,
+};
+
+let positions = graph.apply_custom_layout(&amp;circular)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="layout-plugins"><a class="header" href="#layout-plugins">Layout Plugins</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Register layout plugin
+graph.register_layout_plugin("spiral", Box::new(SpiralLayout::new()));
+
+// Use registered plugin
+let config = LayoutConfig {
+    algorithm: LayoutAlgorithm::Custom("spiral".to_string()),
+    ..Default::default()
+};
+
+graph.calculate_layout_with_config(&amp;config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="layout-events"><a class="header" href="#layout-events">Layout Events</a></h2>
+<h3 id="listening-to-layout-changes"><a class="header" href="#listening-to-layout-changes">Listening to Layout Changes</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::graph::LayoutEvents;
+
+// Subscribe to layout events
+let layout_receiver = graph.layout_event_channel.1.clone();
+
+std::thread::spawn(move || {
+    while let Ok(event) = layout_receiver.recv() {
+        match event {
+            LayoutEvents::LayoutStarted { algorithm } =&gt; {
+                println!("Layout started: {:?}", algorithm);
+            }
+            LayoutEvents::LayoutCompleted { algorithm, duration } =&gt; {
+                println!("Layout completed: {:?} in {:?}", algorithm, duration);
+            }
+            LayoutEvents::NodePositionChanged { node_id, old_pos, new_pos } =&gt; {
+                println!("Node {} moved: ({:.1}, {:.1}) -&gt; ({:.1}, {:.1})", 
+                    node_id, old_pos.x, old_pos.y, new_pos.x, new_pos.y);
+            }
+            LayoutEvents::LayoutProgress { progress } =&gt; {
+                println!("Layout progress: {:.1}%", progress * 100.0);
+            }
+        }
+    }
+});
+<span class="boring">}</span></code></pre></pre>
+<h2 id="webassembly-layout-api"><a class="header" href="#webassembly-layout-api">WebAssembly Layout API</a></h2>
+<h3 id="javascript-integration"><a class="header" href="#javascript-integration">JavaScript Integration</a></h3>
+<pre><code class="language-javascript">import { Graph, LayoutAlgorithm } from 'reflow-network';
+
+const graph = new Graph("LayoutDemo", false, {});
+
+// Add nodes and connections
+graph.addNode("input", "InputNode", {});
+graph.addNode("processor", "ProcessorNode", {});
+graph.addNode("output", "OutputNode", {});
+graph.addConnection("input", "out", "processor", "in", {});
+graph.addConnection("processor", "out", "output", "in", {});
+
+// Apply automatic layout
+const positions = graph.calculateLayout({
+    algorithm: LayoutAlgorithm.Hierarchical,
+    nodeSpacing: 120,
+    layerSpacing: 80
+});
+
+// Update UI with calculated positions
+for (const [nodeId, position] of positions) {
+    const nodeElement = document.getElementById(nodeId);
+    nodeElement.style.left = `${position.x}px`;
+    nodeElement.style.top = `${position.y}px`;
+}
+
+// Manual positioning
+graph.setNodePosition("processor", 200, 100);
+
+// Listen for layout events
+graph.onLayoutChange((event) =&gt; {
+    if (event.type === 'position_changed') {
+        updateNodeElement(event.nodeId, event.newPosition);
+    }
+});
+</code></pre>
+<h2 id="layout-best-practices"><a class="header" href="#layout-best-practices">Layout Best Practices</a></h2>
+<h3 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h3>
+<ol>
+<li><strong>Use appropriate algorithms</strong>: Choose the right algorithm for your graph type</li>
+<li><strong>Limit iterations</strong>: Set reasonable iteration limits for force-directed layouts</li>
+<li><strong>Cache layouts</strong>: Store calculated positions to avoid recalculation</li>
+<li><strong>Incremental updates</strong>: Use incremental layout for small changes</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Incremental update for small changes
+graph.add_node("new_node", "Component", None);
+graph.incremental_layout_update(&amp;incremental_config)?;
+
+// Avoid: Full recalculation for small changes
+graph.auto_layout()?; // Expensive for large graphs
+<span class="boring">}</span></code></pre></pre>
+<h3 id="visual-quality"><a class="header" href="#visual-quality">Visual Quality</a></h3>
+<ol>
+<li><strong>Minimize crossings</strong>: Use algorithms that reduce edge crossings</li>
+<li><strong>Consistent spacing</strong>: Maintain uniform spacing between nodes</li>
+<li><strong>Respect hierarchy</strong>: Use hierarchical layout for workflow graphs</li>
+<li><strong>Group related nodes</strong>: Use group layouts for related components</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Group-aware layout
+let group_config = GroupLayoutConfig {
+    group_spacing: 200.0,
+    internal_spacing: 50.0,
+    group_padding: 20.0,
+    layout_algorithm: LayoutAlgorithm::Grid,
+};
+graph.layout_groups(&amp;group_config)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="user-experience"><a class="header" href="#user-experience">User Experience</a></h3>
+<ol>
+<li><strong>Smooth transitions</strong>: Use animation between layout changes</li>
+<li><strong>Preserve user positioning</strong>: Respect manually positioned nodes</li>
+<li><strong>Provide layout options</strong>: Allow users to choose layout algorithms</li>
+<li><strong>Show progress</strong>: Display progress for long-running layout calculations</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Preserve manual positions
+let manual_positions = graph.get_manually_positioned_nodes();
+let config = LayoutConfig {
+    preserve_positions: manual_positions,
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-layout-issues"><a class="header" href="#common-layout-issues">Common Layout Issues</a></h3>
+<ol>
+<li><strong>Overlapping nodes</strong>: Increase node spacing or use different algorithm</li>
+<li><strong>Poor aspect ratio</strong>: Adjust layout bounds or use compact layout</li>
+<li><strong>Too many crossings</strong>: Use hierarchical layout or enable crossing minimization</li>
+<li><strong>Unstable force layout</strong>: Reduce spring strength or increase damping</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Fix overlapping nodes
+let config = LayoutConfig {
+    node_spacing: 150.0, // Increase spacing
+    collision_detection: true,
+    ..Default::default()
+};
+
+// Fix unstable force layout
+let force_config = ForceDirectedConfig {
+    spring_strength: 0.1, // Reduce from default 0.3
+    damping: 0.8,         // Add damping
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="advanced.html">Advanced Features</a> - History, subgraphs, and optimization</li>
+<li><a href="creating-graphs.html">Creating Graphs</a> - Basic graph operations</li>
+<li><a href="analysis.html">Graph Analysis</a> - Validation and performance analysis</li>
+<li><a href="../../tutorials/building-visual-editor.html">Building Visual Editors</a> - Complete tutorial</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/graph/analysis.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/graph/advanced.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/graph/analysis.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/graph/advanced.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,861 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Troubleshooting Guide - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="troubleshooting-guide"><a class="header" href="#troubleshooting-guide">Troubleshooting Guide</a></h1>
+<p>Common issues and solutions when working with Reflow.</p>
+<h2 id="installation-issues"><a class="header" href="#installation-issues">Installation Issues</a></h2>
+<h3 id="rust-compilation-errors"><a class="header" href="#rust-compilation-errors">Rust Compilation Errors</a></h3>
+<p><strong>Problem</strong>: Build fails with compiler errors</p>
+<pre><code>error[E0432]: unresolved import `reflow_network::Graph`
+</code></pre>
+<p><strong>Solution</strong>:</p>
+<ol>
+<li>Ensure you have the latest Rust version (1.70+)</li>
+<li>Update dependencies: <code>cargo update</code></li>
+<li>Clean build cache: <code>cargo clean &amp;&amp; cargo build</code></li>
+</ol>
+<p><strong>Problem</strong>: Missing system dependencies</p>
+<pre><code>error: linking with `cc` failed: exit status: 1
+</code></pre>
+<p><strong>Solution</strong>:</p>
+<ul>
+<li><strong>Linux</strong>: Install build essentials: <code>sudo apt-get install build-essential</code></li>
+<li><strong>macOS</strong>: Install Xcode command line tools: <code>xcode-select --install</code></li>
+<li><strong>Windows</strong>: Install Visual Studio Build Tools</li>
+</ul>
+<h3 id="webassembly-build-issues"><a class="header" href="#webassembly-build-issues">WebAssembly Build Issues</a></h3>
+<p><strong>Problem</strong>: wasm-pack fails to build</p>
+<pre><code>Error: failed to execute `wasm-pack build`: No such file or directory
+</code></pre>
+<p><strong>Solution</strong>:</p>
+<ol>
+<li>Install wasm-pack: <code>curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh</code></li>
+<li>Add wasm target: <code>rustup target add wasm32-unknown-unknown</code></li>
+<li>Verify installation: <code>wasm-pack --version</code></li>
+</ol>
+<h2 id="runtime-issues"><a class="header" href="#runtime-issues">Runtime Issues</a></h2>
+<h3 id="actor-initialization-failures"><a class="header" href="#actor-initialization-failures">Actor Initialization Failures</a></h3>
+<p><strong>Problem</strong>: Actors fail to start</p>
+<pre><code>Error: Actor 'data_processor' failed to initialize: E001
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Check actor configuration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Verify all required ports are defined
+fn get_input_ports(&amp;self) -&gt; Vec&lt;PortDefinition&gt; {
+    vec![
+        PortDefinition::new("input", PortType::Any),
+    ]
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Validate actor state:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Ensure actor is in valid initial state
+impl Actor for MyActor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        if !self.initialized {
+            return Err(ActorError::NotInitialized);
+        }
+        // ... processing logic
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Check dependencies:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Verify all dependencies are available
+impl MyActor {
+    pub fn new() -&gt; Result&lt;Self, ActorError&gt; {
+        let dependency = SomeDependency::connect()
+            .map_err(|_| ActorError::DependencyUnavailable)?;
+        
+        Ok(Self { dependency, initialized: true })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h3 id="message-routing-errors"><a class="header" href="#message-routing-errors">Message Routing Errors</a></h3>
+<p><strong>Problem</strong>: Messages not reaching destination actors</p>
+<pre><code>Warning: Message dropped - no route to 'processor.input'
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Verify connections:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Check connection exists
+network.connect("source", "output", "processor", "input").await?;
+
+// Verify actor and port names
+let actors = network.list_actors();
+println!("Available actors: {:?}", actors);
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Check port compatibility:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Ensure port types match
+source_actor.get_output_ports(); // Returns Vec&lt;PortDefinition&gt;
+processor_actor.get_input_ports(); // Should have compatible types
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Monitor message flow:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>network.enable_message_tracing(true);
+// Check logs for message routing information
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h3 id="memory-issues"><a class="header" href="#memory-issues">Memory Issues</a></h3>
+<p><strong>Problem</strong>: Out of memory errors</p>
+<pre><code>Error: Memory allocation failed: E005
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Configure memory limits:</p>
+<pre><code class="language-toml">[memory]
+max_heap_size = "2GB"
+gc_frequency = 50
+enable_memory_pooling = true
+</code></pre>
+</li>
+<li>
+<p>Implement proper cleanup:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Drop for MyActor {
+    fn drop(&amp;mut self) {
+        // Clean up resources
+        self.cleanup_connections();
+        self.release_buffers();
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Use memory profiling:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use memory_stats::memory_stats;
+
+if let Some(usage) = memory_stats() {
+    println!("Memory usage: {} bytes", usage.physical_mem);
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h2 id="network-issues"><a class="header" href="#network-issues">Network Issues</a></h2>
+<h3 id="connection-timeouts"><a class="header" href="#connection-timeouts">Connection Timeouts</a></h3>
+<p><strong>Problem</strong>: Network operations timeout</p>
+<pre><code>Error: Connection timeout after 5000ms: E003
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Increase timeout values:</p>
+<pre><code class="language-toml">[network]
+timeout_ms = 30000  # Increase to 30 seconds
+</code></pre>
+</li>
+<li>
+<p>Implement retry logic:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::utility::RetryActor;
+
+let retry_actor = RetryActor::new()
+    .max_attempts(3)
+    .backoff_strategy(BackoffStrategy::Exponential)
+    .base_delay(Duration::from_millis(100));
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Check network connectivity:</p>
+<pre><code class="language-bash"># Test connectivity
+curl -I http://your-endpoint
+ping your-server
+</code></pre>
+</li>
+</ol>
+<h3 id="websocket-connection-issues"><a class="header" href="#websocket-connection-issues">WebSocket Connection Issues</a></h3>
+<p><strong>Problem</strong>: WebSocket connections fail</p>
+<pre><code>Error: WebSocket connection failed: Connection refused
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Verify server configuration:</p>
+<pre><code class="language-toml">[websocket]
+enable = true
+port = 8080
+bind_address = "0.0.0.0"
+</code></pre>
+</li>
+<li>
+<p>Check firewall settings:</p>
+<pre><code class="language-bash"># Linux
+sudo ufw allow 8080
+
+# macOS
+sudo pfctl -f /etc/pf.conf
+</code></pre>
+</li>
+<li>
+<p>Test WebSocket endpoint:</p>
+<pre><code class="language-javascript">// Test in browser console
+const ws = new WebSocket('ws://localhost:8080');
+ws.onopen = () =&gt; console.log('Connected');
+ws.onerror = (error) =&gt; console.error('Error:', error);
+</code></pre>
+</li>
+</ol>
+<h2 id="script-runtime-issues"><a class="header" href="#script-runtime-issues">Script Runtime Issues</a></h2>
+<h3 id="deno-permission-errors"><a class="header" href="#deno-permission-errors">Deno Permission Errors</a></h3>
+<p><strong>Problem</strong>: Deno scripts fail due to permissions</p>
+<pre><code>Error: Requires read access to "./data", run again with --allow-read
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Configure permissions:</p>
+<pre><code class="language-toml">[scripts.deno]
+allow_read = true
+allow_net = false
+allow_write = false
+</code></pre>
+</li>
+<li>
+<p>Specify allowed paths:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = ScriptConfig {
+    runtime: ScriptRuntime::JavaScript,
+    permissions: ScriptPermissions {
+        allow_read: Some(vec!["./data".to_string(), "./config".to_string()]),
+        allow_net: Some(vec!["api.example.com".to_string()]),
+        allow_write: None,
+    },
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h3 id="python-import-errors"><a class="header" href="#python-import-errors">Python Import Errors</a></h3>
+<p><strong>Problem</strong>: Python modules not found</p>
+<pre><code>ModuleNotFoundError: No module named 'requests'
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Install dependencies:</p>
+<pre><code class="language-bash">pip install -r requirements.txt
+</code></pre>
+</li>
+<li>
+<p>Configure virtual environment:</p>
+<pre><code class="language-toml">[scripts.python]
+virtual_env = "./venv"
+requirements = "requirements.txt"
+</code></pre>
+</li>
+<li>
+<p>Verify Python path:</p>
+<pre><code class="language-python">import sys
+print(sys.path)
+</code></pre>
+</li>
+</ol>
+<h3 id="webassembly-module-loading"><a class="header" href="#webassembly-module-loading">WebAssembly Module Loading</a></h3>
+<p><strong>Problem</strong>: WASM modules fail to load</p>
+<pre><code>Error: Invalid WASM module format
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Verify WASM file:</p>
+<pre><code class="language-bash">wasm-objdump -h module.wasm
+</code></pre>
+</li>
+<li>
+<p>Check module exports:</p>
+<pre><code class="language-bash">wasm-objdump -x module.wasm | grep Export
+</code></pre>
+</li>
+<li>
+<p>Validate memory configuration:</p>
+<pre><code class="language-toml">[scripts.wasm]
+max_memory = "64MB"
+stack_size = "1MB"
+</code></pre>
+</li>
+</ol>
+<h2 id="graph-issues"><a class="header" href="#graph-issues">Graph Issues</a></h2>
+<h3 id="cycle-detection-errors"><a class="header" href="#cycle-detection-errors">Cycle Detection Errors</a></h3>
+<p><strong>Problem</strong>: Graph contains cycles</p>
+<pre><code>Error: Cycle detected in graph: node1 -&gt; node2 -&gt; node3 -&gt; node1
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Analyze graph structure:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let analysis = graph.analyze_structure();
+if analysis.has_cycles {
+    println!("Cycles found: {:?}", analysis.cycles);
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Remove problematic connections:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Remove cycle-causing connection
+graph.remove_connection("node3", "output", "node1", "input")?;
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Implement cycle breaking:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let cycles = graph.detect_cycles();
+for cycle in cycles {
+    // Break cycle by removing weakest connection
+    let weakest_connection = find_weakest_connection(&amp;cycle);
+    graph.remove_connection_by_id(&amp;weakest_connection.id)?;
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h3 id="port-type-mismatches"><a class="header" href="#port-type-mismatches">Port Type Mismatches</a></h3>
+<p><strong>Problem</strong>: Incompatible port types</p>
+<pre><code>Error: Port type mismatch: Cannot connect String output to Integer input
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Add type conversion:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::data_operations::ConverterActor;
+
+let converter = ConverterActor::new()
+    .add_conversion(PortType::String, PortType::Integer, |value| {
+        if let Message::String(s) = value {
+            s.parse::&lt;i64&gt;().map(Message::Integer).ok()
+        } else {
+            None
+        }
+    });
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Use flexible port types:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>PortDefinition::new("input", PortType::Any)
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Implement custom validation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn validate_connection(&amp;self, output_type: &amp;PortType, input_type: &amp;PortType) -&gt; bool {
+    match (output_type, input_type) {
+        (PortType::String, PortType::Integer) =&gt; true, // Allow with conversion
+        (PortType::Any, _) =&gt; true,
+        (_, PortType::Any) =&gt; true,
+        (a, b) =&gt; a == b,
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h2 id="performance-issues"><a class="header" href="#performance-issues">Performance Issues</a></h2>
+<h3 id="high-cpu-usage"><a class="header" href="#high-cpu-usage">High CPU Usage</a></h3>
+<p><strong>Problem</strong>: Actors consuming excessive CPU</p>
+<pre><code>Warning: Actor 'data_processor' CPU usage: 95%
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Profile actor performance:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::time::Instant;
+
+impl Actor for MyActor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        let start = Instant::now();
+        
+        // ... processing logic
+        
+        let duration = start.elapsed();
+        if duration.as_millis() &gt; 100 {
+            log::warn!("Slow processing: {:?}", duration);
+        }
+        
+        Ok(result)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Implement batching:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_components::synchronization::BatchActor;
+
+let batcher = BatchActor::new()
+    .batch_size(100)
+    .timeout(Duration::from_millis(50));
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Use async processing:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn process_async(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+    // Use tokio::task::yield_now() to yield control
+    tokio::task::yield_now().await;
+    
+    // CPU-intensive work
+    let result = heavy_computation(inputs).await;
+    
+    Ok(result)
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h3 id="memory-leaks"><a class="header" href="#memory-leaks">Memory Leaks</a></h3>
+<p><strong>Problem</strong>: Memory usage continuously increases</p>
+<pre><code>Warning: Memory usage increased to 2.1GB (threshold: 2GB)
+</code></pre>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>
+<p>Monitor memory allocation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::profiling::MemoryProfiler;
+
+let profiler = MemoryProfiler::new();
+profiler.start_monitoring();
+
+// ... run workflows
+
+let report = profiler.generate_report();
+println!("Memory hotspots: {:?}", report.hotspots);
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Implement proper cleanup:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Actor for MyActor {
+    fn process(&amp;mut self, inputs: HashMap&lt;String, Message&gt;) -&gt; Result&lt;HashMap&lt;String, Message&gt;, ActorError&gt; {
+        // Process inputs
+        let result = self.do_processing(inputs)?;
+        
+        // Clean up temporary data
+        self.cleanup_temp_data();
+        
+        Ok(result)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>Use memory limits:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = ActorConfig {
+    memory_limit: Some(100 * 1024 * 1024), // 100MB limit
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<h2 id="debugging-tips"><a class="header" href="#debugging-tips">Debugging Tips</a></h2>
+<h3 id="enable-debug-logging"><a class="header" href="#enable-debug-logging">Enable Debug Logging</a></h3>
+<pre><code class="language-toml">[logging]
+level = "debug"
+targets = [
+    "reflow_network=debug",
+    "reflow_components=info",
+    "my_app=trace"
+]
+</code></pre>
+<h3 id="use-network-introspection"><a class="header" href="#use-network-introspection">Use Network Introspection</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Enable network monitoring
+network.enable_monitoring(true);
+
+// Get network statistics
+let stats = network.get_statistics();
+println!("Messages processed: {}", stats.total_messages);
+println!("Average latency: {:?}", stats.average_latency);
+
+// List active actors
+let actors = network.list_active_actors();
+for (id, status) in actors {
+    println!("Actor {}: {:?}", id, status);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="actor-state-inspection"><a class="header" href="#actor-state-inspection">Actor State Inspection</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Enable actor introspection
+actor.enable_introspection(true);
+
+// Get actor state
+let state = actor.get_internal_state();
+println!("Actor state: {:?}", state);
+
+// Monitor port activity
+let port_stats = actor.get_port_statistics();
+for (port, stats) in port_stats {
+    println!("Port {}: {} messages", port, stats.message_count);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="graph-visualization"><a class="header" href="#graph-visualization">Graph Visualization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Export graph for visualization
+let dot_format = graph.export_dot();
+std::fs::write("graph.dot", dot_format)?;
+
+// Generate SVG visualization
+// Use graphviz: dot -Tsvg graph.dot -o graph.svg
+<span class="boring">}</span></code></pre></pre>
+<h2 id="common-error-patterns"><a class="header" href="#common-error-patterns">Common Error Patterns</a></h2>
+<h3 id="error-e001-actor-initialization-failed"><a class="header" href="#error-e001-actor-initialization-failed">Error E001: Actor Initialization Failed</a></h3>
+<ul>
+<li>Check actor dependencies</li>
+<li>Verify configuration parameters</li>
+<li>Ensure required resources are available</li>
+</ul>
+<h3 id="error-e002-message-routing-error"><a class="header" href="#error-e002-message-routing-error">Error E002: Message Routing Error</a></h3>
+<ul>
+<li>Verify connection exists</li>
+<li>Check port names and types</li>
+<li>Ensure target actor is running</li>
+</ul>
+<h3 id="error-e003-network-connection-failed"><a class="header" href="#error-e003-network-connection-failed">Error E003: Network Connection Failed</a></h3>
+<ul>
+<li>Check network connectivity</li>
+<li>Verify server endpoints</li>
+<li>Review firewall settings</li>
+</ul>
+<h3 id="error-g002-cycle-detected"><a class="header" href="#error-g002-cycle-detected">Error G002: Cycle Detected</a></h3>
+<ul>
+<li>Analyze graph structure</li>
+<li>Remove cycle-causing connections</li>
+<li>Consider using async patterns</li>
+</ul>
+<h3 id="error-c004-port-compatibility-error"><a class="header" href="#error-c004-port-compatibility-error">Error C004: Port Compatibility Error</a></h3>
+<ul>
+<li>Check port type definitions</li>
+<li>Add type conversion actors</li>
+<li>Use flexible port types</li>
+</ul>
+<h2 id="getting-help"><a class="header" href="#getting-help">Getting Help</a></h2>
+<ol>
+<li><strong>Check logs</strong>: Enable debug logging for detailed information</li>
+<li><strong>Use monitoring tools</strong>: Enable network and actor monitoring</li>
+<li><strong>Review configuration</strong>: Verify all configuration parameters</li>
+<li><strong>Test in isolation</strong>: Create minimal test cases</li>
+<li><strong>Community support</strong>: Open issues on GitHub with detailed error information</li>
+</ol>
+<h2 id="diagnostic-tools"><a class="header" href="#diagnostic-tools">Diagnostic Tools</a></h2>
+<h3 id="health-check-endpoint"><a class="header" href="#health-check-endpoint">Health Check Endpoint</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Add health check to your application
+use warp::Filter;
+
+let health = warp::path("health")
+    .map(|| {
+        let status = check_system_health();
+        warp::reply::json(&amp;status)
+    });
+
+warp::serve(health)
+    .run(([127, 0, 0, 1], 8080))
+    .await;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="metrics-collection"><a class="header" href="#metrics-collection">Metrics Collection</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use prometheus::{Counter, Histogram, register_counter, register_histogram};
+
+let message_counter = register_counter!("reflow_messages_total", "Total messages processed").unwrap();
+let processing_time = register_histogram!("reflow_processing_duration_seconds", "Processing time").unwrap();
+
+// In actor processing
+message_counter.inc();
+let _timer = processing_time.start_timer();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="performance-profiling"><a class="header" href="#performance-profiling">Performance Profiling</a></h3>
+<pre><code class="language-bash"># CPU profiling
+cargo install flamegraph
+cargo flamegraph --bin reflow-app
+
+# Memory profiling  
+cargo install heaptrack
+heaptrack target/release/reflow-app
+</code></pre>
+<p>For additional help, see:</p>
+<ul>
+<li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+<li><a href="../architecture/overview.html">Architecture Overview</a> - System architecture</li>
+<li><a href="../tutorials/performance-optimization.html">Performance Optimization</a> - Optimization techniques</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../reference/api-reference.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../appendices/glossary.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../reference/api-reference.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../appendices/glossary.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

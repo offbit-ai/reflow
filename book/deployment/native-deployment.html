@@ -1,0 +1,791 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Native Deployment - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="native-deployment"><a class="header" href="#native-deployment">Native Deployment</a></h1>
+<p>This guide covers deploying Reflow workflows as native applications on various platforms.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Native deployment provides:</p>
+<ul>
+<li><strong>Maximum performance</strong> - Direct OS integration</li>
+<li><strong>Resource efficiency</strong> - No containerization overhead</li>
+<li><strong>Platform integration</strong> - Native system services</li>
+<li><strong>Debugging capabilities</strong> - Full toolchain access</li>
+</ul>
+<h2 id="deployment-options"><a class="header" href="#deployment-options">Deployment Options</a></h2>
+<h3 id="standalone-binary"><a class="header" href="#standalone-binary">Standalone Binary</a></h3>
+<p>Compile workflows into self-contained executables:</p>
+<pre><code class="language-bash"># Build optimized release binary
+cargo build --release
+
+# Binary includes all dependencies
+./target/release/my-workflow
+
+# Cross-compilation for different targets
+cargo build --release --target x86_64-pc-windows-gnu
+cargo build --release --target aarch64-apple-darwin
+</code></pre>
+<h3 id="system-service"><a class="header" href="#system-service">System Service</a></h3>
+<p>Deploy as a system service for automatic startup:</p>
+<h4 id="linux-systemd"><a class="header" href="#linux-systemd">Linux (systemd)</a></h4>
+<p>Create <code>/etc/systemd/system/reflow-workflow.service</code>:</p>
+<pre><code class="language-ini">[Unit]
+Description=Reflow Workflow Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=reflow
+Group=reflow
+ExecStart=/opt/reflow/bin/my-workflow
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables
+Environment=RUST_LOG=info
+Environment=REFLOW_CONFIG=/etc/reflow/config.toml
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/reflow /var/log/reflow
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+<p>Enable and start the service:</p>
+<pre><code class="language-bash">sudo systemctl enable reflow-workflow
+sudo systemctl start reflow-workflow
+sudo systemctl status reflow-workflow
+</code></pre>
+<h4 id="macos-launchd"><a class="header" href="#macos-launchd">macOS (launchd)</a></h4>
+<p>Create <code>/Library/LaunchDaemons/com.yourcompany.reflow.plist</code>:</p>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    &lt;key&gt;Label&lt;/key&gt;
+    &lt;string&gt;com.yourcompany.reflow&lt;/string&gt;
+    
+    &lt;key&gt;ProgramArguments&lt;/key&gt;
+    &lt;array&gt;
+        &lt;string&gt;/usr/local/bin/my-workflow&lt;/string&gt;
+    &lt;/array&gt;
+    
+    &lt;key&gt;RunAtLoad&lt;/key&gt;
+    &lt;true/&gt;
+    
+    &lt;key&gt;KeepAlive&lt;/key&gt;
+    &lt;true/&gt;
+    
+    &lt;key&gt;StandardOutPath&lt;/key&gt;
+    &lt;string&gt;/usr/local/var/log/reflow.log&lt;/string&gt;
+    
+    &lt;key&gt;StandardErrorPath&lt;/key&gt;
+    &lt;string&gt;/usr/local/var/log/reflow.error.log&lt;/string&gt;
+    
+    &lt;key&gt;EnvironmentVariables&lt;/key&gt;
+    &lt;dict&gt;
+        &lt;key&gt;RUST_LOG&lt;/key&gt;
+        &lt;string&gt;info&lt;/string&gt;
+    &lt;/dict&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;
+</code></pre>
+<p>Load the service:</p>
+<pre><code class="language-bash">sudo launchctl load /Library/LaunchDaemons/com.yourcompany.reflow.plist
+</code></pre>
+<h4 id="windows-service"><a class="header" href="#windows-service">Windows Service</a></h4>
+<p>Using the <code>windows-service</code> crate:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Cargo.toml
+[dependencies]
+windows-service = "0.6"
+
+// src/main.rs
+use windows_service::{
+    define_windows_service,
+    service::{
+        ServiceAccess, ServiceErrorControl, ServiceInfo, ServiceStartType,
+        ServiceState, ServiceType,
+    },
+    service_control_handler::{self, ServiceControlHandlerResult},
+    service_dispatcher, Result,
+};
+
+define_windows_service!(ffi_service_main, my_service_main);
+
+fn my_service_main(arguments: Vec&lt;std::ffi::OsString&gt;) {
+    if let Err(_e) = run_service(arguments) {
+        // Handle error
+    }
+}
+
+fn run_service(_arguments: Vec&lt;std::ffi::OsString&gt;) -&gt; Result&lt;()&gt; {
+    let event_handler = move |control_event| -&gt; ServiceControlHandlerResult {
+        match control_event {
+            ServiceControl::Stop =&gt; {
+                // Stop the workflow
+                ServiceControlHandlerResult::NoError
+            }
+            ServiceControl::Interrogate =&gt; ServiceControlHandlerResult::NoError,
+            _ =&gt; ServiceControlHandlerResult::NotImplemented,
+        }
+    };
+
+    let status_handle = service_control_handler::register("reflow", event_handler)?;
+
+    // Start workflow
+    start_workflow();
+
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="configuration-management"><a class="header" href="#configuration-management">Configuration Management</a></h2>
+<h3 id="configuration-files"><a class="header" href="#configuration-files">Configuration Files</a></h3>
+<p>Create hierarchical configuration:</p>
+<pre><code class="language-toml"># /etc/reflow/config.toml (system-wide)
+[runtime]
+thread_pool_size = 8
+max_memory_mb = 1024
+
+[logging]
+level = "info"
+output = "/var/log/reflow/app.log"
+
+[network]
+bind_address = "0.0.0.0:8080"
+</code></pre>
+<pre><code class="language-toml"># ~/.config/reflow/config.toml (user-specific)
+[runtime]
+thread_pool_size = 4  # Override system setting
+
+[development]
+hot_reload = true
+debug_mode = true
+</code></pre>
+<h3 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h3>
+<p>Support environment variable overrides:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use config::{Config, Environment, File};
+
+fn load_config() -&gt; Result&lt;AppConfig, config::ConfigError&gt; {
+    let mut settings = Config::builder()
+        // Start with default values
+        .add_source(File::with_name("config/default"))
+        // Add environment-specific config
+        .add_source(File::with_name(&amp;format!("config/{}", env)).required(false))
+        // Add local config
+        .add_source(File::with_name("config/local").required(false))
+        // Add environment variables with REFLOW_ prefix
+        .add_source(Environment::with_prefix("REFLOW"))
+        .build()?;
+
+    settings.try_deserialize()
+}
+
+// Environment variables:
+// REFLOW_RUNTIME__THREAD_POOL_SIZE=16
+// REFLOW_LOGGING__LEVEL=debug
+// REFLOW_NETWORK__BIND_ADDRESS=127.0.0.1:9090
+<span class="boring">}</span></code></pre></pre>
+<h2 id="resource-management"><a class="header" href="#resource-management">Resource Management</a></h2>
+<h3 id="memory-configuration"><a class="header" href="#memory-configuration">Memory Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tikv_jemallocator::Jemalloc;
+
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
+fn configure_memory() {
+    // Set memory limits
+    std::env::set_var("MALLOC_CONF", "lg_dirty_mult:8,lg_muzzy_mult:8");
+    
+    // Configure actor memory limits
+    let config = ActorSystemConfig {
+        max_actors: 10000,
+        max_memory_per_actor: 100 * 1024 * 1024, // 100MB
+        gc_threshold: 0.8,
+    };
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="file-descriptors"><a class="header" href="#file-descriptors">File Descriptors</a></h3>
+<pre><code class="language-bash"># Increase file descriptor limits
+echo "reflow soft nofile 65536" &gt;&gt; /etc/security/limits.conf
+echo "reflow hard nofile 65536" &gt;&gt; /etc/security/limits.conf
+
+# For systemd services
+echo "LimitNOFILE=65536" &gt;&gt; /etc/systemd/system/reflow-workflow.service
+</code></pre>
+<h3 id="cpu-affinity"><a class="header" href="#cpu-affinity">CPU Affinity</a></h3>
+<p>Pin actors to specific CPU cores:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use core_affinity;
+
+fn configure_cpu_affinity() {
+    let core_ids = core_affinity::get_core_ids().unwrap();
+    
+    // Pin high-priority actors to specific cores
+    for (i, actor) in high_priority_actors.iter().enumerate() {
+        let core_id = core_ids[i % core_ids.len()];
+        
+        tokio::spawn(async move {
+            core_affinity::set_for_current(core_id);
+            actor.run().await;
+        });
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="monitoring-and-observability"><a class="header" href="#monitoring-and-observability">Monitoring and Observability</a></h2>
+<h3 id="logging-configuration"><a class="header" href="#logging-configuration">Logging Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tracing::{info, warn, error};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+fn setup_logging() {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "reflow=info".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .with(
+            tracing_appender::rolling::daily("/var/log/reflow", "app.log")
+        )
+        .init();
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="metrics-integration"><a class="header" href="#metrics-integration">Metrics Integration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use prometheus::{Encoder, TextEncoder, register_counter, register_histogram};
+
+lazy_static! {
+    static ref MESSAGES_PROCESSED: prometheus::Counter = register_counter!(
+        "reflow_messages_processed_total",
+        "Total number of messages processed"
+    ).unwrap();
+    
+    static ref MESSAGE_PROCESSING_TIME: prometheus::Histogram = register_histogram!(
+        "reflow_message_processing_seconds",
+        "Time spent processing messages"
+    ).unwrap();
+}
+
+// Expose metrics endpoint
+async fn metrics_handler() -&gt; impl warp::Reply {
+    let encoder = TextEncoder::new();
+    let metric_families = prometheus::gather();
+    let mut buffer = Vec::new();
+    encoder.encode(&amp;metric_families, &amp;mut buffer).unwrap();
+    
+    warp::reply::with_header(buffer, "content-type", "text/plain")
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="health-checks"><a class="header" href="#health-checks">Health Checks</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use warp::Filter;
+
+#[derive(Serialize)]
+struct HealthStatus {
+    status: String,
+    actors: usize,
+    uptime: u64,
+    memory_usage: u64,
+}
+
+async fn health_check() -&gt; Result&lt;impl warp::Reply, warp::Rejection&gt; {
+    let status = HealthStatus {
+        status: "healthy".to_string(),
+        actors: get_active_actor_count(),
+        uptime: get_uptime_seconds(),
+        memory_usage: get_memory_usage(),
+    };
+    
+    Ok(warp::reply::json(&amp;status))
+}
+
+let health = warp::path("health")
+    .and(warp::get())
+    .and_then(health_check);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="security-considerations"><a class="header" href="#security-considerations">Security Considerations</a></h2>
+<h3 id="user-permissions"><a class="header" href="#user-permissions">User Permissions</a></h3>
+<p>Run with minimal privileges:</p>
+<pre><code class="language-bash"># Create dedicated user
+sudo useradd -r -s /bin/false reflow
+sudo mkdir -p /var/lib/reflow /var/log/reflow
+sudo chown reflow:reflow /var/lib/reflow /var/log/reflow
+</code></pre>
+<h3 id="file-system-sandboxing"><a class="header" href="#file-system-sandboxing">File System Sandboxing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::os::unix::fs::PermissionsExt;
+
+fn setup_sandbox() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // Create chroot environment
+    let sandbox_dir = "/var/lib/reflow/sandbox";
+    std::fs::create_dir_all(sandbox_dir)?;
+    
+    // Set restrictive permissions
+    let mut perms = std::fs::metadata(sandbox_dir)?.permissions();
+    perms.set_mode(0o700);
+    std::fs::set_permissions(sandbox_dir, perms)?;
+    
+    // Change root directory (requires root privileges)
+    // unsafe { libc::chroot(sandbox_dir.as_ptr()) };
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="network-security"><a class="header" href="#network-security">Network Security</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tokio::net::TcpListener;
+use rustls::{Certificate, PrivateKey, ServerConfig};
+
+async fn start_secure_server() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // Load TLS certificates
+    let certs = load_certs("cert.pem")?;
+    let key = load_private_key("key.pem")?;
+    
+    let config = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth()
+        .with_single_cert(certs, key)?;
+    
+    let acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(config));
+    let listener = TcpListener::bind("0.0.0.0:8443").await?;
+    
+    while let Ok((stream, _)) = listener.accept().await {
+        let acceptor = acceptor.clone();
+        
+        tokio::spawn(async move {
+            if let Ok(tls_stream) = acceptor.accept(stream).await {
+                handle_connection(tls_stream).await;
+            }
+        });
+    }
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="profile-guided-optimization"><a class="header" href="#profile-guided-optimization">Profile-Guided Optimization</a></h3>
+<pre><code class="language-bash"># Build with instrumentation
+RUSTFLAGS="-Cprofile-generate=/tmp/pgo-data" \
+    cargo build --release
+
+# Run with representative workload
+./target/release/my-workflow --benchmark
+
+# Rebuild with optimization data
+RUSTFLAGS="-Cprofile-use=/tmp/pgo-data" \
+    cargo build --release
+</code></pre>
+<h3 id="link-time-optimization"><a class="header" href="#link-time-optimization">Link-Time Optimization</a></h3>
+<pre><code class="language-toml"># Cargo.toml
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+</code></pre>
+<h3 id="memory-pool-configuration"><a class="header" href="#memory-pool-configuration">Memory Pool Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use object_pool::Pool;
+
+lazy_static! {
+    static ref MESSAGE_POOL: Pool&lt;HashMap&lt;String, Message&gt;&gt; = Pool::new(1000, || {
+        HashMap::with_capacity(16)
+    });
+}
+
+fn get_message_buffer() -&gt; object_pool::Reusable&lt;HashMap&lt;String, Message&gt;&gt; {
+    MESSAGE_POOL.try_pull().unwrap_or_else(|| {
+        MESSAGE_POOL.attach(HashMap::with_capacity(16))
+    })
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="deployment-scripts"><a class="header" href="#deployment-scripts">Deployment Scripts</a></h2>
+<h3 id="automated-deployment"><a class="header" href="#automated-deployment">Automated Deployment</a></h3>
+<pre><code class="language-bash">#!/bin/bash
+# deploy.sh
+
+set -e
+
+APP_NAME="reflow-workflow"
+SERVICE_USER="reflow"
+INSTALL_DIR="/opt/reflow"
+CONFIG_DIR="/etc/reflow"
+LOG_DIR="/var/log/reflow"
+
+echo "Deploying $APP_NAME..."
+
+# Stop existing service
+sudo systemctl stop $APP_NAME || true
+
+# Create directories
+sudo mkdir -p $INSTALL_DIR/bin $CONFIG_DIR $LOG_DIR
+sudo chown $SERVICE_USER:$SERVICE_USER $LOG_DIR
+
+# Copy binary
+sudo cp target/release/$APP_NAME $INSTALL_DIR/bin/
+sudo chmod +x $INSTALL_DIR/bin/$APP_NAME
+
+# Copy configuration
+sudo cp config/production.toml $CONFIG_DIR/config.toml
+sudo chown root:$SERVICE_USER $CONFIG_DIR/config.toml
+sudo chmod 640 $CONFIG_DIR/config.toml
+
+# Install service file
+sudo cp scripts/$APP_NAME.service /etc/systemd/system/
+sudo systemctl daemon-reload
+
+# Start service
+sudo systemctl enable $APP_NAME
+sudo systemctl start $APP_NAME
+
+echo "Deployment complete. Checking status..."
+sudo systemctl status $APP_NAME
+</code></pre>
+<h3 id="rollback-script"><a class="header" href="#rollback-script">Rollback Script</a></h3>
+<pre><code class="language-bash">#!/bin/bash
+# rollback.sh
+
+APP_NAME="reflow-workflow"
+BACKUP_DIR="/opt/reflow/backups"
+
+echo "Rolling back $APP_NAME..."
+
+# Stop current service
+sudo systemctl stop $APP_NAME
+
+# Restore previous version
+LATEST_BACKUP=$(ls -t $BACKUP_DIR/*.tar.gz | head -n1)
+sudo tar -xzf $LATEST_BACKUP -C /opt/reflow/
+
+# Restart service
+sudo systemctl start $APP_NAME
+sudo systemctl status $APP_NAME
+
+echo "Rollback complete."
+</code></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
+<p><strong>High Memory Usage:</strong></p>
+<pre><code class="language-bash"># Check memory allocation
+echo "Memory usage by process:"
+ps aux --sort=-%mem | grep reflow
+
+# Monitor real-time usage
+top -p $(pgrep reflow)
+
+# Check for memory leaks
+valgrind --tool=memcheck --leak-check=full ./my-workflow
+</code></pre>
+<p><strong>Performance Issues:</strong></p>
+<pre><code class="language-bash"># Profile CPU usage
+perf record -g ./my-workflow
+perf report
+
+# Check system resources
+iostat -x 1
+vmstat 1
+</code></pre>
+<p><strong>File Descriptor Limits:</strong></p>
+<pre><code class="language-bash"># Check current limits
+ulimit -n
+
+# Check process usage
+lsof -p $(pgrep reflow) | wc -l
+
+# Monitor file descriptor usage
+watch -n 1 'ls /proc/$(pgrep reflow)/fd | wc -l'
+</code></pre>
+<h3 id="log-analysis"><a class="header" href="#log-analysis">Log Analysis</a></h3>
+<pre><code class="language-bash"># Real-time log monitoring
+tail -f /var/log/reflow/app.log
+
+# Search for errors
+grep -i error /var/log/reflow/app.log
+
+# Analyze performance patterns
+awk '/processing_time/ {sum += $3; count++} END {print "Average:", sum/count}' app.log
+</code></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="deployment-checklist"><a class="header" href="#deployment-checklist">Deployment Checklist</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Resource limits configured</li>
+<li><input disabled="" type="checkbox"/>
+Security permissions set</li>
+<li><input disabled="" type="checkbox"/>
+Monitoring enabled</li>
+<li><input disabled="" type="checkbox"/>
+Health checks implemented</li>
+<li><input disabled="" type="checkbox"/>
+Backup strategy defined</li>
+<li><input disabled="" type="checkbox"/>
+Rollback procedure tested</li>
+<li><input disabled="" type="checkbox"/>
+Documentation updated</li>
+</ul>
+<h3 id="production-readiness"><a class="header" href="#production-readiness">Production Readiness</a></h3>
+<ol>
+<li><strong>Load Testing</strong> - Validate performance under expected load</li>
+<li><strong>Failure Testing</strong> - Test recovery from various failure scenarios</li>
+<li><strong>Security Audit</strong> - Review permissions and access controls</li>
+<li><strong>Monitoring Setup</strong> - Ensure comprehensive observability</li>
+<li><strong>Backup Verification</strong> - Test backup and restore procedures</li>
+</ol>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="./container-deployment.html">Container Deployment</a> - Docker and Kubernetes</li>
+<li><a href="./cloud-deployment.html">Cloud Deployment</a> - AWS, GCP, Azure</li>
+<li><a href="./monitoring-setup.html">Monitoring Setup</a> - Comprehensive observability</li>
+<li><a href="./security-hardening.html">Security Hardening</a> - Production security</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tutorials/performance-optimization.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../examples/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tutorials/performance-optimization.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../examples/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

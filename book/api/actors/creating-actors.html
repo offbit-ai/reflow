@@ -1,0 +1,1680 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Working with Actors - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="creating-actors"><a class="header" href="#creating-actors">Creating Actors</a></h1>
+<p>This guide covers how to create custom actors in Reflow using the correct implementation patterns. Learn everything from basic actors to advanced patterns with state management and error handling.</p>
+<h2 id="creating-actors-two-approaches"><a class="header" href="#creating-actors-two-approaches">Creating Actors: Two Approaches</a></h2>
+<p>Reflow provides two ways to create actors:</p>
+<ol>
+<li><strong>Actor Macro</strong> (Recommended): Use the <code>#[actor]</code> macro for simple, declarative actor creation</li>
+<li><strong>Manual Implementation</strong>: Implement the <code>Actor</code> trait directly for maximum control</li>
+</ol>
+<h2 id="using-the-actor-macro"><a class="header" href="#using-the-actor-macro">Using the Actor Macro</a></h2>
+<p>The <code>#[actor]</code> macro is the recommended way to create actors. It generates all the necessary boilerplate code including the Actor trait implementation, port management, and process creation.</p>
+<h3 id="basic-actor"><a class="header" href="#basic-actor">Basic Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::collections::HashMap;
+use reflow_network::{
+    actor::ActorContext,
+    message::Message,
+};
+use actor_macro::actor;
+
+#[actor(
+    HelloActor,
+    inports::&lt;100&gt;(input),
+    outports::&lt;50&gt;(output)
+)]
+async fn hello_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    if let Some(Message::String(text)) = payload.get("input") {
+        let response = format!("Hello, {}!", text);
+        
+        Ok([
+            ("output".to_owned(), Message::String(response))
+        ].into())
+    } else {
+        Err(anyhow::anyhow!("Expected string input"))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="actor-with-multiple-inputs"><a class="header" href="#actor-with-multiple-inputs">Actor with Multiple Inputs</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[actor(
+    GreeterActor,
+    inports::&lt;100&gt;(name, age),
+    outports::&lt;50&gt;(greeting),
+    await_all_inports  // Wait for both inputs before processing
+)]
+async fn greeter_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    let name = match payload.get("name").expect("expected name") {
+        Message::String(s) =&gt; s,
+        _ =&gt; return Err(anyhow::anyhow!("Name must be a string")),
+    };
+    
+    let age = match payload.get("age").expect("expected age") {
+        Message::Integer(n) =&gt; *n,
+        _ =&gt; return Err(anyhow::anyhow!("Age must be an integer")),
+    };
+    
+    let greeting = format!("Hello {}, you are {} years old!", name, age);
+    
+    Ok([
+        ("greeting".to_owned(), Message::String(greeting))
+    ].into())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="stateful-actor"><a class="header" href="#stateful-actor">Stateful Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::MemoryState;
+
+#[actor(
+    CounterActor,
+    state(MemoryState),
+    inports::&lt;100&gt;(increment, reset),
+    outports::&lt;50&gt;(count, total)
+)]
+async fn counter_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    
+    let mut state_guard = state.lock();
+    let memory_state = state_guard
+        .as_mut_any()
+        .downcast_mut::&lt;MemoryState&gt;()
+        .expect("Expected MemoryState");
+    
+    // Initialize state if needed
+    if !memory_state.contains_key("count") {
+        memory_state.insert("count", serde_json::json!(0));
+        memory_state.insert("total", serde_json::json!(0));
+    }
+    
+    let current_count = memory_state.get("count")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    
+    let current_total = memory_state.get("total")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    
+    let (new_count, new_total) = if payload.contains_key("reset") {
+        // Reset counter
+        (0, current_total)
+    } else if let Some(Message::Integer(amount)) = payload.get("increment") {
+        // Increment by specific amount
+        let new_count = current_count + amount;
+        (new_count, current_total + amount)
+    } else {
+        // Default increment by 1
+        let new_count = current_count + 1;
+        (new_count, current_total + 1)
+    };
+    
+    // Update state
+    memory_state.insert("count", serde_json::json!(new_count));
+    memory_state.insert("total", serde_json::json!(new_total));
+    
+    println!("Counter: {} (total: {})", new_count, new_total);
+    
+    Ok([
+        ("count".to_owned(), Message::Integer(new_count)),
+        ("total".to_owned(), Message::Integer(new_total)),
+    ].into())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="actor-macro-parameters"><a class="header" href="#actor-macro-parameters">Actor Macro Parameters</a></h2>
+<h3 id="port-definitions"><a class="header" href="#port-definitions">Port Definitions</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Basic ports (unbounded channels)
+inports(A, B, C)
+outports(X, Y)
+
+// Ports with capacity (bounded channels)
+inports::&lt;100&gt;(A, B)      // Input ports with capacity 100
+outports::&lt;50&gt;(X, Y)      // Output ports with capacity 50
+<span class="boring">}</span></code></pre></pre>
+<h3 id="state-management"><a class="header" href="#state-management">State Management</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Use built-in MemoryState
+state(MemoryState)
+
+// Custom state types can also be used
+// (must implement ActorState trait)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="input-synchronization"><a class="header" href="#input-synchronization">Input Synchronization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Process inputs as they arrive (default)
+#[actor(MyActor, inports(A, B), outports(C))]
+
+// Wait for ALL inputs before processing
+#[actor(MyActor, inports(A, B), outports(C), await_all_inports)]
+<span class="boring">}</span></code></pre></pre>
+<h2 id="practical-examples"><a class="header" href="#practical-examples">Practical Examples</a></h2>
+<h3 id="data-processing-pipeline"><a class="header" href="#data-processing-pipeline">Data Processing Pipeline</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Sum Actor - adds numbers from multiple sources
+#[actor(
+    SumActor,
+    inports::&lt;100&gt;(numbers),
+    outports::&lt;50&gt;(sum, count)
+)]
+async fn sum_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    if let Some(Message::Array(numbers)) = payload.get("numbers") {
+        let mut sum = 0i64;
+        let mut count = 0usize;
+        
+        for num in numbers {
+            if let Message::Integer(n) = num {
+                sum += n;
+                count += 1;
+            }
+        }
+        
+        println!("Sum Actor: {} numbers, sum = {}", count, sum);
+        
+        Ok([
+            ("sum".to_owned(), Message::Integer(sum)),
+            ("count".to_owned(), Message::Integer(count as i64)),
+        ].into())
+    } else {
+        Err(anyhow::anyhow!("Expected array of numbers"))
+    }
+}
+
+// Filter Actor - filters values based on condition
+#[actor(
+    FilterActor,
+    inports::&lt;100&gt;(values, threshold),
+    outports::&lt;50&gt;(passed, failed),
+    await_all_inports
+)]
+async fn filter_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    let threshold = match payload.get("threshold").expect("expected threshold") {
+        Message::Integer(t) =&gt; *t,
+        _ =&gt; return Err(anyhow::anyhow!("Threshold must be integer")),
+    };
+    
+    if let Some(Message::Array(values)) = payload.get("values") {
+        let mut passed = Vec::new();
+        let mut failed = Vec::new();
+        
+        for value in values {
+            if let Message::Integer(n) = value {
+                if *n &gt;= threshold {
+                    passed.push(value.clone());
+                } else {
+                    failed.push(value.clone());
+                }
+            }
+        }
+        
+        println!("Filter Actor: {} passed, {} failed (threshold: {})", 
+                passed.len(), failed.len(), threshold);
+        
+        Ok([
+            ("passed".to_owned(), Message::Array(passed)),
+            ("failed".to_owned(), Message::Array(failed)),
+        ].into())
+    } else {
+        Err(anyhow::anyhow!("Expected array of values"))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="http-client-actor"><a class="header" href="#http-client-actor">HTTP Client Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reqwest;
+
+#[actor(
+    HttpClientActor,
+    inports::&lt;50&gt;(request),
+    outports::&lt;25&gt;(response, error)
+)]
+async fn http_client_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    // Parse request
+    let request = match payload.get("request") {
+        Some(Message::Object(obj)) =&gt; obj,
+        _ =&gt; return Err(anyhow::anyhow!("Expected request object")),
+    };
+    
+    let url = match request.get("url") {
+        Some(Message::String(s)) =&gt; s,
+        _ =&gt; return Err(anyhow::anyhow!("Missing URL in request")),
+    };
+    
+    let method = request.get("method")
+        .and_then(|m| if let Message::String(s) = m { Some(s.as_str()) } else { None })
+        .unwrap_or("GET");
+    
+    // Make HTTP request
+    let client = reqwest::Client::new();
+    
+    let result = match method {
+        "GET" =&gt; {
+            match client.get(url).send().await {
+                Ok(response) =&gt; {
+                    let status = response.status().as_u16();
+                    let text = response.text().await.unwrap_or_default();
+                    
+                    let response_obj = [
+                        ("status".to_owned(), Message::Integer(status as i64)),
+                        ("body".to_owned(), Message::String(text)),
+                        ("url".to_owned(), Message::String(url.clone())),
+                    ].into();
+                    
+                    [("response".to_owned(), Message::Object(response_obj))].into()
+                },
+                Err(e) =&gt; {
+                    let error_obj = [
+                        ("message".to_owned(), Message::String(e.to_string())),
+                        ("url".to_owned(), Message::String(url.clone())),
+                    ].into();
+                    
+                    [("error".to_owned(), Message::Object(error_obj))].into()
+                }
+            }
+        },
+        "POST" =&gt; {
+            let body = request.get("body")
+                .and_then(|b| if let Message::String(s) = b { Some(s) } else { None })
+                .unwrap_or("");
+            
+            match client.post(url).body(body.to_string()).send().await {
+                Ok(response) =&gt; {
+                    let status = response.status().as_u16();
+                    let text = response.text().await.unwrap_or_default();
+                    
+                    let response_obj = [
+                        ("status".to_owned(), Message::Integer(status as i64)),
+                        ("body".to_owned(), Message::String(text)),
+                        ("url".to_owned(), Message::String(url.clone())),
+                    ].into();
+                    
+                    [("response".to_owned(), Message::Object(response_obj))].into()
+                },
+                Err(e) =&gt; {
+                    let error_obj = [
+                        ("message".to_owned(), Message::String(e.to_string())),
+                        ("url".to_owned(), Message::String(url.clone())),
+                    ].into();
+                    
+                    [("error".to_owned(), Message::Object(error_obj))].into()
+                }
+            }
+        },
+        _ =&gt; {
+            let error_obj = [
+                ("message".to_owned(), Message::String(format!("Unsupported method: {}", method))),
+            ].into();
+            
+            [("error".to_owned(), Message::Object(error_obj))].into()
+        }
+    };
+    
+    Ok(result)
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="batch-processing-actor"><a class="header" href="#batch-processing-actor">Batch Processing Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[actor(
+    BatchActor,
+    state(MemoryState),
+    inports::&lt;200&gt;(item, flush),
+    outports::&lt;50&gt;(batch, count)
+)]
+async fn batch_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    
+    let mut state_guard = state.lock();
+    let memory_state = state_guard
+        .as_mut_any()
+        .downcast_mut::&lt;MemoryState&gt;()
+        .expect("Expected MemoryState");
+    
+    // Initialize batch storage
+    if !memory_state.contains_key("batch") {
+        memory_state.insert("batch", serde_json::json!([]));
+        memory_state.insert("batch_size", serde_json::json!(10)); // Configurable batch size
+    }
+    
+    let batch_size = memory_state.get("batch_size")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(10) as usize;
+    
+    let mut current_batch: Vec&lt;serde_json::Value&gt; = memory_state.get("batch")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    
+    // Handle flush command
+    if payload.contains_key("flush") {
+        if !current_batch.is_empty() {
+            let batch_messages: Vec&lt;Message&gt; = current_batch
+                .into_iter()
+                .map(|v| Message::from(v))
+                .collect();
+            
+            // Clear batch
+            memory_state.insert("batch", serde_json::json!([]));
+            
+            let count = batch_messages.len();
+            println!("Batch Actor: Flushing {} items", count);
+            
+            return Ok([
+                ("batch".to_owned(), Message::Array(batch_messages)),
+                ("count".to_owned(), Message::Integer(count as i64)),
+            ].into());
+        } else {
+            return Ok(HashMap::new()); // No items to flush
+        }
+    }
+    
+    // Handle new item
+    if let Some(item) = payload.get("item") {
+        current_batch.push(serde_json::json!(item));
+        
+        // Check if batch is full
+        if current_batch.len() &gt;= batch_size {
+            let batch_messages: Vec&lt;Message&gt; = current_batch
+                .iter()
+                .map(|v| Message::from(v.clone()))
+                .collect();
+            
+            // Clear batch
+            memory_state.insert("batch", serde_json::json!([]));
+            
+            let count = batch_messages.len();
+            println!("Batch Actor: Full batch of {} items", count);
+            
+            Ok([
+                ("batch".to_owned(), Message::Array(batch_messages)),
+                ("count".to_owned(), Message::Integer(count as i64)),
+            ].into())
+        } else {
+            // Update batch state
+            memory_state.insert("batch", serde_json::json!(current_batch));
+            
+            // Return empty result (batch not ready yet)
+            Ok(HashMap::new())
+        }
+    } else {
+        Err(anyhow::anyhow!("Expected item or flush command"))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling-patterns"><a class="header" href="#error-handling-patterns">Error Handling Patterns</a></h2>
+<h3 id="graceful-error-handling"><a class="header" href="#graceful-error-handling">Graceful Error Handling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[actor(
+    ValidatorActor,
+    inports::&lt;100&gt;(data),
+    outports::&lt;50&gt;(valid, invalid, error)
+)]
+async fn validator_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    match payload.get("data") {
+        Some(Message::Integer(n)) if *n &gt; 0 =&gt; {
+            println!("Validator: Valid number {}", n);
+            Ok([("valid".to_owned(), Message::Integer(*n))].into())
+        },
+        Some(Message::Integer(n)) =&gt; {
+            println!("Validator: Invalid number {} (must be positive)", n);
+            Ok([("invalid".to_owned(), Message::Integer(*n))].into())
+        },
+        Some(other) =&gt; {
+            let error_msg = format!("Expected integer, got {:?}", other);
+            println!("Validator: {}", error_msg);
+            Ok([("error".to_owned(), Message::Error(error_msg))].into())
+        },
+        None =&gt; {
+            Err(anyhow::anyhow!("Missing data field"))
+        }
+    }
+}
+
+// Retry Actor - implements retry logic with exponential backoff
+#[actor(
+    RetryActor,
+    state(MemoryState),
+    inports::&lt;50&gt;(task),
+    outports::&lt;25&gt;(success, failure)
+)]
+async fn retry_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    
+    let task = payload.get("task")
+        .ok_or_else(|| anyhow::anyhow!("Missing task"))?;
+    
+    let max_retries = 3;
+    let base_delay_ms = 100;
+    
+    for attempt in 1..=max_retries {
+        match simulate_task_processing(task).await {
+            Ok(result) =&gt; {
+                println!("Retry Actor: Task succeeded on attempt {}", attempt);
+                return Ok([("success".to_owned(), result)].into());
+            },
+            Err(e) =&gt; {
+                if attempt &lt; max_retries {
+                    let delay = base_delay_ms * (2_u64.pow(attempt - 1));
+                    println!("Retry Actor: Attempt {} failed, retrying in {}ms: {}", 
+                            attempt, delay, e);
+                    
+                    tokio::time::sleep(tokio::time::Duration::from_millis(delay)).await;
+                } else {
+                    println!("Retry Actor: All {} attempts failed: {}", max_retries, e);
+                    return Ok([
+                        ("failure".to_owned(), Message::Error(format!("Failed after {} attempts: {}", max_retries, e)))
+                    ].into());
+                }
+            }
+        }
+    }
+    
+    unreachable!()
+}
+
+async fn simulate_task_processing(task: &amp;Message) -&gt; Result&lt;Message, anyhow::Error&gt; {
+    // Simulate processing that might fail
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    
+    if rng.gen_bool(0.7) { // 70% success rate
+        Ok(Message::String(format!("Processed: {:?}", task)))
+    } else {
+        Err(anyhow::anyhow!("Simulated task failure"))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="using-actors-in-networks"><a class="header" href="#using-actors-in-networks">Using Actors in Networks</a></h2>
+<h3 id="registration-and-instantiation"><a class="header" href="#registration-and-instantiation">Registration and Instantiation</a></h3>
+<pre><pre class="playground"><code class="language-rust">use reflow_network::{Network, NetworkConfig};
+use reflow_network::connector::{Connector, ConnectionPoint, InitialPacket};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), anyhow::Error&gt; {
+    let mut network = Network::new(NetworkConfig::default());
+    
+    // Register actor types
+    network.register_actor("hello_process", HelloActor::new())?;
+    network.register_actor("counter_process", CounterActor::new())?;
+    network.register_actor("validator_process", ValidatorActor::new())?;
+    
+    // Create actor instances
+    network.add_node("hello1", "hello_process")?;
+    network.add_node("counter1", "counter_process")?;
+    network.add_node("validator1", "validator_process")?;
+    
+    // Connect actors
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "hello1".to_owned(),
+            port: "output".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "validator1".to_owned(),
+            port: "data".to_owned(),
+            ..Default::default()
+        },
+    });
+    
+    // Send initial data
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "hello1".to_owned(),
+            port: "input".to_owned(),
+            initial_data: Some(Message::String("World".to_owned())),
+        },
+    });
+    
+    // Start the network
+    network.start().await?;
+    
+    // Wait for processing
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="testing-actors"><a class="header" href="#testing-actors">Testing Actors</a></h2>
+<h3 id="unit-testing-actor-functions"><a class="header" href="#unit-testing-actor-functions">Unit Testing Actor Functions</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+    use reflow_network::actor::{ActorContext, MemoryState, ActorLoad};
+    use std::sync::Arc;
+    use parking_lot::Mutex;
+    
+    fn create_test_context(payload: HashMap&lt;String, Message&gt;) -&gt; ActorContext {
+        let (tx, _rx) = flume::unbounded();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(MemoryState::default()));
+        
+        ActorContext::new(
+            payload,
+            (tx, _rx),
+            state,
+            HashMap::new(),
+            Arc::new(Mutex::new(ActorLoad::new(0))),
+        )
+    }
+    
+    #[tokio::test]
+    async fn test_hello_actor() {
+        let payload = HashMap::from([
+            ("input".to_string(), Message::String("Test".to_string()))
+        ]);
+        
+        let context = create_test_context(payload);
+        let result = hello_actor(context).await.unwrap();
+        
+        assert_eq!(
+            result.get("output"),
+            Some(&amp;Message::String("Hello, Test!".to_string()))
+        );
+    }
+    
+    #[tokio::test]
+    async fn test_counter_actor_increment() {
+        let payload = HashMap::from([
+            ("increment".to_string(), Message::Integer(5))
+        ]);
+        
+        let context = create_test_context(payload);
+        let result = counter_actor(context).await.unwrap();
+        
+        assert_eq!(result.get("count"), Some(&amp;Message::Integer(5)));
+        assert_eq!(result.get("total"), Some(&amp;Message::Integer(5)));
+    }
+    
+    #[tokio::test]
+    async fn test_greeter_actor() {
+        let payload = HashMap::from([
+            ("name".to_string(), Message::String("Alice".to_string())),
+            ("age".to_string(), Message::Integer(30)),
+        ]);
+        
+        let context = create_test_context(payload);
+        let result = greeter_actor(context).await.unwrap();
+        
+        assert_eq!(
+            result.get("greeting"),
+            Some(&amp;Message::String("Hello Alice, you are 30 years old!".to_string()))
+        );
+    }
+    
+    #[tokio::test]
+    async fn test_validator_actor_valid() {
+        let payload = HashMap::from([
+            ("data".to_string(), Message::Integer(42))
+        ]);
+        
+        let context = create_test_context(payload);
+        let result = validator_actor(context).await.unwrap();
+        
+        assert_eq!(result.get("valid"), Some(&amp;Message::Integer(42)));
+        assert!(!result.contains_key("invalid"));
+        assert!(!result.contains_key("error"));
+    }
+    
+    #[tokio::test]
+    async fn test_validator_actor_invalid() {
+        let payload = HashMap::from([
+            ("data".to_string(), Message::Integer(-5))
+        ]);
+        
+        let context = create_test_context(payload);
+        let result = validator_actor(context).await.unwrap();
+        
+        assert_eq!(result.get("invalid"), Some(&amp;Message::Integer(-5)));
+        assert!(!result.contains_key("valid"));
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="actor-design-guidelines"><a class="header" href="#actor-design-guidelines">Actor Design Guidelines</a></h3>
+<ol>
+<li><strong>Single Responsibility</strong>: Each actor should have one clear purpose</li>
+<li><strong>Idempotent Processing</strong>: Handle duplicate messages gracefully</li>
+<li><strong>Error Propagation</strong>: Use both Result returns and error output ports</li>
+<li><strong>State Minimal</strong>: Keep state minimal and well-defined</li>
+<li><strong>Port Naming</strong>: Use descriptive port names</li>
+</ol>
+<h3 id="performance-tips"><a class="header" href="#performance-tips">Performance Tips</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Use appropriate channel capacities
+inports::&lt;1000&gt;(high_volume_input)   // High throughput
+inports::&lt;10&gt;(low_volume_input)      // Low throughput
+
+// Batch processing for efficiency
+#[actor(
+    EfficientProcessor,
+    inports::&lt;500&gt;(batch),
+    outports::&lt;100&gt;(results)
+)]
+async fn efficient_processor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    if let Some(Message::Array(items)) = payload.get("batch") {
+        // Process items in parallel
+        use futures::stream::{self, StreamExt};
+        
+        let results: Vec&lt;Message&gt; = stream::iter(items.iter())
+            .map(|item| async move {
+                process_single_item(item).await
+            })
+            .buffer_unordered(10) // Process 10 items concurrently
+            .collect()
+            .await;
+        
+        Ok([("results".to_owned(), Message::Array(results))].into())
+    } else {
+        Err(anyhow::anyhow!("Expected batch of items"))
+    }
+}
+
+async fn process_single_item(item: &amp;Message) -&gt; Message {
+    // Simulate processing
+    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+    item.clone()
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="memory-management"><a class="header" href="#memory-management">Memory Management</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Avoid cloning large data when possible
+#[actor(
+    MemoryEfficientActor,
+    inports::&lt;100&gt;(data),
+    outports::&lt;50&gt;(processed)
+)]
+async fn memory_efficient_actor(context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+    let payload = context.get_payload();
+    
+    // Process data in-place when possible
+    if let Some(Message::Array(items)) = payload.get("data") {
+        let count = items.len();
+        
+        // Instead of cloning all items, just extract what we need
+        let summary = Message::Object([
+            ("count".to_owned(), Message::Integer(count as i64)),
+            ("first_item".to_owned(), items.first().cloned().unwrap_or(Message::None)),
+            ("last_item".to_owned(), items.last().cloned().unwrap_or(Message::None)),
+        ].into());
+        
+        Ok([("processed".to_owned(), summary)].into())
+    } else {
+        Err(anyhow::anyhow!("Expected array data"))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="manual-actor-implementation"><a class="header" href="#manual-actor-implementation">Manual Actor Implementation</a></h2>
+<p>For maximum control or when the macro limitations are insufficient, you can implement the Actor trait manually. This approach gives you complete control over the actor's behavior and lifecycle.</p>
+<h3 id="basic-manual-actor"><a class="header" href="#basic-manual-actor">Basic Manual Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::{Actor, ActorBehavior, ActorContext, Port, MemoryState, ActorLoad};
+use reflow_network::message::Message;
+use std::collections::HashMap;
+use std::sync::Arc;
+use parking_lot::Mutex;
+use std::pin::Pin;
+use std::future::Future;
+
+pub struct ManualActor {
+    inports: Port,
+    outports: Port,
+    name: String,
+    load: Arc&lt;Mutex&lt;ActorLoad&gt;&gt;,
+}
+
+impl ManualActor {
+    pub fn new(name: String) -&gt; Self {
+        Self {
+            inports: flume::unbounded(),
+            outports: flume::unbounded(),
+            name,
+            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+        }
+    }
+}
+
+impl Actor for ManualActor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior {
+        let name = self.name.clone();
+        
+        Box::new(move |context: ActorContext| {
+            let name = name.clone();
+            
+            Box::pin(async move {
+                let payload = context.get_payload();
+                
+                if let Some(Message::String(text)) = payload.get("input") {
+                    let response = format!("{}: Processing '{}'", name, text);
+                    println!("{}", response);
+                    
+                    Ok([
+                        ("output".to_owned(), Message::String(response))
+                    ].into())
+                } else {
+                    Err(anyhow::anyhow!("Expected string input"))
+                }
+            })
+        })
+    }
+    
+    fn get_inports(&amp;self) -&gt; Port {
+        self.inports.clone()
+    }
+    
+    fn get_outports(&amp;self) -&gt; Port {
+        self.outports.clone()
+    }
+    
+    fn load_count(&amp;self) -&gt; Arc&lt;Mutex&lt;ActorLoad&gt;&gt; {
+        self.load.clone()
+    }
+    
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt; {
+        let inports = self.get_inports();
+        let behavior = self.get_behavior();
+        let outports = self.get_outports();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(MemoryState::default()));
+        let load_count = self.load_count();
+        
+        Box::pin(async move {
+            use futures::stream::StreamExt;
+            
+            loop {
+                if let Some(payload) = inports.1.stream().next().await {
+                    // Increment load count
+                    {
+                        let mut load = load_count.lock();
+                        load.inc();
+                    }
+                    
+                    let context = ActorContext::new(
+                        payload,
+                        outports.clone(),
+                        state.clone(),
+                        HashMap::new(),
+                        load_count.clone(),
+                    );
+                    
+                    match behavior(context).await {
+                        Ok(result) =&gt; {
+                            if !result.is_empty() {
+                                let _ = outports.0.send(result);
+                            }
+                        },
+                        Err(e) =&gt; {
+                            eprintln!("Error in actor behavior: {:?}", e);
+                        }
+                    }
+                    
+                    // Decrement load count
+                    {
+                        let mut load = load_count.lock();
+                        load.dec();
+                    }
+                }
+            }
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="stateful-manual-actor"><a class="header" href="#stateful-manual-actor">Stateful Manual Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CustomState {
+    pub counter: i64,
+    pub last_message: String,
+    pub timestamps: Vec&lt;i64&gt;,
+}
+
+impl reflow_network::actor::ActorState for CustomState {
+    fn as_mut_any(&amp;mut self) -&gt; &amp;mut dyn std::any::Any {
+        self
+    }
+    
+    fn as_any(&amp;self) -&gt; &amp;dyn std::any::Any {
+        self
+    }
+}
+
+pub struct StatefulManualActor {
+    inports: Port,
+    outports: Port,
+    initial_state: CustomState,
+    load: Arc&lt;Mutex&lt;ActorLoad&gt;&gt;,
+}
+
+impl StatefulManualActor {
+    pub fn new(initial_state: CustomState) -&gt; Self {
+        Self {
+            inports: flume::unbounded(),
+            outports: flume::unbounded(),
+            initial_state,
+            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+        }
+    }
+}
+
+impl Actor for StatefulManualActor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior {
+        Box::new(|context: ActorContext| {
+            Box::pin(async move {
+                let payload = context.get_payload();
+                let state = context.get_state();
+                
+                let mut state_guard = state.lock();
+                let custom_state = state_guard
+                    .as_mut_any()
+                    .downcast_mut::&lt;CustomState&gt;()
+                    .expect("Expected CustomState");
+                
+                // Update counter
+                custom_state.counter += 1;
+                
+                // Record timestamp
+                let now = chrono::Utc::now().timestamp_millis();
+                custom_state.timestamps.push(now);
+                
+                // Keep only last 10 timestamps
+                if custom_state.timestamps.len() &gt; 10 {
+                    custom_state.timestamps.remove(0);
+                }
+                
+                // Process message
+                if let Some(Message::String(text)) = payload.get("message") {
+                    custom_state.last_message = text.clone();
+                    
+                    let response = format!(
+                        "Processed message #{}: '{}' (last 5 timestamps: {:?})",
+                        custom_state.counter,
+                        text,
+                        custom_state.timestamps.iter().rev().take(5).collect::&lt;Vec&lt;_&gt;&gt;()
+                    );
+                    
+                    Ok([
+                        ("response".to_owned(), Message::String(response)),
+                        ("counter".to_owned(), Message::Integer(custom_state.counter)),
+                    ].into())
+                } else {
+                    Err(anyhow::anyhow!("Expected message field"))
+                }
+            })
+        })
+    }
+    
+    fn get_inports(&amp;self) -&gt; Port {
+        self.inports.clone()
+    }
+    
+    fn get_outports(&amp;self) -&gt; Port {
+        self.outports.clone()
+    }
+    
+    fn load_count(&amp;self) -&gt; Arc&lt;Mutex&lt;ActorLoad&gt;&gt; {
+        self.load.clone()
+    }
+    
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt; {
+        let inports = self.get_inports();
+        let behavior = self.get_behavior();
+        let outports = self.get_outports();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(self.initial_state.clone()));
+        let load_count = self.load_count();
+        
+        Box::pin(async move {
+            use futures::stream::StreamExt;
+            
+            loop {
+                if let Some(payload) = inports.1.stream().next().await {
+                    // Increment load count
+                    {
+                        let mut load = load_count.lock();
+                        load.inc();
+                    }
+                    
+                    let context = ActorContext::new(
+                        payload,
+                        outports.clone(),
+                        state.clone(),
+                        HashMap::new(),
+                        load_count.clone(),
+                    );
+                    
+                    match behavior(context).await {
+                        Ok(result) =&gt; {
+                            if !result.is_empty() {
+                                let _ = outports.0.send(result);
+                            }
+                        },
+                        Err(e) =&gt; {
+                            eprintln!("Error in stateful actor behavior: {:?}", e);
+                        }
+                    }
+                    
+                    // Decrement load count
+                    {
+                        let mut load = load_count.lock();
+                        load.dec();
+                    }
+                }
+            }
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="multi-input-manual-actor"><a class="header" href="#multi-input-manual-actor">Multi-Input Manual Actor</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct MultiInputActor {
+    inports: Port,
+    outports: Port,
+    await_all_inputs: bool,
+    input_ports: Vec&lt;String&gt;,
+    load: Arc&lt;Mutex&lt;ActorLoad&gt;&gt;,
+}
+
+impl MultiInputActor {
+    pub fn new(input_ports: Vec&lt;String&gt;, await_all_inputs: bool) -&gt; Self {
+        Self {
+            inports: flume::bounded(100),
+            outports: flume::bounded(50),
+            await_all_inputs,
+            input_ports,
+            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+        }
+    }
+}
+
+impl Actor for MultiInputActor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior {
+        Box::new(|context: ActorContext| {
+            Box::pin(async move {
+                let payload = context.get_payload();
+                
+                // Collect all available data
+                let mut results = HashMap::new();
+                let mut total_value = 0i64;
+                let mut value_count = 0;
+                
+                for (port, message) in &amp;payload {
+                    if let Message::Integer(value) = message {
+                        total_value += value;
+                        value_count += 1;
+                        
+                        results.insert(
+                            format!("processed_{}", port), 
+                            Message::Integer(value * 2)
+                        );
+                    }
+                }
+                
+                if value_count &gt; 0 {
+                    results.insert("sum".to_owned(), Message::Integer(total_value));
+                    results.insert("average".to_owned(), Message::Integer(total_value / value_count));
+                    results.insert("count".to_owned(), Message::Integer(value_count));
+                }
+                
+                println!("MultiInput Actor: processed {} values, sum = {}", value_count, total_value);
+                
+                Ok(results)
+            })
+        })
+    }
+    
+    fn get_inports(&amp;self) -&gt; Port {
+        self.inports.clone()
+    }
+    
+    fn get_outports(&amp;self) -&gt; Port {
+        self.outports.clone()
+    }
+    
+    fn load_count(&amp;self) -&gt; Arc&lt;Mutex&lt;ActorLoad&gt;&gt; {
+        self.load.clone()
+    }
+    
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt; {
+        let inports = self.get_inports();
+        let behavior = self.get_behavior();
+        let outports = self.get_outports();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(MemoryState::default()));
+        let load_count = self.load_count();
+        let await_all_inputs = self.await_all_inputs;
+        let input_ports_count = self.input_ports.len();
+        
+        Box::pin(async move {
+            use futures::stream::StreamExt;
+            let mut all_inputs: HashMap&lt;String, Message&gt; = HashMap::new();
+            
+            loop {
+                if let Some(packet) = inports.1.stream().next().await {
+                    // Increment load count
+                    {
+                        let mut load = load_count.lock();
+                        load.inc();
+                    }
+                    
+                    if await_all_inputs {
+                        // Accumulate inputs until we have all expected ports
+                        all_inputs.extend(packet);
+                        
+                        if all_inputs.len() &gt;= input_ports_count {
+                            let context = ActorContext::new(
+                                all_inputs.clone(),
+                                outports.clone(),
+                                state.clone(),
+                                HashMap::new(),
+                                load_count.clone(),
+                            );
+                            
+                            match behavior(context).await {
+                                Ok(result) =&gt; {
+                                    if !result.is_empty() {
+                                        let _ = outports.0.send(result);
+                                    }
+                                },
+                                Err(e) =&gt; {
+                                    eprintln!("Error in multi-input actor behavior: {:?}", e);
+                                }
+                            }
+                            
+                            all_inputs.clear();
+                        } else {
+                            // Continue without decrementing load count
+                            {
+                                let mut load = load_count.lock();
+                                load.dec();
+                            }
+                            continue;
+                        }
+                    } else {
+                        // Process immediately
+                        let context = ActorContext::new(
+                            packet,
+                            outports.clone(),
+                            state.clone(),
+                            HashMap::new(),
+                            load_count.clone(),
+                        );
+                        
+                        match behavior(context).await {
+                            Ok(result) =&gt; {
+                                if !result.is_empty() {
+                                    let _ = outports.0.send(result);
+                                }
+                            },
+                            Err(e) =&gt; {
+                                eprintln!("Error in multi-input actor behavior: {:?}", e);
+                            }
+                        }
+                    }
+                    
+                    // Decrement load count
+                    {
+                        let mut load = load_count.lock();
+                        load.dec();
+                    }
+                }
+            }
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="when-to-use-manual-implementation"><a class="header" href="#when-to-use-manual-implementation">When to Use Manual Implementation</a></h3>
+<p><strong>Use manual implementation when:</strong></p>
+<ol>
+<li><strong>Complex State Requirements</strong>: You need custom state types or complex state initialization</li>
+<li><strong>Custom Port Logic</strong>: You need dynamic port creation or complex routing logic</li>
+<li><strong>Advanced Error Handling</strong>: You need sophisticated error recovery or circuit breaker patterns</li>
+<li><strong>Performance Optimization</strong>: You need fine-grained control over message processing</li>
+<li><strong>Integration Requirements</strong>: You need to integrate with external systems in specific ways</li>
+</ol>
+<p><strong>Example: Circuit Breaker Actor</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug, Clone)]
+enum CircuitState {
+    Closed,   // Normal operation
+    Open,     // Failing, rejecting requests
+    HalfOpen, // Testing if service recovered
+}
+
+pub struct CircuitBreakerActor {
+    inports: Port,
+    outports: Port,
+    failure_threshold: u32,
+    timeout_ms: u64,
+    load: Arc&lt;Mutex&lt;ActorLoad&gt;&gt;,
+}
+
+impl CircuitBreakerActor {
+    pub fn new(failure_threshold: u32, timeout_ms: u64) -&gt; Self {
+        Self {
+            inports: flume::unbounded(),
+            outports: flume::unbounded(),
+            failure_threshold,
+            timeout_ms,
+            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+        }
+    }
+}
+
+impl Actor for CircuitBreakerActor {
+    fn get_behavior(&amp;self) -&gt; ActorBehavior {
+        let failure_threshold = self.failure_threshold;
+        let timeout_ms = self.timeout_ms;
+        
+        Box::new(move |context: ActorContext| {
+            Box::pin(async move {
+                let payload = context.get_payload();
+                let state = context.get_state();
+                
+                let mut state_guard = state.lock();
+                let memory_state = state_guard
+                    .as_mut_any()
+                    .downcast_mut::&lt;MemoryState&gt;()
+                    .expect("Expected MemoryState");
+                
+                // Initialize circuit breaker state
+                if !memory_state.contains_key("circuit_state") {
+                    memory_state.insert("circuit_state", serde_json::json!("Closed"));
+                    memory_state.insert("failure_count", serde_json::json!(0));
+                    memory_state.insert("last_failure_time", serde_json::json!(0));
+                }
+                
+                let circuit_state_str = memory_state.get("circuit_state")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Closed");
+                
+                let failure_count = memory_state.get("failure_count")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0) as u32;
+                
+                let last_failure_time = memory_state.get("last_failure_time")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0);
+                
+                let circuit_state = match circuit_state_str {
+                    "Open" =&gt; CircuitState::Open,
+                    "HalfOpen" =&gt; CircuitState::HalfOpen,
+                    _ =&gt; CircuitState::Closed,
+                };
+                
+                let now = chrono::Utc::now().timestamp_millis();
+                
+                match circuit_state {
+                    CircuitState::Open =&gt; {
+                        // Check if timeout has passed
+                        if now - last_failure_time &gt; timeout_ms as i64 {
+                            memory_state.insert("circuit_state", serde_json::json!("HalfOpen"));
+                            println!("Circuit breaker: Transitioning to HalfOpen");
+                        } else {
+                            return Ok([
+                                ("rejected".to_owned(), 
+                                 Message::Error("Circuit breaker is OPEN".to_string()))
+                            ].into());
+                        }
+                    },
+                    CircuitState::HalfOpen =&gt; {
+                        // Process one request to test
+                    },
+                    CircuitState::Closed =&gt; {
+                        // Normal operation
+                    }
+                }
+                
+                // Simulate processing the request
+                if let Some(request) = payload.get("request") {
+                    // Simulate success/failure (in real implementation, you'd call actual service)
+                    let success = payload.get("simulate_success")
+                        .and_then(|v| if let Message::Boolean(b) = v { Some(*b) } else { None })
+                        .unwrap_or(true);
+                    
+                    if success {
+                        // Success - reset failure count if in HalfOpen
+                        if matches!(circuit_state, CircuitState::HalfOpen) {
+                            memory_state.insert("circuit_state", serde_json::json!("Closed"));
+                            memory_state.insert("failure_count", serde_json::json!(0));
+                            println!("Circuit breaker: Transitioning to Closed");
+                        }
+                        
+                        Ok([
+                            ("success".to_owned(), Message::String("Request processed".to_string()))
+                        ].into())
+                    } else {
+                        // Failure
+                        let new_failure_count = failure_count + 1;
+                        memory_state.insert("failure_count", serde_json::json!(new_failure_count));
+                        memory_state.insert("last_failure_time", serde_json::json!(now));
+                        
+                        if new_failure_count &gt;= failure_threshold {
+                            memory_state.insert("circuit_state", serde_json::json!("Open"));
+                            println!("Circuit breaker: Transitioning to Open");
+                        }
+                        
+                        Ok([
+                            ("failure".to_owned(), 
+                             Message::Error(format!("Request failed (failures: {})", new_failure_count)))
+                        ].into())
+                    }
+                } else {
+                    Err(anyhow::anyhow!("Missing request"))
+                }
+            })
+        })
+    }
+    
+    fn get_inports(&amp;self) -&gt; Port { self.inports.clone() }
+    fn get_outports(&amp;self) -&gt; Port { self.outports.clone() }
+    fn load_count(&amp;self) -&gt; Arc&lt;Mutex&lt;ActorLoad&gt;&gt; { self.load.clone() }
+    
+    fn create_process(&amp;self) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + 'static + Send&gt;&gt; {
+        let inports = self.get_inports();
+        let behavior = self.get_behavior();
+        let outports = self.get_outports();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(MemoryState::default()));
+        let load_count = self.load_count();
+        
+        Box::pin(async move {
+            use futures::stream::StreamExt;
+            
+            loop {
+                if let Some(payload) = inports.1.stream().next().await {
+                    {
+                        let mut load = load_count.lock();
+                        load.inc();
+                    }
+                    
+                    let context = ActorContext::new(
+                        payload,
+                        outports.clone(),
+                        state.clone(),
+                        HashMap::new(),
+                        load_count.clone(),
+                    );
+                    
+                    match behavior(context).await {
+                        Ok(result) =&gt; {
+                            if !result.is_empty() {
+                                let _ = outports.0.send(result);
+                            }
+                        },
+                        Err(e) =&gt; {
+                            eprintln!("Error in circuit breaker: {:?}", e);
+                        }
+                    }
+                    
+                    {
+                        let mut load = load_count.lock();
+                        load.dec();
+                    }
+                }
+            }
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-manual-actors"><a class="header" href="#testing-manual-actors">Testing Manual Actors</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod manual_actor_tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_manual_actor() {
+        let actor = ManualActor::new("TestActor".to_string());
+        let behavior = actor.get_behavior();
+        
+        let payload = HashMap::from([
+            ("input".to_string(), Message::String("test".to_string()))
+        ]);
+        
+        let (tx, _rx) = flume::unbounded();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(MemoryState::default()));
+        
+        let context = ActorContext::new(
+            payload,
+            (tx, _rx),
+            state,
+            HashMap::new(),
+            Arc::new(Mutex::new(ActorLoad::new(0))),
+        );
+        
+        let result = behavior(context).await.unwrap();
+        
+        assert!(result.contains_key("output"));
+        if let Some(Message::String(output)) = result.get("output") {
+            assert!(output.contains("TestActor"));
+            assert!(output.contains("test"));
+        }
+    }
+    
+    #[tokio::test]
+    async fn test_stateful_manual_actor() {
+        let initial_state = CustomState {
+            counter: 0,
+            last_message: String::new(),
+            timestamps: Vec::new(),
+        };
+        
+        let actor = StatefulManualActor::new(initial_state);
+        let behavior = actor.get_behavior();
+        
+        let payload = HashMap::from([
+            ("message".to_string(), Message::String("hello".to_string()))
+        ]);
+        
+        let (tx, _rx) = flume::unbounded();
+        let state: Arc&lt;Mutex&lt;dyn reflow_network::actor::ActorState&gt;&gt; = 
+            Arc::new(Mutex::new(CustomState::default()));
+        
+        let context = ActorContext::new(
+            payload,
+            (tx, _rx),
+            state,
+            HashMap::new(),
+            Arc::new(Mutex::new(ActorLoad::new(0))),
+        );
+        
+        let result = behavior(context).await.unwrap();
+        
+        assert_eq!(result.get("counter"), Some(&amp;Message::Integer(1)));
+        assert!(result.contains_key("response"));
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="choosing-between-macro-and-manual-implementation"><a class="header" href="#choosing-between-macro-and-manual-implementation">Choosing Between Macro and Manual Implementation</a></h2>
+<h3 id="use-actor-macro-when"><a class="header" href="#use-actor-macro-when">Use Actor Macro When:</a></h3>
+<ul>
+<li>Simple, stateless processing</li>
+<li>Standard input/output patterns</li>
+<li>Rapid prototyping</li>
+<li>Most common use cases</li>
+</ul>
+<h3 id="use-manual-implementation-when"><a class="header" href="#use-manual-implementation-when">Use Manual Implementation When:</a></h3>
+<ul>
+<li>Complex state management</li>
+<li>Custom error handling strategies</li>
+<li>Performance-critical applications</li>
+<li>Integration with external systems</li>
+<li>Advanced patterns (circuit breakers, rate limiting, etc.)</li>
+</ul>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><strong>State Management</strong>: <a href="../state/advanced-patterns.html">Advanced State Patterns</a></li>
+<li><strong>Network Integration</strong>: <a href="../network/workflows.html">Building Workflows</a></li>
+<li><strong>Performance</strong>: <a href="../performance/optimization.html">Actor Optimization</a></li>
+<li><strong>Examples</strong>: <a href="../../examples/README.html">Real-World Examples</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../architecture/graph-system.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/graph/creating-graphs.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../architecture/graph-system.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/graph/creating-graphs.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
