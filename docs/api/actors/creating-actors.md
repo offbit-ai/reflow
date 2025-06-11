@@ -35,7 +35,7 @@ async fn hello_actor(context: ActorContext) -> Result<HashMap<String, Message>, 
         let response = format!("Hello, {}!", text);
         
         Ok([
-            ("output".to_owned(), Message::String(response))
+            ("output".to_owned(), Message::string(response))
         ].into())
     } else {
         Err(anyhow::anyhow!("Expected string input"))
@@ -68,7 +68,7 @@ async fn greeter_actor(context: ActorContext) -> Result<HashMap<String, Message>
     let greeting = format!("Hello {}, you are {} years old!", name, age);
     
     Ok([
-        ("greeting".to_owned(), Message::String(greeting))
+        ("greeting".to_owned(), Message::string(greeting))
     ].into())
 }
 ```

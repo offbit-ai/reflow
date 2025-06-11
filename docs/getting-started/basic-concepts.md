@@ -32,7 +32,7 @@ async fn doubler_actor(context: ActorContext) -> Result<HashMap<String, Message>
     
     if let Some(Message::Integer(n)) = payload.get("number") {
         Ok([
-            ("result".to_owned(), Message::Integer(n * 2))
+            ("result".to_owned(), Message::integer(n * 2))
         ].into())
     } else {
         Err(anyhow::anyhow!("Expected integer input"))

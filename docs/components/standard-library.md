@@ -88,8 +88,8 @@ network.add_node("transformer", "transform")?;
 
 // Usage: Send data with optional transform function
 let transform_request = HashMap::from([
-    ("In".to_string(), Message::String("hello world".to_string())),
-    ("Function".to_string(), Message::String("uppercase".to_string())),
+    ("In".to_string(), Message::string("hello world".to_string())),
+    ("Function".to_string(), Message::string("uppercase".to_string())),
 ]);
 
 // Supported transformations:
@@ -117,11 +117,11 @@ network.add_node("mapper", "map")?;
 
 // Usage: Transform each item in an array
 let map_request = HashMap::from([
-    ("Collection".to_string(), Message::Array(vec![
-        Message::String("hello".to_string()).into(),
-        Message::String("world".to_string()).into(),
+    ("Collection".to_string(), Message::array(vec![
+        EncodableValue::from(serde_json::json!("hello")),
+        EncodableValue::from(serde_json::json!("world")),
     ])),
-    ("Function".to_string(), Message::String("uppercase".to_string())),
+    ("Function".to_string(), Message::string("uppercase".to_string())),
 ]);
 // Result: ["HELLO", "WORLD"]
 ```
@@ -140,12 +140,12 @@ network.add_node("reducer", "reduce")?;
 
 // Usage: Sum numbers in an array
 let reduce_request = HashMap::from([
-    ("Collection".to_string(), Message::Array(vec![
-        Message::Integer(1).into(),
-        Message::Integer(2).into(),
-        Message::Integer(3).into(),
+    ("Collection".to_string(), Message::array(vec![
+        EncodableValue::from(serde_json::json!(1)),
+        EncodableValue::from(serde_json::json!(2)),
+        EncodableValue::from(serde_json::json!(3)),
     ])),
-    ("Function".to_string(), Message::String("sum".to_string())),
+    ("Function".to_string(), Message::string("sum".to_string())),
 ]);
 // Result: 6
 
@@ -171,12 +171,12 @@ network.add_node("grouper", "group")?;
 
 // Usage: Group objects by property
 let group_request = HashMap::from([
-    ("Collection".to_string(), Message::Array(vec![
-        Message::Object(serde_json::json!({"type": "user", "name": "Alice"}).into()).into(),
-        Message::Object(serde_json::json!({"type": "admin", "name": "Bob"}).into()).into(),
-        Message::Object(serde_json::json!({"type": "user", "name": "Charlie"}).into()).into(),
+    ("Collection".to_string(), Message::array(vec![
+        EncodableValue::from(serde_json::json!({"type": "user", "name": "Alice"})),
+        EncodableValue::from(serde_json::json!({"type": "admin", "name": "Bob"})),
+        EncodableValue::from(serde_json::json!({"type": "user", "name": "Charlie"})),
     ])),
-    ("Key".to_string(), Message::String("type".to_string())),
+    ("Key".to_string(), Message::string("type".to_string())),
 ]);
 // Result: {"user": [Alice, Charlie], "admin": [Bob]}
 ```

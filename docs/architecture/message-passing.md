@@ -14,14 +14,14 @@ pub enum Message {
     Boolean(bool),
     Integer(i64),
     Float(f64),
-    String(String),
-    Object(EncodableValue),
-    Array(Vec<EncodableValue>),
-    Stream(Vec<u8>),
-    Encoded(Vec<u8>),
-    Optional(Option<EncodableValue>),
-    Any(EncodableValue),
-    Error(String),
+    String(Arc<String>),
+    Object(Arc<EncodableValue>),
+    Array(Arc<Vec<EncodableValue>>),
+    Stream(Arc<Vec<u8>>),
+    Encoded(Arc<Vec<u8>>),
+    Optional(Option<Arc<EncodableValue>>),
+    Any(Arc<EncodableValue>),
+    Error(Arc<String>),
 }
 ```
 
@@ -64,17 +64,24 @@ if let Message::Integer(n) = message {
     println!("Number: {}", n);
 }
 
-// Working with EncodableValue
+// Working with EncodableValue - modern approach
 let data = serde_json::json!({"key": "value"});
 let encodable = EncodableValue::from(data);
-let object_msg = Message::Object(encodable);
+let object_msg = Message::object(encodable);
 
-// Create arrays with EncodableValue
+// Create arrays with EncodableValue - modern approach
 let array_items = vec![
     EncodableValue::from(serde_json::json!("hello")),
     EncodableValue::from(serde_json::json!(42)),
 ];
-let array_msg = Message::Array(array_items);
+let array_msg = Message::array(array_items);
+
+// Alternative: using helper methods for simple values
+let string_msg = Message::string("hello world".to_string());
+let int_msg = Message::integer(42);
+let bool_msg = Message::boolean(true);
+let float_msg = Message::float(3.14);
+let error_msg = Message::error("Something went wrong".to_string());
 ```
 
 ## Communication Channels
@@ -107,9 +114,9 @@ pub type ActorPayload = HashMap<String, Message>;
 Direct communication between two actors:
 
 ```rust
-// Actor A sends to Actor B
+// Actor A sends to Actor B - using helper method
 let message = HashMap::from([
-    ("data".to_string(), Message::String("hello".to_string()))
+    ("data".to_string(), Message::string("hello".to_string()))
 ]);
 sender.send_async(message).await?;
 ```
@@ -270,11 +277,11 @@ impl RouterActor {
 ```rust
 // Standard error message structure
 let error_msg = HashMap::from([
-    ("error".to_string(), Message::Error("Processing failed".to_string())),
-    ("code".to_string(), Message::Integer(500)),
-    ("source".to_string(), Message::String("database_actor".to_string())),
-    ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
-    ("details".to_string(), Message::Object(error_details)),
+    ("error".to_string(), Message::error("Processing failed".to_string())),
+    ("code".to_string(), Message::integer(500)),
+    ("source".to_string(), Message::string("database_actor".to_string())),
+    ("timestamp".to_string(), Message::string(Utc::now().to_rfc3339())),
+    ("details".to_string(), Message::object(error_details)),
 ]);
 ```
 
@@ -509,9 +516,9 @@ impl UserEventBuilder {
         let event_type = self.event_type.ok_or(BuildError::MissingEventType)?;
         
         Ok(HashMap::from([
-            ("user_id".to_string(), Message::String(user_id)),
-            ("event_type".to_string(), Message::String(event_type)),
-            ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
+            ("user_id".to_string(), Message::string(user_id)),
+            ("event_type".to_string(), Message::string(event_type)),
+            ("timestamp".to_string(), Message::string(Utc::now().to_rfc3339())),
         ]))
     }
 }
@@ -565,7 +572,7 @@ async fn test_message_pipeline() {
     
     // Test message flow
     let test_message = HashMap::from([
-        ("data".to_string(), Message::String("test".to_string()))
+        ("data".to_string(), Message::string("test".to_string()))
     ]);
     
     source.send(test_message.clone()).await;

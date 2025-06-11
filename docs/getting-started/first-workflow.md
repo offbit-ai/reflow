@@ -97,7 +97,7 @@ async fn sum_actor(context: ActorContext) -> Result<HashMap<String, Message>, an
     let result = a + b;
     println!("Sum Actor: {} + {} = {}", a, b, result);
 
-    Ok([("Out".to_owned(), Message::Integer(result))].into())
+    Ok([("Out".to_owned(), Message::integer(result))].into())
 }
 
 // Square Actor - squares the input number

@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let transformer = MapActor::new(|payload| {
         let mut result = HashMap::new();
         result.insert("message".to_string(), 
-                     Message::String("Hello, World!".to_string()));
+                     Message::string("Hello, World!"));
         Ok(result)
     });
     
