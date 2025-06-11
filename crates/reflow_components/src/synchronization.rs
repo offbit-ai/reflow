@@ -8,7 +8,9 @@ use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
 
-use crate::{Actor, ActorContext, ActorBehavior, ActorPayload, ActorLoad, ActorState, MemoryState, Message, Network, Port};
+use reflow_network::message::EncodableValue;
+
+use crate::{Actor, ActorContext, ActorBehavior, ActorLoad, MemoryState, Message, Port};
 
 /// Delays execution or creates timed events.
 ///
@@ -64,7 +66,7 @@ async fn timer_actor(
     let timer_payload = payload
         .get("Payload")
         .cloned()
-        .unwrap_or(Message::Any(serde_json::Value::Null.into()));
+        .unwrap_or(Message::Any(EncodableValue::from(serde_json::Value::Null).into()));
 
     let outports = outport_channels.clone();
 
@@ -94,9 +96,10 @@ async fn timer_actor(
             }
 
             // Send message to output port
-            outports
+            let _ = outports
                 .0
-                .send([("Elapsed".to_owned(), timer_payload)].into())
+                .send_async(HashMap::from([("Elapsed".to_owned(), timer_payload)]))
+                .await;
         });
     }
 
@@ -116,8 +119,9 @@ async fn timer_actor(
             }
 
             // Send message to output port
-            let _ =
-                Network::send_outport_msg(outports, [("Elapsed".to_owned(), timer_payload)].into());
+            spawn_local(async move {
+                let _ = outports.0.send_async(HashMap::from([("Elapsed".to_owned(), timer_payload)])).await;
+            });
         });
 
         let window = web_sys::window().expect("no global window exists");
@@ -226,13 +230,14 @@ async fn debounce_actor(
                         };
 
                         // Send the message
-                        let _ = outports.0.send([("Out".to_owned(), output_message)].into());
+                        let _ = outports.0.send_async(HashMap::from([("Out".to_owned(), output_message)])).await;
                     });
                 }
 
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen::prelude::*;
+                    use wasm_bindgen_futures::spawn_local;
 
                     let state_clone = state.clone();
                     let outports = outport_channels.clone();
@@ -250,7 +255,7 @@ async fn debounce_actor(
                                 if let Some(value) = last_input {
                                     match value {
                                         serde_json::Value::Null => {
-                                            Message::Any(serde_json::Value::Null)
+                                            Message::Any(EncodableValue::from(serde_json::Value::Null).into())
                                         }
                                         serde_json::Value::Bool(b) => Message::Boolean(b),
                                         serde_json::Value::Number(n) => {
@@ -259,12 +264,15 @@ async fn debounce_actor(
                                             } else if let Some(f) = n.as_f64() {
                                                 Message::Float(f)
                                             } else {
-                                                Message::Any(n.into())
+                                                Message::Any(EncodableValue::from(serde_json::Value::Number(n)).into())
                                             }
                                         }
-                                        serde_json::Value::String(s) => Message::String(s),
-                                        serde_json::Value::Array(a) => Message::Array(a),
-                                        serde_json::Value::Object(o) => Message::Object(o.into()),
+                                        serde_json::Value::String(s) => Message::String(s.into()),
+                                        serde_json::Value::Array(a) => {
+                                            let array: Vec<EncodableValue> = a.into_iter().map(|v| v.into()).collect();
+                                            Message::array(array)
+                                        }
+                                        serde_json::Value::Object(o) => Message::Object(EncodableValue::from(serde_json::Value::Object(o)).into()),
                                     }
                                 } else {
                                     return; // No message to send
@@ -275,10 +283,9 @@ async fn debounce_actor(
                         };
 
                         // Send the message
-                        let _ = Network::send_outport_msg(
-                            outports,
-                            [("Out".to_owned(), output_message)].into(),
-                        );
+                        spawn_local(async move {
+                            let _ = outports.0.send_async(HashMap::from([("Out".to_owned(), output_message)])).await;
+                        });
                     });
 
                     let window = web_sys::window().expect("no global window exists");

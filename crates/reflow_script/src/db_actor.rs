@@ -78,7 +78,7 @@ impl DatabaseActor {
             rows.push(Value::Object(row).into());
         }
 
-        Ok(Message::Array(rows))
+        Ok(Message::array(rows))
     }
 
     /// Execute a command and return the number of affected rows
@@ -134,7 +134,7 @@ impl Actor for DatabaseActor {
                         _ => {
                             results.insert(
                                 "error".to_string(),
-                                Message::Error("Missing query or command".to_string()),
+                                Message::error("Missing query or command".to_string()),
                             );
                             return Ok(results);
                         }
@@ -145,7 +145,7 @@ impl Actor for DatabaseActor {
                 let params = match payload.get("params") {
                     Some(Message::Array(p)) => {
                         let mut param_values = Vec::new();
-                        for param in p {
+                        for param in p.as_ref() {
                             let param_value: serde_json::Value = param.clone().into();
                             param_values.push(param_value);
                         }
@@ -153,7 +153,7 @@ impl Actor for DatabaseActor {
                     }
                     Some(Message::Object(obj)) => {
                         let mut param_values = Vec::new();
-                        let obj_value: serde_json::Value = obj.clone().into();
+                        let obj_value: serde_json::Value = obj.as_ref().clone().into();
                         param_values.push(obj_value);
 
                         param_values
@@ -188,7 +188,7 @@ impl Actor for DatabaseActor {
                     Err(e) => {
                         results.insert(
                             "error".to_string(),
-                            Message::Error(format!("Database error: {}", e)),
+                            Message::error(format!("Database error: {}", e)),
                         );
                         results.insert("success".to_string(), Message::Boolean(false));
                     }
@@ -234,7 +234,7 @@ impl Actor for DatabaseActor {
                         .0
                         .send_async(HashMap::from_iter([(
                             "error".to_string(),
-                            Message::Error(e.to_string()),
+                            Message::error(e.to_string()),
                         )]))
                         .await
                         .unwrap();
@@ -277,7 +277,7 @@ mod tests {
         let mut create_payload = HashMap::new();
         create_payload.insert(
             "command".to_string(),
-            Message::String("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)".to_string()),
+            Message::string("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)".to_string()),
         );
 
         let context = ActorContext::new(
@@ -295,11 +295,11 @@ mod tests {
         let mut insert_payload = HashMap::new();
         insert_payload.insert(
             "command".to_string(),
-            Message::String("INSERT INTO test (id, name) VALUES (?, ?)".to_string()),
+            Message::string("INSERT INTO test (id, name) VALUES (?, ?)".to_string()),
         );
         insert_payload.insert(
             "params".to_string(),
-            Message::Array(vec![json!(1).into(), json!("test").into()]),
+            Message::array(vec![json!(1).into(), json!("test").into()]),
         );
 
         let context = ActorContext::new(
@@ -317,7 +317,7 @@ mod tests {
         let mut query_payload = HashMap::new();
         query_payload.insert(
             "query".to_string(),
-            Message::String("SELECT * FROM test".to_string()),
+            Message::string("SELECT * FROM test".to_string()),
         );
         let context = ActorContext::new(
             query_payload,

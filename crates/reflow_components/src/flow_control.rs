@@ -96,7 +96,7 @@ async fn switch_actor(
     
     // Convert case to string for matching
     let case_str = match case {
-        Message::String(s) => s.clone(),
+        Message::String(s) => s.as_str().to_string(),
         _ => serde_json::to_string(case).unwrap_or_default(),
     };
     
@@ -188,13 +188,13 @@ async fn join_actor(
                 result.insert(port.clone(), msg);
             }
             let result = serde_json::Value::Object(result);
-            Ok([("Out".to_owned(), Message::Object(result.into()))].into())
+            Ok([("Out".to_owned(), Message::object(EncodableValue::from(result)))].into())
         },
         "array" => {
             let values: Vec<EncodableValue> = payload.values()
                 .map(|m| serde_json::to_value(m).unwrap_or_default().into())
                 .collect();
-            Ok([("Out".to_owned(), Message::Array(values))].into())
+            Ok([("Out".to_owned(), Message::array(values))].into())
         },
         "concatenate" => {
             // Attempt to concatenate strings
@@ -206,7 +206,7 @@ async fn join_actor(
                     result.push_str(&serde_json::to_string(message).unwrap_or_default());
                 }
             }
-            Ok([("Out".to_owned(), Message::String(result))].into())
+            Ok([("Out".to_owned(), Message::string(result))].into())
         },
         _ => Err(Error::msg(format!("Unknown join mode: {}", mode)))
     }

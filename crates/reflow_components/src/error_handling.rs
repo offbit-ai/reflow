@@ -7,7 +7,7 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-use reflow_network::actor::ActorContext;
+use reflow_network::{actor::ActorContext, message::EncodableValue};
 
 use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
 
@@ -49,8 +49,9 @@ async fn try_catch_actor(context: ActorContext) -> Result<HashMap<String, Messag
                     .and_then(|v| v.as_str())
                     .unwrap_or("identity")
                     .to_string()
+                    .into()
             } else {
-                "identity".to_string()
+                "identity".to_string().into()
             }
         });
 
@@ -195,7 +196,7 @@ async fn try_catch_actor(context: ActorContext) -> Result<HashMap<String, Messag
     // Route result to appropriate output port
     match result {
         Ok(value) => Ok([("Success".to_owned(), value)].into()),
-        Err(error_msg) => Ok([("Error".to_owned(), Message::Error(error_msg))].into()),
+        Err(error_msg) => Ok([("Error".to_owned(), Message::Error(error_msg.into()))].into()),
     }
 }
 
@@ -235,8 +236,9 @@ async fn validate_actor(
                 .and_then(|v| v.as_str())
                 .unwrap_or("type")
                 .to_string()
+                .into()
         } else {
-            "type".to_string()
+            "type".to_string().into()
         }
     };
 
@@ -307,7 +309,7 @@ async fn validate_actor(
                 _ => {
                     return Ok([(
                         "Invalid".to_owned(),
-                        Message::Error("Input is not a number".to_string()),
+                        Message::Error("Input is not a number".to_string().into()),
                     )]
                     .into())
                 }
@@ -378,6 +380,6 @@ async fn validate_actor(
     // Route result to appropriate output port
     match validation_result {
         Ok(_) => Ok([("Valid".to_owned(), input.clone())].into()),
-        Err(error_msg) => Ok([("Invalid".to_owned(), Message::Error(error_msg))].into()),
+        Err(error_msg) => Ok([("Invalid".to_owned(), Message::Error(error_msg.into()))].into()),
     }
 }

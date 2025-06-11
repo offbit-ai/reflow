@@ -43,7 +43,7 @@ async fn store_actor(
     if payload.contains_key("Set") && payload.contains_key("Key") {
         let value = payload.get("Set").unwrap().clone();
         let key = if let Some(Message::String(k)) = payload.get("Key") {
-            k.clone()
+            k.as_str().to_string()
         } else {
             // Convert non-string keys to string
             serde_json::to_string(payload.get("Key").unwrap()).unwrap_or_default()
@@ -65,7 +65,7 @@ async fn store_actor(
                 state_data.insert("storage", serde_json::Value::Object(new_storage));
 
                 // Signal that state has changed
-                result.insert("Changed".to_owned(), Message::String(key));
+                result.insert("Changed".to_owned(), Message::string(key));
             }
         }
     }
@@ -73,7 +73,7 @@ async fn store_actor(
     // Handle Get operation
     if payload.contains_key("Get") {
         let key = if let Some(Message::String(k)) = payload.get("Key") {
-            k.clone()
+            k.as_str().to_string()
         } else if let Some(key_msg) = payload.get("Key") {
             // Convert non-string keys to string
             serde_json::to_string(key_msg).unwrap_or_default()
@@ -184,7 +184,7 @@ async fn state_machine_actor(
             e.clone()
         } else {
             // Convert non-string events to string
-            serde_json::to_string(payload.get("Event").unwrap()).unwrap_or_default()
+            serde_json::to_string(payload.get("Event").unwrap()).unwrap_or_default().into()
         };
 
         // Get current state and apply transition
@@ -236,11 +236,11 @@ async fn state_machine_actor(
         };
 
         // Output current state
-        result.insert("State".to_owned(), Message::String(new_state.clone()));
+        result.insert("State".to_owned(), Message::string(new_state.clone()));
 
         // Signal if state changed
         if changed {
-            result.insert("Changed".to_owned(), Message::String(new_state));
+            result.insert("Changed".to_owned(), Message::string(new_state));
         }
     } else {
         // No event, just output current state
@@ -257,7 +257,7 @@ async fn state_machine_actor(
             }
         };
 
-        result.insert("State".to_owned(), Message::String(current));
+        result.insert("State".to_owned(), Message::string(current));
     }
 
     Ok(result)
@@ -408,7 +408,7 @@ async fn accumulator_actor(
 
                         let update_str = match update {
                             Message::String(s) => s.clone(),
-                            _ => serde_json::to_string(update).unwrap_or_default(),
+                            _ => serde_json::to_string(update).unwrap_or_default().into(),
                         };
 
                         serde_json::json!(format!("{}{}", current_str, update_str))

@@ -735,7 +735,7 @@ impl MessageRouter {
         network: &Arc<Network>,
     ) -> Result<()> {
         // Convert stream config to zflow message and send to streaming actor
-        let stream_message = Message::Object(serde_json::to_value(config)?.into());
+        let stream_message = Message::object(serde_json::to_value(config)?.into());
         
         match network.execute_actor("streaming_sql_actor", stream_message).await {
             Ok(_) => {
@@ -933,7 +933,7 @@ mod tests {
         
         match message {
             Message::Object(obj) => {
-                assert_eq!(serde_json::Value::from(obj).get("test").unwrap().as_str().unwrap(), "value");
+                assert_eq!(serde_json::Value::from(obj.as_ref().clone()).get("test").unwrap().as_str().unwrap(), "value");
             }
             _ => panic!("Expected Object message"),
         }

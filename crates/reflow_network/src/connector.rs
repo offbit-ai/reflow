@@ -12,7 +12,7 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::spawn_local;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize,Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -33,7 +33,7 @@ impl ConnectionPoint {
 }
 
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize,  Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -66,6 +66,7 @@ impl Connector {
             .expect("Expected to get actor process from connected node");
 
         let from_actor = network.actors.get(from_process).unwrap();
+        let from_actor_load_count = from_actor.load_count();
         let from_actor_id = self.from.actor.clone();
 
         let to_actor = network.actors.get(to_process).unwrap();
@@ -82,10 +83,12 @@ impl Connector {
         let mut routine = Box::pin(async move {
 
             while let Some(mut outport_packet) = out_ports.1.clone().stream().next().await {
+                
                 in_ports
                     .clone()
                     .0
-                    .send(HashMap::from_iter([(to_port.to_owned(), outport_packet.remove(&_from_port).unwrap())]))
+                    .send_async(HashMap::from_iter([(to_port.to_owned(), outport_packet.remove(&_from_port).unwrap())]))
+                    .await
                     .expect(
                         format!(
                             "Expected to send message from Actor '{}' to Actor '{}'",
@@ -93,6 +96,7 @@ impl Connector {
                         )
                         .as_str(),
                     );
+                    from_actor_load_count.clone().lock().dec();
 
                 #[cfg(feature = "flowtrace")]
                 {
@@ -124,7 +128,7 @@ impl Connector {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize,  Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]

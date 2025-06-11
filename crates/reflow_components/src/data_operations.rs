@@ -8,6 +8,7 @@ use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
 use reflow_network::{actor::ActorContext, message::EncodableValue};
+use serde_json::to_string;
 
 use crate::{Actor, ActorLoad, ActorBehavior, MemoryState, Message, Port};
 
@@ -40,7 +41,7 @@ async fn transform_actor(
 
     // Get transform function, first from payload, then from state
     let transform_type = if let Some(Message::String(func)) = payload.get("Function") {
-        func.clone()
+        func.as_str().to_string()
     } else {
         let state = state.lock();
         if let Some(state_data) = state.as_any().downcast_ref::<MemoryState>() {
@@ -58,21 +59,21 @@ async fn transform_actor(
         "identity" => input.clone(),
         "uppercase" => {
             if let Message::String(s) = input {
-                Message::String(s.to_uppercase())
+                Message::string(s.to_uppercase())
             } else {
                 input.clone()
             }
         }
         "lowercase" => {
             if let Message::String(s) = input {
-                Message::String(s.to_lowercase())
+                Message::string(s.to_lowercase())
             } else {
                 input.clone()
             }
         }
         "number_to_string" => match input {
-            Message::Integer(i) => Message::String(i.to_string()),
-            Message::Float(f) => Message::String(f.to_string()),
+            Message::Integer(i) => Message::string(i.to_string()),
+            Message::Float(f) => Message::string(f.to_string()),
             _ => input.clone(),
         },
         "parse_int" => {
@@ -80,7 +81,7 @@ async fn transform_actor(
                 if let Ok(i) = s.parse::<i64>() {
                     Message::Integer(i)
                 } else {
-                    Message::Error(format!("Could not parse '{}' as integer", s))
+                    Message::error(format!("Could not parse '{}' as integer", s))
                 }
             } else {
                 input.clone()
@@ -91,7 +92,7 @@ async fn transform_actor(
                 if let Ok(f) = s.parse::<f64>() {
                     Message::Float(f)
                 } else {
-                    Message::Error(format!("Could not parse '{}' as float", s))
+                    Message::error(format!("Could not parse '{}' as float", s))
                 }
             } else {
                 input.clone()
@@ -99,14 +100,14 @@ async fn transform_actor(
         }
         "to_json" => {
             // Convert any message to JSON string
-            Message::String(serde_json::to_string(input).unwrap_or_default())
+            Message::string(serde_json::to_string(input).unwrap_or_default())
         }
         "from_json" => {
             // Parse JSON string to appropriate message type
             if let Message::String(s) = input {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(s) {
                     match v {
-                        serde_json::Value::Null => Message::Any(serde_json::Value::Null.into()),
+                        serde_json::Value::Null => Message::any(serde_json::Value::Null.into()),
                         serde_json::Value::Bool(b) => Message::Boolean(b),
                         serde_json::Value::Number(n) => {
                             if let Some(i) = n.as_i64() {
@@ -114,25 +115,25 @@ async fn transform_actor(
                             } else if let Some(f) = n.as_f64() {
                                 Message::Float(f)
                             } else {
-                                Message::Error(format!("Could not parse number: {}", n))
+                                Message::error(format!("Could not parse number: {}", n))
                             }
                         }
-                        serde_json::Value::String(s) => Message::String(s),
+                        serde_json::Value::String(s) => Message::string(s),
                         serde_json::Value::Array(a) => {
-                            Message::Array(a.iter().map(|v| v.clone().into()).collect())
+                            Message::array(a.iter().map(|v| v.clone().into()).collect())
                         }
                         serde_json::Value::Object(o) => {
-                            Message::Object(serde_json::to_value(o)?.into())
+                            Message::object(serde_json::to_value(o)?.into())
                         }
                     }
                 } else {
-                    Message::Error(format!("Could not parse JSON: '{}'", s))
+                    Message::error(format!("Could not parse JSON: '{}'", s))
                 }
             } else {
                 input.clone()
             }
         }
-        _ => Message::Error(format!("Unknown transform type: {}", transform_type)),
+        _ => Message::error(format!("Unknown transform type: {}", transform_type)),
     };
 
     Ok([("Out".to_owned(), result)].into())
@@ -164,7 +165,7 @@ async fn map_actor(
 
     // Get transform function, first from payload, then from state
     let transform_type = if let Some(Message::String(func)) = payload.get("Function") {
-        func.clone()
+        func.as_str().to_string()
     } else {
         let state = state.lock();
         if let Some(state_data) = state.as_any().downcast_ref::<MemoryState>() {
@@ -191,21 +192,21 @@ async fn map_actor(
                         "identity" => item_msg,
                         "uppercase" => {
                             if let Message::String(s) = &item_msg {
-                                Message::String(s.to_uppercase())
+                                Message::string(s.to_uppercase())
                             } else {
                                 item_msg
                             }
                         }
                         "lowercase" => {
                             if let Message::String(s) = &item_msg {
-                                Message::String(s.to_lowercase())
+                                Message::string(s.to_lowercase())
                             } else {
                                 item_msg
                             }
                         }
                         "number_to_string" => match &item_msg {
-                            Message::Integer(i) => Message::String(i.to_string()),
-                            Message::Float(f) => Message::String(f.to_string()),
+                            Message::Integer(i) => Message::string(i.to_string()),
+                            Message::Float(f) => Message::string(f.to_string()),
                             _ => item_msg,
                         },
                         _ => item_msg,
@@ -215,7 +216,7 @@ async fn map_actor(
                 })
                 .collect();
 
-            Ok([("Result".to_owned(), Message::Array(mapped_items))].into())
+            Ok([("Result".to_owned(), Message::array(mapped_items))].into())
         }
         Message::Object(obj) => {
             if let serde_json::Value::Object(map) = serde_json::to_value(obj).unwrap() {
@@ -230,21 +231,21 @@ async fn map_actor(
                         "identity" => item_msg,
                         "uppercase" => {
                             if let Message::String(s) = &item_msg {
-                                Message::String(s.to_uppercase())
+                                Message::string(s.to_uppercase())
                             } else {
                                 item_msg
                             }
                         }
                         "lowercase" => {
                             if let Message::String(s) = &item_msg {
-                                Message::String(s.to_lowercase())
+                                Message::string(s.to_lowercase())
                             } else {
                                 item_msg
                             }
                         }
                         "number_to_string" => match &item_msg {
-                            Message::Integer(i) => Message::String(i.to_string()),
-                            Message::Float(f) => Message::String(f.to_string()),
+                            Message::Integer(i) => Message::string(i.to_string()),
+                            Message::Float(f) => Message::string(f.to_string()),
                             _ => item_msg,
                         },
                         _ => item_msg,
@@ -258,7 +259,7 @@ async fn map_actor(
 
                 Ok([(
                     "Result".to_owned(),
-                    Message::Object(serde_json::to_value(result_map)?.into()),
+                    Message::object(serde_json::to_value(result_map)?.into()),
                 )]
                 .into())
             } else {
@@ -271,7 +272,7 @@ async fn map_actor(
                 "identity" => collection.clone(),
                 "uppercase" => {
                     if let Message::String(s) = collection {
-                        Message::String(s.to_uppercase())
+                        Message::string(s.to_uppercase())
                     } else {
                         collection.clone()
                     }
@@ -319,9 +320,9 @@ async fn reduce_actor(
                 .get("reducer_type")
                 .and_then(|v| v.as_str())
                 .unwrap_or("sum")
-                .to_string()
+                .to_string().into()
         } else {
-            "sum".to_string()
+            "sum".to_string().into()
         }
     };
 
@@ -333,7 +334,7 @@ async fn reduce_actor(
             if items.is_empty() {
                 return Ok([(
                     "Result".to_owned(),
-                    initial.unwrap_or(Message::Any(serde_json::Value::Null.into())),
+                    initial.unwrap_or(Message::any(serde_json::Value::Null.into())),
                 )]
                 .into());
             }
@@ -370,12 +371,13 @@ async fn reduce_actor(
                                 Message::Float(a + *b as f64)
                             }
                             (Message::String(a), Message::String(b)) => {
-                                Message::String(a.clone() + b)
+                                Message::string(a.as_str().to_string() + b)
                             }
                             (Message::Array(a), Message::Array(b)) => {
-                                let mut result = a.clone();
+                                let mut result = a.as_ref().clone();
                                 result.extend(b.iter().cloned());
-                                Message::Array(result)
+                                
+                                Message::array(result)
                             }
                             (Message::Object(a), Message::Object(b)) => {
                                 if let (
@@ -389,7 +391,7 @@ async fn reduce_actor(
                                     for (k, v) in b_map.iter() {
                                         result.insert(k.clone(), v.clone());
                                     }
-                                    Message::Object(serde_json::to_value(result)?.into())
+                                    Message::object(serde_json::to_value(result)?.into())
                                 } else {
                                     acc.clone()
                                 }
@@ -447,16 +449,16 @@ async fn reduce_actor(
                     let strings: Vec<String> = items_as_messages
                         .iter()
                         .map(|msg| match msg {
-                            Message::String(s) => s.clone(),
+                            Message::String(s) => s.as_str().to_string(),
                             _ => serde_json::to_string(msg).unwrap_or_default(),
                         })
                         .collect();
 
-                    Message::String(strings.join(&separator))
+                    Message::string(strings.join(&separator))
                 }
                 "max" => {
                     if items_as_messages.is_empty() {
-                        initial.unwrap_or(Message::Any(serde_json::Value::Null.into()))
+                        initial.unwrap_or(Message::any(serde_json::Value::Null.into()))
                     } else {
                         let mut max_value = items_as_messages[0].clone();
 
@@ -554,7 +556,7 @@ async fn reduce_actor(
                         min_value
                     }
                 }
-                _ => Message::Error(format!("Unknown reducer type: {}", reducer_type)),
+                _ => Message::error(format!("Unknown reducer type: {}", reducer_type)),
             };
 
             Ok([("Result".to_owned(), result)].into())
@@ -593,7 +595,7 @@ async fn group_actor(
 
     // Get key from payload or state
     let key = if let Some(Message::String(k)) = payload.get("Key") {
-        k.clone()
+        k.as_str().to_string()
     } else {
         let state = state.lock();
         if let Some(state_data) = state.as_any().downcast_ref::<MemoryState>() {
@@ -611,7 +613,7 @@ async fn group_actor(
         Message::Array(items) => {
             let mut groups: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
 
-            for item in items {
+            for item in items.as_ref() {
                 let item_value = serde_json::to_value(item).unwrap_or(serde_json::Value::Null);
 
                 // Extract group key
@@ -642,7 +644,7 @@ async fn group_actor(
 
             Ok([(
                 "Result".to_owned(),
-                Message::Object(serde_json::to_value(groups)?.into()),
+                Message::object(serde_json::to_value(groups)?.into()),
             )]
             .into())
         }
@@ -680,7 +682,7 @@ async fn sort_actor(
 
     // Get key from payload or state
     let key = if let Some(Message::String(k)) = payload.get("Key") {
-        k.clone()
+        k.as_ref().to_string()
     } else {
         let state = state.lock();
         if let Some(state_data) = state.as_any().downcast_ref::<MemoryState>() {
@@ -696,7 +698,7 @@ async fn sort_actor(
 
     // Get order from payload or state
     let order = if let Some(Message::String(o)) = payload.get("Order") {
-        o.clone()
+        o.as_str().to_string()
     } else {
         let state = state.lock();
         if let Some(state_data) = state.as_any().downcast_ref::<MemoryState>() {
@@ -714,7 +716,7 @@ async fn sort_actor(
 
     match collection {
         Message::Array(items) => {
-            let mut items_vec = items.clone();
+            let mut items_vec = items.as_ref().clone();
 
             if key.is_empty() {
                 // Sort by value directly
@@ -740,7 +742,8 @@ async fn sort_actor(
                 });
             }
 
-            Ok([("Result".to_owned(), Message::Array(items_vec))].into())
+           
+            Ok([("Result".to_owned(), Message::array(items_vec))].into())
         }
         _ => {
             // For non-arrays, just return the input

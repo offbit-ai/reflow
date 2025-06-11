@@ -58,6 +58,18 @@ pub trait Actor: Send + Sync + 'static {
     fn create_process(
         &self,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>;
+
+    /// Shutdown the actor, waiting for all processes to finish
+    fn shutdown(&self) {
+        while self.load_count().clone().lock().get() > 0 {
+            // Wait for all processes to finish
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    }
+
+    fn cleanup(&self){
+        // Should be implemented by the actor to clean up resources
+    }
 }
 
 pub struct ActorLoad(pub usize);

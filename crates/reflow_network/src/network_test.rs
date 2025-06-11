@@ -1,9 +1,5 @@
 use std::{
-    collections::HashMap,
-    pin::Pin,
-    sync::Arc,
-    thread::{self, sleep},
-    time::Duration,
+    collections::HashMap, net, pin::Pin, sync::Arc, thread::{self, sleep}, time::Duration
 };
 
 use crate::{
@@ -28,6 +24,7 @@ use crate::{
 )]
 async fn sum_actor(context: ActorContext) -> Result<HashMap<String, Message>, anyhow::Error> {
     let payload = context.get_payload();
+    println!("SumActor received payload: {:?}", payload);
 
     let _a = payload.get("A").expect("expected to get data from port A");
     let _b = payload.get("B").expect("expected to get data from port B");
@@ -90,7 +87,7 @@ async fn _assert_eq(context: ActorContext) -> Result<HashMap<String, Message>, a
     Ok([].into())
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test]
 async fn test_network() -> Result<(), anyhow::Error> {
     let mut network = Network::new(NetworkConfig::default());
 
@@ -156,6 +153,10 @@ async fn test_network() -> Result<(), anyhow::Error> {
 
     // Start the network
     network.start().await?;
+    
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    network.shutdown();
+   
     Ok(())
 }
 
@@ -186,8 +187,8 @@ async fn transform_actor(context: ActorContext) -> Result<HashMap<String, Messag
 
     let result = match input {
         Message::Integer(n) => Message::Integer(n + count),
-        Message::String(s) => Message::String(format!("{}{}", s, count)),
-        _ => Message::Any(Value::Null.into()),
+        Message::String(s) => Message::string(format!("{}{}", s, count)),
+        _ => Message::any(Value::Null.into()),
     };
 
     Ok([("Output".to_owned(), result)].into())
@@ -251,6 +252,11 @@ async fn aggregator_actor(
     result.insert("Sum".to_owned(), Message::Integer(sum));
     result.insert("Count".to_owned(), Message::Integer(count));
 
+    println!(
+        "AggregatorActor: Sum = {}, Count = {}",
+        sum, count
+    );
+
     Ok(result)
 }
 
@@ -308,5 +314,8 @@ async fn test_complex_network() -> Result<(), anyhow::Error> {
 
     // Start network
     network.start().await?;
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    network.shutdown();
     Ok(())
 }

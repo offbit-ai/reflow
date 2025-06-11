@@ -300,7 +300,7 @@ impl Network {
                     &iip.to.port,
                     iip.to
                         .initial_data
-                        .clone()
+                       .clone()
                         .expect("Expected initial packet to have data"),
                 )
                 .expect("Expected to send initial packet");
@@ -433,7 +433,7 @@ impl Network {
                 .clone()
                 .send(HashMap::from_iter([(
                     port.to_owned(),
-                    Message::Encoded(data.0),
+                    Message::encoded(data.0),
                 )]))
                 .expect(format!("Expected initial packet to Actor '{}'", id).as_str());
 
@@ -596,12 +596,21 @@ impl Network {
 
     /// Shutdown the network and finalize pending tasks
     pub fn shutdown(&self) {
-        // Wait for all active workers to be cleared
-        self.thread_pool
-            .lock()
-            .unwrap()
-            .clone()
-            .shutdown_join_timeout(Duration::from_millis(2500));
+        // // Wait for all active workers to be cleared
+        // self.thread_pool
+        //     .lock()
+        //     .unwrap()
+        //     .clone()
+        //     .shutdown_join_timeout(Duration::from_millis(2500));
+        // Clear all actors
+        
+        let active_actors = self.get_active_actors();
+        for actor_id in active_actors {
+            if let Some(actor) = self.actors.get(&actor_id) {
+                actor.shutdown();
+            }
+        }
+
     }
 
     pub fn actor_count(&self) -> usize {
@@ -618,7 +627,7 @@ impl Network {
         );
 
         // Placeholder implementation
-        Ok(Message::Object(
+        Ok(Message::object(
             serde_json::json!({
                 "status": "success",
                 "actor_id": actor_id,

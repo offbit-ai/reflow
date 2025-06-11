@@ -7,7 +7,7 @@ members = [
 
 [workspace.dependencies]
 serde_json = "1.0.133"
-serde = { version = "1.0.215", features = ["derive"] }
+serde = { version = "1.0.215", default-features = true, features = ["derive", "rc"] }
 anyhow = "1.0.94"
 
 

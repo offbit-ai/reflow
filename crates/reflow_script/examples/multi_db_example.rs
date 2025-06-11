@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
     let mut users_query = HashMap::new();
     users_query.insert(
         "query".to_string(),
-        Message::String("SELECT * FROM users".to_string()),
+        Message::string("SELECT * FROM users".to_string()),
     );
     let context = ActorContext::new(
         users_query,
@@ -122,7 +122,7 @@ async fn main() -> Result<()> {
 
     println!("\nUsers query result:");
     if let Message::Array(rows) = &users_result["rows"] {
-        for row in rows {
+        for row in rows.as_ref() {
             if let serde_json::Value::Object(user) = row.clone().into() {
                 println!(
                     "User: id={}, name={}, email={}",
@@ -136,7 +136,7 @@ async fn main() -> Result<()> {
     let mut products_query = HashMap::new();
     products_query.insert(
         "query".to_string(),
-        Message::String("SELECT * FROM products".to_string()),
+        Message::string("SELECT * FROM products".to_string()),
     );
 
     let context = ActorContext::new(
@@ -150,7 +150,7 @@ async fn main() -> Result<()> {
 
     println!("\nProducts query result:");
     if let Message::Array(rows) = &products_result["rows"] {
-        for row in rows {
+        for row in rows.as_ref() {
             if let serde_json::Value::Object(product) = row.clone().into() {
                 println!(
                     "Product: id={}, name={}, price={}",
@@ -191,7 +191,7 @@ async fn main() -> Result<()> {
     let mut users_query = HashMap::new();
     users_query.insert(
         "query".to_string(),
-        Message::String("SELECT COUNT(*) as count FROM users".to_string()),
+        Message::string("SELECT COUNT(*) as count FROM users".to_string()),
     );
 
     let context = ActorContext::new(

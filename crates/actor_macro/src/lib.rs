@@ -271,16 +271,23 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     let mut all_inports = std::collections::HashMap::new();
                     let mut load_count = load_count.clone();
 
+                    fn done(load_count: Arc<parking_lot::Mutex<ActorLoad>>) {
+                        let load_count_guard = load_count.clone();
+                        let mut load = load_count_guard.lock();
+                        load.reset();
+                    }
+                    fn inc(load_count: Arc<parking_lot::Mutex<ActorLoad>>) {
+                        let load_count_guard = load_count.clone();
+                        let mut load = load_count_guard.lock();
+                        load.inc();
+                    }
+
 
                     loop {
                         if let Some(packet) = receiver.clone().stream().next().await {
                         // Increment the load count
-                        {
-                            let load_count_guard = load_count.clone();
-                            let mut load = load_count_guard .lock();
-                            load.inc();
-                        }
-                          
+                            inc(load_count.clone());
+
                             if await_all_inports {
                                 if all_inports.keys().len() < inports_size  {
                                     all_inports.extend(packet.iter().map(|(k, v)| {(k.clone(), v.clone())}));
@@ -293,28 +300,21 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                                            HashMap::new(),
                                             load_count.clone(),
                                         );
-                                        
+
                                         // Run the behavior function
                                         match (behavior_func)(context).await {
                                             Ok(result) => {
                                                 if !result.is_empty() {
                                                     let _ = outports.0.send(result)
                                                         .expect("Expected to send message via outport");
-                                                     // Decrease the load count
-                                                    {
-                                                        let load_count_guard = load_count.clone();
-                                                        let mut load = load_count_guard.lock();
-                                                        load.dec();
-                                                    }
+
                                                 }
+                                                  // Decrease the load count
+                                                    done(load_count.clone());
                                             },
                                             Err(e) => {
                                                   // Decrease the load count
-                                                    {
-                                                        let load_count_guard = load_count.clone();
-                                                        let mut load = load_count_guard.lock();
-                                                        load.dec();
-                                                    }
+                                                    done(load_count.clone());
                                                 eprintln!("Error in behavior function: {:?}", e);
                                             }
                                         }
@@ -334,28 +334,21 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                                             HashMap::new(),
                                             load_count.clone(),
                                         );
-                                
+
                                 // Run the behavior function
                                 match (behavior_func)(context).await {
                                     Ok(result) => {
                                         if !result.is_empty() {
                                             let _ = outports.0.send(result)
                                                 .expect("Expected to send message via outport");
-                                              // Decrease the load count
-                                                    {
-                                                        let load_count_guard = load_count.clone();
-                                                        let mut load = load_count_guard.lock();
-                                                        load.dec();
-                                                    }
+
                                         }
+                                         // Decrease the load count
+                                                   done(load_count.clone());
                                     },
                                     Err(e) => {
                                           // Decrease the load count
-                                                    {
-                                                        let load_count_guard = load_count.clone();
-                                                        let mut load = load_count_guard.lock();
-                                                        load.dec();
-                                                    }
+                                                    done(load_count.clone());
                                         eprintln!("Error in behavior function: {:?}", e);
                                     }
                                 }

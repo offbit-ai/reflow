@@ -248,7 +248,7 @@ mod tests {
         let mut inputs = HashMap::new();
         inputs.insert(
             "operation".to_string(),
-            Message::String("increment".to_string()),
+            Message::string("increment".to_string()),
         );
 
         let context = crate::context::ScriptContext::new(
@@ -277,7 +277,7 @@ mod tests {
         );
         assert_eq!(
             result["operation"],
-            Message::String("increment".to_string())
+            Message::string("increment".to_string())
         );
 
         if let Ok(msg) = outports.1.recv() {
@@ -288,7 +288,7 @@ mod tests {
             assert!(msg.contains_key("previous"));
             assert_eq!(msg["previous"], Message::Integer(0));
             assert!(msg.contains_key("operation"));
-            assert_eq!(msg["operation"], Message::String("increment".to_string()));
+            assert_eq!(msg["operation"], Message::string("increment".to_string()));
         }
 
         // Print state

@@ -163,7 +163,7 @@ impl Actor for ScriptActor {
                         .0
                         .send_async(HashMap::from_iter([(
                             "error".to_string(),
-                            Message::Error(result.err().unwrap().to_string()),
+                            Message::error(result.err().unwrap().to_string()),
                         )]))
                         .await
                         .unwrap();
@@ -294,7 +294,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
 
         payload.insert(
             "packet".to_string(),
-            Message::Array(vec![json!(1).into(), json!(2).into(), json!(3).into()]),
+            Message::array(vec![json!(1).into(), json!(2).into(), json!(3).into()]),
         );
 
         let context = ActorContext::new(
@@ -354,7 +354,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let mut payload = HashMap::new();
         payload.insert(
             "operation".to_string(),
-            Message::String("increment".to_string()),
+            Message::string("increment".to_string()),
         );
         // Call the behavior function
         // let result = behavior(payload, state, outports.clone()).await;
@@ -384,7 +384,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
             );
             assert_eq!(
                 output["operation"],
-                Message::String("increment".to_string())
+                Message::string("increment".to_string())
             );
         }
     }

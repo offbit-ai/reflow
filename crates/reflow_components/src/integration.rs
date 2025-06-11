@@ -10,10 +10,9 @@ use anyhow::Error;
 use parking_lot::Mutex;
 use reflow_network::message::EncodableValue;
 use reqwest::header::HeaderName;
-use serde::de::value;
 use serde_json::json;
 
-use crate::{Actor, ActorContext, ActorLoad, ActorBehavior, MemoryState, Message, Network, Port};
+use crate::{Actor, ActorContext, ActorLoad, ActorBehavior, MemoryState, Message, Port};
 
 /// Makes HTTP requests to external services.
 ///
@@ -43,32 +42,32 @@ async fn http_request_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("URL is required".to_string()),
+                Message::Error("URL is required".to_string().into()),
             )]
             .into())
         }
     };
 
-    let method = match payload.get("Method") {
-        Some(Message::String(m)) => m.to_uppercase(),
-        _ => "GET".to_string(), // Default to GET
+    let method: Arc<str> = match payload.get("Method") {
+        Some(Message::String(m)) => m.to_uppercase().into(),
+        _ => "GET".to_string().into(), // Default to GET
     };
 
     let headers = serde_json::from_value::<HashMap<String, String>>(serde_json::to_value(
         payload.get("Headers").unwrap_or(&Message::Object(
-            json!(HashMap::<String, serde_json::Value>::new()).into(),
+            EncodableValue::from(json!(HashMap::<String, serde_json::Value>::new())).into(),
         )),
     )?)?;
     let body = payload
         .get("Body")
         .cloned()
-        .unwrap_or(Message::String("".to_string()));
+        .unwrap_or(Message::String("".to_string().into()));
 
     // Use reqwest to make the HTTP request
     let client = reqwest::Client::new();
     let req = client.request(
         reqwest::Method::from_bytes(method.as_bytes()).unwrap(),
-        &url,
+        &**url,
     );
 
     let mut req_headers = reqwest::header::HeaderMap::new();
@@ -90,7 +89,7 @@ async fn http_request_actor(
     if !resp.status().is_success() {
         return Ok([(
             "Error".to_owned(),
-            Message::Error(format!("Request failed with status code: {}", status_code)),
+                Message::Error(format!("Request failed with status code: {}", status_code).into()),
         )]
         .into());
     }
@@ -99,7 +98,7 @@ async fn http_request_actor(
 
     let mut result = HashMap::new();
 
-    result.insert("Response".to_owned(), Message::Encoded(body.to_vec()));
+    result.insert("Response".to_owned(), Message::Encoded(body.to_vec().into()));
     result.insert("Status".to_owned(), Message::Integer(status_code as i64));
     Ok(result)
 }
@@ -135,32 +134,32 @@ async fn http_stream_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("URL is required".to_string()),
+                Message::Error("URL is required".to_string().into()),
             )]
             .into())
         }
     };
 
-    let method = match payload.get("Method") {
-        Some(Message::String(m)) => m.to_uppercase(),
-        _ => "GET".to_string(), // Default to GET
+    let method: Arc<str> = match payload.get("Method") {
+        Some(Message::String(m)) => m.to_uppercase().into(),
+        _ => "GET".to_string().into(), // Default to GET
     };
 
     let headers = serde_json::from_value::<HashMap<String, String>>(serde_json::to_value(
         payload.get("Headers").unwrap_or(&Message::Object(
-            json!(HashMap::<String, serde_json::Value>::new()).into(),
+            EncodableValue::from(json!(HashMap::<String, serde_json::Value>::new())).into(),
         )),
     )?)?;
     let body = payload
         .get("Body")
         .cloned()
-        .unwrap_or(Message::String("".to_string()));
+        .unwrap_or(Message::String("".to_string().into()));
 
     // Use reqwest to make the HTTP request
     let client = reqwest::Client::new();
     let req = client.request(
         reqwest::Method::from_bytes(method.as_bytes()).unwrap(),
-        &url,
+        &**url,
     );
 
     let mut req_headers = reqwest::header::HeaderMap::new();
@@ -182,7 +181,7 @@ async fn http_stream_actor(
     if !resp.status().is_success() {
         return Ok([(
             "Error".to_owned(),
-            Message::Error(format!("Request failed with status code: {}", status_code)),
+            Message::Error(format!("Request failed with status code: {}", status_code).into()),
         )]
         .into());
     }
@@ -192,7 +191,7 @@ async fn http_stream_actor(
             .0
             .send_async(HashMap::from([(
                 "Response".to_string(),
-                Message::Stream(chunk.to_vec()),
+                Message::Stream(chunk.to_vec().into()),
             )]))
             .await;
         if res.is_err() {
@@ -200,7 +199,7 @@ async fn http_stream_actor(
                 .0
                 .send_async(HashMap::from([(
                     "Error".to_string(),
-                    Message::Error(res.err().unwrap().to_string()),
+                    Message::Error(res.err().unwrap().to_string().into()),
                 )]))
                 .await?;
             break;
@@ -247,53 +246,53 @@ async fn file_io_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("Path is required".to_string()),
+                Message::Error("Path is required".to_string().into()),
             )]
             .into())
         }
     };
 
-    let operation = match payload.get("Operation") {
-        Some(Message::String(o)) => o.to_lowercase(),
-        _ => "read".to_string(), // Default to read
+    let operation: Arc<str> = match payload.get("Operation") {
+        Some(Message::String(o)) => o.to_lowercase().into(),
+        _ => "read".to_string().into(), // Default to read
     };
 
     let mut result = HashMap::new();
-    let exists = fs::exists(&path)?;
-    let is_directory = fs::metadata(&path)?.is_dir();
+    let exists = fs::exists(&**path)?;
+    let is_directory = fs::metadata(&**path)?.is_dir();
 
-    match operation.as_str() {
+    match operation.as_ref() {
         "read" => {
             if !exists || is_directory {
                 result.insert(
                     "Error".to_owned(),
-                    Message::Error("File not found".to_string()),
+                    Message::Error("File not found".to_string().into()),
                 );
                 result.insert("Success".to_owned(), Message::Boolean(false));
                 return Ok(result);
             }
-            let data = fs::read(&path)?;
+            let data = fs::read(&**path)?;
 
-            result.insert("Data".to_owned(), Message::Encoded(data.to_vec()));
+            result.insert("Data".to_owned(), Message::Encoded(data.into()));
             result.insert("Success".to_owned(), Message::Boolean(true));
         }
         "write" => {
             let content = payload
                 .get("Content")
                 .cloned()
-                .unwrap_or(Message::String("".to_string()));
+                .unwrap_or(Message::String("".to_string().into()));
 
             match content {
                 Message::String(content) => {
-                    fs::write(&path, content)?;
+                    fs::write(&**path, &**content)?;
                 }
                 Message::Encoded(content) => {
-                    fs::write(&path, content)?;
+                    fs::write(&**path, &**content)?;
                 }
                 _ => {
                     result.insert(
                         "Error".to_owned(),
-                        Message::Error("Invalid content type".to_string()),
+                        Message::Error("Invalid content type".to_string().into()),
                     );
                     result.insert("Success".to_owned(), Message::Boolean(false));
                     return Ok(result);
@@ -305,7 +304,7 @@ async fn file_io_actor(
         _ => {
             result.insert(
                 "Error".to_owned(),
-                Message::Error(format!("Unknown operation: {}", operation)),
+                Message::Error(format!("Unknown operation: {}", operation).into()),
             );
             result.insert("Success".to_owned(), Message::Boolean(false));
         }
@@ -314,7 +313,7 @@ async fn file_io_actor(
     Ok(result)
 }
 
-/// Executes a NuShell.
+/// Executes a NuShell command.
 ///
 /// # Inports
 /// - `Command`: Command to execute
@@ -325,7 +324,7 @@ async fn file_io_actor(
 /// - `Error`: Error information if execution failed
 #[actor(
     NuShellActor,
-    inports::<100>(Command),
+    inports::<100>(Command, WorkingDir),
     outports::<50>(Result, Error),
     state(MemoryState)
 )]
@@ -338,7 +337,7 @@ async fn nushell_actor(
     use nu_protocol::{
         engine::{EngineState, Stack, StateWorkingSet},
         PipelineData, Span, Value,
-        debugger:: WithoutDebug
+        debugger::WithoutDebug
     };
     use anyhow::Result;
     use std::path::PathBuf;
@@ -354,71 +353,66 @@ async fn nushell_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("Command is required".to_string()),
+                Message::Error("Command is required".to_string().into()),
             )]
             .into())
         }
     };
     let working_dir = match payload.get("WorkingDir") {
         Some(Message::String(w)) => w.clone(),
-        _ => ".".to_string(), // Default to current directory
+        _ => ".".to_string().into(), // Default to current directory
     };
-    let cwd = PathBuf::from(working_dir);
+    let _cwd = PathBuf::from(&**working_dir);
     let block = parse(&mut working_set, None, command.as_bytes(), false);
 
     let mut final_result = HashMap::new();
 
-    fn value_to_message(engine_state: &mut EngineState, value: &Value) -> Result<Message> {
+    let value_to_message = |engine_state: &mut EngineState, value: &Value| -> Result<Message> {
         match value {
             Value::List { vals, .. } => {
                 let mut array = vec![];
                 for v in vals {
-                    array.push(json!(v.as_str()?).into());
+                    array.push(EncodableValue::from(json!(v.coerce_str()?.to_string())));
                 }
-                Ok(Message::Array(array))
+                Ok(Message::array(array))
             }
-            Value::Bool { val, internal_span } => Ok(Message::Boolean((*val).into())),
-            Value::Int { val, internal_span } => Ok(Message::Integer(*val)),
-            Value::Float { val, internal_span } => Ok(Message::Float(*val)),
-            Value::String { val, internal_span } => Ok(Message::String(val.to_string())),
-            Value::Glob {
-                val,
-                no_expand,
-                internal_span,
-            } => todo!(),
-            Value::Filesize { val, internal_span } => Ok(Message::Integer(val.get())),
-            Value::Duration { val, internal_span } => Ok(Message::Integer(*val)),
-            Value::Date { val, internal_span } => Ok(Message::String(val.to_string())),
-            Value::Range { val, internal_span } => match &**val {
+            Value::Bool { val, .. } => Ok(Message::Boolean(*val)),
+            Value::Int { val, .. } => Ok(Message::Integer(*val)),
+            Value::Float { val, .. } => Ok(Message::Float(*val)),
+            Value::String { val, .. } => Ok(Message::String(val.to_string().into())),
+            Value::Glob { .. } => Ok(Message::String("glob".to_string().into())),
+            Value::Filesize { val, .. } => Ok(Message::Integer(val.get())),
+            Value::Duration { val, .. } => Ok(Message::Integer(*val)),
+            Value::Date { val, .. } => Ok(Message::String(val.to_string().into())),
+            Value::Range { val, .. } => match &**val {
                 nu_protocol::Range::IntRange(int_range) => {
                     let range_object = serde_json::to_value(int_range)?;
-                    Ok(Message::Object(range_object.into()))
+                    Ok(Message::Object(EncodableValue::from(range_object).into()))
                 }
                 nu_protocol::Range::FloatRange(float_range) => {
                     let range_object = serde_json::to_value(float_range)?;
-                    Ok(Message::Object(range_object.into()))
+                    Ok(Message::Object(EncodableValue::from(range_object).into()))
                 }
             },
-            Value::Record { val, internal_span } => {
+            Value::Record { val, .. } => {
                 let mut record = HashMap::new();
                 for (k, v) in val.iter() {
-                    record.insert(k.to_string(), serde_json::to_value(value_to_message(engine_state, v)?)?);
+                    // For record values, we'll convert them to JSON directly to avoid recursive closure calls
+                    record.insert(k.to_string(), serde_json::to_value(v.coerce_str()?.to_string())?);
                 }
-                Ok(Message::Object(json!(record).into()))
+                Ok(Message::Object(EncodableValue::from(json!(record)).into()))
             }
             Value::Closure { val, internal_span } => {
-                Ok(Message::String(val.coerce_into_string(&engine_state, internal_span.clone())?.into()))
+                let string_result = val.coerce_into_string(engine_state, internal_span.clone())?;
+                Ok(Message::String(string_result.to_string().into()))
             }
-            Value::Error {
-                error,
-                internal_span,
-            } => Ok(Message::Error(error.to_string())),
-            Value::Binary { val, internal_span } => Ok(Message::Encoded(val.clone())),
-            Value::CellPath { val, internal_span } => Ok(Message::String(val.to_string())),
-            Value::Custom { val, internal_span } => todo!(),
-            Value::Nothing { internal_span } => Ok(Message::Optional(None)),
+            Value::Error { error, .. } => Ok(Message::Error(error.to_string().into())),
+            Value::Binary { val, .. } => Ok(Message::Encoded(val.clone().into())),
+            Value::CellPath { val, .. } => Ok(Message::String(val.to_string().into())),
+            Value::Custom { .. } => Ok(Message::String("custom".to_string().into())),
+            Value::Nothing { .. } => Ok(Message::Optional(None)),
         }
-    }
+    };
 
   
     match eval_block::<WithoutDebug>(
@@ -437,7 +431,7 @@ async fn nushell_actor(
         Err(e) =>  {
             final_result.insert(
                 "Error".to_owned(),
-                Message::Error(format!("Failed to execute command: {}", e.to_string())),
+                Message::Error(format!("Failed to execute command: {}", e.to_string()).into()),
             );
         }
     }
@@ -470,7 +464,7 @@ async fn database_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("Connection string is required".to_string()),
+                Message::Error("Connection string is required".to_string().into()),
             )]
             .into())
         }
@@ -481,7 +475,7 @@ async fn database_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("Query is required".to_string()),
+                Message::Error("Query is required".to_string().into()),
             )]
             .into())
         }
@@ -508,10 +502,10 @@ async fn database_actor(
             "value": 84
         });
 
-        rows.push(row1.into());
-        rows.push(row2.into());
+        rows.push(EncodableValue::from(row1));
+        rows.push(EncodableValue::from(row2));
 
-        result.insert("Results".to_owned(), Message::Array(rows));
+        result.insert("Results".to_owned(), Message::array(rows));
     } else if query.to_lowercase().starts_with("insert")
         || query.to_lowercase().starts_with("update")
         || query.to_lowercase().starts_with("delete")
@@ -522,11 +516,11 @@ async fn database_actor(
             "success": true
         });
 
-        result.insert("Results".to_owned(), Message::Object(affected.into()));
+        result.insert("Results".to_owned(), Message::Object(EncodableValue::from(affected).into()));
     } else {
         result.insert(
             "Error".to_owned(),
-            Message::Error("Invalid SQL query".to_string()),
+            Message::Error("Invalid SQL query".to_string().into()),
         );
     }
 
@@ -556,7 +550,6 @@ async fn message_queue_actor(
    context:ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     use uuid::Uuid;
-    use tokio::sync::mpsc;
     use std::time::Duration;
 
     let payload = context.get_payload();
@@ -568,21 +561,21 @@ async fn message_queue_actor(
         _ => {
             return Ok([(
                 "Error".to_owned(),
-                Message::Error("Topic is required".to_string()),
+                Message::Error("Topic is required".to_string().into()),
             )]
             .into())
         }
     };
 
-    let action = match payload.get("Action") {
-        Some(Message::String(a)) => a.to_lowercase(),
-        _ => "publish".to_string(), // Default to publish
+    let action: Arc<str> = match payload.get("Action") {
+        Some(Message::String(a)) => a.to_lowercase().into(),
+        _ => "publish".to_string().into(), // Default to publish
     };
     
     // Get or generate subscription ID
     let subscription_id = match payload.get("SubscriptionId") {
         Some(Message::String(id)) => id.clone(),
-        _ => Uuid::new_v4().to_string(),
+        _ => Uuid::new_v4().to_string().into(),
     };
     
     // Check if unsubscribing
@@ -615,12 +608,12 @@ async fn message_queue_actor(
         }
     }
 
-    match action.as_str() {
+    match action.as_ref() {
         "publish" => {
             let message = payload
                 .get("Message")
                 .cloned()
-                .unwrap_or(Message::String("".to_string()));
+                .unwrap_or(Message::String("".to_string().into()));
 
             // Store the message in state
             let mut state_lock = state.lock();
@@ -636,7 +629,7 @@ async fn message_queue_actor(
 
                 // Add message to topic with timestamp
                 let messages = new_topics
-                    .get(&topic)
+                    .get(topic.as_str())
                     .and_then(|v| v.as_array())
                     .cloned()
                     .unwrap_or_default();
@@ -649,7 +642,7 @@ async fn message_queue_actor(
                 });
                 new_messages.push(message_with_metadata.clone());
 
-                new_topics.insert(topic.clone(), serde_json::Value::Array(new_messages));
+                new_topics.insert(topic.to_string(), serde_json::Value::Array(new_messages));
                 state_data.insert("topics", serde_json::Value::Object(new_topics));
                 
                 // Get active subscriptions for this topic
@@ -664,7 +657,7 @@ async fn message_queue_actor(
                             .and_then(|o| o.get("topic"))
                             .and_then(|t| t.as_str())
                         {
-                            if sub_topic == topic {
+                            if sub_topic == topic.as_str() {
                                 // Add message to subscriber's queue
                                 let message_queues = state_data
                                     .get("message_queues")
@@ -706,7 +699,7 @@ async fn message_queue_actor(
                         .cloned()
                     {
                         let mut new_subscriptions = subscriptions;
-                        new_subscriptions.remove(&subscription_id);
+                        new_subscriptions.remove(subscription_id.as_str());
                         state_data.insert("subscriptions", serde_json::Value::Object(new_subscriptions));
                     }
                     
@@ -717,7 +710,7 @@ async fn message_queue_actor(
                         .cloned()
                     {
                         let mut new_message_queues = message_queues;
-                        new_message_queues.remove(&subscription_id);
+                        new_message_queues.remove(subscription_id.as_str());
                         state_data.insert("message_queues", serde_json::Value::Object(new_message_queues));
                     }
                 }
@@ -742,13 +735,13 @@ async fn message_queue_actor(
                     
                     // Create subscription entry
                     let subscription = serde_json::json!({
-                        "topic": topic.clone(),
+                        "topic": topic.to_string(),
                         "created": chrono::Utc::now().to_rfc3339(),
                         "last_active": chrono::Utc::now().to_rfc3339(),
                         "status": "active"
                     });
                     
-                    new_subscriptions.insert(subscription_id.clone(), subscription);
+                    new_subscriptions.insert(subscription_id.to_string(), subscription);
                     state_data.insert("subscriptions", serde_json::Value::Object(new_subscriptions));
                     
                     // Initialize message queue for this subscription
@@ -759,14 +752,14 @@ async fn message_queue_actor(
                         .unwrap_or_default();
                     
                     let mut new_message_queues = message_queues;
-                    new_message_queues.insert(subscription_id.clone(), serde_json::Value::Array(Vec::new()));
+                    new_message_queues.insert(subscription_id.to_string(), serde_json::Value::Array(Vec::new()));
                     state_data.insert("message_queues", serde_json::Value::Object(new_message_queues));
                     
                     // Return any existing messages for this topic
                     let messages = state_data
                         .get("topics")
                         .and_then(|v| v.as_object())
-                        .and_then(|topics| topics.get(&topic))
+                        .and_then(|topics| topics.get(topic.as_str()))
                         .and_then(|v| v.as_array())
                         .map(|msgs| {
                             msgs.iter()
@@ -783,7 +776,7 @@ async fn message_queue_actor(
                         .unwrap_or_default();
                     
                     if !messages.is_empty() {
-                        result.insert("Received".to_owned(), Message::Array(messages));
+                        result.insert("Received".to_owned(), Message::array(messages));
                     }
                 }
             }
@@ -809,7 +802,7 @@ async fn message_queue_actor(
                             let subscription_exists = state_data
                                 .get("subscriptions")
                                 .and_then(|v| v.as_object())
-                                .map(|subs| subs.contains_key(&sub_id))
+                                .map(|subs| subs.contains_key(sub_id.as_str()))
                                 .unwrap_or(false);
                             
                             if !subscription_exists {
@@ -823,13 +816,13 @@ async fn message_queue_actor(
                                 .and_then(|v| v.as_object())
                                 .cloned()
                             {
-                                if let Some(sub_info) = subscriptions.get(&sub_id).and_then(|v| v.as_object()) {
+                                if let Some(sub_info) = subscriptions.get(sub_id.as_str()).and_then(|v| v.as_object()) {
                                     let mut new_sub_info = sub_info.clone();
                                     new_sub_info.insert("last_active".to_string(), 
                                                        serde_json::Value::String(chrono::Utc::now().to_rfc3339()));
                                     
                                     let mut new_subscriptions = subscriptions.clone();
-                                    new_subscriptions.insert(sub_id.clone(), serde_json::Value::Object(new_sub_info));
+                                    new_subscriptions.insert(sub_id.to_string(), serde_json::Value::Object(new_sub_info));
                                     state_data.insert("subscriptions", serde_json::Value::Object(new_subscriptions));
                                 }
                             }
@@ -840,7 +833,7 @@ async fn message_queue_actor(
                                 .and_then(|v| v.as_object())
                                 .cloned()
                             {
-                                if let Some(queue) = message_queues.get(&sub_id).and_then(|v| v.as_array()) {
+                                if let Some(queue) = message_queues.get(sub_id.as_str()).and_then(|v| v.as_array()) {
                                     if !queue.is_empty() {
                                         // Extract message content from queue items
                                         messages_to_send = queue.iter()
@@ -856,7 +849,7 @@ async fn message_queue_actor(
                                         
                                         // Clear the queue
                                         let mut new_message_queues = message_queues;
-                                        new_message_queues.insert(sub_id.clone(), serde_json::Value::Array(Vec::new()));
+                                        new_message_queues.insert(sub_id.to_string(), serde_json::Value::Array(Vec::new()));
                                         state_data.insert("message_queues", serde_json::Value::Object(new_message_queues));
                                     }
                                 }
@@ -870,7 +863,7 @@ async fn message_queue_actor(
                             .0
                             .send_async(HashMap::from([(
                                 "Received".to_string(),
-                                Message::Array(messages_to_send),
+                                Message::array(messages_to_send),
                             )]))
                             .await;
                         
@@ -888,7 +881,7 @@ async fn message_queue_actor(
                                     .cloned()
                                 {
                                     let mut new_subscriptions = subscriptions;
-                                    new_subscriptions.remove(&sub_id);
+                                    new_subscriptions.remove(sub_id.as_str());
                                     state_data.insert("subscriptions", serde_json::Value::Object(new_subscriptions));
                                 }
                                 
@@ -899,7 +892,7 @@ async fn message_queue_actor(
                                     .cloned()
                                 {
                                     let mut new_message_queues = message_queues;
-                                    new_message_queues.remove(&sub_id);
+                                    new_message_queues.remove(sub_id.as_str());
                                     state_data.insert("message_queues", serde_json::Value::Object(new_message_queues));
                                 }
                             }
@@ -914,7 +907,7 @@ async fn message_queue_actor(
         _ => {
             result.insert(
                 "Error".to_owned(),
-                Message::Error(format!("Unknown action: {}", action)),
+                Message::Error(format!("Unknown action: {}", action).into()),
             );
             result.insert("Success".to_owned(), Message::Boolean(false));
         }

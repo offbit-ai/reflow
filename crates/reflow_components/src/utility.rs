@@ -8,7 +8,9 @@ use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
 
-use crate::{Actor, ActorBehavior, ActorContext, ActorLoad, MemoryState, Message, Network, Port};
+use reflow_network::message::EncodableValue;
+
+use crate::{Actor, ActorBehavior, ActorContext, ActorLoad, MemoryState, Message, Port};
 
 /// Logs messages for debugging purposes.
 ///
@@ -45,9 +47,9 @@ async fn log_actor(
                 .get("level")
                 .and_then(|v| v.as_str())
                 .unwrap_or("info")
-                .to_string()
+                .to_string().into()
         } else {
-            "info".to_string()
+            "info".to_string().into()
         }
     };
 
@@ -182,7 +184,7 @@ async fn uuid_actor(
     let prefix = if let Some(Message::String(p)) = payload.get("Prefix") {
         p.clone()
     } else {
-        "".to_string()
+        "".to_string().into()
     };
 
     // Generate a simple UUID (in a real implementation, use a proper UUID library)
@@ -205,7 +207,7 @@ async fn uuid_actor(
         )
     };
 
-    Ok([("ID".to_owned(), Message::String(uuid))].into())
+    Ok([("ID".to_owned(), Message::string(uuid))].into())
 }
 
 /// Counts occurrences or accumulates a running total.
@@ -334,9 +336,9 @@ async fn convert_actor(
                 .get("target_type")
                 .and_then(|v| v.as_str())
                 .unwrap_or("string")
-                .to_string()
+                .to_string().into()
         } else {
-            "string".to_string()
+            "string".to_string().into()
         }
     };
 
@@ -344,17 +346,17 @@ async fn convert_actor(
     match target_type.as_str() {
         "string" => {
             let result = match input {
-                Message::Boolean(b) => Message::String(b.to_string()),
-                Message::Integer(i) => Message::String(i.to_string()),
-                Message::Float(f) => Message::String(f.to_string()),
+                Message::Boolean(b) => Message::string(b.to_string()),
+                Message::Integer(i) => Message::string(i.to_string()),
+                Message::Float(f) => Message::string(f.to_string()),
                 Message::String(_) => input.clone(),
                 Message::Array(_) | Message::Object(_) => {
-                    Message::String(serde_json::to_string(input).unwrap_or_default())
+                    Message::string(serde_json::to_string(input).unwrap_or_default())
                 }
                 _ => {
                     return Ok([(
                         "Error".to_owned(),
-                        Message::Error(format!("Cannot convert {:?} to string", input)),
+                        Message::error(format!("Cannot convert {:?} to string", input)),
                     )]
                     .into());
                 }
@@ -376,7 +378,7 @@ async fn convert_actor(
                     } else {
                         return Ok([(
                             "Error".to_owned(),
-                            Message::Error(format!("Cannot convert string '{}' to boolean", s)),
+                            Message::error(format!("Cannot convert string '{}' to boolean", s)),
                         )]
                         .into());
                     }
@@ -384,7 +386,7 @@ async fn convert_actor(
                 _ => {
                     return Ok([(
                         "Error".to_owned(),
-                        Message::Error(format!("Cannot convert {:?} to boolean", input)),
+                        Message::error(format!("Cannot convert {:?} to boolean", input)),
                     )]
                     .into());
                 }
@@ -402,7 +404,7 @@ async fn convert_actor(
                     Err(_) => {
                         return Ok([(
                             "Error".to_owned(),
-                            Message::Error(format!("Cannot parse '{}' as integer", s)),
+                            Message::error(format!("Cannot parse '{}' as integer", s)),
                         )]
                         .into());
                     }
@@ -410,7 +412,7 @@ async fn convert_actor(
                 _ => {
                     return Ok([(
                         "Error".to_owned(),
-                        Message::Error(format!("Cannot convert {:?} to integer", input)),
+                        Message::error(format!("Cannot convert {:?} to integer", input)),
                     )]
                     .into());
                 }
@@ -428,7 +430,7 @@ async fn convert_actor(
                     Err(_) => {
                         return Ok([(
                             "Error".to_owned(),
-                            Message::Error(format!("Cannot parse '{}' as float", s)),
+                            Message::error(format!("Cannot parse '{}' as float", s)),
                         )]
                         .into());
                     }
@@ -436,7 +438,7 @@ async fn convert_actor(
                 _ => {
                     return Ok([(
                         "Error".to_owned(),
-                        Message::Error(format!("Cannot convert {:?} to float", input)),
+                        Message::error(format!("Cannot convert {:?} to float", input)),
                     )]
                     .into());
                 }
@@ -449,16 +451,24 @@ async fn convert_actor(
                 Message::Array(_) => input.clone(),
                 Message::String(s) => {
                     match serde_json::from_str::<Vec<serde_json::Value>>(s) {
-                        Ok(arr) => Message::Array(arr.iter().map(|d| d.clone().into()).collect()),
+                        Ok(arr) => {
+                            use reflow_network::message::EncodableValue;
+                            let values: Vec<EncodableValue> = arr.iter().map(|d| EncodableValue::from(d.clone())).collect();
+                            Message::array(values)
+                        },
                         Err(_) => {
                             // If not a JSON array, create a single-item array
-                            Message::Array(vec![serde_json::Value::String(s.clone()).into()])
+                            use reflow_network::message::EncodableValue;
+                            let values = vec![EncodableValue::from(serde_json::Value::String(s.to_string()))];
+                            Message::array(values)
                         }
                     }
                 }
                 _ => {
                     // Convert any other type to a single-item array
-                    Message::Array(vec![serde_json::to_value(input).unwrap_or_default().into()])
+                    use reflow_network::message::EncodableValue;
+                    let values = vec![EncodableValue::from(serde_json::to_value(input).unwrap_or_default())];
+                    Message::array(values)
                 }
             };
 
@@ -469,11 +479,11 @@ async fn convert_actor(
                 Message::Object(_) => input.clone(),
                 Message::String(s) => {
                     match serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(s) {
-                        Ok(obj) => Message::Object(serde_json::to_value(obj)?.into()),
+                        Ok(obj) => Message::object(serde_json::to_value(obj)?.into()),
                         Err(_) => {
                             return Ok([(
                                 "Error".to_owned(),
-                                Message::Error(format!("Cannot parse '{}' as object", s)),
+                                Message::error(format!("Cannot parse '{}' as object", s)),
                             )]
                             .into());
                         }
@@ -482,7 +492,7 @@ async fn convert_actor(
                 _ => {
                     return Ok([(
                         "Error".to_owned(),
-                        Message::Error(format!("Cannot convert {:?} to object", input)),
+                        Message::error(format!("Cannot convert {:?} to object", input)),
                     )]
                     .into());
                 }
@@ -492,7 +502,7 @@ async fn convert_actor(
         }
         _ => Ok([(
             "Error".to_owned(),
-            Message::Error(format!("Unknown target type: {}", target_type)),
+            Message::error(format!("Unknown target type: {}", target_type)),
         )]
         .into()),
     }

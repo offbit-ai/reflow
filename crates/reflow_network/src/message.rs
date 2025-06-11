@@ -1,12 +1,13 @@
 use bitcode::{Decode, Encode};
+// use serde_with::{serde_as, DisplayFromStr};
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
 use ordered_float::OrderedFloat;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::io::{self, Read, Write};
@@ -39,6 +40,7 @@ impl EncodedMessage {
     }
 }
 
+// #[serde_as]
 #[derive(Clone, Default, Debug, Serialize, Deserialize, Encode, Decode, PartialEq)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
@@ -51,61 +53,24 @@ pub enum Message {
     Boolean(bool),
     Integer(i64),
     Float(f64),
-    String(String),
-    Object(EncodableValue),
-    Array(Vec<EncodableValue>),
-    Stream(Vec<u8>),
-    Encoded(Vec<u8>),
-    Optional(Option<EncodableValue>),
+
+    String(Arc<String>),
+   
+    Object(Arc<EncodableValue>),
+    
+    Array(Arc<Vec<EncodableValue>>),
+   
+    Stream(Arc<Vec<u8>>),
+   
+    Encoded(Arc<Vec<u8>>),
+   
+    Optional(Option<Arc<EncodableValue>>),
     // Tuple(Vec<Message>),
     // Generic(EncodableValue),
-    Any(EncodableValue),
-    Error(String),
-
-    // // SQL Extensions 
-    // SQLQuery {
-    //     sql: String,
-    //     dialect: CloudDialect,
-    //     connection_id: String,
-    //     parameters: Vec<EncodableValue>,
-    //     execution_options: SQLExecutionOptions,
-    // },
-    // ArrowBatch {
-    //     schema: Vec<u8>, // Serialized Arrow schema
-    //     data: Vec<u8>,   // Serialized Arrow data
-    //     row_count: usize,
-    // },
-    // SQLError {
-    //     error_type: String,
-    //     message: String,
-    //     sql_context: Option<String>,
-    //     line_number: Option<u32>,
-    // },
-    
-    // CloudSQLResult {
-    //     data: Vec<EncodableValue>,
-    //     schema: CloudSQLSchema,
-    //     execution_stats: CloudSQLExecutionStats,
-    //     cost_info: Option<CostInfo>,
-    // },
-    
-    // TranspilationResult {
-    //     original_sql: String,
-    //     transpiled_sql: String,
-    //     source_dialect: CloudDialect,
-    //     target_dialect: CloudDialect,
-    //     confidence_score: f64,
-    //     validation_status: ValidationStatus,
-    // },
-    
-    // MigrationPlan {
-    //     batches: Vec<MigrationBatch>,
-    //     total_queries: usize,
-    //     estimated_duration: Duration,
-    //     risk_assessment: RiskAssessment,
-    // },
+   
+    Any(Arc<EncodableValue>),
+    Error(Arc<String>),
 }
-
 
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Encode, Decode)]
 // pub enum CloudDialect {
@@ -218,7 +183,7 @@ impl<'de> Deserialize<'de> for CompressionConfig {
                             return Err(serde::de::Error::custom(format!(
                                 "Invalid compression strategy: {}",
                                 strategy
-                            )))
+                            )));
                         }
                     };
                     type_strategies.insert(type_name.to_string(), strategy);
@@ -477,12 +442,14 @@ impl Message {
             Message::Float(_) => PortType::Float,
             Message::String(_) => PortType::String,
             Message::Object(v) => {
-                let value: Value = v.clone().into();
-                if let Some(type_name) = value.get("type").and_then(|t| t.as_str()) {
-                    PortType::Object(type_name.to_string())
-                } else {
-                    PortType::Object("Dynamic".to_string())
-                }
+                // Expensive operation
+                // let value: Value = v.as_ref().clone().into();
+                // if let Some(type_name) = value.get("type").and_then(|t| t.as_str()) {
+                //     PortType::Object(type_name.to_string())
+                // } else {
+                //     PortType::Object("Dynamic".to_string())
+                // }
+                PortType::Object("Dynamic".to_string())
             }
             Message::Array(arr) => PortType::Array(Box::new(PortType::Any)),
             Message::Stream(_) => PortType::Stream,
@@ -745,7 +712,7 @@ impl Message {
         // Apply type-specific adjustments
         let threshold_multiplier = match self {
             Message::Stream(_) => 0.7, // More aggressive compression for streams
-            Message::String(_) => 1.5, // Much less aggressive for strings (increased from 0.9)
+            Message::String(_) => 1.5, // Much less aggressive for strings 
             Message::Array(_) => 0.8,  // Moderate for arrays
             _ => 0.8,                  // Default threshold
         };
@@ -859,9 +826,9 @@ impl From<Value> for Message {
                     Message::Float(n.as_f64().unwrap())
                 }
             }
-            Value::String(s) => Message::String(s),
+            Value::String(s) => Message::String(Arc::new(s)),
             Value::Array(vec) => Message::array(vec.into_iter().map(|v| v.into()).collect()),
-            Value::Object(_) => Message::Object(EncodableValue::from(value)),
+            Value::Object(_) => Message::Object(Arc::new(EncodableValue::from(value))),
         }
     }
 }
@@ -874,25 +841,28 @@ impl Into<Value> for Message {
             Message::Boolean(b) => Value::Bool(b),
             Message::Integer(i) => Value::Number(i.into()),
             Message::Float(f) => Value::Number(serde_json::Number::from_f64(f).unwrap()),
-            Message::String(s) => Value::String(s),
-            Message::Object(v) => v.into(),
+            Message::String(s) => Value::String(s.as_str().to_string()),
+            Message::Object(v) => v.as_ref().clone().into(),
             Message::Array(arr) => Value::Array(
                 arr.iter()
                     // .filter_map(|m| m.decode())
                     .map(|m| m.clone().into())
                     .collect(),
             ),
-            Message::Stream(bytes) => {
-                Value::Array(bytes.into_iter().map(|b| Value::Number(b.into())).collect())
-            }
+            Message::Stream(bytes) => Value::Array(
+                <Vec<u8> as Clone>::clone(&bytes)
+                    .into_iter()
+                    .map(|b| Value::Number(b.into()))
+                    .collect(),
+            ),
             Message::Optional(opt) => match opt {
-                Some(m) => Value::from(m),
+                Some(m) => Value::from(m.as_ref().clone()),
                 None => Value::Null,
             },
             // Message::Tuple(items) => Value::Array(items.into_iter().map(|m| m.into()).collect()),
             // Message::Generic(v) => v.into(),
-            Message::Any(v) => v.into(),
-            Message::Error(e) => Value::String(e),
+            Message::Any(v) => v.as_ref().clone().into(),
+            Message::Error(e) => Value::String(e.as_str().to_string()),
             Message::Encoded(encoded) => bitcode::decode::<Message>(&encoded)
                 .expect("Failed to decode message")
                 .into(),
@@ -1013,11 +983,45 @@ impl From<EncodableValue> for Value {
 
 // Helper constructors
 impl Message {
+    pub fn object(value: EncodableValue) -> Self {
+        Message::Object(Arc::new(value))
+    }
+    pub fn any(value: EncodableValue) -> Self {
+        Message::Any(Arc::new(value))
+    }
+    pub fn event(value: EncodableValue) -> Self {
+        Message::Event(value)
+    }
+
     pub fn array(messages: Vec<EncodableValue>) -> Self {
-        Message::Array(messages)
+        Message::Array(Arc::new(messages))
+    }
+    pub fn stream(bytes: Vec<u8>) -> Self {
+        Message::Stream(bytes.into())
+    }
+    pub fn encoded(encoded: Vec<u8>) -> Self {
+        Message::Encoded(Arc::new(encoded))
+    }
+    pub fn error(msg: String) -> Self {
+        Message::Error(msg.into())
+    }
+    pub fn boolean(value: bool) -> Self {
+        Message::Boolean(value)
+    }
+    pub fn integer(value: i64) -> Self {
+        Message::Integer(value)
+    }
+    pub fn float(value: f64) -> Self {
+        Message::Float(value)
+    }
+    pub fn string(value: String) -> Self {
+        Message::String(Arc::new(value))
+    }
+    pub fn flow() -> Self {
+        Message::Flow
     }
 
     pub fn optional(msg: Option<EncodableValue>) -> Self {
-        Message::Optional(msg)
+        Message::Optional(msg.map(|d| Arc::new(d)))
     }
 }

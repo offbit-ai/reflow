@@ -155,14 +155,14 @@ impl PostgresConnection {
                 || column_type == &tokio_postgres::types::Type::VARCHAR
             {
                 let val: String = row.get(i);
-                Message::String(val)
+                Message::string(val)
             } else if column_type == &tokio_postgres::types::Type::BYTEA {
                 let val: Vec<u8> = row.get(i);
-                Message::Encoded(val)
+                Message::encoded(val)
             } else {
                 // For other types, try to get as string
                 match row.try_get::<_, String>(i) {
-                    Ok(val) => Message::String(val),
+                    Ok(val) => Message::string(val),
                     Err(_) => Message::Flow,
                 }
             };
