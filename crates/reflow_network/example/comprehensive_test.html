@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflow Network WASM Bindings - Comprehensive Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-section h3 {
+            color: #555;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.running {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .feature-card h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .feature-card ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .feature-card li {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="emoji">🧪</span> Reflow Network WASM Test Suite</h1>
+        <p>Comprehensive testing of Graph Creation, Stateful Actors, and Network Composition</p>
+    </div>
+
+    <div class="test-section">
+        <h2><span class="emoji">🎯</span> Test Overview</h2>
+        <p>This comprehensive test suite validates the updated WASM bindings for the Reflow Network system. It demonstrates:</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4><span class="emoji">🏗️</span> Graph Creation</h4>
+                <ul>
+                    <li>Creating graphs with metadata</li>
+                    <li>Adding nodes and connections</li>
+                    <li>Setting up inports/outports</li>
+                    <li>Graph serialization/export</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h4><span class="emoji">🎭</span> Stateful Actors</h4>
+                <ul>
+                    <li>Generator with counter state</li>
+                    <li>Accumulator with running totals</li>
+                    <li>Filter with criteria tracking</li>
+                    <li>Logger with message history</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h4><span class="emoji">🚀</span> Network Composition</h4>
+                <ul>
+                    <li>Actor registration and binding</li>
+                    <li>Network startup and execution</li>
+                    <li>Event monitoring and handling</li>
+                    <li>Graceful shutdown procedures</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h4><span class="emoji">📚</span> Advanced Features</h4>
+                <ul>
+                    <li>Graph history with undo/redo</li>
+                    <li>State persistence and recovery</li>
+                    <li>Error handling and reporting</li>
+                    <li>Performance monitoring</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="runTest" class="btn">
+            <span class="emoji">▶️</span> Run Comprehensive Test
+        </button>
+        <button id="clearConsole" class="btn">
+            <span class="emoji">🧹</span> Clear Console
+        </button>
+    </div>
+
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <div class="progress" id="progressContainer" style="display: none;">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="test-section">
+        <h2><span class="emoji">📊</span> Test Results</h2>
+        <div id="results" style="display: none;">
+            <h3>Execution Summary</h3>
+            <div id="summary"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2><span class="emoji">💻</span> Console Output</h2>
+        <div id="console" class="console">
+Ready to run tests. Click "Run Comprehensive Test" to begin...
+        </div>
+    </div>
+
+    <script type="module">
+        import { runComprehensiveTest } from './comprehensive_test.js';
+
+        // Console capture
+        const consoleDiv = document.getElementById('console');
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : type === 'info' ? 'ℹ️' : '📝';
+            const formattedMessage = `[${timestamp}] ${prefix} ${message}`;
+            
+            consoleDiv.textContent += formattedMessage + '\n';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            // Also log to browser console
+            originalConsole[type](message);
+        }
+
+        // Override console methods
+        console.log = (...args) => addToConsole(args.join(' '), 'log');
+        console.error = (...args) => addToConsole(args.join(' '), 'error');
+        console.warn = (...args) => addToConsole(args.join(' '), 'warn');
+        console.info = (...args) => addToConsole(args.join(' '), 'info');
+
+        // UI Elements
+        const runTestBtn = document.getElementById('runTest');
+        const clearConsoleBtn = document.getElementById('clearConsole');
+        const statusDiv = document.getElementById('status');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const resultsDiv = document.getElementById('results');
+        const summaryDiv = document.getElementById('summary');
+
+        function updateStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        function updateProgress(percent) {
+            progressBar.style.width = `${percent}%`;
+        }
+
+        function showResults(result) {
+            resultsDiv.style.display = 'block';
+            
+            const summary = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 2em; color: #28a745;">${result.success ? '✅' : '❌'}</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Test Result</div>
+                        <div>${result.success ? 'SUCCESS' : 'FAILED'}</div>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 2em; color: #1976d2;">🧪</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Tests Run</div>
+                        <div>${result.testsRun || 'N/A'}</div>
+                    </div>
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 2em; color: #f57c00;">📦</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Graph Nodes</div>
+                        <div>${result.graphNodes || 'N/A'}</div>
+                    </div>
+                    <div style="background: #fce4ec; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 2em; color: #c2185b;">📡</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Network Events</div>
+                        <div>${result.networkEvents || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            
+            summaryDiv.innerHTML = summary;
+        }
+
+        // Event Listeners
+        runTestBtn.addEventListener('click', async () => {
+            try {
+                runTestBtn.disabled = true;
+                runTestBtn.innerHTML = '<span class="emoji loading">⏳</span> Running Tests...';
+                
+                updateStatus('Initializing test suite...', 'running');
+                progressContainer.style.display = 'block';
+                updateProgress(0);
+                
+                // Clear previous results
+                resultsDiv.style.display = 'none';
+                consoleDiv.textContent = '';
+                
+                console.log('🚀 Starting Reflow Network WASM Test Suite...');
+                updateProgress(10);
+                
+                // Run the comprehensive test
+                const result = await runComprehensiveTest();
+                updateProgress(100);
+                
+                if (result.success) {
+                    updateStatus('All tests completed successfully! 🎉', 'success');
+                    console.log('✅ Test suite completed successfully!');
+                } else {
+                    updateStatus(`Test failed: ${result.error}`, 'error');
+                    console.error('❌ Test suite failed:', result.error);
+                }
+                
+                showResults(result);
+                
+            } catch (error) {
+                updateStatus(`Unexpected error: ${error.message}`, 'error');
+                console.error('💥 Unexpected error during test execution:', error);
+                showResults({ success: false, error: error.message });
+            } finally {
+                runTestBtn.disabled = false;
+                runTestBtn.innerHTML = '<span class="emoji">▶️</span> Run Comprehensive Test';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+            }
+        });
+
+        clearConsoleBtn.addEventListener('click', () => {
+            consoleDiv.textContent = 'Console cleared. Ready for new test run...\n';
+            statusDiv.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            progressContainer.style.display = 'none';
+        });
+
+        // Initial setup
+        console.log('🌐 Reflow Network WASM Test Suite loaded and ready!');
+        console.log('📋 Click "Run Comprehensive Test" to begin the test suite.');
+        
+        // Make test function available globally for manual execution
+        window.runReflowTest = runComprehensiveTest;
+        window.testUtils = {
+            updateStatus,
+            updateProgress,
+            showResults,
+            addToConsole
+        };
+    </script>
+</body>
+</html>

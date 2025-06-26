@@ -480,7 +480,7 @@ impl Message {
 
             // Array type validation
             (Message::Array(arr), PortType::Array(elem_type)) => {
-                arr.iter().try_for_each(|elem| Ok(()))
+                arr.iter().try_for_each(|_elem| Ok(()))
             }
 
             // Optional type validation
@@ -884,17 +884,17 @@ impl From<JsValue> for Message {
                         Message::Float(n.as_f64().unwrap())
                     }
                 }
-                Value::String(s) => Message::String(s),
-                Value::Array(arr) => Message::array(Box::new(
+                Value::String(s) => Message::String(Arc::new(s)),
+                Value::Array(arr) => Message::array(
                     arr.into_iter()
-                        .map(|v| Message::from(JsValue::from_serde(&v).unwrap()))
+                        .map(|v| EncodableValue::from(v))
                         .collect(),
-                )),
-                Value::Object(obj) => Message::Object(Value::Object(obj).into()),
+                ),
+                Value::Object(obj) => Message::Object(Arc::new(EncodableValue::from(Value::Object(obj)))),
                 Value::Null => Message::Optional(None),
             }
         } else {
-            Message::Error("Invalid JS value".to_string())
+            Message::Error(Arc::new("Invalid JS value".to_string()))
         }
     }
 }
@@ -912,8 +912,10 @@ impl Into<JsValue> for Message {
             Message::Object(v) => JsValue::from_serde(&v).unwrap_or_default(),
             Message::Array(arr) => {
                 let js_arr = js_sys::Array::new();
-                for msg in arr {
-                    js_arr.push(&msg);
+                for msg in arr.iter() {
+                    if let Ok(js_val) = JsValue::from_serde(&msg) {
+                        js_arr.push(&js_val);
+                    }
                 }
                 js_arr.into()
             }
@@ -923,7 +925,7 @@ impl Into<JsValue> for Message {
                 array.into()
             }
             Message::Optional(opt) => match opt {
-                Some(msg) => msg.decode().map(|m| m.into()).unwrap_or(JsValue::NULL),
+                Some(msg) => msg.decode().map(|m: Message| m.into()).unwrap_or(JsValue::NULL),
                 None => JsValue::NULL,
             },
             // Message::Tuple(items) => {

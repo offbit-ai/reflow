@@ -12,7 +12,7 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::spawn_local;
 
-#[derive(Debug, Serialize, Deserialize,Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -32,8 +32,7 @@ impl ConnectionPoint {
     }
 }
 
-
-#[derive(Debug, Serialize, Deserialize,  Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -50,11 +49,12 @@ impl Connector {
 
 impl Connector {
     pub async fn init(&self, network: &Network) {
+        use futures::{Stream, StreamExt, task::Poll};
+
         use crate::network::FlowStub;
         use crate::network::NetworkEvent;
-        use futures::{task::Poll, Stream, StreamExt};
-        
         let network_event_emitter = network.network_event_emitter.clone();
+
         let from_process = network
             .nodes
             .get(&self.from.actor.to_owned())
@@ -81,22 +81,32 @@ impl Connector {
         let in_ports = to_actor.get_inports();
 
         let mut routine = Box::pin(async move {
-
             while let Some(mut outport_packet) = out_ports.1.clone().stream().next().await {
-                
+                let _from_port = _from_port.clone();
+                let to_port = to_port.clone();
+                let from_actor_id = from_actor_id.clone();
+                let to_actor_id = to_actor_id.clone();
+
+                let msg = outport_packet
+                    .remove(&_from_port)
+                    .unwrap_or_else(|| Message::Optional(None));
                 in_ports
                     .clone()
                     .0
-                    .send_async(HashMap::from_iter([(to_port.to_owned(), outport_packet.remove(&_from_port).unwrap())]))
+                    .send_async(HashMap::from_iter([(
+                        to_port.clone().to_owned(),
+                        msg.clone(),
+                    )]))
                     .await
                     .expect(
                         format!(
                             "Expected to send message from Actor '{}' to Actor '{}'",
-                            from_actor_id, to_actor_id
+                            &from_actor_id,
+                            &to_actor_id
                         )
                         .as_str(),
                     );
-                    from_actor_load_count.clone().lock().dec();
+                from_actor_load_count.clone().lock().dec();
 
                 #[cfg(feature = "flowtrace")]
                 {
@@ -105,7 +115,7 @@ impl Connector {
                     let _ = network_sender.clone().send(NetworkEvent::FlowTrace {
                         from: FlowStub {
                             actor_id: from_actor_id,
-                            port: from_port,
+                            port: _from_port,
                             data: Some(json!(msg)),
                         },
                         to: FlowStub {
@@ -120,7 +130,7 @@ impl Connector {
 
         // Start a loop to recieve messages from the first and send to second actor
         #[cfg(not(target_arch = "wasm32"))]
-       let _ =  tokio::spawn(async move {(&mut routine).await});
+        let _ = tokio::spawn(async move { (&mut routine).await });
         // network.thread_pool.lock().unwrap().spawn(routine);
 
         #[cfg(target_arch = "wasm32")]
@@ -128,7 +138,7 @@ impl Connector {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize,  Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]

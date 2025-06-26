@@ -29,17 +29,19 @@ undo = "0.52.0"
 futures = { version = "0.3" }
 bitcode = { version = "0.6.4", features = ["serde"] }
 ordered-float = "5.0.0"
-tokio = { version = "1", features = ["full"] }
+
 chrono = "0.4"
 serde_with = { version = "2.1" , default-features = false, features = ["alloc", "std"]}
 tracing ={ version = "0.1.41"}
 async-trait = "0.1.88"
-reqwest = {version = "0.12.20", features = ["json"]}
+reqwest = {version = "0.12.20", features = ["json"], optional = true }
 serde_yaml = "0.9.30"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["full"] }
 zstd = "0.13.2"
 rayon = "1.10.0"
+reqwest = {version = "0.12.20", features = ["json"]}
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2.86"}
@@ -64,6 +66,7 @@ tsify = { version = "0.4.5", features = ["js"] }
 wasm-bindgen-futures = "0.4.42"
 js-sys = "0.3.77"
 wasm-bindgen-test = "0.3.50"
+console_error_panic_hook = "0.1.7"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
@@ -71,6 +74,7 @@ criterion = { version = "0.5.1", features = ["html_reports"] }
 [features]
 flowtrace = []
 default = []
+wasm = []
 
 [[bench]]
 name = "graph_bench"
@@ -79,3 +83,6 @@ path = "benches/bench.rs"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.50"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

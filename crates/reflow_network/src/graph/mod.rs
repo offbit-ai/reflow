@@ -1,16 +1,16 @@
 pub mod history;
 pub mod journal;
-pub mod types;
 pub mod tests;
+pub mod types;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use foreach::ForEach;
+// use foreach::ForEach;
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use history::*;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
 #[cfg(target_arch = "wasm32")]
@@ -139,6 +139,8 @@ impl Graph {
             is_meta = false;
         }
 
+        // web_sys::console::log_1(&format!("[AddNode] is_meta: {}", is_meta).as_str().into());
+
         let _meta = if is_meta {
             Some(
                 metadata
@@ -148,6 +150,8 @@ impl Graph {
         } else {
             None
         };
+
+        // web_sys::console::log_1(&format!("[AddNode] meta: {:?}", _meta).as_str().into());
         self.add_node(id, process, _meta);
     }
     /// Add inport associated with a node in the Graph
@@ -690,14 +694,14 @@ impl Graph {
     pub fn _calculate_layout(&self) -> JsValue {
         let layout = self.calculate_layout();
         let obj = js_sys::Object::new();
-        
+
         for (node_id, position) in layout {
             let pos = js_sys::Object::new();
             js_sys::Reflect::set(&pos, &"x".into(), &position.x.into()).unwrap();
             js_sys::Reflect::set(&pos, &"y".into(), &position.y.into()).unwrap();
             js_sys::Reflect::set(&obj, &node_id.into(), &pos.into()).unwrap();
         }
-        
+
         obj.into()
     }
 }
@@ -1485,7 +1489,7 @@ impl Graph {
     pub fn rename_outport(&mut self, old_port: &str, new_port: &str) -> &mut Self {
         let old_port_name = self.get_port_name(old_port);
         let new_port_name = self.get_port_name(new_port);
-    
+
         if !self.outports.contains_key(&(old_port_name.clone())) {
             return self;
         }
@@ -1495,8 +1499,9 @@ impl Graph {
         }
 
         if let Some(old_port) = self.outports.remove(&old_port_name) {
-            self.outports.insert(new_port_name.clone(), old_port.clone());
-        
+            self.outports
+                .insert(new_port_name.clone(), old_port.clone());
+
             self.event_channel
                 .0
                 .send(GraphEvents::RenameOutport(json!({
@@ -1516,7 +1521,7 @@ impl Graph {
         if let Some(node) = self.get_node_mut(old_id) {
             (*node).id = new_id.to_owned();
 
-            let _ = self.connections.iter_mut().foreach(|edge, _iter| {
+            let _ = self.connections.iter_mut().for_each(|edge| {
                 if edge.from.node_id == old_id.to_owned() {
                     (*edge).from.node_id = new_id.to_owned()
                 }
@@ -1525,20 +1530,20 @@ impl Graph {
                 }
             });
 
-            let _ = self.initializers.iter_mut().foreach(|iip, _iter| {
+            let _ = self.initializers.iter_mut().for_each(|iip| {
                 if iip.to.node_id == old_id.to_owned() {
                     iip.to.node_id = new_id.to_owned()
                 }
             });
 
-            let _ = self.inports.clone().keys().foreach(|port, _iter| {
+            let _ = self.inports.clone().keys().for_each(|port| {
                 if let Some(private) = self.inports.get_mut(port) {
                     if private.node_id == old_id.to_owned() {
                         private.node_id = new_id.to_owned();
                     }
                 }
             });
-            let _ = self.outports.clone().keys().foreach(|port, _iter| {
+            let _ = self.outports.clone().keys().for_each(|port| {
                 if let Some(private) = self.outports.get_mut(port) {
                     if private.node_id == old_id.to_owned() {
                         private.node_id = new_id.to_owned();
@@ -1546,7 +1551,7 @@ impl Graph {
                 }
             });
 
-            let _ = self.groups.iter_mut().foreach(|group, _iter| {
+            let _ = self.groups.iter_mut().for_each(|group| {
                 if let Some(index) = group
                     .nodes
                     .iter()
@@ -1579,7 +1584,7 @@ impl Graph {
                 (*node).metadata = Some(HashMap::new());
             }
 
-            let _ = metadata.clone().keys().foreach(|item, _iter| {
+            let _ = metadata.clone().keys().for_each(|item| {
                 let meta = metadata.clone();
                 let val = meta.get(item);
 
@@ -1668,7 +1673,7 @@ impl Graph {
 
             let before = p.metadata.clone();
 
-            metadata.clone().keys().foreach(|item, _| {
+            metadata.clone().keys().for_each(|item| {
                 let meta = metadata.clone();
                 let val = meta.get(item);
                 let mut existing_meta = p.metadata.clone();
@@ -1718,7 +1723,7 @@ impl Graph {
 
             let before = p.metadata.clone();
 
-            metadata.clone().keys().foreach(|item, _| {
+            metadata.clone().keys().for_each(|item| {
                 let meta = metadata.clone();
                 let val = meta.get(item);
                 let mut existing_meta = p.metadata.clone();
@@ -1995,7 +2000,7 @@ impl Graph {
         json.properties
             .insert("name".to_owned(), Value::from(self.name.to_owned()));
 
-        let _ = self.groups.iter().foreach(|group, _iter| {
+        for group in &self.groups {
             let mut group_data = group.clone();
             if let Some(metadata) = group.metadata.clone() {
                 if !metadata.is_empty() {
@@ -2003,29 +2008,20 @@ impl Graph {
                 }
             }
             json.groups.push(group_data);
-        });
+        }
 
-        let _ = self.nodes.iter().foreach(|node, _ter| {
-            json.processes.insert(node.0.clone(), node.1.clone());
-        });
+        json.processes = self.nodes.clone();
 
         json.connections = self.connections.clone();
 
-        let _ = self.initializers.iter().foreach(|initializer, _iter| {
-            let mut iip = GraphIIP::default();
-            iip.to = initializer.to.clone();
-
-            iip.data = initializer.data.clone();
-
-            iip.metadata = initializer.metadata.clone();
-
+        for iip in self.initializers.clone() {
             json.connections.push(GraphConnection {
                 from: GraphEdge::default(),
                 to: iip.to,
                 data: Some(iip.data.clone()),
                 metadata: iip.metadata,
             });
-        });
+        }
 
         json
     }
@@ -2050,13 +2046,13 @@ impl Graph {
             }),
         ));
 
-        json.processes.keys().foreach(|prop, _iter| {
+        json.processes.keys().for_each(|prop| {
             if let Some(def) = json.processes.clone().get(prop) {
                 graph.add_node(prop.as_str(), &def.component, def.metadata.clone());
             }
         });
 
-        json.connections.clone().into_iter().foreach(|conn, _| {
+        json.connections.clone().into_iter().for_each(|conn| {
             if let Some(data) = conn.data {
                 if conn.to.index.is_some() {
                     graph.add_initial_index(
@@ -2100,7 +2096,7 @@ impl Graph {
             );
         });
 
-        json.inports.clone().keys().foreach(|inport, _iter| {
+        json.inports.clone().keys().for_each(|inport| {
             if let Some(pri) = json.inports.clone().get(inport) {
                 graph.add_inport(
                     inport,
@@ -2111,7 +2107,7 @@ impl Graph {
                 );
             }
         });
-        json.outports.clone().keys().foreach(|outport, _iter| {
+        json.outports.clone().keys().for_each(|outport| {
             if let Some(pri) = json.outports.clone().get(outport) {
                 graph.add_outport(
                     outport,
@@ -3516,11 +3512,11 @@ impl Graph {
         analysis
     }
 
-     /// Estimates total execution time based on node metadata and graph structure
-     fn estimate_execution_time(&self) -> f64 {
+    /// Estimates total execution time based on node metadata and graph structure
+    fn estimate_execution_time(&self) -> f64 {
         let mut total_time = 0.0;
         let stages = self.identify_pipeline_stages();
-        
+
         for stage in stages {
             let mut stage_time = 0.0;
             for node_id in stage.nodes {
@@ -3536,14 +3532,14 @@ impl Graph {
             }
             total_time += stage_time;
         }
-        
+
         total_time
     }
 
     /// Analyzes resource requirements for the entire graph
     fn analyze_resource_requirements(&self) -> HashMap<String, f64> {
         let mut requirements = HashMap::new();
-        
+
         for node in self.nodes.values() {
             if let Some(metadata) = &node.metadata {
                 if let Some(resources) = metadata.get("resources") {
@@ -3556,19 +3552,19 @@ impl Graph {
                 }
             }
         }
-        
+
         requirements
     }
 
     /// Finds potential optimization opportunities in the graph
     fn find_optimization_opportunities(&self) -> Vec<OptimizationSuggestion> {
         let mut suggestions = Vec::new();
-        
+
         // Find parallelizable chains
         for chain in self.find_sequential_chains() {
             suggestions.push(OptimizationSuggestion::ParallelizableChain { nodes: chain });
         }
-        
+
         // Check for redundant nodes
         for node_id in self.nodes.keys() {
             if self.is_node_redundant(node_id) {
@@ -3578,17 +3574,18 @@ impl Graph {
                 });
             }
         }
-        
+
         // Analyze resource bottlenecks
         for (resource, usage) in self.analyze_resource_requirements() {
-            if usage > 0.8 { // 80% threshold
+            if usage > 0.8 {
+                // 80% threshold
                 suggestions.push(OptimizationSuggestion::ResourceBottleneck {
                     resource,
                     severity: usage,
                 });
             }
         }
-        
+
         suggestions
     }
 
@@ -3761,7 +3758,9 @@ impl Graph {
                 let connected_positions: Vec<f32> = incoming
                     .iter()
                     .chain(outgoing.iter())
-                    .filter_map(|(connected_id, _, _)| positions.get(*connected_id).map(|pos| pos.x))
+                    .filter_map(|(connected_id, _, _)| {
+                        positions.get(*connected_id).map(|pos| pos.x)
+                    })
                     .collect();
 
                 let barycenter = if !connected_positions.is_empty() {

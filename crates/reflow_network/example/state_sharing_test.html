@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>State Sharing Test - JavaScript ↔ Rust WASM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .state-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>State Sharing Test: JavaScript ↔ Rust WASM</h1>
+    <p>This test demonstrates that JavaScript and Rust now properly share state through the WASM bridge.</p>
+
+    <div class="test-section">
+        <h2>Test Actor</h2>
+        <p>Current state:</p>
+        <div id="state-display" class="state-display">Loading...</div>
+        
+        <button onclick="setFromJS()">Set from JavaScript</button>
+        <button onclick="runActor()">Run Actor (Rust)</button>
+        <button onclick="getState()">Refresh State Display</button>
+        <button onclick="clearState()">Clear State</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script type="module">
+        import init, { JsWasmActor } from '../pkg/reflow_network.js';
+
+        let wasmActor = null;
+        let testResults = [];
+
+        // Initialize WASM
+        await init();
+
+        // Create a test actor
+        class TestActor {
+            constructor() {
+                this.inports = ['input'];
+                this.outports = ['output'];
+                this.config = { test: true };
+            }
+
+            run(context) {
+                console.log('Actor running with context:', context);
+                
+                // Read current state
+                const currentCount = context.state.get('count') || 0;
+                const currentMessage = context.state.get('message') || '';
+                
+                // Modify state from Rust side
+                context.state.set('count', currentCount + 1);
+                context.state.set('message', `Updated from Rust at ${new Date().toLocaleTimeString()}`);
+                context.state.set('lastUpdatedBy', 'Rust');
+                
+                // Send output
+                context.send({
+                    output: {
+                        count: currentCount + 1,
+                        message: 'Processed by Rust actor'
+                    }
+                });
+                
+                addTestResult('✅ Actor executed successfully', 'success');
+                updateStateDisplay();
+            }
+        }
+
+        // Create WASM actor wrapper
+        const testActor = new TestActor();
+        wasmActor = new JsWasmActor(testActor);
+
+        // Make functions global for button clicks
+        window.setFromJS = function() {
+            if (!wasmActor) return;
+            
+            // Get current state handle
+            const currentState = wasmActor.getState();
+            if (currentState) {
+                const count = currentState.get('count') || 0;
+                currentState.set('count', count + 10);
+                currentState.set('message', `Updated from JavaScript at ${new Date().toLocaleTimeString()}`);
+                currentState.set('lastUpdatedBy', 'JavaScript');
+                
+                addTestResult('✅ State updated from JavaScript', 'success');
+                updateStateDisplay();
+            } else {
+                addTestResult('❌ Could not access state from JavaScript', 'error');
+            }
+        };
+
+        window.runActor = function() {
+            if (!wasmActor) return;
+            
+            try {
+                // Send a message to the actor
+                wasmActor.sendMessage('input', { 
+                    action: 'increment',
+                    timestamp: Date.now()
+                });
+                
+                addTestResult('✅ Message sent to actor', 'success');
+            } catch (error) {
+                addTestResult(`❌ Error running actor: ${error.message}`, 'error');
+            }
+        };
+
+        window.getState = function() {
+            updateStateDisplay();
+        };
+
+        window.clearState = function() {
+            if (!wasmActor) return;
+            
+            const currentState = wasmActor.getState();
+            if (currentState) {
+                currentState.clear();
+                addTestResult('✅ State cleared', 'success');
+                updateStateDisplay();
+            }
+        };
+
+        function updateStateDisplay() {
+            if (!wasmActor) return;
+            
+            const currentState = wasmActor.getState();
+            const stateDisplay = document.getElementById('state-display');
+            
+            if (currentState) {
+                const stateObj = currentState.getAll();
+                stateDisplay.textContent = JSON.stringify(stateObj, null, 2);
+            } else {
+                stateDisplay.textContent = 'No state available';
+            }
+        }
+
+        function addTestResult(message, type) {
+            testResults.push({ message, type, timestamp: new Date().toLocaleTimeString() });
+            
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = testResults.map(result => 
+                `<div class="test-section ${result.type}">
+                    [${result.timestamp}] ${result.message}
+                </div>`
+            ).join('');
+        }
+
+        // Initial state display
+        updateStateDisplay();
+        addTestResult('🚀 Test initialized successfully', 'success');
+    </script>
+</body>
+</html>

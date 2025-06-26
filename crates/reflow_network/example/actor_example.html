@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reflow Network Actor System Example</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .card h2 {
+        margin-top: 0;
+        color: #3498db;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      pre {
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        padding: 15px;
+        overflow: auto;
+        font-family: "Courier New", Courier, monospace;
+      }
+      #output {
+        height: 300px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      .log-entry {
+        margin-bottom: 5px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+      }
+      .log-entry.info {
+        color: #2c3e50;
+      }
+      .log-entry.success {
+        color: #27ae60;
+      }
+      .log-entry.error {
+        color: #e74c3c;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Reflow Network Actor System Example</h1>
+
+    <div class="container">
+      <div class="card">
+        <h2>Actor System Controls</h2>
+        <div>
+          <button id="initButton">Initialize Actor System</button>
+          <button id="sendButton" disabled>Send Message to Actor</button>
+          <button id="stateButton" disabled>Manipulate Actor State</button>
+          <button id="shutdownButton" disabled>Shutdown Network</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Console Output</h2>
+        <div id="output"></div>
+      </div>
+
+      <div class="card">
+        <h2>Message to Send</h2>
+        <pre id="messageData">
+{
+  "text": "Hello, Actor System!",
+  "count": 42,
+  "timestamp": 0
+}</pre
+        >
+      </div>
+    </div>
+
+    <script type="module">
+      // We'll load the WASM module from the pkg directory
+      import init, {
+        Network,
+        ActorLoad,
+        MemoryState,
+        WasmActorContext,
+        JsWasmActor,
+        init_panic_hook,
+        ActorRunContext
+      } from "../pkg/reflow_network.js";
+
+      // Elements
+      const initButton = document.getElementById("initButton");
+      const sendButton = document.getElementById("sendButton");
+      const stateButton = document.getElementById("stateButton");
+      const shutdownButton = document.getElementById("shutdownButton");
+      const output = document.getElementById("output");
+      const messageData = document.getElementById("messageData");
+
+      // Global variables
+      let network = null;
+      let actorState = null;
+
+      // Custom console logger
+      const log = (message, type = "info") => {
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        output.appendChild(entry);
+        output.scrollTop = output.scrollHeight;
+        console.log(message);
+      };
+
+      // Define a simple actor
+      class SimpleActor {
+        constructor() {
+          this.inports = ["input"];
+          this.outports = ["output"];
+          this.state = {};
+          this.config = {};
+        }
+
+        /**
+         *
+         * @param {ActorRunContext} context
+         */
+        run(context) {
+          console.log(
+            "Actor received data:",
+            JSON.stringify(context.input.input)
+          );
+
+          // Process the data
+          const result = {
+            message: `Processed: ${JSON.stringify(context.input.input)}`,
+            timestamp: Date.now(),
+          };
+
+          // Send the result to the output port
+          context.send({ output: result });
+        }
+      }
+
+      // Initialize the WASM module
+      init()
+        .then(() => {
+          log("WASM module loaded successfully", "success");
+          initButton.disabled = false;
+        })
+        .catch((err) => {
+          log(`Failed to load WASM module: ${err}`, "error");
+        });
+
+      // Initialize button click handler
+      initButton.addEventListener("click", async () => {
+        try {
+          // Initialize panic hook for better error messages
+          init_panic_hook();
+          log("Panic hook initialized", "info");
+
+          // Create a network
+          network = new Network();
+          log("Network created", "success");
+
+          // Create an actor
+          const actor = new SimpleActor();
+          const jsActor = network.createActor("simpleActor", actor);
+          log("Actor created and registered", "success");
+
+          // Add a node to the network
+          network.addNode("processor", "simpleActor");
+          log("Node added to network", "info");
+
+          // Create a state object
+          actorState = new MemoryState();
+          actorState.set("counter", 1);
+          actorState.set("name", "Example Actor");
+          log("Actor state initialized", "info");
+
+          // Start the network
+          await network.start();
+          log("Network started", "success");
+
+          // Listen for network events
+          network.next((event) => {
+            log(`Network event: ${JSON.stringify(event)}`, "info");
+          });
+
+          // Enable other buttons
+          sendButton.disabled = false;
+          stateButton.disabled = false;
+          shutdownButton.disabled = false;
+          initButton.disabled = true;
+        } catch (error) {
+          log(`Error initializing actor system: ${error}`, "error");
+        }
+      });
+
+      // Send message button click handler
+      sendButton.addEventListener("click", async () => {
+        try {
+          if (!network) {
+            throw new Error("Network not initialized");
+          }
+
+          // Parse the message data
+          const data = JSON.parse(messageData.textContent);
+          data.timestamp = Date.now();
+
+          // Update the displayed message
+          messageData.textContent = JSON.stringify(data, null, 2);
+
+          // Send the message
+          log(`Sending message to actor: ${JSON.stringify(data)}`, "info");
+          network.sendToActor("processor", "input", data);
+
+          // Execute the actor directly and get the result
+          const result = await network.executeActor("processor", {
+            command: "calculate",
+            value: 100,
+            timestamp: Date.now(),
+          });
+          log(`Direct execution result: ${JSON.stringify(result)}`, "success");
+        } catch (error) {
+          log(`Error sending message: ${error}`, "error");
+        }
+      });
+
+      // State manipulation button click handler
+      stateButton.addEventListener("click", () => {
+        try {
+          if (!actorState) {
+            throw new Error("Actor state not initialized");
+          }
+
+          // Increment counter
+          const currentCounter = actorState.get("counter");
+          actorState.set("counter", currentCounter + 1);
+
+          // Log state information
+          log(
+            `State counter incremented to: ${actorState.get("counter")}`,
+            "info"
+          );
+          log(`State has 'name': ${actorState.has("name")}`, "info");
+          log(`State size: ${actorState.size()}`, "info");
+
+          // Get all state
+          const allState = actorState.getAll();
+          log(`All state: ${JSON.stringify(allState)}`, "success");
+        } catch (error) {
+          log(`Error manipulating state: ${error}`, "error");
+        }
+      });
+
+      // Shutdown button click handler
+      shutdownButton.addEventListener("click", () => {
+        try {
+          if (!network) {
+            throw new Error("Network not initialized");
+          }
+
+          // Get network information before shutdown
+          log(`Actor names: ${network.getActorNames().join(", ")}`, "info");
+          log(`Active actors: ${network.getActiveActors().join(", ")}`, "info");
+          log(`Actor count: ${network.getActorCount()}`, "info");
+
+          // Shutdown the network
+          network.shutdown();
+          log("Network shutdown complete", "success");
+
+          // Reset buttons
+          sendButton.disabled = true;
+          stateButton.disabled = true;
+          shutdownButton.disabled = true;
+          initButton.disabled = false;
+
+          // Clear references
+          network = null;
+          actorState = null;
+        } catch (error) {
+          log(`Error shutting down network: ${error}`, "error");
+        }
+      });
+    </script>
+  </body>
+</html>

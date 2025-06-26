@@ -2,11 +2,15 @@
 use futures::Future;
 use futures::StreamExt;
 #[cfg(target_arch = "wasm32")]
+use futures::TryFutureExt;
+#[cfg(target_arch = "wasm32")]
 use futures::future::lazy;
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 #[cfg(not(target_arch = "wasm32"))]
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+#[cfg(not(target_arch = "wasm32"))]
+use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 #[cfg(target_arch = "wasm32")]
@@ -35,7 +39,7 @@ use crate::actor::{Actor, ActorState, MemoryState, Port};
 use crate::actor::ActorChannel;
 use crate::graph::Graph;
 use crate::graph::types::{GraphConnection, GraphEdge, GraphEvents, GraphIIP, GraphNode};
-use crate::message::{CompressionConfig, EncodedMessage, Message, MessageError};
+use crate::message::{CompressionConfig, EncodableValue, EncodedMessage, Message, MessageError};
 
 use crate::connector::{ConnectionPoint, Connector, InitialPacket};
 use std::sync::{Arc, Mutex};
@@ -73,10 +77,9 @@ impl Default for NetworkConfig {
 #[serde(tag = "_type")]
 pub enum NetworkEvent {
     #[serde(rename_all = "camelCase")]
-    Actor {
+    ActorEmit {
         actor_id: String,
-        port: String,
-        data: Value,
+        message: EncodableValue
     },
     #[serde(rename_all = "camelCase")]
     FlowTrace { from: FlowStub, to: FlowStub },
@@ -108,7 +111,8 @@ pub struct Network {
     compression_config: CompressionConfig,
 }
 
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_class = Network))]
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(js_class = Network)]
 impl Network {
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(constructor)]
@@ -120,11 +124,49 @@ impl Network {
     #[cfg(target_arch = "wasm32")]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = registerActor))]
     pub fn _register_actor(&mut self, name: &str, actor: ExternActor) -> Result<(), JsValue> {
-        use crate::actor::WasmActor;
+        use crate::actor::JsWasmActor;
 
-        self.register_actor(name, WasmActor::new(actor))
+        self.register_actor(name, JsWasmActor::new(actor))
             .map_err(|err| JsValue::from_str(format!("{}", err.to_string()).as_str()))?;
         Ok(())
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = createActor)]
+    pub fn create_actor(&mut self, name: &str, actor: ExternActor) -> Result<JsValue, JsValue> {
+        use crate::actor::{JsWasmActor, WasmActor};
+        
+        // Register the actor in the network
+        self._register_actor(name, actor.clone())?;
+        
+        // Create a JsWasmActor wrapper for the actor
+        let js_actor = JsWasmActor::new(actor);
+        
+        Ok(JsValue::from(js_actor))
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = getActorNames)]
+    pub fn get_actor_names(&self) -> Vec<String> {
+        self.actors.keys().cloned().collect()
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = getActiveActors)]
+    pub fn _get_active_actors(&self) -> Vec<String> {
+        self.get_active_actors()
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = getActorCount)]
+    pub fn _get_actor_count(&self) -> usize {
+        self.actor_count()
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = getMessageQueueSize)]
+    pub fn _get_message_queue_size(&self) -> usize {
+        self.get_message_queue_size()
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -154,7 +196,7 @@ impl Network {
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name= start)]
     pub async fn _start(&mut self) -> Result<(), JsValue> {
-        self.start()
+        self.start().await
             .map_err(|err| JsValue::from_str(err.to_string().as_str()))?;
 
         Ok(())
@@ -173,6 +215,32 @@ impl Network {
                 .map(|(port, msg)| (port.to_owned(), Message::from(msg.clone())))
                 .collect::<HashMap<String, Message>>();
             Self::send_outport_msg(outports, messages).unwrap();
+        }
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = sendToActor)]
+    pub fn _send_to_actor(&self, actor_id: &str, port: &str, data: JsValue) -> Result<(), JsValue> {
+        if let Ok(value) = data.into_serde::<Value>() {
+            self.send_to_actor(actor_id, port, Message::from(value))
+                .map_err(|e| JsValue::from_str(&format!("Failed to send message: {}", e)))?;
+            Ok(())
+        } else {
+            Err(JsValue::from_str("Failed to parse message data"))
+        }
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_name = executeActor)]
+    pub async fn _execute_actor(&self, actor_id: &str, data: JsValue) -> Result<JsValue, JsValue> {
+        if let Ok(value) = data.into_serde::<Value>() {
+            let result = self.execute_actor(actor_id, Message::from(value))
+                .await
+                .map_err(|e| JsValue::from_str(&format!("Failed to execute actor: {}", e)))?;
+                
+            Ok(JsValue::from_serde(&serde_json::to_value(result).unwrap()).unwrap_or(JsValue::NULL))
+        } else {
+            Err(JsValue::from_str("Failed to parse message data"))
         }
     }
 
@@ -219,6 +287,9 @@ impl Network {
                 let _ = _clear_interval.call1(&JsValue::null(), handle);
             }
         }
+        
+        // Shutdown the network
+        self.shutdown();
     }
 
     /// Get an actor node from the network
@@ -271,7 +342,7 @@ impl Network {
         #[cfg(target_arch = "wasm32")]
         {
             for (id, actor) in &self.actors {
-                Self::init_process(actor, &self.thread_pool).await;
+                Self::init_process(actor, self.thread_pool.clone()).await;
             }
         }
 
@@ -287,7 +358,7 @@ impl Network {
         #[cfg(target_arch = "wasm32")]
         {
             for connector in &self.connectors {
-                connector.init(self);
+                connector.init(self).await;
             }
         }
 
@@ -317,7 +388,7 @@ impl Network {
                             data: Some(
                                 iip.to
                                     .initial_data
-                                    .unwrap_or(Message::Any(serde_json::json!({})))
+                                    .unwrap_or(Message::Optional(None))
                                     .into(),
                             ),
                         },
@@ -355,7 +426,7 @@ impl Network {
                                 iip.to
                                     .initial_data
                                     .clone()
-                                    .unwrap_or(Message::Any(serde_json::json!({})))
+                                    .unwrap_or(Message::Optional(None))
                                     .into(),
                             ),
                         },
@@ -464,6 +535,7 @@ impl Network {
         }
 
         self.nodes.insert(id.to_string(), process.to_string());
+        
         Ok(())
     }
 
@@ -479,9 +551,7 @@ impl Network {
         let mut network = Self::new(config);
 
         for (id, node) in &graph.nodes {
-            network
-                .add_node(id, &node.component)
-                .expect("Expected to add node to Network");
+            network.nodes.insert(id.to_string(), node.component.clone());
         }
 
         for iip in &graph.initializers {
@@ -498,12 +568,12 @@ impl Network {
             network.add_connection(Connector {
                 from: ConnectionPoint {
                     actor: edge.from.node_id.clone(),
-                    port: edge.from.port_name.clone(),
+                    port: edge.from.port_id.clone(),
                     initial_data: edge.clone().data.map(|d| d.into()),
                 },
                 to: ConnectionPoint {
                     actor: edge.to.node_id.clone(),
-                    port: edge.to.port_name.clone(),
+                    port: edge.to.port_id.clone(),
                     initial_data: None,
                 },
             });
@@ -516,7 +586,7 @@ impl Network {
 
         let _event_worker = async move {
             while let Some(graph_event) = graph_receiver.clone().stream().next().await {
-                if let Ok(mut network) = network_clone.lock() {
+                if let Ok(mut network) = network_clone.clone().lock() {
                     match graph_event {
                         GraphEvents::AddNode(node_value) => {
                             if let Ok(node) = serde_json::from_value::<GraphNode>(node_value) {
@@ -597,12 +667,12 @@ impl Network {
 
     /// Shutdown the network and finalize pending tasks
     pub fn shutdown(&self) {
-        // // Wait for all active workers to be cleared
-        // self.thread_pool
-        //     .lock()
-        //     .unwrap()
-        //     .clone()
-        //     .shutdown_join_timeout(Duration::from_millis(2500));
+        // Wait for all active workers to be cleared
+        self.thread_pool
+            .lock()
+            .unwrap()
+            .clone()
+            .shutdown_join_timeout(Duration::from_millis(2500));
         // Clear all actors
         
         let active_actors = self.get_active_actors();
@@ -654,7 +724,7 @@ impl Network {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub struct GraphNetwork {
-    network: Mutex<Network>,
+    network: Arc<Mutex<Network>>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -684,10 +754,11 @@ impl GraphNetwork {
 
     /// Start the network
     #[wasm_bindgen]
-    pub fn start(&mut self) -> Result<(), JsValue> {
+    pub async fn start(&mut self) -> Result<(), JsValue> {
         if let Ok(network) = self.network.lock() {
             return network
                 .start()
+                .await
                 .map_err(|err| JsValue::from_str(err.to_string().as_str()));
         }
         Err(JsValue::from_str("Error starting Network"))
