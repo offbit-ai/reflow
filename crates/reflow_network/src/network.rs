@@ -21,6 +21,7 @@ use rusty_pool::ThreadPool;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::time::Duration;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsValue;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::spawn_local;

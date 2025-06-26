@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 use types::*;
@@ -24,7 +25,7 @@ use web_sys::js_sys::Function;
 /// These graphs can be used for visualization and sketching, but
 /// also are the way to start an FBP network.
 #[derive(Clone)]
-#[wasm_bindgen]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct Graph {
     pub(crate) name: String,
     pub(crate) nodes: HashMap<String, GraphNode>,

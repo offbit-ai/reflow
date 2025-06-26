@@ -1,0 +1,451 @@
+{
+  "verb_categories": {
+    "crud_operations": {
+      "description": "Basic Create, Read, Update, Delete operations",
+      "verbs": {
+        "create": {
+          "description": "Create a new resource",
+          "typical_methods": ["POST"],
+          "examples": ["create_user", "create_project", "create_message"],
+          "parameters": ["resource_data"]
+        },
+        "read": {
+          "description": "Retrieve a specific resource by ID",
+          "typical_methods": ["GET"],
+          "examples": ["read_user", "read_project", "read_message"],
+          "parameters": ["id", "fields"]
+        },
+        "update": {
+          "description": "Modify an existing resource",
+          "typical_methods": ["PUT", "PATCH"],
+          "examples": ["update_user", "update_project", "update_message"],
+          "parameters": ["id", "resource_data"]
+        },
+        "delete": {
+          "description": "Remove a resource",
+          "typical_methods": ["DELETE"],
+          "examples": ["delete_user", "delete_project", "delete_message"],
+          "parameters": ["id"]
+        },
+        "list": {
+          "description": "Retrieve multiple resources with pagination",
+          "typical_methods": ["GET"],
+          "examples": ["list_users", "list_projects", "list_messages"],
+          "parameters": ["limit", "offset", "filter", "sort"]
+        }
+      }
+    },
+    "data_operations": {
+      "description": "Data manipulation and processing operations",
+      "verbs": {
+        "search": {
+          "description": "Search resources with query parameters",
+          "typical_methods": ["GET", "POST"],
+          "examples": ["search_users", "search_files", "search_emails"],
+          "parameters": ["query", "filters", "limit"]
+        },
+        "filter": {
+          "description": "Filter resources by specific criteria",
+          "typical_methods": ["GET", "POST"],
+          "examples": ["filter_issues", "filter_transactions", "filter_contacts"],
+          "parameters": ["criteria", "operators"]
+        },
+        "sort": {
+          "description": "Sort resources by specified fields",
+          "typical_methods": ["GET"],
+          "examples": ["sort_tasks", "sort_files", "sort_messages"],
+          "parameters": ["field", "direction"]
+        },
+        "aggregate": {
+          "description": "Perform aggregation operations on data",
+          "typical_methods": ["GET", "POST"],
+          "examples": ["aggregate_sales", "aggregate_metrics", "aggregate_usage"],
+          "parameters": ["group_by", "functions"]
+        },
+        "transform": {
+          "description": "Transform data format or structure",
+          "typical_methods": ["POST"],
+          "examples": ["transform_data", "transform_image", "transform_document"],
+          "parameters": ["input_data", "transformation_rules"]
+        }
+      }
+    },
+    "batch_operations": {
+      "description": "Operations that handle multiple resources at once",
+      "verbs": {
+        "batch_create": {
+          "description": "Create multiple resources in a single request",
+          "typical_methods": ["POST"],
+          "examples": ["batch_create_users", "batch_create_records", "batch_create_tasks"],
+          "parameters": ["resources_array"]
+        },
+        "batch_update": {
+          "description": "Update multiple resources simultaneously",
+          "typical_methods": ["PUT", "PATCH"],
+          "examples": ["batch_update_prices", "batch_update_status", "batch_update_tags"],
+          "parameters": ["updates_array"]
+        },
+        "batch_delete": {
+          "description": "Delete multiple resources at once",
+          "typical_methods": ["DELETE", "POST"],
+          "examples": ["batch_delete_files", "batch_delete_emails", "batch_delete_records"],
+          "parameters": ["ids_array"]
+        },
+        "bulk_import": {
+          "description": "Import large datasets",
+          "typical_methods": ["POST"],
+          "examples": ["bulk_import_contacts", "bulk_import_products", "bulk_import_transactions"],
+          "parameters": ["file", "format", "mapping"]
+        },
+        "bulk_export": {
+          "description": "Export large datasets",
+          "typical_methods": ["GET", "POST"],
+          "examples": ["bulk_export_data", "bulk_export_reports", "bulk_export_logs"],
+          "parameters": ["format", "filters", "fields"]
+        }
+      }
+    },
+    "communication_operations": {
+      "description": "Communication and messaging operations",
+      "verbs": {
+        "send": {
+          "description": "Send messages, emails, or notifications",
+          "typical_methods": ["POST"],
+          "examples": ["send_email", "send_message", "send_notification"],
+          "parameters": ["recipient", "content", "subject"]
+        },
+        "receive": {
+          "description": "Receive or fetch incoming messages",
+          "typical_methods": ["GET"],
+          "examples": ["receive_emails", "receive_messages", "receive_webhooks"],
+          "parameters": ["since", "limit"]
+        },
+        "forward": {
+          "description": "Forward messages or content to others",
+          "typical_methods": ["POST"],
+          "examples": ["forward_email", "forward_message", "forward_document"],
+          "parameters": ["original_id", "recipients"]
+        },
+        "reply": {
+          "description": "Reply to messages or threads",
+          "typical_methods": ["POST"],
+          "examples": ["reply_email", "reply_comment", "reply_thread"],
+          "parameters": ["original_id", "content"]
+        },
+        "broadcast": {
+          "description": "Send messages to multiple recipients",
+          "typical_methods": ["POST"],
+          "examples": ["broadcast_announcement", "broadcast_alert", "broadcast_update"],
+          "parameters": ["recipients", "content", "channels"]
+        }
+      }
+    },
+    "file_operations": {
+      "description": "File and document management operations",
+      "verbs": {
+        "upload": {
+          "description": "Upload files or documents",
+          "typical_methods": ["POST"],
+          "examples": ["upload_file", "upload_document", "upload_image"],
+          "parameters": ["file", "destination", "metadata"]
+        },
+        "download": {
+          "description": "Download files or documents",
+          "typical_methods": ["GET"],
+          "examples": ["download_file", "download_report", "download_backup"],
+          "parameters": ["file_id", "format"]
+        },
+        "share": {
+          "description": "Share files with others",
+          "typical_methods": ["POST"],
+          "examples": ["share_document", "share_folder", "share_link"],
+          "parameters": ["file_id", "recipients", "permissions"]
+        },
+        "copy": {
+          "description": "Copy files or folders",
+          "typical_methods": ["POST"],
+          "examples": ["copy_file", "copy_folder", "copy_document"],
+          "parameters": ["source_id", "destination"]
+        },
+        "move": {
+          "description": "Move files or folders",
+          "typical_methods": ["PUT", "PATCH"],
+          "examples": ["move_file", "move_folder", "move_document"],
+          "parameters": ["source_id", "destination"]
+        }
+      }
+    },
+    "workflow_operations": {
+      "description": "Workflow and process management operations",
+      "verbs": {
+        "start": {
+          "description": "Start a process or workflow",
+          "typical_methods": ["POST"],
+          "examples": ["start_workflow", "start_build", "start_sync"],
+          "parameters": ["workflow_id", "parameters"]
+        },
+        "stop": {
+          "description": "Stop a running process",
+          "typical_methods": ["POST", "DELETE"],
+          "examples": ["stop_workflow", "stop_build", "stop_sync"],
+          "parameters": ["process_id"]
+        },
+        "pause": {
+          "description": "Pause a running process",
+          "typical_methods": ["POST"],
+          "examples": ["pause_workflow", "pause_build", "pause_sync"],
+          "parameters": ["process_id"]
+        },
+        "resume": {
+          "description": "Resume a paused process",
+          "typical_methods": ["POST"],
+          "examples": ["resume_workflow", "resume_build", "resume_sync"],
+          "parameters": ["process_id"]
+        },
+        "cancel": {
+          "description": "Cancel a process or operation",
+          "typical_methods": ["POST", "DELETE"],
+          "examples": ["cancel_order", "cancel_build", "cancel_subscription"],
+          "parameters": ["operation_id"]
+        },
+        "retry": {
+          "description": "Retry a failed operation",
+          "typical_methods": ["POST"],
+          "examples": ["retry_build", "retry_payment", "retry_sync"],
+          "parameters": ["operation_id"]
+        }
+      }
+    },
+    "access_control_operations": {
+      "description": "User access and permission management",
+      "verbs": {
+        "invite": {
+          "description": "Invite users to join",
+          "typical_methods": ["POST"],
+          "examples": ["invite_user", "invite_member", "invite_collaborator"],
+          "parameters": ["email", "role", "permissions"]
+        },
+        "join": {
+          "description": "Join a group or organization",
+          "typical_methods": ["POST"],
+          "examples": ["join_team", "join_channel", "join_project"],
+          "parameters": ["group_id", "invitation_code"]
+        },
+        "leave": {
+          "description": "Leave a group or organization",
+          "typical_methods": ["DELETE"],
+          "examples": ["leave_team", "leave_channel", "leave_project"],
+          "parameters": ["group_id"]
+        },
+        "assign": {
+          "description": "Assign tasks, roles, or resources",
+          "typical_methods": ["POST", "PUT"],
+          "examples": ["assign_task", "assign_role", "assign_ticket"],
+          "parameters": ["item_id", "assignee", "role"]
+        },
+        "unassign": {
+          "description": "Remove assignments",
+          "typical_methods": ["DELETE"],
+          "examples": ["unassign_task", "unassign_role", "unassign_ticket"],
+          "parameters": ["item_id", "assignee"]
+        }
+      }
+    },
+    "approval_operations": {
+      "description": "Review and approval workflows",
+      "verbs": {
+        "approve": {
+          "description": "Approve requests or submissions",
+          "typical_methods": ["POST"],
+          "examples": ["approve_request", "approve_pull_request", "approve_expense"],
+          "parameters": ["item_id", "comments"]
+        },
+        "reject": {
+          "description": "Reject requests or submissions",
+          "typical_methods": ["POST"],
+          "examples": ["reject_request", "reject_pull_request", "reject_application"],
+          "parameters": ["item_id", "reason"]
+        },
+        "review": {
+          "description": "Review items for approval",
+          "typical_methods": ["POST"],
+          "examples": ["review_code", "review_document", "review_proposal"],
+          "parameters": ["item_id", "feedback"]
+        },
+        "escalate": {
+          "description": "Escalate to higher authority",
+          "typical_methods": ["POST"],
+          "examples": ["escalate_ticket", "escalate_issue", "escalate_request"],
+          "parameters": ["item_id", "escalation_level"]
+        }
+      }
+    },
+    "monitoring_operations": {
+      "description": "Monitoring and observability operations",
+      "verbs": {
+        "watch": {
+          "description": "Monitor resources for changes",
+          "typical_methods": ["POST"],
+          "examples": ["watch_repository", "watch_issue", "watch_project"],
+          "parameters": ["resource_id", "events"]
+        },
+        "unwatch": {
+          "description": "Stop monitoring resources",
+          "typical_methods": ["DELETE"],
+          "examples": ["unwatch_repository", "unwatch_issue", "unwatch_project"],
+          "parameters": ["resource_id"]
+        },
+        "subscribe": {
+          "description": "Subscribe to events or notifications",
+          "typical_methods": ["POST"],
+          "examples": ["subscribe_webhook", "subscribe_feed", "subscribe_alerts"],
+          "parameters": ["event_type", "callback_url"]
+        },
+        "unsubscribe": {
+          "description": "Unsubscribe from events",
+          "typical_methods": ["DELETE"],
+          "examples": ["unsubscribe_webhook", "unsubscribe_feed", "unsubscribe_alerts"],
+          "parameters": ["subscription_id"]
+        }
+      }
+    },
+    "ai_operations": {
+      "description": "AI and machine learning operations",
+      "verbs": {
+        "generate": {
+          "description": "Generate content using AI",
+          "typical_methods": ["POST"],
+          "examples": ["generate_text", "generate_image", "generate_code"],
+          "parameters": ["prompt", "model", "parameters"]
+        },
+        "analyze": {
+          "description": "Analyze content or data",
+          "typical_methods": ["POST"],
+          "examples": ["analyze_sentiment", "analyze_image", "analyze_document"],
+          "parameters": ["content", "analysis_type"]
+        },
+        "translate": {
+          "description": "Translate content between languages",
+          "typical_methods": ["POST"],
+          "examples": ["translate_text", "translate_document", "translate_speech"],
+          "parameters": ["content", "source_language", "target_language"]
+        },
+        "summarize": {
+          "description": "Create summaries of content",
+          "typical_methods": ["POST"],
+          "examples": ["summarize_text", "summarize_document", "summarize_meeting"],
+          "parameters": ["content", "length", "style"]
+        },
+        "classify": {
+          "description": "Classify content into categories",
+          "typical_methods": ["POST"],
+          "examples": ["classify_email", "classify_ticket", "classify_document"],
+          "parameters": ["content", "categories"]
+        },
+        "embed": {
+          "description": "Generate embeddings for content",
+          "typical_methods": ["POST"],
+          "examples": ["embed_text", "embed_document", "embed_image"],
+          "parameters": ["content", "model"]
+        }
+      }
+    }
+  },
+  "verb_naming_conventions": {
+    "format": "{verb}_{resource}",
+    "examples": [
+      "create_user",
+      "update_project", 
+      "delete_file",
+      "list_messages",
+      "send_email",
+      "upload_document"
+    ],
+    "guidelines": [
+      "Use lowercase with underscores",
+      "Start with the action verb",
+      "Follow with the resource type",
+      "Be specific but not overly verbose",
+      "Use singular nouns for individual resources",
+      "Use plural nouns for collections"
+    ]
+  },
+  "parameter_conventions": {
+    "common_parameters": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the resource",
+        "location": "path"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of items to return",
+        "location": "query",
+        "default": 50
+      },
+      "offset": {
+        "type": "integer", 
+        "description": "Number of items to skip",
+        "location": "query",
+        "default": 0
+      },
+      "fields": {
+        "type": "array",
+        "description": "Specific fields to return",
+        "location": "query"
+      },
+      "filter": {
+        "type": "object",
+        "description": "Filter criteria",
+        "location": "query"
+      },
+      "sort": {
+        "type": "string",
+        "description": "Sort order (field:direction)",
+        "location": "query"
+      }
+    }
+  },
+  "tool_generation_metadata": {
+    "function_template": {
+      "name": "{service}_{verb}_{resource}",
+      "description": "{verb} {resource} using {service} API",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    "error_handling": {
+      "common_errors": [
+        {"code": 400, "description": "Bad Request - Invalid parameters"},
+        {"code": 401, "description": "Unauthorized - Invalid credentials"},
+        {"code": 403, "description": "Forbidden - Insufficient permissions"},
+        {"code": 404, "description": "Not Found - Resource does not exist"},
+        {"code": 429, "description": "Rate Limited - Too many requests"},
+        {"code": 500, "description": "Internal Server Error"}
+      ]
+    },
+    "response_patterns": {
+      "single_resource": {
+        "type": "object",
+        "description": "Single resource response"
+      },
+      "resource_list": {
+        "type": "object",
+        "properties": {
+          "data": {"type": "array"},
+          "pagination": {"type": "object"},
+          "total_count": {"type": "integer"}
+        }
+      },
+      "success_confirmation": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"}
+        }
+      }
+    }
+  }
+}

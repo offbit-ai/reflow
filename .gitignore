@@ -2,3 +2,4 @@
 rustc-*
 target
 resource/*
+api_gen/

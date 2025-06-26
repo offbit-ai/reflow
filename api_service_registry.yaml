@@ -1,0 +1,5949 @@
+global_settings:
+  default_retries: 3
+  default_timeout: 30
+  global_rate_limit:
+    enabled: true
+    requests_per_second: 100
+  user_agent: API-Integration-Platform/1.0
+schema_version: 1.0.0
+services:
+  accuweather:
+    api_specs:
+    - base_url: https://dataservice.accuweather.com
+      schema_url: https://developer.accuweather.com/apis
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: apikey
+      primary_method: api_key
+    category: weather
+    description: Weather forecasts, warnings, and historical data
+    documentation:
+      api_reference: https://developer.accuweather.com/apis
+      main_docs: https://developer.accuweather.com/
+    name: AccuWeather
+    operations:
+    - endpoint_pattern: /locations/v1/cities/search
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      resource: locations
+      verb: search
+    - endpoint_pattern: /currentconditions/v1/{locationKey}
+      method: GET
+      parameters:
+      - location: path
+        name: locationKey
+        required: true
+        type: string
+      - location: query
+        name: details
+        type: boolean
+      resource: current_conditions
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        limited_trial:
+          requests_per_day: 50
+        premium:
+          requests_per_day: 750000
+        standard:
+          requests_per_day: 225000
+    status: active
+    vendor: AccuWeather
+  adopt_a_pet:
+    api_specs:
+    - base_url: https://api.adoptapet.com/v1
+      schema_url: https://www.adoptapet.com/public/apis/pet_list.html
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: api_key
+      primary_method: api_key
+    category: other
+    description: Resource to help get pets adopted
+    documentation:
+      api_reference: https://www.adoptapet.com/public/apis/pet_list.html
+      main_docs: https://www.adoptapet.com/public/apis/pet_list.html
+    name: AdoptAPet
+    operations:
+    - endpoint_pattern: /pets/search
+      method: GET
+      parameters:
+      - location: query
+        name: location
+        required: true
+        type: string
+      - location: query
+        name: animal
+        required: true
+        type: string
+      - location: query
+        name: breed
+        type: string
+      resource: pets
+      verb: search
+    - endpoint_pattern: /pets/{pet_id}
+      method: GET
+      parameters:
+      - location: path
+        name: pet_id
+        required: true
+        type: string
+      resource: pet
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_day: 10000
+    sdks:
+      javascript: https://github.com/adoptapet/adoptapet-js
+      python: https://github.com/adoptapet/adoptapet-py
+    status: active
+    vendor: AdoptAPet
+  adyen:
+    api_specs:
+    - base_url: https://checkout-test.adyen.com/v70
+      schema_url: https://docs.adyen.com/api-explorer/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v70
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: X-API-Key
+      primary_method: api_key
+    category: payment
+    description: Global payment processing platform
+    documentation:
+      api_reference: https://docs.adyen.com/api-explorer/
+      main_docs: https://docs.adyen.com/
+    name: Adyen
+    operations:
+    - endpoint_pattern: /payments
+      method: POST
+      parameters:
+      - location: body
+        name: amount
+        required: true
+        type: object
+      - location: body
+        name: merchantAccount
+        required: true
+        type: string
+      - location: body
+        name: reference
+        required: true
+        type: string
+      resource: payment
+      verb: create
+    - endpoint_pattern: /sessions
+      method: POST
+      parameters:
+      - location: body
+        name: amount
+        required: true
+        type: object
+      - location: body
+        name: merchantAccount
+        required: true
+        type: string
+      - location: body
+        name: reference
+        required: true
+        type: string
+      resource: payment_session
+      verb: create
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 25
+    sdks:
+      java: https://github.com/Adyen/adyen-java-api-library
+      javascript: https://github.com/Adyen/adyen-node-api-library
+      python: https://github.com/Adyen/adyen-python-api-library
+    status: active
+    vendor: Adyen
+    webhooks:
+      events:
+      - description: Payment authorized
+        event_type: AUTHORISATION
+      - description: Payment captured
+        event_type: CAPTURE
+      supported: true
+  airtable:
+    api_specs:
+    - base_url: https://api.airtable.com/v0
+      schema_url: https://airtable.com/developers/web/api/introduction
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v0
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: data_storage
+    description: Database and spreadsheet hybrid platform
+    documentation:
+      api_reference: https://airtable.com/developers/web/api
+      main_docs: https://airtable.com/developers/web/api/introduction
+    name: Airtable
+    operations:
+    - endpoint_pattern: /{baseId}/{tableIdOrName}
+      method: GET
+      parameters:
+      - location: path
+        name: baseId
+        required: true
+        type: string
+      - location: path
+        name: tableIdOrName
+        required: true
+        type: string
+      - location: query
+        name: maxRecords
+        type: integer
+      - location: query
+        name: view
+        type: string
+      resource: records
+      verb: list
+    - batch_capable: true
+      endpoint_pattern: /{baseId}/{tableIdOrName}
+      method: POST
+      parameters:
+      - location: path
+        name: baseId
+        required: true
+        type: string
+      - location: path
+        name: tableIdOrName
+        required: true
+        type: string
+      - location: body
+        name: records
+        required: true
+        type: array
+      resource: record
+      verb: create
+    - batch_capable: true
+      endpoint_pattern: /{baseId}/{tableIdOrName}
+      method: PATCH
+      parameters:
+      - location: path
+        name: baseId
+        required: true
+        type: string
+      - location: path
+        name: tableIdOrName
+        required: true
+        type: string
+      - location: body
+        name: records
+        required: true
+        type: array
+      resource: record
+      verb: update
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 5
+      tier_based_limits:
+        business:
+          requests_per_month: null
+        free:
+          requests_per_month: 1000
+        team:
+          requests_per_month: 100000
+    sdks:
+      go: https://github.com/mehanizm/airtable
+      javascript: https://github.com/airtable/airtable.js
+      python: https://github.com/gtalarico/pyairtable
+    status: active
+    vendor: Airtable
+    webhooks:
+      events:
+      - description: Record was created
+        event_type: recordCreated
+      - description: Record was updated
+        event_type: recordUpdated
+      - description: Record was deleted
+        event_type: recordDeleted
+      supported: true
+  alphavantage:
+    api_specs:
+    - base_url: https://www.alphavantage.co/query
+      schema_url: https://www.alphavantage.co/documentation/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: apikey
+      primary_method: api_key
+    category: finance
+    description: Stock market data and financial indicators
+    documentation:
+      api_reference: https://www.alphavantage.co/documentation/
+      main_docs: https://www.alphavantage.co/documentation/
+    name: Alpha Vantage
+    operations:
+    - endpoint_pattern: /
+      method: GET
+      parameters:
+      - location: query
+        name: function
+        required: true
+        type: string
+      - location: query
+        name: symbol
+        required: true
+        type: string
+      - location: query
+        name: interval
+        type: string
+      resource: time_series
+      verb: read
+    - endpoint_pattern: /
+      method: GET
+      parameters:
+      - location: query
+        name: function
+        required: true
+        type: string
+      - location: query
+        name: keywords
+        required: true
+        type: string
+      resource: symbols
+      verb: search
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        free:
+          requests_per_day: 500
+          requests_per_minute: 5
+        premium:
+          requests_per_day: 5000
+          requests_per_minute: 75
+    sdks:
+      javascript: https://github.com/zackurben/alphavantage
+      python: https://github.com/RomelTorres/alpha_vantage
+    status: active
+    vendor: Alpha Vantage Inc.
+  amplitude:
+    api_specs:
+    - base_url: https://api2.amplitude.com/2
+      schema_url: https://developers.amplitude.com/docs/http-api-v2
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      api_key_config:
+        location: body
+        parameter_name: api_key
+      primary_method: api_key
+    category: analytics
+    description: Product analytics and user behavior platform
+    documentation:
+      api_reference: https://developers.amplitude.com/docs/http-api-v2
+      main_docs: https://developers.amplitude.com/
+    name: Amplitude
+    operations:
+    - endpoint_pattern: /httpapi
+      method: POST
+      parameters:
+      - location: body
+        name: api_key
+        required: true
+        type: string
+      - location: body
+        name: events
+        required: true
+        type: array
+      resource: event
+      verb: send
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 30
+    sdks:
+      javascript: https://github.com/amplitude/Amplitude-JavaScript
+      python: https://github.com/amplitude/amplitude-python
+    status: active
+    vendor: Amplitude
+  anthropic:
+    api_specs:
+    - base_url: https://api.anthropic.com
+      schema_url: https://docs.anthropic.com/claude/reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: x-api-key
+      primary_method: api_key
+    category: ai_services
+    description: AI assistant and language model API
+    documentation:
+      api_reference: https://docs.anthropic.com/claude/reference
+      main_docs: https://docs.anthropic.com/claude
+    name: Anthropic Claude
+    operations:
+    - endpoint_pattern: /v1/messages
+      method: POST
+      parameters:
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: messages
+        required: true
+        type: array
+      - location: body
+        name: max_tokens
+        required: true
+        type: integer
+      - location: body
+        name: temperature
+        type: number
+      - location: body
+        name: tools
+        type: array
+      resource: message
+      verb: generate
+    pricing_model: usage_based
+    rate_limits:
+      tier_based_limits:
+        tier_1:
+          input_tokens_per_minute: 40000
+          output_tokens_per_minute: 8000
+          requests_per_minute: 60
+        tier_2:
+          input_tokens_per_minute: 100000
+          output_tokens_per_minute: 20000
+          requests_per_minute: 1000
+        tier_3:
+          input_tokens_per_minute: 200000
+          output_tokens_per_minute: 40000
+          requests_per_minute: 2000
+    sdks:
+      javascript: https://github.com/anthropics/anthropic-sdk-typescript
+      python: https://github.com/anthropics/anthropic-sdk-python
+    status: active
+    vendor: Anthropic
+  asana:
+    api_specs:
+    - base_url: https://app.asana.com/api/1.0
+      schema_url: https://developers.asana.com/docs/overview
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '1.0'
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://app.asana.com/-/oauth_authorize
+        common_scopes:
+        - description: Read and write access to most resources
+          scope: default
+        flows:
+        - authorization_code
+        token_url: https://app.asana.com/-/oauth_token
+      primary_method: oauth2
+    category: project_management
+    description: Project and task management platform
+    documentation:
+      api_reference: https://developers.asana.com/docs/overview
+      main_docs: https://developers.asana.com/docs
+    name: Asana
+    operations:
+    - endpoint_pattern: /tasks
+      method: POST
+      parameters:
+      - location: body
+        name: name
+        required: true
+        type: string
+      - location: body
+        name: projects
+        type: array
+      - location: body
+        name: assignee
+        type: string
+      resource: task
+      verb: create
+    - endpoint_pattern: /projects
+      method: GET
+      parameters:
+      - location: query
+        name: workspace
+        required: true
+        type: string
+      - location: query
+        name: limit
+        type: integer
+      resource: projects
+      verb: list
+    - endpoint_pattern: /tasks/{task_gid}
+      method: GET
+      parameters:
+      - location: path
+        name: task_gid
+        required: true
+        type: string
+      resource: task
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      concurrent_requests: 5
+      default_limits:
+        requests_per_minute: 1500
+    sdks:
+      java: https://github.com/Asana/java-asana
+      javascript: https://github.com/Asana/node-asana
+      python: https://github.com/Asana/python-asana
+    status: active
+    vendor: Asana
+    webhooks:
+      events:
+      - description: Task created, updated, or deleted
+        event_type: task
+      - description: Project modified
+        event_type: project
+      - description: Comment or activity added
+        event_type: story
+      supported: true
+  auth0:
+    api_specs:
+    - base_url: https://{domain}.auth0.com/api/v2
+      schema_url: https://auth0.com/docs/api/management/v2
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      oauth2_config:
+        authorization_url: https://{domain}.auth0.com/authorize
+        common_scopes:
+        - description: Read user data
+          scope: read:users
+        - description: Update user data
+          scope: update:users
+        - description: Create users
+          scope: create:users
+        flows:
+        - client_credentials
+        token_url: https://{domain}.auth0.com/oauth/token
+      primary_method: oauth2
+    category: security
+    compliance:
+    - gdpr
+    - soc2
+    - iso27001
+    description: Identity and access management platform
+    documentation:
+      api_reference: https://auth0.com/docs/api/management/v2
+      main_docs: https://auth0.com/docs
+    name: Auth0
+    operations:
+    - endpoint_pattern: /users
+      method: POST
+      parameters:
+      - location: body
+        name: email
+        required: true
+        type: string
+      - location: body
+        name: password
+        type: string
+      - location: body
+        name: connection
+        required: true
+        type: string
+      resource: user
+      verb: create
+    - endpoint_pattern: /users/{id}
+      method: GET
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      resource: user
+      verb: read
+    - endpoint_pattern: /users
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        type: string
+      - location: query
+        name: page
+        type: integer
+      resource: users
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 15
+      endpoint_specific:
+        logs:
+          requests_per_second: 5
+        users:
+          requests_per_second: 10
+    sdks:
+      java: https://github.com/auth0/auth0-java
+      javascript: https://github.com/auth0/node-auth0
+      python: https://github.com/auth0/auth0-python
+    status: active
+    vendor: Auth0
+  aws_dynamodb:
+    api_specs:
+    - base_url: https://dynamodb.{region}.amazonaws.com
+      schema_url: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '20120810'
+    authentication:
+      custom_auth:
+        description: AWS Signature Version 4
+        implementation_guide: https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
+      primary_method: custom
+    category: data_storage
+    description: NoSQL database service
+    documentation:
+      api_reference: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/
+      main_docs: https://docs.aws.amazon.com/dynamodb/
+    name: AWS DynamoDB
+    operations:
+    - endpoint_pattern: /
+      method: POST
+      parameters:
+      - location: body
+        name: TableName
+        required: true
+        type: string
+      - location: body
+        name: Item
+        required: true
+        type: object
+      resource: item
+      verb: create
+    - endpoint_pattern: /
+      method: POST
+      parameters:
+      - location: body
+        name: TableName
+        required: true
+        type: string
+      - location: body
+        name: Key
+        required: true
+        type: object
+      resource: item
+      verb: read
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 40000
+    sdks:
+      java: https://github.com/aws/aws-sdk-java-v2
+      javascript: https://github.com/aws/aws-sdk-js-v3
+      python: https://github.com/boto/boto3
+    status: active
+    vendor: Amazon Web Services
+  aws_s3:
+    api_specs:
+    - base_url: https://{bucket}.s3.amazonaws.com
+      schema_url: https://docs.aws.amazon.com/AmazonS3/latest/API/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2006-03-01'
+    authentication:
+      custom_auth:
+        description: AWS Signature Version 4
+        implementation_guide: https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
+      primary_method: custom
+    category: data_storage
+    description: Object storage service
+    documentation:
+      api_reference: https://docs.aws.amazon.com/AmazonS3/latest/API/
+      main_docs: https://docs.aws.amazon.com/s3/
+    name: AWS S3
+    operations:
+    - endpoint_pattern: /{key}
+      method: PUT
+      parameters:
+      - location: path
+        name: key
+        required: true
+        type: string
+      resource: object
+      verb: upload
+    - endpoint_pattern: /{key}
+      method: GET
+      parameters:
+      - location: path
+        name: key
+        required: true
+        type: string
+      resource: object
+      verb: download
+    - endpoint_pattern: /
+      method: GET
+      parameters:
+      - location: query
+        name: prefix
+        type: string
+      resource: objects
+      verb: list
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 3500
+    sdks:
+      java: https://github.com/aws/aws-sdk-java-v2
+      javascript: https://github.com/aws/aws-sdk-js-v3
+      python: https://github.com/boto/boto3
+    status: active
+    vendor: Amazon Web Services
+  binance:
+    api_specs:
+    - base_url: https://api.binance.com/api/v3
+      schema_url: https://binance-docs.github.io/apidocs/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: X-MBX-APIKEY
+      primary_method: api_key
+    category: finance
+    description: Cryptocurrency exchange API
+    documentation:
+      api_reference: https://binance-docs.github.io/apidocs/spot/en/
+      main_docs: https://binance-docs.github.io/apidocs/
+    name: Binance
+    operations:
+    - endpoint_pattern: /ticker/price
+      method: GET
+      parameters:
+      - location: query
+        name: symbol
+        type: string
+      resource: ticker
+      verb: read
+    - endpoint_pattern: /order
+      method: POST
+      parameters:
+      - location: query
+        name: symbol
+        required: true
+        type: string
+      - location: query
+        name: side
+        required: true
+        type: string
+      - location: query
+        name: type
+        required: true
+        type: string
+      - location: query
+        name: quantity
+        required: true
+        type: string
+      resource: order
+      verb: create
+    pricing_model: free
+    rate_limits:
+      default_limits:
+        requests_per_minute: 1200
+      endpoint_specific:
+        klines:
+          requests_per_minute: 1200
+        order:
+          requests_per_second: 10
+    sdks:
+      javascript: https://github.com/binance/binance-connector-node
+      python: https://github.com/binance/binance-connector-python
+    status: active
+    vendor: Binance
+  bitbucket:
+    api_specs:
+    - base_url: https://api.bitbucket.org/2.0
+      schema_url: https://developer.atlassian.com/bitbucket/api/2/reference/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2.0'
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://bitbucket.org/site/oauth2/authorize
+        flows:
+        - authorization_code
+        token_url: https://bitbucket.org/site/oauth2/access_token
+      primary_method: oauth2
+    category: development
+    description: Git repository hosting and CI/CD platform
+    documentation:
+      api_reference: https://developer.atlassian.com/bitbucket/api/2/reference/
+      main_docs: https://developer.atlassian.com/bitbucket/
+    name: Bitbucket
+    operations:
+    - endpoint_pattern: /repositories/{workspace}
+      method: GET
+      parameters:
+      - location: path
+        name: workspace
+        required: true
+        type: string
+      resource: repositories
+      verb: list
+    - endpoint_pattern: /repositories/{workspace}/{repo_slug}/issues
+      method: POST
+      parameters:
+      - location: path
+        name: workspace
+        required: true
+        type: string
+      - location: path
+        name: repo_slug
+        required: true
+        type: string
+      - location: body
+        name: title
+        required: true
+        type: string
+      resource: issue
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 1000
+    sdks:
+      python: https://github.com/atlassian-api/atlassian-python-api
+    status: active
+    vendor: Atlassian
+    webhooks:
+      events:
+      - description: Repository push
+        event_type: repo:push
+      - description: Pull request created
+        event_type: pullrequest:created
+      supported: true
+  braintree:
+    api_specs:
+    - base_url: https://api.sandbox.braintreegateway.com
+      schema_url: https://developers.braintreepayments.com/reference/overview
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      alternative_methods:
+      - api_key
+      primary_method: basic_auth
+    category: payment
+    description: PayPal's payment platform for developers
+    documentation:
+      api_reference: https://developers.braintreepayments.com/reference/overview
+      main_docs: https://developers.braintreepayments.com/
+    name: Braintree
+    operations:
+    - endpoint_pattern: /merchants/{merchant_id}/transactions
+      method: POST
+      parameters:
+      - location: path
+        name: merchant_id
+        required: true
+        type: string
+      - location: body
+        name: amount
+        required: true
+        type: string
+      resource: transaction
+      verb: create
+    - endpoint_pattern: /merchants/{merchant_id}/customers
+      method: POST
+      parameters:
+      - location: path
+        name: merchant_id
+        required: true
+        type: string
+      - location: body
+        name: id
+        type: string
+      resource: customer
+      verb: create
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_minute: 2000
+    sdks:
+      javascript: https://github.com/braintree/braintree_node
+      python: https://github.com/braintree/braintree_python
+    status: active
+    vendor: PayPal
+    webhooks:
+      events:
+      - description: Transaction settled
+        event_type: transaction_settled
+      - description: Subscription charged
+        event_type: subscription_charged_successfully
+      supported: true
+  circleci:
+    api_specs:
+    - base_url: https://circleci.com/api/v2
+      schema_url: https://circleci.com/docs/api/v2/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Circle-Token
+      primary_method: bearer_token
+    category: development
+    description: Continuous integration and delivery platform
+    documentation:
+      api_reference: https://circleci.com/docs/api/v2/
+      main_docs: https://circleci.com/docs/
+    name: CircleCI
+    operations:
+    - endpoint_pattern: /project
+      method: GET
+      parameters: []
+      resource: projects
+      verb: list
+    - endpoint_pattern: /project/{project-slug}/pipeline
+      method: POST
+      parameters:
+      - location: path
+        name: project-slug
+        required: true
+        type: string
+      resource: pipeline
+      verb: start
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 3600
+    sdks:
+      python: https://github.com/alpinweis/pycircleci
+    status: active
+    vendor: CircleCI
+    webhooks:
+      events:
+      - description: Workflow completed
+        event_type: workflow-completed
+      - description: Job completed
+        event_type: job-completed
+      supported: true
+  clickup:
+    api_specs:
+    - base_url: https://api.clickup.com/api/v2
+      schema_url: https://clickup.com/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: project_management
+    description: All-in-one productivity and project management platform
+    documentation:
+      api_reference: https://clickup.com/api/
+      main_docs: https://clickup.com/api/
+    name: ClickUp
+    operations:
+    - endpoint_pattern: /list/{list_id}/task
+      method: POST
+      parameters:
+      - location: path
+        name: list_id
+        required: true
+        type: string
+      - location: body
+        name: name
+        required: true
+        type: string
+      resource: task
+      verb: create
+    - endpoint_pattern: /list/{list_id}/task
+      method: GET
+      parameters:
+      - location: path
+        name: list_id
+        required: true
+        type: string
+      resource: tasks
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 100
+    sdks:
+      python: https://github.com/clickup/clickup-python
+    status: active
+    vendor: ClickUp
+    webhooks:
+      events:
+      - description: Task created
+        event_type: taskCreated
+      - description: Task updated
+        event_type: taskUpdated
+      supported: true
+  cloudflare:
+    api_specs:
+    - base_url: https://api.cloudflare.com/client/v4
+      schema_url: https://developers.cloudflare.com/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v4
+    authentication:
+      alternative_methods:
+      - api_key
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: security
+    description: Web performance and security platform
+    documentation:
+      api_reference: https://developers.cloudflare.com/api/
+      main_docs: https://developers.cloudflare.com/
+    name: Cloudflare
+    operations:
+    - endpoint_pattern: /zones
+      method: GET
+      parameters:
+      - location: query
+        name: name
+        type: string
+      resource: zones
+      verb: list
+    - endpoint_pattern: /zones/{zone_id}/dns_records
+      method: POST
+      parameters:
+      - location: path
+        name: zone_id
+        required: true
+        type: string
+      - location: body
+        name: type
+        required: true
+        type: string
+      - location: body
+        name: name
+        required: true
+        type: string
+      - location: body
+        name: content
+        required: true
+        type: string
+      resource: dns_record
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 1200
+    sdks:
+      go: https://github.com/cloudflare/cloudflare-go
+      javascript: https://github.com/cloudflare/cloudflare-typescript
+      python: https://github.com/cloudflare/cloudflare-python
+    status: active
+    vendor: Cloudflare
+  cohere:
+    api_specs:
+    - base_url: https://api.cohere.ai/v1
+      schema_url: https://docs.cohere.com/reference/about
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: ai_services
+    description: Large language models and NLP APIs
+    documentation:
+      api_reference: https://docs.cohere.com/reference/about
+      main_docs: https://docs.cohere.com/
+    name: Cohere
+    operations:
+    - endpoint_pattern: /generate
+      method: POST
+      parameters:
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: prompt
+        required: true
+        type: string
+      - location: body
+        name: max_tokens
+        type: integer
+      resource: text
+      verb: generate
+    - endpoint_pattern: /embed
+      method: POST
+      parameters:
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: texts
+        required: true
+        type: array
+      resource: text
+      verb: embed
+    - endpoint_pattern: /classify
+      method: POST
+      parameters:
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: inputs
+        required: true
+        type: array
+      resource: text
+      verb: classify
+    pricing_model: usage_based
+    rate_limits:
+      tier_based_limits:
+        production:
+          requests_per_minute: 10000
+        trial:
+          requests_per_minute: 20
+    sdks:
+      javascript: https://github.com/cohere-ai/cohere-typescript
+      python: https://github.com/cohere-ai/cohere-python
+    status: active
+    vendor: Cohere
+  coinbase:
+    api_specs:
+    - base_url: https://api.coinbase.com/v2
+      schema_url: https://developers.coinbase.com/api/v2
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://www.coinbase.com/oauth/authorize
+        flows:
+        - authorization_code
+        token_url: https://api.coinbase.com/oauth/token
+      primary_method: oauth2
+    category: finance
+    description: Cryptocurrency exchange platform
+    documentation:
+      api_reference: https://developers.coinbase.com/api/v2
+      main_docs: https://developers.coinbase.com/
+    name: Coinbase
+    operations:
+    - endpoint_pattern: /accounts
+      method: GET
+      parameters: []
+      resource: accounts
+      verb: list
+    - endpoint_pattern: /exchange-rates
+      method: GET
+      parameters:
+      - location: query
+        name: currency
+        type: string
+      resource: exchange_rates
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 10000
+    sdks:
+      javascript: https://github.com/coinbase/coinbase-node
+      ruby: https://github.com/coinbase/coinbase-ruby
+    status: active
+    vendor: Coinbase
+  currencyapi:
+    api_specs:
+    - base_url: https://api.currencyapi.com/v3
+      content_types:
+      - application/json
+      schema_url: https://currencyapi.com/docs/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: apikey
+      primary_method: api_key
+    category: other
+    description: Real-time and historical currency exchange rates
+    documentation:
+      api_reference: https://currencyapi.com/docs/api
+      main_docs: https://currencyapi.com/docs/
+    name: Currency API
+    operations:
+    - endpoint_pattern: /latest
+      method: GET
+      parameters:
+      - description: Base currency code (ISO 4217)
+        location: query
+        name: base_currency
+        required: false
+        type: string
+      - description: Comma-separated list of currency codes to return
+        location: query
+        name: currencies
+        required: false
+        type: string
+      resource: latest_rates
+      verb: read
+    - endpoint_pattern: /historical
+      method: GET
+      parameters:
+      - description: Date in YYYY-MM-DD format
+        location: query
+        name: date
+        required: true
+        type: string
+      - description: Base currency code (ISO 4217)
+        location: query
+        name: base_currency
+        required: false
+        type: string
+      - description: Comma-separated list of currency codes to return
+        location: query
+        name: currencies
+        required: false
+        type: string
+      resource: historical_rates
+      verb: read
+    - endpoint_pattern: /currencies
+      method: GET
+      parameters:
+      - description: Comma-separated list of currency codes to return
+        location: query
+        name: currencies
+        required: false
+        type: string
+      resource: currencies
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        basic:
+          requests_per_month: 10000
+        enterprise:
+          requests_per_month: 1000000
+        free:
+          requests_per_month: 300
+        professional:
+          requests_per_month: 100000
+    status: active
+    vendor: Currency API
+  discord:
+    api_specs:
+    - base_url: https://discord.com/api/v10
+      content_types:
+      - application/json
+      schema_url: https://discord.com/developers/docs/reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v10
+    authentication:
+      alternative_methods:
+      - oauth2
+      oauth2_config:
+        authorization_url: https://discord.com/api/oauth2/authorize
+        common_scopes:
+        - description: Bot permissions
+          scope: bot
+        - description: Read guild information
+          scope: guilds
+        - description: Read messages
+          scope: messages.read
+        flows:
+        - authorization_code
+        token_url: https://discord.com/api/oauth2/token
+      primary_method: bearer_token
+    category: communication
+    description: Gaming and community communication platform
+    documentation:
+      api_reference: https://discord.com/developers/docs/reference
+      main_docs: https://discord.com/developers/docs
+    name: Discord
+    operations:
+    - endpoint_pattern: /channels/{channel_id}/messages
+      method: POST
+      parameters:
+      - location: path
+        name: channel_id
+        required: true
+        type: string
+      - location: body
+        name: content
+        required: true
+        type: string
+      resource: message
+      verb: send
+    - endpoint_pattern: /users/@me/guilds
+      method: GET
+      parameters:
+      - location: query
+        name: limit
+        type: integer
+      resource: guilds
+      verb: list
+    - endpoint_pattern: /guilds/{guild_id}/channels
+      method: POST
+      parameters:
+      - location: path
+        name: guild_id
+        required: true
+        type: string
+      - location: body
+        name: name
+        required: true
+        type: string
+      - location: body
+        name: type
+        required: true
+        type: integer
+      resource: channel
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 50
+      endpoint_specific:
+        guild_members:
+          requests_per_second: 10
+        messages:
+          requests_per_second: 5
+      rate_limit_headers:
+        limit_header: X-RateLimit-Limit
+        remaining_header: X-RateLimit-Remaining
+        reset_header: X-RateLimit-Reset
+    sdks:
+      java: https://github.com/DV8FromTheWorld/JDA
+      javascript: https://github.com/discordjs/discord.js
+      python: https://github.com/Rapptz/discord.py
+    status: active
+    vendor: Discord Inc.
+    webhooks:
+      events:
+      - description: Message posted
+        event_type: MESSAGE_CREATE
+      - description: Member joined guild
+        event_type: GUILD_MEMBER_ADD
+      - description: Reaction added to message
+        event_type: REACTION_ADD
+      supported: true
+  dropbox:
+    api_specs:
+    - base_url: https://api.dropboxapi.com/2
+      schema_url: https://www.dropbox.com/developers/documentation/http/overview
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2'
+    authentication:
+      oauth2_config:
+        authorization_url: https://www.dropbox.com/oauth2/authorize
+        flows:
+        - authorization_code
+        token_url: https://api.dropboxapi.com/oauth2/token
+      primary_method: oauth2
+    category: data_storage
+    description: Cloud file storage and sharing platform
+    documentation:
+      api_reference: https://www.dropbox.com/developers/documentation/http/overview
+      main_docs: https://www.dropbox.com/developers
+    name: Dropbox
+    operations:
+    - endpoint_pattern: /files/upload
+      method: POST
+      parameters:
+      - location: header
+        name: path
+        required: true
+        type: string
+      resource: file
+      verb: upload
+    - endpoint_pattern: /files/download
+      method: POST
+      parameters:
+      - location: header
+        name: path
+        required: true
+        type: string
+      resource: file
+      verb: download
+    - endpoint_pattern: /files/list_folder
+      method: POST
+      parameters:
+      - location: body
+        name: path
+        required: true
+        type: string
+      resource: folder
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 300
+    sdks:
+      javascript: https://github.com/dropbox/dropbox-sdk-js
+      python: https://github.com/dropbox/dropbox-sdk-python
+    status: active
+    vendor: Dropbox
+    webhooks:
+      events:
+      - description: File or folder changed
+        event_type: file_change
+      supported: true
+  facebook:
+    api_specs:
+    - base_url: https://graph.facebook.com/v17.0
+      schema_url: https://developers.facebook.com/docs/graph-api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v17.0
+    authentication:
+      oauth2_config:
+        authorization_url: https://www.facebook.com/v17.0/dialog/oauth
+        common_scopes:
+        - description: Access to user's email
+          scope: email
+        - description: Access to public profile
+          scope: public_profile
+        - description: Manage page posts
+          scope: pages_manage_posts
+        flows:
+        - authorization_code
+        token_url: https://graph.facebook.com/v17.0/oauth/access_token
+      primary_method: oauth2
+    category: communication
+    description: Social media platform API for Facebook
+    documentation:
+      api_reference: https://developers.facebook.com/docs/graph-api/reference
+      main_docs: https://developers.facebook.com/docs/graph-api
+    name: Facebook Graph API
+    operations:
+    - endpoint_pattern: /me
+      method: GET
+      parameters:
+      - location: query
+        name: fields
+        type: string
+      resource: user
+      verb: read
+    - endpoint_pattern: /{page-id}/feed
+      method: POST
+      parameters:
+      - location: path
+        name: page-id
+        required: true
+        type: string
+      - location: body
+        name: message
+        required: true
+        type: string
+      resource: post
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 200
+      endpoint_specific:
+        page:
+          requests_per_hour: 4800
+        user:
+          requests_per_hour: 600
+    sdks:
+      javascript: https://github.com/facebook/facebook-nodejs-business-sdk
+      php: https://github.com/facebook/facebook-php-business-sdk
+      python: https://github.com/facebook/facebook-python-business-sdk
+    status: active
+    vendor: Meta
+    webhooks:
+      events:
+      - description: Page feed changes
+        event_type: feed
+      - description: Page message events
+        event_type: messages
+      supported: true
+  firebase:
+    api_specs:
+    - base_url: https://firebase.googleapis.com/v1
+      schema_url: https://firebase.google.com/docs/reference/rest
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+        flows:
+        - authorization_code
+        token_url: https://oauth2.googleapis.com/token
+      primary_method: oauth2
+    category: data_storage
+    description: Google's mobile and web application development platform
+    documentation:
+      api_reference: https://firebase.google.com/docs/reference/rest
+      main_docs: https://firebase.google.com/docs
+    name: Firebase
+    operations:
+    - endpoint_pattern: /projects/{projectId}/databases/{databaseId}/documents/{collectionId}
+      method: POST
+      parameters:
+      - location: path
+        name: projectId
+        required: true
+        type: string
+      - location: path
+        name: databaseId
+        required: true
+        type: string
+      - location: path
+        name: collectionId
+        required: true
+        type: string
+      resource: document
+      verb: create
+    - endpoint_pattern: /projects/{projectId}/databases/{databaseId}/documents/{documentPath}
+      method: GET
+      parameters:
+      - location: path
+        name: projectId
+        required: true
+        type: string
+      - location: path
+        name: databaseId
+        required: true
+        type: string
+      - location: path
+        name: documentPath
+        required: true
+        type: string
+      resource: document
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 50
+    sdks:
+      java: https://github.com/firebase/firebase-admin-java
+      javascript: https://github.com/firebase/firebase-js-sdk
+      python: https://github.com/firebase/firebase-admin-python
+    status: active
+    vendor: Google
+  freshworks:
+    api_specs:
+    - base_url: https://{domain}.freshsales.io/api
+      schema_url: https://developers.freshworks.com/crm/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Token token=
+      primary_method: api_key
+    category: crm_sales
+    description: Customer relationship management platform
+    documentation:
+      api_reference: https://developers.freshworks.com/crm/api/
+      main_docs: https://developers.freshworks.com/crm/
+    name: Freshworks CRM
+    operations:
+    - endpoint_pattern: /contacts
+      method: POST
+      parameters:
+      - location: body
+        name: contact
+        required: true
+        type: object
+      resource: contact
+      verb: create
+    - endpoint_pattern: /deals
+      method: POST
+      parameters:
+      - location: body
+        name: deal
+        required: true
+        type: object
+      resource: deal
+      verb: create
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_minute: 5000
+    sdks:
+      python: https://github.com/freshworks/freshworks-api-sdk
+    status: active
+    vendor: Freshworks
+  giphy:
+    api_specs:
+    - base_url: https://api.giphy.com/v1
+      schema_url: https://developers.giphy.com/docs/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: api_key
+      primary_method: api_key
+    category: other
+    description: Search and share GIFs
+    documentation:
+      api_reference: https://developers.giphy.com/docs/api/endpoint
+      main_docs: https://developers.giphy.com/docs/api
+    name: Giphy
+    operations:
+    - endpoint_pattern: /gifs/search
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      - location: query
+        name: limit
+        type: integer
+      - location: query
+        name: offset
+        type: integer
+      resource: gifs
+      verb: search
+    - endpoint_pattern: /gifs/{gif_id}
+      method: GET
+      parameters:
+      - location: path
+        name: gif_id
+        required: true
+        type: string
+      resource: gif
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        enterprise:
+          requests_per_day: null
+        free:
+          requests_per_day: 10000
+        partner:
+          requests_per_day: 100000
+    sdks:
+      android: https://github.com/Giphy/giphy-android-sdk
+      ios: https://github.com/Giphy/giphy-ios-sdk
+      javascript: https://github.com/Giphy/giphy-js-sdk-core
+    status: active
+    vendor: Giphy
+  github:
+    api_specs:
+    - base_url: https://api.github.com
+      schema_url: https://github.com/github/rest-api-description/blob/main/descriptions/api.github.com/api.github.com.json
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    - base_url: https://api.github.com/graphql
+      schema_url: https://docs.github.com/en/graphql/overview/schema-introspection
+      spec_format: graphql_schema
+      transport: https
+      type: graphql
+      version: v4
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://github.com/login/oauth/authorize
+        common_scopes:
+        - description: Full repository access
+          scope: repo
+        - description: Public repository access
+          scope: public_repo
+        - description: User profile access
+          scope: user
+        - description: GitHub Actions workflow access
+          scope: workflow
+        flows:
+        - authorization_code
+        token_url: https://github.com/login/oauth/access_token
+      primary_method: oauth2
+    category: development
+    description: Code hosting and collaboration platform
+    documentation:
+      api_reference: https://docs.github.com/en/rest/reference
+      main_docs: https://docs.github.com/en/rest
+    name: GitHub
+    operations:
+    - endpoint_pattern: /user/repos
+      graphql_operation:
+        operation_name: viewer
+        type: query
+      method: GET
+      required_scopes:
+      - repo
+      resource: repositories
+      verb: list
+    - endpoint_pattern: /repos/{owner}/{repo}/issues
+      method: POST
+      parameters:
+      - location: path
+        name: owner
+        required: true
+        type: string
+      - location: path
+        name: repo
+        required: true
+        type: string
+      - location: body
+        name: title
+        required: true
+        type: string
+      - location: body
+        name: body
+        type: string
+      required_scopes:
+      - repo
+      resource: issue
+      verb: create
+    - endpoint_pattern: /repos/{owner}/{repo}/pulls
+      method: POST
+      parameters:
+      - location: path
+        name: owner
+        required: true
+        type: string
+      - location: path
+        name: repo
+        required: true
+        type: string
+      - location: body
+        name: title
+        required: true
+        type: string
+      - location: body
+        name: head
+        required: true
+        type: string
+      - location: body
+        name: base
+        required: true
+        type: string
+      required_scopes:
+      - repo
+      resource: pull_request
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 5000
+      endpoint_specific:
+        graphql:
+          requests_per_hour: 5000
+        search:
+          requests_per_minute: 30
+      tier_based_limits:
+        basic:
+          requests_per_hour: 5000
+        enterprise:
+          requests_per_hour: 15000
+        free:
+          requests_per_hour: 60
+    sdks:
+      go: https://github.com/google/go-github
+      javascript: https://github.com/octokit/octokit.js
+      python: https://github.com/PyGithub/PyGithub
+      ruby: https://github.com/octokit/octokit.rb
+    status: active
+    vendor: GitHub Inc.
+    webhooks:
+      events:
+      - description: Repository push
+        event_type: push
+      - description: Issue activity
+        event_type: issues
+      - description: Pull request activity
+        event_type: pull_request
+      - description: Release published
+        event_type: release
+      security:
+        header_name: X-Hub-Signature-256
+        signature_method: hmac_sha256
+      supported: true
+  gitlab:
+    api_specs:
+    - base_url: https://gitlab.com/api/v4
+      schema_url: https://docs.gitlab.com/ee/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v4
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://gitlab.com/oauth/authorize
+        common_scopes:
+        - description: Full API access
+          scope: api
+        - description: Read user profile
+          scope: read_user
+        - description: Read repository
+          scope: read_repository
+        flows:
+        - authorization_code
+        token_url: https://gitlab.com/oauth/token
+      primary_method: oauth2
+    category: development
+    description: DevOps platform with CI/CD and code hosting
+    documentation:
+      api_reference: https://docs.gitlab.com/ee/api/api_resources.html
+      main_docs: https://docs.gitlab.com/ee/api/
+    name: GitLab
+    operations:
+    - endpoint_pattern: /projects
+      method: GET
+      parameters:
+      - location: query
+        name: owned
+        type: boolean
+      - location: query
+        name: membership
+        type: boolean
+      resource: projects
+      verb: list
+    - endpoint_pattern: /projects/{id}/issues
+      method: POST
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      - location: body
+        name: title
+        required: true
+        type: string
+      - location: body
+        name: description
+        type: string
+      resource: issue
+      verb: create
+    - endpoint_pattern: /projects/{id}/merge_requests
+      method: POST
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      - location: body
+        name: source_branch
+        required: true
+        type: string
+      - location: body
+        name: target_branch
+        required: true
+        type: string
+      - location: body
+        name: title
+        required: true
+        type: string
+      resource: merge_request
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 2000
+      tier_based_limits:
+        free:
+          requests_per_minute: 300
+        premium:
+          requests_per_minute: 2000
+        ultimate:
+          requests_per_minute: 2000
+    sdks:
+      go: https://github.com/xanzy/go-gitlab
+      javascript: https://github.com/jdalrymple/gitbeaker
+      python: https://github.com/python-gitlab/python-gitlab
+    status: active
+    vendor: GitLab Inc.
+    webhooks:
+      events:
+      - description: Repository push
+        event_type: push
+      - description: Merge request activity
+        event_type: merge_request
+      - description: CI/CD pipeline events
+        event_type: pipeline
+      supported: true
+  google_analytics:
+    api_specs:
+    - base_url: https://analyticsreporting.googleapis.com/v4
+      schema_url: https://developers.google.com/analytics/devguides/reporting/core/v4/rest
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v4
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+        common_scopes:
+        - description: Read analytics data
+          scope: https://www.googleapis.com/auth/analytics.readonly
+        - description: Full analytics access
+          scope: https://www.googleapis.com/auth/analytics
+        flows:
+        - authorization_code
+        token_url: https://oauth2.googleapis.com/token
+      primary_method: oauth2
+    category: analytics
+    description: Web analytics and reporting platform
+    documentation:
+      api_reference: https://developers.google.com/analytics/devguides/reporting/core/v4/rest
+      main_docs: https://developers.google.com/analytics
+    name: Google Analytics
+    operations:
+    - endpoint_pattern: /reports:batchGet
+      method: POST
+      parameters:
+      - location: body
+        name: reportRequests
+        required: true
+        type: array
+      resource: reports
+      verb: read
+    - endpoint_pattern: /management/accounts
+      method: GET
+      parameters: []
+      resource: accounts
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_100_seconds: 100
+        requests_per_day: 50000
+    sdks:
+      java: https://github.com/googleapis/google-api-java-client
+      javascript: https://github.com/googleapis/google-api-nodejs-client
+      python: https://github.com/googleapis/google-api-python-client
+    status: active
+    vendor: Google
+  google_maps:
+    api_specs:
+    - base_url: https://maps.googleapis.com/maps/api
+      schema_url: https://developers.google.com/maps/documentation
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: key
+      primary_method: api_key
+    category: other
+    description: Maps, geocoding, and location services
+    documentation:
+      api_reference: https://developers.google.com/maps/documentation
+      main_docs: https://developers.google.com/maps
+    name: Google Maps Platform
+    operations:
+    - endpoint_pattern: /place/textsearch/json
+      method: GET
+      parameters:
+      - location: query
+        name: query
+        required: true
+        type: string
+      - location: query
+        name: key
+        required: true
+        type: string
+      resource: places
+      verb: search
+    - endpoint_pattern: /geocode/json
+      method: GET
+      parameters:
+      - location: query
+        name: address
+        required: true
+        type: string
+      - location: query
+        name: key
+        required: true
+        type: string
+      resource: address
+      verb: geocode
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_day: 25000
+    sdks:
+      javascript: https://github.com/googlemaps/google-maps-services-js
+      python: https://github.com/googlemaps/google-maps-services-python
+    status: active
+    vendor: Google
+  google_sheets:
+    api_specs:
+    - base_url: https://sheets.googleapis.com/v4
+      schema_url: https://sheets.googleapis.com/$discovery/rest?version=v4
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v4
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+        common_scopes:
+        - description: Full access to sheets
+          scope: https://www.googleapis.com/auth/spreadsheets
+        - description: Read-only access
+          scope: https://www.googleapis.com/auth/spreadsheets.readonly
+        flows:
+        - authorization_code
+        token_url: https://oauth2.googleapis.com/token
+      primary_method: oauth2
+    category: data_storage
+    description: Cloud-based spreadsheet application
+    documentation:
+      api_reference: https://developers.google.com/sheets/api/reference/rest
+      main_docs: https://developers.google.com/sheets/api
+    name: Google Sheets
+    operations:
+    - endpoint_pattern: /spreadsheets/{spreadsheetId}/values/{range}
+      method: GET
+      parameters:
+      - location: path
+        name: spreadsheetId
+        required: true
+        type: string
+      - location: path
+        name: range
+        required: true
+        type: string
+      required_scopes:
+      - https://www.googleapis.com/auth/spreadsheets.readonly
+      resource: values
+      verb: read
+    - batch_capable: true
+      endpoint_pattern: /spreadsheets/{spreadsheetId}/values/{range}
+      method: PUT
+      parameters:
+      - location: path
+        name: spreadsheetId
+        required: true
+        type: string
+      - location: path
+        name: range
+        required: true
+        type: string
+      - location: body
+        name: values
+        required: true
+        type: array
+      required_scopes:
+      - https://www.googleapis.com/auth/spreadsheets
+      resource: values
+      verb: update
+    - endpoint_pattern: /spreadsheets
+      method: POST
+      parameters:
+      - location: body
+        name: title
+        required: true
+        type: string
+      required_scopes:
+      - https://www.googleapis.com/auth/spreadsheets
+      resource: spreadsheet
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_day: 100000
+        requests_per_minute: 300
+      endpoint_specific:
+        batchUpdate:
+          requests_per_minute: 100
+        values/batchGet:
+          requests_per_minute: 100
+    sdks:
+      java: https://github.com/googleapis/google-api-java-client
+      javascript: https://github.com/googleapis/google-api-nodejs-client
+      python: https://github.com/googleapis/google-api-python-client
+    status: active
+    vendor: Google
+  here:
+    api_specs:
+    - base_url: https://router.hereapi.com/v8
+      schema_url: https://developer.here.com/documentation
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v7
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: apiKey
+      primary_method: api_key
+    category: location
+    description: Location services and mapping platform
+    documentation:
+      api_reference: https://developer.here.com/documentation/routing-api/api-reference-swagger.html
+      main_docs: https://developer.here.com/documentation
+    name: HERE Maps
+    operations:
+    - endpoint_pattern: /routes
+      method: GET
+      parameters:
+      - location: query
+        name: transportMode
+        required: true
+        type: string
+      - location: query
+        name: origin
+        required: true
+        type: string
+      - location: query
+        name: destination
+        required: true
+        type: string
+      - location: query
+        name: apiKey
+        required: true
+        type: string
+      resource: route
+      verb: read
+    - endpoint_pattern: /geocode
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      - location: query
+        name: apiKey
+        required: true
+        type: string
+      resource: address
+      verb: geocode
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        freemium:
+          requests_per_day: 250000
+        pro:
+          requests_per_day: 1000000
+    sdks:
+      android: https://github.com/heremaps/here-android-sdk-examples
+      ios: https://github.com/heremaps/here-ios-sdk-examples
+      javascript: https://github.com/heremaps/here-sdk-examples
+    status: active
+    vendor: HERE Technologies
+  hubspot:
+    api_specs:
+    - base_url: https://api.hubapi.com
+      schema_url: https://developers.hubspot.com/docs/api/overview
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://app.hubspot.com/oauth/authorize
+        common_scopes:
+        - description: Access contacts
+          scope: contacts
+        - description: Access content
+          scope: content
+        - description: Access reports
+          scope: reports
+        flows:
+        - authorization_code
+        token_url: https://api.hubapi.com/oauth/v1/token
+      primary_method: oauth2
+    category: crm_sales
+    description: Marketing automation and CRM platform
+    documentation:
+      api_reference: https://developers.hubspot.com/docs/api
+      main_docs: https://developers.hubspot.com/docs/api/overview
+    name: HubSpot
+    operations:
+    - batch_capable: true
+      endpoint_pattern: /crm/v3/objects/contacts
+      method: POST
+      parameters:
+      - location: body
+        name: properties
+        required: true
+        type: object
+      resource: contact
+      verb: create
+    - endpoint_pattern: /crm/v3/objects/contacts/{contactId}
+      method: GET
+      parameters:
+      - location: path
+        name: contactId
+        required: true
+        type: string
+      resource: contact
+      verb: read
+    - endpoint_pattern: /crm/v3/objects/contacts/search
+      method: POST
+      parameters:
+      - location: body
+        name: filterGroups
+        required: true
+        type: array
+      resource: contacts
+      verb: search
+    pricing_model: freemium
+    rate_limits:
+      endpoint_specific:
+        search:
+          requests_per_second: 4
+      tier_based_limits:
+        enterprise:
+          requests_per_day: 1000000
+          requests_per_second: 19
+        free:
+          requests_per_day: 40000
+          requests_per_second: 10
+        professional:
+          requests_per_day: 650000
+          requests_per_second: 19
+    sdks:
+      javascript: https://github.com/HubSpot/hubspot-api-nodejs
+      php: https://github.com/HubSpot/hubspot-api-php
+      python: https://github.com/HubSpot/hubspot-api-python
+    status: active
+    vendor: HubSpot
+    webhooks:
+      events:
+      - description: Contact created
+        event_type: contact.creation
+      - description: Contact property changed
+        event_type: contact.propertyChange
+      - description: Deal created
+        event_type: deal.creation
+      supported: true
+  hugging_face:
+    api_specs:
+    - base_url: https://api-inference.huggingface.co
+      schema_url: https://huggingface.co/docs/api-inference/index
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: ai_services
+    description: Machine learning models and inference API
+    documentation:
+      api_reference: https://huggingface.co/docs/api-inference/index
+      main_docs: https://huggingface.co/docs
+    name: Hugging Face
+    operations:
+    - endpoint_pattern: /models/{model_id}
+      method: POST
+      parameters:
+      - location: path
+        name: model_id
+        required: true
+        type: string
+      - location: body
+        name: inputs
+        required: true
+        type: string
+      resource: text
+      verb: generate
+    - endpoint_pattern: /models/{model_id}
+      method: POST
+      parameters:
+      - location: path
+        name: model_id
+        required: true
+        type: string
+      - location: body
+        name: inputs
+        required: true
+        type: string
+      resource: text
+      verb: classify
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        free:
+          requests_per_hour: 1000
+        pro:
+          requests_per_hour: 100000
+    sdks:
+      javascript: https://github.com/huggingface/huggingface.js
+      python: https://github.com/huggingface/huggingface_hub
+    status: active
+    vendor: Hugging Face
+  instagram:
+    api_specs:
+    - base_url: https://graph.facebook.com/v17.0
+      schema_url: https://developers.facebook.com/docs/instagram-api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v17.0
+    authentication:
+      oauth2_config:
+        authorization_url: https://www.facebook.com/v17.0/dialog/oauth
+        common_scopes:
+        - description: Read user profile and media
+          scope: instagram_basic
+        - description: Publish content to Instagram
+          scope: instagram_content_publish
+        - description: Read insights data
+          scope: instagram_manage_insights
+        flows:
+        - authorization_code
+        token_url: https://graph.facebook.com/v17.0/oauth/access_token
+      primary_method: oauth2
+    category: communication
+    description: Social media platform API for Instagram
+    documentation:
+      api_reference: https://developers.facebook.com/docs/instagram-api/reference
+      main_docs: https://developers.facebook.com/docs/instagram-api
+    name: Instagram Graph API
+    operations:
+    - endpoint_pattern: /{ig-user-id}/media
+      method: GET
+      parameters:
+      - location: path
+        name: ig-user-id
+        required: true
+        type: string
+      resource: media
+      verb: list
+    - endpoint_pattern: /{ig-user-id}/media
+      method: POST
+      parameters:
+      - location: path
+        name: ig-user-id
+        required: true
+        type: string
+      - location: body
+        name: image_url
+        required: true
+        type: string
+      - location: body
+        name: caption
+        type: string
+      resource: media
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 200
+    sdks:
+      javascript: https://github.com/facebook/facebook-nodejs-business-sdk
+      python: https://github.com/facebook/facebook-python-business-sdk
+    status: active
+    vendor: Meta
+  intercom:
+    api_specs:
+    - base_url: https://api.intercom.io
+      schema_url: https://developers.intercom.com/intercom-api-reference/reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2.10'
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: crm_sales
+    description: Customer messaging and support platform
+    documentation:
+      api_reference: https://developers.intercom.com/intercom-api-reference/reference
+      main_docs: https://developers.intercom.com/
+    name: Intercom
+    operations:
+    - endpoint_pattern: /contacts
+      method: POST
+      parameters:
+      - location: body
+        name: email
+        required: true
+        type: string
+      - location: body
+        name: name
+        type: string
+      resource: contact
+      verb: create
+    - endpoint_pattern: /messages
+      method: POST
+      parameters:
+      - location: body
+        name: from
+        required: true
+        type: object
+      - location: body
+        name: to
+        required: true
+        type: object
+      - location: body
+        name: message_type
+        required: true
+        type: string
+      resource: message
+      verb: send
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_minute: 1000
+    sdks:
+      javascript: https://github.com/intercom/intercom-node
+      python: https://github.com/intercom/python-intercom
+    status: active
+    vendor: Intercom
+    webhooks:
+      events:
+      - description: User created
+        event_type: user.created
+      - description: User started conversation
+        event_type: conversation.user.created
+      supported: true
+  ipgeolocation:
+    api_specs:
+    - base_url: https://api.ipgeolocation.io
+      content_types:
+      - application/json
+      schema_url: https://ipgeolocation.io/documentation/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: apiKey
+      primary_method: api_key
+    category: other
+    description: Locate and identify website visitors by IP address
+    documentation:
+      api_reference: https://ipgeolocation.io/documentation/ip-geolocation-api.html
+      main_docs: https://ipgeolocation.io/documentation/
+    name: IP Geolocation API
+    operations:
+    - endpoint_pattern: /ipgeo
+      method: GET
+      parameters:
+      - description: IP address to lookup (IPv4 or IPv6)
+        location: query
+        name: ip
+        required: false
+        type: string
+      - description: Comma-separated list of fields to return
+        location: query
+        name: fields
+        required: false
+        type: string
+      - description: Comma-separated list of additional data to include
+        location: query
+        name: include
+        required: false
+        type: string
+      resource: geolocation
+      verb: read
+    - endpoint_pattern: /ipgeo-bulk
+      method: POST
+      parameters:
+      - description: Array of IP addresses to lookup
+        location: body
+        name: ips
+        required: true
+        type: array
+      resource: geolocation
+      verb: batch
+    - endpoint_pattern: /timezone
+      method: GET
+      parameters:
+      - description: IP address to lookup timezone for
+        location: query
+        name: ip
+        required: false
+        type: string
+      - description: Latitude coordinate
+        location: query
+        name: lat
+        required: false
+        type: number
+      - description: Longitude coordinate
+        location: query
+        name: long
+        required: false
+        type: number
+      resource: timezone
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        basic:
+          requests_per_day: 10000
+        enterprise:
+          requests_per_day: 1000000
+        free:
+          requests_per_day: 1000
+        professional:
+          requests_per_day: 100000
+    status: active
+    vendor: IPGeolocation.io
+  jira:
+    api_specs:
+    - base_url: https://{domain}.atlassian.net/rest/api/3
+      schema_url: https://developer.atlassian.com/cloud/jira/platform/rest/v3/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '3'
+    authentication:
+      alternative_methods:
+      - basic_auth
+      oauth2_config:
+        authorization_url: https://auth.atlassian.com/authorize
+        flows:
+        - authorization_code
+        token_url: https://auth.atlassian.com/oauth/token
+      primary_method: oauth2
+    category: project_management
+    description: Issue and project tracking software
+    documentation:
+      api_reference: https://developer.atlassian.com/cloud/jira/platform/rest/v3/
+      main_docs: https://developer.atlassian.com/cloud/jira/
+    name: Jira
+    operations:
+    - endpoint_pattern: /issue
+      method: POST
+      parameters:
+      - location: body
+        name: fields
+        required: true
+        type: object
+      resource: issue
+      verb: create
+    - endpoint_pattern: /search
+      method: GET
+      parameters:
+      - location: query
+        name: jql
+        required: true
+        type: string
+      resource: issues
+      verb: search
+    - endpoint_pattern: /issue/{issueIdOrKey}
+      method: PUT
+      parameters:
+      - location: path
+        name: issueIdOrKey
+        required: true
+        type: string
+      - location: body
+        name: fields
+        required: true
+        type: object
+      resource: issue
+      verb: update
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_second: 10
+    sdks:
+      javascript: https://github.com/MrRefactoring/jira.js
+      python: https://github.com/pycontribs/jira
+    status: active
+    vendor: Atlassian
+    webhooks:
+      events:
+      - description: Issue created
+        event_type: jira:issue_created
+      - description: Issue updated
+        event_type: jira:issue_updated
+      supported: true
+  leaksapi:
+    api_specs:
+    - base_url: https://leaksapi.p.rapidapi.com
+      content_types:
+      - application/json
+      schema_url: https://rapidapi.com/leaks-api/api/leaksapi
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: X-RapidAPI-Key
+        prefix: null
+      primary_method: api_key
+    category: security
+    description: API for checking data breaches and leaked credentials
+    documentation:
+      api_reference: https://rapidapi.com/leaks-api/api/leaksapi
+      main_docs: https://rapidapi.com/leaks-api/api/leaksapi
+    name: LeaksAPI
+    operations:
+    - endpoint_pattern: /api/v2/query/{domain}
+      method: GET
+      parameters:
+      - description: Domain to search for leaks
+        location: path
+        name: domain
+        required: true
+        type: string
+      resource: domain
+      verb: search
+    - endpoint_pattern: /api/v2/query/email/{email}
+      method: GET
+      parameters:
+      - description: Email to search for leaks
+        location: path
+        name: email
+        required: true
+        type: string
+      resource: email
+      verb: search
+    - endpoint_pattern: /api/v2/query/phone/{phone}
+      method: GET
+      parameters:
+      - description: Phone number to search for leaks
+        location: path
+        name: phone
+        required: true
+        type: string
+      resource: phone
+      verb: search
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        basic:
+          requests_per_day: 100
+        pro:
+          requests_per_day: 10000
+        ultra:
+          requests_per_day: 100000
+    status: active
+    vendor: RapidAPI
+  linear:
+    api_specs:
+    - base_url: https://api.linear.app/graphql
+      schema_url: https://developers.linear.app/docs/graphql/working-with-the-graphql-api
+      spec_format: graphql_schema
+      transport: https
+      type: graphql
+      version: '1.0'
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://linear.app/oauth/authorize
+        common_scopes:
+        - description: Read access to issues and projects
+          scope: read
+        - description: Write access to issues and projects
+          scope: write
+        flows:
+        - authorization_code
+        token_url: https://api.linear.app/oauth/token
+      primary_method: oauth2
+    category: development
+    description: Modern issue tracking and project management
+    documentation:
+      api_reference: https://developers.linear.app/docs/graphql
+      main_docs: https://developers.linear.app/
+    name: Linear
+    operations:
+    - endpoint_pattern: /graphql
+      graphql_operation:
+        operation_name: issueCreate
+        type: mutation
+      method: POST
+      parameters:
+      - location: body
+        name: title
+        required: true
+        type: string
+      - location: body
+        name: teamId
+        required: true
+        type: string
+      - location: body
+        name: description
+        type: string
+      resource: issue
+      verb: create
+    - endpoint_pattern: /graphql
+      graphql_operation:
+        operation_name: issues
+        type: query
+      method: POST
+      parameters:
+      - location: body
+        name: filter
+        type: object
+      resource: issues
+      verb: list
+    - endpoint_pattern: /graphql
+      graphql_operation:
+        operation_name: issue
+        type: query
+      method: POST
+      parameters:
+      - location: body
+        name: id
+        required: true
+        type: string
+      resource: issue
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 1000
+    sdks:
+      javascript: https://github.com/linear/linear
+      python: https://github.com/linear/linear-python-sdk
+    status: active
+    vendor: Linear
+    webhooks:
+      events:
+      - description: Issue created, updated, or deleted
+        event_type: Issue
+      - description: Comment added to issue
+        event_type: Comment
+      - description: Project updated
+        event_type: Project
+      supported: true
+  linkedin:
+    api_specs:
+    - base_url: https://api.linkedin.com/v2
+      schema_url: https://docs.microsoft.com/en-us/linkedin/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      oauth2_config:
+        authorization_url: https://www.linkedin.com/oauth/v2/authorization
+        common_scopes:
+        - description: Read basic profile
+          scope: r_liteprofile
+        - description: Read email address
+          scope: r_emailaddress
+        - description: Post, comment and like posts
+          scope: w_member_social
+        flows:
+        - authorization_code
+        token_url: https://www.linkedin.com/oauth/v2/accessToken
+      primary_method: oauth2
+    category: communication
+    description: Professional social network API
+    documentation:
+      api_reference: https://docs.microsoft.com/en-us/linkedin/shared/references/reference-overview
+      main_docs: https://docs.microsoft.com/en-us/linkedin/
+    name: LinkedIn API
+    operations:
+    - endpoint_pattern: /me
+      method: GET
+      parameters: []
+      resource: profile
+      verb: read
+    - endpoint_pattern: /shares
+      method: POST
+      parameters:
+      - location: body
+        name: owner
+        required: true
+        type: string
+      - location: body
+        name: text
+        required: true
+        type: object
+      resource: share
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_day: 100000
+    sdks:
+      javascript: https://github.com/linkedin-developers/linkedin-api-js-client
+    status: active
+    vendor: LinkedIn
+  mailgun:
+    api_specs:
+    - base_url: https://api.mailgun.net/v3
+      schema_url: https://documentation.mailgun.com/en/latest/api_reference.html
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Basic
+      primary_method: basic_auth
+    category: communication
+    description: Email delivery service with powerful APIs
+    documentation:
+      api_reference: https://documentation.mailgun.com/en/latest/api_reference.html
+      main_docs: https://documentation.mailgun.com/
+    name: Mailgun
+    operations:
+    - endpoint_pattern: /{domain}/messages
+      method: POST
+      parameters:
+      - location: path
+        name: domain
+        required: true
+        type: string
+      - location: form
+        name: from
+        required: true
+        type: string
+      - location: form
+        name: to
+        required: true
+        type: string
+      - location: form
+        name: subject
+        required: true
+        type: string
+      - location: form
+        name: text
+        required: true
+        type: string
+      resource: message
+      verb: send
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 100
+    sdks:
+      javascript: https://github.com/mailgun/mailgun-js
+      python: https://github.com/mailgun/mailgun-python
+    status: active
+    vendor: Mailgun Technologies
+    webhooks:
+      events:
+      - description: Email delivered
+        event_type: delivered
+      - description: Email opened
+        event_type: opened
+      - description: Email link clicked
+        event_type: clicked
+      supported: true
+  mapbox:
+    api_specs:
+    - base_url: https://api.mapbox.com
+      schema_url: https://docs.mapbox.com/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: access_token
+      primary_method: api_key
+    category: location
+    description: Maps, navigation, and location data
+    documentation:
+      api_reference: https://docs.mapbox.com/api/overview/
+      main_docs: https://docs.mapbox.com/api/
+    name: Mapbox
+    operations:
+    - endpoint_pattern: /geocoding/v5/{endpoint}/{search_text}.json
+      method: GET
+      parameters:
+      - location: path
+        name: endpoint
+        required: true
+        type: string
+      - location: path
+        name: search_text
+        required: true
+        type: string
+      - location: query
+        name: access_token
+        required: true
+        type: string
+      resource: address
+      verb: geocode
+    - endpoint_pattern: /directions/v5/{profile}/{coordinates}
+      method: GET
+      parameters:
+      - location: path
+        name: profile
+        required: true
+        type: string
+      - location: path
+        name: coordinates
+        required: true
+        type: string
+      - location: query
+        name: access_token
+        required: true
+        type: string
+      resource: directions
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        free:
+          requests_per_minute: 300
+        pay-as-you-go:
+          requests_per_minute: 600
+    sdks:
+      javascript: https://github.com/mapbox/mapbox-sdk-js
+      python: https://github.com/mapbox/mapbox-sdk-py
+    status: active
+    vendor: Mapbox
+  microsoft_teams:
+    api_specs:
+    - base_url: https://graph.microsoft.com/v1.0
+      schema_url: https://docs.microsoft.com/en-us/graph/api/overview
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1.0
+    authentication:
+      oauth2_config:
+        authorization_url: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+        common_scopes:
+        - description: Read and write chat messages
+          scope: https://graph.microsoft.com/Chat.ReadWrite
+        - description: Read team information
+          scope: https://graph.microsoft.com/Team.ReadBasic.All
+        flows:
+        - authorization_code
+        token_url: https://login.microsoftonline.com/common/oauth2/v2.0/token
+      primary_method: oauth2
+    category: communication
+    description: Business communication and collaboration platform
+    documentation:
+      api_reference: https://docs.microsoft.com/en-us/graph/api/resources/teams-api-overview
+      main_docs: https://docs.microsoft.com/en-us/graph/teams-concept-overview
+    name: Microsoft Teams
+    operations:
+    - endpoint_pattern: /teams/{team-id}/channels/{channel-id}/messages
+      method: POST
+      parameters:
+      - location: path
+        name: team-id
+        required: true
+        type: string
+      - location: path
+        name: channel-id
+        required: true
+        type: string
+      - location: body
+        name: body
+        required: true
+        type: object
+      resource: message
+      verb: send
+    - endpoint_pattern: /me/joinedTeams
+      method: GET
+      parameters: []
+      resource: teams
+      verb: list
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_second: 120
+      endpoint_specific:
+        messages:
+          requests_per_second: 30
+    sdks:
+      csharp: https://github.com/microsoftgraph/msgraph-sdk-dotnet
+      javascript: https://github.com/microsoftgraph/msgraph-sdk-javascript
+      python: https://github.com/microsoftgraph/msgraph-sdk-python
+    status: active
+    vendor: Microsoft
+    webhooks:
+      events:
+      - description: Chat message posted
+        event_type: chatMessage
+      - description: Team updated
+        event_type: team
+      supported: true
+  mixpanel:
+    api_specs:
+    - base_url: https://mixpanel.com/api/2.0
+      schema_url: https://developer.mixpanel.com/reference/overview
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      alternative_methods:
+      - bearer_token
+      primary_method: basic_auth
+    category: analytics
+    description: Product analytics platform
+    documentation:
+      api_reference: https://developer.mixpanel.com/reference/overview
+      main_docs: https://developer.mixpanel.com/
+    name: Mixpanel
+    operations:
+    - endpoint_pattern: /track
+      method: POST
+      parameters:
+      - location: body
+        name: event
+        required: true
+        type: string
+      - location: body
+        name: properties
+        required: true
+        type: object
+      resource: event
+      verb: send
+    - endpoint_pattern: /events
+      method: GET
+      parameters:
+      - location: query
+        name: event
+        required: true
+        type: array
+      - location: query
+        name: from_date
+        required: true
+        type: string
+      - location: query
+        name: to_date
+        required: true
+        type: string
+      resource: events
+      verb: read
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_hour: 1000
+    sdks:
+      javascript: https://github.com/mixpanel/mixpanel-node
+      python: https://github.com/mixpanel/mixpanel-python
+    status: active
+    vendor: Mixpanel
+  monday:
+    api_specs:
+    - base_url: https://api.monday.com/v2
+      schema_url: https://developer.monday.com/api-reference/docs
+      spec_format: graphql_schema
+      transport: https
+      type: graphql
+      version: 2023-10
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: project_management
+    description: Work operating system and project management platform
+    documentation:
+      api_reference: https://developer.monday.com/api-reference/docs
+      main_docs: https://developer.monday.com/
+    name: Monday.com
+    operations:
+    - endpoint_pattern: /
+      graphql_operation:
+        operation_name: create_board
+        type: mutation
+      method: POST
+      parameters:
+      - location: body
+        name: board_name
+        required: true
+        type: string
+      - location: body
+        name: board_kind
+        required: true
+        type: string
+      resource: board
+      verb: create
+    - endpoint_pattern: /
+      graphql_operation:
+        operation_name: create_item
+        type: mutation
+      method: POST
+      parameters:
+      - location: body
+        name: board_id
+        required: true
+        type: string
+      - location: body
+        name: item_name
+        required: true
+        type: string
+      resource: item
+      verb: create
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_minute: 60
+    sdks:
+      javascript: https://github.com/mondaycom/monday-sdk-js
+      python: https://github.com/ProdPerfect/monday
+    status: active
+    vendor: Monday.com
+    webhooks:
+      events:
+      - description: Item created
+        event_type: create_pulse
+      - description: Column value changed
+        event_type: change_column_value
+      supported: true
+  mongodb_atlas:
+    api_specs:
+    - base_url: https://cloud.mongodb.com/api/atlas/v2
+      schema_url: https://www.mongodb.com/docs/atlas/reference/api-resources-spec/v2/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      alternative_methods:
+      - basic_auth
+      primary_method: bearer_token
+    category: data_storage
+    description: Cloud database service with APIs for cluster management
+    documentation:
+      api_reference: https://www.mongodb.com/docs/atlas/reference/api-resources-spec/v2/
+      main_docs: https://www.mongodb.com/docs/atlas/api/
+    name: MongoDB Atlas
+    operations:
+    - endpoint_pattern: /groups/{groupId}/clusters
+      method: GET
+      parameters:
+      - location: path
+        name: groupId
+        required: true
+        type: string
+      resource: clusters
+      verb: list
+    - endpoint_pattern: /groups/{groupId}/clusters
+      method: POST
+      parameters:
+      - location: path
+        name: groupId
+        required: true
+        type: string
+      - location: body
+        name: name
+        required: true
+        type: string
+      resource: cluster
+      verb: create
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_minute: 100
+    sdks:
+      go: https://github.com/mongodb/atlas-sdk-go
+    status: active
+    vendor: MongoDB Inc.
+  nasa:
+    api_specs:
+    - base_url: https://api.nasa.gov
+      schema_url: https://api.nasa.gov/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: api_key
+      primary_method: api_key
+    category: other
+    description: Space and astronomy data from NASA
+    documentation:
+      api_reference: https://api.nasa.gov/
+      main_docs: https://api.nasa.gov/
+    name: NASA
+    operations:
+    - endpoint_pattern: /planetary/apod
+      method: GET
+      parameters:
+      - location: query
+        name: date
+        type: string
+      - location: query
+        name: hd
+        type: boolean
+      resource: apod
+      verb: read
+    - endpoint_pattern: /neo/rest/v1/feed
+      method: GET
+      parameters:
+      - location: query
+        name: start_date
+        required: true
+        type: string
+      - location: query
+        name: end_date
+        required: true
+        type: string
+      resource: neo
+      verb: search
+    pricing_model: free
+    rate_limits:
+      default_limits:
+        requests_per_hour: 1000
+    sdks:
+      javascript: https://github.com/nasa/nasa-api-wrapper
+      python: https://github.com/nasa/nasa-api-py
+    status: active
+    vendor: NASA
+  netlify:
+    api_specs:
+    - base_url: https://api.netlify.com/api/v1
+      schema_url: https://docs.netlify.com/api/get-started/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: development
+    description: Web development platform with deployment and hosting
+    documentation:
+      api_reference: https://docs.netlify.com/api/get-started/
+      main_docs: https://docs.netlify.com/
+    name: Netlify
+    operations:
+    - endpoint_pattern: /sites
+      method: POST
+      parameters:
+      - location: body
+        name: name
+        required: true
+        type: string
+      resource: site
+      verb: create
+    - endpoint_pattern: /sites/{site_id}/deploys
+      method: POST
+      parameters:
+      - location: path
+        name: site_id
+        required: true
+        type: string
+      resource: deploy
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 500
+    sdks:
+      javascript: https://github.com/netlify/js-client
+    status: active
+    vendor: Netlify
+    webhooks:
+      events:
+      - description: Deploy created
+        event_type: deploy-created
+      - description: Deploy succeeded
+        event_type: deploy-succeeded
+      supported: true
+  newsapi:
+    api_specs:
+    - base_url: https://newsapi.org/v2
+      schema_url: https://newsapi.org/docs/endpoints
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: X-Api-Key
+      primary_method: api_key
+    category: news
+    description: Search for news articles from various sources
+    documentation:
+      api_reference: https://newsapi.org/docs/endpoints
+      main_docs: https://newsapi.org/docs
+    name: News API
+    operations:
+    - endpoint_pattern: /everything
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      - location: query
+        name: from
+        type: string
+      - location: query
+        name: to
+        type: string
+      - location: query
+        name: language
+        type: string
+      resource: news
+      verb: search
+    - endpoint_pattern: /top-headlines
+      method: GET
+      parameters:
+      - location: query
+        name: country
+        type: string
+      - location: query
+        name: category
+        type: string
+      - location: query
+        name: sources
+        type: string
+      resource: top_headlines
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        business:
+          requests_per_day: 10000
+        developer:
+          requests_per_day: 100
+        standard:
+          requests_per_day: 500
+    sdks:
+      javascript: https://github.com/bzarras/newsapi
+      python: https://github.com/mattlisiv/newsapi-python
+    status: active
+    vendor: News API
+  notion:
+    api_specs:
+    - base_url: https://api.notion.com/v1
+      schema_url: https://developers.notion.com/reference/intro
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2022-06-28'
+    authentication:
+      alternative_methods:
+      - oauth2
+      oauth2_config:
+        authorization_url: https://api.notion.com/v1/oauth/authorize
+        flows:
+        - authorization_code
+        token_url: https://api.notion.com/v1/oauth/token
+      primary_method: bearer_token
+    category: data_storage
+    description: Workspace and knowledge management platform
+    documentation:
+      api_reference: https://developers.notion.com/reference/intro
+      main_docs: https://developers.notion.com/
+    name: Notion
+    operations:
+    - endpoint_pattern: /pages
+      method: POST
+      parameters:
+      - location: body
+        name: parent
+        required: true
+        type: object
+      - location: body
+        name: properties
+        required: true
+        type: object
+      resource: page
+      verb: create
+    - endpoint_pattern: /pages/{page_id}
+      method: GET
+      parameters:
+      - location: path
+        name: page_id
+        required: true
+        type: string
+      resource: page
+      verb: read
+    - endpoint_pattern: /search
+      method: POST
+      parameters:
+      - location: body
+        name: query
+        type: string
+      - location: body
+        name: filter
+        type: object
+      resource: pages
+      verb: search
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 3
+    sdks:
+      javascript: https://github.com/makenotion/notion-sdk-js
+      python: https://github.com/ramnes/notion-sdk-py
+    status: active
+    vendor: Notion Labs
+  nytimes:
+    api_specs:
+    - base_url: https://api.nytimes.com/svc
+      schema_url: https://developer.nytimes.com/apis
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: api-key
+      primary_method: api_key
+    category: news
+    description: Access New York Times articles and data
+    documentation:
+      api_reference: https://developer.nytimes.com/apis
+      main_docs: https://developer.nytimes.com/apis
+    name: New York Times
+    operations:
+    - endpoint_pattern: /search/v2/articlesearch.json
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        type: string
+      - location: query
+        name: begin_date
+        type: string
+      - location: query
+        name: end_date
+        type: string
+      resource: articles
+      verb: search
+    - endpoint_pattern: /topstories/v2/{section}.json
+      method: GET
+      parameters:
+      - location: path
+        name: section
+        required: true
+        type: string
+      resource: top_stories
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_day: 4000
+        requests_per_minute: 5
+    sdks:
+      ruby: https://github.com/nytimes/nytimes-ruby-sdk
+    status: active
+    vendor: The New York Times Company
+  okta:
+    api_specs:
+    - base_url: https://{domain}.okta.com/api/v1
+      schema_url: https://developer.okta.com/docs/reference/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: SSWS
+      primary_method: bearer_token
+    category: security
+    compliance:
+    - soc2
+    - iso27001
+    description: Identity and access management platform
+    documentation:
+      api_reference: https://developer.okta.com/docs/reference/
+      main_docs: https://developer.okta.com/
+    name: Okta
+    operations:
+    - endpoint_pattern: /users
+      method: POST
+      parameters:
+      - location: body
+        name: profile
+        required: true
+        type: object
+      resource: user
+      verb: create
+    - endpoint_pattern: /users
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        type: string
+      - location: query
+        name: limit
+        type: integer
+      resource: users
+      verb: list
+    - endpoint_pattern: /users/{userId}
+      method: GET
+      parameters:
+      - location: path
+        name: userId
+        required: true
+        type: string
+      resource: user
+      verb: read
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_minute: 600
+    sdks:
+      java: https://github.com/okta/okta-sdk-java
+      javascript: https://github.com/okta/okta-sdk-nodejs
+      python: https://github.com/okta/okta-sdk-python
+    status: active
+    vendor: Okta
+    webhooks:
+      events:
+      - description: User created
+        event_type: user.lifecycle.create
+      - description: User activated
+        event_type: user.lifecycle.activate
+      supported: true
+  omdb:
+    api_specs:
+    - base_url: https://www.omdbapi.com
+      schema_url: https://www.omdbapi.com/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: apikey
+      primary_method: api_key
+    category: entertainment
+    description: Movie information and posters
+    documentation:
+      api_reference: https://www.omdbapi.com/
+      main_docs: https://www.omdbapi.com/
+    name: Open Movie Database
+    operations:
+    - endpoint_pattern: /
+      method: GET
+      parameters:
+      - location: query
+        name: s
+        required: true
+        type: string
+      - location: query
+        name: type
+        type: string
+      - location: query
+        name: y
+        type: string
+      resource: movies
+      verb: search
+    - endpoint_pattern: /
+      method: GET
+      parameters:
+      - location: query
+        name: i
+        required: true
+        type: string
+      - location: query
+        name: plot
+        type: string
+      resource: movie
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        free:
+          requests_per_day: 1000
+        paid:
+          requests_per_day: null
+    status: active
+    vendor: OMDb
+  openai:
+    api_specs:
+    - base_url: https://api.openai.com/v1
+      content_types:
+      - application/json
+      schema_url: https://github.com/openai/openai-openapi/blob/master/openapi.yaml
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: ai_services
+    description: AI models and services for natural language processing
+    documentation:
+      api_reference: https://platform.openai.com/docs/api-reference
+      main_docs: https://platform.openai.com/docs
+    name: OpenAI
+    operations:
+    - endpoint_pattern: /chat/completions
+      method: POST
+      parameters:
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: messages
+        required: true
+        type: array
+      - location: body
+        name: temperature
+        type: number
+      - location: body
+        name: max_tokens
+        type: integer
+      - location: body
+        name: tools
+        type: array
+      - location: body
+        name: tool_choice
+        type: string
+      rate_limit_cost: 1
+      resource: completion
+      verb: generate
+    - endpoint_pattern: /embeddings
+      method: POST
+      parameters:
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: input
+        required: true
+        type: string
+      rate_limit_cost: 1
+      resource: embedding
+      verb: generate
+    - endpoint_pattern: /images/generations
+      method: POST
+      parameters:
+      - location: body
+        name: prompt
+        required: true
+        type: string
+      - location: body
+        name: model
+        required: true
+        type: string
+      - location: body
+        name: size
+        type: string
+      - location: body
+        name: quality
+        type: string
+      rate_limit_cost: 5
+      resource: image
+      verb: generate
+    pricing_model: usage_based
+    rate_limits:
+      endpoint_specific:
+        chat/completions:
+          requests_per_minute: 500
+        embeddings:
+          requests_per_minute: 3000
+        images/generations:
+          requests_per_minute: 50
+      rate_limit_headers:
+        limit_header: x-ratelimit-limit-requests
+        remaining_header: x-ratelimit-remaining-requests
+        reset_header: x-ratelimit-reset-requests
+      tier_based_limits:
+        basic:
+          requests_per_day: 10000
+          requests_per_minute: 60
+        free:
+          requests_per_day: 200
+          requests_per_minute: 3
+        premium:
+          requests_per_day: 1000000
+          requests_per_minute: 5000
+    sdks:
+      go: https://github.com/openai/openai-go
+      javascript: https://github.com/openai/openai-node
+      python: https://github.com/openai/openai-python
+    status: active
+    vendor: OpenAI
+  openweathermap:
+    api_specs:
+    - base_url: https://api.openweathermap.org/data/2.5
+      schema_url: https://openweathermap.org/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2.5'
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: appid
+      primary_method: api_key
+    category: other
+    description: Weather data and forecasting API
+    documentation:
+      api_reference: https://openweathermap.org/api
+      main_docs: https://openweathermap.org/api
+    name: OpenWeatherMap
+    operations:
+    - endpoint_pattern: /weather
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      - location: query
+        name: appid
+        required: true
+        type: string
+      resource: weather
+      verb: read
+    - endpoint_pattern: /forecast
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      - location: query
+        name: appid
+        required: true
+        type: string
+      resource: forecast
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        developer:
+          requests_per_minute: 3000
+        free:
+          requests_per_minute: 60
+        startup:
+          requests_per_minute: 600
+    sdks:
+      javascript: https://github.com/alexanderlamdan/openweathermap-api-node
+      python: https://github.com/csparpa/pyowm
+    status: active
+    vendor: OpenWeather
+  paypal:
+    api_specs:
+    - base_url: https://api.paypal.com/v2
+      sandbox_url: https://api.sandbox.paypal.com/v2
+      schema_url: https://developer.paypal.com/api/rest/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      oauth2_config:
+        authorization_url: https://www.paypal.com/signin/authorize
+        flows:
+        - client_credentials
+        token_url: https://api.paypal.com/v1/oauth2/token
+      primary_method: oauth2
+    category: payment
+    description: Digital payment processing platform
+    documentation:
+      api_reference: https://developer.paypal.com/docs/api/
+      main_docs: https://developer.paypal.com/api/rest/
+    name: PayPal
+    operations:
+    - endpoint_pattern: /checkout/orders
+      method: POST
+      parameters:
+      - location: body
+        name: intent
+        required: true
+        type: string
+      - location: body
+        name: purchase_units
+        required: true
+        type: array
+      resource: order
+      verb: create
+    - endpoint_pattern: /checkout/orders/{id}/capture
+      method: POST
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      resource: order
+      verb: capture
+    - endpoint_pattern: /payments/captures/{capture_id}
+      method: GET
+      parameters:
+      - location: path
+        name: capture_id
+        required: true
+        type: string
+      resource: payment
+      verb: read
+    pricing_model: usage_based
+    rate_limits:
+      backoff_strategy: exponential
+      default_limits:
+        requests_per_second: null
+    sdks:
+      java: https://github.com/paypal/PayPal-Java-SDK
+      javascript: https://github.com/paypal/paypal-js
+      php: https://github.com/paypal/PayPal-PHP-SDK
+      python: https://github.com/paypal/PayPal-Python-SDK
+    status: active
+    vendor: PayPal
+    webhooks:
+      events:
+      - description: Order approved
+        event_type: CHECKOUT.ORDER.APPROVED
+      - description: Payment captured
+        event_type: PAYMENT.CAPTURE.COMPLETED
+      - description: Payment refunded
+        event_type: PAYMENT.CAPTURE.REFUNDED
+      supported: true
+  pexels:
+    api_specs:
+    - base_url: https://api.pexels.com/v1
+      schema_url: https://www.pexels.com/api/documentation/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+      primary_method: api_key
+    category: other
+    description: Free stock photos and videos
+    documentation:
+      api_reference: https://www.pexels.com/api/documentation/
+      main_docs: https://www.pexels.com/api/documentation/
+    name: Pexels
+    operations:
+    - endpoint_pattern: /search
+      method: GET
+      parameters:
+      - location: query
+        name: query
+        required: true
+        type: string
+      - location: query
+        name: per_page
+        type: integer
+      - location: query
+        name: page
+        type: integer
+      resource: photos
+      verb: search
+    - endpoint_pattern: /photos/{id}
+      method: GET
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      resource: photo
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 200
+        requests_per_month: 20000
+    sdks:
+      javascript: https://github.com/pexels/pexels-javascript
+      python: https://github.com/pexels/pexels-python
+    status: active
+    vendor: Pexels
+  pinterest:
+    api_specs:
+    - base_url: https://api.pinterest.com/v5
+      schema_url: https://developers.pinterest.com/docs/api/v5/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v5
+    authentication:
+      oauth2_config:
+        authorization_url: https://www.pinterest.com/oauth/
+        common_scopes:
+        - description: Read boards
+          scope: boards:read
+        - description: Read pins
+          scope: pins:read
+        - description: Create pins
+          scope: pins:write
+        flows:
+        - authorization_code
+        token_url: https://api.pinterest.com/v5/oauth/token
+      primary_method: oauth2
+    category: communication
+    description: Visual discovery and bookmarking platform
+    documentation:
+      api_reference: https://developers.pinterest.com/docs/api/v5/
+      main_docs: https://developers.pinterest.com/docs/api/v5/
+    name: Pinterest API
+    operations:
+    - endpoint_pattern: /boards
+      method: GET
+      parameters:
+      - location: query
+        name: page_size
+        type: integer
+      resource: boards
+      verb: list
+    - endpoint_pattern: /pins
+      method: POST
+      parameters:
+      - location: body
+        name: board_id
+        required: true
+        type: string
+      - location: body
+        name: media_source
+        required: true
+        type: object
+      - location: body
+        name: description
+        type: string
+      resource: pin
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 1000
+    sdks:
+      javascript: https://github.com/pinterest/api-quickstart/tree/main/nodejs
+      python: https://github.com/pinterest/api-quickstart/tree/main/python
+    status: active
+    vendor: Pinterest
+  pipedrive:
+    api_specs:
+    - base_url: https://{company_domain}.pipedrive.com/api/v1
+      schema_url: https://developers.pipedrive.com/docs/api/v1
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: api_token
+      primary_method: api_key
+    category: crm_sales
+    description: Sales CRM and pipeline management platform
+    documentation:
+      api_reference: https://developers.pipedrive.com/docs/api/v1
+      main_docs: https://developers.pipedrive.com/
+    name: Pipedrive
+    operations:
+    - endpoint_pattern: /deals
+      method: POST
+      parameters:
+      - location: body
+        name: title
+        required: true
+        type: string
+      - location: body
+        name: value
+        type: number
+      - location: body
+        name: currency
+        type: string
+      resource: deal
+      verb: create
+    - endpoint_pattern: /deals
+      method: GET
+      parameters:
+      - location: query
+        name: status
+        type: string
+      resource: deals
+      verb: list
+    - endpoint_pattern: /persons
+      method: POST
+      parameters:
+      - location: body
+        name: name
+        required: true
+        type: string
+      - location: body
+        name: email
+        type: string
+      resource: person
+      verb: create
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_second: 10
+    sdks:
+      javascript: https://github.com/pipedrive/client-nodejs
+      python: https://github.com/pipedrive/client-python
+    status: active
+    vendor: Pipedrive
+    webhooks:
+      events:
+      - description: Deal created
+        event_type: deal.added
+      - description: Deal updated
+        event_type: deal.updated
+      supported: true
+  posthog:
+    api_specs:
+    - base_url: https://app.posthog.com/api
+      schema_url: https://posthog.com/docs/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: analytics
+    description: Open-source product analytics platform
+    documentation:
+      api_reference: https://posthog.com/docs/api
+      main_docs: https://posthog.com/docs
+    name: PostHog
+    operations:
+    - endpoint_pattern: /capture/
+      method: POST
+      parameters:
+      - location: body
+        name: event
+        required: true
+        type: string
+      - location: body
+        name: distinct_id
+        required: true
+        type: string
+      - location: body
+        name: properties
+        type: object
+      resource: event
+      verb: send
+    - endpoint_pattern: /projects/{project_id}/events/
+      method: GET
+      parameters:
+      - location: path
+        name: project_id
+        required: true
+        type: string
+      resource: events
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 240
+    sdks:
+      javascript: https://github.com/PostHog/posthog-js
+      python: https://github.com/PostHog/posthog-python
+    status: active
+    vendor: PostHog
+  razorpay:
+    api_specs:
+    - base_url: https://api.razorpay.com/v1
+      schema_url: https://razorpay.com/docs/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      primary_method: basic_auth
+    category: payment
+    description: Payment gateway for India
+    documentation:
+      api_reference: https://razorpay.com/docs/api/
+      main_docs: https://razorpay.com/docs/
+    name: Razorpay
+    operations:
+    - endpoint_pattern: /orders
+      method: POST
+      parameters:
+      - location: body
+        name: amount
+        required: true
+        type: integer
+      - location: body
+        name: currency
+        required: true
+        type: string
+      resource: order
+      verb: create
+    - endpoint_pattern: /payments
+      method: POST
+      parameters:
+      - location: body
+        name: amount
+        required: true
+        type: integer
+      - location: body
+        name: currency
+        required: true
+        type: string
+      resource: payment
+      verb: create
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_minute: 50
+    sdks:
+      javascript: https://github.com/razorpay/razorpay-node
+      python: https://github.com/razorpay/razorpay-python
+    status: active
+    vendor: Razorpay
+    webhooks:
+      events:
+      - description: Payment captured
+        event_type: payment.captured
+      - description: Order paid
+        event_type: order.paid
+      supported: true
+  replicate:
+    api_specs:
+    - base_url: https://api.replicate.com/v1
+      schema_url: https://replicate.com/docs/reference/http
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Token
+      primary_method: bearer_token
+    category: ai_services
+    description: Run machine learning models in the cloud
+    documentation:
+      api_reference: https://replicate.com/docs/reference/http
+      main_docs: https://replicate.com/docs
+    name: Replicate
+    operations:
+    - endpoint_pattern: /predictions
+      method: POST
+      parameters:
+      - location: body
+        name: version
+        required: true
+        type: string
+      - location: body
+        name: input
+        required: true
+        type: object
+      resource: prediction
+      verb: create
+    - endpoint_pattern: /predictions/{id}
+      method: GET
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      resource: prediction
+      verb: read
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 50
+    sdks:
+      javascript: https://github.com/replicate/replicate-javascript
+      python: https://github.com/replicate/replicate-python
+    status: active
+    vendor: Replicate
+    webhooks:
+      events:
+      - description: Prediction completed
+        event_type: prediction.completed
+      - description: Prediction failed
+        event_type: prediction.failed
+      supported: true
+  salesforce:
+    api_specs:
+    - base_url: https://{instance}.salesforce.com/services/data/v59.0
+      schema_url: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v59.0
+    authentication:
+      alternative_methods:
+      - jwt
+      oauth2_config:
+        authorization_url: https://login.salesforce.com/services/oauth2/authorize
+        common_scopes:
+        - description: API access
+          scope: api
+        - description: Refresh token
+          scope: refresh_token
+        - description: Full access
+          scope: full
+        flows:
+        - authorization_code
+        - client_credentials
+        token_url: https://login.salesforce.com/services/oauth2/token
+      primary_method: oauth2
+    category: crm_sales
+    compliance:
+    - gdpr
+    - soc2
+    - iso27001
+    description: Customer relationship management platform
+    documentation:
+      api_reference: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/
+      main_docs: https://developer.salesforce.com/docs/
+    name: Salesforce
+    operations:
+    - batch_capable: true
+      endpoint_pattern: /sobjects/{sobjectType}/
+      method: POST
+      parameters:
+      - location: path
+        name: sobjectType
+        required: true
+        type: string
+      resource: record
+      verb: create
+    - endpoint_pattern: /sobjects/{sobjectType}/{id}
+      method: GET
+      parameters:
+      - location: path
+        name: sobjectType
+        required: true
+        type: string
+      - location: path
+        name: id
+        required: true
+        type: string
+      resource: record
+      verb: read
+    - endpoint_pattern: /query/
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      resource: records
+      verb: search
+    pricing_model: subscription
+    rate_limits:
+      endpoint_specific:
+        bulk:
+          requests_per_day: 10000
+        query:
+          requests_per_hour: 20000
+      tier_based_limits:
+        basic:
+          requests_per_day: 100000
+        enterprise:
+          requests_per_day: 1000000
+        free:
+          requests_per_day: 15000
+    sdks:
+      java: https://github.com/forcedotcom/force-spa
+      javascript: https://github.com/forcedotcom/SalesforceDX-Project
+      python: https://github.com/simple-salesforce/simple-salesforce
+    status: active
+    vendor: Salesforce
+    webhooks:
+      events:
+      - description: Account record changes
+        event_type: AccountChangeEvent
+      - description: Contact record changes
+        event_type: ContactChangeEvent
+      - description: Opportunity record changes
+        event_type: OpportunityChangeEvent
+      setup_url: https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/
+      supported: true
+  segment:
+    api_specs:
+    - base_url: https://api.segment.io/v1
+      schema_url: https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      primary_method: basic_auth
+    category: analytics
+    description: Customer data platform and analytics
+    documentation:
+      api_reference: https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/
+      main_docs: https://segment.com/docs/
+    name: Segment
+    operations:
+    - endpoint_pattern: /track
+      method: POST
+      parameters:
+      - location: body
+        name: event
+        required: true
+        type: string
+      - location: body
+        name: userId
+        required: true
+        type: string
+      - location: body
+        name: properties
+        type: object
+      resource: event
+      verb: send
+    - endpoint_pattern: /identify
+      method: POST
+      parameters:
+      - location: body
+        name: userId
+        required: true
+        type: string
+      - location: body
+        name: traits
+        type: object
+      resource: user
+      verb: identify
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 500
+    sdks:
+      javascript: https://github.com/segmentio/analytics-node
+      python: https://github.com/segmentio/analytics-python
+    status: active
+    vendor: Twilio
+  sendgrid:
+    api_specs:
+    - base_url: https://api.sendgrid.com/v3
+      schema_url: https://docs.sendgrid.com/api-reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: communication
+    description: Email delivery service
+    documentation:
+      api_reference: https://docs.sendgrid.com/api-reference
+      main_docs: https://docs.sendgrid.com/
+    name: SendGrid
+    operations:
+    - endpoint_pattern: /mail/send
+      method: POST
+      parameters:
+      - location: body
+        name: from
+        required: true
+        type: object
+      - location: body
+        name: to
+        required: true
+        type: array
+      - location: body
+        name: subject
+        required: true
+        type: string
+      - location: body
+        name: content
+        required: true
+        type: array
+      resource: email
+      verb: send
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_minute: 600
+      endpoint_specific:
+        mail/send:
+          requests_per_minute: null
+    sdks:
+      javascript: https://github.com/sendgrid/sendgrid-nodejs
+      python: https://github.com/sendgrid/sendgrid-python
+    status: active
+    vendor: Twilio Inc.
+  shopify:
+    api_specs:
+    - base_url: https://{shop}.myshopify.com/admin/api/2024-10
+      schema_url: https://shopify.dev/docs/api/admin-rest
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: 2024-10
+    - base_url: https://{shop}.myshopify.com/admin/api/2024-10/graphql.json
+      schema_url: https://shopify.dev/docs/api/admin-graphql
+      spec_format: graphql_schema
+      transport: https
+      type: graphql
+      version: 2024-10
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://{shop}.myshopify.com/admin/oauth/authorize
+        flows:
+        - authorization_code
+        token_url: https://{shop}.myshopify.com/admin/oauth/access_token
+      primary_method: oauth2
+    category: other
+    description: E-commerce platform with comprehensive APIs
+    documentation:
+      api_reference: https://shopify.dev/docs/api
+      main_docs: https://shopify.dev/docs
+    name: Shopify
+    operations:
+    - endpoint_pattern: /products.json
+      method: GET
+      parameters:
+      - location: query
+        name: limit
+        type: integer
+      - location: query
+        name: since_id
+        type: string
+      resource: products
+      verb: list
+    - endpoint_pattern: /products.json
+      method: POST
+      parameters:
+      - location: body
+        name: product
+        required: true
+        type: object
+      resource: product
+      verb: create
+    - endpoint_pattern: /orders.json
+      method: GET
+      parameters:
+      - location: query
+        name: status
+        type: string
+      - location: query
+        name: limit
+        type: integer
+      resource: orders
+      verb: list
+    pricing_model: subscription
+    rate_limits:
+      default_limits:
+        requests_per_second: 2
+      tier_based_limits:
+        basic:
+          requests_per_second: 2
+        shopify_plus:
+          requests_per_second: 20
+    sdks:
+      javascript: https://github.com/Shopify/shopify-node-api
+      python: https://github.com/Shopify/shopify_python_api
+      ruby: https://github.com/Shopify/shopify_api
+    status: active
+    vendor: Shopify Inc.
+    webhooks:
+      events:
+      - description: Order created
+        event_type: orders/create
+      - description: Order updated
+        event_type: orders/updated
+      - description: Product created
+        event_type: products/create
+      supported: true
+  slack:
+    api_specs:
+    - base_url: https://slack.com/api
+      content_types:
+      - application/json
+      - application/x-www-form-urlencoded
+      schema_url: https://api.slack.com/specs/openapi/v2/slack_web.json
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://slack.com/oauth/v2/authorize
+        common_scopes:
+        - description: Send messages
+          required_for:
+          - send_message
+          scope: chat:write
+        - description: View channels
+          required_for:
+          - list_channels
+          scope: channels:read
+        - description: View users
+          required_for:
+          - list_users
+          scope: users:read
+        - description: Upload files
+          required_for:
+          - upload_file
+          scope: files:write
+        flows:
+        - authorization_code
+        pkce_required: true
+        token_url: https://slack.com/api/oauth.v2.access
+      primary_method: oauth2
+    category: communication
+    description: Team communication and collaboration platform
+    documentation:
+      api_reference: https://api.slack.com/methods
+      main_docs: https://api.slack.com/
+    name: Slack
+    operations:
+    - endpoint_pattern: /chat.postMessage
+      method: POST
+      parameters:
+      - location: body
+        name: channel
+        required: true
+        type: string
+      - location: body
+        name: text
+        required: true
+        type: string
+      - location: body
+        name: attachments
+        type: array
+      required_scopes:
+      - chat:write
+      resource: message
+      verb: send
+    - endpoint_pattern: /conversations.list
+      method: GET
+      parameters:
+      - location: query
+        name: types
+        type: string
+      - location: query
+        name: limit
+        type: integer
+      required_scopes:
+      - channels:read
+      resource: channels
+      verb: list
+    - endpoint_pattern: /files.upload
+      method: POST
+      parameters:
+      - location: form
+        name: channels
+        required: true
+        type: string
+      - location: form
+        name: file
+        required: true
+        type: file
+      required_scopes:
+      - files:write
+      resource: file
+      verb: upload
+    pricing_model: freemium
+    rate_limits:
+      backoff_strategy: exponential
+      default_limits:
+        requests_per_minute: 100
+      endpoint_specific:
+        chat.postMessage:
+          requests_per_minute: 100
+        conversations.list:
+          requests_per_minute: 20
+      rate_limit_headers:
+        retry_after_header: Retry-After
+      tier_based_limits:
+        free:
+          requests_per_minute: 100
+        premium:
+          requests_per_minute: 100
+    sdks:
+      java: https://github.com/slackapi/bolt-java
+      javascript: https://github.com/slackapi/bolt-js
+      python: https://github.com/slackapi/bolt-python
+    status: active
+    vendor: Slack Technologies
+    webhooks:
+      events:
+      - description: Message posted to channel
+        event_type: message
+      - description: Channel was created
+        event_type: channel_created
+      - description: User joined channel
+        event_type: member_joined_channel
+      security:
+        header_name: X-Slack-Signature
+        signature_method: hmac_sha256
+      setup_url: https://api.slack.com/events-api
+      supported: true
+  spoonacular:
+    api_specs:
+    - base_url: https://api.spoonacular.com
+      content_types:
+      - application/json
+      schema_url: https://spoonacular.com/food-api/docs
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: apiKey
+      primary_method: api_key
+    category: other
+    description: Food and recipe API with nutrition, ingredients, and meal planning
+    name: Spoonacular
+    operations:
+    - endpoint_pattern: /recipes/complexSearch
+      method: GET
+      parameters:
+      - description: Recipe search query
+        location: query
+        name: query
+        required: false
+        type: string
+      - description: Cuisine type (e.g., italian, chinese)
+        location: query
+        name: cuisine
+        required: false
+        type: string
+      - description: Diet type (e.g., vegetarian, vegan, gluten free)
+        location: query
+        name: diet
+        required: false
+        type: string
+      - description: List of intolerances (e.g., dairy, gluten)
+        location: query
+        name: intolerances
+        required: false
+        type: string
+      - description: Number of results to return (1-100)
+        location: query
+        name: number
+        required: false
+        type: integer
+      - description: Number of results to skip
+        location: query
+        name: offset
+        required: false
+        type: integer
+      resource: recipes
+      verb: search
+    - endpoint_pattern: /recipes/{id}/information
+      method: GET
+      parameters:
+      - description: Recipe ID
+        location: path
+        name: id
+        required: true
+        type: integer
+      - description: Include nutrition data in the response
+        location: query
+        name: includeNutrition
+        required: false
+        type: boolean
+      resource: recipe_information
+      verb: read
+    rate_limits:
+      tier_based_limits:
+        basic:
+          requests_per_day: 1500
+        free:
+          requests_per_day: 150
+        premium:
+          requests_per_day: 10000
+    vendor: Spoonacular
+    status: unknown
+  spotify:
+    api_specs:
+    - base_url: https://api.spotify.com/v1
+      schema_url: https://developer.spotify.com/documentation/web-api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      oauth2_config:
+        authorization_url: https://accounts.spotify.com/authorize
+        common_scopes:
+        - description: Read user profile
+          scope: user-read-private
+        - description: Read private playlists
+          scope: playlist-read-private
+        flows:
+        - authorization_code
+        - client_credentials
+        token_url: https://accounts.spotify.com/api/token
+      primary_method: oauth2
+    category: other
+    description: Music streaming platform API
+    documentation:
+      api_reference: https://developer.spotify.com/documentation/web-api/
+      main_docs: https://developer.spotify.com/documentation/
+    name: Spotify Web API
+    operations:
+    - endpoint_pattern: /search
+      method: GET
+      parameters:
+      - location: query
+        name: q
+        required: true
+        type: string
+      - location: query
+        name: type
+        required: true
+        type: string
+      resource: tracks
+      verb: search
+    - endpoint_pattern: /me
+      method: GET
+      parameters: []
+      required_scopes:
+      - user-read-private
+      resource: user_profile
+      verb: read
+    - endpoint_pattern: /me/playlists
+      method: GET
+      parameters:
+      - location: query
+        name: limit
+        type: integer
+      required_scopes:
+      - playlist-read-private
+      resource: playlists
+      verb: list
+    pricing_model: free
+    rate_limits:
+      default_limits:
+        requests_per_second: 10
+    sdks:
+      javascript: https://github.com/thelinmichael/spotify-web-api-node
+      python: https://github.com/spotipy-dev/spotipy
+    status: active
+    vendor: Spotify
+  square:
+    api_specs:
+    - base_url: https://connect.squareup.com/v2
+      schema_url: https://developer.squareup.com/reference/square
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2.0'
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: payment
+    description: Payment processing and point-of-sale platform
+    documentation:
+      api_reference: https://developer.squareup.com/reference/square
+      main_docs: https://developer.squareup.com/docs
+    name: Square
+    operations:
+    - endpoint_pattern: /payments
+      method: POST
+      parameters:
+      - location: body
+        name: amount_money
+        required: true
+        type: object
+      - location: body
+        name: source_id
+        required: true
+        type: string
+      resource: payment
+      verb: create
+    - endpoint_pattern: /payments
+      method: GET
+      parameters:
+      - location: query
+        name: begin_time
+        type: string
+      - location: query
+        name: end_time
+        type: string
+      resource: payments
+      verb: list
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 10
+    sdks:
+      java: https://github.com/square/square-java-sdk
+      javascript: https://github.com/square/square-nodejs-sdk
+      python: https://github.com/square/square-python-sdk
+    status: active
+    vendor: Block Inc.
+    webhooks:
+      events:
+      - description: Payment created
+        event_type: payment.created
+      - description: Payment updated
+        event_type: payment.updated
+      supported: true
+  stability_ai:
+    api_specs:
+    - base_url: https://api.stability.ai/v1
+      schema_url: https://platform.stability.ai/docs/api-reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: ai_services
+    description: Generative AI models for images and text
+    documentation:
+      api_reference: https://platform.stability.ai/docs/api-reference
+      main_docs: https://platform.stability.ai/docs
+    name: Stability AI
+    operations:
+    - endpoint_pattern: /generation/{engine_id}/text-to-image
+      method: POST
+      parameters:
+      - location: path
+        name: engine_id
+        required: true
+        type: string
+      - location: body
+        name: text_prompts
+        required: true
+        type: array
+      resource: image
+      verb: generate
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_minute: 150
+    sdks:
+      javascript: https://github.com/Stability-AI/platform
+      python: https://github.com/Stability-AI/stability-sdk
+    status: active
+    vendor: Stability AI
+  stripe:
+    api_specs:
+    - base_url: https://api.stripe.com/v1
+      schema_url: https://github.com/stripe/openapi/blob/master/openapi/spec3.json
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2023-10-16'
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: api_key
+    category: payment
+    compliance:
+    - pci_dss
+    - soc2
+    description: Payment processing platform
+    documentation:
+      api_reference: https://stripe.com/docs/api
+      main_docs: https://stripe.com/docs
+    name: Stripe
+    operations:
+    - endpoint_pattern: /payment_intents
+      method: POST
+      parameters:
+      - location: body
+        name: amount
+        required: true
+        type: integer
+      - location: body
+        name: currency
+        required: true
+        type: string
+      resource: payment_intent
+      verb: create
+    - endpoint_pattern: /customers
+      method: POST
+      parameters:
+      - location: body
+        name: email
+        type: string
+      resource: customer
+      verb: create
+    - endpoint_pattern: /charges
+      method: GET
+      parameters:
+      - location: query
+        name: limit
+        type: integer
+      resource: charges
+      verb: list
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 25
+      tier_based_limits:
+        basic:
+          requests_per_second: 25
+        enterprise:
+          requests_per_second: 100
+    sdks:
+      go: https://github.com/stripe/stripe-go
+      java: https://github.com/stripe/stripe-java
+      javascript: https://github.com/stripe/stripe-node
+      python: https://github.com/stripe/stripe-python
+    status: active
+    vendor: Stripe
+    webhooks:
+      events:
+      - description: Payment succeeded
+        event_type: payment_intent.succeeded
+      - description: Payment failed
+        event_type: payment_intent.payment_failed
+      - description: Customer created
+        event_type: customer.created
+      security:
+        header_name: Stripe-Signature
+        signature_method: hmac_sha256
+      supported: true
+  supabase:
+    api_specs:
+    - base_url: https://{project_ref}.supabase.co/rest/v1
+      schema_url: https://supabase.com/docs/guides/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      alternative_methods:
+      - jwt
+      api_key_config:
+        location: header
+        parameter_name: apikey
+      primary_method: api_key
+    category: data_storage
+    description: Open source Firebase alternative with PostgreSQL database
+    documentation:
+      api_reference: https://supabase.com/docs/guides/api
+      main_docs: https://supabase.com/docs
+    name: Supabase
+    operations:
+    - endpoint_pattern: /{table}
+      method: POST
+      parameters:
+      - location: path
+        name: table
+        required: true
+        type: string
+      resource: record
+      verb: create
+    - endpoint_pattern: /{table}
+      method: GET
+      parameters:
+      - location: path
+        name: table
+        required: true
+        type: string
+      - location: query
+        name: select
+        type: string
+      resource: records
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        free:
+          requests_per_hour: 500
+        pro:
+          requests_per_hour: 100000
+    sdks:
+      javascript: https://github.com/supabase/supabase-js
+      python: https://github.com/supabase/supabase-py
+    status: active
+    vendor: Supabase
+  telegram:
+    api_specs:
+    - base_url: https://api.telegram.org/bot{token}
+      schema_url: https://core.telegram.org/bots/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '6.9'
+    authentication:
+      api_key_config:
+        location: path
+        parameter_name: token
+      primary_method: api_key
+    category: communication
+    description: Bot platform for Telegram messaging
+    documentation:
+      api_reference: https://core.telegram.org/bots/api
+      main_docs: https://core.telegram.org/bots
+    name: Telegram Bot API
+    operations:
+    - endpoint_pattern: /sendMessage
+      method: POST
+      parameters:
+      - location: body
+        name: chat_id
+        required: true
+        type: string
+      - location: body
+        name: text
+        required: true
+        type: string
+      resource: message
+      verb: send
+    - endpoint_pattern: /getUpdates
+      method: POST
+      parameters:
+      - location: body
+        name: offset
+        type: integer
+      resource: updates
+      verb: read
+    pricing_model: free
+    rate_limits:
+      default_limits:
+        requests_per_second: 30
+      endpoint_specific:
+        sendMessage:
+          requests_per_minute: 30
+    sdks:
+      javascript: https://github.com/telegraf/telegraf
+      python: https://github.com/python-telegram-bot/python-telegram-bot
+    status: active
+    vendor: Telegram
+    webhooks:
+      events:
+      - description: New message received
+        event_type: message
+      - description: Inline keyboard button pressed
+        event_type: callback_query
+      supported: true
+  tmdb:
+    api_specs:
+    - base_url: https://api.themoviedb.org/3
+      schema_url: https://developers.themoviedb.org/3/getting-started/introduction
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      alternative_methods:
+      - bearer_token
+      api_key_config:
+        location: query
+        parameter_name: api_key
+      primary_method: api_key
+    category: entertainment
+    description: Movie and TV show information
+    documentation:
+      api_reference: https://developers.themoviedb.org/3/getting-started/introduction
+      main_docs: https://developers.themoviedb.org/3/getting-started/introduction
+    name: The Movie Database
+    operations:
+    - endpoint_pattern: /search/movie
+      method: GET
+      parameters:
+      - location: query
+        name: query
+        required: true
+        type: string
+      - location: query
+        name: language
+        type: string
+      - location: query
+        name: page
+        type: integer
+      resource: movies
+      verb: search
+    - endpoint_pattern: /movie/{movie_id}
+      method: GET
+      parameters:
+      - location: path
+        name: movie_id
+        required: true
+        type: integer
+      - location: query
+        name: language
+        type: string
+      resource: movie
+      verb: read
+    pricing_model: free
+    rate_limits:
+      default_limits:
+        requests_per_second: 3
+    sdks:
+      javascript: https://github.com/cavestri/themoviedb-javascript-library
+      python: https://github.com/celiao/tmdbsimple
+    status: active
+    vendor: TMDb
+  tomtom:
+    api_specs:
+    - base_url: https://api.tomtom.com
+      schema_url: https://developer.tomtom.com/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: key
+      primary_method: api_key
+    category: location
+    description: Maps, traffic, and navigation services
+    documentation:
+      api_reference: https://developer.tomtom.com/search-api/documentation/search-api/search-api-documentation
+      main_docs: https://developer.tomtom.com/
+    name: TomTom Maps
+    operations:
+    - endpoint_pattern: /search/2/search/{query}.json
+      method: GET
+      parameters:
+      - location: path
+        name: query
+        required: true
+        type: string
+      - location: query
+        name: key
+        required: true
+        type: string
+      resource: places
+      verb: search
+    - endpoint_pattern: /routing/1/calculateRoute/{locations}/json
+      method: GET
+      parameters:
+      - location: path
+        name: locations
+        required: true
+        type: string
+      - location: query
+        name: key
+        required: true
+        type: string
+      resource: route
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        enterprise:
+          requests_per_day: null
+        free:
+          requests_per_day: 2500
+        standard:
+          requests_per_day: 25000
+    sdks:
+      android: https://github.com/tomtom-international/tomtom-sdk-examples-android
+      javascript: https://github.com/tomtom-international/web-sdk-examples
+    status: active
+    vendor: TomTom
+  trello:
+    api_specs:
+    - base_url: https://api.trello.com/1
+      schema_url: https://developer.atlassian.com/cloud/trello/rest/api-group-actions
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '1'
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://trello.com/1/OAuthAuthorizeToken
+        flows:
+        - authorization_code
+        token_url: https://trello.com/1/OAuthGetAccessToken
+      primary_method: oauth2
+    category: project_management
+    description: Kanban-style project management platform
+    documentation:
+      api_reference: https://developer.atlassian.com/cloud/trello/rest/api-group-actions/
+      main_docs: https://developer.atlassian.com/cloud/trello/
+    name: Trello
+    operations:
+    - endpoint_pattern: /cards
+      method: POST
+      parameters:
+      - location: query
+        name: name
+        required: true
+        type: string
+      - location: query
+        name: idList
+        required: true
+        type: string
+      - location: query
+        name: desc
+        type: string
+      resource: card
+      verb: create
+    - endpoint_pattern: /members/me/boards
+      method: GET
+      parameters:
+      - location: query
+        name: filter
+        type: string
+      resource: boards
+      verb: list
+    - endpoint_pattern: /lists
+      method: POST
+      parameters:
+      - location: query
+        name: name
+        required: true
+        type: string
+      - location: query
+        name: idBoard
+        required: true
+        type: string
+      resource: list
+      verb: create
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_10_seconds: 300
+      endpoint_specific:
+        members:
+          requests_per_900_seconds: 100
+        token:
+          requests_per_10_seconds: 100
+    sdks:
+      javascript: https://github.com/norberteder/trello
+      python: https://github.com/sarumont/py-trello
+      ruby: https://github.com/jeremytregunna/ruby-trello
+    status: active
+    vendor: Atlassian
+    webhooks:
+      events:
+      - description: Card created
+        event_type: createCard
+      - description: Card updated
+        event_type: updateCard
+      - description: Member added to board
+        event_type: addMemberToBoard
+      supported: true
+  twilio:
+    api_specs:
+    - base_url: https://api.twilio.com/2010-04-01
+      content_types:
+      - application/x-www-form-urlencoded
+      schema_url: https://www.twilio.com/docs/usage/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: '2010-04-01'
+    authentication:
+      alternative_methods:
+      - api_key
+      primary_method: basic_auth
+    category: communication
+    description: Cloud communications platform for SMS, voice, and video
+    documentation:
+      api_reference: https://www.twilio.com/docs/usage/api
+      main_docs: https://www.twilio.com/docs
+    name: Twilio
+    operations:
+    - endpoint_pattern: /Accounts/{AccountSid}/Messages.json
+      method: POST
+      parameters:
+      - location: body
+        name: To
+        required: true
+        type: string
+      - location: body
+        name: From
+        required: true
+        type: string
+      - location: body
+        name: Body
+        required: true
+        type: string
+      resource: message
+      verb: send
+    - endpoint_pattern: /Accounts/{AccountSid}/Calls.json
+      method: POST
+      parameters:
+      - location: body
+        name: To
+        required: true
+        type: string
+      - location: body
+        name: From
+        required: true
+        type: string
+      - location: body
+        name: Url
+        required: true
+        type: string
+      resource: call
+      verb: create
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 100
+      endpoint_specific:
+        Calls:
+          requests_per_second: 100
+        Messages:
+          requests_per_second: 100
+    sdks:
+      csharp: https://github.com/twilio/twilio-csharp
+      javascript: https://github.com/twilio/twilio-node
+      python: https://github.com/twilio/twilio-python
+    status: active
+    vendor: Twilio Inc.
+    webhooks:
+      events:
+      - description: Message status changed
+        event_type: message-status
+      - description: Call status changed
+        event_type: call-status
+      supported: true
+  twitch:
+    api_specs:
+    - base_url: https://api.twitch.tv/helix
+      schema_url: https://dev.twitch.tv/docs/api/reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: helix
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://id.twitch.tv/oauth2/authorize
+        flows:
+        - authorization_code
+        - client_credentials
+        token_url: https://id.twitch.tv/oauth2/token
+      primary_method: oauth2
+    category: entertainment
+    description: Live streaming platform API
+    documentation:
+      api_reference: https://dev.twitch.tv/docs/api/reference
+      main_docs: https://dev.twitch.tv/docs/
+    name: Twitch
+    operations:
+    - endpoint_pattern: /users
+      method: GET
+      parameters:
+      - location: query
+        name: id
+        type: string
+      - location: query
+        name: login
+        type: string
+      resource: users
+      verb: read
+    - endpoint_pattern: /streams
+      method: GET
+      parameters:
+      - location: query
+        name: game_id
+        type: string
+      - location: query
+        name: language
+        type: string
+      - location: query
+        name: first
+        type: integer
+      resource: streams
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_minute: 800
+      endpoint_specific:
+        get_streams:
+          requests_per_minute: 800
+        get_users:
+          requests_per_minute: 800
+    sdks:
+      javascript: https://github.com/twitch-js/twitch-js
+      python: https://github.com/twitchdev/twitch-python-sdk
+    status: active
+    vendor: Twitch Interactive
+    webhooks:
+      events:
+      - description: Stream goes live
+        event_type: stream.online
+      - description: Stream goes offline
+        event_type: stream.offline
+      - description: User follows a channel
+        event_type: channel.follow
+      supported: true
+  twitter:
+    api_specs:
+    - base_url: https://api.twitter.com/2
+      schema_url: https://developer.twitter.com/en/docs/twitter-api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      alternative_methods:
+      - bearer_token
+      oauth2_config:
+        authorization_url: https://twitter.com/i/oauth2/authorize
+        flows:
+        - authorization_code
+        token_url: https://api.twitter.com/2/oauth2/token
+      primary_method: oauth2
+    category: other
+    description: Social media platform API
+    documentation:
+      api_reference: https://developer.twitter.com/en/docs/twitter-api
+      main_docs: https://developer.twitter.com/en/docs
+    name: Twitter API
+    operations:
+    - endpoint_pattern: /tweets
+      method: POST
+      parameters:
+      - location: body
+        name: text
+        required: true
+        type: string
+      resource: tweet
+      verb: create
+    - endpoint_pattern: /tweets/search/recent
+      method: GET
+      parameters:
+      - location: query
+        name: query
+        required: true
+        type: string
+      resource: tweets
+      verb: search
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        elevated:
+          requests_per_month: 2000000
+        enterprise:
+          requests_per_month: null
+        essential:
+          requests_per_month: 10000
+    sdks:
+      javascript: https://github.com/twitterdev/twitter-api-typescript-sdk
+      python: https://github.com/twitterdev/twitter-api-python-sdk
+    status: active
+    vendor: X Corp
+  unsplash:
+    api_specs:
+    - base_url: https://api.unsplash.com
+      schema_url: https://unsplash.com/documentation
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      alternative_methods:
+      - api_key
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Client-ID
+      oauth2_config:
+        authorization_url: https://unsplash.com/oauth/authorize
+        flows:
+        - authorization_code
+        token_url: https://unsplash.com/oauth/token
+      primary_method: oauth2
+    category: other
+    description: Free high-resolution photos
+    documentation:
+      api_reference: https://unsplash.com/documentation
+      main_docs: https://unsplash.com/documentation
+    name: Unsplash
+    operations:
+    - endpoint_pattern: /search/photos
+      method: GET
+      parameters:
+      - location: query
+        name: query
+        required: true
+        type: string
+      - location: query
+        name: per_page
+        type: integer
+      - location: query
+        name: page
+        type: integer
+      resource: photos
+      verb: search
+    - endpoint_pattern: /photos/{id}
+      method: GET
+      parameters:
+      - location: path
+        name: id
+        required: true
+        type: string
+      resource: photo
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_day: 1000
+        requests_per_hour: 50
+    sdks:
+      javascript: https://github.com/unsplash/unsplash-js
+      ruby: https://github.com/unsplash/unsplash_rb
+    status: active
+    vendor: Unsplash
+  vercel:
+    api_specs:
+    - base_url: https://api.vercel.com
+      schema_url: https://vercel.com/docs/rest-api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v9
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: development
+    description: Frontend deployment and hosting platform
+    documentation:
+      api_reference: https://vercel.com/docs/rest-api
+      main_docs: https://vercel.com/docs
+    name: Vercel
+    operations:
+    - endpoint_pattern: /v13/deployments
+      method: POST
+      parameters:
+      - location: body
+        name: name
+        required: true
+        type: string
+      - location: body
+        name: files
+        required: true
+        type: array
+      resource: deployment
+      verb: create
+    - endpoint_pattern: /v6/deployments
+      method: GET
+      parameters:
+      - location: query
+        name: app
+        type: string
+      resource: deployments
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_hour: 5000
+    sdks:
+      javascript: https://github.com/vercel/sdk
+    status: active
+    vendor: Vercel
+    webhooks:
+      events:
+      - description: Deployment created
+        event_type: deployment.created
+      - description: Deployment ready
+        event_type: deployment.ready
+      supported: true
+  vonage:
+    api_specs:
+    - base_url: https://rest.nexmo.com
+      schema_url: https://developer.vonage.com/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v1
+    authentication:
+      alternative_methods:
+      - jwt
+      api_key_config:
+        location: query
+        parameter_name: api_key
+      primary_method: api_key
+    category: communication
+    description: Communication APIs for voice, SMS, and video
+    documentation:
+      api_reference: https://developer.vonage.com/api
+      main_docs: https://developer.vonage.com/
+    name: Vonage
+    operations:
+    - endpoint_pattern: /sms/json
+      method: POST
+      parameters:
+      - location: body
+        name: from
+        required: true
+        type: string
+      - location: body
+        name: to
+        required: true
+        type: string
+      - location: body
+        name: text
+        required: true
+        type: string
+      resource: sms
+      verb: send
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 10
+    sdks:
+      javascript: https://github.com/Vonage/vonage-node-sdk
+      python: https://github.com/Vonage/vonage-python-sdk
+    status: active
+    vendor: Vonage
+  weatherbit:
+    api_specs:
+    - base_url: https://api.weatherbit.io/v2.0
+      schema_url: https://www.weatherbit.io/api
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2.0
+    authentication:
+      api_key_config:
+        location: query
+        parameter_name: key
+      primary_method: api_key
+    category: weather
+    description: Weather forecasts and historical weather data
+    documentation:
+      api_reference: https://www.weatherbit.io/api/swaggerui
+      main_docs: https://www.weatherbit.io/api
+    name: Weatherbit
+    operations:
+    - endpoint_pattern: /current
+      method: GET
+      parameters:
+      - location: query
+        name: lat
+        type: number
+      - location: query
+        name: lon
+        type: number
+      - location: query
+        name: city
+        type: string
+      - location: query
+        name: units
+        type: string
+      resource: current_weather
+      verb: read
+    - endpoint_pattern: /forecast/daily
+      method: GET
+      parameters:
+      - location: query
+        name: lat
+        type: number
+      - location: query
+        name: lon
+        type: number
+      - location: query
+        name: days
+        type: integer
+      resource: forecast
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      tier_based_limits:
+        developer:
+          requests_per_day: 500
+        free:
+          requests_per_day: 50
+        pro:
+          requests_per_day: 50000
+        starter:
+          requests_per_day: 5000
+    sdks:
+      python: https://github.com/weatherbit/weatherbit-python
+    status: active
+    vendor: Weatherbit
+  whatsapp_business:
+    api_specs:
+    - base_url: https://graph.facebook.com/v17.0
+      schema_url: https://developers.facebook.com/docs/whatsapp/cloud-api/reference
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v17.0
+    authentication:
+      api_key_config:
+        location: header
+        parameter_name: Authorization
+        prefix: Bearer
+      primary_method: bearer_token
+    category: communication
+    description: Business messaging API for WhatsApp
+    documentation:
+      api_reference: https://developers.facebook.com/docs/whatsapp/cloud-api/reference
+      main_docs: https://developers.facebook.com/docs/whatsapp
+    name: WhatsApp Business
+    operations:
+    - endpoint_pattern: /{phone_number_id}/messages
+      method: POST
+      parameters:
+      - location: path
+        name: phone_number_id
+        required: true
+        type: string
+      - location: body
+        name: to
+        required: true
+        type: string
+      - location: body
+        name: text
+        required: true
+        type: object
+      resource: message
+      verb: send
+    pricing_model: usage_based
+    rate_limits:
+      default_limits:
+        requests_per_second: 80
+    sdks:
+      javascript: https://github.com/WhatsApp/WhatsApp-Business-API-Client-Node
+      python: https://github.com/leandcesar/whatsapp-cloud-api
+    status: active
+    vendor: Meta
+    webhooks:
+      events:
+      - description: Message received
+        event_type: messages
+      - description: Message status update
+        event_type: message_status
+      supported: true
+  youtube:
+    api_specs:
+    - base_url: https://www.googleapis.com/youtube/v3
+      schema_url: https://developers.google.com/youtube/v3/docs/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v3
+    authentication:
+      alternative_methods:
+      - api_key
+      oauth2_config:
+        authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+        common_scopes:
+        - description: Read YouTube data
+          scope: https://www.googleapis.com/auth/youtube.readonly
+        - description: Manage YouTube account
+          scope: https://www.googleapis.com/auth/youtube
+        flows:
+        - authorization_code
+        token_url: https://oauth2.googleapis.com/token
+      primary_method: oauth2
+    category: other
+    description: Video platform and content management API
+    documentation:
+      api_reference: https://developers.google.com/youtube/v3/docs/
+      main_docs: https://developers.google.com/youtube/
+    name: YouTube Data API
+    operations:
+    - endpoint_pattern: /search
+      method: GET
+      parameters:
+      - location: query
+        name: part
+        required: true
+        type: string
+      - location: query
+        name: q
+        required: true
+        type: string
+      resource: videos
+      verb: search
+    - endpoint_pattern: /videos
+      method: GET
+      parameters:
+      - location: query
+        name: part
+        required: true
+        type: string
+      - location: query
+        name: id
+        required: true
+        type: string
+      resource: video
+      verb: read
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_day: 10000
+    sdks:
+      javascript: https://github.com/googleapis/google-api-nodejs-client
+      python: https://github.com/googleapis/google-api-python-client
+    status: active
+    vendor: Google
+  zoom:
+    api_specs:
+    - base_url: https://api.zoom.us/v2
+      schema_url: https://developers.zoom.us/docs/api/
+      spec_format: openapi_3.0
+      transport: https
+      type: openapi
+      version: v2
+    authentication:
+      alternative_methods:
+      - jwt
+      oauth2_config:
+        authorization_url: https://zoom.us/oauth/authorize
+        flows:
+        - authorization_code
+        token_url: https://zoom.us/oauth/token
+      primary_method: oauth2
+    category: communication
+    description: Video conferencing and communication platform
+    documentation:
+      api_reference: https://developers.zoom.us/docs/api/
+      main_docs: https://developers.zoom.us/docs/
+    name: Zoom
+    operations:
+    - endpoint_pattern: /users/{userId}/meetings
+      method: POST
+      parameters:
+      - location: path
+        name: userId
+        required: true
+        type: string
+      - location: body
+        name: topic
+        required: true
+        type: string
+      - location: body
+        name: type
+        type: integer
+      - location: body
+        name: start_time
+        type: string
+      resource: meeting
+      verb: create
+    - endpoint_pattern: /users/{userId}/meetings
+      method: GET
+      parameters:
+      - location: path
+        name: userId
+        required: true
+        type: string
+      resource: meetings
+      verb: list
+    pricing_model: freemium
+    rate_limits:
+      default_limits:
+        requests_per_second: 10
+      endpoint_specific:
+        meetings:
+          requests_per_day: 100
+      tier_based_limits:
+        basic:
+          requests_per_second: 10
+        enterprise:
+          requests_per_second: 40
+    sdks:
+      javascript: https://github.com/zoom/zoom-sdk-web
+      python: https://github.com/prschmid/zoomus
+    status: active
+    vendor: Zoom Video Communications
+    webhooks:
+      events:
+      - description: Meeting started
+        event_type: meeting.started
+      - description: Meeting ended
+        event_type: meeting.ended
+      supported: true
+
