@@ -273,6 +273,8 @@ async fn validate_actor(
                 Message::Optional(_) => "optional",
                 Message::Any(_) => "any",
                 Message::Error(_) => "error",
+                Message::RemoteReference { .. } => "remote_reference",
+                Message::NetworkEvent { .. } => "network_event",
             };
 
             if expected_type == "any" || expected_type == actual_type {

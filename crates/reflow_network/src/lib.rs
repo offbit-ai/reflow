@@ -1,6 +1,11 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+pub mod discovery;
+pub mod distributed_network;
+pub mod bridge;
+pub mod router;
+pub mod proxy;
 pub mod network;
 pub mod connector;
 pub mod types;
@@ -9,6 +14,7 @@ pub mod ports;
 pub mod actor;
 mod helper;
 pub mod graph;
+pub mod multi_graph;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod api_kit;
 #[cfg(test)]

@@ -55,21 +55,40 @@ pub enum Message {
     Float(f64),
 
     String(Arc<String>),
-   
+
     Object(Arc<EncodableValue>),
-    
+
     Array(Arc<Vec<EncodableValue>>),
-   
+
     Stream(Arc<Vec<u8>>),
-   
+
     Encoded(Arc<Vec<u8>>),
-   
+
     Optional(Option<Arc<EncodableValue>>),
     // Tuple(Vec<Message>),
     // Generic(EncodableValue),
-   
     Any(Arc<EncodableValue>),
     Error(Arc<String>),
+
+    // Remote messaging
+    RemoteReference {
+        network_id: String,
+        actor_id: String,
+        port: String,
+    },
+    NetworkEvent {
+        event_type: NetworkEventType,
+        data: EncodableValue,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Encode, Decode)]
+pub enum NetworkEventType {
+    ActorRegistered,
+    ActorUnregistered,
+    NetworkConnected,
+    NetworkDisconnected,
+    HeartbeatMissed,
 }
 
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Encode, Decode)]
@@ -454,18 +473,11 @@ impl Message {
             Message::Array(arr) => PortType::Array(Box::new(PortType::Any)),
             Message::Stream(_) => PortType::Stream,
             Message::Optional(opt) => PortType::Option(Box::new(PortType::Any)),
-            // Message::Tuple(items) => PortType::Tuple(items.iter().map(|m| m.get_type()).collect()),
-            // Message::Generic(v) => {
-            //     let value: Value = v.clone().into();
-            //     if let Some(type_name) = value.get("type").and_then(|t| t.as_str()) {
-            //         PortType::Generic(type_name.to_string())
-            //     } else {
-            //         PortType::Generic("Unknown".to_string())
-            //     }
-            // }
             Message::Any(_) => PortType::Any,
             Message::Error(_) => PortType::String,
-            Message::Encoded(encoded) => PortType::Encoded,
+            Message::Encoded(..) => PortType::Encoded,
+            Message::RemoteReference { .. } => PortType::Any,
+            Message::NetworkEvent { .. } => PortType::Event,
         }
     }
 
@@ -661,7 +673,9 @@ impl Message {
             Message::Optional(_) => "Optional",
             Message::Any(_) => "Any",
             Message::Error(_) => "Error",
-            Message::Encoded(items) => "Encoded",
+            Message::Encoded(..) => "Encoded",
+            Message::RemoteReference { .. } => "NetworkReference",
+            Message::NetworkEvent { .. } => "NetworkEvent",
         }
     }
 
@@ -712,7 +726,7 @@ impl Message {
         // Apply type-specific adjustments
         let threshold_multiplier = match self {
             Message::Stream(_) => 0.7, // More aggressive compression for streams
-            Message::String(_) => 1.5, // Much less aggressive for strings 
+            Message::String(_) => 1.5, // Much less aggressive for strings
             Message::Array(_) => 0.8,  // Moderate for arrays
             _ => 0.8,                  // Default threshold
         };
@@ -859,13 +873,24 @@ impl Into<Value> for Message {
                 Some(m) => Value::from(m.as_ref().clone()),
                 None => Value::Null,
             },
-            // Message::Tuple(items) => Value::Array(items.into_iter().map(|m| m.into()).collect()),
-            // Message::Generic(v) => v.into(),
             Message::Any(v) => v.as_ref().clone().into(),
             Message::Error(e) => Value::String(e.as_str().to_string()),
             Message::Encoded(encoded) => bitcode::decode::<Message>(&encoded)
                 .expect("Failed to decode message")
                 .into(),
+            Message::RemoteReference {
+                network_id,
+                actor_id,
+                port,
+            } => json!({
+                "network_id": network_id,
+                "actor_id": actor_id,
+                "port": port
+            }),
+            Message::NetworkEvent { event_type, data } => json!({
+                "event_type": event_type,
+                "data": serde_json::Value::from(data)
+            }),
         }
     }
 }
@@ -885,12 +910,12 @@ impl From<JsValue> for Message {
                     }
                 }
                 Value::String(s) => Message::String(Arc::new(s)),
-                Value::Array(arr) => Message::array(
-                    arr.into_iter()
-                        .map(|v| EncodableValue::from(v))
-                        .collect(),
-                ),
-                Value::Object(obj) => Message::Object(Arc::new(EncodableValue::from(Value::Object(obj)))),
+                Value::Array(arr) => {
+                    Message::array(arr.into_iter().map(|v| EncodableValue::from(v)).collect())
+                }
+                Value::Object(obj) => {
+                    Message::Object(Arc::new(EncodableValue::from(Value::Object(obj))))
+                }
                 Value::Null => Message::Optional(None),
             }
         } else {
@@ -925,7 +950,10 @@ impl Into<JsValue> for Message {
                 array.into()
             }
             Message::Optional(opt) => match opt {
-                Some(msg) => msg.decode().map(|m: Message| m.into()).unwrap_or(JsValue::NULL),
+                Some(msg) => msg
+                    .decode()
+                    .map(|m: Message| m.into())
+                    .unwrap_or(JsValue::NULL),
                 None => JsValue::NULL,
             },
             // Message::Tuple(items) => {
