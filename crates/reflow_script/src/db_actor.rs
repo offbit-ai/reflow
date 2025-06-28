@@ -7,7 +7,7 @@ use anyhow::{Result, anyhow};
 use parking_lot::Mutex;
 use reflow_network::{
     actor::{
-        Actor, ActorBehavior, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
+        Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
     },
     message::Message,
 };
@@ -211,6 +211,7 @@ impl Actor for DatabaseActor {
 
     fn create_process(
         &self,
+        actor_config: ActorConfig,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
@@ -219,13 +220,15 @@ impl Actor for DatabaseActor {
 
         Box::pin(async move {
             let (_, receiver) = inports;
+            let load = Arc::new(parking_lot::Mutex::new(ActorLoad::new(0)));
+            
             while let Ok(payload) = receiver.recv_async().await {
                 let context = ActorContext::new(
                     payload,
                     outports.clone(),
                     state.clone(),
-                    HashMap::new(),
-                    Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+                    actor_config.clone(),
+                    load.clone(),
                 );
                 let result = behavior(context).await;
 
@@ -280,11 +283,25 @@ mod tests {
             Message::string("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)".to_string()),
         );
 
+        // Create ActorConfig for test
+        let node = reflow_network::graph::types::GraphNode {
+            id: "test_actor".to_string(),
+            component: "DatabaseActor".to_string(),
+            metadata: Some(HashMap::new()),
+        };
+
+        let actor_config = reflow_network::actor::ActorConfig {
+            node,
+            resolved_env: HashMap::new(),
+            config: HashMap::new(),
+            namespace: None,
+        };
+
         let context = ActorContext::new(
             create_payload,
             outports.clone(),
             state.clone(),
-            HashMap::new(),
+            actor_config.clone(),
             Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
         );
         let result = behavior(context).await?;
@@ -306,7 +323,7 @@ mod tests {
             insert_payload,
             outports.clone(),
             state.clone(),
-            HashMap::new(),
+            actor_config.clone(),
             Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
         );
         let result = behavior(context).await?;
@@ -323,7 +340,7 @@ mod tests {
             query_payload,
             outports.clone(),
             state.clone(),
-            HashMap::new(),
+            actor_config.clone(),
             Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
         );
         let result = behavior(context).await?;

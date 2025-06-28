@@ -1,0 +1,957 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ActorConfig Migration - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/migration/actor-config-migration.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="actorconfig-migration-guide"><a class="header" href="#actorconfig-migration-guide">ActorConfig Migration Guide</a></h1>
+<p>This guide helps you migrate existing actors from the old HashMap-based configuration approach to the new ActorConfig system, providing a smooth transition path with minimal breaking changes.</p>
+<h2 id="migration-overview"><a class="header" href="#migration-overview">Migration Overview</a></h2>
+<p>The ActorConfig system replaces the previous <code>set_config(HashMap&lt;String, serde_json::Value&gt;)</code> method with a more robust <code>create_process(ActorConfig)</code> approach that provides:</p>
+<ul>
+<li><strong>Type Safety</strong>: Strongly typed configuration with validation</li>
+<li><strong>Better Error Handling</strong>: Clear configuration error messages</li>
+<li><strong>Dynamic Updates</strong>: Runtime configuration changes</li>
+<li><strong>Multiple Sources</strong>: Support for JSON, YAML, environment variables</li>
+<li><strong>Schema Validation</strong>: Built-in validation and defaults</li>
+</ul>
+<h2 id="quick-migration-steps"><a class="header" href="#quick-migration-steps">Quick Migration Steps</a></h2>
+<h3 id="1-update-actor-trait-implementation"><a class="header" href="#1-update-actor-trait-implementation">1. Update Actor Trait Implementation</a></h3>
+<p><strong>Before (Old Pattern):</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::{Actor, ActorContext};
+use std::collections::HashMap;
+
+pub struct DataProcessor {
+    batch_size: usize,
+    timeout: Duration,
+    enable_retry: bool,
+}
+
+impl Actor for DataProcessor {
+    fn set_config(&amp;mut self, config: HashMap&lt;String, serde_json::Value&gt;) {
+        self.batch_size = config.get("batch_size")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(10.0) as usize;
+        
+        self.timeout = Duration::from_millis(
+            config.get("timeout_ms")
+                .and_then(|v| v.as_f64()) 
+                .unwrap_or(5000.0) as u64
+        );
+        
+        self.enable_retry = config.get("enable_retry")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+    }
+    
+    async fn run(&amp;self, context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+        // Actor logic using self.batch_size, self.timeout, etc.
+        // ...
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>After (New Pattern):</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::{Actor, ActorConfig, ActorContext};
+use std::collections::HashMap;
+
+pub struct DataProcessor;
+
+impl DataProcessor {
+    pub fn new() -&gt; Self {
+        Self
+    }
+}
+
+impl Actor for DataProcessor {
+    fn create_process(&amp;self, config: ActorConfig) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt; {
+        // Extract configuration values
+        let batch_size = config.get_number("batch_size").unwrap_or(10.0) as usize;
+        let timeout = Duration::from_millis(config.get_number("timeout_ms").unwrap_or(5000.0) as u64);
+        let enable_retry = config.get_boolean("enable_retry").unwrap_or(true);
+        
+        Box::pin(async move {
+            // Actor logic using configuration values
+            // ...
+        })
+    }
+    
+    // Remove the old set_config method
+    // fn set_config(&amp;mut self, config: HashMap&lt;String, serde_json::Value&gt;) { ... }
+    
+    // Remove the old run method  
+    // async fn run(&amp;self, context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; { ... }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-update-actor-registration"><a class="header" href="#2-update-actor-registration">2. Update Actor Registration</a></h3>
+<p><strong>Before:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut network = Network::new();
+let mut processor = DataProcessor::new();
+
+// Configure actor with HashMap
+let config = HashMap::from([
+    ("batch_size".to_string(), serde_json::Value::Number(50.into())),
+    ("timeout_ms".to_string(), serde_json::Value::Number(10000.into())),
+    ("enable_retry".to_string(), serde_json::Value::Bool(false)),
+]);
+
+processor.set_config(config);
+network.register_actor("processor", processor)?;
+<span class="boring">}</span></code></pre></pre>
+<p><strong>After:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut network = Network::new();
+let processor = DataProcessor::new();
+
+// Configuration is provided when adding to network
+let config = ActorConfig::from_json(r#"
+{
+    "batch_size": 50,
+    "timeout_ms": 10000,
+    "enable_retry": false
+}
+"#)?;
+
+network.register_actor("processor", processor)?;
+network.add_node_with_config("processor", "processor", Some(config))?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="migration-patterns"><a class="header" href="#migration-patterns">Migration Patterns</a></h2>
+<h3 id="pattern-1-simple-state-based-actor"><a class="header" href="#pattern-1-simple-state-based-actor">Pattern 1: Simple State-Based Actor</a></h3>
+<p><strong>Before:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct TimerActor {
+    interval_ms: u64,
+    max_ticks: Option&lt;u64&gt;,
+    current_ticks: u64,
+}
+
+impl Actor for TimerActor {
+    fn set_config(&amp;mut self, config: HashMap&lt;String, serde_json::Value&gt;) {
+        self.interval_ms = config.get("interval_ms")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1000.0) as u64;
+        
+        self.max_ticks = config.get("max_ticks")
+            .and_then(|v| v.as_f64())
+            .map(|v| v as u64);
+    }
+    
+    async fn run(&amp;self, context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+        let mut output = HashMap::new();
+        
+        if self.current_ticks &lt; self.max_ticks.unwrap_or(u64::MAX) {
+            // Emit tick
+            output.insert("tick".to_string(), Message::Integer(self.current_ticks as i64));
+        }
+        
+        Ok(output)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>After:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct TimerActor;
+
+impl Actor for TimerActor {
+    fn create_process(&amp;self, config: ActorConfig) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt; {
+        let interval_ms = config.get_number("interval_ms").unwrap_or(1000.0) as u64;
+        let max_ticks = config.get_number("max_ticks").map(|v| v as u64);
+        
+        Box::pin(async move {
+            let mut current_ticks = 0u64;
+            let interval = Duration::from_millis(interval_ms);
+            
+            loop {
+                if let Some(max) = max_ticks {
+                    if current_ticks &gt;= max {
+                        break;
+                    }
+                }
+                
+                // Emit tick
+                current_ticks += 1;
+                
+                tokio::time::sleep(interval).await;
+            }
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pattern-2-complex-configuration-with-validation"><a class="header" href="#pattern-2-complex-configuration-with-validation">Pattern 2: Complex Configuration with Validation</a></h3>
+<p><strong>Before:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct DatabaseActor {
+    connection_string: String,
+    pool_size: u32,
+    query_timeout: Duration,
+}
+
+impl Actor for DatabaseActor {
+    fn set_config(&amp;mut self, config: HashMap&lt;String, serde_json::Value&gt;) {
+        self.connection_string = config.get("connection_string")
+            .and_then(|v| v.as_str())
+            .unwrap_or("postgresql://localhost/db")
+            .to_string();
+        
+        let pool_size = config.get("pool_size")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(10.0) as u32;
+        
+        // Manual validation
+        self.pool_size = if pool_size &gt; 0 &amp;&amp; pool_size &lt;= 100 {
+            pool_size
+        } else {
+            eprintln!("Invalid pool_size {}, using default", pool_size);
+            10
+        };
+        
+        self.query_timeout = Duration::from_millis(
+            config.get("query_timeout_ms")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(30000.0) as u64
+        );
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>After (with typed configuration):</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct DatabaseConfig {
+    #[serde(default = "default_connection_string")]
+    connection_string: String,
+    
+    #[serde(default = "default_pool_size")]
+    pool_size: u32,
+    
+    #[serde(default = "default_query_timeout")]
+    query_timeout_ms: u64,
+}
+
+fn default_connection_string() -&gt; String {
+    "postgresql://localhost/db".to_string()
+}
+
+fn default_pool_size() -&gt; u32 { 10 }
+fn default_query_timeout() -&gt; u64 { 30000 }
+
+impl ActorConfigSchema for DatabaseConfig {
+    fn validate(&amp;self) -&gt; Result&lt;(), String&gt; {
+        if self.connection_string.is_empty() {
+            return Err("connection_string cannot be empty".to_string());
+        }
+        
+        if self.pool_size == 0 || self.pool_size &gt; 100 {
+            return Err("pool_size must be between 1 and 100".to_string());
+        }
+        
+        if self.query_timeout_ms == 0 {
+            return Err("query_timeout_ms must be positive".to_string());
+        }
+        
+        Ok(())
+    }
+}
+
+struct DatabaseActor;
+
+impl Actor for DatabaseActor {
+    fn create_process(&amp;self, config: ActorConfig) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt; {
+        // Parse and validate configuration
+        let db_config: DatabaseConfig = config.parse_typed().expect("Invalid configuration");
+        
+        let connection_string = db_config.connection_string;
+        let pool_size = db_config.pool_size;
+        let query_timeout = Duration::from_millis(db_config.query_timeout_ms);
+        
+        Box::pin(async move {
+            // Database actor implementation
+            // Configuration is guaranteed to be valid
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pattern-3-actors-with-complex-state-management"><a class="header" href="#pattern-3-actors-with-complex-state-management">Pattern 3: Actors with Complex State Management</a></h3>
+<p><strong>Before:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct StatefulProcessor {
+    state: Arc&lt;Mutex&lt;ProcessorState&gt;&gt;,
+    config: ProcessorConfig,
+}
+
+#[derive(Clone)]
+struct ProcessorConfig {
+    batch_size: usize,
+    processing_mode: ProcessingMode,
+}
+
+impl Actor for StatefulProcessor {
+    fn set_config(&amp;mut self, config: HashMap&lt;String, serde_json::Value&gt;) {
+        self.config.batch_size = config.get("batch_size")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(10.0) as usize;
+        
+        let mode_str = config.get("processing_mode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("sequential");
+        
+        self.config.processing_mode = match mode_str {
+            "parallel" =&gt; ProcessingMode::Parallel,
+            "batch" =&gt; ProcessingMode::Batch,
+            _ =&gt; ProcessingMode::Sequential,
+        };
+    }
+    
+    async fn run(&amp;self, context: ActorContext) -&gt; Result&lt;HashMap&lt;String, Message&gt;, anyhow::Error&gt; {
+        // Use self.config and self.state
+        // ...
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>After:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct StatefulProcessor;
+
+impl Actor for StatefulProcessor {
+    fn create_process(&amp;self, config: ActorConfig) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt; {
+        let batch_size = config.get_number("batch_size").unwrap_or(10.0) as usize;
+        let processing_mode = match config.get_string("processing_mode").as_deref() {
+            Some("parallel") =&gt; ProcessingMode::Parallel,
+            Some("batch") =&gt; ProcessingMode::Batch,
+            _ =&gt; ProcessingMode::Sequential,
+        };
+        
+        Box::pin(async move {
+            // Create state inside the process
+            let state = Arc::new(Mutex::new(ProcessorState::new()));
+            
+            // Actor implementation with local state
+            // ...
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="graph-migration"><a class="header" href="#graph-migration">Graph Migration</a></h2>
+<h3 id="updating-graph-definitions"><a class="header" href="#updating-graph-definitions">Updating Graph Definitions</a></h3>
+<p><strong>Before:</strong></p>
+<pre><code class="language-json">{
+  "processes": {
+    "processor": {
+      "component": "DataProcessor",
+      "metadata": {
+        "batch_size": 50,
+        "timeout_ms": 10000,
+        "enable_retry": false
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="language-json">{
+  "processes": {
+    "processor": {
+      "component": "DataProcessor", 
+      "metadata": {
+        "config": {
+          "batch_size": 50,
+          "timeout_ms": 10000,
+          "enable_retry": false
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<p>The configuration is now nested under a <code>"config"</code> key in the metadata, which the system automatically extracts and converts to an ActorConfig.</p>
+<h2 id="migration-utilities"><a class="header" href="#migration-utilities">Migration Utilities</a></h2>
+<h3 id="automatic-configuration-migration"><a class="header" href="#automatic-configuration-migration">Automatic Configuration Migration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::ActorConfig;
+
+// Helper to migrate old graph metadata format
+pub fn migrate_graph_metadata(old_metadata: &amp;serde_json::Value) -&gt; serde_json::Value {
+    if let Some(obj) = old_metadata.as_object() {
+        // Check if it already has a "config" key
+        if obj.contains_key("config") {
+            return old_metadata.clone(); // Already migrated
+        }
+        
+        // Wrap existing metadata in "config" key
+        let mut new_metadata = serde_json::Map::new();
+        new_metadata.insert("config".to_string(), old_metadata.clone());
+        
+        serde_json::Value::Object(new_metadata)
+    } else {
+        old_metadata.clone()
+    }
+}
+
+// Helper to migrate legacy HashMap config to ActorConfig
+impl ActorConfig {
+    pub fn from_legacy_hashmap(legacy: HashMap&lt;String, serde_json::Value&gt;) -&gt; Self {
+        let mut config = ActorConfig::default();
+        
+        for (key, value) in legacy {
+            config.set(&amp;key, value);
+        }
+        
+        config
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="migration-script"><a class="header" href="#migration-script">Migration Script</a></h3>
+<pre><pre class="playground"><code class="language-rust">// migration_script.rs - Tool to migrate existing graph files
+use std::path::Path;
+use tokio::fs;
+
+pub async fn migrate_graph_file(path: &amp;Path) -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let content = fs::read_to_string(path).await?;
+    let mut graph: serde_json::Value = serde_json::from_str(&amp;content)?;
+    
+    // Migrate processes metadata
+    if let Some(processes) = graph.get_mut("processes").and_then(|p| p.as_object_mut()) {
+        for (_, process) in processes.iter_mut() {
+            if let Some(metadata) = process.get_mut("metadata") {
+                *metadata = migrate_graph_metadata(metadata);
+            }
+        }
+    }
+    
+    // Write back the migrated graph
+    let migrated_content = serde_json::to_string_pretty(&amp;graph)?;
+    fs::write(path, migrated_content).await?;
+    
+    println!("Migrated: {}", path.display());
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let graph_files = glob::glob("**/*.graph.json")?;
+    
+    for entry in graph_files {
+        if let Ok(path) = entry {
+            migrate_graph_file(&amp;path).await?;
+        }
+    }
+    
+    println!("Migration completed!");
+    Ok(())
+}</code></pre></pre>
+<h2 id="backward-compatibility"><a class="header" href="#backward-compatibility">Backward Compatibility</a></h2>
+<h3 id="temporary-compatibility-layer"><a class="header" href="#temporary-compatibility-layer">Temporary Compatibility Layer</a></h3>
+<p>If you need to maintain compatibility with old and new systems during migration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::actor::ActorConfig;
+
+pub struct CompatibilityActor {
+    // Store configuration in both formats during transition
+    legacy_config: Option&lt;HashMap&lt;String, serde_json::Value&gt;&gt;,
+    actor_config: Option&lt;ActorConfig&gt;,
+}
+
+impl CompatibilityActor {
+    pub fn new() -&gt; Self {
+        Self {
+            legacy_config: None,
+            actor_config: None,
+        }
+    }
+    
+    // Helper to get config value from either format
+    fn get_config_value&lt;T&gt;(&amp;self, key: &amp;str) -&gt; Option&lt;T&gt; 
+    where
+        T: serde::de::DeserializeOwned + Clone,
+    {
+        // Try new format first
+        if let Some(config) = &amp;self.actor_config {
+            if let Ok(value) = config.get::&lt;T&gt;(key) {
+                return Some(value);
+            }
+        }
+        
+        // Fall back to legacy format
+        if let Some(legacy) = &amp;self.legacy_config {
+            if let Some(value) = legacy.get(key) {
+                if let Ok(parsed) = serde_json::from_value::&lt;T&gt;(value.clone()) {
+                    return Some(parsed);
+                }
+            }
+        }
+        
+        None
+    }
+}
+
+impl Actor for CompatibilityActor {
+    // Support old method during transition
+    fn set_config(&amp;mut self, config: HashMap&lt;String, serde_json::Value&gt;) {
+        self.legacy_config = Some(config);
+    }
+    
+    // Implement new method
+    fn create_process(&amp;self, config: ActorConfig) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt; {
+        // Use helper method to get values from either format
+        let batch_size = self.get_config_value::&lt;f64&gt;("batch_size").unwrap_or(10.0) as usize;
+        let timeout_ms = self.get_config_value::&lt;f64&gt;("timeout_ms").unwrap_or(5000.0) as u64;
+        
+        Box::pin(async move {
+            // Actor implementation
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="testing-migration"><a class="header" href="#testing-migration">Testing Migration</a></h2>
+<h3 id="unit-tests-for-migrated-actors"><a class="header" href="#unit-tests-for-migrated-actors">Unit Tests for Migrated Actors</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod migration_tests {
+    use super::*;
+    use reflow_network::actor::testing::TestActorConfig;
+    
+    #[tokio::test]
+    async fn test_migrated_actor_with_legacy_values() {
+        // Test that migrated actor works with old-style values
+        let config = TestActorConfig::builder()
+            .with_number("batch_size", 50.0)
+            .with_number("timeout_ms", 10000.0)
+            .with_boolean("enable_retry", false)
+            .build();
+        
+        let actor = DataProcessor::new();
+        
+        // Should not panic with valid configuration
+        let process = actor.create_process(config.into());
+        
+        // Test that process can be spawned
+        let handle = tokio::spawn(process);
+        
+        // Clean shutdown for test
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        handle.abort();
+    }
+    
+    #[test]
+    fn test_configuration_migration_helper() {
+        let legacy_config = HashMap::from([
+            ("batch_size".to_string(), serde_json::Value::Number(25.into())),
+            ("timeout_ms".to_string(), serde_json::Value::Number(15000.into())),
+        ]);
+        
+        let actor_config = ActorConfig::from_legacy_hashmap(legacy_config);
+        
+        assert_eq!(actor_config.get_number("batch_size"), Some(25.0));
+        assert_eq!(actor_config.get_number("timeout_ms"), Some(15000.0));
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="common-migration-issues"><a class="header" href="#common-migration-issues">Common Migration Issues</a></h2>
+<h3 id="issue-1-missing-configuration-values"><a class="header" href="#issue-1-missing-configuration-values">Issue 1: Missing Configuration Values</a></h3>
+<p><strong>Problem:</strong> Actor expects configuration values that aren't provided.</p>
+<p><strong>Solution:</strong> Use default values and graceful degradation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Before: Could panic
+let batch_size = config.get("batch_size").unwrap().as_f64().unwrap() as usize;
+
+// After: Graceful with defaults
+let batch_size = config.get_number("batch_size").unwrap_or(10.0) as usize;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="issue-2-type-conversion-errors"><a class="header" href="#issue-2-type-conversion-errors">Issue 2: Type Conversion Errors</a></h3>
+<p><strong>Problem:</strong> Configuration values have different types than expected.</p>
+<p><strong>Solution:</strong> Use explicit type checking and conversion:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Robust type handling
+let batch_size = match config.get_number("batch_size") {
+    Some(size) if size &gt; 0.0 =&gt; size as usize,
+    Some(invalid) =&gt; {
+        eprintln!("Invalid batch_size: {}, using default", invalid);
+        10
+    },
+    None =&gt; {
+        println!("No batch_size specified, using default");
+        10
+    }
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="issue-3-state-management-migration"><a class="header" href="#issue-3-state-management-migration">Issue 3: State Management Migration</a></h3>
+<p><strong>Problem:</strong> Actors with complex internal state need restructuring.</p>
+<p><strong>Solution:</strong> Move state into the process:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Before: State as struct fields
+struct StatefulActor {
+    state: ProcessorState,
+    config: Config,
+}
+
+// After: State managed in process
+impl Actor for StatefulActor {
+    fn create_process(&amp;self, config: ActorConfig) -&gt; Pin&lt;Box&lt;dyn Future&lt;Output = ()&gt; + Send + 'static&gt;&gt; {
+        Box::pin(async move {
+            let mut state = ProcessorState::new();
+            
+            loop {
+                // Process using local state
+                // ...
+            }
+        })
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="migration-checklist"><a class="header" href="#migration-checklist">Migration Checklist</a></h2>
+<h3 id="pre-migration"><a class="header" href="#pre-migration">Pre-Migration</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Identify all actors using <code>set_config</code></li>
+<li><input disabled="" type="checkbox"/>
+Document current configuration formats</li>
+<li><input disabled="" type="checkbox"/>
+Create backup of existing graph files</li>
+<li><input disabled="" type="checkbox"/>
+Plan migration order (dependencies first)</li>
+</ul>
+<h3 id="during-migration"><a class="header" href="#during-migration">During Migration</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Update actor trait implementations</li>
+<li><input disabled="" type="checkbox"/>
+Migrate configuration extraction logic</li>
+<li><input disabled="" type="checkbox"/>
+Add typed configuration schemas (recommended)</li>
+<li><input disabled="" type="checkbox"/>
+Update graph file metadata format</li>
+<li><input disabled="" type="checkbox"/>
+Update actor registration code</li>
+</ul>
+<h3 id="post-migration"><a class="header" href="#post-migration">Post-Migration</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Test all actors with new configuration system</li>
+<li><input disabled="" type="checkbox"/>
+Verify graph loading and execution</li>
+<li><input disabled="" type="checkbox"/>
+Remove old <code>set_config</code> implementations</li>
+<li><input disabled="" type="checkbox"/>
+Update documentation and examples</li>
+<li><input disabled="" type="checkbox"/>
+Performance testing with new system</li>
+</ul>
+<h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+All actors receive expected configuration</li>
+<li><input disabled="" type="checkbox"/>
+Configuration validation works correctly</li>
+<li><input disabled="" type="checkbox"/>
+Default values are applied appropriately</li>
+<li><input disabled="" type="checkbox"/>
+Error handling for invalid configurations</li>
+<li><input disabled="" type="checkbox"/>
+Dynamic configuration updates (if used)</li>
+</ul>
+<h2 id="performance-considerations"><a class="header" href="#performance-considerations">Performance Considerations</a></h2>
+<h3 id="before-and-after-performance"><a class="header" href="#before-and-after-performance">Before and After Performance</a></h3>
+<p>The new ActorConfig system provides better performance in several areas:</p>
+<ol>
+<li><strong>Configuration Parsing</strong>: One-time parsing vs repeated HashMap lookups</li>
+<li><strong>Type Safety</strong>: Compile-time validation reduces runtime errors</li>
+<li><strong>Memory Usage</strong>: More efficient internal representation</li>
+<li><strong>Validation</strong>: Built-in validation vs manual checking</li>
+</ol>
+<h3 id="benchmarking-migration"><a class="header" href="#benchmarking-migration">Benchmarking Migration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// benchmark_migration.rs
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+fn benchmark_old_config(c: &amp;mut Criterion) {
+    let config = HashMap::from([
+        ("batch_size".to_string(), serde_json::Value::Number(50.into())),
+        ("timeout_ms".to_string(), serde_json::Value::Number(10000.into())),
+    ]);
+    
+    c.bench_function("old_config_extraction", |b| b.iter(|| {
+        let batch_size = black_box(config.get("batch_size")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(10.0) as usize);
+        let timeout = black_box(config.get("timeout_ms")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(5000.0) as u64);
+    }));
+}
+
+fn benchmark_new_config(c: &amp;mut Criterion) {
+    let config = ActorConfig::from_json(r#"
+    {
+        "batch_size": 50,
+        "timeout_ms": 10000
+    }
+    "#).unwrap();
+    
+    c.bench_function("new_config_extraction", |b| b.iter(|| {
+        let batch_size = black_box(config.get_number("batch_size").unwrap_or(10.0) as usize);
+        let timeout = black_box(config.get_number("timeout_ms").unwrap_or(5000.0) as u64);
+    }));
+}
+
+criterion_group!(benches, benchmark_old_config, benchmark_new_config);
+criterion_main!(benches);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>After completing the migration:</p>
+<ol>
+<li><strong>Remove Legacy Code</strong>: Clean up old <code>set_config</code> implementations</li>
+<li><strong>Add Validation</strong>: Implement typed configuration schemas for better validation</li>
+<li><strong>Dynamic Configuration</strong>: Consider adding runtime configuration updates</li>
+<li><strong>Documentation</strong>: Update all examples and documentation</li>
+<li><strong>Monitoring</strong>: Add configuration monitoring and alerting</li>
+</ol>
+<h2 id="getting-help"><a class="header" href="#getting-help">Getting Help</a></h2>
+<p>If you encounter issues during migration:</p>
+<ol>
+<li><strong>Check Examples</strong>: Look at migrated examples in the documentation</li>
+<li><strong>Configuration Validation</strong>: Use typed schemas to catch issues early</li>
+<li><strong>Testing</strong>: Write comprehensive tests for migrated actors</li>
+<li><strong>Community</strong>: Ask for help in the Reflow community forums</li>
+<li><strong>GitHub Issues</strong>: Report bugs or ask for clarification</li>
+</ol>
+<p>The migration to ActorConfig provides significant benefits in terms of type safety, validation, and maintainability. While it requires some initial effort, the improved developer experience and runtime reliability make it worthwhile.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tutorials/wasm-actor-development.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../deployment/native-deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tutorials/wasm-actor-development.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../deployment/native-deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

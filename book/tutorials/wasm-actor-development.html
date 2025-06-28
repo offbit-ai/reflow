@@ -1,0 +1,1890 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>WASM Actor Development - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/tutorials/wasm-actor-development.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="wasm-actor-development-tutorial"><a class="header" href="#wasm-actor-development-tutorial">WASM Actor Development Tutorial</a></h1>
+<p>Learn how to develop actors specifically for browser environments using Reflow's WebAssembly bindings.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>This tutorial covers creating actors that leverage browser APIs, handle asynchronous operations, and provide interactive user experiences. We'll build several example actors that demonstrate common patterns in browser-based workflow development.</p>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<ul>
+<li>Basic understanding of JavaScript and async programming</li>
+<li>Familiarity with <a href="../getting-started/basic-concepts.html">Reflow's actor concepts</a></li>
+<li><a href="../deployment/browser-deployment.html">WASM setup completed</a></li>
+</ul>
+<h2 id="tutorial-structure"><a class="header" href="#tutorial-structure">Tutorial Structure</a></h2>
+<p>We'll build increasingly complex actors:</p>
+<ol>
+<li><strong>Data Transformation Actor</strong> - Basic processing patterns</li>
+<li><strong>Web API Client Actor</strong> - HTTP requests and async operations</li>
+<li><strong>File Processing Actor</strong> - Browser file handling</li>
+<li><strong>Real-time Data Actor</strong> - WebSocket connections and streaming</li>
+<li><strong>Interactive UI Actor</strong> - DOM manipulation and user interaction</li>
+</ol>
+<h2 id="1-data-transformation-actor"><a class="header" href="#1-data-transformation-actor">1. Data Transformation Actor</a></h2>
+<p>Let's start with a versatile data transformation actor that handles various data formats.</p>
+<h3 id="creating-the-actor"><a class="header" href="#creating-the-actor">Creating the Actor</a></h3>
+<pre><code class="language-javascript">class DataTransformActor {
+    constructor() {
+        this.inports = ["data", "config"];
+        this.outports = ["result", "error", "stats"];
+        
+        // Default transformation configuration
+        this.config = {
+            operation: "normalize",  // normalize, aggregate, filter, map
+            outputFormat: "json",    // json, csv, xml
+            precision: 2,           // for numeric operations
+            batchSize: 100          // for batch processing
+        };
+    }
+
+    run(context) {
+        // Update configuration if provided
+        if (context.input.config) {
+            this.updateConfig(context.input.config);
+        }
+
+        // Process incoming data
+        if (context.input.data !== undefined) {
+            try {
+                const result = this.transform(context.input.data, context);
+                this.updateStats(context, result);
+                context.send({ result });
+            } catch (error) {
+                this.handleError(error, context);
+            }
+        }
+    }
+
+    updateConfig(newConfig) {
+        this.config = { ...this.config, ...newConfig };
+        console.log("Configuration updated:", this.config);
+    }
+
+    transform(data, context) {
+        switch (this.config.operation) {
+            case "normalize":
+                return this.normalizeData(data);
+            case "aggregate": 
+                return this.aggregateData(data, context);
+            case "filter":
+                return this.filterData(data);
+            case "map":
+                return this.mapData(data);
+            default:
+                throw new Error(`Unknown operation: ${this.config.operation}`);
+        }
+    }
+
+    normalizeData(data) {
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
+
+        return data.map(item =&gt; {
+            if (typeof item === 'number') {
+                return Number(item.toFixed(this.config.precision));
+            }
+            
+            if (typeof item === 'string') {
+                return item.trim().toLowerCase();
+            }
+            
+            if (typeof item === 'object' &amp;&amp; item !== null) {
+                const normalized = {};
+                for (const [key, value] of Object.entries(item)) {
+                    // Normalize keys to camelCase
+                    const normalizedKey = key.replace(/_([a-z])/g, (g) =&gt; g[1].toUpperCase());
+                    normalized[normalizedKey] = typeof value === 'string' ? 
+                        value.trim() : value;
+                }
+                return normalized;
+            }
+            
+            return item;
+        });
+    }
+
+    aggregateData(data, context) {
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
+
+        // Get existing aggregation state
+        const aggregated = context.state.get('aggregated') || [];
+        const combined = aggregated.concat(data);
+        
+        // Keep only recent data based on batch size
+        const recent = combined.slice(-this.config.batchSize);
+        context.state.set('aggregated', recent);
+
+        // Calculate statistics
+        const numbers = recent.filter(x =&gt; typeof x === 'number');
+        const result = {
+            count: recent.length,
+            numericCount: numbers.length,
+            sum: numbers.reduce((a, b) =&gt; a + b, 0),
+            average: numbers.length &gt; 0 ? 
+                numbers.reduce((a, b) =&gt; a + b, 0) / numbers.length : 0,
+            min: numbers.length &gt; 0 ? Math.min(...numbers) : null,
+            max: numbers.length &gt; 0 ? Math.max(...numbers) : null,
+            latest: recent[recent.length - 1],
+            timestamp: Date.now()
+        };
+
+        return result;
+    }
+
+    filterData(data) {
+        if (!Array.isArray(data)) {
+            return data;
+        }
+
+        // Apply various filters based on configuration
+        return data.filter(item =&gt; {
+            // Filter out null/undefined
+            if (item == null) return false;
+            
+            // Filter by type if specified
+            if (this.config.filterType) {
+                if (typeof item !== this.config.filterType) return false;
+            }
+            
+            // Filter by value range for numbers
+            if (typeof item === 'number') {
+                if (this.config.minValue !== undefined &amp;&amp; item &lt; this.config.minValue) return false;
+                if (this.config.maxValue !== undefined &amp;&amp; item &gt; this.config.maxValue) return false;
+            }
+            
+            // Filter by pattern for strings
+            if (typeof item === 'string' &amp;&amp; this.config.pattern) {
+                const regex = new RegExp(this.config.pattern, 'i');
+                if (!regex.test(item)) return false;
+            }
+            
+            return true;
+        });
+    }
+
+    mapData(data) {
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
+
+        return data.map((item, index) =&gt; {
+            const mapped = {
+                original: item,
+                index: index,
+                timestamp: Date.now(),
+                processed: true
+            };
+
+            // Apply transformations based on type
+            if (typeof item === 'number') {
+                mapped.doubled = item * 2;
+                mapped.squared = item * item;
+                mapped.formatted = item.toFixed(this.config.precision);
+            }
+            
+            if (typeof item === 'string') {
+                mapped.length = item.length;
+                mapped.uppercase = item.toUpperCase();
+                mapped.words = item.split(/\s+/).length;
+            }
+            
+            if (typeof item === 'object' &amp;&amp; item !== null) {
+                mapped.keys = Object.keys(item);
+                mapped.keyCount = Object.keys(item).length;
+            }
+
+            return mapped;
+        });
+    }
+
+    updateStats(context, result) {
+        const stats = context.state.get('stats') || {
+            processedCount: 0,
+            lastProcessed: null,
+            totalDataSize: 0,
+            operationCounts: {}
+        };
+
+        stats.processedCount++;
+        stats.lastProcessed = Date.now();
+        stats.totalDataSize += JSON.stringify(result).length;
+        
+        const operation = this.config.operation;
+        stats.operationCounts[operation] = (stats.operationCounts[operation] || 0) + 1;
+
+        context.state.set('stats', stats);
+        
+        // Send stats periodically
+        if (stats.processedCount % 10 === 0) {
+            context.send({ stats });
+        }
+    }
+
+    handleError(error, context) {
+        const errorInfo = {
+            message: error.message,
+            operation: this.config.operation,
+            timestamp: Date.now(),
+            config: this.config
+        };
+
+        console.error("DataTransformActor error:", errorInfo);
+        context.send({ error: errorInfo });
+    }
+}
+</code></pre>
+<h3 id="testing-the-transform-actor"><a class="header" href="#testing-the-transform-actor">Testing the Transform Actor</a></h3>
+<pre><code class="language-javascript">// Test the data transformation actor
+async function testDataTransformActor() {
+    const graph = new Graph("DataTransformTest", true);
+    
+    // Add the transform actor
+    graph.addNode("transformer", "DataTransformActor", {
+        x: 200, y: 100,
+        description: "Data transformation processor"
+    });
+
+    // Add test data
+    const testData = [
+        1.23456, 2.67890, 3.14159,
+        "  Hello World  ", "  JAVASCRIPT  ",
+        { first_name: "John", last_name: "Doe", age: 30 },
+        { product_id: 123, product_name: "Widget", price: 9.99 }
+    ];
+
+    graph.addInitial(testData, "transformer", "data");
+    
+    // Test different operations
+    const operations = [
+        { operation: "normalize", precision: 2 },
+        { operation: "aggregate", batchSize: 50 },
+        { operation: "filter", filterType: "number", minValue: 2 },
+        { operation: "map" }
+    ];
+
+    const network = new GraphNetwork(graph);
+    network.registerActor("DataTransformActor", new DataTransformActor());
+
+    // Monitor results
+    network.next((event) =&gt; {
+        if (event._type === "FlowTrace" &amp;&amp; event.to.port === "result") {
+            console.log("Transform result:", event.from.data);
+        }
+    });
+
+    await network.start();
+
+    // Test different operations
+    for (const config of operations) {
+        console.log(`\nTesting operation: ${config.operation}`);
+        const result = await network.executeActor("transformer", {
+            data: testData,
+            config: config
+        });
+        console.log("Result:", result);
+    }
+}
+</code></pre>
+<h2 id="2-web-api-client-actor"><a class="header" href="#2-web-api-client-actor">2. Web API Client Actor</a></h2>
+<p>Now let's build an actor that makes HTTP requests and handles various web APIs.</p>
+<h3 id="creating-the-api-client-actor"><a class="header" href="#creating-the-api-client-actor">Creating the API Client Actor</a></h3>
+<pre><code class="language-javascript">class WebAPIClientActor {
+    constructor() {
+        this.inports = ["request", "config"];
+        this.outports = ["response", "error", "progress"];
+        
+        this.config = {
+            baseURL: "",
+            timeout: 10000,
+            retries: 3,
+            retryDelay: 1000,
+            headers: {
+                "Content-Type": "application/json"
+            }
+        };
+    }
+
+    async run(context) {
+        // Update configuration
+        if (context.input.config) {
+            this.config = { ...this.config, ...context.input.config };
+        }
+
+        // Process request
+        if (context.input.request) {
+            await this.makeRequest(context.input.request, context);
+        }
+    }
+
+    async makeRequest(request, context) {
+        const url = this.buildURL(request.url);
+        const options = this.buildRequestOptions(request);
+        
+        try {
+            const response = await this.fetchWithRetry(url, options, context);
+            const data = await this.parseResponse(response, request.responseType);
+            
+            context.send({
+                response: {
+                    data: data,
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    url: response.url,
+                    timestamp: Date.now()
+                }
+            });
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: error.message,
+                    type: error.name,
+                    url: url,
+                    request: request,
+                    timestamp: Date.now()
+                }
+            });
+        }
+    }
+
+    buildURL(url) {
+        if (url.startsWith('http')) {
+            return url;
+        }
+        return `${this.config.baseURL}${url}`;
+    }
+
+    buildRequestOptions(request) {
+        const options = {
+            method: request.method || 'GET',
+            headers: { ...this.config.headers, ...request.headers }
+        };
+
+        if (request.body) {
+            if (typeof request.body === 'object') {
+                options.body = JSON.stringify(request.body);
+            } else {
+                options.body = request.body;
+            }
+        }
+
+        return options;
+    }
+
+    async fetchWithRetry(url, options, context) {
+        let lastError;
+        
+        for (let attempt = 1; attempt &lt;= this.config.retries; attempt++) {
+            try {
+                // Set up timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() =&gt; controller.abort(), this.config.timeout);
+                
+                options.signal = controller.signal;
+
+                // Send progress update
+                context.send({
+                    progress: {
+                        attempt: attempt,
+                        maxAttempts: this.config.retries,
+                        url: url,
+                        status: "requesting"
+                    }
+                });
+
+                const response = await fetch(url, options);
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return response;
+
+            } catch (error) {
+                lastError = error;
+                
+                if (attempt &lt; this.config.retries) {
+                    const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
+                    
+                    context.send({
+                        progress: {
+                            attempt: attempt,
+                            maxAttempts: this.config.retries,
+                            error: error.message,
+                            retryIn: delay,
+                            status: "retrying"
+                        }
+                    });
+
+                    await new Promise(resolve =&gt; setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        throw lastError;
+    }
+
+    async parseResponse(response, responseType = 'json') {
+        switch (responseType.toLowerCase()) {
+            case 'json':
+                return await response.json();
+            case 'text':
+                return await response.text();
+            case 'blob':
+                return await response.blob();
+            case 'arraybuffer':
+                return await response.arrayBuffer();
+            default:
+                return await response.json();
+        }
+    }
+}
+</code></pre>
+<h3 id="api-actor-examples"><a class="header" href="#api-actor-examples">API Actor Examples</a></h3>
+<pre><code class="language-javascript">// Example: Weather API actor
+class WeatherAPIActor extends WebAPIClientActor {
+    constructor() {
+        super();
+        this.inports = ["location", "config"];
+        this.outports = ["weather", "error"];
+        
+        this.config = {
+            ...this.config,
+            baseURL: "https://api.openweathermap.org/data/2.5",
+            apiKey: "" // Set your API key
+        };
+    }
+
+    async run(context) {
+        if (context.input.location) {
+            const request = {
+                url: `/weather?q=${encodeURIComponent(context.input.location)}&amp;appid=${this.config.apiKey}&amp;units=metric`,
+                method: "GET",
+                responseType: "json"
+            };
+
+            await this.makeRequest(request, context);
+        }
+    }
+}
+
+// Example: REST API actor
+class RESTAPIActor extends WebAPIClientActor {
+    constructor() {
+        super();
+        this.inports = ["operation", "config"];
+        this.outports = ["result", "error"];
+    }
+
+    async run(context) {
+        if (context.input.config) {
+            this.config = { ...this.config, ...context.input.config };
+        }
+
+        if (context.input.operation) {
+            const op = context.input.operation;
+            const request = {
+                url: op.endpoint,
+                method: op.method || 'GET',
+                headers: op.headers,
+                body: op.data,
+                responseType: op.responseType || 'json'
+            };
+
+            await this.makeRequest(request, context);
+        }
+    }
+}
+</code></pre>
+<h2 id="3-file-processing-actor"><a class="header" href="#3-file-processing-actor">3. File Processing Actor</a></h2>
+<p>Let's create an actor that handles file operations in the browser.</p>
+<pre><code class="language-javascript">class FileProcessorActor {
+    constructor() {
+        this.inports = ["file", "operation", "config"];
+        this.outports = ["content", "metadata", "progress", "error"];
+        
+        this.config = {
+            chunkSize: 64 * 1024, // 64KB chunks
+            supportedTypes: ['text', 'json', 'csv', 'xml'],
+            maxFileSize: 10 * 1024 * 1024 // 10MB
+        };
+    }
+
+    run(context) {
+        if (context.input.config) {
+            this.config = { ...this.config, ...context.input.config };
+        }
+
+        if (context.input.file &amp;&amp; context.input.operation) {
+            this.processFile(context.input.file, context.input.operation, context);
+        }
+    }
+
+    processFile(file, operation, context) {
+        // Validate file
+        if (!file || !(file instanceof File)) {
+            context.send({ error: "Valid File object required" });
+            return;
+        }
+
+        if (file.size &gt; this.config.maxFileSize) {
+            context.send({ 
+                error: `File too large: ${file.size} bytes (max: ${this.config.maxFileSize})` 
+            });
+            return;
+        }
+
+        // Send file metadata
+        context.send({
+            metadata: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                lastModified: new Date(file.lastModified),
+                operation: operation
+            }
+        });
+
+        // Process based on operation
+        switch (operation.type) {
+            case 'read':
+                this.readFile(file, operation, context);
+                break;
+            case 'parse':
+                this.parseFile(file, operation, context);
+                break;
+            case 'analyze':
+                this.analyzeFile(file, operation, context);
+                break;
+            default:
+                context.send({ error: `Unknown operation: ${operation.type}` });
+        }
+    }
+
+    readFile(file, operation, context) {
+        const reader = new FileReader();
+        
+        reader.onprogress = (event) =&gt; {
+            if (event.lengthComputable) {
+                context.send({
+                    progress: {
+                        loaded: event.loaded,
+                        total: event.total,
+                        percentage: (event.loaded / event.total) * 100,
+                        operation: 'reading'
+                    }
+                });
+            }
+        };
+
+        reader.onload = (event) =&gt; {
+            const result = event.target.result;
+            context.send({
+                content: {
+                    data: result,
+                    encoding: operation.encoding || 'utf-8',
+                    format: operation.format || 'text',
+                    size: result.length || result.byteLength
+                }
+            });
+        };
+
+        reader.onerror = () =&gt; {
+            context.send({
+                error: `Failed to read file: ${reader.error.message}`
+            });
+        };
+
+        // Choose reading method
+        const format = operation.format || 'text';
+        switch (format) {
+            case 'text':
+                reader.readAsText(file, operation.encoding || 'utf-8');
+                break;
+            case 'dataurl':
+                reader.readAsDataURL(file);
+                break;
+            case 'binary':
+                reader.readAsArrayBuffer(file);
+                break;
+            default:
+                reader.readAsText(file);
+        }
+    }
+
+    parseFile(file, operation, context) {
+        const reader = new FileReader();
+        
+        reader.onload = (event) =&gt; {
+            try {
+                const text = event.target.result;
+                let parsed;
+
+                switch (operation.format) {
+                    case 'json':
+                        parsed = JSON.parse(text);
+                        break;
+                    case 'csv':
+                        parsed = this.parseCSV(text);
+                        break;
+                    case 'xml':
+                        parsed = this.parseXML(text);
+                        break;
+                    default:
+                        parsed = text;
+                }
+
+                context.send({
+                    content: {
+                        data: parsed,
+                        format: operation.format,
+                        recordCount: Array.isArray(parsed) ? parsed.length : 1
+                    }
+                });
+
+            } catch (error) {
+                context.send({
+                    error: `Failed to parse ${operation.format}: ${error.message}`
+                });
+            }
+        };
+
+        reader.readAsText(file);
+    }
+
+    parseCSV(text) {
+        const lines = text.split('\n').filter(line =&gt; line.trim());
+        if (lines.length === 0) return [];
+
+        const headers = lines[0].split(',').map(h =&gt; h.trim());
+        const data = [];
+
+        for (let i = 1; i &lt; lines.length; i++) {
+            const values = lines[i].split(',').map(v =&gt; v.trim());
+            const row = {};
+            
+            headers.forEach((header, index) =&gt; {
+                row[header] = values[index] || '';
+            });
+            
+            data.push(row);
+        }
+
+        return data;
+    }
+
+    parseXML(text) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/xml');
+        
+        if (doc.querySelector('parsererror')) {
+            throw new Error('Invalid XML format');
+        }
+
+        return this.xmlToObject(doc.documentElement);
+    }
+
+    xmlToObject(element) {
+        const obj = {};
+        
+        // Add attributes
+        if (element.attributes.length &gt; 0) {
+            obj['@attributes'] = {};
+            for (const attr of element.attributes) {
+                obj['@attributes'][attr.name] = attr.value;
+            }
+        }
+
+        // Add child elements
+        for (const child of element.children) {
+            const name = child.tagName;
+            const value = child.children.length &gt; 0 ? 
+                this.xmlToObject(child) : child.textContent;
+            
+            if (obj[name]) {
+                if (!Array.isArray(obj[name])) {
+                    obj[name] = [obj[name]];
+                }
+                obj[name].push(value);
+            } else {
+                obj[name] = value;
+            }
+        }
+
+        return obj;
+    }
+
+    analyzeFile(file, operation, context) {
+        const reader = new FileReader();
+        
+        reader.onload = (event) =&gt; {
+            const text = event.target.result;
+            const analysis = {
+                size: text.length,
+                lines: text.split('\n').length,
+                words: text.split(/\s+/).filter(w =&gt; w).length,
+                characters: text.length,
+                charactersNoSpaces: text.replace(/\s/g, '').length,
+                encoding: 'utf-8',
+                detectedFormat: this.detectFormat(text, file.name),
+                timestamp: Date.now()
+            };
+
+            context.send({ content: analysis });
+        };
+
+        reader.readAsText(file);
+    }
+
+    detectFormat(text, filename) {
+        const extension = filename.split('.').pop().toLowerCase();
+        
+        // Try to detect format
+        try {
+            JSON.parse(text);
+            return 'json';
+        } catch {}
+
+        if (text.includes('&lt;?xml') || text.includes('&lt;html')) {
+            return 'xml';
+        }
+
+        if (text.includes(',') &amp;&amp; text.split('\n').length &gt; 1) {
+            return 'csv';
+        }
+
+        return extension || 'text';
+    }
+}
+</code></pre>
+<h2 id="4-real-time-data-actor"><a class="header" href="#4-real-time-data-actor">4. Real-time Data Actor</a></h2>
+<p>Let's build an actor that handles real-time data streams via WebSockets.</p>
+<pre><code class="language-javascript">class WebSocketActor {
+    constructor() {
+        this.inports = ["connect", "disconnect", "send", "config"];
+        this.outports = ["message", "status", "error"];
+        
+        this.config = {
+            reconnectAttempts: 5,
+            reconnectDelay: 1000,
+            pingInterval: 30000,
+            maxMessageSize: 1024 * 1024 // 1MB
+        };
+        
+        this.socket = null;
+        this.reconnectCount = 0;
+        this.pingTimer = null;
+    }
+
+    run(context) {
+        if (context.input.config) {
+            this.config = { ...this.config, ...context.input.config };
+        }
+
+        if (context.input.connect) {
+            this.connect(context.input.connect, context);
+        }
+
+        if (context.input.disconnect) {
+            this.disconnect(context);
+        }
+
+        if (context.input.send) {
+            this.sendMessage(context.input.send, context);
+        }
+    }
+
+    connect(connectionInfo, context) {
+        if (this.socket &amp;&amp; this.socket.readyState === WebSocket.OPEN) {
+            context.send({ status: "Already connected" });
+            return;
+        }
+
+        try {
+            this.socket = new WebSocket(connectionInfo.url, connectionInfo.protocols);
+            
+            this.socket.onopen = () =&gt; {
+                this.reconnectCount = 0;
+                context.send({ 
+                    status: {
+                        type: "connected",
+                        url: connectionInfo.url,
+                        timestamp: Date.now()
+                    }
+                });
+                
+                // Start ping timer
+                this.startPing(context);
+            };
+
+            this.socket.onmessage = (event) =&gt; {
+                try {
+                    const data = this.parseMessage(event.data);
+                    context.send({
+                        message: {
+                            data: data,
+                            timestamp: Date.now(),
+                            size: event.data.length
+                        }
+                    });
+                } catch (error) {
+                    context.send({
+                        error: {
+                            message: "Failed to parse incoming message",
+                            data: event.data,
+                            error: error.message
+                        }
+                    });
+                }
+            };
+
+            this.socket.onclose = (event) =&gt; {
+                this.stopPing();
+                
+                const closeInfo = {
+                    type: "disconnected",
+                    code: event.code,
+                    reason: event.reason,
+                    wasClean: event.wasClean,
+                    timestamp: Date.now()
+                };
+
+                context.send({ status: closeInfo });
+
+                // Attempt reconnection if not a clean close
+                if (!event.wasClean &amp;&amp; this.reconnectCount &lt; this.config.reconnectAttempts) {
+                    this.attemptReconnect(connectionInfo, context);
+                }
+            };
+
+            this.socket.onerror = (error) =&gt; {
+                context.send({
+                    error: {
+                        message: "WebSocket error",
+                        timestamp: Date.now()
+                    }
+                });
+            };
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: "Failed to create WebSocket connection",
+                    error: error.message,
+                    url: connectionInfo.url
+                }
+            });
+        }
+    }
+
+    attemptReconnect(connectionInfo, context) {
+        this.reconnectCount++;
+        const delay = this.config.reconnectDelay * Math.pow(2, this.reconnectCount - 1);
+
+        context.send({
+            status: {
+                type: "reconnecting",
+                attempt: this.reconnectCount,
+                maxAttempts: this.config.reconnectAttempts,
+                delay: delay
+            }
+        });
+
+        setTimeout(() =&gt; {
+            this.connect(connectionInfo, context);
+        }, delay);
+    }
+
+    disconnect(context) {
+        if (this.socket) {
+            this.stopPing();
+            this.socket.close(1000, "Client disconnect");
+            this.socket = null;
+        }
+
+        context.send({
+            status: {
+                type: "disconnected",
+                reason: "Client initiated",
+                timestamp: Date.now()
+            }
+        });
+    }
+
+    sendMessage(messageData, context) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            context.send({
+                error: {
+                    message: "WebSocket not connected",
+                    messageData: messageData
+                }
+            });
+            return;
+        }
+
+        try {
+            const message = this.formatMessage(messageData);
+            
+            if (message.length &gt; this.config.maxMessageSize) {
+                context.send({
+                    error: {
+                        message: "Message too large",
+                        size: message.length,
+                        maxSize: this.config.maxMessageSize
+                    }
+                });
+                return;
+            }
+
+            this.socket.send(message);
+            
+            context.send({
+                status: {
+                    type: "message_sent",
+                    size: message.length,
+                    timestamp: Date.now()
+                }
+            });
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: "Failed to send message",
+                    error: error.message,
+                    messageData: messageData
+                }
+            });
+        }
+    }
+
+    parseMessage(data) {
+        // Try to parse as JSON first
+        try {
+            return JSON.parse(data);
+        } catch {
+            return data; // Return as string if not JSON
+        }
+    }
+
+    formatMessage(data) {
+        if (typeof data === 'string') {
+            return data;
+        }
+        return JSON.stringify(data);
+    }
+
+    startPing(context) {
+        this.stopPing();
+        
+        this.pingTimer = setInterval(() =&gt; {
+            if (this.socket &amp;&amp; this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+            }
+        }, this.config.pingInterval);
+    }
+
+    stopPing() {
+        if (this.pingTimer) {
+            clearInterval(this.pingTimer);
+            this.pingTimer = null;
+        }
+    }
+}
+</code></pre>
+<h2 id="5-interactive-ui-actor"><a class="header" href="#5-interactive-ui-actor">5. Interactive UI Actor</a></h2>
+<p>Finally, let's create an actor that can interact with the DOM and handle user interactions.</p>
+<pre><code class="language-javascript">class UIInteractionActor {
+    constructor() {
+        this.inports = ["createElement", "updateElement", "removeElement", "addEventListener"];
+        this.outports = ["element", "event", "error"];
+        
+        this.config = {
+            containerSelector: "#app",
+            eventTypes: ["click", "input", "change", "submit"]
+        };
+        
+        this.elements = new Map(); // Track created elements
+        this.listeners = new Map(); // Track event listeners
+    }
+
+    run(context) {
+        if (context.input.createElement) {
+            this.createElement(context.input.createElement, context);
+        }
+
+        if (context.input.updateElement) {
+            this.updateElement(context.input.updateElement, context);
+        }
+
+        if (context.input.removeElement) {
+            this.removeElement(context.input.removeElement, context);
+        }
+
+        if (context.input.addEventListener) {
+            this.addEventListener(context.input.addEventListener, context);
+        }
+    }
+
+    createElement(elementData, context) {
+        try {
+            const element = document.createElement(elementData.tag || 'div');
+            
+            // Set attributes
+            if (elementData.attributes) {
+                for (const [key, value] of Object.entries(elementData.attributes)) {
+                    element.setAttribute(key, value);
+                }
+            }
+
+            // Set properties
+            if (elementData.properties) {
+                for (const [key, value] of Object.entries(elementData.properties)) {
+                    element[key] = value;
+                }
+            }
+
+            // Set styles
+            if (elementData.styles) {
+                for (const [key, value] of Object.entries(elementData.styles)) {
+                    element.style[key] = value;
+                }
+            }
+
+            // Set content
+            if (elementData.textContent) {
+                element.textContent = elementData.textContent;
+            }
+            
+            if (elementData.innerHTML) {
+                element.innerHTML = elementData.innerHTML;
+            }
+
+            // Add to container
+            const container = document.querySelector(this.config.containerSelector);
+            if (container) {
+                container.appendChild(element);
+            }
+
+            // Generate unique ID if not provided
+            const elementId = elementData.id || `element_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            if (!element.id) {
+                element.id = elementId;
+            }
+
+            // Store element reference
+            this.elements.set(elementId, element);
+
+            context.send({
+                element: {
+                    id: elementId,
+                    tag: element.tagName.toLowerCase(),
+                    created: true,
+                    timestamp: Date.now()
+                }
+            });
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: "Failed to create element",
+                    error: error.message,
+                    elementData: elementData
+                }
+            });
+        }
+    }
+
+    updateElement(updateData, context) {
+        try {
+            const element = this.elements.get(updateData.id) || 
+                           document.getElementById(updateData.id);
+            
+            if (!element) {
+                context.send({
+                    error: {
+                        message: "Element not found",
+                        id: updateData.id
+                    }
+                });
+                return;
+            }
+
+            // Update attributes
+            if (updateData.attributes) {
+                for (const [key, value] of Object.entries(updateData.attributes)) {
+                    if (value === null) {
+                        element.removeAttribute(key);
+                    } else {
+                        element.setAttribute(key, value);
+                    }
+                }
+            }
+
+            // Update properties
+            if (updateData.properties) {
+                for (const [key, value] of Object.entries(updateData.properties)) {
+                    element[key] = value;
+                }
+            }
+
+            // Update styles
+            if (updateData.styles) {
+                for (const [key, value] of Object.entries(updateData.styles)) {
+                    element.style[key] = value;
+                }
+            }
+
+            // Update content
+            if (updateData.textContent !== undefined) {
+                element.textContent = updateData.textContent;
+            }
+            
+            if (updateData.innerHTML !== undefined) {
+                element.innerHTML = updateData.innerHTML;
+            }
+
+            context.send({
+                element: {
+                    id: updateData.id,
+                    updated: true,
+                    timestamp: Date.now()
+                }
+            });
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: "Failed to update element",
+                    error: error.message,
+                    updateData: updateData
+                }
+            });
+        }
+    }
+
+    removeElement(removeData, context) {
+        try {
+            const element = this.elements.get(removeData.id) || 
+                           document.getElementById(removeData.id);
+            
+            if (!element) {
+                context.send({
+                    error: {
+                        message: "Element not found",
+                        id: removeData.id
+                    }
+                });
+                return;
+            }
+
+            // Remove event listeners
+            const listeners = this.listeners.get(removeData.id);
+            if (listeners) {
+                for (const listener of listeners) {
+                    element.removeEventListener(listener.type, listener.handler);
+                }
+                this.listeners.delete(removeData.id);
+            }
+
+            // Remove from DOM
+            element.remove();
+
+            // Remove from tracking
+            this.elements.delete(removeData.id);
+
+            context.send({
+                element: {
+                    id: removeData.id,
+                    removed: true,
+                    timestamp: Date.now()
+                }
+            });
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: "Failed to remove element",
+                    error: error.message,
+                    removeData: removeData
+                }
+            });
+        }
+    }
+
+    addEventListener(listenerData, context) {
+        try {
+            const element = this.elements.get(listenerData.elementId) || 
+                           document.getElementById(listenerData.elementId);
+            
+            if (!element) {
+                context.send({
+                    error: {
+                        message: "Element not found",
+                        id: listenerData.elementId
+                    }
+                });
+                return;
+            }
+
+            const handler = (event) =&gt; {
+                const eventData = {
+                    type: event.type,
+                    elementId: listenerData.elementId,
+                    timestamp: Date.now(),
+                    target: {
+                        id: event.target.id,
+                        tagName: event.target.tagName,
+                        value: event.target.value,
+                        checked: event.target.checked
+                    }
+                };
+
+                // Add specific event data
+                if (event.type === 'click') {
+                    eventData.coordinates = {
+                        clientX: event.clientX,
+                        clientY: event.clientY,
+                        pageX: event.pageX,
+                        pageY: event.pageY
+                    };
+                }
+
+                if (event.type === 'input' || event.type === 'change') {
+                    eventData.value = event.target.value;
+                }
+
+                context.send({ event: eventData });
+            };
+
+            element.addEventListener(listenerData.eventType, handler);
+
+            // Track the listener
+            if (!this.listeners.has(listenerData.elementId)) {
+                this.listeners.set(listenerData.elementId, []);
+            }
+            this.listeners.get(listenerData.elementId).push({
+                type: listenerData.eventType,
+                handler: handler
+            });
+
+            context.send({
+                element: {
+                    id: listenerData.elementId,
+                    eventType: listenerData.eventType,
+                    listenerAdded: true,
+                    timestamp: Date.now()
+                }
+            });
+
+        } catch (error) {
+            context.send({
+                error: {
+                    message: "Failed to add event listener",
+                    error: error.message,
+                    listenerData: listenerData
+                }
+            });
+        }
+    }
+}
+</code></pre>
+<h2 id="complete-working-example"><a class="header" href="#complete-working-example">Complete Working Example</a></h2>
+<p>Let's build a complete application that uses all the actors we've created:</p>
+<pre><code class="language-javascript">// Complete WASM Actor Demo Application
+class WASMActorDemo {
+    constructor() {
+        this.graph = null;
+        this.network = null;
+        this.isRunning = false;
+    }
+
+    async initialize() {
+        // Initialize WASM
+        await init();
+        init_panic_hook();
+
+        // Create demo graph
+        this.createDemoGraph();
+        
+        // Register all actors
+        this.registerActors();
+        
+        // Setup UI
+        this.setupUI();
+        
+        console.log("✅ WASM Actor Demo initialized");
+    }
+
+    createDemoGraph() {
+        this.graph = new Graph("WASMActorDemo", true, {
+            description: "Comprehensive WASM actor demonstration",
+            version: "1.0.0"
+        });
+
+        // Add actors
+        this.graph.addNode("dataTransform", "DataTransformActor", {
+            x: 100, y: 100,
+            description: "Data transformation processor"
+        });
+
+        this.graph.addNode("fileProcessor", "FileProcessorActor", {
+            x: 300, y: 100,
+            description: "File processing handler"
+        });
+
+        this.graph.addNode("apiClient", "WebAPIClientActor", {
+            x: 500, y: 100,
+            description: "Web API client"
+        });
+
+        this.graph.addNode("websocket", "WebSocketActor", {
+            x: 100, y: 300,
+            description: "WebSocket connection"
+        });
+
+        this.graph.addNode("uiManager", "UIInteractionActor", {
+            x: 300, y: 300,
+            description: "UI interaction manager"
+        });
+
+        // Create connections
+        this.graph.addConnection("dataTransform", "result", "fileProcessor", "operation");
+        this.graph.addConnection("fileProcessor", "content", "apiClient", "request");
+        this.graph.addConnection("apiClient", "response", "websocket", "send");
+        this.graph.addConnection("websocket", "message", "uiManager", "createElement");
+
+        // Add some initial data
+        this.graph.addInitial([1, 2, 3, 4, 5], "dataTransform", "data");
+    }
+
+    registerActors() {
+        this.network = new GraphNetwork(this.graph);
+        
+        this.network.registerActor("DataTransformActor", new DataTransformActor());
+        this.network.registerActor("FileProcessorActor", new FileProcessorActor());
+        this.network.registerActor("WebAPIClientActor", new WebAPIClientActor());
+        this.network.registerActor("WebSocketActor", new WebSocketActor());
+        this.network.registerActor("UIInteractionActor", new UIInteractionActor());
+
+        // Monitor network events
+        this.network.next((event) =&gt; {
+            this.handleNetworkEvent(event);
+        });
+    }
+
+    setupUI() {
+        document.body.innerHTML = `
+            &lt;div id="demo-app"&gt;
+                &lt;h1&gt;WASM Actor Development Demo&lt;/h1&gt;
+                
+                &lt;div class="controls"&gt;
+                    &lt;button id="startNetwork"&gt;Start Network&lt;/button&gt;
+                    &lt;button id="stopNetwork"&gt;Stop Network&lt;/button&gt;
+                    &lt;button id="testDataTransform"&gt;Test Data Transform&lt;/button&gt;
+                    &lt;button id="testFileUpload"&gt;Test File Upload&lt;/button&gt;
+                    &lt;button id="testAPI"&gt;Test API Call&lt;/button&gt;
+                    &lt;button id="testWebSocket"&gt;Test WebSocket&lt;/button&gt;
+                &lt;/div&gt;
+                
+                &lt;div class="output"&gt;
+                    &lt;h3&gt;Network Events:&lt;/h3&gt;
+                    &lt;div id="events" style="height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;"&gt;&lt;/div&gt;
+                &lt;/div&gt;
+                
+                &lt;div class="file-upload"&gt;
+                    &lt;h3&gt;File Upload Test:&lt;/h3&gt;
+                    &lt;input type="file" id="fileInput" /&gt;
+                    &lt;select id="fileOperation"&gt;
+                        &lt;option value="read"&gt;Read&lt;/option&gt;
+                        &lt;option value="parse"&gt;Parse&lt;/option&gt;
+                        &lt;option value="analyze"&gt;Analyze&lt;/option&gt;
+                    &lt;/select&gt;
+                &lt;/div&gt;
+                
+                &lt;div id="dynamic-content"&gt;
+                    &lt;h3&gt;Dynamic UI Elements:&lt;/h3&gt;
+                    &lt;!-- UI actor will add elements here --&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        `;
+
+        // Add event listeners
+        document.getElementById('startNetwork').onclick = () =&gt; this.startNetwork();
+        document.getElementById('stopNetwork').onclick = () =&gt; this.stopNetwork();
+        document.getElementById('testDataTransform').onclick = () =&gt; this.testDataTransform();
+        document.getElementById('testFileUpload').onclick = () =&gt; this.testFileUpload();
+        document.getElementById('testAPI').onclick = () =&gt; this.testAPI();
+        document.getElementById('testWebSocket').onclick = () =&gt; this.testWebSocket();
+    }
+
+    async startNetwork() {
+        if (!this.isRunning) {
+            await this.network.start();
+            this.isRunning = true;
+            this.logEvent("Network started");
+        }
+    }
+
+    stopNetwork() {
+        if (this.isRunning) {
+            this.network.shutdown();
+            this.isRunning = false;
+            this.logEvent("Network stopped");
+        }
+    }
+
+    async testDataTransform() {
+        const testData = [
+            Math.random() * 100,
+            Math.random() * 100,
+            "  Test String  ",
+            { test_field: "value", another_field: 123 }
+        ];
+
+        const result = await this.network.executeActor("dataTransform", {
+            data: testData,
+            config: { operation: "normalize", precision: 2 }
+        });
+
+        this.logEvent("Data transform result", result);
+    }
+
+    testFileUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const operation = document.getElementById('fileOperation').value;
+        
+        if (fileInput.files.length &gt; 0) {
+            const file = fileInput.files[0];
+            this.network.executeActor("fileProcessor", {
+                file: file,
+                operation: { type: operation, format: 'auto' }
+            });
+        } else {
+            alert("Please select a file first");
+        }
+    }
+
+    async testAPI() {
+        // Test with a public API
+        const result = await this.network.executeActor("apiClient", {
+            request: {
+                url: "https://jsonplaceholder.typicode.com/posts/1",
+                method: "GET",
+                responseType: "json"
+            }
+        });
+
+        this.logEvent("API call result", result);
+    }
+
+    testWebSocket() {
+        // Test WebSocket connection (you'll need a WebSocket server)
+        this.network.executeActor("websocket", {
+            connect: {
+                url: "wss://echo.websocket.org/",
+                protocols: []
+            }
+        });
+    }
+
+    handleNetworkEvent(event) {
+        switch (event._type) {
+            case "FlowTrace":
+                this.logEvent(`Data flow: ${event.from.actorId}:${event.from.port} → ${event.to.actorId}:${event.to.port}`, event.from.data);
+                break;
+                
+            case "ActorStarted":
+                this.logEvent(`Actor started: ${event.actorId}`);
+                break;
+                
+            case "ActorStopped":
+                this.logEvent(`Actor stopped: ${event.actorId}`);
+                break;
+                
+            case "ProcessError":
+                this.logEvent(`Error in ${event.actorId}: ${event.error}`, null, "error");
+                break;
+                
+            default:
+                this.logEvent(`Network event: ${event._type}`, event);
+        }
+    }
+
+    logEvent(message, data = null, type = "info") {
+        const eventsDiv = document.getElementById('events');
+        const timestamp = new Date().toLocaleTimeString();
+        
+        const eventElement = document.createElement('div');
+        eventElement.className = `event event-${type}`;
+        eventElement.style.marginBottom = '5px';
+        eventElement.style.padding = '5px';
+        eventElement.style.backgroundColor = type === 'error' ? '#ffe6e6' : '#e6f3ff';
+        
+        let content = `[${timestamp}] ${message}`;
+        if (data) {
+            content += `\nData: ${JSON.stringify(data, null, 2)}`;
+        }
+        
+        eventElement.textContent = content;
+        eventsDiv.appendChild(eventElement);
+        eventsDiv.scrollTop = eventsDiv.scrollHeight;
+    }
+}
+
+// Initialize the demo when the page loads
+document.addEventListener('DOMContentLoaded', async () =&gt; {
+    const demo = new WASMActorDemo();
+    await demo.initialize();
+});
+</code></pre>
+<h2 id="best-practices-and-performance-tips"><a class="header" href="#best-practices-and-performance-tips">Best Practices and Performance Tips</a></h2>
+<h3 id="1-state-management"><a class="header" href="#1-state-management">1. State Management</a></h3>
+<pre><code class="language-javascript">// ✅ Good: Batch state operations
+class EfficientActor {
+    run(context) {
+        const state = context.state.getAll();
+        
+        // Modify locally
+        state.counter = (state.counter || 0) + 1;
+        state.lastUpdate = Date.now();
+        state.processedItems = (state.processedItems || []);
+        state.processedItems.push(context.input.data);
+        
+        // Write once
+        context.state.setAll(state);
+    }
+}
+
+// ❌ Avoid: Multiple state operations
+class InefficientActor {
+    run(context) {
+        const counter = context.state.get('counter') || 0;
+        context.state.set('counter', counter + 1);
+        context.state.set('lastUpdate', Date.now());
+        
+        const items = context.state.get('processedItems') || [];
+        items.push(context.input.data);
+        context.state.set('processedItems', items);
+    }
+}
+</code></pre>
+<h3 id="2-error-handling"><a class="header" href="#2-error-handling">2. Error Handling</a></h3>
+<pre><code class="language-javascript">class RobustActor {
+    run(context) {
+        try {
+            this.processInput(context);
+        } catch (error) {
+            this.handleError(error, context);
+        }
+    }
+    
+    handleError(error, context) {
+        // Log error details
+        console.error(`${this.constructor.name} error:`, error);
+        
+        // Send structured error information
+        context.send({
+            error: {
+                message: error.message,
+                stack: error.stack,
+                input: context.input,
+                timestamp: Date.now(),
+                actorType: this.constructor.name
+            }
+        });
+        
+        // Update error statistics
+        const stats = context.state.get('errorStats') || { count: 0, lastError: null };
+        stats.count++;
+        stats.lastError = Date.now();
+        context.state.set('errorStats', stats);
+    }
+}
+</code></pre>
+<h3 id="3-memory-management"><a class="header" href="#3-memory-management">3. Memory Management</a></h3>
+<pre><code class="language-javascript">class MemoryAwareActor {
+    constructor() {
+        this.inports = ["input"];
+        this.outports = ["output"];
+        this.config = { maxCacheSize: 1000 };
+    }
+    
+    run(context) {
+        // Clean up old cache entries
+        this.cleanupCache(context);
+        
+        // Process input
+        const result = this.processData(context.input.input);
+        
+        // Cache result if within limits
+        this.cacheResult(result, context);
+        
+        context.send({ output: result });
+    }
+    
+    cleanupCache(context) {
+        const cache = context.state.get('cache') || {};
+        const entries = Object.entries(cache);
+        
+        if (entries.length &gt; this.config.maxCacheSize) {
+            // Sort by timestamp and keep only recent entries
+            const sorted = entries.sort((a, b) =&gt; b[1].timestamp - a[1].timestamp);
+            const cleaned = Object.fromEntries(sorted.slice(0, this.config.maxCacheSize));
+            context.state.set('cache', cleaned);
+        }
+    }
+}
+</code></pre>
+<h2 id="conclusion"><a class="header" href="#conclusion">Conclusion</a></h2>
+<p>This tutorial covered the essential patterns for developing WASM actors in browser environments:</p>
+<ol>
+<li><strong>Data Transformation</strong> - Processing and manipulating data with stateful operations</li>
+<li><strong>Web API Integration</strong> - Making HTTP requests with retry logic and error handling</li>
+<li><strong>File Processing</strong> - Handling browser file operations with progress tracking</li>
+<li><strong>Real-time Communication</strong> - WebSocket connections with automatic reconnection</li>
+<li><strong>UI Interaction</strong> - DOM manipulation and event handling</li>
+</ol>
+<h3 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h3>
+<ul>
+<li><strong>State Management</strong>: Use batch operations for better performance</li>
+<li><strong>Error Handling</strong>: Implement comprehensive error reporting and recovery</li>
+<li><strong>Async Operations</strong>: Handle promises and timeouts properly</li>
+<li><strong>Memory Management</strong>: Clean up resources and limit cache sizes</li>
+<li><strong>Browser APIs</strong>: Leverage native browser capabilities effectively</li>
+</ul>
+<h3 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h3>
+<ul>
+<li><strong><a href="../api/wasm/getting-started.html">Complete WASM API Reference</a></strong> - Full API documentation</li>
+<li><strong><a href="../api/wasm/actors-in-browser.html">Browser Actors Guide</a></strong> - Detailed actor patterns</li>
+<li><strong><a href="browser-workflow-editor.html">Browser Workflow Editor</a></strong> - Building visual editors</li>
+<li><strong><a href="performance-optimization.html">Performance Optimization</a></strong> - Advanced optimization techniques</li>
+</ul>
+<p>The examples in this tutorial provide a solid foundation for building sophisticated browser-based workflow applications using Reflow's WASM bindings.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tutorials/multi-graph-workspace.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../migration/actor-config-migration.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tutorials/multi-graph-workspace.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../migration/actor-config-migration.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

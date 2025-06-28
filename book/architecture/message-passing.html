@@ -8,7 +8,7 @@
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -140,6 +140,12 @@
                         <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/architecture/message-passing.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
 
                     </div>
                 </div>
@@ -179,14 +185,14 @@ pub enum Message {
     Boolean(bool),
     Integer(i64),
     Float(f64),
-    String(String),
-    Object(EncodableValue),
-    Array(Vec&lt;EncodableValue&gt;),
-    Stream(Vec&lt;u8&gt;),
-    Encoded(Vec&lt;u8&gt;),
-    Optional(Option&lt;EncodableValue&gt;),
-    Any(EncodableValue),
-    Error(String),
+    String(Arc&lt;String&gt;),
+    Object(Arc&lt;EncodableValue&gt;),
+    Array(Arc&lt;Vec&lt;EncodableValue&gt;&gt;),
+    Stream(Arc&lt;Vec&lt;u8&gt;&gt;),
+    Encoded(Arc&lt;Vec&lt;u8&gt;&gt;),
+    Optional(Option&lt;Arc&lt;EncodableValue&gt;&gt;),
+    Any(Arc&lt;EncodableValue&gt;),
+    Error(Arc&lt;String&gt;),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="encodablevalue"><a class="header" href="#encodablevalue">EncodableValue</a></h3>
@@ -226,17 +232,24 @@ if let Message::Integer(n) = message {
     println!("Number: {}", n);
 }
 
-// Working with EncodableValue
+// Working with EncodableValue - modern approach
 let data = serde_json::json!({"key": "value"});
 let encodable = EncodableValue::from(data);
-let object_msg = Message::Object(encodable);
+let object_msg = Message::object(encodable);
 
-// Create arrays with EncodableValue
+// Create arrays with EncodableValue - modern approach
 let array_items = vec![
     EncodableValue::from(serde_json::json!("hello")),
     EncodableValue::from(serde_json::json!(42)),
 ];
-let array_msg = Message::Array(array_items);
+let array_msg = Message::array(array_items);
+
+// Alternative: using helper methods for simple values
+let string_msg = Message::string("hello world".to_string());
+let int_msg = Message::integer(42);
+let bool_msg = Message::boolean(true);
+let float_msg = Message::float(3.14);
+let error_msg = Message::error("Something went wrong".to_string());
 <span class="boring">}</span></code></pre></pre>
 <h2 id="communication-channels"><a class="header" href="#communication-channels">Communication Channels</a></h2>
 <h3 id="ports"><a class="header" href="#ports">Ports</a></h3>
@@ -263,9 +276,9 @@ pub type ActorPayload = HashMap&lt;String, Message&gt;;
 <p>Direct communication between two actors:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>// Actor A sends to Actor B
+</span>// Actor A sends to Actor B - using helper method
 let message = HashMap::from([
-    ("data".to_string(), Message::String("hello".to_string()))
+    ("data".to_string(), Message::string("hello".to_string()))
 ]);
 sender.send_async(message).await?;
 <span class="boring">}</span></code></pre></pre>
@@ -412,11 +425,11 @@ impl RouterActor {
 </span><span class="boring">fn main() {
 </span>// Standard error message structure
 let error_msg = HashMap::from([
-    ("error".to_string(), Message::Error("Processing failed".to_string())),
-    ("code".to_string(), Message::Integer(500)),
-    ("source".to_string(), Message::String("database_actor".to_string())),
-    ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
-    ("details".to_string(), Message::Object(error_details)),
+    ("error".to_string(), Message::error("Processing failed".to_string())),
+    ("code".to_string(), Message::integer(500)),
+    ("source".to_string(), Message::string("database_actor".to_string())),
+    ("timestamp".to_string(), Message::string(Utc::now().to_rfc3339())),
+    ("details".to_string(), Message::object(error_details)),
 ]);
 <span class="boring">}</span></code></pre></pre>
 <h3 id="dead-letter-queue"><a class="header" href="#dead-letter-queue">Dead Letter Queue</a></h3>
@@ -640,9 +653,9 @@ impl UserEventBuilder {
         let event_type = self.event_type.ok_or(BuildError::MissingEventType)?;
         
         Ok(HashMap::from([
-            ("user_id".to_string(), Message::String(user_id)),
-            ("event_type".to_string(), Message::String(event_type)),
-            ("timestamp".to_string(), Message::String(Utc::now().to_rfc3339())),
+            ("user_id".to_string(), Message::string(user_id)),
+            ("event_type".to_string(), Message::string(event_type)),
+            ("timestamp".to_string(), Message::string(Utc::now().to_rfc3339())),
         ]))
     }
 }
@@ -693,7 +706,7 @@ async fn test_message_pipeline() {
     
     // Test message flow
     let test_message = HashMap::from([
-        ("data".to_string(), Message::String("test".to_string()))
+        ("data".to_string(), Message::string("test".to_string()))
     ]);
     
     source.send(test_message.clone()).await;
@@ -762,22 +775,6 @@ async fn test_message_pipeline() {
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
 

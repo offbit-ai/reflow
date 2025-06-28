@@ -1,7 +1,7 @@
 use anyhow::Result;
 use parking_lot::{Mutex, RwLock};
 use reflow_network::{
-    actor::{Actor, ActorBehavior, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port},
+    actor::{Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port},
     message::Message,
 };
 use serde::{Deserialize, Serialize};
@@ -142,6 +142,7 @@ impl Actor for ScriptActor {
 
     fn create_process(
         &self,
+        actor_config: ActorConfig
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
@@ -153,7 +154,7 @@ impl Actor for ScriptActor {
                     payload,
                     outports.clone(),
                     state.clone(),
-                    HashMap::new(),
+                    actor_config.clone(),
                     Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
                 );
                 let result = behavior(context).await;
@@ -297,11 +298,13 @@ __return_value=np.array(inputs.get("packet").data).sum()
             Message::array(vec![json!(1).into(), json!(2).into(), json!(3).into()]),
         );
 
+        let actor_config = ActorConfig::default();
+
         let context = ActorContext::new(
             payload,
             outports.clone(),
             state.clone(),
-            HashMap::new(),
+            actor_config.clone(),
             Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
         );
         // Call the behavior function
@@ -356,9 +359,11 @@ __return_value=np.array(inputs.get("packet").data).sum()
             "operation".to_string(),
             Message::string("increment".to_string()),
         );
+
+        let actor_config = ActorConfig::default();
         // Call the behavior function
         // let result = behavior(payload, state, outports.clone()).await;
-        let _ = tokio::spawn(actor.create_process());
+        let _ = tokio::spawn(actor.create_process(actor_config));
 
         let outports = actor.get_outports();
         let _ = actor.get_inports().0.send_async(payload.clone()).await;

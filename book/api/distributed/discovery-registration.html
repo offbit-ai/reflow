@@ -1,0 +1,921 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Discovery &amp; Registration - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/api/distributed/discovery-registration.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="discovery--registration"><a class="header" href="#discovery--registration">Discovery &amp; Registration</a></h1>
+<p>Learn how to use network discovery services and automatic actor registration in distributed Reflow networks.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Discovery and registration services enable:</p>
+<ul>
+<li><strong>Automatic network discovery</strong>: Find available networks without manual configuration</li>
+<li><strong>Service registration</strong>: Advertise your network's capabilities to others</li>
+<li><strong>Dynamic actor discovery</strong>: Automatically find and register remote actors</li>
+<li><strong>Health monitoring</strong>: Track network and actor availability</li>
+<li><strong>Load balancing</strong>: Distribute connections across available instances</li>
+</ul>
+<h2 id="discovery-service-types"><a class="header" href="#discovery-service-types">Discovery Service Types</a></h2>
+<h3 id="1-built-in-discovery"><a class="header" href="#1-built-in-discovery">1. Built-in Discovery</a></h3>
+<p>Use Reflow's built-in discovery where one network acts as a registry:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::distributed_network::{DistributedNetwork, DistributedConfig};
+
+// Discovery server (registry)
+let registry_config = DistributedConfig {
+    network_id: "discovery_registry".to_string(),
+    instance_id: "registry_001".to_string(),
+    bind_address: "0.0.0.0".to_string(),
+    bind_port: 8090,
+    discovery_endpoints: vec![], // Empty - this IS the discovery server
+    // ... other config
+};
+
+let mut registry_network = DistributedNetwork::new(registry_config).await?;
+registry_network.start().await?;
+println!("🔍 Discovery registry started on port 8090");
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-client-networks-using-registry"><a class="header" href="#2-client-networks-using-registry">2. Client Networks Using Registry</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Client networks connect to registry for discovery
+let client_config = DistributedConfig {
+    network_id: "worker_network".to_string(),
+    instance_id: "worker_001".to_string(),
+    bind_address: "127.0.0.1".to_string(),
+    bind_port: 8091,
+    discovery_endpoints: vec!["http://registry:8090".to_string()],
+    // ... other config
+};
+
+let mut client_network = DistributedNetwork::new(client_config).await?;
+client_network.start().await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-external-discovery-services"><a class="header" href="#3-external-discovery-services">3. External Discovery Services</a></h3>
+<p>Integrate with external service discovery systems:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Using Consul
+let consul_config = DistributedConfig {
+    network_id: "consul_client".to_string(),
+    discovery_endpoints: vec![
+        "http://consul.service.consul:8500/v1/agent/services".to_string()
+    ],
+    // ... other config
+};
+
+// Using etcd
+let etcd_config = DistributedConfig {
+    network_id: "etcd_client".to_string(),
+    discovery_endpoints: vec![
+        "http://etcd.cluster.local:2379/v2/keys/reflow/services".to_string()
+    ],
+    // ... other config
+};
+
+// Using Kubernetes DNS
+let k8s_config = DistributedConfig {
+    network_id: "k8s_service".to_string(),
+    discovery_endpoints: vec![
+        "http://reflow-discovery.default.svc.cluster.local:8080".to_string()
+    ],
+    // ... other config
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="network-registration"><a class="header" href="#network-registration">Network Registration</a></h2>
+<h3 id="basic-registration"><a class="header" href="#basic-registration">Basic Registration</a></h3>
+<p>Networks automatically register themselves when started:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let network_config = DistributedConfig {
+    network_id: "ml_processing_cluster".to_string(),
+    instance_id: "gpu_worker_001".to_string(),
+    bind_address: "0.0.0.0".to_string(),
+    bind_port: 8080,
+    discovery_endpoints: vec!["http://discovery:8090".to_string()],
+    // ... other config
+};
+
+let mut network = DistributedNetwork::new(network_config).await?;
+
+// Registration happens automatically on start
+network.start().await?;
+// Network is now registered with discovery service
+<span class="boring">}</span></code></pre></pre>
+<h3 id="registration-with-metadata"><a class="header" href="#registration-with-metadata">Registration with Metadata</a></h3>
+<p>Include additional metadata during registration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Register with capabilities and metadata
+let registration_metadata = serde_json::json!({
+    "capabilities": ["ml_training", "gpu_compute", "data_processing"],
+    "resources": {
+        "cpu_cores": 32,
+        "gpu_count": 4,
+        "memory_gb": 128
+    },
+    "version": "1.2.0",
+    "tags": ["ml", "gpu", "production"],
+    "health_check_url": "http://worker:8080/health"
+});
+
+// This metadata is included in registration (implementation detail)
+// The discovery service can use this for intelligent routing
+<span class="boring">}</span></code></pre></pre>
+<h3 id="manual-registration-control"><a class="header" href="#manual-registration-control">Manual Registration Control</a></h3>
+<p>Control registration timing and behavior:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Start network without auto-registration
+let mut network = DistributedNetwork::new(config).await?;
+network.start().await?;
+
+// Perform initialization
+setup_local_actors(&amp;mut network).await?;
+run_health_checks(&amp;network).await?;
+
+// Register manually when ready
+network.register_with_discovery().await?;
+println!("✅ Network registered and ready for connections");
+<span class="boring">}</span></code></pre></pre>
+<h2 id="network-discovery"><a class="header" href="#network-discovery">Network Discovery</a></h2>
+<h3 id="discover-available-networks"><a class="header" href="#discover-available-networks">Discover Available Networks</a></h3>
+<p>Find networks that are currently available:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Discover all available networks
+let discovered_networks = client_network.discover_networks().await?;
+
+for network_info in discovered_networks {
+    println!("🌐 Found network: {} ({})", 
+        network_info.network_id, 
+        network_info.endpoint
+    );
+    println!("   Capabilities: {:?}", network_info.capabilities);
+    println!("   Last seen: {}", network_info.last_seen);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="filtered-discovery"><a class="header" href="#filtered-discovery">Filtered Discovery</a></h3>
+<p>Find networks with specific capabilities:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Discover networks with ML capabilities
+let ml_networks = client_network.discover_networks_with_capability("ml_training").await?;
+
+for network in ml_networks {
+    println!("🧠 ML Network: {} at {}", network.network_id, network.endpoint);
+    
+    // Connect to ML networks
+    client_network.connect_to_network(&amp;network.endpoint).await?;
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="discovery-by-tags"><a class="header" href="#discovery-by-tags">Discovery by Tags</a></h3>
+<p>Find networks using tag-based filtering:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Discover production GPU networks
+let gpu_networks = client_network.discover_networks_by_tags(vec!["gpu", "production"]).await?;
+
+for network in gpu_networks {
+    if network.is_healthy() {
+        client_network.connect_to_network(&amp;network.endpoint).await?;
+        println!("✅ Connected to GPU network: {}", network.network_id);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="automatic-actor-discovery"><a class="header" href="#automatic-actor-discovery">Automatic Actor Discovery</a></h2>
+<h3 id="discover-actors-on-connected-networks"><a class="header" href="#discover-actors-on-connected-networks">Discover Actors on Connected Networks</a></h3>
+<p>Once connected to a network, discover its available actors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Connect to a network first
+client_network.connect_to_network("ml_cluster:8080").await?;
+
+// Discover actors on that network
+let actors = client_network.discover_actors_on_network("ml_cluster").await?;
+
+for actor in actors {
+    println!("🎭 Actor: {} ({})", actor.name, actor.component_type);
+    println!("   Capabilities: {:?}", actor.capabilities);
+    println!("   Ports: in={:?}, out={:?}", actor.inports, actor.outports);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="automatic-registration"><a class="header" href="#automatic-registration">Automatic Registration</a></h3>
+<p>Register all discovered actors automatically:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Discover and register all compatible actors
+let discovered_actors = client_network.discover_actors_on_network("data_cluster").await?;
+
+for actor in discovered_actors {
+    // Only register actors we can use
+    if actor.capabilities.contains(&amp;"data_processing".to_string()) {
+        match client_network.register_remote_actor(&amp;actor.name, "data_cluster").await {
+            Ok(_) =&gt; println!("✅ Registered actor: {}", actor.name),
+            Err(e) =&gt; eprintln!("❌ Failed to register {}: {}", actor.name, e),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="selective-auto-registration"><a class="header" href="#selective-auto-registration">Selective Auto-Registration</a></h3>
+<p>Register actors based on complex criteria:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn smart_actor_registration(
+    network: &amp;mut DistributedNetwork,
+    remote_network_id: &amp;str
+) -&gt; Result&lt;Vec&lt;String&gt;, anyhow::Error&gt; {
+    let actors = network.discover_actors_on_network(remote_network_id).await?;
+    let mut registered_actors = Vec::new();
+    
+    for actor in actors {
+        // Complex registration logic
+        let should_register = match actor.component_type.as_str() {
+            "DataProcessorActor" =&gt; {
+                // Only register if we don't have local data processors
+                !network.has_local_actor_of_type("DataProcessorActor").await
+            },
+            "MLTrainerActor" =&gt; {
+                // Only register GPU trainers
+                actor.capabilities.contains(&amp;"gpu_compute".to_string())
+            },
+            "DatabaseActor" =&gt; {
+                // Register if it's a different database type than our local ones
+                let local_dbs = network.get_local_database_types().await;
+                !local_dbs.contains(&amp;actor.get_database_type())
+            },
+            _ =&gt; false, // Don't auto-register unknown types
+        };
+        
+        if should_register {
+            let alias = network.register_remote_actor(&amp;actor.name, remote_network_id).await?;
+            registered_actors.push(alias);
+            println!("🤖 Smart-registered: {} as {}", actor.name, alias);
+        }
+    }
+    
+    Ok(registered_actors)
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="health-monitoring"><a class="header" href="#health-monitoring">Health Monitoring</a></h2>
+<h3 id="network-health-checks"><a class="header" href="#network-health-checks">Network Health Checks</a></h3>
+<p>Monitor the health of discovered networks:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Periodic health monitoring
+async fn monitor_network_health(network: &amp;DistributedNetwork) -&gt; Result&lt;(), anyhow::Error&gt; {
+    let mut interval = tokio::time::interval(Duration::from_secs(30));
+    
+    loop {
+        interval.tick().await;
+        
+        let connected_networks = network.get_connected_networks().await;
+        for network_id in connected_networks {
+            match network.ping_network(&amp;network_id).await {
+                Ok(latency) =&gt; {
+                    println!("✅ Network {} healthy ({}ms)", network_id, latency.as_millis());
+                },
+                Err(e) =&gt; {
+                    eprintln!("❌ Network {} unhealthy: {}", network_id, e);
+                    
+                    // Attempt reconnection
+                    if let Ok(network_info) = network.get_network_info(&amp;network_id).await {
+                        match network.reconnect_to_network(&amp;network_info.endpoint).await {
+                            Ok(_) =&gt; println!("🔄 Reconnected to {}", network_id),
+                            Err(e) =&gt; eprintln!("🔌 Reconnection failed: {}", e),
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="actor-health-monitoring"><a class="header" href="#actor-health-monitoring">Actor Health Monitoring</a></h3>
+<p>Monitor remote actor availability:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn monitor_remote_actors(network: &amp;DistributedNetwork) -&gt; Result&lt;(), anyhow::Error&gt; {
+    let remote_actors = network.list_registered_remote_actors().await;
+    
+    for (actor_alias, actor_ref) in remote_actors {
+        match network.ping_remote_actor(&amp;actor_ref.network_id, &amp;actor_ref.actor_id).await {
+            Ok(_) =&gt; {
+                println!("✅ Remote actor {} is responsive", actor_alias);
+            },
+            Err(e) =&gt; {
+                eprintln!("❌ Remote actor {} is unresponsive: {}", actor_alias, e);
+                
+                // Try to re-register the actor
+                match network.refresh_remote_actor(&amp;actor_alias).await {
+                    Ok(_) =&gt; println!("🔄 Refreshed remote actor: {}", actor_alias),
+                    Err(e) =&gt; {
+                        eprintln!("🚫 Failed to refresh {}: {}", actor_alias, e);
+                        // Consider removing the actor or marking it as unavailable
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="load-balancing-and-failover"><a class="header" href="#load-balancing-and-failover">Load Balancing and Failover</a></h2>
+<h3 id="discover-multiple-instances"><a class="header" href="#discover-multiple-instances">Discover Multiple Instances</a></h3>
+<p>Find multiple instances of the same service:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Find all instances of a specific service type
+let data_processors = client_network.discover_networks_with_capability("data_processing").await?;
+
+println!("Found {} data processing networks:", data_processors.len());
+for (i, network) in data_processors.iter().enumerate() {
+    println!("  {}. {} at {} (load: {}%)", 
+        i + 1, 
+        network.network_id, 
+        network.endpoint,
+        network.cpu_usage.unwrap_or(0.0)
+    );
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="load-balanced-registration"><a class="header" href="#load-balanced-registration">Load-Balanced Registration</a></h3>
+<p>Register actors from multiple networks for load balancing:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Register the same actor type from multiple networks
+let processing_networks = vec!["cluster_1", "cluster_2", "cluster_3"];
+
+for (i, network_id) in processing_networks.iter().enumerate() {
+    if client_network.is_network_available(network_id).await {
+        let alias = format!("data_processor_{}", i + 1);
+        client_network.register_remote_actor_with_alias(
+            &amp;alias,
+            "data_processor", 
+            network_id
+        ).await?;
+        println!("⚖️  Registered load-balanced actor: {}", alias);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="failover-registration"><a class="header" href="#failover-registration">Failover Registration</a></h3>
+<p>Implement failover with primary and backup actors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct FailoverActorRegistry {
+    network: Arc&lt;DistributedNetwork&gt;,
+    primary_actors: HashMap&lt;String, String&gt;,    // service -&gt; primary actor alias
+    backup_actors: HashMap&lt;String, Vec&lt;String&gt;&gt;, // service -&gt; backup actor aliases
+}
+
+impl FailoverActorRegistry {
+    async fn register_with_failover(&amp;mut self, 
+        service_name: &amp;str, 
+        actor_type: &amp;str
+    ) -&gt; Result&lt;(), anyhow::Error&gt; {
+        let networks = self.network.discover_networks_with_capability(actor_type).await?;
+        
+        if networks.is_empty() {
+            return Err(anyhow::anyhow!("No networks found with capability: {}", actor_type));
+        }
+        
+        // Primary: Use the network with lowest load
+        let primary_network = networks.iter()
+            .min_by(|a, b| a.cpu_usage.partial_cmp(&amp;b.cpu_usage).unwrap())
+            .unwrap();
+        
+        let primary_alias = format!("{}_primary", service_name);
+        self.network.register_remote_actor_with_alias(
+            &amp;primary_alias,
+            actor_type,
+            &amp;primary_network.network_id
+        ).await?;
+        
+        self.primary_actors.insert(service_name.to_string(), primary_alias);
+        
+        // Backups: Register from other networks
+        let mut backup_aliases = Vec::new();
+        for (i, network) in networks.iter().skip(1).enumerate() {
+            let backup_alias = format!("{}_backup_{}", service_name, i + 1);
+            self.network.register_remote_actor_with_alias(
+                &amp;backup_alias,
+                actor_type,
+                &amp;network.network_id
+            ).await?;
+            backup_aliases.push(backup_alias);
+        }
+        
+        self.backup_actors.insert(service_name.to_string(), backup_aliases);
+        
+        println!("🛡️  Registered failover service: {} with {} backups", 
+            service_name, backup_aliases.len());
+        
+        Ok(())
+    }
+    
+    async fn handle_primary_failure(&amp;self, service_name: &amp;str) -&gt; Result&lt;String, anyhow::Error&gt; {
+        if let Some(backups) = self.backup_actors.get(service_name) {
+            if let Some(first_backup) = backups.first() {
+                // Promote first backup to primary
+                println!("🔄 Promoting backup to primary for service: {}", service_name);
+                return Ok(first_backup.clone());
+            }
+        }
+        Err(anyhow::anyhow!("No backup available for service: {}", service_name))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="configuration-management"><a class="header" href="#configuration-management">Configuration Management</a></h2>
+<h3 id="discovery-service-configuration"><a class="header" href="#discovery-service-configuration">Discovery Service Configuration</a></h3>
+<p>Configure discovery service behavior:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug, Clone)]
+pub struct DiscoveryConfig {
+    pub refresh_interval_ms: u64,
+    pub health_check_interval_ms: u64,
+    pub max_discovery_retries: u32,
+    pub discovery_timeout_ms: u64,
+    pub enable_auto_registration: bool,
+    pub registration_metadata: serde_json::Value,
+}
+
+impl Default for DiscoveryConfig {
+    fn default() -&gt; Self {
+        DiscoveryConfig {
+            refresh_interval_ms: 30000,      // 30 seconds
+            health_check_interval_ms: 15000, // 15 seconds
+            max_discovery_retries: 3,
+            discovery_timeout_ms: 5000,      // 5 seconds
+            enable_auto_registration: true,
+            registration_metadata: serde_json::json!({
+                "version": "1.0.0",
+                "capabilities": []
+            }),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="environment-specific-discovery"><a class="header" href="#environment-specific-discovery">Environment-Specific Discovery</a></h3>
+<p>Configure discovery for different environments:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn create_discovery_config(environment: &amp;str) -&gt; DiscoveryConfig {
+    match environment {
+        "development" =&gt; DiscoveryConfig {
+            refresh_interval_ms: 10000,  // Faster refresh for dev
+            health_check_interval_ms: 5000,
+            discovery_timeout_ms: 2000,  // Shorter timeout
+            enable_auto_registration: true,
+            registration_metadata: serde_json::json!({
+                "environment": "development",
+                "auto_discovery": true
+            }),
+            ..Default::default()
+        },
+        "production" =&gt; DiscoveryConfig {
+            refresh_interval_ms: 60000,  // Slower refresh for prod
+            health_check_interval_ms: 30000,
+            discovery_timeout_ms: 10000, // Longer timeout
+            enable_auto_registration: false, // Manual control
+            registration_metadata: serde_json::json!({
+                "environment": "production",
+                "manual_registration": true
+            }),
+            ..Default::default()
+        },
+        _ =&gt; DiscoveryConfig::default(),
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="discovery-errors"><a class="header" href="#discovery-errors">Discovery Errors</a></h3>
+<p>Handle common discovery and registration errors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn robust_discovery(network: &amp;DistributedNetwork) -&gt; Result&lt;Vec&lt;NetworkInfo&gt;, anyhow::Error&gt; {
+    let mut retries = 3;
+    let mut last_error = None;
+    
+    while retries &gt; 0 {
+        match network.discover_networks().await {
+            Ok(networks) =&gt; {
+                if networks.is_empty() {
+                    println!("⚠️  No networks discovered, retrying...");
+                } else {
+                    return Ok(networks);
+                }
+            },
+            Err(e) =&gt; {
+                eprintln!("❌ Discovery attempt failed: {}", e);
+                last_error = Some(e);
+                
+                // Wait before retry
+                tokio::time::sleep(Duration::from_secs(2)).await;
+            }
+        }
+        
+        retries -= 1;
+    }
+    
+    Err(last_error.unwrap_or_else(|| anyhow::anyhow!("Discovery failed after retries")))
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="registration-conflicts"><a class="header" href="#registration-conflicts">Registration Conflicts</a></h3>
+<p>Handle registration conflicts gracefully:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn safe_actor_registration(
+    network: &amp;mut DistributedNetwork,
+    actor_name: &amp;str,
+    remote_network: &amp;str
+) -&gt; Result&lt;String, anyhow::Error&gt; {
+    match network.register_remote_actor(actor_name, remote_network).await {
+        Ok(alias) =&gt; Ok(alias),
+        Err(e) if e.to_string().contains("name conflict") =&gt; {
+            // Try with numbered suffix
+            for i in 1..=10 {
+                let attempt_name = format!("{}_{}", actor_name, i);
+                match network.register_remote_actor_with_alias(
+                    &amp;attempt_name, 
+                    actor_name, 
+                    remote_network
+                ).await {
+                    Ok(alias) =&gt; {
+                        println!("✅ Registered with conflict resolution: {}", alias);
+                        return Ok(alias);
+                    },
+                    Err(_) =&gt; continue,
+                }
+            }
+            Err(anyhow::anyhow!("Could not resolve naming conflict for: {}", actor_name))
+        },
+        Err(e) =&gt; Err(e),
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="1-discovery-strategy"><a class="header" href="#1-discovery-strategy">1. Discovery Strategy</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Use hierarchical discovery with fallbacks
+let discovery_endpoints = vec![
+    "http://local-discovery:8090",      // Local first
+    "http://regional-discovery:8090",   // Regional second
+    "http://global-discovery:8090",     // Global fallback
+];
+
+// Configure discovery timeouts appropriately
+let config = DiscoveryConfig {
+    discovery_timeout_ms: 5000,    // 5 seconds max
+    max_discovery_retries: 3,      // Try 3 times
+    refresh_interval_ms: 30000,    // Refresh every 30s
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-health-monitoring"><a class="header" href="#2-health-monitoring">2. Health Monitoring</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Implement comprehensive health monitoring
+async fn comprehensive_health_check(network: &amp;DistributedNetwork) -&gt; HealthStatus {
+    let mut status = HealthStatus::new();
+    
+    // Check discovery service connectivity
+    status.discovery_healthy = network.ping_discovery_service().await.is_ok();
+    
+    // Check connected networks
+    let networks = network.get_connected_networks().await;
+    for network_id in networks {
+        let network_healthy = network.ping_network(&amp;network_id).await.is_ok();
+        status.network_health.insert(network_id, network_healthy);
+    }
+    
+    // Check remote actors
+    let actors = network.list_registered_remote_actors().await;
+    for (alias, actor_ref) in actors {
+        let actor_healthy = network.ping_remote_actor(
+            &amp;actor_ref.network_id, 
+            &amp;actor_ref.actor_id
+        ).await.is_ok();
+        status.actor_health.insert(alias, actor_healthy);
+    }
+    
+    status
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-resource-cleanup"><a class="header" href="#3-resource-cleanup">3. Resource Cleanup</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Proper cleanup on shutdown
+async fn graceful_shutdown(mut network: DistributedNetwork) -&gt; Result&lt;(), anyhow::Error&gt; {
+    // Stop discovery refresh
+    network.stop_discovery_refresh().await?;
+    
+    // Unregister from discovery service
+    network.unregister_from_discovery().await?;
+    
+    // Clean up remote actor registrations
+    let remote_actors = network.list_registered_remote_actors().await;
+    for (alias, _) in remote_actors {
+        network.unregister_remote_actor(&amp;alias).await?;
+    }
+    
+    // Disconnect from all networks
+    let connected = network.get_connected_networks().await;
+    for network_id in connected {
+        network.disconnect_from_network(&amp;network_id).await?;
+    }
+    
+    // Finally shutdown the network
+    network.shutdown().await?;
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="integration-examples"><a class="header" href="#integration-examples">Integration Examples</a></h2>
+<h3 id="docker-swarm-integration"><a class="header" href="#docker-swarm-integration">Docker Swarm Integration</a></h3>
+<pre><code class="language-yaml"># docker-compose.yml
+version: '3.8'
+services:
+  reflow-discovery:
+    image: reflow:latest
+    command: --mode discovery --port 8090
+    ports:
+      - "8090:8090"
+    deploy:
+      replicas: 1
+      
+  reflow-worker:
+    image: reflow:latest
+    command: --mode worker --discovery http://reflow-discovery:8090
+    deploy:
+      replicas: 3
+    depends_on:
+      - reflow-discovery
+</code></pre>
+<h3 id="kubernetes-integration"><a class="header" href="#kubernetes-integration">Kubernetes Integration</a></h3>
+<pre><code class="language-yaml"># reflow-discovery-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: reflow-discovery
+spec:
+  selector:
+    app: reflow-discovery
+  ports:
+    - port: 8090
+      targetPort: 8090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reflow-discovery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reflow-discovery
+  template:
+    metadata:
+      labels:
+        app: reflow-discovery
+    spec:
+      containers:
+      - name: reflow
+        image: reflow:latest
+        args: ["--mode", "discovery", "--port", "8090"]
+        ports:
+        - containerPort: 8090
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="conflict-resolution.html">Conflict Resolution</a> - Handle actor name conflicts</li>
+<li><a href="setting-up-networks.html">Setting Up Distributed Networks</a> - Basic network setup</li>
+<li><a href="remote-actors.html">Remote Actors</a> - Working with remote actors</li>
+</ul>
+<h2 id="related-documentation"><a class="header" href="#related-documentation">Related Documentation</a></h2>
+<ul>
+<li><a href="../../architecture/distributed-networks.html">Architecture: Distributed Networks</a></li>
+<li><a href="../../tutorials/distributed-workflow-example.html">Tutorial: Distributed Workflow Example</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/distributed/remote-actors.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/distributed/conflict-resolution.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/distributed/remote-actors.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/distributed/conflict-resolution.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

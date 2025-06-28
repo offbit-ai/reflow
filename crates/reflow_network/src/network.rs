@@ -24,6 +24,7 @@ use wasm_bindgen::prelude::*;
 use rusty_pool::ThreadPool;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::time::Duration;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsValue;
@@ -33,7 +34,7 @@ use wasm_bindgen_futures::spawn_local;
 #[cfg(target_arch = "wasm32")]
 use crate::actor::ExternActor;
 
-use crate::actor::{Actor, ActorState, MemoryState, Port};
+use crate::actor::{Actor, ActorConfig, ActorState, MemoryState, Port};
 
 #[cfg(target_arch = "wasm32")]
 use crate::actor::ActorChannel;
@@ -79,7 +80,7 @@ pub enum NetworkEvent {
     #[serde(rename_all = "camelCase")]
     ActorEmit {
         actor_id: String,
-        message: EncodableValue
+        message: EncodableValue,
     },
     #[serde(rename_all = "camelCase")]
     FlowTrace { from: FlowStub, to: FlowStub },
@@ -100,8 +101,9 @@ pub struct FlowStub {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct Network {
     config: NetworkConfig,
-    pub(crate) actors: HashMap<String, Box<dyn Actor>>,
-    pub(crate) nodes: HashMap<String, String>,
+    pub(crate) actors: HashMap<String, Arc<dyn Actor>>,
+    pub(crate) initialized_actors: HashMap<String, Arc<dyn Actor>>,
+    pub(crate) nodes: HashMap<String, GraphNode>,
     connectors: Vec<Connector>,
     initials: Vec<InitialPacket>,
     pub(crate) network_event_emitter: (flume::Sender<NetworkEvent>, flume::Receiver<NetworkEvent>),
@@ -130,39 +132,39 @@ impl Network {
             .map_err(|err| JsValue::from_str(format!("{}", err.to_string()).as_str()))?;
         Ok(())
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = createActor)]
     pub fn create_actor(&mut self, name: &str, actor: ExternActor) -> Result<JsValue, JsValue> {
         use crate::actor::{JsWasmActor, WasmActor};
-        
+
         // Register the actor in the network
         self._register_actor(name, actor.clone())?;
-        
+
         // Create a JsWasmActor wrapper for the actor
         let js_actor = JsWasmActor::new(actor);
-        
+
         Ok(JsValue::from(js_actor))
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = getActorNames)]
     pub fn get_actor_names(&self) -> Vec<String> {
         self.actors.keys().cloned().collect()
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = getActiveActors)]
     pub fn _get_active_actors(&self) -> Vec<String> {
         self.get_active_actors()
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = getActorCount)]
     pub fn _get_actor_count(&self) -> usize {
         self.actor_count()
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = getMessageQueueSize)]
     pub fn _get_message_queue_size(&self) -> usize {
@@ -178,7 +180,12 @@ impl Network {
             );
             return;
         }
-        self.nodes.insert(id.to_string(), process.to_string());
+        let node = GraphNode {
+            id: id.to_string(),
+            component: process.to_string(),
+            metadata: None,
+        };
+        self.nodes.insert(id.to_string(), node);
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -196,7 +203,8 @@ impl Network {
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name= start)]
     pub async fn _start(&mut self) -> Result<(), JsValue> {
-        self.start().await
+        self.start()
+            .await
             .map_err(|err| JsValue::from_str(err.to_string().as_str()))?;
 
         Ok(())
@@ -205,8 +213,8 @@ impl Network {
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen]
     pub fn emit(&mut self, actor_id: String, packet: JsValue) {
-        if let Some(process) = self.nodes.get(&actor_id) {
-            let actor = self.actors.get(process).unwrap();
+        if let Some(node) = self.nodes.get(&actor_id) {
+            let actor = self.actors.get(&node.component).unwrap();
             let outports = actor.get_outports();
             let messages = packet
                 .into_serde::<HashMap<String, serde_json::Value>>()
@@ -217,7 +225,7 @@ impl Network {
             Self::send_outport_msg(outports, messages).unwrap();
         }
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = sendToActor)]
     pub fn _send_to_actor(&self, actor_id: &str, port: &str, data: JsValue) -> Result<(), JsValue> {
@@ -229,16 +237,20 @@ impl Network {
             Err(JsValue::from_str("Failed to parse message data"))
         }
     }
-    
+
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = executeActor)]
     pub async fn _execute_actor(&self, actor_id: &str, data: JsValue) -> Result<JsValue, JsValue> {
         if let Ok(value) = data.into_serde::<Value>() {
-            let result = self.execute_actor(actor_id, Message::from(value))
+            let result = self
+                .execute_actor(actor_id, Message::from(value))
                 .await
                 .map_err(|e| JsValue::from_str(&format!("Failed to execute actor: {}", e)))?;
-                
-            Ok(JsValue::from_serde(&serde_json::to_value(result).unwrap()).unwrap_or(JsValue::NULL))
+
+            Ok(
+                JsValue::from_serde(&serde_json::to_value(result).unwrap())
+                    .unwrap_or(JsValue::NULL),
+            )
         } else {
             Err(JsValue::from_str("Failed to parse message data"))
         }
@@ -287,7 +299,7 @@ impl Network {
                 let _ = _clear_interval.call1(&JsValue::null(), handle);
             }
         }
-        
+
         // Shutdown the network
         self.shutdown();
     }
@@ -309,6 +321,7 @@ impl Network {
             config: config.clone(),
             nodes: HashMap::new(),
             actors: HashMap::new(),
+            initialized_actors: HashMap::new(),
             connectors: Vec::new(),
             initials: Vec::new(),
             network_event_emitter: flume::unbounded(),
@@ -323,26 +336,32 @@ impl Network {
         }
     }
 
-    pub async fn start(&self) -> Result<(), anyhow::Error> {
+    pub async fn start(&mut self) -> Result<(), anyhow::Error> {
         // Warm up all processes
         #[cfg(not(target_arch = "wasm32"))]
         {
-            // use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-            //  self
-            //     .actors
-            //     .iter()
-            //     .for_each(|(_, actor)| async {
-            //         Self::init_process(actor, self.thread_pool.clone()).await
-            //     });
 
-            for actor in &self.actors {
-                Self::init_process(actor.1, self.thread_pool.clone()).await;
+            for (id, node) in self.nodes.clone() {
+
+                let actor = self.actors.get(&node.component).expect(&format!(
+                    "Expected to find actor {} for node {}",
+                    node.component, id
+                ));
+                let config = ActorConfig::from_node(node.clone())?;
+               
+                Self::init_process(actor.create_process(config), self.thread_pool.clone()).await;
+                self.initialized_actors.insert(id, actor.clone());
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
-            for (id, actor) in &self.actors {
-                Self::init_process(actor, self.thread_pool.clone()).await;
+            for (id, node) in &self.nodes {
+                let actor = self.actors.get(&node.component).expect(&format!(
+                    "Expected to find actor {} for node {}",
+                    node.component, id
+                ));
+               let config = ActorConfig::from_node(node.clone())?;
+                Self::init_process(actor.create_process(config), self.thread_pool.clone()).await;
             }
         }
 
@@ -366,13 +385,13 @@ impl Network {
         #[cfg(not(target_arch = "wasm32"))]
         {
             use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-            self.initials.par_iter().for_each(|iip| {
+            for iip in &self.initials {
                 self.send_to_actor(
                     &iip.to.actor,
                     &iip.to.port,
                     iip.to
                         .initial_data
-                       .clone()
+                        .clone()
                         .expect("Expected initial packet to have data"),
                 )
                 .expect("Expected to send initial packet");
@@ -399,7 +418,7 @@ impl Network {
                         },
                     });
                 }
-            });
+            }
         }
         #[cfg(target_arch = "wasm32")]
         {
@@ -443,21 +462,22 @@ impl Network {
         Ok(())
     }
 
-    pub(crate) async fn init_process(actor: &Box<dyn Actor>, thread_pool: Arc<Mutex<ThreadPool>>) {
-       
-        let process = actor.create_process();
-       
+    pub(crate) async fn init_process(
+        actor_process: std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>,
+        thread_pool: Arc<Mutex<ThreadPool>>,
+    ) {
+        // let process = actor.create_process(actor_config);
 
         #[cfg(not(target_arch = "wasm32"))]
         //thread_pool.lock().unwrap().spawn(process);
         let _ = tokio::spawn(async move {
-            process.await;
+            actor_process.await;
         });
 
         // thread_pool.lock().unwrap().spawn();
 
         #[cfg(target_arch = "wasm32")]
-        spawn_local(process);
+        spawn_local(actor_process);
     }
 
     pub fn set_compression_config(&mut self, config: CompressionConfig) {
@@ -475,8 +495,8 @@ impl Network {
     }
 
     pub fn send_to_actor(&self, id: &str, port: &str, data: Message) -> Result<(), anyhow::Error> {
-        if let Some(process) = self.nodes.get(id) {
-            let actor = self.actors.get(process).unwrap();
+        if let Some(node) = self.nodes.get(id) {
+            let actor = self.actors.get(&node.component).unwrap();
 
             actor
                 .get_inports()
@@ -496,8 +516,8 @@ impl Network {
         port: &str,
         data: EncodedMessage,
     ) -> Result<(), anyhow::Error> {
-        if let Some(process) = self.nodes.get(id) {
-            let actor = self.actors.get(process).unwrap();
+        if let Some(node) = self.nodes.get(id) {
+            let actor = self.actors.get(&node.component).unwrap();
 
             actor
                 .get_inports()
@@ -522,11 +542,11 @@ impl Network {
             )));
         }
 
-        self.actors.insert(name.to_string(), Box::new(actor));
+        self.actors.insert(name.to_string(), Arc::new(actor));
         Ok(())
     }
 
-    pub fn add_node(&mut self, id: &str, process: &str) -> Result<(), anyhow::Error> {
+    pub fn add_node(&mut self, id: &str, process: &str, metadata: Option<HashMap<String, Value>>) -> Result<(), anyhow::Error> {
         if !self.actors.contains_key(process) {
             return Err(anyhow::Error::msg(format!(
                 "Could not find process '{}' in Network",
@@ -534,8 +554,13 @@ impl Network {
             )));
         }
 
-        self.nodes.insert(id.to_string(), process.to_string());
-        
+        let node = GraphNode {
+            id: id.to_string(),
+            component: process.to_string(),
+            metadata,
+        };
+        self.nodes.insert(id.to_string(), node);
+
         Ok(())
     }
 
@@ -551,7 +576,7 @@ impl Network {
         let mut network = Self::new(config);
 
         for (id, node) in &graph.nodes {
-            network.nodes.insert(id.to_string(), node.component.clone());
+            network.nodes.insert(id.to_string(), node.clone());
         }
 
         for iip in &graph.initializers {
@@ -590,7 +615,7 @@ impl Network {
                     match graph_event {
                         GraphEvents::AddNode(node_value) => {
                             if let Ok(node) = serde_json::from_value::<GraphNode>(node_value) {
-                                let _ = network.add_node(&node.id, &node.component);
+                                let _ = network.add_node(&node.id, &node.component, node.metadata);
                             }
                         }
                         GraphEvents::RemoveNode(node_value) => {
@@ -674,23 +699,24 @@ impl Network {
             .clone()
             .shutdown_join_timeout(Duration::from_millis(2500));
         // Clear all actors
-        
+
         let active_actors = self.get_active_actors();
         for actor_id in active_actors {
             if let Some(actor) = self.actors.get(&actor_id) {
                 actor.shutdown();
             }
         }
-
     }
 
     pub fn actor_count(&self) -> usize {
-       self.actors.len()
+        self.actors.len()
     }
 
-    pub async fn execute_actor(&self, actor_id: &str, message: Message) -> Result<Message, anyhow::Error> {
-
-
+    pub async fn execute_actor(
+        &self,
+        actor_id: &str,
+        message: Message,
+    ) -> Result<Message, anyhow::Error> {
         println!(
             "🎭 Executing actor: {} with message type: {:?}",
             actor_id,
@@ -709,7 +735,11 @@ impl Network {
     }
 
     pub fn get_active_actors(&self) -> Vec<String> {
-        self.actors.iter().filter(|(_, actor)| actor.load_count().lock().get() > 0 ).map(|(id, _)| id.clone()).collect()
+        self.initialized_actors
+            .iter()
+            .filter(|(_, actor)| actor.load_count().lock().get() > 0)
+            .map(|(id, _)| id.clone())
+            .collect()
     }
 
     pub fn get_message_queue_size(&self) -> usize {

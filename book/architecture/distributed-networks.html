@@ -1,0 +1,591 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Distributed Networks - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/architecture/distributed-networks.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="distributed-networks"><a class="header" href="#distributed-networks">Distributed Networks</a></h1>
+<p>Reflow's distributed network system enables bi-directional communication between separate Reflow instances, allowing you to build scalable, multi-node workflows while maintaining the familiar actor-based programming model.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>The distributed network architecture extends Reflow's local actor model to support remote communication across network boundaries. This enables:</p>
+<ul>
+<li><strong>Cross-Network Actor Communication</strong>: Actors in one Reflow instance can send messages to actors in remote instances</li>
+<li><strong>Network-Transparent Operation</strong>: Remote actors appear as local actors in your workflows</li>
+<li><strong>Bi-directional Message Flow</strong>: Full duplex communication between distributed nodes</li>
+<li><strong>Automatic Discovery</strong>: Networks can discover and register with each other automatically</li>
+<li><strong>Conflict Resolution</strong>: Smart handling of actor name conflicts across networks</li>
+</ul>
+<h2 id="architecture-components"><a class="header" href="#architecture-components">Architecture Components</a></h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                    Distributed Reflow Network                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  Instance A (Server)           │  Instance B (Client)               │
+│ ┌─────────────────────────────┐ │ ┌─────────────────────────────────┐ │
+│ │ Local Network               │ │ │ Local Network                   │ │
+│ │ ├─ Actor A1 ─┐              │ │ │ ├─ Actor B1 ─┐                  │ │
+│ │ ├─ Actor A2 ─┤              │ │ │ ├─ Actor B2 ─┤                  │ │
+│ │ └─ Actor A3 ─┘              │ │ │ └─ Actor B3 ─┘                  │ │
+│ └─────────────────────────────┘ │ └─────────────────────────────────┘ │
+│            │                    │                    │                │
+│ ┌─────────────────────────────┐ │ ┌─────────────────────────────────┐ │
+│ │ Network Bridge              │◄─┤ │ Network Bridge                  │ │
+│ │ ├─ Discovery Service        │ │ │ ├─ Discovery Service             │ │
+│ │ ├─ Message Router           │ │ │ ├─ Message Router                │ │
+│ │ ├─ Connection Manager       │ │ │ ├─ Connection Manager            │ │
+│ │ └─ Remote Actor Proxy       │ │ │ └─ Remote Actor Proxy            │ │
+│ └─────────────────────────────┘ │ └─────────────────────────────────┘ │
+│            │                    │                    │                │
+│ ┌─────────────────────────────┐ │ ┌─────────────────────────────────┐ │
+│ │ Transport Layer             │◄─┤ │ Transport Layer                 │ │
+│ │ ├─ WebSocket/TCP Server     │ │ │ ├─ WebSocket/TCP Client          │ │
+│ │ ├─ Protocol Handler         │ │ │ ├─ Protocol Handler              │ │
+│ │ └─ Serialization            │ │ │ └─ Serialization                 │ │
+│ └─────────────────────────────┘ │ └─────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="core-components"><a class="header" href="#core-components">Core Components</a></h3>
+<ol>
+<li><strong>DistributedNetwork</strong>: Main orchestrator that combines local networks with distributed communication</li>
+<li><strong>NetworkBridge</strong>: Handles all cross-network communication and actor registration</li>
+<li><strong>DiscoveryService</strong>: Automatic network discovery and registration</li>
+<li><strong>MessageRouter</strong>: Routes messages between local and remote actors</li>
+<li><strong>RemoteActorProxy</strong>: Local representatives of remote actors</li>
+<li><strong>TransportLayer</strong>: WebSocket/TCP communication infrastructure</li>
+</ol>
+<h2 id="basic-setup"><a class="header" href="#basic-setup">Basic Setup</a></h2>
+<h3 id="creating-a-distributed-network"><a class="header" href="#creating-a-distributed-network">Creating a Distributed Network</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::distributed_network::{DistributedNetwork, DistributedConfig};
+use reflow_network::network::NetworkConfig;
+
+// Configure the distributed network
+let config = DistributedConfig {
+    network_id: "main_workflow_engine".to_string(),
+    instance_id: "server_001".to_string(),
+    bind_address: "0.0.0.0".to_string(),
+    bind_port: 8080,
+    discovery_endpoints: vec![
+        "http://discovery.example.com:3000".to_string()
+    ],
+    auth_token: Some("secure_token".to_string()),
+    max_connections: 100,
+    heartbeat_interval_ms: 30000,
+    local_network_config: NetworkConfig::default(),
+};
+
+// Create and start the distributed network
+let mut distributed_network = DistributedNetwork::new(config).await?;
+distributed_network.start().await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="registering-local-actors"><a class="header" href="#registering-local-actors">Registering Local Actors</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use your_actors::DataProcessorActor;
+
+// Register actors that will be available to remote networks
+distributed_network.register_local_actor(
+    "data_processor",
+    DataProcessorActor::new(),
+    Some(HashMap::from([
+        ("capability".to_string(), serde_json::Value::String("data_processing".to_string())),
+        ("version".to_string(), serde_json::Value::String("1.0.0".to_string())),
+    ]))
+)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="connecting-to-remote-networks"><a class="header" href="#connecting-to-remote-networks">Connecting to Remote Networks</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Connect to another network
+distributed_network.connect_to_network("192.168.1.100:8080").await?;
+
+// Register a remote actor for local use
+distributed_network.register_remote_actor(
+    "remote_validator",      // Remote actor ID
+    "validation_network"     // Remote network ID
+).await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="actor-communication-patterns"><a class="header" href="#actor-communication-patterns">Actor Communication Patterns</a></h2>
+<h3 id="direct-remote-messaging"><a class="header" href="#direct-remote-messaging">Direct Remote Messaging</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::message::Message;
+
+// Send message to remote actor
+distributed_network.send_to_remote_actor(
+    "validation_network",    // Target network
+    "remote_validator",      // Target actor
+    "input",                 // Target port
+    Message::String("validate this data".to_string().into())
+).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="workflow-integration"><a class="header" href="#workflow-integration">Workflow Integration</a></h3>
+<p>Remote actors integrate seamlessly into local workflows:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Get local network handle
+let local_network = distributed_network.get_local_network();
+let mut network = local_network.write();
+
+// Add local actor
+network.add_node("local_collector", "data_collector", None)?;
+
+// Add remote actor (appears as local)
+network.add_node("remote_processor", "remote_validator@validation_network", None)?;
+
+// Connect them in a workflow
+network.add_connection(Connector {
+    from: ConnectionPoint {
+        actor: "local_collector".to_string(),
+        port: "output".to_string(),
+        ..Default::default()
+    },
+    to: ConnectionPoint {
+        actor: "remote_processor".to_string(),
+        port: "input".to_string(),
+        ..Default::default()
+    },
+})?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="network-discovery"><a class="header" href="#network-discovery">Network Discovery</a></h2>
+<h3 id="automatic-discovery"><a class="header" href="#automatic-discovery">Automatic Discovery</a></h3>
+<p>The discovery service can automatically find and register remote networks:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Enable automatic discovery
+let config = DistributedConfig {
+    // ... other config
+    discovery_endpoints: vec![
+        "http://service-discovery.local:3000".to_string(),
+        "http://backup-discovery.local:3000".to_string(),
+    ],
+    // ...
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="manual-network-registration"><a class="header" href="#manual-network-registration">Manual Network Registration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Manually connect to specific networks
+let networks_to_connect = vec![
+    "analytics.company.com:8080",
+    "ml-pipeline.company.com:8080",
+    "data-warehouse.company.com:8080",
+];
+
+for endpoint in networks_to_connect {
+    match distributed_network.connect_to_network(endpoint).await {
+        Ok(_) =&gt; println!("Connected to {}", endpoint),
+        Err(e) =&gt; eprintln!("Failed to connect to {}: {}", endpoint, e),
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="conflict-resolution"><a class="header" href="#conflict-resolution">Conflict Resolution</a></h2>
+<p>When multiple networks have actors with the same name, Reflow provides several resolution strategies:</p>
+<h3 id="automatic-aliasing"><a class="header" href="#automatic-aliasing">Automatic Aliasing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Register remote actor with automatic conflict resolution
+let alias = distributed_network.register_remote_actor_with_strategy(
+    "data_processor",                    // Remote actor name (conflicts with local)
+    "analytics_network",                 // Remote network
+    ConflictResolutionStrategy::AutoAlias // Strategy
+).await?;
+
+println!("Remote actor available as: {}", alias);
+// Output: "Remote actor available as: analytics_network_data_processor"
+<span class="boring">}</span></code></pre></pre>
+<h3 id="manual-aliasing"><a class="header" href="#manual-aliasing">Manual Aliasing</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Provide custom aliases for clarity
+distributed_network.register_remote_actor_with_strategy(
+    "validator",
+    "security_network",
+    ConflictResolutionStrategy::ManualAlias("security_validator".to_string())
+).await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="security-considerations"><a class="header" href="#security-considerations">Security Considerations</a></h2>
+<h3 id="authentication"><a class="header" href="#authentication">Authentication</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = DistributedConfig {
+    // Use authentication tokens
+    auth_token: Some("your_secure_token_here".to_string()),
+    // ... other config
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="network-isolation"><a class="header" href="#network-isolation">Network Isolation</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Restrict which networks can connect
+let config = DistributedConfig {
+    // Only allow specific discovery endpoints
+    discovery_endpoints: vec![
+        "https://trusted-discovery.company.com:3000".to_string()
+    ],
+    max_connections: 10, // Limit concurrent connections
+    // ... other config
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="monitoring-and-health-checks"><a class="header" href="#monitoring-and-health-checks">Monitoring and Health Checks</a></h2>
+<h3 id="connection-status"><a class="header" href="#connection-status">Connection Status</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Check network health
+let bridge_status = distributed_network.get_bridge_status().await?;
+println!("Connected networks: {}", bridge_status.connected_networks.len());
+
+for (network_id, status) in &amp;bridge_status.connected_networks {
+    println!("  {}: {:?}", network_id, status);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="heartbeat-monitoring"><a class="header" href="#heartbeat-monitoring">Heartbeat Monitoring</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = DistributedConfig {
+    heartbeat_interval_ms: 15000, // 15 second heartbeats
+    // ... other config
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="connection-failures"><a class="header" href="#connection-failures">Connection Failures</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::distributed_network::DistributedError;
+
+match distributed_network.connect_to_network("unreachable:8080").await {
+    Ok(_) =&gt; println!("Connected successfully"),
+    Err(DistributedError::ConnectionTimeout) =&gt; {
+        eprintln!("Connection timed out - network may be down");
+    },
+    Err(DistributedError::AuthenticationFailed) =&gt; {
+        eprintln!("Authentication failed - check token");
+    },
+    Err(e) =&gt; eprintln!("Other error: {}", e),
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="message-delivery-failures"><a class="header" href="#message-delivery-failures">Message Delivery Failures</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Messages automatically retry with backoff
+match distributed_network.send_to_remote_actor(
+    "target_network", "target_actor", "input", message
+).await {
+    Ok(_) =&gt; println!("Message sent successfully"),
+    Err(e) =&gt; {
+        eprintln!("Failed to send message: {}", e);
+        // Message will be retried automatically
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-considerations"><a class="header" href="#performance-considerations">Performance Considerations</a></h2>
+<h3 id="connection-pooling"><a class="header" href="#connection-pooling">Connection Pooling</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = DistributedConfig {
+    max_connections: 50, // Adjust based on load
+    // ... other config
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="message-batching"><a class="header" href="#message-batching">Message Batching</a></h3>
+<p>Messages are automatically batched for efficiency, but you can tune batching behavior:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Large messages are automatically compressed
+let large_data = Message::Object(/* large JSON object */);
+distributed_network.send_to_remote_actor(
+    "target_network", "target_actor", "bulk_input", large_data
+).await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="network-design"><a class="header" href="#network-design">Network Design</a></h3>
+<ol>
+<li><strong>Use Descriptive Network IDs</strong>: Choose meaningful names like <code>analytics_cluster</code> instead of <code>network1</code></li>
+<li><strong>Plan for Conflicts</strong>: Use descriptive actor names to minimize naming conflicts</li>
+<li><strong>Group Related Services</strong>: Co-locate related actors in the same network for efficiency</li>
+<li><strong>Design for Failure</strong>: Always handle network partitions and connection failures gracefully</li>
+</ol>
+<h3 id="actor-organization"><a class="header" href="#actor-organization">Actor Organization</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Descriptive, specific names
+distributed_network.register_local_actor("customer_data_validator", validator, None)?;
+distributed_network.register_local_actor("payment_processor", processor, None)?;
+
+// Avoid: Generic names likely to conflict
+// distributed_network.register_local_actor("validator", validator, None)?;
+// distributed_network.register_local_actor("processor", processor, None)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="resource-management"><a class="header" href="#resource-management">Resource Management</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Always clean up connections
+struct DistributedWorkflow {
+    network: DistributedNetwork,
+}
+
+impl Drop for DistributedWorkflow {
+    fn drop(&amp;mut self) {
+        // Gracefully shutdown connections
+        if let Err(e) = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(self.network.shutdown())
+        }) {
+            eprintln!("Error during cleanup: {}", e);
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
+<ol>
+<li><strong>Connection Refused</strong>: Check firewall settings and ensure target network is running</li>
+<li><strong>Authentication Failed</strong>: Verify auth tokens match between networks</li>
+<li><strong>Actor Not Found</strong>: Ensure remote actor is registered and network is connected</li>
+<li><strong>Message Timeouts</strong>: Check network latency and increase timeout values if needed</li>
+</ol>
+<h3 id="debug-logging"><a class="header" href="#debug-logging">Debug Logging</a></h3>
+<p>Enable detailed logging for troubleshooting:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use tracing_subscriber;
+
+// Enable debug logging
+tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::DEBUG)
+    .init();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="health-check-endpoint"><a class="header" href="#health-check-endpoint">Health Check Endpoint</a></h3>
+<p>Networks automatically expose health endpoints:</p>
+<pre><code class="language-bash"># Check network health
+curl http://your-network:8080/health
+
+# Get network status
+curl http://your-network:8080/status
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="../api/distributed/remote-actors.html">Remote Actors</a> - Detailed remote actor API</li>
+<li><a href="../api/distributed/discovery-registration.html">Discovery &amp; Registration</a> - Network discovery details</li>
+<li><a href="../api/distributed/conflict-resolution.html">Conflict Resolution</a> - Advanced conflict handling</li>
+<li><a href="../tutorials/distributed-workflow-example.html">Distributed Workflow Tutorial</a> - Step-by-step example</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../architecture/graph-system.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../architecture/multi-graph-composition.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../architecture/graph-system.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../architecture/multi-graph-composition.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

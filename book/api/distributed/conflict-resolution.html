@@ -1,0 +1,799 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Conflict Resolution - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/api/distributed/conflict-resolution.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="conflict-resolution"><a class="header" href="#conflict-resolution">Conflict Resolution</a></h1>
+<p>Learn how to handle actor name conflicts in distributed Reflow networks.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Name conflicts occur when multiple networks have actors with identical names. This guide covers:</p>
+<ul>
+<li><strong>Understanding conflict types</strong>: Different scenarios that cause conflicts</li>
+<li><strong>Resolution strategies</strong>: Automatic and manual approaches to resolve conflicts</li>
+<li><strong>Prevention techniques</strong>: Best practices to avoid conflicts</li>
+<li><strong>Hierarchical namespacing</strong>: Advanced organization patterns</li>
+</ul>
+<h2 id="conflict-types"><a class="header" href="#conflict-types">Conflict Types</a></h2>
+<h3 id="1-local-remote-conflicts"><a class="header" href="#1-local-remote-conflicts">1. Local-Remote Conflicts</a></h3>
+<p>Conflict between a local actor and a remote actor with the same name:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Local network has "data_processor"
+network.register_local_actor("data_processor", DataProcessorActor::new())?;
+
+// Trying to register remote actor with same name
+match client_network.register_remote_actor("data_processor", "server_network").await {
+    Err(e) if e.to_string().contains("name conflict") =&gt; {
+        println!("❌ Conflict: local 'data_processor' vs remote 'data_processor'");
+    },
+    _ =&gt; {}
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-remote-remote-conflicts"><a class="header" href="#2-remote-remote-conflicts">2. Remote-Remote Conflicts</a></h3>
+<p>Multiple remote networks have actors with the same name:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Both networks have "authentication_service"
+client_network.register_remote_actor("authentication_service", "primary_auth").await?;
+
+// This will conflict:
+match client_network.register_remote_actor("authentication_service", "backup_auth").await {
+    Err(e) =&gt; println!("❌ Conflict: primary_auth/authentication_service vs backup_auth/authentication_service"),
+    _ =&gt; {}
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-alias-conflicts"><a class="header" href="#3-alias-conflicts">3. Alias Conflicts</a></h3>
+<p>Custom aliases that conflict with existing names:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Register with alias that conflicts with local actor
+match client_network.register_remote_actor_with_alias(
+    "local_actor_name",  // This alias conflicts!
+    "remote_actor",
+    "remote_network"
+).await {
+    Err(e) =&gt; println!("❌ Alias conflicts with existing local actor"),
+    _ =&gt; {}
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="resolution-strategies"><a class="header" href="#resolution-strategies">Resolution Strategies</a></h2>
+<h3 id="1-automatic-aliasing"><a class="header" href="#1-automatic-aliasing">1. Automatic Aliasing</a></h3>
+<p>Let the system automatically generate unique aliases:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::distributed_network::ConflictResolutionStrategy;
+
+// Automatic resolution with numbered suffixes
+let alias = client_network.register_remote_actor_with_strategy(
+    "data_processor",
+    "server_network", 
+    ConflictResolutionStrategy::AutoAlias
+).await?;
+
+// Results in aliases like:
+// - "data_processor" (if no conflict)
+// - "data_processor_1" (first conflict)
+// - "data_processor_2" (second conflict)
+
+println!("✅ Registered as: {}", alias);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-network-prefixing"><a class="header" href="#2-network-prefixing">2. Network Prefixing</a></h3>
+<p>Prefix remote actors with their network name:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let alias = client_network.register_remote_actor_with_strategy(
+    "data_processor",
+    "server_network",
+    ConflictResolutionStrategy::NetworkPrefix
+).await?;
+
+// Results in: "server_network_data_processor"
+println!("✅ Network-prefixed actor: {}", alias);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-fully-qualified-names"><a class="header" href="#3-fully-qualified-names">3. Fully Qualified Names</a></h3>
+<p>Use complete network::actor notation:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let alias = client_network.register_remote_actor_with_strategy(
+    "data_processor", 
+    "server_network",
+    ConflictResolutionStrategy::FullyQualified
+).await?;
+
+// Results in: "server_network::data_processor"
+println!("✅ Fully qualified actor: {}", alias);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-manual-aliases"><a class="header" href="#4-manual-aliases">4. Manual Aliases</a></h3>
+<p>Provide explicit custom aliases:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let alias = client_network.register_remote_actor_with_strategy(
+    "data_processor",
+    "server_network", 
+    ConflictResolutionStrategy::ManualAlias("server_data_proc".to_string())
+).await?;
+
+// Results in: "server_data_proc"
+println!("✅ Custom alias: {}", alias);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="5-fail-on-conflict"><a class="header" href="#5-fail-on-conflict">5. Fail on Conflict</a></h3>
+<p>Explicitly handle conflicts in application code:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>match client_network.register_remote_actor_with_strategy(
+    "data_processor",
+    "server_network",
+    ConflictResolutionStrategy::Fail
+).await {
+    Ok(alias) =&gt; println!("✅ No conflict, registered as: {}", alias),
+    Err(e) =&gt; {
+        println!("❌ Registration failed due to conflict: {}", e);
+        // Handle conflict manually
+        handle_naming_conflict(&amp;mut client_network, "data_processor", "server_network").await?;
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="advanced-conflict-resolution"><a class="header" href="#advanced-conflict-resolution">Advanced Conflict Resolution</a></h2>
+<h3 id="intelligent-conflict-detection"><a class="header" href="#intelligent-conflict-detection">Intelligent Conflict Detection</a></h3>
+<p>Detect and analyze conflicts before registration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn analyze_potential_conflicts(
+    network: &amp;DistributedNetwork,
+    actor_name: &amp;str,
+    remote_network_id: &amp;str
+) -&gt; Result&lt;ConflictAnalysis, anyhow::Error&gt; {
+    let mut analysis = ConflictAnalysis::new();
+    
+    // Check local conflicts
+    if network.has_local_actor(actor_name).await {
+        analysis.local_conflicts.push(LocalConflict {
+            actor_name: actor_name.to_string(),
+            actor_type: network.get_local_actor_type(actor_name).await?,
+        });
+    }
+    
+    // Check remote conflicts
+    let remote_actors = network.list_registered_remote_actors().await;
+    for (alias, actor_ref) in remote_actors {
+        if alias == actor_name {
+            analysis.remote_conflicts.push(RemoteConflict {
+                alias,
+                actor_ref,
+            });
+        }
+    }
+    
+    // Suggest resolutions
+    analysis.suggested_resolutions = suggest_resolutions(&amp;analysis, actor_name, remote_network_id);
+    
+    Ok(analysis)
+}
+
+#[derive(Debug)]
+struct ConflictAnalysis {
+    local_conflicts: Vec&lt;LocalConflict&gt;,
+    remote_conflicts: Vec&lt;RemoteConflict&gt;,
+    suggested_resolutions: Vec&lt;SuggestedResolution&gt;,
+}
+
+#[derive(Debug)]
+struct SuggestedResolution {
+    strategy: ConflictResolutionStrategy,
+    resulting_alias: String,
+    confidence: f32,
+    description: String,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="multi-network-batch-registration"><a class="header" href="#multi-network-batch-registration">Multi-Network Batch Registration</a></h3>
+<p>Handle conflicts when registering actors from multiple networks:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn batch_register_with_conflict_resolution(
+    network: &amp;mut DistributedNetwork,
+    registrations: Vec&lt;(String, String)&gt;  // (actor_name, network_id)
+) -&gt; Result&lt;BatchRegistrationResult, anyhow::Error&gt; {
+    let mut results = BatchRegistrationResult::new();
+    let mut name_usage = HashMap::new();
+    
+    // Analyze all potential conflicts first
+    for (actor_name, network_id) in &amp;registrations {
+        name_usage.entry(actor_name.clone())
+            .or_insert_with(Vec::new)
+            .push(network_id.clone());
+    }
+    
+    // Register with conflict resolution
+    for (actor_name, network_id) in registrations {
+        let strategy = if name_usage[&amp;actor_name].len() &gt; 1 {
+            // Multiple networks have same actor name
+            ConflictResolutionStrategy::NetworkPrefix
+        } else if network.has_local_actor(&amp;actor_name).await {
+            // Conflicts with local actor
+            ConflictResolutionStrategy::FullyQualified
+        } else {
+            // No conflicts expected
+            ConflictResolutionStrategy::AutoAlias
+        };
+        
+        match network.register_remote_actor_with_strategy(&amp;actor_name, &amp;network_id, strategy).await {
+            Ok(alias) =&gt; {
+                results.successful.push(SuccessfulRegistration {
+                    actor_name: actor_name.clone(),
+                    network_id: network_id.clone(),
+                    alias,
+                    strategy_used: strategy,
+                });
+            },
+            Err(e) =&gt; {
+                results.failed.push(FailedRegistration {
+                    actor_name,
+                    network_id,
+                    error: e.to_string(),
+                });
+            }
+        }
+    }
+    
+    Ok(results)
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="context-aware-resolution"><a class="header" href="#context-aware-resolution">Context-Aware Resolution</a></h3>
+<p>Choose resolution strategies based on actor types and usage patterns:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn smart_conflict_resolution(
+    network: &amp;mut DistributedNetwork,
+    actor_name: &amp;str,
+    network_id: &amp;str,
+    actor_metadata: &amp;ActorMetadata
+) -&gt; Result&lt;String, anyhow::Error&gt; {
+    // Analyze actor characteristics
+    let strategy = match actor_metadata.actor_type.as_str() {
+        "DatabaseActor" =&gt; {
+            // For databases, use descriptive prefixes
+            let db_type = actor_metadata.get_database_type().unwrap_or("db");
+            ConflictResolutionStrategy::ManualAlias(
+                format!("{}_{}", db_type, actor_name)
+            )
+        },
+        "MLTrainerActor" =&gt; {
+            // For ML trainers, include model type
+            let model_type = actor_metadata.get_model_type().unwrap_or("model");
+            ConflictResolutionStrategy::ManualAlias(
+                format!("{}_trainer_{}", model_type, network_id)
+            )
+        },
+        "AuthenticationActor" =&gt; {
+            // For auth services, indicate primary/backup
+            let is_primary = actor_metadata.is_primary_service().unwrap_or(false);
+            let role = if is_primary { "primary" } else { "backup" };
+            ConflictResolutionStrategy::ManualAlias(
+                format!("auth_{}_{}", role, network_id)
+            )
+        },
+        _ =&gt; {
+            // Default strategy for other types
+            if network.has_local_actor(actor_name).await {
+                ConflictResolutionStrategy::NetworkPrefix
+            } else {
+                ConflictResolutionStrategy::AutoAlias
+            }
+        }
+    };
+    
+    network.register_remote_actor_with_strategy(actor_name, network_id, strategy).await
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="hierarchical-namespacing"><a class="header" href="#hierarchical-namespacing">Hierarchical Namespacing</a></h2>
+<h3 id="subgraph-organization"><a class="header" href="#subgraph-organization">Subgraph Organization</a></h3>
+<p>Organize remote actors in hierarchical namespaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Instead of flat aliases, use hierarchical organization
+let mount_config = SubgraphMountConfig {
+    mount_point: "server".to_string(),
+    network_id: "server_network".to_string(),
+    include_patterns: vec!["*".to_string()],
+    exclude_patterns: vec!["internal_*".to_string()],
+};
+
+// Mount entire network as subgraph
+network.mount_network_as_subgraph(mount_config).await?;
+
+// Actors are now accessible as:
+// - "server/data_processor"
+// - "server/validator" 
+// - "server/transformer"
+
+// Use in workflows
+network.add_node("remote_proc", "server/data_processor", None)?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="nested-organization"><a class="header" href="#nested-organization">Nested Organization</a></h3>
+<p>Create deeply nested hierarchies for complex setups:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Mount multiple networks with organized structure
+let mount_configs = vec![
+    SubgraphMountConfig {
+        mount_point: "ml/training".to_string(),
+        network_id: "ml_training_cluster".to_string(),
+        // ...
+    },
+    SubgraphMountConfig {
+        mount_point: "ml/inference".to_string(), 
+        network_id: "ml_inference_cluster".to_string(),
+        // ...
+    },
+    SubgraphMountConfig {
+        mount_point: "data/processing".to_string(),
+        network_id: "data_processing_cluster".to_string(),
+        // ...
+    },
+];
+
+for config in mount_configs {
+    network.mount_network_as_subgraph(config).await?;
+}
+
+// Result: Clean hierarchical structure
+// ml/training/model_trainer
+// ml/training/feature_engineer
+// ml/inference/predictor
+// ml/inference/batch_scorer
+// data/processing/cleaner
+// data/processing/transformer
+<span class="boring">}</span></code></pre></pre>
+<h2 id="conflict-prevention"><a class="header" href="#conflict-prevention">Conflict Prevention</a></h2>
+<h3 id="1-naming-conventions"><a class="header" href="#1-naming-conventions">1. Naming Conventions</a></h3>
+<p>Establish clear naming conventions to prevent conflicts:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Descriptive, domain-specific names
+"user_authentication_service"
+"payment_data_processor"
+"ml_model_trainer_gpu"
+"postgres_connection_pool"
+
+// Avoid: Generic names likely to conflict
+"processor"
+"handler"
+"service"
+"actor"
+"worker"
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-network-aware-registration"><a class="header" href="#2-network-aware-registration">2. Network-Aware Registration</a></h3>
+<p>Include network identity in actor names during registration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Register with network context
+async fn register_with_network_context(
+    network: &amp;mut DistributedNetwork,
+    actor_name: &amp;str,
+    remote_network_id: &amp;str
+) -&gt; Result&lt;String, anyhow::Error&gt; {
+    // Auto-generate context-aware names
+    let network_context = remote_network_id.split('_').next().unwrap_or(remote_network_id);
+    let contextual_name = format!("{}_{}", network_context, actor_name);
+    
+    network.register_remote_actor_with_alias(
+        &amp;contextual_name,
+        actor_name,
+        remote_network_id
+    ).await
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-capability-based-naming"><a class="header" href="#3-capability-based-naming">3. Capability-Based Naming</a></h3>
+<p>Name actors based on their capabilities rather than generic terms:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Analyze actor capabilities and suggest names
+async fn suggest_capability_based_name(
+    actor_metadata: &amp;ActorMetadata
+) -&gt; String {
+    let capabilities = &amp;actor_metadata.capabilities;
+    
+    let primary_capability = capabilities.first().unwrap_or(&amp;"generic".to_string());
+    let secondary_capability = capabilities.get(1);
+    
+    match (primary_capability.as_str(), secondary_capability) {
+        ("ml_training", Some(sec)) if sec.contains("gpu") =&gt; "gpu_ml_trainer".to_string(),
+        ("data_processing", Some(sec)) if sec.contains("stream") =&gt; "stream_data_processor".to_string(),
+        ("database", Some(sec)) =&gt; format!("{}_database", sec),
+        (primary, _) =&gt; format!("{}_service", primary),
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="conflict-resolution-errors"><a class="header" href="#conflict-resolution-errors">Conflict Resolution Errors</a></h3>
+<p>Handle errors during conflict resolution:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn handle_conflict_resolution_error(
+    error: &amp;anyhow::Error,
+    actor_name: &amp;str,
+    network_id: &amp;str
+) -&gt; ConflictResolutionAction {
+    if error.to_string().contains("maximum retries exceeded") {
+        ConflictResolutionAction::UseFullyQualified
+    } else if error.to_string().contains("invalid alias") {
+        ConflictResolutionAction::GenerateAlternative
+    } else if error.to_string().contains("network disconnected") {
+        ConflictResolutionAction::RetryLater
+    } else {
+        ConflictResolutionAction::FailRegistration
+    }
+}
+
+enum ConflictResolutionAction {
+    UseFullyQualified,
+    GenerateAlternative,
+    RetryLater,
+    FailRegistration,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="registration-rollback"><a class="header" href="#registration-rollback">Registration Rollback</a></h3>
+<p>Implement rollback for failed batch registrations:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn register_with_rollback(
+    network: &amp;mut DistributedNetwork,
+    registrations: Vec&lt;(String, String)&gt;
+) -&gt; Result&lt;Vec&lt;String&gt;, anyhow::Error&gt; {
+    let mut successful_aliases = Vec::new();
+    
+    for (actor_name, network_id) in registrations {
+        match network.register_remote_actor(&amp;actor_name, &amp;network_id).await {
+            Ok(alias) =&gt; {
+                successful_aliases.push(alias);
+            },
+            Err(e) =&gt; {
+                // Rollback previous registrations
+                for alias in &amp;successful_aliases {
+                    if let Err(rollback_err) = network.unregister_remote_actor(alias).await {
+                        eprintln!("⚠️  Rollback failed for {}: {}", alias, rollback_err);
+                    }
+                }
+                return Err(e);
+            }
+        }
+    }
+    
+    Ok(successful_aliases)
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="1-proactive-conflict-analysis"><a class="header" href="#1-proactive-conflict-analysis">1. Proactive Conflict Analysis</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Analyze potential conflicts before registration
+async fn plan_registrations(
+    network: &amp;DistributedNetwork,
+    planned_registrations: &amp;[(String, String)]
+) -&gt; RegistrationPlan {
+    let mut plan = RegistrationPlan::new();
+    
+    for (actor_name, network_id) in planned_registrations {
+        let analysis = analyze_potential_conflicts(network, actor_name, network_id).await.unwrap();
+        
+        if analysis.has_conflicts() {
+            plan.add_with_resolution(actor_name, network_id, analysis.best_resolution());
+        } else {
+            plan.add_direct(actor_name, network_id);
+        }
+    }
+    
+    plan
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-documentation-and-tracking"><a class="header" href="#2-documentation-and-tracking">2. Documentation and Tracking</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Track and document conflict resolutions
+struct ConflictResolutionLog {
+    entries: Vec&lt;ConflictLogEntry&gt;,
+}
+
+struct ConflictLogEntry {
+    timestamp: chrono::DateTime&lt;chrono::Utc&gt;,
+    original_name: String,
+    resolved_alias: String,
+    strategy_used: ConflictResolutionStrategy,
+    reason: String,
+}
+
+impl ConflictResolutionLog {
+    fn log_resolution(&amp;mut self, 
+        original_name: String, 
+        resolved_alias: String, 
+        strategy: ConflictResolutionStrategy,
+        reason: String
+    ) {
+        self.entries.push(ConflictLogEntry {
+            timestamp: chrono::Utc::now(),
+            original_name,
+            resolved_alias,
+            strategy_used: strategy,
+            reason,
+        });
+    }
+    
+    fn generate_report(&amp;self) -&gt; String {
+        // Generate human-readable conflict resolution report
+        format!("Conflict Resolution Report\n{:#?}", self.entries)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-testing-conflict-scenarios"><a class="header" href="#3-testing-conflict-scenarios">3. Testing Conflict Scenarios</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod conflict_tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_local_remote_conflict_resolution() {
+        let mut network = create_test_network().await;
+        
+        // Register local actor
+        network.register_local_actor("processor", TestActor::new()).unwrap();
+        
+        // Try to register remote actor with same name
+        let alias = network.register_remote_actor_with_strategy(
+            "processor",
+            "remote_network",
+            ConflictResolutionStrategy::AutoAlias
+        ).await.unwrap();
+        
+        assert_eq!(alias, "processor_1");
+    }
+    
+    #[tokio::test] 
+    async fn test_multiple_remote_conflicts() {
+        let mut network = create_test_network().await;
+        
+        // Register multiple remote actors with same name
+        let alias1 = network.register_remote_actor("auth", "network1").await.unwrap();
+        let alias2 = network.register_remote_actor_with_strategy(
+            "auth", 
+            "network2",
+            ConflictResolutionStrategy::NetworkPrefix
+        ).await.unwrap();
+        
+        assert_eq!(alias1, "auth");
+        assert_eq!(alias2, "network2_auth");
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="setting-up-networks.html">Setting Up Distributed Networks</a> - Basic network setup</li>
+<li><a href="remote-actors.html">Remote Actors</a> - Working with remote actors</li>
+<li><a href="discovery-registration.html">Discovery &amp; Registration</a> - Network discovery</li>
+</ul>
+<h2 id="related-documentation"><a class="header" href="#related-documentation">Related Documentation</a></h2>
+<ul>
+<li><a href="../../architecture/distributed-networks.html">Architecture: Distributed Networks</a></li>
+<li><a href="../../tutorials/distributed-workflow-example.html">Tutorial: Distributed Workflow Example</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/distributed/discovery-registration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/wasm/getting-started.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/distributed/discovery-registration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/wasm/getting-started.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

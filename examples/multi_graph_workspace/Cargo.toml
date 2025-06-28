@@ -1,0 +1,33 @@
+[workspace]
+
+[package]
+name = "multi_graph_workspace_example"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "workspace_example"
+path = "workspace_example.rs"
+
+[[bin]]
+name = "simple_workspace_example"
+path = "simple_workspace_example.rs"
+
+[lib]
+name = "multi_graph_workspace"
+path = "src/lib.rs"
+
+[dependencies]
+reflow_network = { path = "../../crates/reflow_network" }
+actor_macro = { path = "../../crates/actor_macro" }
+anyhow = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+scopeguard = "1.2"
+parking_lot = "0.12"
+futures = "0.3"
+flume = "*"
+
+[dev-dependencies]
+tracing-subscriber = "0.3"

@@ -1,0 +1,83 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "collector",
+    "description": "Data collection pipeline",
+    "version": "1.0.0",
+    "namespace": "data/ingestion"
+  },
+  "processes": {
+    "api_fetcher": {
+      "id": "api_fetcher",
+      "component": "ApiFetcherActor",
+      "metadata": {}
+    },
+    "data_validator": {
+      "id": "data_validator",
+      "component": "DataValidatorActor",
+      "metadata": {}
+    }
+  },
+  "connections": [
+    {
+      "from": { 
+        "portName": "Output",
+        "portId": "Output", 
+        "nodeId": "api_fetcher",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "to": { 
+        "portName": "Input",
+        "portId": "Input", 
+        "nodeId": "data_validator",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "metadata": {}
+    }
+  ],
+  "inports": {
+    "api_config": {
+      "portName": "Config",
+      "portId": "Config",
+      "nodeId": "api_fetcher",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "outports": {
+    "raw_data": {
+      "portName": "Output",
+      "portId": "Output",
+      "nodeId": "data_validator",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "groups": [],
+  "graph_dependencies": [],
+  "external_connections": [
+    {
+      "connectionId": "collector_to_transformer",
+      "targetGraph": "transformer",
+      "targetNamespace": "data/processing",
+      "fromProcess": "data_validator",
+      "fromPort": "Output",
+      "toProcess": "cleaner",
+      "toPort": "Input",
+      "description": "Send validated raw data to transformer"
+    }
+  ],
+  "provided_interfaces": {
+    "raw_data_output": {
+      "interfaceId": "raw_data_output",
+      "processName": "data_validator",
+      "portName": "Output",
+      "dataType": "RawDataRecord",
+      "description": "Raw data from external APIs",
+      "required": false
+    }
+  },
+  "required_interfaces": {}
+}

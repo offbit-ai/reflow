@@ -8,7 +8,7 @@
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation platform">
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -140,6 +140,12 @@
                         <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/components/standard-library.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
 
                     </div>
                 </div>
@@ -245,8 +251,8 @@ network.add_node("transformer", "transform")?;
 
 // Usage: Send data with optional transform function
 let transform_request = HashMap::from([
-    ("In".to_string(), Message::String("hello world".to_string())),
-    ("Function".to_string(), Message::String("uppercase".to_string())),
+    ("In".to_string(), Message::string("hello world".to_string())),
+    ("Function".to_string(), Message::string("uppercase".to_string())),
 ]);
 
 // Supported transformations:
@@ -272,11 +278,11 @@ network.add_node("mapper", "map")?;
 
 // Usage: Transform each item in an array
 let map_request = HashMap::from([
-    ("Collection".to_string(), Message::Array(vec![
-        Message::String("hello".to_string()).into(),
-        Message::String("world".to_string()).into(),
+    ("Collection".to_string(), Message::array(vec![
+        EncodableValue::from(serde_json::json!("hello")),
+        EncodableValue::from(serde_json::json!("world")),
     ])),
-    ("Function".to_string(), Message::String("uppercase".to_string())),
+    ("Function".to_string(), Message::string("uppercase".to_string())),
 ]);
 // Result: ["HELLO", "WORLD"]
 <span class="boring">}</span></code></pre></pre>
@@ -293,12 +299,12 @@ network.add_node("reducer", "reduce")?;
 
 // Usage: Sum numbers in an array
 let reduce_request = HashMap::from([
-    ("Collection".to_string(), Message::Array(vec![
-        Message::Integer(1).into(),
-        Message::Integer(2).into(),
-        Message::Integer(3).into(),
+    ("Collection".to_string(), Message::array(vec![
+        EncodableValue::from(serde_json::json!(1)),
+        EncodableValue::from(serde_json::json!(2)),
+        EncodableValue::from(serde_json::json!(3)),
     ])),
-    ("Function".to_string(), Message::String("sum".to_string())),
+    ("Function".to_string(), Message::string("sum".to_string())),
 ]);
 // Result: 6
 
@@ -322,12 +328,12 @@ network.add_node("grouper", "group")?;
 
 // Usage: Group objects by property
 let group_request = HashMap::from([
-    ("Collection".to_string(), Message::Array(vec![
-        Message::Object(serde_json::json!({"type": "user", "name": "Alice"}).into()).into(),
-        Message::Object(serde_json::json!({"type": "admin", "name": "Bob"}).into()).into(),
-        Message::Object(serde_json::json!({"type": "user", "name": "Charlie"}).into()).into(),
+    ("Collection".to_string(), Message::array(vec![
+        EncodableValue::from(serde_json::json!({"type": "user", "name": "Alice"})),
+        EncodableValue::from(serde_json::json!({"type": "admin", "name": "Bob"})),
+        EncodableValue::from(serde_json::json!({"type": "user", "name": "Charlie"})),
     ])),
-    ("Key".to_string(), Message::String("type".to_string())),
+    ("Key".to_string(), Message::string("type".to_string())),
 ]);
 // Result: {"user": [Alice, Charlie], "admin": [Bob]}
 <span class="boring">}</span></code></pre></pre>
@@ -820,7 +826,7 @@ for i in 0..4 {
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../api/graph/advanced.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../api/wasm/actors-in-browser.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -834,7 +840,7 @@ for i in 0..4 {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../api/graph/advanced.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../api/wasm/actors-in-browser.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
@@ -845,22 +851,6 @@ for i in 0..4 {
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
 

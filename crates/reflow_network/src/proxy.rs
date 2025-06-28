@@ -1,7 +1,7 @@
 use parking_lot::Mutex;
 
 use crate::{
-    actor::{Actor, ActorContext, ActorLoad, MemoryState, Port},
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
     bridge::NetworkBridge,
     message::Message,
 };
@@ -95,6 +95,7 @@ impl Actor for RemoteActorProxy {
 
     fn create_process(
         &self,
+        config: ActorConfig
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
 
@@ -113,7 +114,7 @@ impl Actor for RemoteActorProxy {
                             packet,
                             outports.clone(),
                             Arc::new(Mutex::new(MemoryState::default())),
-                            HashMap::new(),
+                            config.clone(),
                             load.clone(),
                         );
 

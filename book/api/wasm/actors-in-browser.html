@@ -1,0 +1,1254 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Actors in Browser - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/api/wasm/actors-in-browser.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="browser-actors-guide"><a class="header" href="#browser-actors-guide">Browser Actors Guide</a></h1>
+<p>Complete guide to creating and managing actors in browser environments using Reflow's WebAssembly bindings.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Browser actors in Reflow follow the same conceptual model as native Rust actors but use a JavaScript interface optimized for web environments. They support stateful processing, real-time event handling, and seamless integration with web APIs.</p>
+<h2 id="actor-lifecycle-in-browser"><a class="header" href="#actor-lifecycle-in-browser">Actor Lifecycle in Browser</a></h2>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│                Actor Lifecycle                      │
+├─────────────────────────────────────────────────────┤
+│ 1. Construction                                     │
+│    ├─ new MyActor()                                │
+│    ├─ Define inports/outports                      │
+│    └─ Initialize configuration                     │
+├─────────────────────────────────────────────────────┤
+│ 2. Registration                                     │
+│    ├─ network.registerActor("MyActor", instance)   │
+│    └─ WASM bridge creates wrapper                  │
+├─────────────────────────────────────────────────────┤
+│ 3. Execution                                        │
+│    ├─ run(context) called with inputs              │
+│    ├─ Access state through context.state           │
+│    ├─ Process data with JavaScript logic           │
+│    └─ Send outputs via context.send()              │
+├─────────────────────────────────────────────────────┤
+│ 4. State Persistence                               │
+│    ├─ State stored in WASM memory                  │
+│    └─ Survives across multiple executions          │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="basic-actor-structure"><a class="header" href="#basic-actor-structure">Basic Actor Structure</a></h2>
+<h3 id="minimal-actor"><a class="header" href="#minimal-actor">Minimal Actor</a></h3>
+<pre><code class="language-javascript">class MinimalActor {
+    constructor() {
+        // Required: Define input and output ports
+        this.inports = ["input"];
+        this.outports = ["output"];
+        
+        // Optional: Actor configuration
+        this.config = {};
+        
+        // State is managed by WASM bridge
+        this.state = null;
+    }
+
+    /**
+     * Main execution method called by the runtime
+     * @param {ActorRunContext} context - Execution context
+     */
+    run(context) {
+        // Get input data
+        const input = context.input.input;
+        
+        // Simple processing
+        const output = `Processed: ${input}`;
+        
+        // Send result
+        context.send({ output });
+    }
+}
+</code></pre>
+<h3 id="stateful-actor"><a class="header" href="#stateful-actor">Stateful Actor</a></h3>
+<pre><code class="language-javascript">class CounterActor {
+    constructor() {
+        this.inports = ["increment", "reset"];
+        this.outports = ["count", "status"];
+        this.config = { 
+            step: 1,
+            maxCount: 100 
+        };
+    }
+
+    run(context) {
+        // Get current count from persistent state
+        let count = context.state.get('count') || 0;
+        
+        // Handle different input ports
+        if (context.input.increment !== undefined) {
+            count += this.config.step;
+            
+            // Check bounds
+            if (count &gt;= this.config.maxCount) {
+                count = this.config.maxCount;
+                context.send({ 
+                    status: "Maximum count reached" 
+                });
+            }
+            
+            // Update state
+            context.state.set('count', count);
+            
+            // Send current count
+            context.send({ count });
+        }
+        
+        if (context.input.reset !== undefined) {
+            count = 0;
+            context.state.set('count', count);
+            context.send({ 
+                count,
+                status: "Counter reset"
+            });
+        }
+    }
+}
+</code></pre>
+<h3 id="configurable-actor"><a class="header" href="#configurable-actor">Configurable Actor</a></h3>
+<pre><code class="language-javascript">class ConfigurableProcessor {
+    constructor() {
+        this.inports = ["data", "config"];
+        this.outports = ["processed", "error"];
+        
+        // Default configuration
+        this.config = {
+            mode: "transform",
+            batchSize: 1,
+            timeout: 5000,
+            filters: [],
+            outputFormat: "json"
+        };
+    }
+
+    run(context) {
+        // Update configuration if provided
+        if (context.input.config) {
+            this.updateConfig(context.input.config);
+        }
+        
+        // Process data
+        if (context.input.data) {
+            try {
+                const result = this.processData(context.input.data, context);
+                context.send({ processed: result });
+            } catch (error) {
+                context.send({ 
+                    error: {
+                        message: error.message,
+                        input: context.input.data,
+                        timestamp: Date.now()
+                    }
+                });
+            }
+        }
+    }
+    
+    updateConfig(newConfig) {
+        // Merge with existing configuration
+        this.config = { ...this.config, ...newConfig };
+        console.log("Updated configuration:", this.config);
+    }
+    
+    processData(data, context) {
+        switch (this.config.mode) {
+            case "transform":
+                return this.transformData(data);
+            case "filter":
+                return this.filterData(data);
+            case "aggregate":
+                return this.aggregateData(data, context);
+            default:
+                throw new Error(`Unknown processing mode: ${this.config.mode}`);
+        }
+    }
+    
+    transformData(data) {
+        return {
+            transformed: true,
+            original: data,
+            timestamp: Date.now(),
+            format: this.config.outputFormat
+        };
+    }
+    
+    filterData(data) {
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
+        
+        return data.filter(item =&gt; {
+            return this.config.filters.every(filter =&gt; 
+                this.applyFilter(item, filter)
+            );
+        });
+    }
+    
+    aggregateData(data, context) {
+        // Get previous aggregated data from state
+        const previous = context.state.get('aggregated') || [];
+        const combined = previous.concat(Array.isArray(data) ? data : [data]);
+        
+        // Keep only recent data based on batchSize
+        const recent = combined.slice(-this.config.batchSize);
+        context.state.set('aggregated', recent);
+        
+        return {
+            count: recent.length,
+            sum: recent.reduce((acc, val) =&gt; acc + (typeof val === 'number' ? val : 0), 0),
+            average: recent.length &gt; 0 ? recent.reduce((acc, val) =&gt; acc + (typeof val === 'number' ? val : 0), 0) / recent.length : 0,
+            latest: recent[recent.length - 1]
+        };
+    }
+    
+    applyFilter(item, filter) {
+        // Simple filter implementation
+        if (filter.field &amp;&amp; filter.value) {
+            return item[filter.field] === filter.value;
+        }
+        return true;
+    }
+}
+</code></pre>
+<h2 id="advanced-actor-patterns"><a class="header" href="#advanced-actor-patterns">Advanced Actor Patterns</a></h2>
+<h3 id="asynchronous-web-api-actor"><a class="header" href="#asynchronous-web-api-actor">Asynchronous Web API Actor</a></h3>
+<pre><code class="language-javascript">class WebAPIActor {
+    constructor() {
+        this.inports = ["url", "config"];
+        this.outports = ["data", "error"];
+        this.config = {
+            method: "GET",
+            timeout: 10000,
+            retries: 3
+        };
+    }
+
+    async run(context) {
+        const url = context.input.url;
+        const config = { ...this.config, ...context.input.config };
+        
+        if (!url) {
+            context.send({ error: "URL is required" });
+            return;
+        }
+
+        try {
+            const data = await this.fetchWithRetry(url, config);
+            context.send({ data });
+        } catch (error) {
+            context.send({ 
+                error: {
+                    message: error.message,
+                    url,
+                    timestamp: Date.now()
+                }
+            });
+        }
+    }
+
+    async fetchWithRetry(url, config) {
+        let lastError;
+        
+        for (let attempt = 1; attempt &lt;= config.retries; attempt++) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() =&gt; controller.abort(), config.timeout);
+                
+                const response = await fetch(url, {
+                    method: config.method,
+                    headers: config.headers,
+                    body: config.body,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+                
+            } catch (error) {
+                lastError = error;
+                
+                if (attempt &lt; config.retries) {
+                    // Exponential backoff
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve =&gt; setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        throw lastError;
+    }
+}
+</code></pre>
+<h3 id="timer-actor"><a class="header" href="#timer-actor">Timer Actor</a></h3>
+<pre><code class="language-javascript">class TimerActor {
+    constructor() {
+        this.inports = ["start", "stop", "interval"];
+        this.outports = ["tick", "status"];
+        this.config = { defaultInterval: 1000 };
+        
+        // Store timer reference
+        this.timerId = null;
+    }
+
+    run(context) {
+        if (context.input.start !== undefined) {
+            this.startTimer(context);
+        }
+        
+        if (context.input.stop !== undefined) {
+            this.stopTimer(context);
+        }
+        
+        if (context.input.interval !== undefined) {
+            this.updateInterval(context.input.interval, context);
+        }
+    }
+    
+    startTimer(context) {
+        // Stop existing timer if running
+        this.stopTimer(context, false);
+        
+        const interval = context.state.get('interval') || this.config.defaultInterval;
+        let tickCount = context.state.get('tickCount') || 0;
+        
+        this.timerId = setInterval(() =&gt; {
+            tickCount++;
+            context.state.set('tickCount', tickCount);
+            
+            // Send tick event
+            context.send({
+                tick: {
+                    count: tickCount,
+                    timestamp: Date.now(),
+                    interval: interval
+                }
+            });
+        }, interval);
+        
+        context.state.set('running', true);
+        context.send({ status: `Timer started with ${interval}ms interval` });
+    }
+    
+    stopTimer(context, sendStatus = true) {
+        if (this.timerId) {
+            clearInterval(this.timerId);
+            this.timerId = null;
+        }
+        
+        context.state.set('running', false);
+        
+        if (sendStatus) {
+            const tickCount = context.state.get('tickCount') || 0;
+            context.send({ 
+                status: `Timer stopped after ${tickCount} ticks` 
+            });
+        }
+    }
+    
+    updateInterval(newInterval, context) {
+        context.state.set('interval', newInterval);
+        
+        // Restart timer with new interval if currently running
+        if (context.state.get('running')) {
+            this.startTimer(context);
+        }
+    }
+}
+</code></pre>
+<h3 id="file-reader-actor-browser"><a class="header" href="#file-reader-actor-browser">File Reader Actor (Browser)</a></h3>
+<pre><code class="language-javascript">class FileReaderActor {
+    constructor() {
+        this.inports = ["file", "options"];
+        this.outports = ["content", "progress", "error"];
+        this.config = {
+            readAs: "text", // "text", "dataURL", "arrayBuffer"
+            encoding: "utf-8",
+            chunkSize: 64 * 1024 // 64KB chunks for progress
+        };
+    }
+
+    run(context) {
+        const file = context.input.file;
+        const options = { ...this.config, ...context.input.options };
+        
+        if (!file || !file instanceof File) {
+            context.send({ error: "Valid File object required" });
+            return;
+        }
+
+        this.readFile(file, options, context);
+    }
+
+    readFile(file, options, context) {
+        const reader = new FileReader();
+        
+        // Track progress
+        reader.onprogress = (event) =&gt; {
+            if (event.lengthComputable) {
+                const progress = (event.loaded / event.total) * 100;
+                context.send({ 
+                    progress: {
+                        loaded: event.loaded,
+                        total: event.total,
+                        percentage: progress
+                    }
+                });
+            }
+        };
+        
+        reader.onload = (event) =&gt; {
+            const result = event.target.result;
+            context.send({
+                content: {
+                    data: result,
+                    filename: file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: file.lastModified,
+                    readAs: options.readAs
+                }
+            });
+        };
+        
+        reader.onerror = (event) =&gt; {
+            context.send({
+                error: {
+                    message: "Failed to read file",
+                    filename: file.name,
+                    error: event.target.error
+                }
+            });
+        };
+
+        // Choose reading method based on options
+        switch (options.readAs) {
+            case "text":
+                reader.readAsText(file, options.encoding);
+                break;
+            case "dataURL":
+                reader.readAsDataURL(file);
+                break;
+            case "arrayBuffer":
+                reader.readAsArrayBuffer(file);
+                break;
+            default:
+                context.send({ error: `Unsupported read method: ${options.readAs}` });
+        }
+    }
+}
+</code></pre>
+<h2 id="state-management-patterns"><a class="header" href="#state-management-patterns">State Management Patterns</a></h2>
+<h3 id="complex-state-actor"><a class="header" href="#complex-state-actor">Complex State Actor</a></h3>
+<pre><code class="language-javascript">class StatefulProcessor {
+    constructor() {
+        this.inports = ["data", "command"];
+        this.outports = ["result", "state", "error"];
+        this.config = {};
+    }
+
+    run(context) {
+        // Handle commands
+        if (context.input.command) {
+            this.handleCommand(context.input.command, context);
+        }
+        
+        // Process data
+        if (context.input.data) {
+            this.processData(context.input.data, context);
+        }
+    }
+    
+    handleCommand(command, context) {
+        switch (command.action) {
+            case "get_state":
+                context.send({ 
+                    state: context.state.getAll() 
+                });
+                break;
+                
+            case "set_state":
+                if (command.data) {
+                    context.state.setAll(command.data);
+                    context.send({ 
+                        result: "State updated successfully" 
+                    });
+                }
+                break;
+                
+            case "clear_state":
+                context.state.clear();
+                context.send({ 
+                    result: "State cleared" 
+                });
+                break;
+                
+            case "get_stats":
+                this.sendStatistics(context);
+                break;
+                
+            default:
+                context.send({ 
+                    error: `Unknown command: ${command.action}` 
+                });
+        }
+    }
+    
+    processData(data, context) {
+        // Update processing statistics
+        const stats = context.state.get('stats') || {
+            processedCount: 0,
+            totalSize: 0,
+            lastProcessed: null,
+            errors: 0
+        };
+        
+        try {
+            // Simulate processing
+            const processed = this.transform(data);
+            
+            // Update statistics
+            stats.processedCount++;
+            stats.totalSize += JSON.stringify(data).length;
+            stats.lastProcessed = Date.now();
+            
+            context.state.set('stats', stats);
+            context.send({ result: processed });
+            
+        } catch (error) {
+            stats.errors++;
+            context.state.set('stats', stats);
+            
+            context.send({
+                error: {
+                    message: error.message,
+                    data: data,
+                    timestamp: Date.now()
+                }
+            });
+        }
+    }
+    
+    transform(data) {
+        return {
+            original: data,
+            transformed: Array.isArray(data) ? data.map(x =&gt; x * 2) : data,
+            timestamp: Date.now()
+        };
+    }
+    
+    sendStatistics(context) {
+        const stats = context.state.get('stats') || {};
+        const stateSize = context.state.size();
+        
+        context.send({
+            state: {
+                statistics: stats,
+                stateSize: stateSize,
+                stateKeys: context.state.keys(),
+                uptime: Date.now() - (stats.firstProcessed || Date.now())
+            }
+        });
+    }
+}
+</code></pre>
+<h3 id="cache-actor"><a class="header" href="#cache-actor">Cache Actor</a></h3>
+<pre><code class="language-javascript">class CacheActor {
+    constructor() {
+        this.inports = ["get", "set", "delete", "clear"];
+        this.outports = ["value", "status", "stats"];
+        this.config = {
+            maxSize: 100,
+            ttlMs: 300000 // 5 minutes
+        };
+    }
+
+    run(context) {
+        if (context.input.get) {
+            this.getValue(context.input.get, context);
+        }
+        
+        if (context.input.set) {
+            this.setValue(context.input.set, context);
+        }
+        
+        if (context.input.delete) {
+            this.deleteValue(context.input.delete, context);
+        }
+        
+        if (context.input.clear) {
+            this.clearCache(context);
+        }
+    }
+    
+    getValue(request, context) {
+        const cache = context.state.get('cache') || {};
+        const entry = cache[request.key];
+        
+        if (!entry) {
+            context.send({ 
+                value: { 
+                    key: request.key, 
+                    found: false 
+                } 
+            });
+            return;
+        }
+        
+        // Check TTL
+        if (entry.expires &amp;&amp; Date.now() &gt; entry.expires) {
+            delete cache[request.key];
+            context.state.set('cache', cache);
+            
+            context.send({ 
+                value: { 
+                    key: request.key, 
+                    found: false, 
+                    expired: true 
+                } 
+            });
+            return;
+        }
+        
+        // Update access time
+        entry.lastAccessed = Date.now();
+        context.state.set('cache', cache);
+        
+        context.send({
+            value: {
+                key: request.key,
+                value: entry.value,
+                found: true,
+                created: entry.created,
+                lastAccessed: entry.lastAccessed
+            }
+        });
+    }
+    
+    setValue(request, context) {
+        const cache = context.state.get('cache') || {};
+        
+        // Enforce size limit
+        const keys = Object.keys(cache);
+        if (keys.length &gt;= this.config.maxSize &amp;&amp; !cache[request.key]) {
+            // Remove oldest entry
+            const oldest = keys.reduce((min, key) =&gt; 
+                (!min || cache[key].lastAccessed &lt; cache[min].lastAccessed) ? key : min
+            );
+            delete cache[oldest];
+        }
+        
+        // Set new value
+        const now = Date.now();
+        cache[request.key] = {
+            value: request.value,
+            created: now,
+            lastAccessed: now,
+            expires: request.ttl ? now + request.ttl : now + this.config.ttlMs
+        };
+        
+        context.state.set('cache', cache);
+        
+        context.send({
+            status: {
+                operation: "set",
+                key: request.key,
+                success: true,
+                cacheSize: Object.keys(cache).length
+            }
+        });
+    }
+    
+    deleteValue(request, context) {
+        const cache = context.state.get('cache') || {};
+        const existed = cache[request.key] !== undefined;
+        
+        delete cache[request.key];
+        context.state.set('cache', cache);
+        
+        context.send({
+            status: {
+                operation: "delete",
+                key: request.key,
+                existed: existed,
+                cacheSize: Object.keys(cache).length
+            }
+        });
+    }
+    
+    clearCache(context) {
+        const cache = context.state.get('cache') || {};
+        const count = Object.keys(cache).length;
+        
+        context.state.set('cache', {});
+        
+        context.send({
+            status: {
+                operation: "clear",
+                clearedCount: count,
+                cacheSize: 0
+            }
+        });
+    }
+}
+</code></pre>
+<h2 id="integration-with-browser-apis"><a class="header" href="#integration-with-browser-apis">Integration with Browser APIs</a></h2>
+<h3 id="geolocation-actor"><a class="header" href="#geolocation-actor">Geolocation Actor</a></h3>
+<pre><code class="language-javascript">class GeolocationActor {
+    constructor() {
+        this.inports = ["getCurrentPosition", "watchPosition", "clearWatch"];
+        this.outports = ["position", "error"];
+        this.config = {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 600000 // 10 minutes
+        };
+        
+        this.watchId = null;
+    }
+
+    run(context) {
+        if (!navigator.geolocation) {
+            context.send({ error: "Geolocation is not supported" });
+            return;
+        }
+        
+        if (context.input.getCurrentPosition) {
+            this.getCurrentPosition(context);
+        }
+        
+        if (context.input.watchPosition) {
+            this.startWatching(context);
+        }
+        
+        if (context.input.clearWatch) {
+            this.stopWatching(context);
+        }
+    }
+    
+    getCurrentPosition(context) {
+        const options = { ...this.config, ...context.input.getCurrentPosition };
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) =&gt; {
+                context.send({
+                    position: {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        altitude: position.coords.altitude,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed,
+                        timestamp: position.timestamp
+                    }
+                });
+            },
+            (error) =&gt; {
+                context.send({
+                    error: {
+                        code: error.code,
+                        message: error.message,
+                        timestamp: Date.now()
+                    }
+                });
+            },
+            options
+        );
+    }
+    
+    startWatching(context) {
+        this.stopWatching(context, false);
+        
+        const options = { ...this.config, ...context.input.watchPosition };
+        
+        this.watchId = navigator.geolocation.watchPosition(
+            (position) =&gt; {
+                context.send({
+                    position: {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        altitude: position.coords.altitude,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed,
+                        timestamp: position.timestamp,
+                        isWatching: true
+                    }
+                });
+            },
+            (error) =&gt; {
+                context.send({
+                    error: {
+                        code: error.code,
+                        message: error.message,
+                        timestamp: Date.now(),
+                        isWatching: true
+                    }
+                });
+            },
+            options
+        );
+        
+        context.state.set('watching', true);
+    }
+    
+    stopWatching(context, sendConfirmation = true) {
+        if (this.watchId !== null) {
+            navigator.geolocation.clearWatch(this.watchId);
+            this.watchId = null;
+        }
+        
+        context.state.set('watching', false);
+        
+        if (sendConfirmation) {
+            context.send({
+                position: {
+                    message: "Stopped watching position",
+                    timestamp: Date.now(),
+                    isWatching: false
+                }
+            });
+        }
+    }
+}
+</code></pre>
+<h2 id="testing-and-debugging-actors"><a class="header" href="#testing-and-debugging-actors">Testing and Debugging Actors</a></h2>
+<h3 id="test-helper-functions"><a class="header" href="#test-helper-functions">Test Helper Functions</a></h3>
+<pre><code class="language-javascript">// Actor testing utilities
+class ActorTester {
+    constructor(ActorClass) {
+        this.ActorClass = ActorClass;
+        this.actor = new ActorClass();
+        this.mockState = new Map();
+        this.outputs = [];
+    }
+    
+    // Create a mock context for testing
+    createMockContext(inputs) {
+        const self = this;
+        
+        return {
+            input: inputs,
+            state: {
+                get: (key) =&gt; self.mockState.get(key),
+                set: (key, value) =&gt; self.mockState.set(key, value),
+                has: (key) =&gt; self.mockState.has(key),
+                remove: (key) =&gt; self.mockState.delete(key),
+                clear: () =&gt; self.mockState.clear(),
+                getAll: () =&gt; Object.fromEntries(self.mockState),
+                setAll: (obj) =&gt; {
+                    self.mockState.clear();
+                    Object.entries(obj).forEach(([k, v]) =&gt; self.mockState.set(k, v));
+                },
+                size: () =&gt; self.mockState.size,
+                keys: () =&gt; Array.from(self.mockState.keys()),
+                values: () =&gt; Array.from(self.mockState.values())
+            },
+            send: (outputs) =&gt; {
+                self.outputs.push({
+                    timestamp: Date.now(),
+                    outputs: outputs
+                });
+            }
+        };
+    }
+    
+    // Test actor with given inputs
+    test(inputs, expectedOutputs) {
+        this.outputs = [];
+        const context = this.createMockContext(inputs);
+        
+        // Run the actor
+        const result = this.actor.run(context);
+        
+        // Handle async actors
+        if (result instanceof Promise) {
+            return result.then(() =&gt; this.verifyOutputs(expectedOutputs));
+        } else {
+            return this.verifyOutputs(expectedOutputs);
+        }
+    }
+    
+    verifyOutputs(expectedOutputs) {
+        const results = {
+            passed: true,
+            outputs: this.outputs,
+            state: Object.fromEntries(this.mockState),
+            errors: []
+        };
+        
+        if (expectedOutputs) {
+            // Simple verification - can be enhanced
+            if (this.outputs.length !== expectedOutputs.length) {
+                results.passed = false;
+                results.errors.push(`Expected ${expectedOutputs.length} outputs, got ${this.outputs.length}`);
+            }
+        }
+        
+        return results;
+    }
+}
+
+// Example usage
+async function testCounterActor() {
+    const tester = new ActorTester(CounterActor);
+    
+    // Test increment
+    const result1 = await tester.test({ increment: 1 });
+    console.log("Increment test:", result1);
+    
+    // Test reset
+    const result2 = await tester.test({ reset: true });
+    console.log("Reset test:", result2);
+}
+</code></pre>
+<h3 id="debug-actor-wrapper"><a class="header" href="#debug-actor-wrapper">Debug Actor Wrapper</a></h3>
+<pre><code class="language-javascript">class DebugActorWrapper {
+    constructor(actor, name) {
+        this.actor = actor;
+        this.name = name || actor.constructor.name;
+        this.executionCount = 0;
+        this.totalExecutionTime = 0;
+    }
+    
+    get inports() { return this.actor.inports; }
+    get outports() { return this.actor.outports; }
+    get config() { return this.actor.config; }
+    set config(value) { this.actor.config = value; }
+    
+    run(context) {
+        this.executionCount++;
+        const startTime = performance.now();
+        
+        console.group(`🎭 ${this.name} #${this.executionCount}`);
+        console.log("Inputs:", context.input);
+        console.log("State before:", context.state.getAll());
+        
+        // Wrap the send method to log outputs
+        const originalSend = context.send;
+        context.send = (outputs) =&gt; {
+            console.log("Outputs:", outputs);
+            originalSend(outputs);
+        };
+        
+        try {
+            const result = this.actor.run(context);
+            
+            const endTime = performance.now();
+            const executionTime = endTime - startTime;
+            this.totalExecutionTime += executionTime;
+            
+            console.log("State after:", context.state.getAll());
+            console.log(`Execution time: ${executionTime.toFixed(2)}ms`);
+            console.log(`Average time: ${(this.totalExecutionTime / this.executionCount).toFixed(2)}ms`);
+            console.groupEnd();
+            
+            return result;
+            
+        } catch (error) {
+            console.error("Actor error:", error);
+            console.groupEnd();
+            throw error;
+        }
+    }
+}
+
+// Usage
+const debugCounter = new DebugActorWrapper(new CounterActor(), "MyCounter");
+network.registerActor("CounterActor", debugCounter);
+</code></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="efficient-actor-patterns"><a class="header" href="#efficient-actor-patterns">Efficient Actor Patterns</a></h3>
+<pre><code class="language-javascript">// ✅ Good: Minimal state operations
+class EfficientActor {
+    run(context) {
+        // Read state once
+        const state = context.state.getAll();
+        
+        // Modify locally
+        state.counter = (state.counter || 0) + 1;
+        state.lastUpdate = Date.now();
+        
+        // Write once
+        context.state.setAll(state);
+        
+        context.send({ output: state.counter });
+    }
+}
+
+// ❌ Avoid: Multiple state operations
+class InefficientActor {
+    run(context) {
+        // Multiple gets/sets are slower
+        const counter = context.state.get('counter') || 0;
+        context.state.set('counter', counter + 1);
+        
+        const lastUpdate = Date.now();
+        context.state.set('lastUpdate', lastUpdate);
+        
+        context.send({ output: counter + 1 });
+    }
+}
+
+// ✅ Good: Batch processing
+class BatchActor {
+    constructor() {
+        this.inports = ["input"];
+        this.outports = ["output"];
+        this.config = { batchSize: 10 };
+    }
+    
+    run(context) {
+        const batch = context.state.get('batch') || [];
+        batch.push(context.input.input);
+        
+        if (batch.length &gt;= this.config.batchSize) {
+            // Process entire batch at once
+            const results = this.processBatch(batch);
+            context.send({ output: results });
+            context.state.set('batch', []);
+        } else {
+            context.state.set('batch', batch);
+        }
+    }
+    
+    processBatch(items) {
+        return items.map(item =&gt; ({ processed: item, timestamp: Date.now() }));
+    }
+}
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><strong><a href="graphs-and-networks.html">Graph Management</a></strong> - Creating and managing graphs in browser</li>
+<li><strong><a href="state-management.html">State Management</a></strong> - Advanced state handling patterns</li>
+<li><strong><a href="events-and-monitoring.html">Events &amp; Monitoring</a></strong> - Real-time event handling</li>
+<li><strong><a href="../../tutorials/browser-workflow-editor.html">Browser Workflow Editor Tutorial</a></strong> - Building visual editors</li>
+</ul>
+<p>Browser actors provide a powerful way to create interactive, stateful workflows that run entirely in the browser. Use the patterns and examples above to build robust, performant actor-based applications.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/wasm/getting-started.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../components/standard-library.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/wasm/getting-started.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../components/standard-library.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

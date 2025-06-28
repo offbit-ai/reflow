@@ -1,0 +1,868 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Dependency Resolution - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/api/multi-graph/dependency-resolution.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="dependency-resolution"><a class="header" href="#dependency-resolution">Dependency Resolution</a></h1>
+<p>Learn how to handle complex dependencies between graphs in multi-graph compositions.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Dependency resolution in multi-graph systems involves:</p>
+<ul>
+<li><strong>Automatic dependency detection</strong>: Analyze graph dependencies from metadata</li>
+<li><strong>Topological ordering</strong>: Ensure graphs are loaded in dependency order</li>
+<li><strong>Circular dependency detection</strong>: Identify and resolve circular dependencies</li>
+<li><strong>Version constraints</strong>: Handle version compatibility between dependent graphs</li>
+<li><strong>Interface matching</strong>: Verify compatible interfaces between graphs</li>
+<li><strong>Missing dependency handling</strong>: Graceful handling of unresolved dependencies</li>
+</ul>
+<h2 id="basic-dependency-resolution"><a class="header" href="#basic-dependency-resolution">Basic Dependency Resolution</a></h2>
+<h3 id="dependency-resolver"><a class="header" href="#dependency-resolver">Dependency Resolver</a></h3>
+<p>The core component for handling graph dependencies:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{DependencyResolver, DependencyError};
+
+let resolver = DependencyResolver::new();
+
+// Load graphs with dependencies
+let graphs = vec![
+    graph_export_a,  // depends on graph_b
+    graph_export_b,  // no dependencies
+    graph_export_c,  // depends on graph_a and graph_b
+];
+
+// Resolve dependency order
+let ordered_graphs = resolver.resolve_dependencies(&amp;graphs)?;
+
+// Graphs are now ordered: [graph_b, graph_a, graph_c]
+for graph in &amp;ordered_graphs {
+    let name = graph.properties.get("name").and_then(|v| v.as_str()).unwrap_or("unnamed");
+    println!("Loading graph: {}", name);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="dependency-declaration"><a class="header" href="#dependency-declaration">Dependency Declaration</a></h3>
+<p>Declare dependencies in graph metadata:</p>
+<pre><code class="language-json">{
+  "properties": {
+    "name": "ml_trainer",
+    "version": "1.2.0",
+    "dependencies": [
+      "data_processor",
+      "feature_engineer"
+    ]
+  },
+  "graph_dependencies": [
+    {
+      "graph_name": "data_processor",
+      "namespace": "data/processing",
+      "version_constraint": "&gt;=1.0.0",
+      "required": true,
+      "description": "Requires processed data for training"
+    },
+    {
+      "graph_name": "feature_engineer",
+      "namespace": "ml/features",
+      "version_constraint": "^2.1.0",
+      "required": true,
+      "description": "Requires feature engineering pipeline"
+    }
+  ]
+}
+</code></pre>
+<h2 id="advanced-dependency-resolution"><a class="header" href="#advanced-dependency-resolution">Advanced Dependency Resolution</a></h2>
+<h3 id="version-constraints"><a class="header" href="#version-constraints">Version Constraints</a></h3>
+<p>Handle version compatibility:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{VersionConstraint, VersionResolver};
+
+// Define version constraints
+let constraints = vec![
+    VersionConstraint {
+        graph_name: "data_processor".to_string(),
+        constraint: "&gt;=1.0.0".to_string(),
+        required: true,
+    },
+    VersionConstraint {
+        graph_name: "ml_core".to_string(),
+        constraint: "^2.0.0".to_string(),  // Compatible with 2.x.x
+        required: true,
+    },
+    VersionConstraint {
+        graph_name: "analytics".to_string(),
+        constraint: "~1.5.0".to_string(),  // Compatible with 1.5.x
+        required: false,
+    },
+];
+
+let version_resolver = VersionResolver::new();
+let resolution_result = version_resolver.resolve_versions(&amp;graphs, &amp;constraints)?;
+
+if resolution_result.has_conflicts() {
+    println!("❌ Version conflicts detected:");
+    for conflict in &amp;resolution_result.conflicts {
+        println!("  {} requires {} but {} is available", 
+            conflict.dependent, conflict.required_version, conflict.available_version);
+    }
+} else {
+    println!("✅ All version constraints satisfied");
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="interface-compatibility"><a class="header" href="#interface-compatibility">Interface Compatibility</a></h3>
+<p>Verify interface compatibility between dependent graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{InterfaceResolver, InterfaceCompatibility};
+
+let interface_resolver = InterfaceResolver::new();
+
+// Analyze interface compatibility
+let compatibility_result = interface_resolver.analyze_compatibility(&amp;ordered_graphs)?;
+
+for incompatibility in &amp;compatibility_result.incompatibilities {
+    match incompatibility.severity {
+        Severity::Error =&gt; {
+            println!("❌ Interface incompatibility: {} → {}", 
+                incompatibility.provider, incompatibility.consumer);
+            println!("   Expected: {}", incompatibility.expected_signature);
+            println!("   Actual: {}", incompatibility.actual_signature);
+        },
+        Severity::Warning =&gt; {
+            println!("⚠️  Interface warning: {} → {}", 
+                incompatibility.provider, incompatibility.consumer);
+            println!("   {}", incompatibility.description);
+        },
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="conditional-dependencies"><a class="header" href="#conditional-dependencies">Conditional Dependencies</a></h3>
+<p>Handle dependencies that are only required under certain conditions:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{ConditionalDependency, DependencyCondition};
+
+// Define conditional dependencies in graph metadata
+let conditional_deps = vec![
+    ConditionalDependency {
+        graph_name: "ml_trainer".to_string(),
+        condition: DependencyCondition::EnvironmentVariable("ENABLE_ML".to_string()),
+        version_constraint: Some("&gt;=2.0.0".to_string()),
+        required: true,
+    },
+    ConditionalDependency {
+        graph_name: "analytics_dashboard".to_string(),
+        condition: DependencyCondition::ConfigValue("features.analytics".to_string()),
+        version_constraint: None,
+        required: false,
+    },
+];
+
+// Resolve conditional dependencies
+let resolution_context = ResolutionContext {
+    environment_variables: HashMap::from([
+        ("ENABLE_ML".to_string(), "true".to_string()),
+    ]),
+    config_values: HashMap::from([
+        ("features.analytics".to_string(), serde_json::json!(true)),
+    ]),
+};
+
+let resolved_deps = resolver.resolve_conditional_dependencies(
+    &amp;conditional_deps, 
+    &amp;resolution_context
+)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="circular-dependency-detection"><a class="header" href="#circular-dependency-detection">Circular Dependency Detection</a></h2>
+<h3 id="identifying-cycles"><a class="header" href="#identifying-cycles">Identifying Cycles</a></h3>
+<p>Detect and report circular dependencies:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::CircularDependencyDetector;
+
+let cycle_detector = CircularDependencyDetector::new();
+let cycle_result = cycle_detector.detect_cycles(&amp;graphs)?;
+
+if cycle_result.has_cycles() {
+    println!("❌ Circular dependencies detected:");
+    for cycle in &amp;cycle_result.cycles {
+        println!("  🔄 {}", cycle.join(" → "));
+        
+        // Suggest resolution strategies
+        let suggestions = cycle_detector.suggest_resolutions(&amp;cycle)?;
+        for suggestion in suggestions {
+            println!("    💡 {}", suggestion);
+        }
+    }
+} else {
+    println!("✅ No circular dependencies found");
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="cycle-resolution-strategies"><a class="header" href="#cycle-resolution-strategies">Cycle Resolution Strategies</a></h3>
+<p>Automatic strategies for resolving circular dependencies:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{CycleResolutionStrategy, DependencyBreaker};
+
+let cycle_breaker = DependencyBreaker::new();
+
+// Strategy 1: Optional dependency promotion
+let resolution1 = cycle_breaker.resolve_by_optional_promotion(&amp;cycle)?;
+
+// Strategy 2: Interface extraction
+let resolution2 = cycle_breaker.resolve_by_interface_extraction(&amp;cycle)?;
+
+// Strategy 3: Dependency inversion
+let resolution3 = cycle_breaker.resolve_by_dependency_inversion(&amp;cycle)?;
+
+// Apply the best resolution strategy
+let best_resolution = cycle_breaker.select_best_resolution(vec![
+    resolution1, resolution2, resolution3
+])?;
+
+println!("🔧 Applying resolution: {}", best_resolution.description);
+let resolved_graphs = cycle_breaker.apply_resolution(&amp;graphs, &amp;best_resolution)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="missing-dependency-handling"><a class="header" href="#missing-dependency-handling">Missing Dependency Handling</a></h2>
+<h3 id="graceful-degradation"><a class="header" href="#graceful-degradation">Graceful Degradation</a></h3>
+<p>Handle missing dependencies gracefully:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{MissingDependencyHandler, DegradationStrategy};
+
+let missing_handler = MissingDependencyHandler::new();
+
+// Configure degradation strategies
+let strategies = HashMap::from([
+    ("optional_dependencies".to_string(), DegradationStrategy::Skip),
+    ("required_dependencies".to_string(), DegradationStrategy::Fail),
+    ("soft_dependencies".to_string(), DegradationStrategy::Substitute),
+]);
+
+missing_handler.configure_strategies(strategies);
+
+// Handle missing dependencies
+let resolution_result = missing_handler.handle_missing_dependencies(
+    &amp;graphs,
+    &amp;missing_deps
+)?;
+
+for action in &amp;resolution_result.actions {
+    match action {
+        DegradationAction::Skipped(graph_name) =&gt; {
+            println!("⏭️  Skipped optional dependency: {}", graph_name);
+        },
+        DegradationAction::Substituted(original, substitute) =&gt; {
+            println!("🔄 Substituted {} with {}", original, substitute);
+        },
+        DegradationAction::Failed(graph_name, reason) =&gt; {
+            println!("❌ Failed to resolve required dependency: {} ({})", graph_name, reason);
+        },
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="dependency-substitution"><a class="header" href="#dependency-substitution">Dependency Substitution</a></h3>
+<p>Provide alternatives for missing dependencies:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::DependencySubstitution;
+
+let substitutions = vec![
+    DependencySubstitution {
+        original: "premium_ml_engine".to_string(),
+        substitute: "basic_ml_engine".to_string(),
+        compatibility_level: CompatibilityLevel::Partial,
+        feature_differences: vec![
+            "Advanced model optimization not available".to_string(),
+            "Reduced prediction accuracy".to_string(),
+        ],
+    },
+    DependencySubstitution {
+        original: "enterprise_analytics".to_string(),
+        substitute: "community_analytics".to_string(),
+        compatibility_level: CompatibilityLevel::Full,
+        feature_differences: vec![],
+    },
+];
+
+missing_handler.register_substitutions(substitutions);
+
+// Apply substitutions during resolution
+let result = missing_handler.resolve_with_substitutions(&amp;graphs)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="dependency-analysis-and-reporting"><a class="header" href="#dependency-analysis-and-reporting">Dependency Analysis and Reporting</a></h2>
+<h3 id="dependency-graph-visualization"><a class="header" href="#dependency-graph-visualization">Dependency Graph Visualization</a></h3>
+<p>Generate dependency graphs for analysis:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{DependencyAnalyzer, DependencyGraph};
+
+let analyzer = DependencyAnalyzer::new();
+
+// Generate dependency graph
+let dep_graph = analyzer.build_dependency_graph(&amp;graphs)?;
+
+// Export to various formats
+dep_graph.export_to_dot("dependencies.dot")?;         // Graphviz DOT
+dep_graph.export_to_json("dependencies.json")?;       // JSON format
+dep_graph.export_to_mermaid("dependencies.md")?;      // Mermaid diagram
+
+// Analyze graph properties
+let analysis = analyzer.analyze_dependency_structure(&amp;dep_graph)?;
+
+println!("📊 Dependency Analysis:");
+println!("  Graphs: {}", analysis.total_graphs);
+println!("  Dependencies: {}", analysis.total_dependencies);
+println!("  Max depth: {}", analysis.max_dependency_depth);
+println!("  Strongly connected components: {}", analysis.scc_count);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="impact-analysis"><a class="header" href="#impact-analysis">Impact Analysis</a></h3>
+<p>Analyze the impact of dependency changes:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::ImpactAnalyzer;
+
+let impact_analyzer = ImpactAnalyzer::new();
+
+// Analyze impact of changing a graph
+let impact = impact_analyzer.analyze_change_impact(
+    &amp;dep_graph,
+    "data_processor",  // Graph being changed
+    "2.0.0"            // New version
+)?;
+
+println!("🎯 Impact Analysis for data_processor v2.0.0:");
+println!("  Directly affected graphs: {}", impact.direct_dependents.len());
+println!("  Transitively affected graphs: {}", impact.transitive_dependents.len());
+println!("  Breaking changes detected: {}", impact.breaking_changes.len());
+
+for change in &amp;impact.breaking_changes {
+    println!("  ⚠️  {}: {}", change.affected_graph, change.description);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="real-world-examples"><a class="header" href="#real-world-examples">Real-World Examples</a></h2>
+<h3 id="data-processing-pipeline-dependencies"><a class="header" href="#data-processing-pipeline-dependencies">Data Processing Pipeline Dependencies</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Example: Complex data processing pipeline with dependencies
+async fn resolve_data_pipeline_dependencies() -&gt; Result&lt;Vec&lt;GraphExport&gt;, DependencyError&gt; {
+    let graphs = vec![
+        // Base data collector (no dependencies)
+        load_graph("data/ingestion/api_collector.graph.json").await?,
+        
+        // Data processor (depends on collector)
+        load_graph("data/processing/cleaner.graph.json").await?,
+        
+        // Feature engineer (depends on processor)
+        load_graph("ml/features/engineer.graph.json").await?,
+        
+        // ML trainer (depends on feature engineer)
+        load_graph("ml/training/trainer.graph.json").await?,
+        
+        // Model validator (depends on trainer)
+        load_graph("ml/validation/validator.graph.json").await?,
+        
+        // Inference service (depends on trainer, but not validator)
+        load_graph("ml/inference/predictor.graph.json").await?,
+        
+        // Analytics dashboard (depends on multiple components)
+        load_graph("analytics/dashboard.graph.json").await?,
+    ];
+    
+    let resolver = DependencyResolver::new();
+    let ordered_graphs = resolver.resolve_dependencies(&amp;graphs)?;
+    
+    // Result order: collector → cleaner → engineer → trainer → [validator, predictor] → dashboard
+    
+    Ok(ordered_graphs)
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="ml-pipeline-with-version-constraints"><a class="header" href="#ml-pipeline-with-version-constraints">ML Pipeline with Version Constraints</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Example: ML pipeline with strict version requirements
+async fn resolve_ml_pipeline_with_versions() -&gt; Result&lt;Vec&lt;GraphExport&gt;, DependencyError&gt; {
+    let graphs = load_ml_graphs().await?;
+    
+    let version_constraints = vec![
+        VersionConstraint {
+            graph_name: "tensorflow_runtime".to_string(),
+            constraint: "&gt;=2.8.0".to_string(),
+            required: true,
+        },
+        VersionConstraint {
+            graph_name: "data_validator".to_string(),
+            constraint: "^1.5.0".to_string(),
+            required: true,
+        },
+        VersionConstraint {
+            graph_name: "model_optimizer".to_string(),
+            constraint: "~2.1.0".to_string(),
+            required: false,
+        },
+    ];
+    
+    let resolver = DependencyResolver::with_version_constraints(version_constraints);
+    
+    // Resolve dependencies with version checking
+    let resolution_result = resolver.resolve_with_versions(&amp;graphs)?;
+    
+    if resolution_result.has_conflicts() {
+        // Handle version conflicts
+        for conflict in &amp;resolution_result.conflicts {
+            eprintln!("Version conflict: {} requires {} but {} is available",
+                conflict.dependent, conflict.required_version, conflict.available_version);
+        }
+        return Err(DependencyError::VersionConflict(resolution_result.conflicts));
+    }
+    
+    Ok(resolution_result.ordered_graphs)
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="handling-optional-dependencies"><a class="header" href="#handling-optional-dependencies">Handling Optional Dependencies</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Example: System with optional features and dependencies
+async fn resolve_with_optional_features() -&gt; Result&lt;Vec&lt;GraphExport&gt;, DependencyError&gt; {
+    let base_graphs = load_core_graphs().await?;
+    let optional_graphs = load_optional_graphs().await?;
+    
+    let resolver = DependencyResolver::new();
+    
+    // Configure optional dependency handling
+    let config = DependencyResolutionConfig {
+        allow_missing_optional: true,
+        substitute_missing: true,
+        fail_on_missing_required: true,
+    };
+    
+    resolver.configure(config);
+    
+    // Define substitutions for missing optional dependencies
+    let substitutions = vec![
+        DependencySubstitution {
+            original: "premium_feature_a".to_string(),
+            substitute: "basic_feature_a".to_string(),
+            compatibility_level: CompatibilityLevel::Partial,
+            feature_differences: vec![
+                "Advanced analytics not available".to_string(),
+            ],
+        },
+    ];
+    
+    resolver.register_substitutions(substitutions);
+    
+    // Resolve with graceful handling of missing optional dependencies
+    let all_graphs = [base_graphs, optional_graphs].concat();
+    let resolution_result = resolver.resolve_with_graceful_degradation(&amp;all_graphs)?;
+    
+    // Report what was included/excluded
+    for action in &amp;resolution_result.degradation_actions {
+        match action {
+            DegradationAction::Skipped(graph) =&gt; {
+                println!("⏭️  Skipped optional feature: {}", graph);
+            },
+            DegradationAction::Substituted(original, substitute) =&gt; {
+                println!("🔄 Using {} instead of {}", substitute, original);
+            },
+        }
+    }
+    
+    Ok(resolution_result.ordered_graphs)
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="testing-dependency-resolution"><a class="header" href="#testing-dependency-resolution">Testing Dependency Resolution</a></h2>
+<h3 id="unit-testing-dependencies"><a class="header" href="#unit-testing-dependencies">Unit Testing Dependencies</a></h3>
+<p>Test dependency resolution logic:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_simple_dependency_resolution() {
+        let graph_a = create_test_graph("graph_a", vec![]);
+        let graph_b = create_test_graph("graph_b", vec!["graph_a"]);
+        let graph_c = create_test_graph("graph_c", vec!["graph_b"]);
+        
+        let graphs = vec![graph_c, graph_a, graph_b]; // Intentionally unordered
+        
+        let resolver = DependencyResolver::new();
+        let ordered = resolver.resolve_dependencies(&amp;graphs).unwrap();
+        
+        assert_eq!(get_graph_name(&amp;ordered[0]), "graph_a");
+        assert_eq!(get_graph_name(&amp;ordered[1]), "graph_b");
+        assert_eq!(get_graph_name(&amp;ordered[2]), "graph_c");
+    }
+    
+    #[tokio::test]
+    async fn test_circular_dependency_detection() {
+        let graph_a = create_test_graph("graph_a", vec!["graph_b"]);
+        let graph_b = create_test_graph("graph_b", vec!["graph_c"]);
+        let graph_c = create_test_graph("graph_c", vec!["graph_a"]);
+        
+        let graphs = vec![graph_a, graph_b, graph_c];
+        
+        let resolver = DependencyResolver::new();
+        let result = resolver.resolve_dependencies(&amp;graphs);
+        
+        assert!(matches!(result, Err(DependencyError::CircularDependency(_))));
+    }
+    
+    #[tokio::test]
+    async fn test_version_constraint_validation() {
+        let graph_a = create_test_graph_with_version("graph_a", "1.0.0", vec![]);
+        let graph_b = create_test_graph_with_version("graph_b", "2.0.0", vec![
+            ("graph_a", "&gt;=1.5.0")
+        ]);
+        
+        let graphs = vec![graph_a, graph_b];
+        
+        let resolver = DependencyResolver::new();
+        let result = resolver.resolve_dependencies(&amp;graphs);
+        
+        assert!(matches!(result, Err(DependencyError::VersionConflict(_))));
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="integration-testing"><a class="header" href="#integration-testing">Integration Testing</a></h3>
+<p>Test complete dependency resolution workflows:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn test_complete_workspace_dependency_resolution() {
+    let workspace_path = "test_workspace";
+    setup_test_workspace(workspace_path).await;
+    
+    let discovery = WorkspaceDiscovery::new(WorkspaceConfig {
+        root_path: PathBuf::from(workspace_path),
+        ..Default::default()
+    });
+    
+    let workspace = discovery.discover_workspace().await.unwrap();
+    
+    let resolver = DependencyResolver::new();
+    let ordered_graphs = resolver.resolve_dependencies(&amp;workspace.graphs).await.unwrap();
+    
+    // Verify correct ordering
+    verify_dependency_order(&amp;ordered_graphs);
+    
+    // Verify all required dependencies are satisfied
+    verify_all_dependencies_satisfied(&amp;ordered_graphs);
+    
+    cleanup_test_workspace(workspace_path).await;
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="1-explicit-dependency-declaration"><a class="header" href="#1-explicit-dependency-declaration">1. Explicit Dependency Declaration</a></h3>
+<p>Always declare dependencies explicitly in graph metadata:</p>
+<pre><code class="language-json">{
+  "properties": {
+    "name": "my_graph",
+    "dependencies": ["required_graph_1", "required_graph_2"]
+  },
+  "graph_dependencies": [
+    {
+      "graph_name": "required_graph_1",
+      "version_constraint": "&gt;=1.0.0",
+      "required": true,
+      "description": "Provides core data processing functionality"
+    }
+  ]
+}
+</code></pre>
+<h3 id="2-use-semantic-versioning"><a class="header" href="#2-use-semantic-versioning">2. Use Semantic Versioning</a></h3>
+<p>Follow semantic versioning for graph versions:</p>
+<pre><code class="language-json">{
+  "properties": {
+    "version": "2.1.3"  // MAJOR.MINOR.PATCH
+  },
+  "graph_dependencies": [
+    {
+      "graph_name": "data_processor",
+      "version_constraint": "^2.0.0"  // Compatible with 2.x.x
+    }
+  ]
+}
+</code></pre>
+<h3 id="3-design-for-loose-coupling"><a class="header" href="#3-design-for-loose-coupling">3. Design for Loose Coupling</a></h3>
+<p>Minimize dependencies between graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Minimal, well-defined dependencies
+let graph_deps = vec![
+    GraphDependency {
+        graph_name: "core_processor".to_string(),
+        required: true,
+        // Only depends on stable core functionality
+    },
+];
+
+// Avoid: Tight coupling with many dependencies
+let graph_deps = vec![
+    // Too many dependencies make the graph fragile
+    GraphDependency { graph_name: "helper1".to_string(), required: true },
+    GraphDependency { graph_name: "helper2".to_string(), required: true },
+    GraphDependency { graph_name: "helper3".to_string(), required: true },
+    GraphDependency { graph_name: "helper4".to_string(), required: true },
+];
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-test-dependency-changes"><a class="header" href="#4-test-dependency-changes">4. Test Dependency Changes</a></h3>
+<p>Always test the impact of dependency changes:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Before making changes, analyze impact
+let impact = analyzer.analyze_change_impact(&amp;dep_graph, "my_graph", "2.0.0")?;
+
+if impact.has_breaking_changes() {
+    println!("⚠️  Breaking changes detected - review carefully");
+    for change in &amp;impact.breaking_changes {
+        println!("  - {}", change.description);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="5-document-dependencies"><a class="header" href="#5-document-dependencies">5. Document Dependencies</a></h3>
+<p>Document why dependencies exist and what they provide:</p>
+<pre><code class="language-json">{
+  "graph_dependencies": [
+    {
+      "graph_name": "ml_core",
+      "version_constraint": "&gt;=2.0.0",
+      "required": true,
+      "description": "Provides tensor operations and model training infrastructure required for neural network training"
+    }
+  ]
+}
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="workspace-discovery.html">Workspace Discovery</a> - Discover graphs for dependency analysis</li>
+<li><a href="graph-composition.html">Graph Composition</a> - Compose resolved graphs</li>
+<li><a href="../../tutorials/multi-graph-workspace.html">Tutorial: Multi-Graph Workspace</a></li>
+</ul>
+<h2 id="related-documentation"><a class="header" href="#related-documentation">Related Documentation</a></h2>
+<ul>
+<li><a href="../../architecture/multi-graph-composition.html">Architecture: Multi-Graph Composition</a></li>
+<li><a href="../../architecture/graph-system.html">Graph System Overview</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/multi-graph/graph-composition.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/distributed/setting-up-networks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/multi-graph/graph-composition.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/distributed/setting-up-networks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

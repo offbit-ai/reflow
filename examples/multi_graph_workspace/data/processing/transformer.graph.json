@@ -1,0 +1,101 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "transformer",
+    "description": "Data transformation pipeline",
+    "version": "1.0.0",
+    "namespace": "data/processing",
+    "dependencies": ["collector"]
+  },
+  "processes": {
+    "cleaner": {
+      "id": "cleaner",
+      "component": "DataCleanerActor",
+      "metadata": {}
+    },
+    "normalizer": {
+      "id": "normalizer",
+      "component": "DataNormalizerActor",
+      "metadata": {}
+    }
+  },
+  "connections": [
+    {
+      "from": { 
+        "portName": "Output",
+        "portId": "Output", 
+        "nodeId": "cleaner",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "to": { 
+        "portName": "Input",
+        "portId": "Input", 
+        "nodeId": "normalizer",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "metadata": {}
+    }
+  ],
+  "inports": {
+    "raw_data": {
+      "portName": "Input",
+      "portId": "Input",
+      "nodeId": "cleaner",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "outports": {
+    "clean_data": {
+      "portName": "Output",
+      "portId": "Output",
+      "nodeId": "normalizer",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "groups": [],
+  "graph_dependencies": [
+    {
+      "graphName": "collector",
+      "namespace": "data/ingestion",
+      "versionConstraint": ">=1.0.0",
+      "required": true,
+      "description": "Requires data collector for input"
+    }
+  ],
+  "external_connections": [
+    {
+      "connectionId": "transformer_to_trainer",
+      "targetGraph": "trainer",
+      "targetNamespace": "ml/training",
+      "fromProcess": "normalizer",
+      "fromPort": "Output",
+      "toProcess": "feature_engineer",
+      "toPort": "Input",
+      "description": "Send cleaned data to ML training pipeline"
+    }
+  ],
+  "provided_interfaces": {
+    "clean_data_output": {
+      "interfaceId": "clean_data_output",
+      "processName": "normalizer",
+      "portName": "Output",
+      "dataType": "CleanedDataRecord",
+      "description": "Cleaned and normalized data output",
+      "required": false
+    }
+  },
+  "required_interfaces": {
+    "raw_data_input": {
+      "interfaceId": "raw_data_input",
+      "processName": "cleaner",
+      "portName": "Input",
+      "dataType": "RawDataRecord",
+      "description": "Raw data input from collector",
+      "required": true
+    }
+  }
+}

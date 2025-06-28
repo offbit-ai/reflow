@@ -1,0 +1,101 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "trainer",
+    "description": "ML model training pipeline",
+    "version": "1.0.0",
+    "namespace": "ml/training",
+    "dependencies": ["transformer"]
+  },
+  "processes": {
+    "feature_engineer": {
+      "id": "feature_engineer",
+      "component": "FeatureEngineerActor",
+      "metadata": {}
+    },
+    "model_trainer": {
+      "id": "model_trainer",
+      "component": "ModelTrainerActor",
+      "metadata": {}
+    }
+  },
+  "connections": [
+    {
+      "from": { 
+        "portName": "Output",
+        "portId": "Output", 
+        "nodeId": "feature_engineer",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "to": { 
+        "portName": "Input",
+        "portId": "Input", 
+        "nodeId": "model_trainer",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "metadata": {}
+    }
+  ],
+  "inports": {
+    "training_data": {
+      "portName": "Input",
+      "portId": "Input",
+      "nodeId": "feature_engineer",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "outports": {
+    "trained_model": {
+      "portName": "Output",
+      "portId": "Output",
+      "nodeId": "model_trainer",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "groups": [],
+  "graph_dependencies": [
+    {
+      "graphName": "transformer",
+      "namespace": "data/processing",
+      "versionConstraint": ">=1.0.0",
+      "required": true,
+      "description": "Requires clean data from transformer"
+    }
+  ],
+  "external_connections": [
+    {
+      "connectionId": "trainer_feedback_to_transformer",
+      "targetGraph": "transformer",
+      "targetNamespace": "data/processing",
+      "fromProcess": "model_trainer",
+      "fromPort": "ValidationResults",
+      "toProcess": "normalizer",
+      "toPort": "Feedback",
+      "description": "Send validation feedback back to improve data transformation"
+    }
+  ],
+  "required_interfaces": {
+    "clean_data_input": {
+      "interfaceId": "clean_data_input",
+      "processName": "feature_engineer",
+      "portName": "Input",
+      "dataType": "CleanedDataRecord",
+      "description": "Clean data from processing pipeline",
+      "required": true
+    }
+  },
+  "provided_interfaces": {
+    "trained_model_output": {
+      "interfaceId": "trained_model_output",
+      "processName": "model_trainer",
+      "portName": "Output",
+      "dataType": "TrainedModel",
+      "description": "Trained ML model",
+      "required": false
+    }
+  }
+}

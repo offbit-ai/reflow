@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap, net, pin::Pin, sync::Arc, thread::{self, sleep}, time::Duration
 };
-
+use crate::actor::ActorConfig;
 use crate::{
     actor::{ActorContext, ActorPayload},
     connector::{ConnectionPoint, Connector, InitialPacket},
@@ -101,9 +101,9 @@ async fn test_network() -> Result<(), anyhow::Error> {
 
     network.register_actor("assert_eq_process", AssertEqActor::new())?;
 
-    network.add_node(sum_id, "sum_process")?;
-    network.add_node(square_id, "square_process")?;
-    network.add_node(asser_eq_id, "assert_eq_process")?;
+    network.add_node(sum_id, "sum_process", None)?;
+    network.add_node(square_id, "square_process", None)?;
+    network.add_node(asser_eq_id, "assert_eq_process", None)?;
 
     network.add_connection(Connector {
         from: ConnectionPoint {
@@ -270,9 +270,9 @@ async fn test_complex_network() -> Result<(), anyhow::Error> {
     network.register_actor("aggregator", AggregatorActor::new())?;
 
     // Add nodes
-    network.add_node("transform1", "transform")?;
-    network.add_node("filter1", "filter")?;
-    network.add_node("aggregator1", "aggregator")?;
+    network.add_node("transform1", "transform", None)?;
+    network.add_node("filter1", "filter", None)?;
+    network.add_node("aggregator1", "aggregator", None)?;
 
     // Connect nodes
     network.add_connection(Connector {

@@ -8,7 +8,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use tracing::{error, info, warn};
 
-use crate::actor::{Actor, ActorBehavior, ActorContext, ActorState, MemoryState, Port};
+use crate::actor::{Actor, ActorConfig, ActorBehavior, ActorContext, MemoryState, Port};
 use crate::message::Message;
 
 // ============================================================================
@@ -858,12 +858,13 @@ impl Actor for ApiOperationActor {
         self.outports.clone()
     }
 
-    fn create_process(&self) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
+    fn create_process(&self, config:ActorConfig) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
         let state = Arc::new(parking_lot::Mutex::new(MemoryState::default()));
         let outports = self.get_outports();
         let load = self.load_count();
+        let actor_config = config.clone();
 
         Box::pin(async move {
             while let Ok(payload) = inports.1.recv_async().await {
@@ -872,11 +873,12 @@ impl Actor for ApiOperationActor {
                     load_guard.inc();
                 }
 
+
                 let context = ActorContext::new(
                     payload,
                     outports.clone(),
                     state.clone(),
-                    HashMap::new(),
+                    actor_config.clone(),
                     load.clone(),
                 );
 
@@ -1256,11 +1258,25 @@ mod tests {
         // Test URL building
         let payload = HashMap::from([("id".to_string(), Message::string("123".to_string()))]);
 
+        // Create ActorConfig for test
+        let node = crate::graph::types::GraphNode {
+            id: "test_actor".to_string(),
+            component: "TestComponent".to_string(),
+            metadata: Some(HashMap::new()),
+        };
+
+        let actor_config = crate::actor::ActorConfig {
+            node,
+            resolved_env: HashMap::new(),
+            config: HashMap::new(),
+            namespace: None,
+        };
+
         let context = ActorContext::new(
             payload,
             actor.get_outports(),
             Arc::new(parking_lot::Mutex::new(MemoryState::default())),
-            HashMap::new(),
+            actor_config,
             Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
         );
 

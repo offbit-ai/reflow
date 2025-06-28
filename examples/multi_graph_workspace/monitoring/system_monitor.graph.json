@@ -1,0 +1,143 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "system_monitor",
+    "description": "System monitoring and observability pipeline",
+    "version": "1.0.0",
+    "namespace": "monitoring"
+  },
+  "processes": {
+    "metrics_collector": {
+      "id": "metrics_collector",
+      "component": "MetricsCollectorActor",
+      "metadata": {}
+    },
+    "anomaly_detector": {
+      "id": "anomaly_detector",
+      "component": "AnomalyDetectorActor",
+      "metadata": {}
+    },
+    "alert_manager": {
+      "id": "alert_manager",
+      "component": "AlertManagerActor",
+      "metadata": {}
+    }
+  },
+  "connections": [
+    {
+      "from": { 
+        "portName": "Output",
+        "portId": "Output", 
+        "nodeId": "metrics_collector",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "to": { 
+        "portName": "Input",
+        "portId": "Input", 
+        "nodeId": "anomaly_detector",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "metadata": {}
+    },
+    {
+      "from": { 
+        "portName": "Alerts",
+        "portId": "Alerts", 
+        "nodeId": "anomaly_detector",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "to": { 
+        "portName": "Input",
+        "portId": "Input", 
+        "nodeId": "alert_manager",
+        "expose": false,
+        "portType": {"type": "any"}
+      },
+      "metadata": {}
+    }
+  ],
+  "inports": {
+    "external_metrics": {
+      "portName": "ExternalInput",
+      "portId": "ExternalInput",
+      "nodeId": "metrics_collector",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "outports": {
+    "dashboard_data": {
+      "portName": "Dashboard",
+      "portId": "Dashboard",
+      "nodeId": "metrics_collector",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "groups": [],
+  "graph_dependencies": [],
+  "external_connections": [
+    {
+      "connectionId": "monitor_collector_performance",
+      "targetGraph": "collector",
+      "targetNamespace": "data/ingestion",
+      "fromProcess": "metrics_collector",
+      "fromPort": "PerformanceRequest",
+      "toProcess": "api_fetcher",
+      "toPort": "MetricsPort",
+      "description": "Monitor data collector performance metrics"
+    },
+    {
+      "connectionId": "monitor_transformer_throughput",
+      "targetGraph": "transformer", 
+      "targetNamespace": "data/processing",
+      "fromProcess": "metrics_collector",
+      "fromPort": "ThroughputRequest",
+      "toProcess": "normalizer",
+      "toPort": "MetricsPort",
+      "description": "Monitor transformer throughput and processing times"
+    },
+    {
+      "connectionId": "monitor_trainer_progress",
+      "targetGraph": "trainer",
+      "targetNamespace": "ml/training", 
+      "fromProcess": "metrics_collector",
+      "fromPort": "ProgressRequest",
+      "toProcess": "model_trainer",
+      "toPort": "MetricsPort",
+      "description": "Monitor ML training progress and model quality metrics"
+    },
+    {
+      "connectionId": "send_throttle_commands",
+      "targetGraph": "collector",
+      "targetNamespace": "data/ingestion",
+      "fromProcess": "alert_manager",
+      "fromPort": "ThrottleCommands",
+      "toProcess": "api_fetcher",
+      "toPort": "ControlPort",
+      "description": "Send throttle commands when system is overloaded"
+    }
+  ],
+  "provided_interfaces": {
+    "system_metrics": {
+      "interfaceId": "system_metrics",
+      "processName": "metrics_collector",
+      "portName": "Dashboard",
+      "dataType": "SystemMetrics",
+      "description": "Real-time system performance metrics",
+      "required": false
+    },
+    "control_commands": {
+      "interfaceId": "control_commands",
+      "processName": "alert_manager",
+      "portName": "ThrottleCommands",
+      "dataType": "ControlCommand",
+      "description": "System control commands for load balancing",
+      "required": false
+    }
+  },
+  "required_interfaces": {}
+}

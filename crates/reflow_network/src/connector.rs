@@ -65,11 +65,11 @@ impl Connector {
             .get(&self.to.actor.to_owned())
             .expect("Expected to get actor process from connected node");
 
-        let from_actor = network.actors.get(from_process).unwrap();
+        let from_actor = network.initialized_actors.get(&from_process.id).expect(&format!("Expected to find intitialized Actor for id {}", from_process.id));
         let from_actor_load_count = from_actor.load_count();
         let from_actor_id = self.from.actor.clone();
 
-        let to_actor = network.actors.get(to_process).unwrap();
+        let to_actor = network.initialized_actors.get(&to_process.id).expect(&format!("Expected to find intitialized Actor for id {}", from_process.id));
 
         let to_actor_id = self.to.actor.clone();
 

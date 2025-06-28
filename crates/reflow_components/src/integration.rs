@@ -3,7 +3,7 @@
 //! This module contains components that facilitate interaction with external systems.
 
 use std::{collections::HashMap, sync::Arc};
-
+use reflow_network::actor::ActorConfig;
 use actor_macro::actor;
 use anyhow::Error;
 

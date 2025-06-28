@@ -1994,6 +1994,10 @@ impl Graph {
             groups: Vec::new(),
             processes: HashMap::new(),
             connections: Vec::new(),
+            graph_dependencies: Vec::new(),
+            external_connections: Vec::new(),
+            provided_interfaces: HashMap::new(),
+            required_interfaces: HashMap::new(),
         };
 
         json.properties = self.properties.clone();

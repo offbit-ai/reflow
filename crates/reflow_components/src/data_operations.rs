@@ -11,6 +11,7 @@ use reflow_network::{actor::ActorContext, message::EncodableValue};
 use serde_json::to_string;
 
 use crate::{Actor, ActorLoad, ActorBehavior, MemoryState, Message, Port};
+use reflow_network::actor::ActorConfig;
 
 /// Applies a transformation function to input data.
 ///

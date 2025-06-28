@@ -1,0 +1,923 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Graph Composition - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/api/multi-graph/graph-composition.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="graph-composition"><a class="header" href="#graph-composition">Graph Composition</a></h1>
+<p>Learn how to compose multiple discovered graphs into unified workflows.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Graph composition allows you to:</p>
+<ul>
+<li><strong>Combine multiple graphs</strong>: Merge discovered graphs into a single executable network</li>
+<li><strong>Create cross-graph connections</strong>: Connect processes across different graph namespaces</li>
+<li><strong>Resolve dependencies</strong>: Handle inter-graph dependencies automatically</li>
+<li><strong>Share resources</strong>: Create shared processes accessible by multiple graphs</li>
+<li><strong>Build unified workflows</strong>: Transform modular graphs into cohesive pipelines</li>
+</ul>
+<h2 id="basic-composition"><a class="header" href="#basic-composition">Basic Composition</a></h2>
+<h3 id="using-graphcomposer"><a class="header" href="#using-graphcomposer">Using GraphComposer</a></h3>
+<p>The primary tool for composing graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{GraphComposer, GraphComposition, GraphSource};
+
+// Create composer
+let mut composer = GraphComposer::new();
+
+// Define composition
+let composition = GraphComposition {
+    sources: vec![
+        GraphSource::JsonFile("data/collector.graph.json".to_string()),
+        GraphSource::JsonFile("data/processor.graph.json".to_string()),
+        GraphSource::JsonFile("ml/trainer.graph.json".to_string()),
+    ],
+    connections: vec![
+        // Cross-graph connections defined here
+    ],
+    shared_resources: vec![
+        // Shared processes defined here
+    ],
+    properties: HashMap::from([
+        ("name".to_string(), serde_json::json!("composed_workflow")),
+        ("version".to_string(), serde_json::json!("1.0.0")),
+    ]),
+    case_sensitive: Some(false),
+    metadata: None,
+};
+
+// Compose into unified graph
+let composed_graph = composer.compose_graphs(composition).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="from-workspace-discovery"><a class="header" href="#from-workspace-discovery">From Workspace Discovery</a></h3>
+<p>Compose directly from discovered workspaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::workspace::{WorkspaceDiscovery, WorkspaceConfig};
+
+// Discover workspace
+let discovery = WorkspaceDiscovery::new(WorkspaceConfig::default());
+let workspace = discovery.discover_workspace().await?;
+
+// Convert to composition sources
+let sources: Vec&lt;GraphSource&gt; = workspace.graphs
+    .into_iter()
+    .map(|g| GraphSource::GraphExport(g.graph))
+    .collect();
+
+let composition = GraphComposition {
+    sources,
+    connections: vec![], // Will be populated
+    shared_resources: vec![],
+    properties: HashMap::from([
+        ("name".to_string(), serde_json::json!("workspace_composition")),
+    ]),
+    case_sensitive: Some(false),
+    metadata: None,
+};
+
+let composed_graph = composer.compose_graphs(composition).await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="cross-graph-connections"><a class="header" href="#cross-graph-connections">Cross-Graph Connections</a></h2>
+<h3 id="manual-connection-definition"><a class="header" href="#manual-connection-definition">Manual Connection Definition</a></h3>
+<p>Create explicit connections between graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{CompositionConnection, CompositionEndpoint};
+
+let composition = GraphComposition {
+    sources: vec![
+        GraphSource::JsonFile("data/collector.graph.json".to_string()),
+        GraphSource::JsonFile("ml/trainer.graph.json".to_string()),
+    ],
+    connections: vec![
+        CompositionConnection {
+            from: CompositionEndpoint {
+                process: "data/collector".to_string(),  // Namespaced process name
+                port: "Output".to_string(),
+                index: None,
+            },
+            to: CompositionEndpoint {
+                process: "ml/feature_engineer".to_string(),
+                port: "Input".to_string(),
+                index: None,
+            },
+            metadata: Some(HashMap::from([
+                ("description".to_string(), serde_json::json!("Data pipeline to ML training")),
+            ])),
+        },
+    ],
+    // ... rest of composition
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="using-connection-builder"><a class="header" href="#using-connection-builder">Using Connection Builder</a></h3>
+<p>Programmatically build connections:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::GraphConnectionBuilder;
+
+// First, discover workspace to get graph information
+let workspace = discovery.discover_workspace().await?;
+
+// Create connection builder
+let mut connection_builder = GraphConnectionBuilder::new(workspace);
+
+// Build connections using fluent API
+connection_builder
+    .connect(
+        "collector",       // from graph
+        "data_collector", // from process
+        "Output",         // from port
+        "processor",      // to graph
+        "data_cleaner",   // to process
+        "Input"           // to port
+    )?
+    .connect(
+        "processor",
+        "data_transformer",
+        "Output",
+        "trainer",
+        "feature_engineer",
+        "Input"
+    )?;
+
+// Get connections for composition
+let connections = connection_builder.build();
+
+let composition = GraphComposition {
+    sources: workspace.graphs.into_iter()
+        .map(|g| GraphSource::GraphExport(g.graph))
+        .collect(),
+    connections,
+    // ... rest of composition
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="interface-based-connections"><a class="header" href="#interface-based-connections">Interface-Based Connections</a></h3>
+<p>Connect using declared interfaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Connect using interface definitions from graphs
+connection_builder
+    .connect_interface(
+        "processor",           // from graph
+        "clean_data_output",   // from interface
+        "trainer",             // to graph
+        "training_data_input"  // to interface
+    )?
+    .connect_interface(
+        "trainer",
+        "model_output",
+        "predictor",
+        "model_input"
+    )?;
+
+let connections = connection_builder.build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="shared-resources"><a class="header" href="#shared-resources">Shared Resources</a></h2>
+<h3 id="defining-shared-processes"><a class="header" href="#defining-shared-processes">Defining Shared Processes</a></h3>
+<p>Create processes accessible by multiple graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::SharedResource;
+
+let composition = GraphComposition {
+    sources: vec![
+        // Multiple graphs that need logging
+        GraphSource::JsonFile("data/processor.graph.json".to_string()),
+        GraphSource::JsonFile("ml/trainer.graph.json".to_string()),
+        GraphSource::JsonFile("api/service.graph.json".to_string()),
+    ],
+    shared_resources: vec![
+        SharedResource {
+            name: "shared_logger".to_string(),
+            component: "LoggerActor".to_string(),
+            metadata: Some(HashMap::from([
+                ("log_level".to_string(), serde_json::json!("info")),
+                ("output_file".to_string(), serde_json::json!("workflow.log")),
+            ])),
+        },
+        SharedResource {
+            name: "config_manager".to_string(),
+            component: "ConfigManagerActor".to_string(),
+            metadata: Some(HashMap::from([
+                ("config_file".to_string(), serde_json::json!("config.yaml")),
+            ])),
+        },
+    ],
+    connections: vec![
+        // Connect graphs to shared resources
+        CompositionConnection {
+            from: CompositionEndpoint {
+                process: "data/processor".to_string(),
+                port: "LogOutput".to_string(),
+                index: None,
+            },
+            to: CompositionEndpoint {
+                process: "shared_logger".to_string(),
+                port: "Input".to_string(),
+                index: None,
+            },
+            metadata: None,
+        },
+        // More connections to shared logger...
+    ],
+    // ... rest of composition
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="resource-sharing-patterns"><a class="header" href="#resource-sharing-patterns">Resource Sharing Patterns</a></h3>
+<p>Common patterns for shared resources:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// 1. Centralized Logging
+let shared_logging = SharedResource {
+    name: "central_logger".to_string(),
+    component: "CentralLoggerActor".to_string(),
+    metadata: Some(HashMap::from([
+        ("aggregation".to_string(), serde_json::json!(true)),
+        ("format".to_string(), serde_json::json!("json")),
+    ])),
+};
+
+// 2. Configuration Management
+let config_service = SharedResource {
+    name: "config_service".to_string(),
+    component: "ConfigServiceActor".to_string(),
+    metadata: Some(HashMap::from([
+        ("watch_changes".to_string(), serde_json::json!(true)),
+    ])),
+};
+
+// 3. Metrics Collection
+let metrics_collector = SharedResource {
+    name: "metrics_collector".to_string(),
+    component: "MetricsCollectorActor".to_string(),
+    metadata: Some(HashMap::from([
+        ("export_interval".to_string(), serde_json::json!(30)),
+        ("export_format".to_string(), serde_json::json!("prometheus")),
+    ])),
+};
+
+// 4. Authentication Service
+let auth_service = SharedResource {
+    name: "auth_service".to_string(),
+    component: "AuthServiceActor".to_string(),
+    metadata: Some(HashMap::from([
+        ("token_expiry".to_string(), serde_json::json!(3600)),
+        ("jwt_secret".to_string(), serde_json::json!("${JWT_SECRET}")),
+    ])),
+};
+<span class="boring">}</span></code></pre></pre>
+<h2 id="namespace-management"><a class="header" href="#namespace-management">Namespace Management</a></h2>
+<h3 id="automatic-namespacing"><a class="header" href="#automatic-namespacing">Automatic Namespacing</a></h3>
+<p>Graphs are automatically namespaced during composition:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Original process names in individual graphs:
+// collector.graph.json: "data_collector"
+// processor.graph.json: "data_processor"  
+// trainer.graph.json: "model_trainer"
+
+// After composition with namespace prefixes:
+// "data/data_collector"     (from collector graph in data/ folder)
+// "data/data_processor"     (from processor graph in data/ folder)
+// "ml/model_trainer"        (from trainer graph in ml/ folder)
+
+// Access in composed graph:
+let composed_export = composed_graph.export();
+assert!(composed_export.processes.contains_key("data/data_collector"));
+assert!(composed_export.processes.contains_key("ml/model_trainer"));
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-namespace-mapping"><a class="header" href="#custom-namespace-mapping">Custom Namespace Mapping</a></h3>
+<p>Control how namespaces are applied:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::{NamespaceMapping, NamespaceStrategy};
+
+let namespace_mapping = NamespaceMapping {
+    graph_mappings: HashMap::from([
+        ("collector".to_string(), "ingestion".to_string()),
+        ("processor".to_string(), "processing".to_string()),
+        ("trainer".to_string(), "machine_learning".to_string()),
+    ]),
+    strategy: NamespaceStrategy::CustomMapping,
+    collision_resolution: CollisionResolution::Prefix,
+};
+
+let composer = GraphComposer::with_namespace_mapping(namespace_mapping);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="advanced-composition"><a class="header" href="#advanced-composition">Advanced Composition</a></h2>
+<h3 id="conditional-composition"><a class="header" href="#conditional-composition">Conditional Composition</a></h3>
+<p>Compose graphs based on conditions:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::ConditionalComposition;
+
+let conditional_composition = ConditionalComposition {
+    base_sources: vec![
+        GraphSource::JsonFile("core/processor.graph.json".to_string()),
+    ],
+    conditional_sources: vec![
+        ConditionalSource {
+            condition: Condition::EnvironmentVariable("ENABLE_ML".to_string()),
+            sources: vec![
+                GraphSource::JsonFile("ml/trainer.graph.json".to_string()),
+                GraphSource::JsonFile("ml/predictor.graph.json".to_string()),
+            ],
+        },
+        ConditionalSource {
+            condition: Condition::ConfigValue("features.analytics".to_string()),
+            sources: vec![
+                GraphSource::JsonFile("analytics/collector.graph.json".to_string()),
+            ],
+        },
+    ],
+};
+
+let composed_graph = composer.compose_conditional(conditional_composition).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="templated-composition"><a class="header" href="#templated-composition">Templated Composition</a></h3>
+<p>Use templates for dynamic composition:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::CompositionTemplate;
+
+let template = CompositionTemplate {
+    template_file: "templates/data_pipeline.yaml".to_string(),
+    parameters: HashMap::from([
+        ("input_source".to_string(), serde_json::json!("kafka")),
+        ("output_destination".to_string(), serde_json::json!("postgres")),
+        ("enable_validation".to_string(), serde_json::json!(true)),
+    ]),
+};
+
+let composition = composer.render_template(template).await?;
+let composed_graph = composer.compose_graphs(composition).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="layered-composition"><a class="header" href="#layered-composition">Layered Composition</a></h3>
+<p>Build compositions in layers:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Base layer: Core functionality
+let base_composition = GraphComposition {
+    sources: vec![
+        GraphSource::JsonFile("core/base.graph.json".to_string()),
+    ],
+    // ... base configuration
+};
+
+// Feature layer: Additional features
+let feature_layer = GraphComposition {
+    sources: vec![
+        GraphSource::JsonFile("features/analytics.graph.json".to_string()),
+        GraphSource::JsonFile("features/monitoring.graph.json".to_string()),
+    ],
+    // ... feature connections
+};
+
+// Environment layer: Environment-specific configuration
+let env_layer = GraphComposition {
+    sources: vec![
+        GraphSource::JsonFile("env/production.graph.json".to_string()),
+    ],
+    // ... environment-specific resources
+};
+
+// Compose layers
+let base_graph = composer.compose_graphs(base_composition).await?;
+let feature_graph = composer.compose_layers(base_graph, feature_layer).await?;
+let final_graph = composer.compose_layers(feature_graph, env_layer).await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="validation-and-testing"><a class="header" href="#validation-and-testing">Validation and Testing</a></h2>
+<h3 id="composition-validation"><a class="header" href="#composition-validation">Composition Validation</a></h3>
+<p>Validate composed graphs before execution:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::CompositionValidator;
+
+let validator = CompositionValidator::new();
+
+// Validate composition structure
+let validation_result = validator.validate_composition(&amp;composition).await?;
+
+if !validation_result.is_valid() {
+    println!("❌ Composition validation failed:");
+    for error in &amp;validation_result.errors {
+        println!("  - {}", error);
+    }
+    for warning in &amp;validation_result.warnings {
+        println!("  ⚠️  {}", warning);
+    }
+} else {
+    println!("✅ Composition validation passed");
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-composed-graphs"><a class="header" href="#testing-composed-graphs">Testing Composed Graphs</a></h3>
+<p>Test the composed graph before deployment:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::CompositionTester;
+
+let tester = CompositionTester::new();
+
+// Create test scenarios
+let test_scenarios = vec![
+    TestScenario {
+        name: "data_flow_test".to_string(),
+        inputs: HashMap::from([
+            ("data/collector".to_string(), vec![
+                Message::String("test_data".to_string())
+            ]),
+        ]),
+        expected_outputs: HashMap::from([
+            ("ml/predictor".to_string(), vec![
+                Message::Object(serde_json::json!({"prediction": 0.95}))
+            ]),
+        ]),
+        timeout_ms: 5000,
+    },
+];
+
+// Run tests
+let test_results = tester.run_tests(&amp;composed_graph, test_scenarios).await?;
+
+for result in &amp;test_results {
+    if result.passed {
+        println!("✅ Test '{}' passed", result.scenario_name);
+    } else {
+        println!("❌ Test '{}' failed: {}", result.scenario_name, result.error.as_ref().unwrap());
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="lazy-loading"><a class="header" href="#lazy-loading">Lazy Loading</a></h3>
+<p>Only load necessary graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = CompositionConfig {
+    lazy_loading: true,
+    load_on_demand: true,
+    cache_loaded_graphs: true,
+    max_concurrent_loads: 4,
+};
+
+let composer = GraphComposer::with_config(config);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="parallel-composition"><a class="header" href="#parallel-composition">Parallel Composition</a></h3>
+<p>Compose large numbers of graphs in parallel:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = CompositionConfig {
+    parallel_composition: true,
+    max_parallel_graphs: 8,
+    composition_timeout_ms: 30000,
+};
+
+let composer = GraphComposer::with_config(config);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="memory-management"><a class="header" href="#memory-management">Memory Management</a></h3>
+<p>Control memory usage during composition:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = CompositionConfig {
+    max_memory_usage_mb: 1024,
+    cleanup_intermediate_results: true,
+    stream_large_graphs: true,
+};
+
+let composer = GraphComposer::with_config(config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="real-world-examples"><a class="header" href="#real-world-examples">Real-World Examples</a></h2>
+<h3 id="data-processing-pipeline"><a class="header" href="#data-processing-pipeline">Data Processing Pipeline</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Compose a complete data processing pipeline
+async fn create_data_pipeline() -&gt; Result&lt;Graph, CompositionError&gt; {
+    let mut composer = GraphComposer::new();
+    
+    let composition = GraphComposition {
+        sources: vec![
+            GraphSource::JsonFile("ingestion/api_collector.graph.json".to_string()),
+            GraphSource::JsonFile("processing/data_cleaner.graph.json".to_string()),
+            GraphSource::JsonFile("processing/transformer.graph.json".to_string()),
+            GraphSource::JsonFile("storage/database_writer.graph.json".to_string()),
+        ],
+        connections: vec![
+            CompositionConnection {
+                from: CompositionEndpoint {
+                    process: "ingestion/api_collector".to_string(),
+                    port: "RawData".to_string(),
+                    index: None,
+                },
+                to: CompositionEndpoint {
+                    process: "processing/data_cleaner".to_string(),
+                    port: "Input".to_string(),
+                    index: None,
+                },
+                metadata: None,
+            },
+            CompositionConnection {
+                from: CompositionEndpoint {
+                    process: "processing/data_cleaner".to_string(),
+                    port: "CleanedData".to_string(),
+                    index: None,
+                },
+                to: CompositionEndpoint {
+                    process: "processing/transformer".to_string(),
+                    port: "Input".to_string(),
+                    index: None,
+                },
+                metadata: None,
+            },
+            CompositionConnection {
+                from: CompositionEndpoint {
+                    process: "processing/transformer".to_string(),
+                    port: "TransformedData".to_string(),
+                    index: None,
+                },
+                to: CompositionEndpoint {
+                    process: "storage/database_writer".to_string(),
+                    port: "Input".to_string(),
+                    index: None,
+                },
+                metadata: None,
+            },
+        ],
+        shared_resources: vec![
+            SharedResource {
+                name: "logger".to_string(),
+                component: "LoggerActor".to_string(),
+                metadata: Some(HashMap::from([
+                    ("level".to_string(), serde_json::json!("info")),
+                ])),
+            },
+        ],
+        properties: HashMap::from([
+            ("name".to_string(), serde_json::json!("data_processing_pipeline")),
+            ("version".to_string(), serde_json::json!("1.0.0")),
+        ]),
+        case_sensitive: Some(false),
+        metadata: None,
+    };
+    
+    composer.compose_graphs(composition).await
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="ml-training-pipeline"><a class="header" href="#ml-training-pipeline">ML Training Pipeline</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Compose ML training and inference pipeline
+async fn create_ml_pipeline() -&gt; Result&lt;Graph, CompositionError&gt; {
+    let workspace = WorkspaceDiscovery::new(WorkspaceConfig {
+        root_path: PathBuf::from("./ml_workspace"),
+        ..Default::default()
+    }).discover_workspace().await?;
+    
+    let mut connection_builder = GraphConnectionBuilder::new(workspace);
+    
+    // Build ML pipeline connections
+    connection_builder
+        .connect_interface(
+            "data_preprocessor",
+            "processed_data_output",
+            "feature_engineer",
+            "raw_data_input"
+        )?
+        .connect_interface(
+            "feature_engineer",
+            "features_output",
+            "model_trainer",
+            "training_data_input"
+        )?
+        .connect_interface(
+            "model_trainer",
+            "trained_model_output",
+            "model_evaluator",
+            "model_input"
+        )?
+        .connect_interface(
+            "model_trainer",
+            "trained_model_output",
+            "inference_service",
+            "model_input"
+        )?;
+    
+    let connections = connection_builder.build();
+    
+    let composition = GraphComposition {
+        sources: workspace.graphs.into_iter()
+            .map(|g| GraphSource::GraphExport(g.graph))
+            .collect(),
+        connections,
+        shared_resources: vec![
+            SharedResource {
+                name: "model_registry".to_string(),
+                component: "ModelRegistryActor".to_string(),
+                metadata: Some(HashMap::from([
+                    ("storage_backend".to_string(), serde_json::json!("s3")),
+                ])),
+            },
+            SharedResource {
+                name: "metrics_tracker".to_string(),
+                component: "MetricsTrackerActor".to_string(),
+                metadata: Some(HashMap::from([
+                    ("export_interval".to_string(), serde_json::json!(60)),
+                ])),
+            },
+        ],
+        properties: HashMap::from([
+            ("name".to_string(), serde_json::json!("ml_training_pipeline")),
+            ("description".to_string(), serde_json::json!("Complete ML training and inference pipeline")),
+        ]),
+        case_sensitive: Some(false),
+        metadata: None,
+    };
+    
+    let mut composer = GraphComposer::new();
+    composer.compose_graphs(composition).await
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="1-plan-your-composition"><a class="header" href="#1-plan-your-composition">1. Plan Your Composition</a></h3>
+<ul>
+<li>Design graph boundaries thoughtfully</li>
+<li>Keep related functionality together</li>
+<li>Plan for reusability across compositions</li>
+</ul>
+<h3 id="2-use-clear-naming"><a class="header" href="#2-use-clear-naming">2. Use Clear Naming</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Descriptive endpoint names
+CompositionEndpoint {
+    process: "data_ingestion/api_collector".to_string(),
+    port: "ValidatedApiData".to_string(),
+    index: None,
+}
+
+// Avoid: Generic names
+CompositionEndpoint {
+    process: "graph1/proc1".to_string(),
+    port: "Output".to_string(),
+    index: None,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-document-connections"><a class="header" href="#3-document-connections">3. Document Connections</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>CompositionConnection {
+    from: CompositionEndpoint { /* ... */ },
+    to: CompositionEndpoint { /* ... */ },
+    metadata: Some(HashMap::from([
+        ("description".to_string(), serde_json::json!("Cleaned data flows to ML feature engineering")),
+        ("data_type".to_string(), serde_json::json!("CleanedDataRecord")),
+        ("expected_rate".to_string(), serde_json::json!("1000 records/minute")),
+    ])),
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-validate-early-and-often"><a class="header" href="#4-validate-early-and-often">4. Validate Early and Often</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Validate before composing
+let validation_result = validator.validate_composition(&amp;composition).await?;
+assert!(validation_result.is_valid());
+
+// Test after composing
+let test_results = tester.run_tests(&amp;composed_graph, test_scenarios).await?;
+assert!(test_results.iter().all(|r| r.passed));
+<span class="boring">}</span></code></pre></pre>
+<h3 id="5-use-shared-resources-wisely"><a class="header" href="#5-use-shared-resources-wisely">5. Use Shared Resources Wisely</a></h3>
+<ul>
+<li>Share stateless services (logging, config)</li>
+<li>Be cautious with stateful shared resources</li>
+<li>Consider resource contention and bottlenecks</li>
+</ul>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="dependency-resolution.html">Dependency Resolution</a> - Handle complex dependencies</li>
+<li><a href="workspace-discovery.html">Workspace Discovery</a> - Discover graphs to compose</li>
+<li><a href="../../tutorials/multi-graph-workspace.html">Tutorial: Multi-Graph Workspace</a></li>
+</ul>
+<h2 id="related-documentation"><a class="header" href="#related-documentation">Related Documentation</a></h2>
+<ul>
+<li><a href="../../architecture/multi-graph-composition.html">Architecture: Multi-Graph Composition</a></li>
+<li><a href="../../architecture/graph-system.html">Graph System Overview</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/multi-graph/workspace-discovery.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/multi-graph/dependency-resolution.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/multi-graph/workspace-discovery.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/multi-graph/dependency-resolution.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "generator",
+    "description": "Simple data generator",
+    "version": "1.0.0",
+    "namespace": "simple"
+  },
+  "processes": {
+    "data_gen": {
+      "id": "data_gen",
+      "component": "SimpleTimerActor",
+      "metadata": {
+        "interval": 1000
+      }
+    }
+  },
+  "connections": [],
+  "inports": {},
+  "outports": {
+    "data_out": {
+      "portName": "Output",
+      "portId": "Output",
+      "nodeId": "data_gen",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "groups": [],
+  "graph_dependencies": [],
+  "external_connections": [],
+  "provided_interfaces": {
+    "data_stream": {
+      "interfaceId": "data_stream",
+      "processName": "data_gen",
+      "portName": "Output",
+      "dataType": "TimerEvent",
+      "description": "Generated timer events",
+      "required": false
+    }
+  },
+  "required_interfaces": {}
+}

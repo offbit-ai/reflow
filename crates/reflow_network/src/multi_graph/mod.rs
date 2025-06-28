@@ -41,6 +41,16 @@ pub trait GraphGenerator: Send + Sync + Debug {
     fn generate(&self) -> Result<GraphExport, GenerationError>;
 }
 
+// Re-export the two-tier system types
+pub use crate::graph::types::{
+    WorkspaceGraphExport, WorkspaceMetadata, WorkspaceFileFormat,
+    ResolvedDependency, AutoDiscoveredConnection, InterfaceAnalysis,
+    DependencyResolutionStatus, DiscoveryMethod, InterfaceTypeMismatch,
+    MismatchSeverity,
+    // First tier types (already extended GraphExport)
+    GraphDependency, ExternalConnection, InterfaceDefinition
+};
+
 // Metadata enhancement for existing GraphExport
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraphMetadata {
@@ -721,6 +731,10 @@ impl GraphComposer {
             groups: Vec::new(),
             processes: HashMap::new(),
             connections: Vec::new(),
+            graph_dependencies: Vec::new(),
+            external_connections: Vec::new(),
+            provided_interfaces: HashMap::new(),
+            required_interfaces: HashMap::new(),
         };
 
         // Add processes from all graphs with namespace prefixes

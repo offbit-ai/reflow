@@ -1,0 +1,999 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Distributed Workflow Example - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/tutorials/distributed-workflow-example.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="distributed-workflow-example"><a class="header" href="#distributed-workflow-example">Distributed Workflow Example</a></h1>
+<p>Learn how to build and deploy distributed workflows using Reflow's distributed networking capabilities.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>This tutorial demonstrates how to create a complete distributed workflow that spans multiple network instances. We'll build a real-world example: a distributed data processing and machine learning pipeline.</p>
+<h2 id="what-youll-build"><a class="header" href="#what-youll-build">What You'll Build</a></h2>
+<p>A distributed system with three network instances:</p>
+<ol>
+<li><strong>Data Instance</strong>: Collects and processes raw data</li>
+<li><strong>ML Instance</strong>: Trains and evaluates machine learning models</li>
+<li><strong>API Instance</strong>: Serves predictions and provides monitoring</li>
+</ol>
+<pre><code>┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Data Instance  │───▶│  ML Instance    │───▶│  API Instance   │
+│                 │    │                 │    │                 │
+│ • Data Collector│    │ • Feature Eng.  │    │ • Prediction API│
+│ • Data Processor│    │ • Model Trainer │    │ • Monitoring    │
+│ • Data Validator│    │ • Model Eval.   │    │ • Dashboard     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+</code></pre>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<ul>
+<li>Rust development environment</li>
+<li>Basic understanding of Reflow actors and networks</li>
+<li>Familiarity with distributed systems concepts</li>
+</ul>
+<h2 id="step-1-project-setup"><a class="header" href="#step-1-project-setup">Step 1: Project Setup</a></h2>
+<p>Create the project structure:</p>
+<pre><code class="language-bash">mkdir distributed_ml_pipeline
+cd distributed_ml_pipeline
+
+# Create instance directories
+mkdir -p instances/{data,ml,api}
+mkdir -p shared/actors
+mkdir -p shared/types
+
+# Initialize Cargo workspace
+cargo init --name distributed_ml_pipeline
+</code></pre>
+<h3 id="cargotoml"><a class="header" href="#cargotoml">Cargo.toml</a></h3>
+<pre><code class="language-toml">[workspace]
+members = [
+    "instances/data",
+    "instances/ml", 
+    "instances/api",
+    "shared/actors",
+    "shared/types"
+]
+
+[workspace.dependencies]
+reflow_network = { path = "../../crates/reflow_network" }
+actor_macro = { path = "../../crates/actor_macro" }
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+</code></pre>
+<h2 id="step-2-shared-types-and-actors"><a class="header" href="#step-2-shared-types-and-actors">Step 2: Shared Types and Actors</a></h2>
+<h3 id="shared-types"><a class="header" href="#shared-types">Shared Types</a></h3>
+<p>Create <code>shared/types/src/lib.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataRecord {
+    pub id: String,
+    pub timestamp: DateTime&lt;Utc&gt;,
+    pub features: Vec&lt;f64&gt;,
+    pub metadata: std::collections::HashMap&lt;String, serde_json::Value&gt;,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessedData {
+    pub record_id: String,
+    pub processed_features: Vec&lt;f64&gt;,
+    pub quality_score: f64,
+    pub processing_timestamp: DateTime&lt;Utc&gt;,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrainingData {
+    pub features: Vec&lt;Vec&lt;f64&gt;&gt;,
+    pub labels: Vec&lt;f64&gt;,
+    pub metadata: TrainingMetadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrainingMetadata {
+    pub total_samples: usize,
+    pub feature_count: usize,
+    pub training_timestamp: DateTime&lt;Utc&gt;,
+    pub data_source: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrainedModel {
+    pub model_id: String,
+    pub model_data: Vec&lt;u8&gt;, // Serialized model
+    pub performance_metrics: ModelMetrics,
+    pub training_timestamp: DateTime&lt;Utc&gt;,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelMetrics {
+    pub accuracy: f64,
+    pub precision: f64,
+    pub recall: f64,
+    pub f1_score: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PredictionRequest {
+    pub request_id: String,
+    pub features: Vec&lt;f64&gt;,
+    pub model_version: Option&lt;String&gt;,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PredictionResponse {
+    pub request_id: String,
+    pub prediction: f64,
+    pub confidence: f64,
+    pub model_version: String,
+    pub processing_time_ms: u64,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="shared-actors"><a class="header" href="#shared-actors">Shared Actors</a></h3>
+<p>Create <code>shared/actors/src/lib.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
+    message::{Message, EncodableValue},
+};
+use shared_types::*;
+use std::{collections::HashMap, sync::Arc};
+use actor_macro::actor;
+use anyhow::Error;
+
+/// Logging actor that can be shared across all instances
+#[actor(
+    DistributedLoggerActor,
+    inports::&lt;100&gt;(Input),
+    outports::&lt;50&gt;(Output),
+    state(MemoryState)
+)]
+pub async fn distributed_logger_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let config = context.get_config();
+    
+    let instance_name = config.get_string("instance_name").unwrap_or("unknown".to_string());
+    let log_level = config.get_string("log_level").unwrap_or("info".to_string());
+    
+    for (port, message) in payload.iter() {
+        let timestamp = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%.3f");
+        
+        match message {
+            Message::String(s) =&gt; {
+                println!("[{}] [{}] [{}]: {}", timestamp, instance_name, log_level.to_uppercase(), s);
+            },
+            Message::Object(obj) =&gt; {
+                if let Ok(json_str) = serde_json::to_string_pretty(obj) {
+                    println!("[{}] [{}] [{}]:\n{}", timestamp, instance_name, log_level.to_uppercase(), json_str);
+                }
+            },
+            _ =&gt; {
+                println!("[{}] [{}] [{}]: {:?}", timestamp, instance_name, log_level.to_uppercase(), message);
+            }
+        }
+    }
+    
+    Ok(HashMap::new())
+}
+
+/// Metrics collector for monitoring distributed system performance
+#[actor(
+    MetricsCollectorActor,
+    inports::&lt;100&gt;(Input),
+    outports::&lt;50&gt;(Output, Alert),
+    state(MemoryState)
+)]
+pub async fn metrics_collector_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let mut output = HashMap::new();
+    
+    for (port, message) in payload.iter() {
+        if let Message::Object(metric_data) = message {
+            // Store metrics in state
+            {
+                let mut state_lock = state.lock();
+                if let Some(state_data) = state_lock.as_mut_any().downcast_mut::&lt;MemoryState&gt;() {
+                    let metrics_key = format!("metrics_{}", chrono::Utc::now().timestamp());
+                    state_data.insert(metrics_key, metric_data.as_value().clone());
+                    
+                    // Keep only last 100 metrics entries
+                    let keys: Vec&lt;String&gt; = state_data.data().keys()
+                        .filter(|k| k.starts_with("metrics_"))
+                        .cloned()
+                        .collect();
+                    
+                    if keys.len() &gt; 100 {
+                        let mut sorted_keys = keys;
+                        sorted_keys.sort();
+                        for key in sorted_keys.into_iter().take(keys.len() - 100) {
+                            state_data.data_mut().remove(&amp;key);
+                        }
+                    }
+                }
+            }
+            
+            // Check for alert conditions
+            if let Some(error_rate) = metric_data.as_value().get("error_rate").and_then(|v| v.as_f64()) {
+                if error_rate &gt; 0.1 { // 10% error rate threshold
+                    let alert = Message::object(EncodableValue::from(serde_json::json!({
+                        "type": "high_error_rate",
+                        "error_rate": error_rate,
+                        "timestamp": chrono::Utc::now().to_rfc3339(),
+                        "severity": "warning"
+                    })));
+                    output.insert("Alert".to_string(), alert);
+                }
+            }
+            
+            // Forward metrics for further processing
+            output.insert("Output".to_string(), message.clone());
+        }
+    }
+    
+    Ok(output)
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="step-3-data-instance"><a class="header" href="#step-3-data-instance">Step 3: Data Instance</a></h2>
+<p>Create the data processing instance in <code>instances/data/src/main.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust">use reflow_network::{
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
+    distributed_network::{DistributedConfig, DistributedNetwork},
+    message::{Message, EncodableValue},
+    network::NetworkConfig,
+};
+use shared_actors::{DistributedLoggerActor, MetricsCollectorActor};
+use shared_types::*;
+use std::{collections::HashMap, sync::Arc, time::Duration};
+use actor_macro::actor;
+use anyhow::Error;
+use tokio::time::sleep;
+
+/// Data collector that simulates collecting raw data
+#[actor(
+    DataCollectorActor,
+    inports::&lt;100&gt;(Trigger),
+    outports::&lt;50&gt;(Output, Metrics),
+    state(MemoryState)
+)]
+async fn data_collector_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let mut output = HashMap::new();
+    
+    if payload.contains_key("Trigger") {
+        // Generate sample data
+        let record = DataRecord {
+            id: uuid::Uuid::new_v4().to_string(),
+            timestamp: chrono::Utc::now(),
+            features: (0..10).map(|_| rand::random::&lt;f64&gt;()).collect(),
+            metadata: HashMap::from([
+                ("source".to_string(), serde_json::json!("sensor_array")),
+                ("quality".to_string(), serde_json::json!("high")),
+            ]),
+        };
+        
+        // Update collection count
+        let count = {
+            let mut state_lock = state.lock();
+            if let Some(state_data) = state_lock.as_mut_any().downcast_mut::&lt;MemoryState&gt;() {
+                let count = state_data.get("collection_count")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0) + 1;
+                state_data.insert("collection_count".to_string(), serde_json::json!(count));
+                count
+            } else {
+                1
+            }
+        };
+        
+        // Send data for processing
+        let data_message = Message::object(EncodableValue::from(serde_json::to_value(record)?));
+        output.insert("Output".to_string(), data_message);
+        
+        // Send metrics
+        let metrics = Message::object(EncodableValue::from(serde_json::json!({
+            "actor": "data_collector",
+            "records_collected": count,
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "instance": "data"
+        })));
+        output.insert("Metrics".to_string(), metrics);
+    }
+    
+    Ok(output)
+}
+
+/// Data processor that cleans and validates data
+#[actor(
+    DataProcessorActor,
+    inports::&lt;100&gt;(Input),
+    outports::&lt;50&gt;(Output, Metrics, Log),
+    state(MemoryState)
+)]
+async fn data_processor_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let mut output = HashMap::new();
+    
+    for (port, message) in payload.iter() {
+        if port == "Input" {
+            if let Message::Object(obj) = message {
+                if let Ok(record) = serde_json::from_value::&lt;DataRecord&gt;(obj.as_value().clone()) {
+                    // Simulate data processing
+                    let processed = ProcessedData {
+                        record_id: record.id.clone(),
+                        processed_features: record.features.iter()
+                            .map(|&amp;f| f * 2.0 + 1.0) // Simple transformation
+                            .collect(),
+                        quality_score: record.features.iter().sum::&lt;f64&gt;() / record.features.len() as f64,
+                        processing_timestamp: chrono::Utc::now(),
+                    };
+                    
+                    // Send processed data
+                    let processed_message = Message::object(EncodableValue::from(serde_json::to_value(processed)?));
+                    output.insert("Output".to_string(), processed_message);
+                    
+                    // Send log message
+                    let log_message = Message::String(
+                        format!("Processed data record {} with quality score {:.2}", 
+                            record.id, processed.quality_score).into()
+                    );
+                    output.insert("Log".to_string(), log_message);
+                    
+                    // Send metrics
+                    let metrics = Message::object(EncodableValue::from(serde_json::json!({
+                        "actor": "data_processor",
+                        "processing_time_ms": 10, // Simulated
+                        "quality_score": processed.quality_score,
+                        "timestamp": chrono::Utc::now().to_rfc3339(),
+                        "instance": "data"
+                    })));
+                    output.insert("Metrics".to_string(), metrics);
+                }
+            }
+        }
+    }
+    
+    Ok(output)
+}
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    tracing_subscriber::fmt::init();
+    
+    println!("🚀 Starting Data Instance");
+    
+    // Configure distributed network
+    let config = DistributedConfig {
+        network_id: "data_instance".to_string(),
+        instance_id: "data_001".to_string(),
+        bind_address: "127.0.0.1".to_string(),
+        bind_port: 9001,
+        discovery_endpoints: vec![],
+        auth_token: Some("data_token".to_string()),
+        max_connections: 10,
+        heartbeat_interval_ms: 30000,
+        local_network_config: NetworkConfig::default(),
+    };
+    
+    // Create distributed network
+    let mut network = DistributedNetwork::new(config).await?;
+    
+    // Register local actors
+    network.register_local_actor("data_collector", DataCollectorActor::new(), None)?;
+    network.register_local_actor("data_processor", DataProcessorActor::new(), None)?;
+    network.register_local_actor("logger", DistributedLoggerActor::new(), Some(HashMap::from([
+        ("instance_name".to_string(), serde_json::json!("data")),
+    ])))?;
+    network.register_local_actor("metrics", MetricsCollectorActor::new(), None)?;
+    
+    // Start the network
+    network.start().await?;
+    
+    // Get local network for workflow setup
+    {
+        let local_net = network.get_local_network();
+        let mut net = local_net.write();
+        
+        // Create workflow connections
+        net.add_connection(reflow_network::connector::Connector {
+            from: reflow_network::connector::ConnectionPoint {
+                actor: "data_collector".to_string(),
+                port: "Output".to_string(),
+                ..Default::default()
+            },
+            to: reflow_network::connector::ConnectionPoint {
+                actor: "data_processor".to_string(),
+                port: "Input".to_string(),
+                ..Default::default()
+            },
+        })?;
+        
+        net.add_connection(reflow_network::connector::Connector {
+            from: reflow_network::connector::ConnectionPoint {
+                actor: "data_processor".to_string(),
+                port: "Log".to_string(),
+                ..Default::default()
+            },
+            to: reflow_network::connector::ConnectionPoint {
+                actor: "logger".to_string(),
+                port: "Input".to_string(),
+                ..Default::default()
+            },
+        })?;
+        
+        net.add_connection(reflow_network::connector::Connector {
+            from: reflow_network::connector::ConnectionPoint {
+                actor: "data_processor".to_string(),
+                port: "Metrics".to_string(),
+                ..Default::default()
+            },
+            to: reflow_network::connector::ConnectionPoint {
+                actor: "metrics".to_string(),
+                port: "Input".to_string(),
+                ..Default::default()
+            },
+        })?;
+    }
+    
+    println!("✅ Data Instance ready on 127.0.0.1:9001");
+    
+    // Start data collection loop
+    tokio::spawn(async move {
+        loop {
+            sleep(Duration::from_secs(5)).await;
+            
+            // Trigger data collection
+            let trigger_message = Message::Boolean(true);
+            if let Ok(local_net) = network.get_local_network().try_read() {
+                let _ = local_net.send_to_actor("data_collector", "Trigger", trigger_message);
+            }
+        }
+    });
+    
+    // Keep running
+    loop {
+        sleep(Duration::from_secs(1)).await;
+    }
+}</code></pre></pre>
+<h2 id="step-4-ml-instance"><a class="header" href="#step-4-ml-instance">Step 4: ML Instance</a></h2>
+<p>Create the ML training instance in <code>instances/ml/src/main.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust">use reflow_network::{
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
+    distributed_network::{DistributedConfig, DistributedNetwork},
+    message::{Message, EncodableValue},
+    network::NetworkConfig,
+};
+use shared_actors::{DistributedLoggerActor, MetricsCollectorActor};
+use shared_types::*;
+use std::{collections::HashMap, sync::Arc, time::Duration};
+use actor_macro::actor;
+use anyhow::Error;
+use tokio::time::sleep;
+
+/// Feature engineer that prepares data for ML training
+#[actor(
+    FeatureEngineerActor,
+    inports::&lt;100&gt;(Input),
+    outports::&lt;50&gt;(Output, Log, Metrics),
+    state(MemoryState)
+)]
+async fn feature_engineer_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let mut output = HashMap::new();
+    
+    for (port, message) in payload.iter() {
+        if port == "Input" {
+            if let Message::Object(obj) = message {
+                if let Ok(processed) = serde_json::from_value::&lt;ProcessedData&gt;(obj.as_value().clone()) {
+                    // Accumulate features for batch training
+                    {
+                        let mut state_lock = state.lock();
+                        if let Some(state_data) = state_lock.as_mut_any().downcast_mut::&lt;MemoryState&gt;() {
+                            let mut features: Vec&lt;Vec&lt;f64&gt;&gt; = state_data.get("accumulated_features")
+                                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                                .unwrap_or_default();
+                            
+                            let mut labels: Vec&lt;f64&gt; = state_data.get("accumulated_labels")
+                                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                                .unwrap_or_default();
+                            
+                            features.push(processed.processed_features.clone());
+                            labels.push(processed.quality_score); // Use quality score as label
+                            
+                            state_data.insert("accumulated_features".to_string(), serde_json::to_value(&amp;features)?);
+                            state_data.insert("accumulated_labels".to_string(), serde_json::to_value(&amp;labels)?);
+                            
+                            // Send training data when we have enough samples
+                            if features.len() &gt;= 10 {
+                                let training_data = TrainingData {
+                                    features: features.clone(),
+                                    labels: labels.clone(),
+                                    metadata: TrainingMetadata {
+                                        total_samples: features.len(),
+                                        feature_count: features[0].len(),
+                                        training_timestamp: chrono::Utc::now(),
+                                        data_source: "data_instance".to_string(),
+                                    },
+                                };
+                                
+                                let training_message = Message::object(EncodableValue::from(serde_json::to_value(training_data)?));
+                                output.insert("Output".to_string(), training_message);
+                                
+                                // Reset accumulation
+                                state_data.insert("accumulated_features".to_string(), serde_json::json!([]));
+                                state_data.insert("accumulated_labels".to_string(), serde_json::json!([]));
+                                
+                                let log_message = Message::String(
+                                    format!("Generated training batch with {} samples", features.len()).into()
+                                );
+                                output.insert("Log".to_string(), log_message);
+                            }
+                        }
+                    }
+                    
+                    // Send metrics
+                    let metrics = Message::object(EncodableValue::from(serde_json::json!({
+                        "actor": "feature_engineer",
+                        "features_processed": 1,
+                        "timestamp": chrono::Utc::now().to_rfc3339(),
+                        "instance": "ml"
+                    })));
+                    output.insert("Metrics".to_string(), metrics);
+                }
+            }
+        }
+    }
+    
+    Ok(output)
+}
+
+/// Model trainer that trains ML models
+#[actor(
+    ModelTrainerActor,
+    inports::&lt;100&gt;(Input),
+    outports::&lt;50&gt;(Output, Log, Metrics),
+    state(MemoryState)
+)]
+async fn model_trainer_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let mut output = HashMap::new();
+    
+    for (port, message) in payload.iter() {
+        if port == "Input" {
+            if let Message::Object(obj) = message {
+                if let Ok(training_data) = serde_json::from_value::&lt;TrainingData&gt;(obj.as_value().clone()) {
+                    // Simulate model training
+                    sleep(Duration::from_millis(100)).await; // Simulate training time
+                    
+                    let model = TrainedModel {
+                        model_id: uuid::Uuid::new_v4().to_string(),
+                        model_data: vec![1, 2, 3, 4, 5], // Dummy model data
+                        performance_metrics: ModelMetrics {
+                            accuracy: 0.85 + rand::random::&lt;f64&gt;() * 0.1,
+                            precision: 0.82 + rand::random::&lt;f64&gt;() * 0.15,
+                            recall: 0.78 + rand::random::&lt;f64&gt;() * 0.2,
+                            f1_score: 0.80 + rand::random::&lt;f64&gt;() * 0.15,
+                        },
+                        training_timestamp: chrono::Utc::now(),
+                    };
+                    
+                    // Send trained model
+                    let model_message = Message::object(EncodableValue::from(serde_json::to_value(model.clone())?));
+                    output.insert("Output".to_string(), model_message);
+                    
+                    // Send log message
+                    let log_message = Message::String(
+                        format!("Trained model {} with accuracy {:.3}", 
+                            model.model_id, model.performance_metrics.accuracy).into()
+                    );
+                    output.insert("Log".to_string(), log_message);
+                    
+                    // Send metrics
+                    let metrics = Message::object(EncodableValue::from(serde_json::json!({
+                        "actor": "model_trainer",
+                        "model_id": model.model_id,
+                        "accuracy": model.performance_metrics.accuracy,
+                        "training_samples": training_data.metadata.total_samples,
+                        "timestamp": chrono::Utc::now().to_rfc3339(),
+                        "instance": "ml"
+                    })));
+                    output.insert("Metrics".to_string(), metrics);
+                }
+            }
+        }
+    }
+    
+    Ok(output)
+}
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    tracing_subscriber::fmt::init();
+    
+    println!("🚀 Starting ML Instance");
+    
+    // Configure distributed network
+    let config = DistributedConfig {
+        network_id: "ml_instance".to_string(),
+        instance_id: "ml_001".to_string(),
+        bind_address: "127.0.0.1".to_string(),
+        bind_port: 9002,
+        discovery_endpoints: vec![],
+        auth_token: Some("ml_token".to_string()),
+        max_connections: 10,
+        heartbeat_interval_ms: 30000,
+        local_network_config: NetworkConfig::default(),
+    };
+    
+    // Create distributed network
+    let mut network = DistributedNetwork::new(config).await?;
+    
+    // Register local actors
+    network.register_local_actor("feature_engineer", FeatureEngineerActor::new(), None)?;
+    network.register_local_actor("model_trainer", ModelTrainerActor::new(), None)?;
+    network.register_local_actor("logger", DistributedLoggerActor::new(), Some(HashMap::from([
+        ("instance_name".to_string(), serde_json::json!("ml")),
+    ])))?;
+    network.register_local_actor("metrics", MetricsCollectorActor::new(), None)?;
+    
+    // Start the network
+    network.start().await?;
+    
+    // Get local network for workflow setup
+    {
+        let local_net = network.get_local_network();
+        let mut net = local_net.write();
+        
+        // Create workflow connections
+        net.add_connection(reflow_network::connector::Connector {
+            from: reflow_network::connector::ConnectionPoint {
+                actor: "feature_engineer".to_string(),
+                port: "Output".to_string(),
+                ..Default::default()
+            },
+            to: reflow_network::connector::ConnectionPoint {
+                actor: "model_trainer".to_string(),
+                port: "Input".to_string(),
+                ..Default::default()
+            },
+        })?;
+        
+        net.add_connection(reflow_network::connector::Connector {
+            from: reflow_network::connector::ConnectionPoint {
+                actor: "feature_engineer".to_string(),
+                port: "Log".to_string(),
+                ..Default::default()
+            },
+            to: reflow_network::connector::ConnectionPoint {
+                actor: "logger".to_string(),
+                port: "Input".to_string(),
+                ..Default::default()
+            },
+        })?;
+        
+        net.add_connection(reflow_network::connector::Connector {
+            from: reflow_network::connector::ConnectionPoint {
+                actor: "model_trainer".to_string(),
+                port: "Log".to_string(),
+                ..Default::default()
+            },
+            to: reflow_network::connector::ConnectionPoint {
+                actor: "logger".to_string(),
+                port: "Input".to_string(),
+                ..Default::default()
+            },
+        })?;
+    }
+    
+    println!("✅ ML Instance ready on 127.0.0.1:9002");
+    
+    // Connect to data instance
+    println!("🔌 Connecting to data instance...");
+    network.connect_to_network("127.0.0.1:9001").await?;
+    
+    // Register remote actors from data instance
+    network.register_remote_actor("data_processor", "data_instance").await?;
+    
+    // Connect data processor to feature engineer
+    {
+        let local_net = network.get_local_network();
+        let net = local_net.read();
+        // Note: This would connect via the proxy actor created for data_processor
+    }
+    
+    println!("✅ Connected to data instance");
+    
+    // Keep running
+    loop {
+        sleep(Duration::from_secs(1)).await;
+    }
+}</code></pre></pre>
+<h2 id="step-5-api-instance"><a class="header" href="#step-5-api-instance">Step 5: API Instance</a></h2>
+<p>Create the API serving instance in <code>instances/api/src/main.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
+    distributed_network::{DistributedConfig, DistributedNetwork},
+    message::{Message, EncodableValue},
+    network::NetworkConfig,
+};
+use shared_actors::{DistributedLoggerActor, MetricsCollectorActor};
+use shared_types::*;
+use std::{collections::HashMap, sync::Arc, time::Duration};
+use actor_macro::actor;
+use anyhow::Error;
+use tokio::time::sleep;
+
+/// Prediction service that serves ML predictions
+#[actor(
+    PredictionServiceActor,
+    inports::&lt;100&gt;(ModelUpdate, PredictionRequest),
+    outports::&lt;50&gt;(PredictionResponse, Log, Metrics),
+    state(MemoryState)
+)]
+async fn prediction_service_actor(
+    context: ActorContext,
+) -&gt; Result&lt;HashMap&lt;String, Message&gt;, Error&gt; {
+    let payload = context.get_payload();
+    let state = context.get_state();
+    let mut output = HashMap::new();
+    
+    for (port, message) in payload.iter() {
+        match port.as_str() {
+            "ModelUpdate" =&gt; {
+                if let Message::Object(obj) = message {
+                    if let Ok(model) = serde_json::from_value::&lt;TrainedModel&gt;(obj.as_value().clone()) {
+                        // Store the latest model
+                        {
+                            let mut state_lock = state.lock();
+                            if let Some(state_data) = state_lock.as_mut_any().downcast_mut::&lt;MemoryState&gt;() {
+                                state_data.insert("current_model".to_string(), serde_json::to_value(model.clone())?);
+                                state_data.insert("model_version".to_string(), serde_json::json!(model.model_id));
+                            }
+                        }
+                        
+                        let log_message = Message::String(
+                            format!("Updated prediction model to {} (accuracy: {:.3})",
+<span class="boring">}</span></code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tutorials/performance-optimization.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../tutorials/multi-graph-workspace.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tutorials/performance-optimization.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../tutorials/multi-graph-workspace.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

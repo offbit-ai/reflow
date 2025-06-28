@@ -1,4 +1,4 @@
-use std::{any::Any, collections::HashMap, pin::Pin, rc::Rc, sync::Arc};
+use std::{any::Any, collections::HashMap, pin::Pin, rc::Rc, sync::Arc, env};
 
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
@@ -15,7 +15,7 @@ use wasm_bindgen::convert::FromWasmAbi;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{message::Message, network::Network};
+use crate::{message::Message, network::Network, graph::types::GraphNode};
 
 // #[cfg(not(target_arch = "wasm32"))]
 pub type ActorBehavior = Box<
@@ -44,6 +44,164 @@ pub type Port = (
     flume::Receiver<HashMap<String, crate::message::Message>>,
 );
 
+/// Enhanced configuration for actors containing metadata, environment variables, and resolved config
+#[derive(Debug, Clone)]
+pub struct ActorConfig {
+    /// Full GraphNode snapshot including metadata
+    pub node: GraphNode,
+    /// Resolved environment variables
+    pub resolved_env: HashMap<String, String>,
+    /// Final processed configuration combining metadata and environment variables
+    pub config: HashMap<String, Value>,
+    /// Graph namespace (for multi-graph support)
+    pub namespace: Option<String>,
+}
+
+impl Default for ActorConfig {
+    fn default() -> Self {
+        Self {
+            node: GraphNode {
+                id: "default".to_string(),
+                component: "DefaultComponent".to_string(),
+                metadata: Some(HashMap::new()),
+            },
+            resolved_env: HashMap::new(),
+            config: HashMap::new(),
+            namespace: None,
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("Missing required environment variable: {0}")]
+    MissingRequiredEnvVar(String),
+    #[error("Invalid environment variable value for {0}: {1}")]
+    InvalidEnvValue(String, String),
+    #[error("Configuration parsing error: {0}")]
+    ParseError(String),
+}
+
+impl ActorConfig {
+    /// Create ActorConfig from a GraphNode, resolving environment variables
+    pub fn from_node(node: GraphNode) -> Result<Self, ConfigError> {
+        Self::from_node_with_namespace(node, None)
+    }
+
+    /// Create ActorConfig from a GraphNode with namespace support
+    pub fn from_node_with_namespace(node: GraphNode, namespace: Option<String>) -> Result<Self, ConfigError> {
+        let mut resolved_env = HashMap::new();
+        let mut config = HashMap::new();
+
+        // Start with metadata as base config
+        if let Some(metadata) = &node.metadata {
+            config.extend(metadata.clone());
+        }
+
+        // Process environment variable requirements
+        if let Some(metadata) = &node.metadata {
+            if let Some(env_vars) = metadata.get("env_vars") {
+                if let Some(env_vars_obj) = env_vars.as_object() {
+                    for (env_key, requirement) in env_vars_obj {
+                        let requirement_str = requirement.as_str().unwrap_or("required");
+                        
+                        match Self::resolve_env_var(env_key, requirement_str)? {
+                            Some(value) => {
+                                resolved_env.insert(env_key.clone(), value.clone());
+                                // Also add to config for backwards compatibility
+                                config.insert(env_key.clone(), Value::String(value));
+                            }
+                            None => {
+                                // Optional environment variable not found - that's OK
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(ActorConfig {
+            node,
+            resolved_env,
+            config,
+            namespace,
+        })
+    }
+
+    /// Resolve a single environment variable
+    fn resolve_env_var(env_key: &str, requirement: &str) -> Result<Option<String>, ConfigError> {
+        match env::var(env_key) {
+            Ok(value) => Ok(Some(value)),
+            Err(env::VarError::NotPresent) => {
+                if requirement.starts_with("required") {
+                    Err(ConfigError::MissingRequiredEnvVar(env_key.to_string()))
+                } else if let Some(default) = requirement.strip_prefix("optional:") {
+                    Ok(Some(default.to_string()))
+                } else {
+                    Ok(None)
+                }
+            }
+            Err(env::VarError::NotUnicode(_)) => {
+                Err(ConfigError::InvalidEnvValue(
+                    env_key.to_string(),
+                    "Invalid UTF-8".to_string(),
+                ))
+            }
+        }
+    }
+
+    /// Get environment variable value
+    pub fn get_env(&self, key: &str) -> Option<&String> {
+        self.resolved_env.get(key)
+    }
+
+    /// Get metadata from the original GraphNode
+    pub fn get_metadata(&self) -> Option<&HashMap<String, Value>> {
+        self.node.metadata.as_ref()
+    }
+
+    /// Get component name from the GraphNode
+    pub fn get_component(&self) -> &str {
+        &self.node.component
+    }
+
+    /// Get node ID from the GraphNode
+    pub fn get_node_id(&self) -> &str {
+        &self.node.id
+    }
+
+    /// Helper method to get string value from config
+    pub fn get_string(&self, key: &str) -> Option<String> {
+        self.config.get(key).and_then(|v| v.as_str()).map(|s| s.to_string())
+    }
+
+    /// Helper method to get number value from config
+    pub fn get_number(&self, key: &str) -> Option<f64> {
+        self.config.get(key).and_then(|v| v.as_f64())
+    }
+
+    /// Helper method to get boolean value from config
+    pub fn get_bool(&self, key: &str) -> Option<bool> {
+        self.config.get(key).and_then(|v| v.as_bool())
+    }
+
+    /// Helper method to get integer value from config
+    pub fn get_integer(&self, key: &str) -> Option<i64> {
+        self.config.get(key).and_then(|v| v.as_i64())
+    }
+
+    /// Get the full config as HashMap for backwards compatibility
+    pub fn as_hashmap(&self) -> HashMap<String, Value> {
+        self.config.clone()
+    }
+
+    /// Get a config value with environment variable fallback
+    pub fn get_config_or_env(&self, key: &str) -> Option<String> {
+        // Try config first, then environment variable
+        self.get_string(key).or_else(|| self.get_env(key).cloned())
+    }
+}
+
 // #[cfg(not(target_arch = "wasm32"))]
 pub trait Actor: Send + Sync + 'static {
     /// Trait method to get actor's behavior
@@ -59,6 +217,7 @@ pub trait Actor: Send + Sync + 'static {
 
     fn create_process(
         &self,
+        config: ActorConfig,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>;
 
     /// Shutdown the actor, waiting for all processes to finish
@@ -73,6 +232,8 @@ pub trait Actor: Send + Sync + 'static {
         // Should be implemented by the actor to clean up resources
     }
 }
+
+
 
 // Native ActorLoad for non-WASM targets (tuple struct)
 #[cfg(not(target_arch = "wasm32"))]
@@ -183,7 +344,7 @@ pub struct ActorContext {
     pub payload: ActorPayload,
     pub outports: Port,
     pub state: Arc<Mutex<dyn ActorState>>,
-    pub config: HashMap<String, Value>,
+    pub config: ActorConfig,
     load: Arc<Mutex<ActorLoad>>,
 }
 
@@ -193,7 +354,7 @@ impl ActorContext {
         payload: ActorPayload,
         outports: Port,
         state: Arc<Mutex<dyn ActorState>>,
-        config: HashMap<String, Value>,
+        config: ActorConfig,
         load: Arc<Mutex<ActorLoad>>,
     ) -> Self {
         ActorContext {
@@ -206,12 +367,18 @@ impl ActorContext {
         }
     }
 
+
     pub fn get_state(&self) -> Arc<Mutex<dyn ActorState>> {
         self.state.clone()
     }
 
-    pub fn get_config(&self) -> &HashMap<String, Value> {
+    pub fn get_config(&self) -> &ActorConfig {
         &self.config
+    }
+
+    /// Get config as HashMap for backwards compatibility
+    pub fn get_config_hashmap(&self) -> HashMap<String, Value> {
+        self.config.as_hashmap()
     }
 
     pub fn get_load(&self) -> Arc<Mutex<ActorLoad>> {
@@ -257,8 +424,22 @@ impl WasmActorContext {
         let state = Arc::new(Mutex::new(MemoryState::default()));
         let load = Arc::new(Mutex::new(ActorLoad::new(0)));
 
+        // Create ActorConfig from HashMap for backwards compatibility
+        let node = GraphNode {
+            id: "wasm_actor".to_string(),
+            component: "WasmComponent".to_string(),
+            metadata: Some(config_map.clone()),
+        };
+
+        let actor_config = ActorConfig {
+            node,
+            resolved_env: HashMap::new(),
+            config: config_map,
+            namespace: None,
+        };
+
         Ok(WasmActorContext {
-            context: ActorContext::new(payload_map, outports, state, config_map, load),
+            context: ActorContext::new(payload_map, outports, state, actor_config, load),
         })
     }
 
@@ -879,8 +1060,9 @@ impl Actor for JsWasmActor {
 
     fn create_process(
         &self,
+        config: ActorConfig,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
-        self.actor.create_process()
+        self.actor.create_process(config)
     }
 }
 
@@ -1001,6 +1183,7 @@ impl Actor for WasmActor {
 
     fn create_process(
         &self,
+        actor_config: ActorConfig,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
         use serde_json::json;
@@ -1014,9 +1197,7 @@ impl Actor for WasmActor {
 
         let (_, receiver) = self.inports.clone();
 
-        let config = self.get_config();
-
-        let await_all_inports = config
+        let await_all_inports = actor_config.config
             .get("await_all_inports")
             .unwrap_or(&json!(false))
             .as_bool()
@@ -1038,7 +1219,7 @@ impl Actor for WasmActor {
                                     all_inports.clone(),
                                     outports.clone(),
                                     actor_state.clone(),
-                                    config.clone(),
+                                    actor_config.clone(),
                                     load.clone(),
                                 );
 
@@ -1062,7 +1243,7 @@ impl Actor for WasmActor {
                             packet,
                             outports.clone(),
                             actor_state.clone(),
-                            config.clone(),
+                            actor_config.clone(),
                             load.clone(),
                         );
 

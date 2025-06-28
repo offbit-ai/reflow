@@ -4,7 +4,7 @@
 //! for cross-network actor communication.
 
 use reflow_network::{
-    actor::{Actor, ActorContext, ActorLoad, MemoryState, Port},
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
     distributed_network::{DistributedConfig, DistributedNetwork},
     message::Message,
     network::NetworkConfig,
@@ -15,8 +15,6 @@ use tokio::time::sleep;
 // Bidirectional communication actor that can both send and respond to messages
 struct BidirectionalActor {
     prefix: String,
-    remote_network: Option<Arc<DistributedNetwork>>,
-    remote_actor_id: Option<String>,
     inports: Port,
     outports: Port,
     load: Arc<parking_lot::Mutex<ActorLoad>>,
@@ -26,25 +24,6 @@ impl BidirectionalActor {
     fn new(prefix: String) -> Self {
         Self {
             prefix,
-            remote_network: None,
-            remote_actor_id: None,
-            inports: flume::unbounded(),
-            outports: flume::unbounded(),
-            load: Arc::new(parking_lot::Mutex::new(
-                reflow_network::actor::ActorLoad::new(0),
-            )),
-        }
-    }
-
-    fn with_remote(
-        prefix: String,
-        remote_network: Arc<DistributedNetwork>,
-        remote_actor_id: String,
-    ) -> Self {
-        Self {
-            prefix,
-            remote_network: Some(remote_network),
-            remote_actor_id: Some(remote_actor_id),
             inports: flume::unbounded(),
             outports: flume::unbounded(),
             load: Arc::new(parking_lot::Mutex::new(
@@ -57,13 +36,9 @@ impl BidirectionalActor {
 impl Actor for BidirectionalActor {
     fn get_behavior(&self) -> reflow_network::actor::ActorBehavior {
         let prefix = self.prefix.clone();
-        let remote_network = self.remote_network.clone();
-        let remote_actor_id = self.remote_actor_id.clone();
 
         Box::new(move |context| {
             let prefix = prefix.clone();
-            let remote_network = remote_network.clone();
-            let remote_actor_id = remote_actor_id.clone();
 
             Box::pin(async move {
                 let payload = context.get_payload();
@@ -75,23 +50,6 @@ impl Actor for BidirectionalActor {
                             let response = match message {
                                 Message::String(s) => {
                                     tracing::info!("[{}] Received: {}", prefix, s);
-
-                                    // If we have a remote network, send a response back
-                                    if let (Some(network), Some(remote_id)) =
-                                        (&remote_network, &remote_actor_id)
-                                    {
-                                        let response_msg = Message::String(
-                                            format!("[{}] Response to: {}", prefix, s).into(),
-                                        );
-
-                                        // Send response directly (simplified for demo)
-                                        tracing::info!(
-                                            "[{}] Would send response: {:?}",
-                                            prefix,
-                                            response_msg
-                                        );
-                                    }
-
                                     Message::String(format!("[{}] Processed: {}", prefix, s).into())
                                 }
                                 _ => {
@@ -143,6 +101,7 @@ impl Actor for BidirectionalActor {
 
     fn create_process(
         &self,
+        actor_config: ActorConfig,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
 
@@ -153,25 +112,36 @@ impl Actor for BidirectionalActor {
         let prefix = self.prefix.clone();
 
         Box::pin(async move {
-            tracing::info!("[{}] Actor process started, waiting for messages...", prefix);
-            
+            tracing::info!(
+                "[{}] Actor process started, waiting for messages...",
+                prefix
+            );
+
             loop {
                 tracing::debug!("[{}] Waiting for next message...", prefix);
-                
+
                 if let Some(packet) = receiver.stream().next().await {
-                    tracing::info!("[{}] 📨 Received packet with {} messages", prefix, packet.len());
-                    
+                    tracing::info!(
+                        "[{}] 📨 Received packet with {} messages",
+                        prefix,
+                        packet.len()
+                    );
+
                     let context = ActorContext::new(
                         packet,
                         outports.clone(),
                         Arc::new(parking_lot::Mutex::new(MemoryState::default())),
-                        HashMap::new(),
+                        actor_config.clone(),
                         load.clone(),
                     );
 
                     if let Ok(result) = behavior(context).await {
                         if !result.is_empty() {
-                            tracing::info!("[{}] 📤 Sending {} output messages", prefix, result.len());
+                            tracing::info!(
+                                "[{}] 📤 Sending {} output messages",
+                                prefix,
+                                result.len()
+                            );
                             let _ = outports
                                 .0
                                 .send(result)
@@ -184,11 +154,14 @@ impl Actor for BidirectionalActor {
                         tracing::error!("[{}] Error processing messages", prefix);
                     }
                 } else {
-                    tracing::warn!("[{}] Received None from message stream, actor stopping", prefix);
+                    tracing::warn!(
+                        "[{}] Received None from message stream, actor stopping",
+                        prefix
+                    );
                     break;
                 }
             }
-            
+
             tracing::info!("[{}] Actor process ended", prefix);
         })
     }
@@ -233,10 +206,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("📡 Created server and client networks");
 
-    // Start networks
-    server_network.start().await?;
-    client_network.start().await?;
-
     println!("🌐 Started server and client networks");
 
     // Give networks time to initialize
@@ -245,13 +214,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Register local actors on server
     {
         let server_actor = BidirectionalActor::new("SERVER".to_string());
-        server_network.register_local_actor("server_actor", server_actor)?;
+        server_network.register_local_actor("server_actor", server_actor, None)?;
+        // Start networks
+        server_network.start().await?;
     }
 
     // Register local actors on client
     {
         let client_actor = BidirectionalActor::new("CLIENT".to_string());
-        client_network.register_local_actor("client_actor", client_actor)?;
+        client_network.register_local_actor("client_actor", client_actor, None)?;
+        client_network.start().await?;
     }
 
     println!("🎭 Registered local actors on both networks");
@@ -295,6 +267,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Give time for registration
     sleep(Duration::from_secs(2)).await;
+
+    
 
     let response_message = Message::String("Hello from server!".to_string().into());
     {

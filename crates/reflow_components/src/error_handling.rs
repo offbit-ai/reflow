@@ -10,6 +10,7 @@ use parking_lot::Mutex;
 use reflow_network::{actor::ActorContext, message::EncodableValue};
 
 use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
+use reflow_network::actor::ActorConfig;
 
 /// Handles errors from operations.
 ///

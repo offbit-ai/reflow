@@ -1,7 +1,7 @@
 //! Example of using multiple database connections with the DB pool wrapper
 
 use anyhow::Result;
-use reflow_network::actor::{Actor, ActorContext, ActorLoad};
+use reflow_network::actor::{Actor, ActorConfig, ActorContext, ActorLoad};
 use reflow_network::message::Message;
 use reflow_script::db_actor::DatabaseActor;
 use reflow_script::db_manager::get_db_pool_manager;
@@ -111,11 +111,12 @@ async fn main() -> Result<()> {
         "query".to_string(),
         Message::string("SELECT * FROM users".to_string()),
     );
+    let actor_config = ActorConfig::default();
     let context = ActorContext::new(
         users_query,
         users_outports.clone(),
         state.clone(),
-        HashMap::new(),
+        actor_config,
         Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
     );
     let users_result = users_behavior(context).await?;
@@ -138,12 +139,12 @@ async fn main() -> Result<()> {
         "query".to_string(),
         Message::string("SELECT * FROM products".to_string()),
     );
-
+    let actor_config = ActorConfig::default();
     let context = ActorContext::new(
         products_query,
         products_outports.clone(),
         state.clone(),
-        HashMap::new(),
+        actor_config,
         Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
     );
     let products_result = products_behavior(context).await?;
@@ -194,11 +195,13 @@ async fn main() -> Result<()> {
         Message::string("SELECT COUNT(*) as count FROM users".to_string()),
     );
 
+    let actor_config = ActorConfig::default();
+
     let context = ActorContext::new(
         users_query,
         users_outports.clone(),
         state.clone(),
-        HashMap::new(),
+        actor_config,
         Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
     );
     let users_result = users_behavior(context).await?;

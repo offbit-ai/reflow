@@ -8,7 +8,7 @@ use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
 use reflow_network::message::EncodableValue;
-
+use reflow_network::actor::ActorConfig;
 use crate::{Actor, ActorContext, ActorLoad, ActorBehavior, MemoryState, Message, Port};
 
 /// Stores and retrieves values from persistent state.

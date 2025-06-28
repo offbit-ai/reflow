@@ -1,0 +1,774 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Workspace Discovery - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/api/multi-graph/workspace-discovery.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="workspace-discovery"><a class="header" href="#workspace-discovery">Workspace Discovery</a></h1>
+<p>Learn how to automatically discover and load graph files in multi-graph workspaces.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Workspace discovery enables:</p>
+<ul>
+<li><strong>Automatic graph discovery</strong>: Find all <code>*.graph.json</code> and <code>*.graph.yaml</code> files recursively</li>
+<li><strong>Folder-based namespacing</strong>: Use directory structure as natural namespaces</li>
+<li><strong>Clean instantiation</strong>: Load discovered graphs into memory with proper isolation</li>
+<li><strong>Rich metadata</strong>: Inject discovery information and workspace context</li>
+<li><strong>Flexible configuration</strong>: Control discovery patterns and exclusions</li>
+</ul>
+<h2 id="basic-discovery"><a class="header" href="#basic-discovery">Basic Discovery</a></h2>
+<h3 id="simple-workspace-discovery"><a class="header" href="#simple-workspace-discovery">Simple Workspace Discovery</a></h3>
+<p>Discover all graphs in a workspace directory:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::workspace::{WorkspaceDiscovery, WorkspaceConfig};
+
+// Basic workspace discovery
+let config = WorkspaceConfig::default();
+let discovery = WorkspaceDiscovery::new(config);
+
+// Discover all graphs in current directory
+let workspace = discovery.discover_workspace().await?;
+
+println!("🎉 Discovered {} graphs across {} namespaces", 
+    workspace.graphs.len(), 
+    workspace.namespaces.len()
+);
+
+// Print discovered graphs
+for graph_meta in &amp;workspace.graphs {
+    let graph_name = graph_meta.graph.properties
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unnamed");
+    
+    println!("📈 Graph: {} (namespace: {})", 
+        graph_name,
+        graph_meta.discovered_namespace
+    );
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-discovery-configuration"><a class="header" href="#custom-discovery-configuration">Custom Discovery Configuration</a></h3>
+<p>Configure discovery behavior for your needs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::path::PathBuf;
+
+let workspace_config = WorkspaceConfig {
+    root_path: PathBuf::from("./my_workspace"),
+    graph_patterns: vec![
+        "**/*.graph.json".to_string(),
+        "**/*.graph.yaml".to_string(),
+        "**/*.graph.yml".to_string(),
+    ],
+    excluded_paths: vec![
+        "**/node_modules/**".to_string(),
+        "**/target/**".to_string(),
+        "**/.git/**".to_string(),
+        "**/test/**".to_string(),
+        "**/.*/**".to_string(),
+    ],
+    max_depth: Some(8),
+    namespace_strategy: NamespaceStrategy::FolderStructure,
+};
+
+let discovery = WorkspaceDiscovery::new(workspace_config);
+let workspace = discovery.discover_workspace().await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="namespace-strategies"><a class="header" href="#namespace-strategies">Namespace Strategies</a></h2>
+<h3 id="1-folder-structure-default"><a class="header" href="#1-folder-structure-default">1. Folder Structure (Default)</a></h3>
+<p>Use directory structure as hierarchical namespaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = WorkspaceConfig {
+    namespace_strategy: NamespaceStrategy::FolderStructure,
+    ..Default::default()
+};
+
+// Example structure:
+// data/ingestion/collector.graph.json    → namespace: "data/ingestion"
+// data/processing/transformer.graph.json → namespace: "data/processing"  
+// ml/training/trainer.graph.json         → namespace: "ml/training"
+// ml/inference/predictor.graph.json      → namespace: "ml/inference"
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-flattened-namespace"><a class="header" href="#2-flattened-namespace">2. Flattened Namespace</a></h3>
+<p>Put all graphs in the root namespace:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = WorkspaceConfig {
+    namespace_strategy: NamespaceStrategy::Flatten,
+    ..Default::default()
+};
+
+// All graphs get namespace: "" (root)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-file-based-prefixes"><a class="header" href="#3-file-based-prefixes">3. File-Based Prefixes</a></h3>
+<p>Use filename prefixes as namespaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = WorkspaceConfig {
+    namespace_strategy: NamespaceStrategy::FileBasedPrefix,
+    ..Default::default()
+};
+
+// Examples:
+// ml_trainer.graph.json     → namespace: "ml"
+// data_processor.graph.json → namespace: "data"
+// auth_service.graph.json   → namespace: "auth"
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-custom-namespace-functions"><a class="header" href="#4-custom-namespace-functions">4. Custom Namespace Functions</a></h3>
+<p>Define custom namespacing logic:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::workspace::NamespaceStrategy;
+
+// Semantic-based namespacing
+let config = WorkspaceConfig {
+    namespace_strategy: NamespaceStrategy::custom(
+        "semantic_based",
+        Some(serde_json::json!({
+            "rules": {
+                "ml": ["model", "train", "predict"],
+                "data": ["ingest", "process", "transform"],
+                "api": ["service", "endpoint", "rest"]
+            }
+        }))
+    )?,
+    ..Default::default()
+};
+
+// Graphs are organized by semantic content
+<span class="boring">}</span></code></pre></pre>
+<h2 id="discovery-results"><a class="header" href="#discovery-results">Discovery Results</a></h2>
+<h3 id="workspace-collection-structure"><a class="header" href="#workspace-collection-structure">Workspace Collection Structure</a></h3>
+<p>The discovery process returns a comprehensive workspace collection:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug)]
+pub struct WorkspaceCollection {
+    pub graphs: Vec&lt;GraphWithMetadata&gt;,
+    pub namespaces: HashMap&lt;String, NamespaceInfo&gt;,
+    pub dependency_analysis: DependencyAnalysis,
+    pub workspace_root: PathBuf,
+}
+
+// Access discovered information
+let workspace = discovery.discover_workspace().await?;
+
+// Individual graphs with metadata
+for graph_meta in &amp;workspace.graphs {
+    println!("Graph: {}", graph_meta.file_info.graph_name);
+    println!("  Path: {}", graph_meta.file_info.path.display());
+    println!("  Namespace: {}", graph_meta.discovered_namespace);
+    println!("  Size: {} bytes", graph_meta.file_info.size_bytes);
+    println!("  Modified: {:?}", graph_meta.file_info.modified);
+}
+
+// Namespace organization
+for (namespace, info) in &amp;workspace.namespaces {
+    println!("📁 Namespace: {} ({} graphs)", namespace, info.graph_count);
+    for graph_name in &amp;info.graphs {
+        println!("  📈 {}", graph_name);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="graph-metadata-enhancement"><a class="header" href="#graph-metadata-enhancement">Graph Metadata Enhancement</a></h3>
+<p>Discovery automatically enhances graphs with workspace metadata:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Original graph properties are preserved and enhanced
+let enhanced_graph = &amp;workspace.graphs[0].graph;
+
+// Injected workspace metadata
+let workspace_namespace = enhanced_graph.properties
+    .get("workspace_namespace")
+    .and_then(|v| v.as_str());
+
+let workspace_path = enhanced_graph.properties
+    .get("workspace_path")
+    .and_then(|v| v.as_str());
+
+let discovery_timestamp = enhanced_graph.properties
+    .get("discovery_timestamp")
+    .and_then(|v| v.as_str());
+
+println!("Discovered at: {}", discovery_timestamp.unwrap_or("unknown"));
+<span class="boring">}</span></code></pre></pre>
+<h2 id="advanced-discovery"><a class="header" href="#advanced-discovery">Advanced Discovery</a></h2>
+<h3 id="filtered-discovery"><a class="header" href="#filtered-discovery">Filtered Discovery</a></h3>
+<p>Discover specific types of graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::workspace::DiscoveryFilter;
+
+let filter = DiscoveryFilter {
+    name_patterns: vec!["*processor*".to_string(), "*trainer*".to_string()],
+    capability_requirements: vec!["ml_training".to_string(), "data_processing".to_string()],
+    min_file_size: Some(1024), // At least 1KB
+    max_file_age_days: Some(30), // Modified within 30 days
+};
+
+let filtered_workspace = discovery.discover_workspace_with_filter(filter).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="incremental-discovery"><a class="header" href="#incremental-discovery">Incremental Discovery</a></h3>
+<p>Update workspace with only changed files:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Initial discovery
+let workspace = discovery.discover_workspace().await?;
+
+// Later, discover only changes
+let changes = discovery.discover_changes_since(&amp;workspace).await?;
+
+println!("📊 Changes since last discovery:");
+println!("  Added: {} graphs", changes.added.len());
+println!("  Modified: {} graphs", changes.modified.len());
+println!("  Removed: {} graphs", changes.removed.len());
+
+// Apply changes to workspace
+let updated_workspace = discovery.apply_changes(workspace, changes).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="parallel-discovery"><a class="header" href="#parallel-discovery">Parallel Discovery</a></h3>
+<p>Speed up discovery with parallel processing:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = WorkspaceConfig {
+    parallel_discovery: true,
+    max_concurrent_loads: 8,
+    ..Default::default()
+};
+
+let discovery = WorkspaceDiscovery::new(config);
+
+// Discovery happens in parallel across multiple threads
+let workspace = discovery.discover_workspace().await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="dependency-analysis"><a class="header" href="#dependency-analysis">Dependency Analysis</a></h2>
+<h3 id="automatic-dependency-detection"><a class="header" href="#automatic-dependency-detection">Automatic Dependency Detection</a></h3>
+<p>Discovery analyzes dependencies between graphs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let workspace = discovery.discover_workspace().await?;
+let analysis = &amp;workspace.dependency_analysis;
+
+// View dependency relationships
+for dep in &amp;analysis.dependencies {
+    println!("🔗 {} depends on {} ({})", 
+        dep.dependent_graph,
+        dep.dependency_graph,
+        if dep.required { "required" } else { "optional" }
+    );
+}
+
+// Check for circular dependencies
+if analysis.has_circular_dependencies() {
+    println!("⚠️  Circular dependencies detected!");
+    for cycle in analysis.get_circular_dependencies() {
+        println!("  🔄 {}", cycle.join(" → "));
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="interface-analysis"><a class="header" href="#interface-analysis">Interface Analysis</a></h3>
+<p>Analyze provided and required interfaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Graphs that provide interfaces
+for interface in &amp;analysis.provided_interfaces {
+    println!("📤 {} provides interface: {} ({})", 
+        interface.graph_name,
+        interface.interface_name,
+        interface.interface_definition.description.as_ref().unwrap_or(&amp;"No description".to_string())
+    );
+}
+
+// Graphs that require interfaces
+for interface in &amp;analysis.required_interfaces {
+    println!("📥 {} requires interface: {} ({})", 
+        interface.graph_name,
+        interface.interface_name,
+        interface.interface_definition.description.as_ref().unwrap_or(&amp;"No description".to_string())
+    );
+}
+
+// Find interface compatibility
+let compatibility_report = analysis.analyze_interface_compatibility();
+for incompatibility in compatibility_report.mismatches {
+    println!("❌ Interface mismatch: {} → {}", 
+        incompatibility.provider,
+        incompatibility.consumer
+    );
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<h3 id="discovery-errors"><a class="header" href="#discovery-errors">Discovery Errors</a></h3>
+<p>Handle common discovery issues:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>match discovery.discover_workspace().await {
+    Ok(workspace) =&gt; {
+        println!("✅ Discovery successful: {} graphs", workspace.graphs.len());
+    },
+    Err(e) =&gt; {
+        match e {
+            DiscoveryError::GlobError(pattern_err) =&gt; {
+                eprintln!("❌ Invalid glob pattern: {}", pattern_err);
+            },
+            DiscoveryError::LoadError(path, reason) =&gt; {
+                eprintln!("❌ Failed to load {}: {}", path.display(), reason);
+            },
+            DiscoveryError::UnsupportedFormat(path) =&gt; {
+                eprintln!("❌ Unsupported file format: {}", path.display());
+            },
+            DiscoveryError::IoError(io_err) =&gt; {
+                eprintln!("❌ IO error during discovery: {}", io_err);
+            },
+            _ =&gt; {
+                eprintln!("❌ Discovery failed: {}", e);
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="resilient-discovery"><a class="header" href="#resilient-discovery">Resilient Discovery</a></h3>
+<p>Continue discovery even when some files fail to load:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = WorkspaceConfig {
+    continue_on_load_error: true,
+    max_load_errors: 5,
+    ..Default::default()
+};
+
+let discovery = WorkspaceDiscovery::new(config);
+let result = discovery.discover_workspace().await?;
+
+// Check for partial failures
+if !result.load_errors.is_empty() {
+    println!("⚠️  {} files failed to load:", result.load_errors.len());
+    for error in &amp;result.load_errors {
+        println!("  ❌ {}: {}", error.path.display(), error.reason);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h2>
+<h3 id="caching-discovery-results"><a class="header" href="#caching-discovery-results">Caching Discovery Results</a></h3>
+<p>Cache discovery results to speed up subsequent runs:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::workspace::DiscoveryCache;
+
+let cache = DiscoveryCache::new("./workspace_cache");
+let discovery = WorkspaceDiscovery::with_cache(config, cache);
+
+// First run: Full discovery and cache
+let workspace = discovery.discover_workspace().await?;
+
+// Subsequent runs: Load from cache if nothing changed
+let cached_workspace = discovery.discover_workspace().await?; // Much faster!
+<span class="boring">}</span></code></pre></pre>
+<h3 id="memory-management"><a class="header" href="#memory-management">Memory Management</a></h3>
+<p>Configure memory usage for large workspaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = WorkspaceConfig {
+    lazy_load_graphs: true,        // Load graph content on demand
+    max_memory_usage_mb: 512,      // Limit memory usage
+    graph_content_cache_size: 100, // Cache up to 100 graph contents
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="progress-monitoring"><a class="header" href="#progress-monitoring">Progress Monitoring</a></h3>
+<p>Monitor discovery progress for large workspaces:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::multi_graph::workspace::DiscoveryProgress;
+
+let (discovery, mut progress_rx) = WorkspaceDiscovery::with_progress(config);
+
+// Start discovery in background
+let workspace_future = discovery.discover_workspace();
+
+// Monitor progress
+tokio::spawn(async move {
+    while let Some(progress) = progress_rx.recv().await {
+        match progress {
+            DiscoveryProgress::FilesFound(count) =&gt; {
+                println!("📁 Found {} graph files", count);
+            },
+            DiscoveryProgress::LoadingFile(path) =&gt; {
+                println!("📈 Loading {}", path.display());
+            },
+            DiscoveryProgress::NamespaceCreated(namespace, graph_count) =&gt; {
+                println!("📂 Namespace '{}' with {} graphs", namespace, graph_count);
+            },
+            DiscoveryProgress::Complete(total_graphs) =&gt; {
+                println!("✅ Discovery complete: {} graphs", total_graphs);
+                break;
+            }
+        }
+    }
+});
+
+// Wait for completion
+let workspace = workspace_future.await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="integration-examples"><a class="header" href="#integration-examples">Integration Examples</a></h2>
+<h3 id="example-workspace-structure"><a class="header" href="#example-workspace-structure">Example Workspace Structure</a></h3>
+<pre><code>my_workspace/
+├── data/
+│   ├── ingestion/
+│   │   ├── api_collector.graph.json      → namespace: data/ingestion
+│   │   └── file_reader.graph.yaml        → namespace: data/ingestion
+│   ├── processing/
+│   │   ├── cleaner.graph.json            → namespace: data/processing
+│   │   ├── transformer.graph.json        → namespace: data/processing
+│   │   └── validator.graph.yaml          → namespace: data/processing
+│   └── storage/
+│       ├── database_writer.graph.json    → namespace: data/storage
+│       └── cache_manager.graph.yaml      → namespace: data/storage
+├── ml/
+│   ├── training/
+│   │   ├── model_trainer.graph.json      → namespace: ml/training
+│   │   └── feature_engineer.graph.yaml   → namespace: ml/training
+│   ├── inference/
+│   │   ├── predictor.graph.json          → namespace: ml/inference
+│   │   └── batch_scorer.graph.json       → namespace: ml/inference
+│   └── evaluation/
+│       └── model_evaluator.graph.yaml    → namespace: ml/evaluation
+├── monitoring/
+│   ├── metrics.graph.json                → namespace: monitoring
+│   ├── alerts.graph.yaml                 → namespace: monitoring
+│   └── dashboard.graph.json              → namespace: monitoring
+└── shared/
+    ├── logging.graph.yaml                 → namespace: shared
+    ├── auth.graph.json                    → namespace: shared
+    └── config.graph.json                  → namespace: shared
+</code></pre>
+<h3 id="complete-discovery-example"><a class="header" href="#complete-discovery-example">Complete Discovery Example</a></h3>
+<pre><pre class="playground"><code class="language-rust">use reflow_network::multi_graph::workspace::*;
+use std::path::PathBuf;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // Configure discovery
+    let config = WorkspaceConfig {
+        root_path: PathBuf::from("./my_workspace"),
+        graph_patterns: vec![
+            "**/*.graph.json".to_string(),
+            "**/*.graph.yaml".to_string(),
+        ],
+        excluded_paths: vec![
+            "**/test/**".to_string(),
+            "**/.*/**".to_string(),
+        ],
+        max_depth: Some(6),
+        namespace_strategy: NamespaceStrategy::FolderStructure,
+    };
+    
+    // Perform discovery
+    println!("🔍 Starting workspace discovery...");
+    let discovery = WorkspaceDiscovery::new(config);
+    let workspace = discovery.discover_workspace().await?;
+    
+    // Print results
+    println!("\n📊 Discovery Results");
+    println!("================");
+    println!("📁 Workspace root: {}", workspace.workspace_root.display());
+    println!("🎯 Total graphs: {}", workspace.graphs.len());
+    println!("📂 Namespaces: {}", workspace.namespaces.len());
+    
+    // Show namespace breakdown
+    println!("\n📂 Namespace Organization:");
+    for (namespace, info) in &amp;workspace.namespaces {
+        println!("  📁 {} ({} graphs)", namespace, info.graphs.len());
+        for graph_name in &amp;info.graphs {
+            println!("    📈 {}", graph_name);
+        }
+    }
+    
+    // Show dependencies
+    println!("\n🔗 Dependencies:");
+    for dep in &amp;workspace.dependency_analysis.dependencies {
+        println!("  {} → {} ({})", 
+            dep.dependent_graph,
+            dep.dependency_graph,
+            if dep.required { "required" } else { "optional" }
+        );
+    }
+    
+    println!("\n✅ Workspace discovery completed successfully!");
+    
+    Ok(())
+}</code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<h3 id="1-organize-by-function"><a class="header" href="#1-organize-by-function">1. Organize by Function</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Functional organization
+data/
+  ingestion/     # Data collection graphs
+  processing/    # Data transformation graphs  
+  storage/       # Data persistence graphs
+ml/
+  training/      # ML training graphs
+  inference/     # ML prediction graphs
+  evaluation/    # ML validation graphs
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-consistent-naming"><a class="header" href="#2-consistent-naming">2. Consistent Naming</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good: Descriptive, consistent names
+api_data_collector.graph.json
+stream_data_processor.graph.json
+ml_model_trainer.graph.json
+postgres_storage_writer.graph.json
+
+// Avoid: Generic names
+collector.graph.json
+processor.graph.json
+trainer.graph.json
+writer.graph.json
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-graph-documentation"><a class="header" href="#3-graph-documentation">3. Graph Documentation</a></h3>
+<p>Include metadata in graph files for better discovery:</p>
+<pre><code class="language-json">{
+  "properties": {
+    "name": "data_processor",
+    "description": "Processes incoming data streams with validation and transformation",
+    "version": "1.2.0",
+    "tags": ["data", "processing", "validation"],
+    "capabilities": ["stream_processing", "data_validation"],
+    "dependencies": ["data_collector"]
+  }
+}
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li><a href="graph-composition.html">Graph Composition</a> - Combine discovered graphs</li>
+<li><a href="dependency-resolution.html">Dependency Resolution</a> - Handle graph dependencies</li>
+<li><a href="../../tutorials/multi-graph-workspace.html">Tutorial: Multi-Graph Workspace</a></li>
+</ul>
+<h2 id="related-documentation"><a class="header" href="#related-documentation">Related Documentation</a></h2>
+<ul>
+<li><a href="../../architecture/multi-graph-composition.html">Architecture: Multi-Graph Composition</a></li>
+<li><a href="../../architecture/graph-system.html">Graph System Overview</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../api/graph/advanced.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../api/multi-graph/graph-composition.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../api/graph/advanced.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../api/multi-graph/graph-composition.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

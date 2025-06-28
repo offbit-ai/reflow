@@ -25,23 +25,27 @@
 // │ └─────────────────────────────┘ │ └─────────────────────────────────┘ │
 // └─────────────────────────────────────────────────────────────────────┘
 
-
-
-use std::collections::HashMap;
-use std::sync::Arc;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::{bridge::NetworkBridge, message::Message, network::{Network, NetworkConfig}};
+use crate::{
+    actor::ActorConfig,
+    bridge::NetworkBridge,
+    message::Message,
+    network::{Network, NetworkConfig},
+};
 
 #[derive(Clone)]
 pub struct DistributedNetwork {
     // Existing local network
     local_network: Arc<RwLock<Network>>,
-    
+
     // Network bridge for distributed communication
     bridge: Arc<NetworkBridge>,
-    
+
     // Network identity and configuration
     config: DistributedConfig,
 }
@@ -56,74 +60,92 @@ pub struct DistributedConfig {
     pub auth_token: Option<String>,
     pub max_connections: usize,
     pub heartbeat_interval_ms: u64,
-    pub local_network_config: NetworkConfig
+    pub local_network_config: NetworkConfig,
 }
 
 impl DistributedNetwork {
     pub async fn new(config: DistributedConfig) -> Result<Self, anyhow::Error> {
-        let local_network = Arc::new(RwLock::new(Network::new(config.local_network_config.clone())));
+        let local_network = Arc::new(RwLock::new(Network::new(
+            config.local_network_config.clone(),
+        )));
         let bridge = Arc::new(NetworkBridge::new(config.clone()).await?);
-        
+
         Ok(DistributedNetwork {
             local_network,
             bridge,
             config,
         })
     }
-    
+
     pub async fn start(&mut self) -> Result<(), anyhow::Error> {
-        // Start local network
-        self.local_network.clone().write().start().await?;
-        
+       
+
         // Start distributed bridge
         self.bridge.start(self.local_network.clone()).await?;
-        
+
+         // Start local network
+        self.local_network.clone().write().start().await?;
+
         Ok(())
     }
-    
-    pub async fn register_remote_actor(&self, 
-        actor_id: &str, 
-        remote_network_id: &str
+
+    pub async fn register_remote_actor(
+        &self,
+        actor_id: &str,
+        remote_network_id: &str,
     ) -> Result<(), anyhow::Error> {
         // Register with router
-        self.bridge.register_remote_actor(actor_id, remote_network_id).await?;
-        
+        self.bridge
+            .register_remote_actor(actor_id, remote_network_id)
+            .await?;
+
         // Create proxy actor in local network
         let proxy = crate::proxy::RemoteActorProxy::new(
             remote_network_id.to_string(),
             actor_id.to_string(),
             self.bridge.clone(),
         );
-        
+
         // Register proxy in local network with a unique name
         let proxy_name = format!("{}@{}", actor_id, remote_network_id);
         {
             let mut network = self.local_network.write();
             network.register_actor(&proxy_name, proxy)?;
-            
+
             // Add as a node and start the proxy actor process
-            network.add_node(&proxy_name, &proxy_name)?;
-            
+            network.add_node(&proxy_name, &proxy_name, Some(HashMap::from([
+                ("remote_actor_proxy".to_string(), serde_json::Value::Bool(true)),
+            ])))?;
+
             // Start the proxy actor process
             if let Some(actor_impl) = network.actors.get(&proxy_name) {
-                let process = actor_impl.create_process();
+                let actor_config =
+                    ActorConfig::from_node(network.nodes.get(&proxy_name).cloned().unwrap())?;
+                let process = actor_impl.create_process(actor_config);
                 tokio::spawn(process);
             }
         }
-        
-        tracing::info!("Created and started proxy actor '{}' for remote actor '{}' in network '{}'", 
-                      proxy_name, actor_id, remote_network_id);
-        
+
+        tracing::info!(
+            "Created and started proxy actor '{}' for remote actor '{}' in network '{}'",
+            proxy_name,
+            actor_id,
+            remote_network_id
+        );
+
         Ok(())
     }
-    
-    pub async fn send_to_remote_actor(&self, 
+
+    pub async fn send_to_remote_actor(
+        &self,
         network_id: &str,
-        actor_id: &str, 
-        port: &str, 
-        message: Message
+        actor_id: &str,
+        port: &str,
+        message: Message,
     ) -> Result<(), anyhow::Error> {
-        self.bridge.send_remote_message(network_id, actor_id, port, message).await
+        self.bridge
+            .send_remote_message(network_id, actor_id, port, message)
+            .await
     }
 
     pub async fn connect_to_network(&self, endpoint: &str) -> Result<(), anyhow::Error> {
@@ -135,21 +157,19 @@ impl DistributedNetwork {
     }
 
     /// Register a local actor with the distributed network
-    pub fn register_local_actor<T: crate::actor::Actor + 'static>(&self, actor_id: &str, actor: T) -> Result<(), anyhow::Error> {
+    pub fn register_local_actor<T: crate::actor::Actor + 'static>(
+        &self,
+        actor_id: &str,
+        actor: T,
+        metadata: Option<HashMap<String, Value>>
+    ) -> Result<(), anyhow::Error> {
         let mut network = self.local_network.write();
-        
         // Register the actor
         network.register_actor(actor_id, actor)?;
-        
+
         // Add as a node in the network and start it
-        network.add_node(actor_id, actor_id)?;
-        
-        // Start the individual actor process
-        if let Some(actor_impl) = network.actors.get(actor_id) {
-            let process = actor_impl.create_process();
-            tokio::spawn(process);
-        }
-        
+        network.add_node(actor_id, actor_id, metadata)?;
+
         Ok(())
     }
 
@@ -160,14 +180,17 @@ impl DistributedNetwork {
 
     /// Shutdown the distributed network
     pub async fn shutdown(&mut self) -> Result<(), anyhow::Error> {
-        tracing::info!("Shutting down distributed network: {}", self.config.network_id);
-        
+        tracing::info!(
+            "Shutting down distributed network: {}",
+            self.config.network_id
+        );
+
         // Shutdown bridge first
         self.bridge.shutdown().await?;
-        
+
         // Shutdown local network
         self.local_network.write().shutdown();
-        
+
         Ok(())
     }
 }

@@ -1,0 +1,80 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "processor",
+    "description": "Simple data processor",
+    "version": "1.0.0",
+    "namespace": "simple",
+    "dependencies": ["generator"]
+  },
+  "processes": {
+    "transformer": {
+      "id": "transformer",
+      "component": "SimpleLoggerActor",
+      "metadata": {
+        "prefix": "PROCESSED: "
+      }
+    }
+  },
+  "connections": [],
+  "inports": {
+    "data_in": {
+      "portName": "Input",
+      "portId": "Input",
+      "nodeId": "transformer",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "outports": {
+    "data_out": {
+      "portName": "Output",
+      "portId": "Output",
+      "nodeId": "transformer",
+      "expose": true,
+      "portType": {"type": "any"}
+    }
+  },
+  "groups": [],
+  "graph_dependencies": [
+    {
+      "graphName": "generator",
+      "namespace": "simple",
+      "versionConstraint": ">=1.0.0",
+      "required": true,
+      "description": "Requires data generator for input"
+    }
+  ],
+  "external_connections": [
+    {
+      "connectionId": "generator_to_processor",
+      "targetGraph": "generator",
+      "targetNamespace": "simple",
+      "fromProcess": "data_gen",
+      "fromPort": "Output",
+      "toProcess": "transformer",
+      "toPort": "Input",
+      "description": "Connect generator output to processor input"
+    }
+  ],
+  "provided_interfaces": {
+    "processed_data": {
+      "interfaceId": "processed_data",
+      "processName": "transformer",
+      "portName": "Output",
+      "dataType": "ProcessedEvent",
+      "description": "Processed data output",
+      "required": false
+    }
+  },
+  "required_interfaces": {
+    "data_input": {
+      "interfaceId": "data_input",
+      "processName": "transformer",
+      "portName": "Input",
+      "dataType": "TimerEvent",
+      "description": "Data input from generator",
+      "required": true
+    }
+  }
+}

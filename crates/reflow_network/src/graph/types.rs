@@ -7,7 +7,7 @@ use tsify::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -267,6 +267,56 @@ pub struct GraphGroup {
     pub metadata: Option<HashMap<String, Value>>,
 }
 
+/// Graph dependency for workspace composition
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct GraphDependency {
+    pub graph_name: String,
+    pub namespace: Option<String>,
+    pub version_constraint: Option<String>,
+    pub required: bool,
+    pub description: Option<String>,
+}
+
+/// External connection to other graphs in workspace
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalConnection {
+    pub connection_id: String,
+    pub target_graph: String,
+    pub target_namespace: Option<String>,
+    pub from_process: String,
+    pub from_port: String,
+    pub to_process: String,
+    pub to_port: String,
+    pub description: Option<String>,
+    #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, any> | undefined"))]
+    pub metadata: Option<HashMap<String, Value>>,
+}
+
+/// Interface definition for workspace graph interfaces
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct InterfaceDefinition {
+    pub interface_id: String,
+    pub process_name: String,
+    pub port_name: String,
+    pub data_type: Option<String>,
+    pub description: Option<String>,
+    pub required: bool,
+    #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, any> | undefined"))]
+    pub metadata: Option<HashMap<String, Value>>,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
@@ -290,6 +340,19 @@ pub struct GraphExport {
     pub processes: HashMap<String, GraphNode>,
     #[serde(default = "default_connections")]
     pub connections: Vec<GraphConnection>,
+    
+    // New workspace fields (Optional for backward compatibility)
+    #[serde(default = "default_graph_dependencies", skip_serializing_if = "Vec::is_empty")]
+    pub graph_dependencies: Vec<GraphDependency>,
+    
+    #[serde(default = "default_external_connections", skip_serializing_if = "Vec::is_empty")]
+    pub external_connections: Vec<ExternalConnection>,
+    
+    #[serde(default = "default_provided_interfaces", skip_serializing_if = "HashMap::is_empty")]
+    pub provided_interfaces: HashMap<String, InterfaceDefinition>,
+    
+    #[serde(default = "default_required_interfaces", skip_serializing_if = "HashMap::is_empty")]
+    pub required_interfaces: HashMap<String, InterfaceDefinition>,
 }
 
 pub fn default_properties() -> HashMap<String, Value> {
@@ -310,6 +373,22 @@ pub fn default_groups() -> Vec<GraphGroup> {
 
 pub fn default_connections() -> Vec<GraphConnection> {
     return Vec::new();
+}
+
+pub fn default_graph_dependencies() -> Vec<GraphDependency> {
+    return Vec::new();
+}
+
+pub fn default_external_connections() -> Vec<ExternalConnection> {
+    return Vec::new();
+}
+
+pub fn default_provided_interfaces() -> HashMap<String, InterfaceDefinition> {
+    return HashMap::new();
+}
+
+pub fn default_required_interfaces() -> HashMap<String, InterfaceDefinition> {
+    return HashMap::new();
 }
 
 type EventValue = Value;
@@ -374,6 +453,277 @@ impl std::fmt::Display for GraphError {
 }
 
 impl std::error::Error for GraphError {}
+
+/// Second tier: Workspace-enhanced graph export with discovery metadata
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceGraphExport {
+    /// The core graph definition (first tier)
+    #[serde(flatten)]
+    pub graph: GraphExport,
+    
+    /// Workspace discovery metadata
+    pub workspace_metadata: WorkspaceMetadata,
+}
+
+/// Metadata added during workspace discovery
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceMetadata {
+    /// Discovered namespace based on file structure
+    pub discovered_namespace: String,
+    
+    /// Original file path relative to workspace root
+    pub source_path: String,
+    
+    /// File format detected
+    pub source_format: WorkspaceFileFormat,
+    
+    /// Discovery timestamp
+    pub discovered_at: String,
+    
+    /// File size in bytes
+    pub file_size: u64,
+    
+    /// Last modified time of source file
+    pub last_modified: Option<String>,
+    
+    /// Resolved dependencies after analysis
+    pub resolved_dependencies: Vec<ResolvedDependency>,
+    
+    /// Auto-discovered connections to other graphs
+    pub auto_connections: Vec<AutoDiscoveredConnection>,
+    
+    /// Interface compatibility analysis
+    pub interface_analysis: InterfaceAnalysis,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+pub enum WorkspaceFileFormat {
+    Json,
+    Yaml,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct ResolvedDependency {
+    /// The dependency graph name
+    pub target_graph: String,
+    
+    /// Target graph's namespace
+    pub target_namespace: String,
+    
+    /// Whether dependency was resolved successfully
+    pub resolved: bool,
+    
+    /// Version constraint if specified
+    pub version_constraint: Option<String>,
+    
+    /// Resolution status
+    pub resolution_status: DependencyResolutionStatus,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+pub enum DependencyResolutionStatus {
+    Resolved,
+    NotFound,
+    VersionMismatch,
+    CircularDependency,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct AutoDiscoveredConnection {
+    /// Unique identifier for this connection
+    pub connection_id: String,
+    
+    /// Source graph name
+    pub from_graph: String,
+    
+    /// Source graph namespace
+    pub from_namespace: String,
+    
+    /// Source interface name
+    pub from_interface: String,
+    
+    /// Target graph name
+    pub to_graph: String,
+    
+    /// Target graph namespace
+    pub to_namespace: String,
+    
+    /// Target interface name
+    pub to_interface: String,
+    
+    /// Confidence score (0.0 to 1.0)
+    pub confidence: f64,
+    
+    /// How this connection was discovered
+    pub discovery_method: DiscoveryMethod,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+pub enum DiscoveryMethod {
+    ExplicitDeclaration,
+    InterfaceMatching,
+    DataTypeCompatibility,
+    NamingConvention,
+    DependencyAnalysis,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct InterfaceAnalysis {
+    /// Number of provided interfaces
+    pub provided_count: usize,
+    
+    /// Number of required interfaces
+    pub required_count: usize,
+    
+    /// Compatibility scores with other graphs
+    pub compatibility_scores: HashMap<String, f64>,
+    
+    /// Interface type mismatches found
+    pub type_mismatches: Vec<InterfaceTypeMismatch>,
+    
+    /// Unused provided interfaces
+    pub unused_provided: Vec<String>,
+    
+    /// Unsatisfied required interfaces
+    pub unsatisfied_required: Vec<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct InterfaceTypeMismatch {
+    pub provided_interface: String,
+    pub provided_type: Option<String>,
+    pub required_interface: String,
+    pub required_type: Option<String>,
+    pub target_graph: String,
+    pub severity: MismatchSeverity,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+pub enum MismatchSeverity {
+    Warning,
+    Error,
+    Critical,
+}
+
+impl WorkspaceGraphExport {
+    /// Create a WorkspaceGraphExport from a base GraphExport
+    pub fn from_graph_export(graph: GraphExport, workspace_metadata: WorkspaceMetadata) -> Self {
+        WorkspaceGraphExport {
+            graph,
+            workspace_metadata,
+        }
+    }
+    
+    /// Extract the base GraphExport
+    pub fn into_graph_export(self) -> GraphExport {
+        self.graph
+    }
+    
+    /// Get a reference to the base GraphExport
+    pub fn graph_export(&self) -> &GraphExport {
+        &self.graph
+    }
+    
+    /// Get a mutable reference to the base GraphExport
+    pub fn graph_export_mut(&mut self) -> &mut GraphExport {
+        &mut self.graph
+    }
+    
+    /// Get the graph name
+    pub fn graph_name(&self) -> Option<&str> {
+        self.graph.properties.get("name").and_then(|v| v.as_str())
+    }
+    
+    /// Get the discovered namespace
+    pub fn namespace(&self) -> &str {
+        &self.workspace_metadata.discovered_namespace
+    }
+    
+    /// Check if this graph has unresolved dependencies
+    pub fn has_unresolved_dependencies(&self) -> bool {
+        self.workspace_metadata.resolved_dependencies.iter()
+            .any(|dep| !dep.resolved)
+    }
+    
+    /// Get all auto-discovered connections with confidence above threshold
+    pub fn get_confident_auto_connections(&self, threshold: f64) -> Vec<&AutoDiscoveredConnection> {
+        self.workspace_metadata.auto_connections.iter()
+            .filter(|conn| conn.confidence >= threshold)
+            .collect()
+    }
+    
+    /// Check interface compatibility with another graph
+    pub fn is_compatible_with(&self, other_graph_name: &str) -> Option<f64> {
+        self.workspace_metadata.interface_analysis.compatibility_scores
+            .get(other_graph_name)
+            .copied()
+    }
+}
+
+impl Default for WorkspaceMetadata {
+    fn default() -> Self {
+        WorkspaceMetadata {
+            discovered_namespace: "default".to_string(),
+            source_path: "unknown".to_string(),
+            source_format: WorkspaceFileFormat::Json,
+            discovered_at: chrono::Utc::now().to_rfc3339(),
+            file_size: 0,
+            last_modified: None,
+            resolved_dependencies: Vec::new(),
+            auto_connections: Vec::new(),
+            interface_analysis: InterfaceAnalysis::default(),
+        }
+    }
+}
+
+impl Default for InterfaceAnalysis {
+    fn default() -> Self {
+        InterfaceAnalysis {
+            provided_count: 0,
+            required_count: 0,
+            compatibility_scores: HashMap::new(),
+            type_mismatches: Vec::new(),
+            unused_provided: Vec::new(),
+            unsatisfied_required: Vec::new(),
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct FlowValidation {

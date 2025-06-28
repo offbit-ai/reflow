@@ -7,7 +7,7 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-
+use reflow_network::actor::ActorConfig;
 use reflow_network::message::EncodableValue;
 
 use crate::{Actor, ActorBehavior, ActorContext, ActorLoad, MemoryState, Message, Port};
