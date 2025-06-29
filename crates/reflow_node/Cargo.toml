@@ -1,0 +1,23 @@
+[package]
+name = "reflow_node"
+version = "0.1.0"
+edition = "2021"
+description = "Node.js bindings for Reflow Network using Neon"
+license = "MIT"
+exclude = ["index.node"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+neon = { version = "1", default-features = false, features = ["napi-6", "serde"] }
+reflow_network = { path = "../reflow_network" }
+tokio = { version = "1", features = ["full"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = "1.20"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }

@@ -44,6 +44,7 @@ use crate::message::{CompressionConfig, EncodableValue, EncodedMessage, Message,
 
 use crate::connector::{ConnectionPoint, Connector, InitialPacket};
 use std::sync::{Arc, Mutex};
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
@@ -309,7 +310,9 @@ impl Network {
     #[wasm_bindgen(js_name = getNode)]
     pub fn get_node(&self, actor_id: &str) -> JsValue {
         if let Some(actor) = self.nodes.get(actor_id) {
-            return actor.into();
+            use wasm_bindgen_test::__rt::wasm_bindgen::JsValue;
+
+            return JsValue::from_serde(&json!(actor)).unwrap_or(JsValue::null());
         }
         JsValue::null()
     }
@@ -785,7 +788,7 @@ impl GraphNetwork {
     /// Start the network
     #[wasm_bindgen]
     pub async fn start(&mut self) -> Result<(), JsValue> {
-        if let Ok(network) = self.network.lock() {
+        if let Ok(network) = self.network.lock().as_mut() {
             return network
                 .start()
                 .await

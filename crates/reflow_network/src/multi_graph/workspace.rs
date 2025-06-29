@@ -10,13 +10,14 @@ use anyhow::Result;
 use glob::glob;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::fs;
 
 use crate::graph::types::{GraphExport, WorkspaceGraphExport, WorkspaceMetadata, WorkspaceFileFormat, 
     ResolvedDependency, AutoDiscoveredConnection, InterfaceAnalysis, DependencyResolutionStatus,
     DiscoveryMethod, InterfaceTypeMismatch, MismatchSeverity};
 
-use super::{GraphComposition, GraphLoader, GraphMetadata, GraphSource, LoadError};
+use super::{GraphComposition, GraphLoader, GraphSource, GraphMetadata, LoadError};
 
 /// Configuration for workspace discovery
 #[derive(Debug, Clone)]
@@ -129,6 +130,7 @@ impl WorkspaceDiscovery {
         Ok(workspace_composition)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn discover_graph_files(&self) -> Result<Vec<DiscoveredGraphFile>, DiscoveryError> {
         let mut discovered_files = Vec::new();
         
@@ -163,6 +165,13 @@ impl WorkspaceDiscovery {
         
         discovered_files.sort_by(|a, b| a.namespace.cmp(&b.namespace));
         Ok(discovered_files)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    async fn discover_graph_files(&self) -> Result<Vec<DiscoveredGraphFile>, DiscoveryError> {
+        // In WASM, file system discovery is not available
+        // Return empty list - graphs must be provided via other means
+        Ok(Vec::new())
     }
 
     async fn load_base_graphs(&self, files: &[DiscoveredGraphFile]) -> Result<Vec<GraphWithFileInfo>, DiscoveryError> {
@@ -313,6 +322,7 @@ impl WorkspaceDiscovery {
     }
 
     // Helper methods
+    #[cfg(not(target_arch = "wasm32"))]
     async fn analyze_graph_file(&self, path: &Path) -> Result<DiscoveredGraphFile, DiscoveryError> {
         let metadata = fs::metadata(path).await
             .map_err(|e| DiscoveryError::FileAccessError(path.to_path_buf(), e.to_string()))?;
@@ -328,6 +338,23 @@ impl WorkspaceDiscovery {
             format,
             size_bytes: metadata.len(),
             modified: metadata.modified().ok(),
+        })
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    async fn analyze_graph_file(&self, path: &Path) -> Result<DiscoveredGraphFile, DiscoveryError> {
+        // In WASM, we can't access file metadata, so use defaults
+        let namespace = self.namespace_builder.build_namespace(path, &self.config)?;
+        let format = self.detect_file_format(path)?;
+        let graph_name = self.extract_graph_name(path)?;
+        
+        Ok(DiscoveredGraphFile {
+            path: path.to_path_buf(),
+            namespace,
+            graph_name,
+            format,
+            size_bytes: 0, // Unknown in WASM
+            modified: None, // Unknown in WASM
         })
     }
 

@@ -969,7 +969,20 @@ impl Into<JsValue> for Message {
             Message::Encoded(encoded) => {
                 let decoded = bitcode::decode::<Message>(&encoded).unwrap_or_default();
                 decoded.into()
-            }
+            },
+            Message::RemoteReference {
+                network_id,
+                actor_id,
+                port,
+            } => JsValue::from_serde(&json!({
+                "network_id": network_id,
+                "actor_id": actor_id,
+                "port": port
+            })).unwrap_or(JsValue::null()),
+            Message::NetworkEvent { event_type, data } => JsValue::from_serde(&json!({
+                "event_type": event_type,
+                "data": serde_json::Value::from(data)
+            })).unwrap_or(JsValue::null()),
         }
     }
 }

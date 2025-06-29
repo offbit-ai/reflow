@@ -778,6 +778,10 @@ impl Graph {
         self
     }
 
+    pub fn get_properties(&self) -> HashMap<String, Value> {
+        self.properties.clone()
+    }
+
     /// Nodes objects can be retrieved from the graph by their ID:
     /// ```no_run
     /// let node = my_graph.get_node('actor_id').unwrap();
@@ -787,6 +791,10 @@ impl Graph {
     }
     pub fn get_node_mut(&mut self, key: &str) -> Option<&mut GraphNode> {
         self.nodes.get_mut(key)
+    }
+
+    pub fn get_nodes(&self) -> Vec<GraphNode> {
+        self.nodes.values().cloned().collect()
     }
 
     /// Adding a node to the graph
@@ -1345,6 +1353,10 @@ impl Graph {
                     })
                     .map(|&mut idx| &mut self.connections[idx])
             })
+    }
+
+    pub fn get_connections(&self) -> Vec<GraphConnection> {
+        self.connections.clone()
     }
 
     /// Disconnected nodes
@@ -1983,6 +1995,99 @@ impl Graph {
         )) || self
             .connection_port_indices
             .contains_key(&((node2.to_owned(), port2), (node1.to_owned(), port1)))
+    }
+
+    pub fn import(&mut self, graph_export: GraphExport) {
+        // Clear existing graph data
+        self.nodes.clear();
+        self.connections.clear();
+        self.initializers.clear();
+        self.groups.clear();
+        self.inports.clear();
+        self.outports.clear();
+        self.connection_indices.clear();
+        self.connection_port_indices.clear();
+        self.initializer_indices.clear();
+        self.node_groups.clear();
+        self.adjacency_lists.clear();
+
+        // Set basic properties
+        self.case_sensitive = graph_export.case_sensitive;
+        self.properties = graph_export.properties.clone();
+        
+        // Set name from properties if available
+        if let Some(name) = self.properties.get("name") {
+            if let Some(name_str) = name.as_str() {
+                self.name = name_str.to_string();
+            }
+        }
+
+        // Add nodes
+        for (node_id, node) in graph_export.processes {
+            self.add_node(&node_id, &node.component, node.metadata);
+        }
+
+        // Add connections and initializers
+        for connection in graph_export.connections {
+            if let Some(data) = connection.data {
+                // This is an initializer
+                if let Some(index) = connection.to.index {
+                    self.add_initial_index(
+                        data,
+                        &connection.to.node_id,
+                        &connection.to.port_id,
+                        index,
+                        connection.metadata,
+                    );
+                } else {
+                    self.add_initial(
+                        data,
+                        &connection.to.node_id,
+                        &connection.to.port_id,
+                        connection.metadata,
+                    );
+                }
+            } else {
+                // This is a regular connection
+                self.add_connection(
+                    &connection.from.node_id,
+                    &connection.from.port_id,
+                    &connection.to.node_id,
+                    &connection.to.port_id,
+                    connection.metadata,
+                );
+            }
+        }
+
+        // Add inports
+        for (port_id, edge) in graph_export.inports {
+            self.add_inport(
+                &port_id,
+                &edge.node_id,
+                &edge.port_name,
+                edge.port_type,
+                edge.metadata,
+            );
+        }
+
+        // Add outports
+        for (port_id, edge) in graph_export.outports {
+            self.add_outport(
+                &port_id,
+                &edge.node_id,
+                &edge.port_name,
+                edge.port_type,
+                edge.metadata,
+            );
+        }
+
+        // Add groups
+        for group in graph_export.groups {
+            self.add_group(&group.id, group.nodes, group.metadata);
+        }
+
+        // Rebuild caches
+        self.rebuild_adjacency_lists();
     }
 
     pub fn export(&self) -> GraphExport {

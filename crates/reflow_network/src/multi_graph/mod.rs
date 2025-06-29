@@ -13,6 +13,10 @@ use anyhow::Result;
 
 pub mod workspace;
 
+// WASM bindings module (only for WASM target)
+#[cfg(target_arch = "wasm32")]
+pub mod wasm_bindings;
+
 pub type GenerationError = anyhow::Error;
 
 // Graph source management using existing types
@@ -51,8 +55,10 @@ pub use crate::graph::types::{
     GraphDependency, ExternalConnection, InterfaceDefinition
 };
 
+
+
 // Metadata enhancement for existing GraphExport
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GraphMetadata {
     pub namespace: Option<String>,   // Preferred namespace
     pub version: Option<String>,     // Graph version
@@ -181,6 +187,7 @@ impl GraphLoader {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn load_graph(&self, source: GraphSource) -> Result<GraphExport, LoadError> {
         let mut graph_export = match source {
             GraphSource::JsonFile(path) => {
@@ -203,6 +210,72 @@ impl GraphLoader {
 
         // Normalize the graph (ensure consistent format)
         self.normalizer.normalize(&mut graph_export)?;
+
+        Ok(graph_export)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub async fn load_graph(&self, source: GraphSource) -> Result<GraphExport, LoadError> {
+        let mut graph_export = match source {
+            GraphSource::JsonFile(_path) => {
+                return Err(LoadError::IoError(std::io::Error::new(
+                    std::io::ErrorKind::Unsupported,
+                    "File system access not supported in WASM target. Use JsonContent or GraphExport instead."
+                )));
+            }
+            GraphSource::JsonContent(content) => serde_json::from_str::<GraphExport>(&content)?,
+            GraphSource::GraphExport(export) => export,
+            GraphSource::NetworkApi(url) => {
+                // Use web-sys fetch for WASM
+                return self.load_graph_from_url_wasm(&url).await;
+            }
+            // GraphSource::Dynamic(generator) => {
+            //     generator.generate()?
+            // },
+        };
+
+        // Validate the graph
+        self.validator.validate(&graph_export)?;
+
+        // Normalize the graph (ensure consistent format)
+        self.normalizer.normalize(&mut graph_export)?;
+
+        Ok(graph_export)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    async fn load_graph_from_url_wasm(&self, url: &str) -> Result<GraphExport, LoadError> {
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen_futures::JsFuture;
+        use web_sys::{Request, RequestInit, RequestMode, Response};
+
+        let mut opts = RequestInit::new();
+        opts.set_method("GET");
+        opts.set_mode(RequestMode::Cors);
+
+        let request = Request::new_with_str_and_init(url, &opts)
+            .map_err(|e| LoadError::HttpError(format!("Failed to create request: {:?}", e)))?;
+
+        let window = web_sys::window().ok_or_else(|| {
+            LoadError::HttpError("Failed to get window object".to_string())
+        })?;
+
+        let resp_value = JsFuture::from(window.fetch_with_request(&request))
+            .await
+            .map_err(|e| LoadError::HttpError(format!("Network error: {:?}", e)))?;
+
+        let resp: Response = resp_value.dyn_into()
+            .map_err(|e| LoadError::HttpError(format!("Invalid response: {:?}", e)))?;
+
+        let json = JsFuture::from(resp.json()
+            .map_err(|e| LoadError::HttpError(format!("Failed to get JSON: {:?}", e)))?)
+            .await
+            .map_err(|e| LoadError::HttpError(format!("Failed to parse JSON: {:?}", e)))?;
+
+        let graph_export: GraphExport = serde_wasm_bindgen::from_value(json)
+            .map_err(|e| LoadError::JsonError(serde_json::Error::io(
+                std::io::Error::new(std::io::ErrorKind::InvalidData, format!("WASM JSON parse error: {:?}", e))
+            )))?;
 
         Ok(graph_export)
     }
@@ -338,16 +411,24 @@ impl GraphNormalizer {
 #[derive(Debug, thiserror::Error)]
 pub enum LoadError {
     #[error("IO error: {0}")]
-    IoError(#[from] tokio::io::Error),
+    IoError(#[from] std::io::Error),
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
     #[error("HTTP error: {0}")]
-    HttpError(#[from] reqwest::Error),
+    HttpError(String),
     #[error("Validation error: {0}")]
     ValidationError(#[from] ValidationError),
     #[error("Generation error: {0}")]
     GenerationError(#[from] GenerationError),
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+impl From<reqwest::Error> for LoadError {
+    fn from(err: reqwest::Error) -> Self {
+        LoadError::HttpError(err.to_string())
+    }
+}
+
 
 #[derive(Debug, thiserror::Error)]
 pub enum ValidationError {
@@ -829,8 +910,18 @@ impl GraphComposer {
 
         // Add shared resources as processes
         for shared_resource in &composition.shared_resources {
+            #[cfg(not(target_arch = "wasm32"))]
+            let id = uuid::Uuid::new_v4().to_string();
+            
+            #[cfg(target_arch = "wasm32")]
+            let id = {
+                use js_sys::Math;
+                // Generate a simple UUID-like string for WASM
+                format!("shared-{}-{}", Math::random(), shared_resource.name)
+            };
+            
             let shared_process = GraphNode {
-                id: uuid::Uuid::new_v4().to_string(),
+                id,
                 component: shared_resource.component.clone(),
                 metadata: shared_resource.metadata.clone(),
             };

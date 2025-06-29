@@ -457,7 +457,7 @@ impl WasmActorContext {
 
     #[wasm_bindgen(js_name = getConfig)]
     pub fn get_config(&self) -> JsValue {
-        JsValue::from_serde(self.context.get_config()).unwrap_or(JsValue::NULL)
+        JsValue::from_serde(&self.context.get_config_hashmap()).unwrap_or(JsValue::NULL)
     }
 
     #[wasm_bindgen(js_name = getState)]

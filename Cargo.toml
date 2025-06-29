@@ -11,7 +11,8 @@ serde = { version = "1.0.215", default-features = true, features = ["derive", "r
 anyhow = "1.0.94"
 thiserror = "2.0.12"
 uuid = "1.17.0"
-
+parking_lot = "0.12.3"
+tracing ={ version = "0.1.41"}
 
 [profile.release]
 opt-level = 3
