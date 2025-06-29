@@ -19,7 +19,7 @@ thiserror = {workspace = true}
 actor_macro = { path = "../actor_macro" }
 parking_lot = {workspace = true}
 flate2 = "1.0.35"
-flume = "0.11.0"
+flume = {workspace = true}
 rusty_pool = "0.7.0"
 num_cpus = "1.16.0"
 once_cell = "1.19.0"

@@ -6,6 +6,8 @@
 use crate::neon_bindings::utils::*;
 use neon::prelude::*;
 use parking_lot::RwLock as ParkingRwLock;
+use reflow_network::graph;
+use reflow_network::graph::history::{Command, CompositeCommand, GraphHistory};
 use reflow_network::{graph::types::*, graph::Graph};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -18,8 +20,9 @@ pub struct NodeGraph {
 
 impl Finalize for NodeGraph {}
 
+
 impl NodeGraph {
-    fn new(mut cx: FunctionContext) -> JsResult<JsBox<NodeGraph>> {
+    fn js_new(mut cx: FunctionContext) -> JsResult<JsBox<NodeGraph>> {
         // Get optional parameters: name, case_sensitive, properties
         let name = get_optional_string_arg(&mut cx, 0).unwrap_or_else(|| "Graph".to_string());
 
@@ -48,12 +51,12 @@ impl NodeGraph {
     }
 
     fn add_node(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
-        let id = cx.argument::<JsString>(0)?.value(&mut cx);
-        let component = cx.argument::<JsString>(1)?.value(&mut cx);
+        let id = cx.argument::<JsString>(1)?.value(&mut cx);
+        let component = cx.argument::<JsString>(2)?.value(&mut cx);
         let metadata = cx
-            .argument_opt(2)
+            .argument_opt(3)
             .and_then(|v| js_to_json_value(&mut cx, v).ok())
             .and_then(|v| {
                 if let JsonValue::Object(map) = v {
@@ -68,22 +71,22 @@ impl NodeGraph {
     }
 
     fn remove_node(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let id = cx.argument::<JsString>(0)?.value(&mut cx);
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let id = cx.argument::<JsString>(1)?.value(&mut cx);
 
         this.inner.write().remove_node(&id);
         Ok(cx.undefined())
     }
 
     fn add_connection(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
-        let from_node = cx.argument::<JsString>(0)?.value(&mut cx);
-        let from_port = cx.argument::<JsString>(1)?.value(&mut cx);
-        let to_node = cx.argument::<JsString>(2)?.value(&mut cx);
-        let to_port = cx.argument::<JsString>(3)?.value(&mut cx);
+        let from_node = cx.argument::<JsString>(1)?.value(&mut cx);
+        let from_port = cx.argument::<JsString>(2)?.value(&mut cx);
+        let to_node = cx.argument::<JsString>(3)?.value(&mut cx);
+        let to_port = cx.argument::<JsString>(4)?.value(&mut cx);
         let metadata = cx
-            .argument_opt(4)
+            .argument_opt(5)
             .and_then(|v| js_to_json_value(&mut cx, v).ok())
             .and_then(|v| {
                 if let JsonValue::Object(map) = v {
@@ -100,12 +103,12 @@ impl NodeGraph {
     }
 
     fn remove_connection(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
-        let from_node = cx.argument::<JsString>(0)?.value(&mut cx);
+        let from_node = cx.argument::<JsString>(1)?.value(&mut cx);
         let from_port = cx.argument::<JsString>(1)?.value(&mut cx);
-        let to_node = cx.argument::<JsString>(2)?.value(&mut cx);
-        let to_port = cx.argument::<JsString>(3)?.value(&mut cx);
+        let to_node = cx.argument::<JsString>(3)?.value(&mut cx);
+        let to_port = cx.argument::<JsString>(4)?.value(&mut cx);
 
         this.inner
             .write()
@@ -114,13 +117,13 @@ impl NodeGraph {
     }
 
     fn add_initial(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let _v = cx.argument::<JsValue>(0)?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let _v = cx.argument::<JsValue>(1)?;
         let data = js_to_json_value(&mut cx, _v)?;
-        let to_node = cx.argument::<JsString>(1)?.value(&mut cx);
-        let to_port = cx.argument::<JsString>(2)?.value(&mut cx);
+        let to_node = cx.argument::<JsString>(2)?.value(&mut cx);
+        let to_port = cx.argument::<JsString>(3)?.value(&mut cx);
         let metadata = cx
-            .argument_opt(3)
+            .argument_opt(4)
             .and_then(|v| js_to_json_value(&mut cx, v).ok())
             .and_then(|v| {
                 if let JsonValue::Object(map) = v {
@@ -137,23 +140,23 @@ impl NodeGraph {
     }
 
     fn remove_initial(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
-        let to_node = cx.argument::<JsString>(0)?.value(&mut cx);
-        let to_port = cx.argument::<JsString>(1)?.value(&mut cx);
+        let to_node = cx.argument::<JsString>(1)?.value(&mut cx);
+        let to_port = cx.argument::<JsString>(2)?.value(&mut cx);
 
         this.inner.write().remove_initial(&to_node, &to_port);
         Ok(cx.undefined())
     }
 
     fn add_inport(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
-        let public_port = cx.argument::<JsString>(0)?.value(&mut cx);
-        let node_id = cx.argument::<JsString>(1)?.value(&mut cx);
-        let node_port = cx.argument::<JsString>(2)?.value(&mut cx);
+        let public_port = cx.argument::<JsString>(1)?.value(&mut cx);
+        let node_id = cx.argument::<JsString>(2)?.value(&mut cx);
+        let node_port = cx.argument::<JsString>(3)?.value(&mut cx);
         let metadata = cx
-            .argument_opt(3)
+            .argument_opt(4)
             .and_then(|v| js_to_json_value(&mut cx, v).ok())
             .and_then(|v| {
                 if let JsonValue::Object(map) = v {
@@ -171,21 +174,21 @@ impl NodeGraph {
     }
 
     fn remove_inport(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let public_port = cx.argument::<JsString>(0)?.value(&mut cx);
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let public_port = cx.argument::<JsString>(1)?.value(&mut cx);
 
         this.inner.write().remove_inport(&public_port);
         Ok(cx.undefined())
     }
 
     fn add_outport(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
-        let public_port = cx.argument::<JsString>(0)?.value(&mut cx);
-        let node_id = cx.argument::<JsString>(1)?.value(&mut cx);
-        let node_port = cx.argument::<JsString>(2)?.value(&mut cx);
+        let public_port = cx.argument::<JsString>(1)?.value(&mut cx);
+        let node_id = cx.argument::<JsString>(2)?.value(&mut cx);
+        let node_port = cx.argument::<JsString>(3)?.value(&mut cx);
         let metadata = cx
-            .argument_opt(3)
+            .argument_opt(4)
             .and_then(|v| js_to_json_value(&mut cx, v).ok())
             .and_then(|v| {
                 if let JsonValue::Object(map) = v {
@@ -207,20 +210,19 @@ impl NodeGraph {
     }
 
     fn remove_outport(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let public_port = cx.argument::<JsString>(0)?.value(&mut cx);
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let public_port = cx.argument::<JsString>(1)?.value(&mut cx);
 
         this.inner.write().remove_outport(&public_port);
         Ok(cx.undefined())
     }
 
     fn add_group(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-
-        let name = cx.argument::<JsString>(0)?.value(&mut cx);
-        let nodes = cx.argument::<JsArray>(1)?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let name = cx.argument::<JsString>(1)?.value(&mut cx);
+        let nodes = cx.argument::<JsArray>(2)?;
         let metadata = cx
-            .argument_opt(2)
+            .argument_opt(3)
             .and_then(|v| js_to_json_value(&mut cx, v).ok())
             .map(|v| serde_json::from_value::<HashMap<String, JsonValue>>(v).ok())
             .unwrap();
@@ -237,16 +239,16 @@ impl NodeGraph {
     }
 
     fn remove_group(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let name = cx.argument::<JsString>(0)?.value(&mut cx);
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let name = cx.argument::<JsString>(1)?.value(&mut cx);
 
         this.inner.write().remove_group(&name);
         Ok(cx.undefined())
     }
 
     fn set_properties(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let _v = cx.argument::<JsValue>(0)?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let _v = cx.argument::<JsValue>(1)?;
         let properties = js_to_json_value(&mut cx, _v)?;
 
         if let JsonValue::Object(map) = properties {
@@ -258,7 +260,7 @@ impl NodeGraph {
     }
 
     fn get_properties<'a>(mut cx: FunctionContext<'a>) -> JsResult<'a, JsValue> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
 
         // Use export to access properties since they're private
         let props = this.inner.read().get_properties();
@@ -270,7 +272,7 @@ impl NodeGraph {
     }
 
     fn export(mut cx: FunctionContext) -> JsResult<JsValue> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
         let graph_export = this.inner.read().export();
 
         // Convert GraphExport to JSON and then to JS
@@ -283,8 +285,8 @@ impl NodeGraph {
     }
 
     fn import(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
-        let _v = cx.argument::<JsValue>(0)?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let _v = cx.argument::<JsValue>(1)?;
         let graph_data = js_to_json_value(&mut cx, _v)?;
 
         let graph_export: GraphExport = match serde_json::from_value(graph_data) {
@@ -297,7 +299,7 @@ impl NodeGraph {
     }
 
     fn to_json(mut cx: FunctionContext) -> JsResult<JsString> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
         let graph_export = this.inner.read().export();
 
         let json_str = match serde_json::to_string_pretty(&graph_export) {
@@ -324,14 +326,14 @@ impl NodeGraph {
     }
 
     fn clone_graph(mut cx: FunctionContext) -> JsResult<JsBox<NodeGraph>> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
         let cloned = this.inner.clone();
 
         Ok(cx.boxed(NodeGraph { inner: cloned }))
     }
 
     fn get_nodes(mut cx: FunctionContext) -> JsResult<JsArray> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
         let nodes = this.inner.read().get_nodes();
 
         let js_array = JsArray::new(&mut cx, nodes.len());
@@ -348,7 +350,7 @@ impl NodeGraph {
     }
 
     fn get_connections(mut cx: FunctionContext) -> JsResult<JsArray> {
-        let this = cx.this::<JsBox<NodeGraph>>()?;
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
         let connections = this.inner.read().get_connections();
 
         let js_array = JsArray::new(&mut cx, connections.len());
@@ -363,52 +365,309 @@ impl NodeGraph {
 
         Ok(js_array)
     }
-}
 
-/// Node.js GraphHistory wrapper
-pub struct NodeGraphHistory {
-    // TODO: Implement history tracking
-}
+    fn get_initializers(mut cx: FunctionContext) -> JsResult<JsValue> {
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let graph = this.inner.read();
 
-impl Finalize for NodeGraphHistory {}
-
-impl NodeGraphHistory {
-    fn new(mut cx: FunctionContext) -> JsResult<JsBox<NodeGraphHistory>> {
-        Ok(cx.boxed(NodeGraphHistory {}))
+        match serde_json::to_value(&graph.initializers) {
+            Ok(json_value) => json_value_to_js(&mut cx, &json_value),
+            Err(e) => cx.throw_error(format!("Failed to serialize initializers: {}", e)),
+        }
     }
 
-    fn push_snapshot(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        // TODO: Implement history snapshot
+    fn set_property(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let key = cx.argument::<JsString>(1)?.value(&mut cx);
+        let value = cx.argument::<JsValue>(1)?;
+
+        let value_json = js_to_json_value(&mut cx, value)?;
+        this.inner.write().properties.insert(key, value_json);
         Ok(cx.undefined())
     }
 
-    fn undo(mut cx: FunctionContext) -> JsResult<JsValue> {
-        // TODO: Implement undo functionality
-        Ok(cx.undefined().upcast())
-    }
+    fn get_property(mut cx: FunctionContext) -> JsResult<JsValue> {
+        let this = cx.argument::<JsBox<NodeGraph>>(0)?;
+        let key = cx.argument::<JsString>(1)?.value(&mut cx);
 
-    fn redo(mut cx: FunctionContext) -> JsResult<JsValue> {
-        // TODO: Implement redo functionality
-        Ok(cx.undefined().upcast())
-    }
-
-    fn can_undo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
-        // TODO: Check if undo is available
-        Ok(cx.boolean(false))
-    }
-
-    fn can_redo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
-        // TODO: Check if redo is available
-        Ok(cx.boolean(false))
+        let graph = this.inner.read();
+        match graph.properties.get(&key) {
+            Some(value) => json_value_to_js(&mut cx, value),
+            None => Ok(cx.null().upcast()),
+        }
     }
 }
 
-/// Create Graph constructor
+// pub struct NodeCompositeCommand {
+//     inner: Box<CompositeCommand>,
+// }
+
+// impl Finalize for NodeCompositeCommand {}
+
+// impl NodeCompositeCommand {
+//     fn new(mut cx: FunctionContext) -> JsResult<JsBox<NodeCompositeCommand>> {
+//         let name_js = cx.argument::<JsValue>(0)?;
+//         let name = name_js
+//             .downcast::<JsString, _>(&mut cx)
+//             .map(|s| s.value(&mut cx))
+//             .unwrap_or_else(|_| "CompositeCommand".to_string());
+//         let command = CompositeCommand::new(&name);
+//         Ok(cx.boxed(NodeCompositeCommand { inner: Box::new(command) }))
+//     }
+// }
+
+// pub struct NodeGraphHistory {
+//     inner: Arc<ParkingRwLock<GraphHistory>>,
+// }
+
+// impl Finalize for NodeGraphHistory {}
+
+// impl NodeGraphHistory {
+//     fn new(mut cx: FunctionContext) -> JsResult<JsBox<NodeGraphHistory>> {
+//         let limit = get_optional_number_arg(&mut cx, 0)
+//             .map(|n| n as usize)
+//             .unwrap_or(50);
+
+//         let history = Graph::with_history_and_limit(limit).1;
+
+//         Ok(cx.boxed(NodeGraphHistory {
+//             inner: Arc::new(ParkingRwLock::new(history)),
+//         }))
+//     }
+
+//     fn with_graph_and_limit(mut cx: FunctionContext) -> JsResult<JsArray> {
+//         let limit = get_optional_number_arg(&mut cx, 0)
+//             .map(|n| n as usize)
+//             .unwrap_or(50);
+
+//         let (graph, history) = Graph::with_history_and_limit(limit);
+
+//         let result = cx.empty_array();
+
+//         let node_graph = cx.boxed(NodeGraph {
+//             inner: Arc::new(ParkingRwLock::new(graph)),
+//         });
+//         result.set(&mut cx, 0, node_graph)?;
+
+//         let node_history = cx.boxed(NodeGraphHistory {
+//             inner: Arc::new(ParkingRwLock::new(history)),
+//         });
+//         result.set(&mut cx, 1, node_history)?;
+
+//         Ok(result)
+//     }
+
+//     fn commit_transaction(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+//         let command_js = cx.argument::<JsValue>(0)?;
+//         let graph_js = cx.argument::<JsValue>(1)?;
+
+//         // let graph_json = js_to_json_value(&mut cx, graph_js)?;
+//         // let graph_export: GraphExport = match serde_json::from_value(graph_json) {
+//         //     Ok(export) => export,
+//         //     Err(e) => return cx.throw_error(format!("Failed to parse graph: {}", e))
+//         // };
+
+//         let graph = graph_js
+//             .downcast::<JsBox<NodeGraph>, _>(&mut cx)
+//             .map_err(|_| -> JsResult<JsUndefined> {
+//                 cx.throw_error("Graph must be an instance of NodeGraph")
+//             })
+//             .expect("Failed to downcast graph");
+
+//         let command = command_js
+//             .downcast::<JsBox<NodeCompositeCommand>, _>(&mut cx)
+//             .map_err(|_|-> JsResult<JsUndefined> {
+//                 cx.throw_error("Command must be an instance of CompositeCommand")
+//             })
+//             .expect("Failed to downcast command");
+
+//          let comm =    Box::leak(command.inner); // Leak the command to avoid double free
+//         this.inner
+//             .write()
+//             .execute(Box::new(*comm), &mut graph.inner.write());
+//         Ok(cx.undefined())
+//     }
+
+//     fn undo(mut cx: FunctionContext) -> JsResult<JsValue> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+
+//         match this.inner.write().undo() {
+//             Some(graph_export) => match serde_json::to_value(&graph_export) {
+//                 Ok(json_value) => json_value_to_js(&mut cx, &json_value),
+//                 Err(e) => cx.throw_error(format!("Failed to serialize graph: {}", e)),
+//             },
+//             None => Ok(cx.null().upcast()),
+//         }
+//     }
+
+//     fn redo(mut cx: FunctionContext) -> JsResult<JsValue> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+
+//         match this.inner.write().redo() {
+//             Some(graph_export) => match serde_json::to_value(&graph_export) {
+//                 Ok(json_value) => json_value_to_js(&mut cx, &json_value),
+//                 Err(e) => cx.throw_error(format!("Failed to serialize graph: {}", e)),
+//             },
+//             None => Ok(cx.null().upcast()),
+//         }
+//     }
+
+//     fn can_undo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+//         Ok(cx.boolean(this.inner.read().can_undo()))
+//     }
+
+//     fn can_redo(mut cx: FunctionContext) -> JsResult<JsBoolean> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+//         Ok(cx.boolean(this.inner.read().can_redo()))
+//     }
+
+//     fn clear(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+//         this.inner.write().clear();
+//         Ok(cx.undefined())
+//     }
+
+//     fn size(mut cx: FunctionContext) -> JsResult<JsNumber> {
+//         let this = cx.this::<JsBox<NodeGraphHistory>>()?;
+//         Ok(cx.number(this.inner.read().size() as f64))
+//     }
+// }
+
+/// Create Graph constructor function with all methods
 pub fn create_graph(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraph::new)?)
+    let constructor = JsFunction::new(&mut cx, |cx| NodeGraph::js_new(cx))?;
+
+    // Add static methods
+    let load_fn = JsFunction::new(&mut cx, NodeGraph::import)?;
+    constructor.set(&mut cx, "load", load_fn)?;
+
+    // let with_history_fn = JsFunction::new(&mut cx, NodeGraphHistory::with_graph_and_limit)?;
+    // constructor.set(&mut cx, "withHistoryAndLimit", with_history_fn)?;
+
+    // Add instance methods to prototype
+    let prototype_result = constructor.get::<JsObject, _, _>(&mut cx, "prototype");
+
+    let prototype = match prototype_result {
+        Ok(proto) => {
+            println!("✅ Got existing prototype");
+            proto
+        }
+        Err(_) => {
+            println!("❌ No existing prototype, creating new one");
+            // Create a new prototype object
+            let new_proto = cx.empty_object();
+            constructor.set(&mut cx, "prototype", new_proto)?;
+            constructor.get::<JsObject, _, _>(&mut cx, "prototype")?
+        }
+    };
+
+    // let prototype = constructor.upcast::<JsObject>();
+
+    // Node operations
+    let add_node_fn = JsFunction::new(&mut cx, NodeGraph::add_node)?;
+    prototype.set(&mut cx, "addNode", add_node_fn)?;
+
+    let remove_node_fn = JsFunction::new(&mut cx, NodeGraph::remove_node)?;
+    prototype.set(&mut cx, "removeNode", remove_node_fn)?;
+
+    // Connection operations
+    let add_connection_fn = JsFunction::new(&mut cx, NodeGraph::add_connection)?;
+    prototype.set(&mut cx, "addConnection", add_connection_fn)?;
+
+    let remove_connection_fn = JsFunction::new(&mut cx, NodeGraph::remove_connection)?;
+    prototype.set(&mut cx, "removeConnection", remove_connection_fn)?;
+
+    // Initial packet operations
+    let add_initial_fn = JsFunction::new(&mut cx, NodeGraph::add_initial)?;
+    prototype.set(&mut cx, "addInitial", add_initial_fn)?;
+
+    let remove_initial_fn = JsFunction::new(&mut cx, NodeGraph::remove_initial)?;
+    prototype.set(&mut cx, "removeInitial", remove_initial_fn)?;
+
+    // Port operations
+    let add_inport_fn = JsFunction::new(&mut cx, NodeGraph::add_inport)?;
+    prototype.set(&mut cx, "addInport", add_inport_fn)?;
+
+    let remove_inport_fn = JsFunction::new(&mut cx, NodeGraph::remove_inport)?;
+    prototype.set(&mut cx, "removeInport", remove_inport_fn)?;
+
+    let add_outport_fn = JsFunction::new(&mut cx, NodeGraph::add_outport)?;
+    prototype.set(&mut cx, "addOutport", add_outport_fn)?;
+
+    let remove_outport_fn = JsFunction::new(&mut cx, NodeGraph::remove_outport)?;
+    prototype.set(&mut cx, "removeOutport", remove_outport_fn)?;
+
+    // Group operations
+    let add_group_fn = JsFunction::new(&mut cx, NodeGraph::add_group)?;
+    prototype.set(&mut cx, "addGroup", add_group_fn)?;
+
+    let remove_group_fn = JsFunction::new(&mut cx, NodeGraph::remove_group)?;
+    prototype.set(&mut cx, "removeGroup", remove_group_fn)?;
+
+    // Graph operations
+    let export_fn = JsFunction::new(&mut cx, NodeGraph::export)?;
+    prototype.set(&mut cx, "export", export_fn)?;
+
+    let clone_fn = JsFunction::new(&mut cx, NodeGraph::clone_graph)?;
+    prototype.set(&mut cx, "clone", clone_fn)?;
+
+    // Property operations
+    let set_property_fn = JsFunction::new(&mut cx, NodeGraph::set_property)?;
+    prototype.set(&mut cx, "setProperty", set_property_fn)?;
+
+    let get_property_fn = JsFunction::new(&mut cx, NodeGraph::get_property)?;
+    prototype.set(&mut cx, "getProperty", get_property_fn)?;
+
+    // Serialization
+    let to_json_fn = JsFunction::new(&mut cx, NodeGraph::to_json)?;
+    prototype.set(&mut cx, "toJSON", to_json_fn)?;
+
+    // Getters for graph components
+    let get_nodes_fn = JsFunction::new(&mut cx, NodeGraph::get_nodes)?;
+    prototype.set(&mut cx, "getNodes", get_nodes_fn)?;
+
+    let get_connections_fn = JsFunction::new(&mut cx, NodeGraph::get_connections)?;
+    prototype.set(&mut cx, "getConnections", get_connections_fn)?;
+
+    let get_initializers_fn = JsFunction::new(&mut cx, NodeGraph::get_initializers)?;
+    prototype.set(&mut cx, "getInitializers", get_initializers_fn)?;
+
+    Ok(constructor)
 }
 
-/// Create GraphHistory constructor
-pub fn create_graph_history(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraphHistory::new)?)
-}
+// /// Create GraphHistory constructor function with all methods
+// pub fn create_graph_history(mut cx: FunctionContext) -> JsResult<JsFunction> {
+//     let constructor = JsFunction::new(&mut cx, NodeGraphHistory::new)?;
+
+//     // Add static methods
+//     let with_graph_fn = JsFunction::new(&mut cx, NodeGraphHistory::with_graph_and_limit)?;
+//     constructor.set(&mut cx, "withGraphAndLimit", with_graph_fn)?;
+
+//     // Add instance methods to prototype
+//     let prototype = constructor.get::<JsObject, _, _>(&mut cx, "prototype")?;
+
+//     let push_fn = JsFunction::new(&mut cx, NodeGraphHistory::push)?;
+//     prototype.set(&mut cx, "push", push_fn)?;
+
+//     let undo_fn = JsFunction::new(&mut cx, NodeGraphHistory::undo)?;
+//     prototype.set(&mut cx, "undo", undo_fn)?;
+
+//     let redo_fn = JsFunction::new(&mut cx, NodeGraphHistory::redo)?;
+//     prototype.set(&mut cx, "redo", redo_fn)?;
+
+//     let can_undo_fn = JsFunction::new(&mut cx, NodeGraphHistory::can_undo)?;
+//     prototype.set(&mut cx, "canUndo", can_undo_fn)?;
+
+//     let can_redo_fn = JsFunction::new(&mut cx, NodeGraphHistory::can_redo)?;
+//     prototype.set(&mut cx, "canRedo", can_redo_fn)?;
+
+//     let clear_fn = JsFunction::new(&mut cx, NodeGraphHistory::clear)?;
+//     prototype.set(&mut cx, "clear", clear_fn)?;
+
+//     let size_fn = JsFunction::new(&mut cx, NodeGraphHistory::size)?;
+//     prototype.set(&mut cx, "size", size_fn)?;
+
+//     Ok(constructor)
+// }

@@ -34,7 +34,7 @@ pub struct Graph {
     pub(crate) connection_indices: HashMap<(String, String), Vec<usize>>,
     /// Key is ((from_node, from_port), (to_node, to_port)) -> Vec<connection_indices>
     pub(crate) connection_port_indices: HashMap<((String, String), (String, String)), Vec<usize>>,
-    pub(crate) initializers: Vec<GraphIIP>,
+    pub initializers: Vec<GraphIIP>,
     // Indexed initializers for faster initializer lookups
     pub(crate) initializer_indices: HashMap<String, Vec<usize>>,
     pub(crate) groups: Vec<GraphGroup>,
@@ -42,7 +42,7 @@ pub struct Graph {
     pub(crate) node_groups: HashMap<String, HashSet<String>>,
     pub(crate) inports: HashMap<String, GraphEdge>,
     pub(crate) outports: HashMap<String, GraphEdge>,
-    pub(crate) properties: HashMap<String, Value>,
+    pub properties: HashMap<String, Value>,
     pub(crate) case_sensitive: bool,
     pub(crate) event_channel: (flume::Sender<GraphEvents>, flume::Receiver<GraphEvents>),
     // Cached adjacency lists for faster traversal

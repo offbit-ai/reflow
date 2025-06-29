@@ -15,8 +15,8 @@ mod neon_bindings;
 // Import all the binding functions
 use neon_bindings::{
     network::{create_network, create_graph_network},
-    graph::{create_graph, create_graph_history},
-    actor::create_actor,
+    graph::{create_graph},
+    // actor::create_actor,
     multi_graph::{
         create_workspace, create_graph_composer, create_graph_loader, create_graph_metadata, create_graph_normalizer, create_graph_validator,
         create_namespace_manager
@@ -27,6 +27,8 @@ use neon_bindings::{
     },
 };
 
+use crate::neon_bindings::create_javascript_state;
+
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
     // Initialize the async runtime
@@ -34,6 +36,8 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     
     // Export basic functionality
     cx.export_function("init_panic_hook", init_panic_hook)?;
+
+    cx.export_function("MemoryState", create_javascript_state)?;
     
     // Export Network bindings - enhanced versions with full Node.js capabilities
     cx.export_function("Network", create_network)?;
@@ -42,10 +46,10 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     
     // Export Graph bindings - clean names without WASM* prefix
     cx.export_function("Graph", create_graph)?;
-    cx.export_function("GraphHistory", create_graph_history)?;
+    // cx.export_function("GraphHistory", create_graph_history)?;
     
     // Export Actor bindings
-    cx.export_function("Actor", create_actor)?;
+    // cx.export_function("Actor", create_actor)?;
     
     // Export Multi-graph bindings - workspace and composition features
     cx.export_function("Workspace", create_workspace)?;

@@ -16,11 +16,26 @@
   "author": "ReFlow Team",
   "license": "MIT",
   
-  "scripts": {
-    "build": "cargo-cp-artifact -a cdylib reflow_node index.node -- cargo build",
-    "build-debug": "cargo build",
-    "test": "node examples/basic_example.js",
-    "clean": "cargo clean"
+ "scripts": {
+     "build": "node build.js",
+    "build-debug": "node build.js debug",
+    "build-release": "node build.js",
+    "copy-binary": "cargo-cp-artifact -a cdylib reflow_node index.node -- cargo build --release",
+    "copy-binary-debug": "cargo-cp-artifact -a cdylib reflow_node index.node -- cargo build",
+    "test": "npm run build && node examples/basic_example.js",
+    "test-debug": "npm run build-debug && node examples/basic_example.js",
+    "clean": "cargo clean && rm -f index.node",
+    "lint": "cargo clippy -- -D warnings",
+    "fmt": "cargo fmt --check",
+    "docs": "cargo doc --open",
+    "benchmark": "npm run build && node benchmarks/performance.js",
+    "example:basic": "npm run build && node examples/basic_example.js",
+    "example:advanced": "npm run build && node examples/advanced_example.js",
+    "install": "npm run build",
+    "prepack": "npm run build && npm run generate-types",
+    "generate-types": "node scripts/generate-types.js",
+    "check": "cargo check",
+    "verify": "npm run lint && npm run fmt && npm run test"
   },
   "files": [
     "index.node",

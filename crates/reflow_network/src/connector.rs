@@ -48,7 +48,7 @@ impl Connector {
 }
 
 impl Connector {
-    pub async fn init(&self, network: &Network) {
+    pub fn init(&self, network: &Network) {
         use futures::{Stream, StreamExt, task::Poll};
 
         use crate::network::FlowStub;

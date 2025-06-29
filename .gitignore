@@ -4,3 +4,4 @@ target
 resource/*
 api_gen/
 node_modules
+index.node

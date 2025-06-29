@@ -339,7 +339,7 @@ impl Network {
         }
     }
 
-    pub async fn start(&mut self) -> Result<(), anyhow::Error> {
+    pub fn start(&mut self) -> Result<(), anyhow::Error> {
         // Warm up all processes
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -352,7 +352,7 @@ impl Network {
                 ));
                 let config = ActorConfig::from_node(node.clone())?;
                
-                Self::init_process(actor.create_process(config), self.thread_pool.clone()).await;
+                Self::init_process(actor.create_process(config), self.thread_pool.clone());
                 self.initialized_actors.insert(id, actor.clone());
             }
         }
@@ -364,7 +364,7 @@ impl Network {
                     node.component, id
                 ));
                let config = ActorConfig::from_node(node.clone())?;
-                Self::init_process(actor.create_process(config), self.thread_pool.clone()).await;
+                Self::init_process(actor.create_process(config), self.thread_pool.clone());
             }
         }
 
@@ -374,13 +374,13 @@ impl Network {
             // use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
             for connector in &self.connectors {
-                connector.init(self).await;
+                connector.init(self);
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
             for connector in &self.connectors {
-                connector.init(self).await;
+                connector.init(self);
             }
         }
 
@@ -465,7 +465,7 @@ impl Network {
         Ok(())
     }
 
-    pub(crate) async fn init_process(
+    pub(crate) fn init_process(
         actor_process: std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>,
         thread_pool: Arc<Mutex<ThreadPool>>,
     ) {

@@ -152,7 +152,7 @@ async fn test_network() -> Result<(), anyhow::Error> {
     });
 
     // Start the network
-    network.start().await?;
+    network.start()?;
     
     tokio::time::sleep(Duration::from_secs(2)).await;
     network.shutdown();
@@ -313,7 +313,7 @@ async fn test_complex_network() -> Result<(), anyhow::Error> {
     }
 
     // Start network
-    network.start().await?;
+    network.start()?;
 
     tokio::time::sleep(Duration::from_secs(2)).await;
     network.shutdown();

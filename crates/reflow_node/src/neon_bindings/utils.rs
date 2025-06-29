@@ -28,7 +28,7 @@ pub fn get_optional_number_arg(cx: &mut FunctionContext, index: usize) -> Option
 }
 
 /// Convert JavaScript value to serde_json::Value
-pub fn js_to_json_value(cx: &mut FunctionContext, value: Handle<JsValue>) -> NeonResult<JsonValue> {
+pub fn js_to_json_value<'cx>(cx: &mut Cx<'cx>, value: Handle<JsValue>) -> NeonResult<JsonValue> {
     if value.is_a::<JsNull, _>(cx) || value.is_a::<JsUndefined, _>(cx) {
         Ok(JsonValue::Null)
     } else if let Ok(b) = value.downcast::<JsBoolean, _>(cx) {
@@ -71,7 +71,7 @@ pub fn js_to_json_value(cx: &mut FunctionContext, value: Handle<JsValue>) -> Neo
 }
 
 /// Convert serde_json::Value to JavaScript value
-pub fn json_value_to_js<'a>(cx: &mut FunctionContext<'a>, value: &JsonValue) -> NeonResult<Handle<'a, JsValue>> {
+pub fn json_value_to_js<'a>(cx: &mut Cx<'a>, value: &JsonValue) -> NeonResult<Handle<'a, JsValue>> {
     match value {
         JsonValue::Null => Ok(cx.null().upcast()),
         JsonValue::Bool(b) => Ok(cx.boolean(*b).upcast()),
@@ -185,7 +185,7 @@ pub fn string_vec_to_js_array<'a>(cx: &mut FunctionContext<'a>, vec: &[String]) 
 }
 
 /// Convert JS object to HashMap<String, JsonValue>
-pub fn js_object_to_map(cx: &mut FunctionContext, obj: Handle<JsObject>) -> NeonResult<HashMap<String, JsonValue>> {
+pub fn js_object_to_map<'cx>(cx: &mut Cx<'cx>, obj: Handle<JsObject>) -> NeonResult<HashMap<String, JsonValue>> {
     let prop_names = obj.get_own_property_names(cx)?;
     let mut map = HashMap::new();
     

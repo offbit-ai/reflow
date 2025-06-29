@@ -84,7 +84,7 @@ impl DistributedNetwork {
         self.bridge.start(self.local_network.clone()).await?;
 
          // Start local network
-        self.local_network.clone().write().start().await?;
+        self.local_network.clone().write().start()?;
 
         Ok(())
     }
