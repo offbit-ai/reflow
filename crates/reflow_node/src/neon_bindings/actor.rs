@@ -69,13 +69,11 @@ impl Actor for JavaScriptActor {
         let js_actor = self.js_actor.clone();
         let channel = self.channel.clone();
         let state = Arc::clone(&self.state);
-        let config = self.config.clone();
 
         Box::new(move |context| {
             let js_actor = js_actor.clone();
             let channel = channel.clone();
             let state = Arc::clone(&state);
-            let config = config.clone();
 
             Box::pin(async move {
                 // Create a promise to handle the async JS call
@@ -83,11 +81,10 @@ impl Actor for JavaScriptActor {
 
                 // Call JavaScript actor on the main thread
                 channel.send(move |mut cx| {
-                    let result = call_js_actor(&mut cx, js_actor, &context, &state, &config)
-                        .map_or(
-                            Err(anyhow::Error::msg("Failed to call JavaScript actor")),
-                            |outputs| Ok(outputs),
-                        );
+                    let result = call_js_actor(&mut cx, js_actor, &context, &state).map_or(
+                        Err(anyhow::Error::msg("Failed to call JavaScript actor")),
+                        |outputs| Ok(outputs),
+                    );
                     let _ = sender.send(result);
                     Ok(())
                 });
@@ -112,7 +109,7 @@ impl Actor for JavaScriptActor {
 
     fn create_process(
         &self,
-        config: ActorConfig,
+        mut config: ActorConfig,
     ) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
         use futures_util::StreamExt;
 
@@ -122,7 +119,10 @@ impl Actor for JavaScriptActor {
         let state = Arc::clone(&self.state);
         let load = Arc::clone(&self.load);
 
+        config.config.extend(self.config.clone().into_iter());
+
         let inports_size = self.inports.len();
+        let inport_keys = self.inports.clone();
 
         let await_all_inports = config
             .config
@@ -140,7 +140,12 @@ impl Actor for JavaScriptActor {
 
                     if await_all_inports {
                         if all_inports.keys().len() < inports_size {
-                            all_inports.extend(packet.iter().map(|(k, v)| (k.clone(), v.clone())));
+                            all_inports.extend(
+                                packet
+                                    .iter()
+                                    .filter(|(k, _)| inport_keys.contains(k))
+                                    .map(|(k, v)| (k.clone(), v.clone())),
+                            );
                             if all_inports.keys().len() == inports_size {
                                 // Run the behavior function
                                 let context = ActorContext::new(
@@ -157,7 +162,7 @@ impl Actor for JavaScriptActor {
                                             .0
                                             .send(result)
                                             .expect("Expected to send message via outport");
-                                        load.lock().dec();
+                                        load.lock().reset();
                                     }
                                 }
                             }
@@ -314,7 +319,6 @@ fn call_js_actor(
     js_actor: Arc<ParkingRwLock<Root<JsObject>>>,
     context: &reflow_network::actor::ActorContext,
     state: &Arc<Mutex<MemoryState>>,
-    config: &HashMap<String, JsonValue>,
 ) -> Result<HashMap<String, Message>, String> {
     // Convert inputs to JavaScript
     let input_json = match serde_json::to_value(
@@ -328,7 +332,7 @@ fn call_js_actor(
         Err(e) => return Err(format!("Failed to serialize inputs: {}", e)),
     };
 
-    let config_json = JsonValue::Object(config.clone().into_iter().collect());
+    let config_json = JsonValue::Object(context.config.as_hashmap().into_iter().collect());
 
     // Create state object for JavaScript
     let js_state = cx.boxed(JavaScriptActorState::new(Arc::clone(state)));

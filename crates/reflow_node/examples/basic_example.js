@@ -33,6 +33,7 @@ class SourceActor {
     run(context) {
         console.log('📤 SourceActor: Starting data generation');
 
+        console.log('📤 SourceActor: Config:', this.config);
         // Generate some data
         for (let i = 1; i <= this.config.count; i++) {
             const data = {
@@ -59,28 +60,30 @@ class TransformActor {
     constructor() {
         this.inports = ["input"];
         this.outports = ["output"];
-        this.config = { multiplier: 2, await_all_inports: true };
+        this.config = { multiplier: 2, await_all_inports: false };
     }
 
     run(context) {
         const data = context.input.input;
-        if (data) {
-            console.log('🔄 TransformActor: Processing:', data);
-
-            // Transform the data
-            const transformed = {
-                ...data,
-                value: data.value * this.config.multiplier,
-                processed: true,
-                processedAt: Date.now()
-            };
-
-            console.log('🔄 TransformActor: Transformed:', transformed);
-
-            context.send({
-                output: transformed
-            });
+        if (!data) {
+            return;
         }
+        console.log('🔄 TransformActor: Processing:', data);
+
+        // Transform the data
+        const transformed = {
+            ...data,
+            value: data.value * this.config.multiplier,
+            processed: true,
+            processedAt: Date.now()
+        };
+
+        console.log('🔄 TransformActor: Transformed:', transformed);
+
+        context.send({
+            output: transformed
+        });
+
     }
 }
 
@@ -91,15 +94,16 @@ class SinkActor {
     constructor() {
         this.inports = ["input"];
         this.outports = [];
-        this.config = {await_all_inports: true};
+        this.config = {  };
     }
 
     run(context) {
-        if (context.input.input) {
-            const data = context.input.input;
-            console.log('📥 SinkActor: Final result:', data);
-            console.log(`📥 SinkActor: Value ${data.id} transformed from ${data.value / 2} to ${data.value}`);
+        if (!context.input.input) {
+            return;
         }
+        const data = context.input.input;
+        console.log('📥 SinkActor: Final result:', data);
+        console.log(`📥 SinkActor: Value ${data.id} transformed from ${data.value / 2} to ${data.value}`);
     }
 }
 
@@ -291,7 +295,8 @@ async function main() {
         // Run GraphNetwork example
         await runSimpleNetwork();
 
-        await sleep(500); // Short delay before next example
+        await sleep(500); // Wait a bit before next example
+
 
         // Run regular Network example  
         await runRegularNetwork();
