@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Node.js bindings for ReFlow Network - Enhanced capabilities over WASM version",
   "main": "index.node",
+
   "keywords": [
     "reflow",
     "network",
@@ -15,9 +16,8 @@
   ],
   "author": "ReFlow Team",
   "license": "MIT",
-  
- "scripts": {
-     "build": "node build.js",
+  "scripts": {
+    "build": "node build.js",
     "build-debug": "node build.js debug",
     "build-release": "node build.js",
     "copy-binary": "cargo-cp-artifact -a cdylib reflow_node index.node -- cargo build --release",
@@ -42,10 +42,10 @@
     "examples/",
     "src/"
   ],
- "devDependencies": {
+  "devDependencies": {
+    "@types/node": "^24.0.7",
     "cargo-cp-artifact": "0.1.9"
   },
-  "dependencies": {},
   "cpu": [
     "x64",
     "arm64"

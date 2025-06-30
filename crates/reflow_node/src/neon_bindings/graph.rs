@@ -20,7 +20,6 @@ pub struct NodeGraph {
 
 impl Finalize for NodeGraph {}
 
-
 impl NodeGraph {
     fn js_new(mut cx: FunctionContext) -> JsResult<JsBox<NodeGraph>> {
         // Get optional parameters: name, case_sensitive, properties
@@ -617,8 +616,14 @@ pub fn create_graph(mut cx: FunctionContext) -> JsResult<JsFunction> {
     let set_property_fn = JsFunction::new(&mut cx, NodeGraph::set_property)?;
     prototype.set(&mut cx, "setProperty", set_property_fn)?;
 
+    let set_properties_fn = JsFunction::new(&mut cx, NodeGraph::set_properties)?;
+    prototype.set(&mut cx, "setProperties", set_properties_fn)?;
+
     let get_property_fn = JsFunction::new(&mut cx, NodeGraph::get_property)?;
     prototype.set(&mut cx, "getProperty", get_property_fn)?;
+
+    let get_properties_fn = JsFunction::new(&mut cx, NodeGraph::get_properties)?;
+    prototype.set(&mut cx, "getProperties", get_properties_fn)?;
 
     // Serialization
     let to_json_fn = JsFunction::new(&mut cx, NodeGraph::to_json)?;

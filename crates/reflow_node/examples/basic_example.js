@@ -11,6 +11,8 @@
 
 const reflow = require('../index.node');
 
+const {Graph, Network} = require('../lib/index.js');
+
 // Initialize error handling
 reflow.init_panic_hook();
 
@@ -115,38 +117,37 @@ async function createSimpleGraph() {
     console.log('\n🎯 Creating a simple processing graph...');
 
     // Create a new graph
-    const Graph = reflow.Graph();
     const graph = new Graph("SimpleProcessing");
 
     console.log('📦 Adding nodes...');
 
     // Add nodes
-    Graph.prototype.addNode(graph, "source", "SourceActor", {
+    graph.addNode("source", "SourceActor", {
         description: "Data generator"
     });
 
-    Graph.prototype.addNode(graph, "transform", "TransformActor", {
+   graph.addNode("transform", "TransformActor", {
         description: "Data transformer"
     });
 
-    Graph.prototype.addNode(graph, "sink", "SinkActor", {
+    graph.addNode("sink", "SinkActor", {
         description: "Data consumer"
     });
 
     console.log('🔗 Adding connections...');
 
     // Connect the nodes: source → transform → sink
-    Graph.prototype.addConnection(graph, "source", "output", "transform", "input");
-    Graph.prototype.addConnection(graph, "transform", "output", "sink", "input");
+    graph.addConnection("source", "output", "transform", "input");
+    graph.addConnection("transform", "output", "sink", "input");
 
     console.log('🚀 Adding initial trigger...');
 
     // Add initial data to start the process
-    Graph.prototype.addInitial(graph, { start: true }, "source", "trigger");
+    graph.addInitial({ start: true }, "source", "trigger");
 
     console.log('✅ Graph created successfully');
 
-    return Graph.prototype.export(graph);
+    return graph.export();
 }
 
 // ============================================================================
@@ -209,7 +210,6 @@ async function runRegularNetwork() {
     console.log('\n🔧 Alternative: Using regular Network (manual setup)...');
 
     // Create a regular Network (not GraphNetwork)
-    const Network = new reflow.Network();
     const network = new Network();
 
     // Create and register actors
@@ -222,31 +222,31 @@ async function runRegularNetwork() {
     // Customize config for shorter demo
     sourceActor.config.count = 3;
 
-    Network.prototype.registerActor(network, "SourceActor", sourceActor);
-    Network.prototype.registerActor(network, "TransformActor", transformActor);
-    Network.prototype.registerActor(network, "SinkActor", sinkActor);
+    network.registerActor( "SourceActor", sourceActor);
+    network.registerActor( "TransformActor", transformActor);
+    network.registerActor( "SinkActor", sinkActor);
 
     // Add nodes manually
     console.log('📦 Adding nodes manually...');
-    Network.prototype.addNode(network, "src", "SourceActor");
-    Network.prototype.addNode(network, "trans", "TransformActor");
-    Network.prototype.addNode(network, "sink", "SinkActor");
+    network.addNode( "src", "SourceActor");
+    network.addNode( "trans", "TransformActor");
+    network.addNode( "sink", "SinkActor");
 
     // Add connections manually
     console.log('🔗 Adding connections manually...');
-    Network.prototype.addConnection(network, {
+    network.addConnection( {
         from: { actor: "src", port: "output" },
         to: { actor: "trans", port: "input" }
     });
 
-    Network.prototype.addConnection(network, {
+    network.addConnection( {
         from: { actor: "trans", port: "output" },
         to: { actor: "sink", port: "input" }
     });
 
     // Add initial trigger
     console.log('🚀 Adding initial trigger...');
-    Network.prototype.addInitial(network, {
+    network.addInitial( {
         to: {
             actor: "src",
             port: "trigger",
@@ -258,7 +258,7 @@ async function runRegularNetwork() {
     console.log('\n🚀 Starting regular network...');
 
     try {
-        await Network.prototype.start(network);
+        network.start(network);
         console.log('✅ Regular network started');
 
         // Let it process
@@ -270,7 +270,7 @@ async function runRegularNetwork() {
         console.error('❌ Regular network execution failed:', error.message);
     } finally {
         console.log('🛑 Shutting down regular network...');
-        Network.prototype.shutdown(network);
+        network.shutdown(network);
         console.log('✅ Regular network shutdown completed');
     }
 }
