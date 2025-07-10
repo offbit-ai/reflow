@@ -7,8 +7,9 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-use reflow_network::actor::ActorConfig;
-use reflow_network::message::EncodableValue;
+use reflow_actor::ActorConfig;
+use reflow_actor::message::EncodableValue;
+use reflow_tracing_protocol::client::TracingIntegration;
 
 use crate::{Actor, ActorBehavior, ActorContext, ActorLoad, MemoryState, Message, Port};
 
@@ -452,13 +453,13 @@ async fn convert_actor(
                 Message::String(s) => {
                     match serde_json::from_str::<Vec<serde_json::Value>>(s) {
                         Ok(arr) => {
-                            use reflow_network::message::EncodableValue;
+                            use EncodableValue;
                             let values: Vec<EncodableValue> = arr.iter().map(|d| EncodableValue::from(d.clone())).collect();
                             Message::array(values)
                         },
                         Err(_) => {
                             // If not a JSON array, create a single-item array
-                            use reflow_network::message::EncodableValue;
+                            use EncodableValue;
                             let values = vec![EncodableValue::from(serde_json::Value::String(s.to_string()))];
                             Message::array(values)
                         }
@@ -466,7 +467,7 @@ async fn convert_actor(
                 }
                 _ => {
                     // Convert any other type to a single-item array
-                    use reflow_network::message::EncodableValue;
+                    use EncodableValue;
                     let values = vec![EncodableValue::from(serde_json::to_value(input).unwrap_or_default())];
                     Message::array(values)
                 }

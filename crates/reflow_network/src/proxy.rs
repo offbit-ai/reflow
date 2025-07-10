@@ -1,4 +1,5 @@
 use parking_lot::Mutex;
+use reflow_tracing_protocol::client::TracingIntegration;
 
 use crate::{
     actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
@@ -95,7 +96,8 @@ impl Actor for RemoteActorProxy {
 
     fn create_process(
         &self,
-        config: ActorConfig
+        config: ActorConfig,
+        tracing_integration: Option<TracingIntegration>
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
 

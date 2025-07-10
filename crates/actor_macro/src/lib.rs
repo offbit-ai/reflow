@@ -248,7 +248,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     self.load().clone()
                 }
 
-                fn create_process(&self, config: ActorConfig) ->  std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
+                fn create_process(&self, config: ActorConfig, tracing_integration: Option<TracingIntegration>) ->  std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
 
                     let await_all_inports = self.await_all_inports;
                     let outports = self.get_outports();
@@ -262,6 +262,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     let (_, receiver) = self.get_inports();
 
                     let config = config.clone();
+                    let tracing_integration = tracing_integration.clone();
 
                     Box::pin(async move {
                         use futures::Stream;
@@ -285,7 +286,8 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
                         
                         let config = config.clone();
-
+                        let actor_id = config.get_node_id();
+                        let tracing_integration = tracing_integration.clone();
                         loop {
                             if let Some(packet) = receiver.clone().stream().next().await {
                             // Increment the load count
@@ -312,13 +314,19 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                                                             .expect("Expected to send message via outport");
 
                                                     }
-                                                      // Decrease the load count
-                                                        done(load_count.clone());
+                                                    // Decrease the load count
+                                                    done(load_count.clone());
+                                                    if let Some(tracing) = tracing_integration.clone() {
+                                                        let _ =  tracing.trace_actor_completed(actor_id).await;
+                                                    }
                                                 },
                                                 Err(e) => {
                                                       // Decrease the load count
-                                                        done(load_count.clone());
+                                                    done(load_count.clone());
                                                     eprintln!("Error in behavior function: {:?}", e);
+                                                    if let Some(tracing) = tracing_integration.clone() {
+                                                        let _ =  tracing.trace_actor_failed(actor_id, e.to_string()).await;
+                                                    }
                                                 }
                                             }
                                             all_inports.clear();
@@ -329,7 +337,6 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 
                                 if(!await_all_inports) {
-
                                     let context = ActorContext::new(
                                                 packet,
                                                  outports.clone(),
@@ -347,12 +354,18 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
                                             }
                                              // Decrease the load count
-                                                       done(load_count.clone());
+                                            done(load_count.clone());
+                                            if let Some(tracing) = tracing_integration.clone() {
+                                              let _ =  tracing.trace_actor_completed(actor_id).await;
+                                            }
                                         },
                                         Err(e) => {
                                               // Decrease the load count
                                                         done(load_count.clone());
                                             eprintln!("Error in behavior function: {:?}", e);
+                                            if let Some(tracing) = tracing_integration.clone() {
+                                              let _ =  tracing.trace_actor_failed(actor_id, e.to_string()).await;
+                                            }
                                         }
                                     }
                                 }

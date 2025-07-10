@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use reflow_network::graph::Graph;
+use reflow_graph::Graph;
 use std::collections::HashMap;
 
 pub fn benchmark_graph_operations(c: &mut Criterion) {

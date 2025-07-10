@@ -13,7 +13,7 @@ use reflow_network::{
     connector::{ConnectionPoint, Connector, InitialPacket},
     graph::{types::GraphExport, Graph},
     message::{EncodableValue, Message},
-    network::{Network, NetworkConfig},
+    network::{Network, NetworkConfig}, tracing::TracingIntegration,
 };
 use serde_json::{json, Value as JsonValue};
 use std::collections::HashMap;
@@ -110,6 +110,7 @@ impl Actor for JavaScriptActor {
     fn create_process(
         &self,
         mut config: ActorConfig,
+        tracing_integration:Option<TracingIntegration>
     ) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
         use futures_util::StreamExt;
 

@@ -13,18 +13,17 @@ pub mod proxy;
 pub mod network;
 pub mod connector;
 pub mod types;
-pub mod message;
 pub mod ports;
+pub mod message;
 pub mod actor;
 mod helper;
 pub mod graph;
 pub mod multi_graph;
+pub mod tracing;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod api_kit;
 #[cfg(test)]
 mod network_test;
-#[cfg(test)]
-mod message_test;
 
 // Export WASM bindings
 #[cfg(target_arch = "wasm32")]

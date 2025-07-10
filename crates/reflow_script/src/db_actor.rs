@@ -5,12 +5,11 @@
 
 use anyhow::{Result, anyhow};
 use parking_lot::Mutex;
-use reflow_network::{
-    actor::{
-        Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
-    },
+use reflow_actor::{
+    Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
     message::Message,
 };
+use reflow_tracing_protocol::client::TracingIntegration;
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
 
@@ -212,6 +211,7 @@ impl Actor for DatabaseActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
+        tracing_integration: Option<TracingIntegration>
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();

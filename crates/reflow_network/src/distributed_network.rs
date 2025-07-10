@@ -34,7 +34,7 @@ use std::sync::Arc;
 use crate::{
     actor::ActorConfig,
     bridge::NetworkBridge,
-    message::Message,
+    actor::message::Message,
     network::{Network, NetworkConfig},
 };
 
@@ -121,7 +121,7 @@ impl DistributedNetwork {
             if let Some(actor_impl) = network.actors.get(&proxy_name) {
                 let actor_config =
                     ActorConfig::from_node(network.nodes.get(&proxy_name).cloned().unwrap())?;
-                let process = actor_impl.create_process(actor_config);
+                let process = actor_impl.create_process(actor_config, network.tracing_integration.clone());
                 tokio::spawn(process);
             }
         }

@@ -7,11 +7,11 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-use reflow_network::{actor::ActorContext, message::EncodableValue};
+use reflow_actor::{ActorContext, message::EncodableValue};
 use serde_json::to_string;
-
+use reflow_tracing_protocol::client::TracingIntegration;
 use crate::{Actor, ActorLoad, ActorBehavior, MemoryState, Message, Port};
-use reflow_network::actor::ActorConfig;
+use reflow_actor::ActorConfig;
 
 /// Applies a transformation function to input data.
 ///

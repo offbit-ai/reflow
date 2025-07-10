@@ -1,4 +1,5 @@
 use anyhow::{Result, anyhow};
+use reflow_tracing_protocol::client::TracingIntegration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -9,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use tracing::{error, info, warn};
 
 use crate::actor::{Actor, ActorConfig, ActorBehavior, ActorContext, MemoryState, Port};
-use crate::message::Message;
+use crate::actor::message::Message;
 
 // ============================================================================
 // Service Registry Types (matching our JSON schema)
@@ -858,7 +859,7 @@ impl Actor for ApiOperationActor {
         self.outports.clone()
     }
 
-    fn create_process(&self, config:ActorConfig) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
+    fn create_process(&self, config:ActorConfig, tracing_integration: Option<TracingIntegration>) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
         let state = Arc::new(parking_lot::Mutex::new(MemoryState::default()));

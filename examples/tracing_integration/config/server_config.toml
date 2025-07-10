@@ -1,0 +1,37 @@
+# Reflow Tracing Server Configuration
+
+[server]
+host = "127.0.0.1"
+port = 8080
+max_connections = 1000
+websocket_buffer_size = 1048576  # 1MB
+
+[storage]
+backend = "sqlite"  # Options: "memory", "sqlite", "postgres", "mongodb"
+
+[storage.sqlite]
+database_path = "examples/tracing_integration/data/traces.db"
+wal_mode = true
+journal_mode = "WAL"
+synchronous = "NORMAL"
+cache_size = -2000  # 2MB
+
+[storage.postgres]
+connection_url = "postgresql://user:password@localhost/reflow_traces"
+max_connections = 10
+min_connections = 1
+acquire_timeout_secs = 30
+
+[storage.memory]
+max_traces = 10000
+eviction_policy = "lru"
+
+[compression]
+enabled = true
+algorithm = "zstd"  # Options: "zstd", "lz4", "brotli", "gzip"
+level = 3
+
+[metrics]
+enabled = true
+port = 9090
+endpoint = "/metrics"

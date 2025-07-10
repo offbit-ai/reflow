@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 use tokio::sync::Mutex;
 
 use crate::{
-    discovery::DiscoveryService, distributed_network::DistributedConfig, message::Message, network::Network, router::{MessageRouter, RemoteMessage}
+    discovery::DiscoveryService, distributed_network::DistributedConfig, actor::message::Message, network::Network, router::{MessageRouter, RemoteMessage}
 };
 use anyhow::Result;
 use futures_util::{SinkExt, StreamExt};

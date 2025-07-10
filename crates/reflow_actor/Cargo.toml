@@ -1,0 +1,57 @@
+[package]
+name = "reflow_actor"
+version = "0.1.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = {workspace = true}
+reflow_graph ={ path = "../reflow_graph" }
+actor_macro = { path = "../actor_macro" }
+reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
+parking_lot = {workspace = true}
+flate2 = "1.0.35"
+flume = {workspace = true}
+futures = { version = "0.3" }
+chrono = { version = "0.4", features = ["serde"] }
+bitcode = { version = "0.6.4", features = ["serde"] }
+ordered-float = "5.0.0"
+once_cell = "1.19.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["full"] }
+zstd = "0.13.2"
+rayon = "1.10.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.86"}
+lz4_flex = "0.11.3"
+gloo-utils = "0.2"
+gloo-events = "0.2"
+web-sys = { version = "0.3.77", features = [
+    "console",
+    "IdbRequest",
+    "IdbVersionChangeEvent",
+    "IdbFactory",
+    "Window",
+    "IdbDatabase",
+    "IdbObjectStore",
+    "IdbTransaction",
+    "IdbTransactionMode",
+    "IdbOpenDbRequest",
+    "DomException",
+    "Storage",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
+] }
+tsify = { version = "0.4.5", features = ["js"] }
+wasm-bindgen-futures = "0.4.42"
+js-sys = "0.3.77"
+wasm-bindgen-test = "0.3.50"
+console_error_panic_hook = "0.1.7"
+serde-wasm-bindgen = "0.6.5"

@@ -15,7 +15,7 @@ use web_sys::IdbDatabase;
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 
-use crate::graph::{self, types::*, Graph};
+use crate::{types::*, Graph};
 use std::sync::{Arc, Mutex};
 
 /// Command trait defining the interface for all graph operations

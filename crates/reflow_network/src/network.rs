@@ -9,10 +9,12 @@ use futures::future::lazy;
 use gloo_utils::format::JsValueSerdeExt;
 #[cfg(not(target_arch = "wasm32"))]
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use reflow_actor::ActorContext;
 #[cfg(not(target_arch = "wasm32"))]
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use tokio::task::JoinHandle;
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
 #[cfg(target_arch = "wasm32")]
@@ -21,7 +23,7 @@ use wasm_bindgen::closure::Closure;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use rusty_pool::ThreadPool;
+// use rusty_pool::ThreadPool;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -41,33 +43,26 @@ use crate::actor::ActorChannel;
 use crate::graph::Graph;
 use crate::graph::types::{GraphConnection, GraphEdge, GraphEvents, GraphIIP, GraphNode};
 use crate::message::{CompressionConfig, EncodableValue, EncodedMessage, Message, MessageError};
+use crate::tracing::{TracingClient, TracingConfig, TracingIntegration};
 
 use crate::connector::{ConnectionPoint, Connector, InitialPacket};
-use std::sync::{Arc, Mutex};
 use serde_json::json;
+use std::sync::{Arc, Mutex};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 pub struct NetworkConfig {
-    /// Size of worker threads this network should use
-    pub pool_size: usize,
-    /// Max size of worker threads
-    pub max_pool_size: usize,
-    /// How long  should a worker run before it is shutdown
-    pub keep_alive: Duration,
-
     pub compression: CompressionConfig,
+    pub tracing: TracingConfig,
 }
 
 impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
-            pool_size: num_cpus::get(),
-            max_pool_size: num_cpus::get() * 2,
-            keep_alive: Duration::from_secs(3 * 60),
             compression: CompressionConfig::default(),
+            tracing: TracingConfig::default(),
         }
     }
 }
@@ -82,9 +77,7 @@ pub enum NetworkEvent {
     ActorEmit {
         actor_id: String,
         message: EncodableValue,
-    },
-    #[serde(rename_all = "camelCase")]
-    FlowTrace { from: FlowStub, to: FlowStub },
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -100,19 +93,25 @@ pub struct FlowStub {
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
+#[derive(Clone)]
 pub struct Network {
     config: NetworkConfig,
     pub(crate) actors: HashMap<String, Arc<dyn Actor>>,
     pub(crate) initialized_actors: HashMap<String, Arc<dyn Actor>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub (crate) processes: HashMap<String, Arc<JoinHandle<()>>>,
     pub(crate) nodes: HashMap<String, GraphNode>,
     connectors: Vec<Connector>,
     initials: Vec<InitialPacket>,
     pub(crate) network_event_emitter: (flume::Sender<NetworkEvent>, flume::Receiver<NetworkEvent>),
     #[cfg(target_arch = "wasm32")]
     event_handle: Vec<JsValue>,
-    pub(crate) thread_pool: Arc<Mutex<ThreadPool>>,
     compression_config: CompressionConfig,
+    pub(crate) tracing_integration: Option<TracingIntegration>,
 }
+
+unsafe impl Send for Network {}
+unsafe impl Sync for Network {}
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_class = Network)]
@@ -223,7 +222,7 @@ impl Network {
                 .iter()
                 .map(|(port, msg)| (port.to_owned(), Message::from(msg.clone())))
                 .collect::<HashMap<String, Message>>();
-            Self::send_outport_msg(outports, messages).unwrap();
+            outports.0.send(messages)?;
         }
     }
 
@@ -320,56 +319,75 @@ impl Network {
 
 impl Network {
     pub fn new(config: NetworkConfig) -> Self {
+        // Initialize tracing if enabled
+        let tracing_integration = if config.tracing.enabled {
+            let client = TracingClient::new(config.tracing.clone());
+            Some(TracingIntegration::new(client))
+        } else {
+            None
+        };
+
         Self {
             config: config.clone(),
             nodes: HashMap::new(),
             actors: HashMap::new(),
             initialized_actors: HashMap::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            processes:HashMap::new(),
             connectors: Vec::new(),
             initials: Vec::new(),
             network_event_emitter: flume::unbounded(),
             #[cfg(target_arch = "wasm32")]
             event_handle: Vec::new(),
-            thread_pool: Arc::new(Mutex::new(ThreadPool::new(
-                config.pool_size,
-                config.max_pool_size,
-                config.keep_alive,
-            ))),
             compression_config: config.compression,
+            tracing_integration,
         }
     }
 
     pub fn start(&mut self) -> Result<(), anyhow::Error> {
+        let tracing_integration = self.tracing_integration.clone();
+        tokio::runtime::Handle::current().spawn(async move {
+            // Initialize tracing connection if enabled
+            if let Some(ref tracing) = tracing_integration {
+                if let Err(e) = tracing.client().connect().await {
+                    tracing::warn!("Failed to connect to tracing server: {}", e);
+                } else {
+                    // Start a flow trace for this network session
+                    let flow_id = format!("network_session_{}", chrono::Utc::now().timestamp());
+                    if let Ok(trace_id) = tracing.start_flow_trace(&flow_id).await {
+                        tracing::info!("Started network trace: {:?}", trace_id);
+                    }
+                }
+            }
+        });
+
         // Warm up all processes
-        #[cfg(not(target_arch = "wasm32"))]
         {
-
             for (id, node) in self.nodes.clone() {
-
                 let actor = self.actors.get(&node.component).expect(&format!(
                     "Expected to find actor {} for node {}",
                     node.component, id
                 ));
                 let config = ActorConfig::from_node(node.clone())?;
-               
-                Self::init_process(actor.create_process(config), self.thread_pool.clone());
-                self.initialized_actors.insert(id, actor.clone());
-            }
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            for (id, node) in &self.nodes {
-                let actor = self.actors.get(&node.component).expect(&format!(
-                    "Expected to find actor {} for node {}",
-                    node.component, id
-                ));
-               let config = ActorConfig::from_node(node.clone())?;
-                Self::init_process(actor.create_process(config), self.thread_pool.clone());
+
+                let tracing_integration = self.tracing_integration.clone();
+                self.processes.insert(id.clone(), Arc::new(Self::init_process(actor.create_process(config, tracing_integration))));
+
+                self.initialized_actors.insert(id.clone(), actor.clone());
+
+                let tracing_integration = self.tracing_integration.clone();
+                let id = id.clone();
+                // Trace actor creation
+                let _ = tokio::runtime::Handle::current().spawn(async move {
+                    if let Some(ref tracing) = tracing_integration {
+                        let _ = tracing.trace_actor_created(&id);
+                    }
+                });
             }
         }
 
         // Warm up all connectors to begin to recieve messages
-        #[cfg(not(target_arch = "wasm32"))]
+
         {
             // use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
@@ -377,53 +395,9 @@ impl Network {
                 connector.init(self);
             }
         }
-        #[cfg(target_arch = "wasm32")]
-        {
-            for connector in &self.connectors {
-                connector.init(self);
-            }
-        }
 
         // Send all initial packets
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-            for iip in &self.initials {
-                self.send_to_actor(
-                    &iip.to.actor,
-                    &iip.to.port,
-                    iip.to
-                        .initial_data
-                        .clone()
-                        .expect("Expected initial packet to have data"),
-                )
-                .expect("Expected to send initial packet");
 
-                #[cfg(feature = "flowtrace")]
-                {
-                    // Send flow event
-                    let (network_sender, _) = &self.network_event_emitter;
-                    let _ = network_sender.clone().send(NetworkEvent::FlowTrace {
-                        from: FlowStub {
-                            actor_id: "_initial_".to_owned(),
-                            port: "_initial_".to_owned(),
-                            data: Some(
-                                iip.to
-                                    .initial_data
-                                    .unwrap_or(Message::Optional(None))
-                                    .into(),
-                            ),
-                        },
-                        to: FlowStub {
-                            actor_id: iip.to.actor.clone(),
-                            port: iip.to.port.clone(),
-                            data: None,
-                        },
-                    });
-                }
-            }
-        }
-        #[cfg(target_arch = "wasm32")]
         {
             for iip in &self.initials {
                 self.send_to_actor(
@@ -435,30 +409,6 @@ impl Network {
                         .expect("Expected initial packet to have data"),
                 )
                 .expect("Expected to send initial packet");
-
-                #[cfg(feature = "flowtrace")]
-                {
-                    // Send flow event
-                    let (network_sender, _) = &self.network_event_emitter;
-                    let _ = network_sender.clone().send(NetworkEvent::FlowTrace {
-                        from: FlowStub {
-                            actor_id: "_initial_".to_owned(),
-                            port: "_initial_".to_owned(),
-                            data: Some(
-                                iip.to
-                                    .initial_data
-                                    .clone()
-                                    .unwrap_or(Message::Optional(None))
-                                    .into(),
-                            ),
-                        },
-                        to: FlowStub {
-                            actor_id: iip.to.actor.clone(),
-                            port: iip.to.port.clone(),
-                            data: None,
-                        },
-                    });
-                }
             }
         }
 
@@ -467,17 +417,9 @@ impl Network {
 
     pub(crate) fn init_process(
         actor_process: std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>,
-        thread_pool: Arc<Mutex<ThreadPool>>,
-    ) {
-        // let process = actor.create_process(actor_config);
-
+    ) -> JoinHandle<()> {
         #[cfg(not(target_arch = "wasm32"))]
-        //thread_pool.lock().unwrap().spawn(process);
-        let _ = tokio::spawn(async move {
-            actor_process.await;
-        });
-
-        // thread_pool.lock().unwrap().spawn();
+        return tokio::spawn(async move { actor_process.await });
 
         #[cfg(target_arch = "wasm32")]
         spawn_local(actor_process);
@@ -487,19 +429,23 @@ impl Network {
         self.compression_config = config.clone();
     }
 
-    /// Send the message to all the respective outports
-    #[inline]
-    pub(crate) fn send_outport_msg(
-        out_port: Port,
-        messages: HashMap<String, Message>,
-    ) -> Result<(), anyhow::Error> {
-        out_port.0.send(messages)?;
-        Ok(())
-    }
-
     pub fn send_to_actor(&self, id: &str, port: &str, data: Message) -> Result<(), anyhow::Error> {
         if let Some(node) = self.nodes.get(id) {
             let actor = self.actors.get(&node.component).unwrap();
+
+            // Trace the message being sent
+            if let Some(ref tracing) = self.tracing_integration {
+                let message_type = format!("{:?}", std::mem::discriminant(&data));
+                let size_bytes = serde_json::to_string(&data).unwrap_or_default().len();
+                let tracing_clone = tracing.clone();
+                let id_clone = id.to_string();
+                let port_clone = port.to_string();
+                tokio::runtime::Handle::current().spawn(async move {
+                    let _ = tracing_clone
+                        .trace_message_sent(&id_clone, &port_clone, &message_type, size_bytes)
+                        .await;
+                });
+            }
 
             actor
                 .get_inports()
@@ -549,7 +495,12 @@ impl Network {
         Ok(())
     }
 
-    pub fn add_node(&mut self, id: &str, process: &str, metadata: Option<HashMap<String, Value>>) -> Result<(), anyhow::Error> {
+    pub fn add_node(
+        &mut self,
+        id: &str,
+        process: &str,
+        metadata: Option<HashMap<String, Value>>,
+    ) -> Result<(), anyhow::Error> {
         if !self.actors.contains_key(process) {
             return Err(anyhow::Error::msg(format!(
                 "Could not find process '{}' in Network",
@@ -612,7 +563,7 @@ impl Network {
 
         let network_clone = network.clone();
 
-        let _event_worker = async move {
+        let event_worker = async move {
             while let Some(graph_event) = graph_receiver.clone().stream().next().await {
                 if let Ok(mut network) = network_clone.clone().lock() {
                     match graph_event {
@@ -679,34 +630,40 @@ impl Network {
             }
         };
 
-        // TODO: Bind graph events to network
+        // Bind graph events to network
         #[cfg(not(target_arch = "wasm32"))]
         {
-            if let Ok(network) = network.clone().lock() {
-                network.thread_pool.lock().unwrap().spawn(_event_worker);
-            }
+            let _ = tokio::spawn(event_worker);
         }
 
         #[cfg(target_arch = "wasm32")]
-        spawn_local(_event_worker);
+        spawn_local(event_worker);
 
         return network;
     }
 
     /// Shutdown the network and finalize pending tasks
     pub fn shutdown(&self) {
-        // Wait for all active workers to be cleared
-        self.thread_pool
-            .lock()
-            .unwrap()
-            .clone()
-            .shutdown_join_timeout(Duration::from_millis(2500));
-        // Clear all actors
+        let tracing_integration = self.tracing_integration.clone();
+        let _ = tokio::runtime::Handle::current().spawn(async move {
+            // Shutdown tracing first to flush any pending events
+            if let Some(ref tracing) = tracing_integration {
+                if let Err(e) = tracing.client().shutdown().await {
+                    tracing::warn!("Failed to shutdown tracing client: {}", e);
+                }
+            }
+        });
 
+       
+        // Clear all actors
         let active_actors = self.get_active_actors();
         for actor_id in active_actors {
             if let Some(actor) = self.actors.get(&actor_id) {
                 actor.shutdown();
+            }
+            // Abort their processes
+            if let Some(process) = self.processes.get(&actor_id) {
+                process.abort();
             }
         }
     }
@@ -718,23 +675,37 @@ impl Network {
     pub async fn execute_actor(
         &self,
         actor_id: &str,
-        message: Message,
-    ) -> Result<Message, anyhow::Error> {
-        println!(
-            "🎭 Executing actor: {} with message type: {:?}",
-            actor_id,
-            std::mem::discriminant(&message)
-        );
+        payload: HashMap<String, Message>,
+    ) -> Result<HashMap<String, Message>, anyhow::Error> {
+        if let Some(actor) = self.initialized_actors.get(actor_id) {
+            let config = ActorConfig::from_node(self.nodes.get(actor_id).unwrap().clone())?;
 
-        // Placeholder implementation
-        Ok(Message::object(
-            serde_json::json!({
-                "status": "success",
-                "actor_id": actor_id,
-                "timestamp": chrono::Utc::now().timestamp_millis()
-            })
-            .into(),
-        ))
+            let outports = actor.get_outports();
+            let state = Arc::new(parking_lot::Mutex::new(MemoryState(HashMap::new())));
+            let actor_behavior = actor.get_behavior();
+            let load = actor.load_count();
+            match actor_behavior(ActorContext::new(payload, outports, state, config, load)).await {
+                Ok(res) => {
+                    if let Some(tracing) = &self.tracing_integration {
+                        let _ = tracing.trace_actor_completed(actor_id).await;
+                    }
+
+                    return Ok(res)
+                }
+                Err(err) => {
+                    if let Some(ref tracing) = self.tracing_integration {
+                        let tracing_clone = tracing.clone();
+                        let id_clone = actor_id.to_string();
+
+                        let _ = tracing_clone
+                            .trace_actor_failed(&id_clone, err.to_string())
+                            .await;
+                    }
+                }
+            }
+        }
+
+        Ok(HashMap::new())
     }
 
     pub fn get_active_actors(&self) -> Vec<String> {

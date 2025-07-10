@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use parking_lot::Mutex;
-use reflow_network::{actor::{ActorState, Port}, message::Message};
+use reflow_actor::{ActorState, Port, message::Message};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -56,7 +56,7 @@ impl ScriptContext {
     
     /// Get state value by key
     pub fn get_state(&self, key: &str) -> Option<Value> {
-        if let Some(memory_state) = self.state.lock().as_any().downcast_ref::<reflow_network::actor::MemoryState>() {
+        if let Some(memory_state) = self.state.lock().as_any().downcast_ref::<reflow_actor::MemoryState>() {
             memory_state.get(key).cloned()
         } else {
             None
@@ -65,7 +65,7 @@ impl ScriptContext {
     
     /// Set state value by key
     pub fn set_state(&self, key: &str, value: Value) -> Result<()> {
-        if let Some(memory_state) = self.state.lock().as_mut_any().downcast_mut::<reflow_network::actor::MemoryState>() {
+        if let Some(memory_state) = self.state.lock().as_mut_any().downcast_mut::<reflow_actor::MemoryState>() {
             memory_state.insert(key, value);
             Ok(())
         } else {
@@ -77,7 +77,7 @@ impl ScriptContext {
     pub fn to_serializable(&self) -> Result<SerializableContext> {
         let mut state_map = HashMap::new();
         
-        if let Some(memory_state) = self.state.lock().as_any().downcast_ref::<reflow_network::actor::MemoryState>() {
+        if let Some(memory_state) = self.state.lock().as_any().downcast_ref::<reflow_actor::MemoryState>() {
             for (key, value) in &memory_state.0 {
                 state_map.insert(key.clone(), value.clone());
             }

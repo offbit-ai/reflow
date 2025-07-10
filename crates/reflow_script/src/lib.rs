@@ -1,9 +1,10 @@
 use anyhow::Result;
 use parking_lot::{Mutex, RwLock};
-use reflow_network::{
-    actor::{Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port},
+use reflow_actor::{
+    Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
     message::Message,
 };
+use reflow_tracing_protocol::client::TracingIntegration;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 
@@ -142,7 +143,8 @@ impl Actor for ScriptActor {
 
     fn create_process(
         &self,
-        actor_config: ActorConfig
+        actor_config: ActorConfig,
+        tracing_integration: Option<TracingIntegration>
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
@@ -243,7 +245,7 @@ mod tests {
     #[cfg(feature = "python")]
     #[tokio::test]
     async fn test_python_actor() -> Result<()> {
-        use reflow_network::actor::{ActorContext, ActorLoad};
+        use reflow_actor::{ActorContext, ActorLoad};
         use serde_json::json;
         use std::vec;
         use tracing::Level;
@@ -363,7 +365,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let actor_config = ActorConfig::default();
         // Call the behavior function
         // let result = behavior(payload, state, outports.clone()).await;
-        let _ = tokio::spawn(actor.create_process(actor_config));
+        let _ = tokio::spawn(actor.create_process(actor_config, None));
 
         let outports = actor.get_outports();
         let _ = actor.get_inports().0.send_async(payload.clone()).await;

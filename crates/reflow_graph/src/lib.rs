@@ -10,7 +10,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use gloo_utils::format::JsValueSerdeExt;
 use history::*;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
 #[cfg(target_arch = "wasm32")]
@@ -24,27 +24,27 @@ use web_sys::js_sys::Function;
 /// connected to each other with edges.
 /// These graphs can be used for visualization and sketching, but
 /// also are the way to start an FBP network.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct Graph {
     pub(crate) name: String,
-    pub(crate) nodes: HashMap<String, GraphNode>,
-    pub(crate) connections: Vec<GraphConnection>,
+    pub nodes: HashMap<String, GraphNode>,
+    pub connections: Vec<GraphConnection>,
     // Indexed connections for faster connection lookups
     pub(crate) connection_indices: HashMap<(String, String), Vec<usize>>,
     /// Key is ((from_node, from_port), (to_node, to_port)) -> Vec<connection_indices>
     pub(crate) connection_port_indices: HashMap<((String, String), (String, String)), Vec<usize>>,
     pub initializers: Vec<GraphIIP>,
     // Indexed initializers for faster initializer lookups
-    pub(crate) initializer_indices: HashMap<String, Vec<usize>>,
-    pub(crate) groups: Vec<GraphGroup>,
+    pub initializer_indices: HashMap<String, Vec<usize>>,
+    pub groups: Vec<GraphGroup>,
     // Indexed node groups for faster group membership lookups
     pub(crate) node_groups: HashMap<String, HashSet<String>>,
     pub(crate) inports: HashMap<String, GraphEdge>,
     pub(crate) outports: HashMap<String, GraphEdge>,
     pub properties: HashMap<String, Value>,
     pub(crate) case_sensitive: bool,
-    pub(crate) event_channel: (flume::Sender<GraphEvents>, flume::Receiver<GraphEvents>),
+    pub event_channel: (flume::Sender<GraphEvents>, flume::Receiver<GraphEvents>),
     // Cached adjacency lists for faster traversal
     pub(crate) adjacency_lists: HashMap<String, Vec<String>>,
 
@@ -2014,7 +2014,7 @@ impl Graph {
         // Set basic properties
         self.case_sensitive = graph_export.case_sensitive;
         self.properties = graph_export.properties.clone();
-        
+
         // Set name from properties if available
         if let Some(name) = self.properties.get("name") {
             if let Some(name_str) = name.as_str() {

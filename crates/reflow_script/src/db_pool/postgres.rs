@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use parking_lot::{Mutex, RwLock};
-use reflow_network::message::Message;
+use reflow_actor::message::Message;
 use serde_json::Value;
 use std::str::FromStr;
 use std::sync::Arc;

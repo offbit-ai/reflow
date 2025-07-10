@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reflow_network = { path = "../reflow_network" }
+reflow_actor = { path = "../reflow_actor"}
 actor_macro = { path = "../actor_macro" }
+reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
 anyhow = "1.0"
 parking_lot = "0.12"
 serde = { version = "1.0", features = ["derive"] }

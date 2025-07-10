@@ -7,8 +7,9 @@ use std::{collections::HashMap, sync::Arc};
 use actor_macro::actor;
 use anyhow::Error;
 use parking_lot::Mutex;
-use reflow_network::message::EncodableValue;
-use reflow_network::actor::ActorConfig;
+use reflow_actor::message::EncodableValue;
+use reflow_tracing_protocol::client::TracingIntegration;
+use reflow_actor::ActorConfig;
 use crate::{Actor, ActorContext, ActorLoad, ActorBehavior, MemoryState, Message, Port};
 
 /// Stores and retrieves values from persistent state.

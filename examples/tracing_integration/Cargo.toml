@@ -1,0 +1,66 @@
+[package]
+name = "tracing_integration_example"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+# Multiple binaries for different example scenarios
+
+[[bin]]
+name = "monitoring_client"
+path = "src/monitoring_client.rs"
+
+[[bin]]
+name = "complete_example"
+path = "src/complete_example.rs"
+
+[[bin]]
+name = "simple_client"
+path = "src/simple_client.rs"
+
+[dependencies]
+# Core reflow dependencies
+reflow_network = { path = "../../crates/reflow_network" }
+reflow_tracing_protocol = { path = "../../crates/reflow_tracing_protocol" }
+reflow_actor = { path = "../../crates/reflow_actor" }
+reflow_graph = { path = "../../crates/reflow_graph" }
+
+# Async runtime and utilities
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# Serialization and protocol
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# WebSocket and networking
+tokio-tungstenite = "0.20"
+url = "2.4"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# CLI and configuration
+clap = { version = "4.0", features = ["derive"] }
+toml = "0.8"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8"
+flume = "0.11"
+
+# Terminal output formatting
+colored = "2.0"
+indicatif = "0.17"
+
+
+parking_lot = "0.12"
+futures-util = "0.3.31"

@@ -9,6 +9,8 @@ use crate::{
 };
 use actor_macro::actor;
 use parking_lot::Mutex;
+use reflow_tracing_protocol::client::TracingIntegration;
+
 use serde_json::{Map, Value};
 
 use crate::{

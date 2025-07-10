@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: reflow_traces
+      POSTGRES_USER: reflow
+      POSTGRES_PASSWORD: reflow_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reflow -d reflow_traces"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  reflow-tracing:
+    build:
+      context: ../../../
+      dockerfile: examples/tracing_integration/docker/Dockerfile.server
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      REFLOW_TRACING_HOST: 0.0.0.0
+      REFLOW_TRACING_PORT: 8080
+      REFLOW_TRACING_STORAGE_BACKEND: postgres
+      REFLOW_TRACING_POSTGRES_URL: postgresql://reflow:reflow_password@postgres:5432/reflow_traces
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning
+    depends_on:
+      - reflow-tracing
+
+volumes:
+  postgres_data:
+  grafana_data:

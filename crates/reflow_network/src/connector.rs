@@ -1,6 +1,6 @@
 use std::{collections::HashMap, pin::Pin};
 
-use crate::{message::Message, network::Network};
+use crate::{actor::message::Message, network::Network};
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use serde::{Deserialize, Serialize};
@@ -12,7 +12,7 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::spawn_local;
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -32,7 +32,7 @@ impl ConnectionPoint {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
@@ -79,6 +79,9 @@ impl Connector {
 
         let out_ports = from_actor.get_outports();
         let in_ports = to_actor.get_inports();
+        
+        // Clone tracing integration before moving into async block
+        let tracing_integration = network.tracing_integration.clone();
 
         let mut routine = Box::pin(async move {
             while let Some(mut outport_packet) = out_ports.1.clone().stream().next().await {
@@ -108,22 +111,26 @@ impl Connector {
                     );
                 from_actor_load_count.clone().lock().dec();
 
-                #[cfg(feature = "flowtrace")]
-                {
-                    // Send flow event
-                    let (network_sender, _) = network_event_emitter.clone();
-                    let _ = network_sender.clone().send(NetworkEvent::FlowTrace {
-                        from: FlowStub {
-                            actor_id: from_actor_id,
-                            port: _from_port,
-                            data: Some(json!(msg)),
-                        },
-                        to: FlowStub {
-                            actor_id: to_actor_id,
-                            port: to_port,
-                            data: None,
-                        },
-                    });
+
+                // Send tracing event if tracing is enabled
+                if let Some(ref tracing) = tracing_integration {
+                    let message_size = std::mem::size_of_val(&msg);
+                    let _ = tracing.trace_message_sent(
+                        from_actor_id.clone(),
+                        _from_port.clone(),
+                        format!("{:?}", std::mem::discriminant(&msg)),
+                        message_size,
+                    ).await;
+                    
+                    // Trace the data flow between actors
+                    let _ = tracing.trace_data_flow(
+                        from_actor_id.clone(),
+                        _from_port.clone(),
+                        to_actor_id.clone(),
+                        to_port.clone(),
+                        format!("{:?}", std::mem::discriminant(&msg)),
+                        message_size,
+                    ).await;
                 }
             }
         });
@@ -138,7 +145,7 @@ impl Connector {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]

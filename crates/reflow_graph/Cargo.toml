@@ -1,0 +1,55 @@
+[package]
+name = "reflow_graph"
+version = "0.1.0"
+edition = "2021"
+authors = ["Damilare Akinlaja"]
+
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = {workspace = true}
+flume = {workspace = true}
+futures-util = "0.3.31"
+futures = { version = "0.3" }
+chrono = { version = "0.4", features = ["serde"] }
+
+[[bench]]
+name = "graph_bench"
+harness = false
+path = "benches/bench.rs"
+
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.86"}
+lz4_flex = "0.11.3"
+gloo-utils = "0.2"
+gloo-events = "0.2"
+web-sys = { version = "0.3.77", features = [
+    "console",
+    "IdbRequest",
+    "IdbVersionChangeEvent",
+    "IdbFactory",
+    "Window",
+    "IdbDatabase",
+    "IdbObjectStore",
+    "IdbTransaction",
+    "IdbTransactionMode",
+    "IdbOpenDbRequest",
+    "DomException",
+    "Storage",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
+] }
+tsify = { version = "0.4.5", features = ["js"] }
+wasm-bindgen-futures = "0.4.42"
+js-sys = "0.3.77"
+wasm-bindgen-test = "0.3.50"
+console_error_panic_hook = "0.1.7"
+serde-wasm-bindgen = "0.6.5"

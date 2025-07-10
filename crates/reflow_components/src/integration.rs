@@ -3,12 +3,13 @@
 //! This module contains components that facilitate interaction with external systems.
 
 use std::{collections::HashMap, sync::Arc};
-use reflow_network::actor::ActorConfig;
+use reflow_actor::ActorConfig;
 use actor_macro::actor;
 use anyhow::Error;
 
 use parking_lot::Mutex;
-use reflow_network::message::EncodableValue;
+use reflow_actor::message::EncodableValue;
+use reflow_tracing_protocol::client::TracingIntegration;
 use reqwest::header::HeaderName;
 use serde_json::json;
 

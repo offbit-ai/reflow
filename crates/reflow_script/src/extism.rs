@@ -2,7 +2,7 @@ use super::{Message, ScriptConfig, ScriptEngine};
 use anyhow::Result;
 use extism::{Function, Manifest, Plugin, Val, ValType, Wasm, WasmMetadata, convert::Json};
 
-use reflow_network::actor::MemoryState;
+use reflow_actor::MemoryState;
 use serde_json::json;
 use std::{
     collections::HashMap,
@@ -26,7 +26,7 @@ impl ExtismEngine {
     fn create_host_functions(
         &self,
         outports_sender: flume::Sender<HashMap<String, Message>>,
-        state: Arc<parking_lot::Mutex<dyn reflow_network::actor::ActorState>>,
+        state: Arc<parking_lot::Mutex<dyn reflow_actor::ActorState>>,
     ) -> Vec<Function> {
         let mut functions = Vec::new();
 
@@ -217,7 +217,7 @@ mod tests {
     use super::*;
     use crate::{ScriptEnvironment, ScriptRuntime};
     use parking_lot::Mutex;
-    use reflow_network::actor::{MemoryState, Port};
+    use reflow_actor::{MemoryState, Port};
     use std::sync::Arc;
 
     fn test_config(source: Vec<u8>) -> ScriptConfig {

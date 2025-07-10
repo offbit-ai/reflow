@@ -12,10 +12,13 @@ path = "src/lib.rs"
 doctest = false
 
 [dependencies]
+reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = {workspace = true}
+reflow_graph ={ path = "../reflow_graph" }
+reflow_actor ={ path = "../reflow_actor" }
 actor_macro = { path = "../actor_macro" }
 parking_lot = {workspace = true}
 flate2 = "1.0.35"
@@ -49,6 +52,14 @@ rayon = "1.10.0"
 reqwest = {version = "0.12.20", features = ["json"]}
 tokio-tungstenite = "0.27.0"
 uuid = {workspace = true, features = ["v4"]}
+hostname = "0.4.1"
+semver = "1.0.26"
+sha2 = "0.10.9"
+prometheus = "0.14.0"
+lz4_flex = "0.11.3"
+brotli = "7.0.0"
+
+
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2.86"}
@@ -88,10 +99,7 @@ flowtrace = []
 default = []
 wasm = []
 
-[[bench]]
-name = "graph_bench"
-harness = false
-path = "benches/bench.rs"
+
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.50"
