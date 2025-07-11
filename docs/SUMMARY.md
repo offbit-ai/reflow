@@ -25,6 +25,19 @@
 
 ---
 
+# Observability
+
+- [Observability Overview](observability/overview.md)
+- [Quick Start Guide](observability/getting-started.md)
+- [Architecture](observability/architecture.md)
+- [Event Types](observability/event-types.md)
+- [Data Flow Tracing](observability/data-flow-tracing.md)
+- [Configuration](observability/configuration.md)
+- [Storage Backends](observability/storage-backends.md)
+- [Production Deployment](observability/deployment.md)
+
+---
+
 # API Documentation
 
 - [Working with Actors](api/actors/creating-actors.md)

@@ -2,13 +2,44 @@ use crate::context::ScriptContext;
 
 use super::{Message, ScriptConfig, ScriptEngine};
 use anyhow::Result;
-use deno_runtime::deno_core::{serde_v8, v8};
 use flume::{Receiver, Sender};
 use futures::executor::block_on;
 use parking_lot::Mutex;
-use reflow_js::JavascriptRuntime;
+use reflow_js::{JavascriptRuntime, CallbackHandle};
 use serde_json::{Value, json};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
+
+/// Convert reflow_js::Message to reflow_script::Message
+fn convert_js_message_to_script_message(js_msg: reflow_js::Message) -> Message {
+    match js_msg {
+        reflow_js::Message::Flow => Message::Flow,
+        reflow_js::Message::Integer(i) => Message::Integer(i),
+        reflow_js::Message::Float(f) => Message::Float(f),
+        reflow_js::Message::String(s) => Message::String(s),
+        reflow_js::Message::Boolean(b) => Message::Boolean(b),
+        reflow_js::Message::Array(arr) => {
+            let converted: Vec<Message> = arr
+                .into_iter()
+                .map(convert_js_message_to_script_message)
+                .collect();
+            Message::Array(converted)
+        }
+        reflow_js::Message::Object(obj) => {
+            let converted: HashMap<String, Message> = obj
+                .into_iter()
+                .map(|(k, v)| (k, convert_js_message_to_script_message(v)))
+                .collect();
+            Message::Object(converted)
+        }
+        reflow_js::Message::Optional(opt) => {
+            match opt {
+                Some(boxed_msg) => Message::Optional(Some(Box::new(convert_js_message_to_script_message(*boxed_msg)))),
+                None => Message::Optional(None),
+            }
+        }
+        reflow_js::Message::Any(value) => Message::Any(value),
+    }
+}
 
 #[derive(Clone)]
 pub struct JavaScriptEngine {
@@ -230,80 +261,33 @@ impl ScriptEngine for JavaScriptEngine {
             let mut runtime = runtime.lock();
 
             let (outports_send, _) = context.outports.clone();
-            {
-                let mut worker = runtime.worker.write();
-                let scope = &mut worker.js_runtime.handle_scope();
-
-                let num = scope.get_number_of_data_slots();
-                scope.set_data(num, Box::into_raw(Box::new(outports_send)) as *mut _);
-            }
-
-            let send_output_fn = {
-                fn callback(
-                    scope: &mut v8::HandleScope,
-                    args: v8::FunctionCallbackArguments,
-                    mut rv: v8::ReturnValue,
-                ) {
-                    let error_key = v8::String::new(scope, "error").unwrap();
-                    let error_wrapper = v8::Object::new(scope);
-
-                    let sender = unsafe {
-                        let slot = scope.get_number_of_data_slots();
-                        let data = scope.get_data(slot) as *mut Sender<HashMap<String, Message>>;
-                        let sender = data.read();
-                        sender
-                    };
-
-                    if args.length() < 2 {
-                        let error_msg =
-                            v8::String::new(scope, "Invalid number of arguments.").unwrap();
-                        error_wrapper.set(scope, error_key.into(), error_msg.into());
-                        rv.set(error_wrapper.into());
-                        return;
+            
+            // Convert reflow_script Message to reflow_js Message for the callback
+            let js_sender = {
+                let (tx, rx) = flume::unbounded();
+                let script_sender = outports_send.clone();
+                std::thread::spawn(move || {
+                    while let Ok(msg_map) = rx.recv() {
+                        let converted_map: HashMap<String, Message> = msg_map
+                            .into_iter()
+                            .map(|(k, v)| (k, convert_js_message_to_script_message(v)))
+                            .collect();
+                        let _ = script_sender.send(converted_map);
                     }
-
-                    let port = args.get(0).to_rust_string_lossy(scope);
-
-                    // Convert the message to a JSON value
-                    let message = args.get(1).clone();
-
-                    let message_value = serde_v8::from_v8(scope, message).unwrap();
-                    let message_value: Message =
-                        serde_json::from_value::<serde_json::Value>(message_value)
-                            .unwrap()
-                            .into();
-
-                    let mut results = HashMap::new();
-                    results.insert(port.to_string(), message_value);
-                    if let Err(e) = sender.send(results) {
-                        let error_msg =
-                            v8::String::new(scope, &format!("Failed to send output: {}", e))
-                                .unwrap();
-                        error_wrapper.set(scope, error_key.into(), error_msg.into());
-                        rv.set(error_wrapper.into());
-                        return;
-                    }
-
-                    rv.set_undefined();
-                }
-
-                let mut worker = runtime.worker.write();
-                let scope = &mut worker.js_runtime.handle_scope();
-
-                let func = v8::FunctionTemplate::new(scope, callback);
-                let func: v8::Local<v8::Value> = func.get_function(scope).unwrap().into();
-                v8::Global::new(scope, func)
+                });
+                tx
             };
+
+            // Use the factory method to create the callback
+            let send_output_fn = runtime.create_send_output_callback(js_sender);
+            
             let _context_obj = runtime.create_object();
-            let _context_obj =
-                runtime.object_set_property(_context_obj, "send_output", send_output_fn.into());
-            let context_obj = {
-                let mut worker = runtime.worker.write();
-                let scope = &mut worker.js_runtime.handle_scope();
-                let v: v8::Local<v8::Value> = v8::Local::new(scope, _context_obj).into();
-                let gv = v8::Global::new(scope, v);
-                gv
-            };
+            let _context_obj = runtime.object_set_property_with_callback(
+                _context_obj, 
+                "send_output", 
+                send_output_fn
+            );
+            let context_obj = runtime.obj_to_value(_context_obj);
             let inputs = runtime
                 .convert_value_from_rust(json!(context.inputs))
                 .expect("Failed to convert input to javascript value");

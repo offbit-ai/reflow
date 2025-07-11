@@ -3,7 +3,7 @@
 use super::*;
 use reflow_actor::message::Message;
 use crate::network::Network;
-use crate::tracing::storage::TraceStorageError;
+use crate::storage::sqlite::TraceStorageError;
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use tokio::time::{Duration, Instant};

@@ -1,0 +1,720 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Storage Backends - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/observability/storage-backends.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="storage-backends"><a class="header" href="#storage-backends">Storage Backends</a></h1>
+<p>Reflow's observability framework supports multiple storage backends to accommodate different operational requirements, from development and testing to large-scale production deployments.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>The tracing system provides a pluggable storage architecture that allows you to choose the most appropriate backend for your needs:</p>
+<ul>
+<li><strong>Memory Storage</strong>: Fast, ephemeral storage for development and testing</li>
+<li><strong>SQLite Storage</strong>: Lightweight, embedded database for small to medium deployments</li>
+<li><strong>PostgreSQL Storage</strong>: Robust, scalable database for production environments</li>
+<li><strong>ClickHouse Storage</strong>: High-performance analytical database for massive scale</li>
+<li><strong>Custom Storage</strong>: Implement your own storage adapter</li>
+</ul>
+<h2 id="memory-storage"><a class="header" href="#memory-storage">Memory Storage</a></h2>
+<h3 id="when-to-use"><a class="header" href="#when-to-use">When to Use</a></h3>
+<ul>
+<li>Development and testing environments</li>
+<li>Temporary trace analysis</li>
+<li>Systems with limited persistence requirements</li>
+<li>Quick prototyping and debugging</li>
+</ul>
+<h3 id="configuration"><a class="header" href="#configuration">Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::MemoryStorage;
+
+let storage = MemoryStorage::new();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<ul>
+<li><strong>Ultra-fast</strong>: No disk I/O overhead</li>
+<li><strong>Zero configuration</strong>: Works out of the box</li>
+<li><strong>Bounded capacity</strong>: Configurable memory limits</li>
+<li><strong>Automatic cleanup</strong>: LRU eviction when capacity is reached</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::{MemoryStorage, MemoryConfig};
+
+let config = MemoryConfig {
+    max_traces: 10_000,
+    max_events_per_trace: 1_000,
+    max_memory_mb: 256,
+    eviction_policy: EvictionPolicy::LRU,
+};
+
+let storage = MemoryStorage::with_config(config);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="limitations"><a class="header" href="#limitations">Limitations</a></h3>
+<ul>
+<li><strong>No persistence</strong>: Data lost on restart</li>
+<li><strong>Memory bound</strong>: Limited by available RAM</li>
+<li><strong>Single process</strong>: No sharing between instances</li>
+<li><strong>No complex queries</strong>: Basic filtering only</li>
+</ul>
+<h2 id="sqlite-storage"><a class="header" href="#sqlite-storage">SQLite Storage</a></h2>
+<h3 id="when-to-use-1"><a class="header" href="#when-to-use-1">When to Use</a></h3>
+<ul>
+<li>Small to medium production deployments</li>
+<li>Single-node applications</li>
+<li>Applications requiring persistence without database administration</li>
+<li>Development environments with persistence needs</li>
+</ul>
+<h3 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::SqliteStorage;
+
+let storage = SqliteStorage::new("traces.db").await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
+<ul>
+<li><strong>Persistent</strong>: Data survives restarts</li>
+<li><strong>ACID transactions</strong>: Data integrity guarantees</li>
+<li><strong>Full SQL support</strong>: Complex queries and analysis</li>
+<li><strong>Embedded</strong>: No separate database server required</li>
+<li><strong>Backup friendly</strong>: Single file for easy backups</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::{SqliteStorage, SqliteConfig};
+
+let config = SqliteConfig {
+    database_path: "traces.db".to_string(),
+    journal_mode: JournalMode::WAL,
+    synchronous: SynchronousMode::Normal,
+    cache_size_mb: 64,
+    busy_timeout_ms: 5000,
+    max_connections: 10,
+};
+
+let storage = SqliteStorage::with_config(config).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="performance-tuning"><a class="header" href="#performance-tuning">Performance Tuning</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Optimize for write performance
+let fast_config = SqliteConfig {
+    journal_mode: JournalMode::WAL,      // Write-Ahead Logging
+    synchronous: SynchronousMode::Normal, // Balanced durability/speed
+    cache_size_mb: 128,                  // Larger cache
+    busy_timeout_ms: 10000,              // Handle contention
+    ..Default::default()
+};
+
+// Optimize for read performance
+let read_config = SqliteConfig {
+    cache_size_mb: 256,                  // Very large cache
+    temp_store: TempStore::Memory,       // In-memory temp tables
+    mmap_size_mb: 512,                   // Memory-mapped I/O
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="limitations-1"><a class="header" href="#limitations-1">Limitations</a></h3>
+<ul>
+<li><strong>Single writer</strong>: Write concurrency limited</li>
+<li><strong>File size</strong>: Large databases can become unwieldy</li>
+<li><strong>Network access</strong>: No remote access without additional tools</li>
+</ul>
+<h2 id="postgresql-storage"><a class="header" href="#postgresql-storage">PostgreSQL Storage</a></h2>
+<h3 id="when-to-use-2"><a class="header" href="#when-to-use-2">When to Use</a></h3>
+<ul>
+<li>Production environments with multiple instances</li>
+<li>High-concurrency applications</li>
+<li>Applications requiring advanced SQL features</li>
+<li>Distributed systems</li>
+<li>Long-term data retention requirements</li>
+</ul>
+<h3 id="configuration-2"><a class="header" href="#configuration-2">Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::PostgresStorage;
+
+let storage = PostgresStorage::new("postgresql://user:pass@localhost/traces").await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
+<ul>
+<li><strong>High concurrency</strong>: Excellent multi-client performance</li>
+<li><strong>ACID compliance</strong>: Strong consistency guarantees</li>
+<li><strong>Advanced SQL</strong>: Window functions, CTEs, advanced analytics</li>
+<li><strong>JSON support</strong>: Native support for trace event JSON</li>
+<li><strong>Partitioning</strong>: Time-based table partitioning</li>
+<li><strong>Replication</strong>: Built-in streaming replication</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::{PostgresStorage, PostgresConfig};
+
+let config = PostgresConfig {
+    connection_url: "postgresql://user:pass@localhost/traces".to_string(),
+    max_connections: 20,
+    min_connections: 5,
+    connection_timeout_ms: 5000,
+    idle_timeout_ms: 600000,
+    max_lifetime_ms: 1800000,
+    schema_name: "tracing".to_string(),
+    enable_partitioning: true,
+    partition_interval: PartitionInterval::Daily,
+};
+
+let storage = PostgresStorage::with_config(config).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="schema-setup"><a class="header" href="#schema-setup">Schema Setup</a></h3>
+<pre><code class="language-sql">-- Create dedicated schema
+CREATE SCHEMA IF NOT EXISTS tracing;
+
+-- Create partitioned tables
+CREATE TABLE tracing.traces (
+    trace_id UUID PRIMARY KEY,
+    flow_id VARCHAR(255) NOT NULL,
+    execution_id UUID NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    status VARCHAR(50) NOT NULL,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+) PARTITION BY RANGE (start_time);
+
+CREATE TABLE tracing.events (
+    event_id UUID PRIMARY KEY,
+    trace_id UUID NOT NULL REFERENCES tracing.traces(trace_id),
+    timestamp TIMESTAMPTZ NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    actor_id VARCHAR(255) NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+) PARTITION BY RANGE (timestamp);
+
+-- Create indexes for performance
+CREATE INDEX idx_traces_flow_id ON tracing.traces(flow_id);
+CREATE INDEX idx_traces_start_time ON tracing.traces(start_time);
+CREATE INDEX idx_events_trace_id ON tracing.events(trace_id);
+CREATE INDEX idx_events_timestamp ON tracing.events(timestamp);
+CREATE INDEX idx_events_actor_id ON tracing.events(actor_id);
+CREATE INDEX idx_events_type ON tracing.events(event_type);
+
+-- GIN index for JSON queries
+CREATE INDEX idx_events_data_gin ON tracing.events USING GIN(data);
+</code></pre>
+<h3 id="partitioning-management"><a class="header" href="#partitioning-management">Partitioning Management</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Automatic partition management
+let config = PostgresConfig {
+    enable_partitioning: true,
+    partition_interval: PartitionInterval::Daily,
+    partition_retention_days: 30,
+    auto_create_partitions: true,
+    ..Default::default()
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="performance-optimization"><a class="header" href="#performance-optimization">Performance Optimization</a></h3>
+<pre><code class="language-sql">-- Optimize PostgreSQL configuration
+ALTER SYSTEM SET shared_buffers = '256MB';
+ALTER SYSTEM SET effective_cache_size = '1GB';
+ALTER SYSTEM SET maintenance_work_mem = '64MB';
+ALTER SYSTEM SET checkpoint_completion_target = 0.9;
+ALTER SYSTEM SET wal_buffers = '16MB';
+ALTER SYSTEM SET default_statistics_target = 100;
+SELECT pg_reload_conf();
+</code></pre>
+<h2 id="clickhouse-storage"><a class="header" href="#clickhouse-storage">ClickHouse Storage</a></h2>
+<h3 id="when-to-use-3"><a class="header" href="#when-to-use-3">When to Use</a></h3>
+<ul>
+<li>Very high-volume trace data (millions of events per second)</li>
+<li>Analytical workloads and reporting</li>
+<li>Time-series analysis</li>
+<li>Long-term data retention with compression</li>
+<li>Real-time dashboards and monitoring</li>
+</ul>
+<h3 id="configuration-3"><a class="header" href="#configuration-3">Configuration</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::ClickHouseStorage;
+
+let storage = ClickHouseStorage::new("http://localhost:8123").await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
+<ul>
+<li><strong>Columnar storage</strong>: Excellent compression and analytical performance</li>
+<li><strong>Distributed architecture</strong>: Horizontal scaling</li>
+<li><strong>Real-time ingestion</strong>: Handle massive write loads</li>
+<li><strong>Advanced analytics</strong>: Built-in analytical functions</li>
+<li><strong>Time-series optimized</strong>: Purpose-built for time-ordered data</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::{ClickHouseStorage, ClickHouseConfig};
+
+let config = ClickHouseConfig {
+    url: "http://clickhouse:8123".to_string(),
+    database: "tracing".to_string(),
+    cluster: Some("cluster".to_string()),
+    username: Some("default".to_string()),
+    password: None,
+    compression: CompressionMethod::LZ4,
+    batch_size: 10000,
+    flush_interval_ms: 5000,
+    max_memory_usage: 1_000_000_000, // 1GB
+    max_execution_time_ms: 300_000,   // 5 minutes
+};
+
+let storage = ClickHouseStorage::with_config(config).await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="schema-design"><a class="header" href="#schema-design">Schema Design</a></h3>
+<pre><code class="language-sql">-- Optimized ClickHouse schema
+CREATE TABLE tracing.events_local ON CLUSTER cluster (
+    timestamp DateTime64(3),
+    trace_id UUID,
+    event_id UUID,
+    flow_id String,
+    execution_id UUID,
+    event_type LowCardinality(String),
+    actor_id String,
+    port String,
+    message_type String,
+    message_size UInt32,
+    execution_time_ns UInt64,
+    memory_usage UInt64,
+    cpu_usage Float32,
+    data String -- JSON as string for flexibility
+) ENGINE = ReplicatedMergeTree('/clickhouse/tables/{cluster}/{shard}/events', '{replica}')
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (timestamp, trace_id, event_id)
+SETTINGS index_granularity = 8192;
+
+-- Distributed table
+CREATE TABLE tracing.events ON CLUSTER cluster AS tracing.events_local
+ENGINE = Distributed(cluster, tracing, events_local, rand());
+
+-- Materialized views for aggregations
+CREATE MATERIALIZED VIEW tracing.event_metrics
+ENGINE = SummingMergeTree()
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (timestamp, actor_id, event_type)
+AS SELECT
+    toStartOfMinute(timestamp) as timestamp,
+    actor_id,
+    event_type,
+    count() as event_count,
+    avg(execution_time_ns) as avg_execution_time,
+    max(execution_time_ns) as max_execution_time,
+    sum(message_size) as total_bytes
+FROM tracing.events_local
+GROUP BY timestamp, actor_id, event_type;
+</code></pre>
+<h3 id="performance-tuning-1"><a class="header" href="#performance-tuning-1">Performance Tuning</a></h3>
+<pre><code class="language-xml">&lt;!-- ClickHouse configuration --&gt;
+&lt;yandex&gt;
+    &lt;profiles&gt;
+        &lt;default&gt;
+            &lt;max_memory_usage&gt;10000000000&lt;/max_memory_usage&gt;
+            &lt;use_uncompressed_cache&gt;1&lt;/use_uncompressed_cache&gt;
+            &lt;load_balancing&gt;random&lt;/load_balancing&gt;
+        &lt;/default&gt;
+    &lt;/profiles&gt;
+    
+    &lt;users&gt;
+        &lt;default&gt;
+            &lt;profile&gt;default&lt;/profile&gt;
+            &lt;networks incl="networks" replace="replace"&gt;
+                &lt;ip&gt;::/0&lt;/ip&gt;
+            &lt;/networks&gt;
+        &lt;/default&gt;
+    &lt;/users&gt;
+&lt;/yandex&gt;
+</code></pre>
+<h2 id="custom-storage-implementation"><a class="header" href="#custom-storage-implementation">Custom Storage Implementation</a></h2>
+<h3 id="storage-trait"><a class="header" href="#storage-trait">Storage Trait</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use async_trait::async_trait;
+use reflow_tracing::storage::{StorageBackend, StorageError};
+
+#[async_trait]
+pub trait StorageBackend: Send + Sync {
+    async fn store_trace(&amp;self, trace: FlowTrace) -&gt; Result&lt;(), StorageError&gt;;
+    async fn get_trace(&amp;self, trace_id: TraceId) -&gt; Result&lt;Option&lt;FlowTrace&gt;, StorageError&gt;;
+    async fn query_traces(&amp;self, query: TraceQuery) -&gt; Result&lt;Vec&lt;FlowTrace&gt;, StorageError&gt;;
+    async fn store_event(&amp;self, trace_id: TraceId, event: TraceEvent) -&gt; Result&lt;(), StorageError&gt;;
+    async fn get_events(&amp;self, trace_id: TraceId) -&gt; Result&lt;Vec&lt;TraceEvent&gt;, StorageError&gt;;
+    async fn health_check(&amp;self) -&gt; Result&lt;(), StorageError&gt;;
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="example-redis-storage"><a class="header" href="#example-redis-storage">Example: Redis Storage</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use redis::{Client, Connection};
+use reflow_tracing::storage::{StorageBackend, StorageError};
+
+pub struct RedisStorage {
+    client: Client,
+}
+
+impl RedisStorage {
+    pub fn new(url: &amp;str) -&gt; Result&lt;Self, StorageError&gt; {
+        let client = Client::open(url)?;
+        Ok(Self { client })
+    }
+}
+
+#[async_trait]
+impl StorageBackend for RedisStorage {
+    async fn store_trace(&amp;self, trace: FlowTrace) -&gt; Result&lt;(), StorageError&gt; {
+        let mut conn = self.client.get_connection()?;
+        let key = format!("trace:{}", trace.trace_id);
+        let value = serde_json::to_string(&amp;trace)?;
+        
+        redis::cmd("SET")
+            .arg(&amp;key)
+            .arg(&amp;value)
+            .arg("EX")
+            .arg(3600) // 1 hour TTL
+            .query(&amp;mut conn)?;
+            
+        Ok(())
+    }
+    
+    async fn get_trace(&amp;self, trace_id: TraceId) -&gt; Result&lt;Option&lt;FlowTrace&gt;, StorageError&gt; {
+        let mut conn = self.client.get_connection()?;
+        let key = format!("trace:{}", trace_id);
+        
+        let value: Option&lt;String&gt; = redis::cmd("GET")
+            .arg(&amp;key)
+            .query(&amp;mut conn)?;
+            
+        match value {
+            Some(json) =&gt; Ok(Some(serde_json::from_str(&amp;json)?)),
+            None =&gt; Ok(None),
+        }
+    }
+    
+    // Implement other methods...
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="storage-selection-guide"><a class="header" href="#storage-selection-guide">Storage Selection Guide</a></h2>
+<h3 id="decision-matrix"><a class="header" href="#decision-matrix">Decision Matrix</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Memory</th><th>SQLite</th><th>PostgreSQL</th><th>ClickHouse</th><th>Custom</th></tr></thead><tbody>
+<tr><td><strong>Persistence</strong></td><td>❌</td><td>✅</td><td>✅</td><td>✅</td><td>Depends</td></tr>
+<tr><td><strong>Concurrency</strong></td><td>Medium</td><td>Low</td><td>High</td><td>Very High</td><td>Depends</td></tr>
+<tr><td><strong>Scale</strong></td><td>Small</td><td>Medium</td><td>Large</td><td>Massive</td><td>Depends</td></tr>
+<tr><td><strong>Setup Complexity</strong></td><td>None</td><td>Low</td><td>Medium</td><td>High</td><td>Varies</td></tr>
+<tr><td><strong>Query Flexibility</strong></td><td>Limited</td><td>High</td><td>Very High</td><td>High</td><td>Depends</td></tr>
+<tr><td><strong>Analytics</strong></td><td>Basic</td><td>Good</td><td>Excellent</td><td>Outstanding</td><td>Depends</td></tr>
+<tr><td><strong>Operational Overhead</strong></td><td>None</td><td>Low</td><td>Medium</td><td>High</td><td>Varies</td></tr>
+</tbody></table>
+</div>
+<h3 id="recommendations"><a class="header" href="#recommendations">Recommendations</a></h3>
+<p><strong>Development/Testing</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Quick start with memory storage
+let storage = MemoryStorage::new();
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Small Production</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// SQLite for simple deployments
+let storage = SqliteStorage::new("traces.db").await?;
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Medium Production</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// PostgreSQL for robust applications
+let storage = PostgresStorage::new("postgresql://...").await?;
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Large Scale/Analytics</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ClickHouse for high-volume scenarios
+let storage = ClickHouseStorage::new("http://clickhouse:8123").await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="migration-between-backends"><a class="header" href="#migration-between-backends">Migration Between Backends</a></h2>
+<h3 id="exportimport-tool"><a class="header" href="#exportimport-tool">Export/Import Tool</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::migration::StorageMigrator;
+
+// Migrate from SQLite to PostgreSQL
+let migrator = StorageMigrator::new(
+    SqliteStorage::new("traces.db").await?,
+    PostgresStorage::new("postgresql://...").await?
+);
+
+migrator.migrate_all_traces().await?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="backup-and-restore"><a class="header" href="#backup-and-restore">Backup and Restore</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Backup to file
+let backup_path = "traces_backup.json";
+storage.export_to_file(backup_path).await?;
+
+// Restore from file
+storage.import_from_file(backup_path).await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="monitoring-storage-performance"><a class="header" href="#monitoring-storage-performance">Monitoring Storage Performance</a></h2>
+<h3 id="metrics-collection"><a class="header" href="#metrics-collection">Metrics Collection</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing::storage::StorageMetrics;
+
+let metrics = storage.get_metrics().await?;
+println!("Storage performance:");
+println!("  Write latency: {}ms", metrics.avg_write_latency_ms);
+println!("  Read latency: {}ms", metrics.avg_read_latency_ms);
+println!("  Storage size: {}MB", metrics.storage_size_mb);
+println!("  Query performance: {}ms", metrics.avg_query_latency_ms);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="health-monitoring"><a class="header" href="#health-monitoring">Health Monitoring</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Regular health checks
+tokio::spawn(async move {
+    loop {
+        match storage.health_check().await {
+            Ok(_) =&gt; println!("Storage healthy"),
+            Err(e) =&gt; eprintln!("Storage unhealthy: {}", e),
+        }
+        tokio::time::sleep(Duration::from_secs(30)).await;
+    }
+});
+<span class="boring">}</span></code></pre></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<ol>
+<li><strong>Choose Appropriate Backend</strong>: Match storage backend to your scale and requirements</li>
+<li><strong>Plan for Growth</strong>: Start simple but design for scale</li>
+<li><strong>Monitor Performance</strong>: Track storage metrics and query performance</li>
+<li><strong>Regular Backups</strong>: Implement automated backup strategies</li>
+<li><strong>Partition Large Tables</strong>: Use time-based partitioning for better performance</li>
+<li><strong>Index Strategically</strong>: Create indexes for common query patterns</li>
+<li><strong>Manage Retention</strong>: Implement data retention policies to control growth</li>
+<li><strong>Test Disaster Recovery</strong>: Regularly test backup and restore procedures</li>
+<li><strong>Optimize Queries</strong>: Use EXPLAIN to understand and optimize query performance</li>
+<li><strong>Monitor Resources</strong>: Keep an eye on disk space, memory, and CPU usage</li>
+</ol>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../observability/configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../observability/deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../observability/configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../observability/deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

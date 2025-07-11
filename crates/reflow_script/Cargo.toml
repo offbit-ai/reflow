@@ -32,15 +32,14 @@ tracing-subscriber = "0.3"
 lazy_static = "1.4.0"
 base64 = "0.22.1"
 
-# Database support  
-rusqlite = { version = "0.34.0", optional = true }
+# Database support (only available when database features are enabled)
+sqlx = { version = "0.8.2", optional = true, default-features = false }
 tokio-postgres = { version = "0.7.10", optional = true }
 deadpool-postgres = { version = "0.14.1", optional = true }
 
 # Optional runtimes
-reflow_js = { path = "../reflow_js", optional = true }
+# reflow_js = { path = "../reflow_js", optional = true }
 reflow_py = { path = "../reflow_py", optional = true }
-deno_runtime = {version = "0.205.0", optional = true, default-features = false, features = ["include_js_files_for_snapshotting"] }
 
 # Extism plugin support
 extism = {version = "1.10.0", optional = true}
@@ -49,11 +48,11 @@ extism = {version = "1.10.0", optional = true}
 wasm-bindgen-test = "0.3.50"
 
 [features]
-default = ["python", "extism", "postgres"]
+default = ["python", "extism", "db"]
 db = ["sqlite", "postgres"]
 python = ["reflow_py"]
-deno = ["dep:reflow_js", "dep:deno_runtime"]
+# deno = ["dep:reflow_js"]
 extism = ["dep:extism"]
 webworker = []
-sqlite = ["dep:rusqlite"]
-postgres = ["dep:tokio-postgres", "dep:deadpool-postgres"]
+sqlite = ["dep:sqlx", "sqlx?/sqlite", "sqlx?/runtime-tokio-rustls", "sqlx?/chrono", "sqlx?/uuid"]
+postgres = ["dep:sqlx", "dep:tokio-postgres", "dep:deadpool-postgres", "sqlx?/postgres", "sqlx?/runtime-tokio-rustls", "sqlx?/chrono", "sqlx?/uuid"]

@@ -15,11 +15,8 @@ uuid = "1.17.0"
 parking_lot = "0.12.3"
 tracing ={ version = "0.1.41"}
 flume = "0.11.0"
-
-# Force a specific version of libsqlite3-sys to resolve conflicts
-[workspace.dependencies.libsqlite3-sys]
-version = "0.32.0"
-
+# Force consistent sqlite version across all dependencies
+libsqlite3-sys = "0.32.0"
 
 [profile.release]
 opt-level = 3

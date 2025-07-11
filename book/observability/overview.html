@@ -1,0 +1,415 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Observability Overview - Reflow Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Comprehensive documentation for the Reflow workflow automation engine - featuring distributed graph network and multi-graph composition">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Reflow Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/reflow-project/reflow/edit/main/docs/docs/observability/overview.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="observability-overview"><a class="header" href="#observability-overview">Observability Overview</a></h1>
+<p>Reflow provides a comprehensive observability framework that enables deep introspection into distributed actor networks. The observability system captures detailed execution traces, performance metrics, and data flow patterns across all components in your system.</p>
+<h2 id="key-features"><a class="header" href="#key-features">Key Features</a></h2>
+<h3 id="-comprehensive-event-tracing"><a class="header" href="#-comprehensive-event-tracing">🔍 <strong>Comprehensive Event Tracing</strong></a></h3>
+<ul>
+<li><strong>Actor Lifecycle</strong>: Track creation, startup, execution, completion, and failures</li>
+<li><strong>Message Flow</strong>: Monitor all message passing between actors with detailed metadata</li>
+<li><strong>Data Flow Tracing</strong>: NEW - Automatic tracing of data flow between connected actors</li>
+<li><strong>State Changes</strong>: Capture state transitions with diff support for time-travel debugging</li>
+<li><strong>Network Events</strong>: Monitor distributed network operations and health</li>
+</ul>
+<h3 id="-real-time-monitoring"><a class="header" href="#-real-time-monitoring">📊 <strong>Real-time Monitoring</strong></a></h3>
+<ul>
+<li><strong>Live Event Streaming</strong>: WebSocket-based real-time event notifications</li>
+<li><strong>Performance Metrics</strong>: CPU usage, memory consumption, throughput measurements</li>
+<li><strong>Custom Dashboards</strong>: Build monitoring interfaces using the WebSocket API</li>
+<li><strong>Alerting</strong>: Set up custom alerts based on event patterns and thresholds</li>
+</ul>
+<h3 id="-flexible-storage"><a class="header" href="#-flexible-storage">🗄️ <strong>Flexible Storage</strong></a></h3>
+<ul>
+<li><strong>SQLite</strong>: Embedded database perfect for development and small deployments</li>
+<li><strong>PostgreSQL</strong>: Production-ready backend with ACID guarantees and concurrent access</li>
+<li><strong>Memory</strong>: High-performance in-memory storage for testing and temporary analysis</li>
+</ul>
+<h3 id="-distributed-tracing"><a class="header" href="#-distributed-tracing">🌐 <strong>Distributed Tracing</strong></a></h3>
+<ul>
+<li><strong>Cross-Network Visibility</strong>: Trace execution across multiple network instances</li>
+<li><strong>Causality Tracking</strong>: Maintain event dependency chains across distributed components</li>
+<li><strong>Span Integration</strong>: Compatible with OpenTelemetry and Jaeger for unified observability</li>
+</ul>
+<h2 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h2>
+<pre><code class="language-mermaid">graph TB
+    subgraph "Client Applications"
+        A1[Actor Network 1]
+        A2[Actor Network 2] 
+        A3[Actor Network N]
+    end
+    
+    subgraph "Tracing Infrastructure"
+        TC[TracingClient]
+        WS[WebSocket Protocol]
+        TS[Tracing Server]
+    end
+    
+    subgraph "Storage Layer"
+        SQLite[(SQLite)]
+        Postgres[(PostgreSQL)]
+        Memory[(Memory)]
+    end
+    
+    subgraph "Analysis &amp; Monitoring"
+        RT[Real-time Dashboard]
+        HQ[Historical Queries]
+        AL[Alerting]
+    end
+    
+    A1 --&gt;|Events| TC
+    A2 --&gt;|Events| TC
+    A3 --&gt;|Events| TC
+    TC --&gt;|BatchedEvents| WS
+    WS --&gt; TS
+    TS --&gt; SQLite
+    TS --&gt; Postgres
+    TS --&gt; Memory
+    TS --&gt;|Live Events| RT
+    TS --&gt;|Query Results| HQ
+    TS --&gt;|Notifications| AL
+</code></pre>
+<h2 id="event-types"><a class="header" href="#event-types">Event Types</a></h2>
+<h3 id="core-actor-events"><a class="header" href="#core-actor-events">Core Actor Events</a></h3>
+<ul>
+<li><strong><code>ActorCreated</code></strong>: Actor instance creation with configuration</li>
+<li><strong><code>ActorStarted</code></strong>: Actor begins execution</li>
+<li><strong><code>ActorCompleted</code></strong>: Successful actor completion</li>
+<li><strong><code>ActorFailed</code></strong>: Actor error with detailed error information</li>
+</ul>
+<h3 id="communication-events"><a class="header" href="#communication-events">Communication Events</a></h3>
+<ul>
+<li><strong><code>MessageSent</code></strong>: Message transmission between actors</li>
+<li><strong><code>MessageReceived</code></strong>: Message reception confirmation</li>
+<li><strong><code>DataFlow</code></strong>:  Automatic data flow tracing between connected actors</li>
+<li><strong><code>PortConnected</code></strong>: Port connection establishment</li>
+<li><strong><code>PortDisconnected</code></strong>: Port disconnection</li>
+</ul>
+<h3 id="system-events"><a class="header" href="#system-events">System Events</a></h3>
+<ul>
+<li><strong><code>StateChanged</code></strong>: Actor state modifications with diffs</li>
+<li><strong><code>NetworkEvent</code></strong>: Distributed network operations</li>
+</ul>
+<h2 id="integration-patterns"><a class="header" href="#integration-patterns">Integration Patterns</a></h2>
+<h3 id="automatic-integration"><a class="header" href="#automatic-integration">Automatic Integration</a></h3>
+<p>The tracing framework integrates automatically with Reflow networks:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_network::{Network, NetworkConfig};
+use reflow_network::tracing::TracingConfig;
+
+// Enable tracing with minimal configuration
+let tracing_config = TracingConfig {
+    server_url: "ws://localhost:8080".to_string(),
+    enabled: true,
+    ..Default::default()
+};
+
+let network_config = NetworkConfig {
+    tracing: tracing_config,
+    ..Default::default()
+};
+
+let network = Network::new(network_config);
+// All actor operations are now automatically traced!
+<span class="boring">}</span></code></pre></pre>
+<h3 id="manual-event-recording"><a class="header" href="#manual-event-recording">Manual Event Recording</a></h3>
+<p>For custom events and detailed control:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use reflow_tracing_protocol::{TraceEvent, TracingIntegration};
+
+// Record custom events
+if let Some(tracing) = global_tracing() {
+    tracing.trace_actor_created("custom_actor").await?;
+    tracing.trace_data_flow(
+        "source_actor", "output",
+        "target_actor", "input",
+        "CustomMessage", 1024
+    ).await?;
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="data-flow-tracing"><a class="header" href="#data-flow-tracing">Data Flow Tracing</a></h2>
+<p>The latest enhancement to the observability framework provides automatic data flow tracing:</p>
+<h3 id="automatic-capture"><a class="header" href="#automatic-capture">Automatic Capture</a></h3>
+<ul>
+<li><strong>Zero Configuration</strong>: Works out-of-the-box with existing actor networks</li>
+<li><strong>Connector Integration</strong>: Captures data flow at the connector level for accuracy</li>
+<li><strong>Bidirectional Tracking</strong>: Traces both source and destination information</li>
+<li><strong>Performance Metadata</strong>: Includes message size, type, and timing information</li>
+</ul>
+<h3 id="rich-context"><a class="header" href="#rich-context">Rich Context</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Data flow events automatically include:
+DataFlow {
+    from_actor: "data_processor",
+    from_port: "output",
+    to_actor: "analytics_engine", 
+    to_port: "input",
+    message_type: "ProcessedData",
+    size_bytes: 2048,
+    timestamp: "2025-01-07T06:00:00Z",
+    causality_chain: [...],
+    performance_metrics: {...}
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="use-cases"><a class="header" href="#use-cases">Use Cases</a></h2>
+<h3 id="development--debugging"><a class="header" href="#development--debugging">Development &amp; Debugging</a></h3>
+<ul>
+<li><strong>Execution Visualization</strong>: See exactly how data flows through your system</li>
+<li><strong>Performance Profiling</strong>: Identify bottlenecks and optimization opportunities</li>
+<li><strong>Error Investigation</strong>: Trace error propagation through actor networks</li>
+<li><strong>State Debugging</strong>: Time-travel debugging with state diffs</li>
+</ul>
+<h3 id="production-monitoring"><a class="header" href="#production-monitoring">Production Monitoring</a></h3>
+<ul>
+<li><strong>Health Monitoring</strong>: Track system health and detect anomalies</li>
+<li><strong>Performance Monitoring</strong>: Monitor throughput, latency, and resource usage</li>
+<li><strong>Capacity Planning</strong>: Analyze usage patterns for scaling decisions</li>
+<li><strong>Incident Response</strong>: Rapid diagnosis of production issues</li>
+</ul>
+<h3 id="analytics--optimization"><a class="header" href="#analytics--optimization">Analytics &amp; Optimization</a></h3>
+<ul>
+<li><strong>Usage Patterns</strong>: Understand how your system is actually used</li>
+<li><strong>Performance Optimization</strong>: Data-driven optimization decisions</li>
+<li><strong>Architecture Evolution</strong>: Make informed architectural changes</li>
+<li><strong>Compliance</strong>: Maintain audit trails for regulatory requirements</li>
+</ul>
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
+<ol>
+<li><strong><a href="getting-started.html">Quick Start Guide</a></strong> - Get tracing running in 5 minutes</li>
+<li><strong><a href="architecture.html">Architecture Deep Dive</a></strong> - Understand the technical details</li>
+<li><strong><a href="configuration.html">Configuration Guide</a></strong> - Customize for your environment</li>
+<li><strong><a href="deployment.html">Deployment Guide</a></strong> - Production deployment patterns</li>
+</ol>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<ul>
+<li>Learn about <a href="event-types.html">event types and their uses</a></li>
+<li>Explore <a href="storage-backends.html">storage backend options</a></li>
+<li>Set up <a href="deployment.html">production monitoring</a></li>
+<li>Integrate with <a href="../tutorials/advanced-tracing-setup.html">existing monitoring systems</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../architecture/multi-graph-composition.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../observability/getting-started.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../architecture/multi-graph-composition.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../observability/getting-started.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -8,9 +8,9 @@ use std::time::Instant;
 use crate::db_pool::{ConnectionStatus, DatabaseConnection};
 
 #[cfg(feature = "sqlite")]
-use rusqlite::{Connection, params, Row};
+use sqlx::{SqlitePool, SqliteConnection, Row};
 
-/// SQLite database connection using rusqlite
+/// SQLite database connection using SQLx
 pub struct SQLiteConnection {
     /// Unique identifier for this connection
     id: String,
@@ -18,11 +18,11 @@ pub struct SQLiteConnection {
     connection_string: String,
     /// Connection status
     status: RwLock<ConnectionStatus>,
-    /// SQLite connection
+    /// SQLite pool
     #[cfg(feature = "sqlite")]
-    connection: RwLock<Option<Connection>>,
+    pool: RwLock<Option<SqlitePool>>,
     #[cfg(not(feature = "sqlite"))]
-    connection: RwLock<Option<()>>,
+    pool: RwLock<Option<()>>,
     /// Last activity timestamp
     last_activity: RwLock<Instant>,
     /// Whether the connection is initialized
@@ -36,7 +36,7 @@ impl SQLiteConnection {
             id: id.to_string(),
             connection_string: connection_string.to_string(),
             status: RwLock::new(ConnectionStatus::Disconnected),
-            connection: RwLock::new(None),
+            pool: RwLock::new(None),
             last_activity: RwLock::new(Instant::now()),
             initialized: AtomicBool::new(false),
         }
@@ -47,33 +47,57 @@ impl SQLiteConnection {
         *self.last_activity.write() = Instant::now();
     }
 
-    /// Convert a rusqlite row to a JSON object
+    /// Convert a SQLx row to a JSON object
     #[cfg(feature = "sqlite")]
-    fn row_to_json(row: &Row) -> Result<serde_json::Map<String, Value>> {
+    fn row_to_json(row: &sqlx::sqlite::SqliteRow) -> Result<serde_json::Map<String, Value>> {
         let mut map = serde_json::Map::new();
-        let column_count = row.as_ref().column_count();
         
-        for i in 0..column_count {
-            let column_name = row.as_ref().column_name(i)?;
+        for column in row.columns() {
+            let column_name = column.name();
             
-            let value = match row.get_ref(i)? {
-                rusqlite::types::ValueRef::Null => Value::Null,
-                rusqlite::types::ValueRef::Integer(i) => Value::Number(i.into()),
-                rusqlite::types::ValueRef::Real(f) => {
-                    if let Some(num) = serde_json::Number::from_f64(f) {
-                        Value::Number(num)
-                    } else {
-                        Value::Null
+            let value = match column.type_info().name() {
+                "NULL" => Value::Null,
+                "INTEGER" => {
+                    match row.try_get::<Option<i64>, _>(column_name) {
+                        Ok(Some(i)) => Value::Number(i.into()),
+                        Ok(None) => Value::Null,
+                        Err(_) => Value::Null,
                     }
-                }
-                rusqlite::types::ValueRef::Text(s) => {
-                    let text = std::str::from_utf8(s)
-                        .map_err(|e| anyhow!("Invalid UTF-8 in text column: {}", e))?;
-                    Value::String(text.to_string())
-                }
-                rusqlite::types::ValueRef::Blob(b) => {
-                    // Convert blob to base64 string
-                    Value::String(base64::encode(b))
+                },
+                "REAL" => {
+                    match row.try_get::<Option<f64>, _>(column_name) {
+                        Ok(Some(f)) => {
+                            if let Some(num) = serde_json::Number::from_f64(f) {
+                                Value::Number(num)
+                            } else {
+                                Value::Null
+                            }
+                        },
+                        Ok(None) => Value::Null,
+                        Err(_) => Value::Null,
+                    }
+                },
+                "TEXT" => {
+                    match row.try_get::<Option<String>, _>(column_name) {
+                        Ok(Some(s)) => Value::String(s),
+                        Ok(None) => Value::Null,
+                        Err(_) => Value::Null,
+                    }
+                },
+                "BLOB" => {
+                    match row.try_get::<Option<Vec<u8>>, _>(column_name) {
+                        Ok(Some(b)) => Value::String(base64::encode(b)),
+                        Ok(None) => Value::Null,
+                        Err(_) => Value::Null,
+                    }
+                },
+                _ => {
+                    // Try to get as string as fallback
+                    match row.try_get::<Option<String>, _>(column_name) {
+                        Ok(Some(s)) => Value::String(s),
+                        Ok(None) => Value::Null,
+                        Err(_) => Value::Null,
+                    }
                 }
             };
 
@@ -83,47 +107,31 @@ impl SQLiteConnection {
         Ok(map)
     }
 
-    /// Convert a JSON value to a rusqlite parameter
-    #[cfg(feature = "sqlite")]
-    fn json_to_param(value: &Value) -> rusqlite::types::ToSqlOutput<'_> {
-        match value {
-            Value::Null => rusqlite::types::ToSqlOutput::Borrowed(rusqlite::types::ValueRef::Null),
-            Value::Bool(b) => rusqlite::types::ToSqlOutput::Owned(rusqlite::types::Value::Integer(if *b { 1 } else { 0 })),
-            Value::Number(n) => {
-                if let Some(i) = n.as_i64() {
-                    rusqlite::types::ToSqlOutput::Owned(rusqlite::types::Value::Integer(i))
-                } else if let Some(f) = n.as_f64() {
-                    rusqlite::types::ToSqlOutput::Owned(rusqlite::types::Value::Real(f))
-                } else {
-                    rusqlite::types::ToSqlOutput::Owned(rusqlite::types::Value::Text(n.to_string()))
-                }
-            }
-            Value::String(s) => rusqlite::types::ToSqlOutput::Owned(rusqlite::types::Value::Text(s.clone())),
-            _ => {
-                let json_str = serde_json::to_string(value).unwrap_or_default();
-                rusqlite::types::ToSqlOutput::Owned(rusqlite::types::Value::Text(json_str))
-            }
-        }
-    }
-
     pub fn destroy(&mut self) -> Result<()> {
         *self.status.write() = ConnectionStatus::Disconnected;
         self.initialized.store(false, Ordering::SeqCst);
         
         #[cfg(feature = "sqlite")]
         {
-            let mut conn = self.connection.write();
-            if let Some(c) = conn.take() {
-                // Close the connection
-                drop(c);
+            let mut pool = self.pool.write();
+            if let Some(p) = pool.take() {
+                // Close the pool
+                drop(p);
             }
         }
         
         // Remove the database file if it's not in-memory
-        if self.connection_string != ":memory:" {
-            if let Err(e) = std::fs::remove_file(&self.connection_string) {
+        if self.connection_string != ":memory:" && !self.connection_string.contains("memory") {
+            // Extract file path from connection string
+            let file_path = if self.connection_string.starts_with("sqlite://") {
+                &self.connection_string[9..]
+            } else {
+                &self.connection_string
+            };
+            
+            if let Err(e) = std::fs::remove_file(file_path) {
                 // Only log as warning since file might not exist
-                tracing::warn!("Could not remove database file {}: {}", self.connection_string, e);
+                tracing::warn!("Could not remove database file {}: {}", file_path, e);
             }
         }
 
@@ -144,10 +152,10 @@ impl DatabaseConnection for SQLiteConnection {
     async fn is_healthy(&self) -> bool {
         #[cfg(feature = "sqlite")]
         {
-            let connection_guard = self.connection.read();
-            if let Some(conn) = connection_guard.as_ref() {
+            let pool_guard = self.pool.read();
+            if let Some(pool) = pool_guard.as_ref() {
                 // Execute a simple query to check if the connection is healthy
-                match conn.execute("SELECT 1", []) {
+                match sqlx::query("SELECT 1").fetch_one(pool).await {
                     Ok(_) => return true,
                     Err(e) => {
                         tracing::warn!("SQLite connection health check failed: {}", e);
@@ -173,29 +181,30 @@ impl DatabaseConnection for SQLiteConnection {
 
         #[cfg(feature = "sqlite")]
         {
-            let connection_string = self.connection_string.clone();
-            
-            // Create connection in a blocking task
-            let conn = tokio::task::spawn_blocking(move || {
+            let connection_string = if self.connection_string == ":memory:" {
+                "sqlite::memory:".to_string()
+            } else {
                 // Ensure the directory exists for file databases
-                if connection_string != ":memory:" {
-                    let path = Path::new(&connection_string);
-                    if let Some(parent) = path.parent() {
-                        std::fs::create_dir_all(parent)?;
-                    }
+                let path = Path::new(&self.connection_string);
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent)?;
                 }
 
-                // Create the connection
-                let conn = Connection::open(&connection_string)?;
-                
-                // Enable foreign keys
-                conn.execute("PRAGMA foreign_keys = ON", [])?;
-                
-                Result::<Connection>::Ok(conn)
-            }).await??;
+                format!("sqlite://{}", self.connection_string)
+            };
 
-            // Store the connection
-            *self.connection.write() = Some(conn);
+            // Create the pool
+            let pool = SqlitePool::connect(&connection_string).await
+                .map_err(|e| anyhow!("Failed to create SQLite pool: {}", e))?;
+
+            // Enable foreign keys
+            sqlx::query("PRAGMA foreign_keys = ON")
+                .execute(&pool)
+                .await
+                .map_err(|e| anyhow!("Failed to enable foreign keys: {}", e))?;
+
+            // Store the pool
+            *self.pool.write() = Some(pool);
             *self.status.write() = ConnectionStatus::Connected;
             self.initialized.store(true, Ordering::SeqCst);
             self.update_activity();
@@ -212,7 +221,7 @@ impl DatabaseConnection for SQLiteConnection {
     }
 
     async fn reconnect(&mut self) -> Result<()> {
-        // Close the existing connection if any
+        // Close the existing pool if any
         self.close().await?;
 
         // Connect again
@@ -224,24 +233,39 @@ impl DatabaseConnection for SQLiteConnection {
 
         #[cfg(feature = "sqlite")]
         {
-            let connection_guard = self.connection.read();
-            let conn = connection_guard
+            let pool_guard = self.pool.read();
+            let pool = pool_guard
                 .as_ref()
-                .ok_or_else(|| anyhow!("SQLite connection not initialized"))?;
+                .ok_or_else(|| anyhow!("SQLite pool not initialized"))?;
 
-            let query = query.to_string();
-            let params_owned = params;
+            let mut query_builder = sqlx::query(query);
             
-            // Execute in a blocking task since rusqlite is synchronous
-            let result = tokio::task::spawn_blocking(move || {
-                // For now, implement without parameters - TODO: add parameter support
-                match conn.execute(&query, []) {
-                    Ok(affected) => Ok(affected as u64),
-                    Err(e) => Err(anyhow!("SQLite execute error: {}", e)),
-                }
-            }).await?;
+            // Bind parameters
+            for param in params {
+                query_builder = match param {
+                    Value::Null => query_builder.bind(None::<String>),
+                    Value::Bool(b) => query_builder.bind(b),
+                    Value::Number(n) => {
+                        if let Some(i) = n.as_i64() {
+                            query_builder.bind(i)
+                        } else if let Some(f) = n.as_f64() {
+                            query_builder.bind(f)
+                        } else {
+                            query_builder.bind(n.to_string())
+                        }
+                    },
+                    Value::String(s) => query_builder.bind(s),
+                    _ => {
+                        let json_str = serde_json::to_string(&param)?;
+                        query_builder.bind(json_str)
+                    }
+                };
+            }
 
-            result
+            let result = query_builder.execute(pool).await
+                .map_err(|e| anyhow!("SQLite execute error: {}", e))?;
+
+            Ok(result.rows_affected())
         }
 
         #[cfg(not(feature = "sqlite"))]
@@ -259,29 +283,44 @@ impl DatabaseConnection for SQLiteConnection {
 
         #[cfg(feature = "sqlite")]
         {
-            let connection_guard = self.connection.read();
-            let conn = connection_guard
+            let pool_guard = self.pool.read();
+            let pool = pool_guard
                 .as_ref()
-                .ok_or_else(|| anyhow!("SQLite connection not initialized"))?;
+                .ok_or_else(|| anyhow!("SQLite pool not initialized"))?;
 
-            let query = query.to_string();
+            let mut query_builder = sqlx::query(query);
             
-            // Execute in a blocking task since rusqlite is synchronous
-            let result = tokio::task::spawn_blocking(move || {
-                let mut stmt = conn.prepare(&query)?;
-                let rows = stmt.query_map([], |row| {
-                    Self::row_to_json(row).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))
-                })?;
+            // Bind parameters
+            for param in params {
+                query_builder = match param {
+                    Value::Null => query_builder.bind(None::<String>),
+                    Value::Bool(b) => query_builder.bind(b),
+                    Value::Number(n) => {
+                        if let Some(i) = n.as_i64() {
+                            query_builder.bind(i)
+                        } else if let Some(f) = n.as_f64() {
+                            query_builder.bind(f)
+                        } else {
+                            query_builder.bind(n.to_string())
+                        }
+                    },
+                    Value::String(s) => query_builder.bind(s),
+                    _ => {
+                        let json_str = serde_json::to_string(&param)?;
+                        query_builder.bind(json_str)
+                    }
+                };
+            }
 
-                let mut results = Vec::new();
-                for row_result in rows {
-                    results.push(row_result?);
-                }
-                
-                Result::<Vec<serde_json::Map<String, Value>>>::Ok(results)
-            }).await??;
+            let rows = query_builder.fetch_all(pool).await
+                .map_err(|e| anyhow!("SQLite query error: {}", e))?;
 
-            Ok(result)
+            let mut results = Vec::new();
+            for row in rows {
+                results.push(Self::row_to_json(&row)?);
+            }
+
+            Ok(results)
         }
 
         #[cfg(not(feature = "sqlite"))]
@@ -293,10 +332,9 @@ impl DatabaseConnection for SQLiteConnection {
     async fn close(&mut self) -> Result<()> {
         #[cfg(feature = "sqlite")]
         {
-            let mut conn = self.connection.write();
-            if let Some(c) = conn.take() {
-                // rusqlite connections are automatically closed when dropped
-                drop(c);
+            let mut pool = self.pool.write();
+            if let Some(p) = pool.take() {
+                p.close().await;
             }
         }
 
@@ -329,8 +367,9 @@ mod tests {
         assert!(conn.execute(create_table, vec![]).await.is_ok());
 
         // Insert data
-        let insert = "INSERT INTO test (id, name) VALUES (1, 'test')";
-        assert!(conn.execute(insert, vec![]).await.is_ok());
+        let insert = "INSERT INTO test (id, name) VALUES (?, ?)";
+        let params = vec![Value::Number(1.into()), Value::String("test".to_string())];
+        assert!(conn.execute(insert, params).await.is_ok());
 
         // Query data
         let query = "SELECT * FROM test";

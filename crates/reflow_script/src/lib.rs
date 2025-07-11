@@ -62,11 +62,14 @@ pub mod extism;
 /// Context for script execution
 pub mod context;
 
-/// Database connection pool
+/// Database connection pool (only available with database features)
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub mod db_manager;
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub mod db_pool;
 
-/// Database actor for executing database operations
+/// Database actor for executing database operations (only available with database features)
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub mod db_actor;
 
 /// Script actor that wraps a script engine

@@ -19,10 +19,9 @@ use crate::protocol::{
 
 pub mod events;
 pub mod replay;
-pub mod storage;
 pub mod versioning;
 
-use storage::TraceStorage;
+use crate::storage::TraceStorage;
 
 /// Enhanced network event with tracing context
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -227,10 +226,13 @@ impl FlowTracingFramework {
             metadata: self.create_trace_metadata(),
         };
 
-        // Store initial trace
-        if let Err(e) = self.storage.store_trace(&trace) {
-            eprintln!("Failed to store initial trace: {}", e);
-        }
+        // Store initial trace (async operation, spawn task)
+        let storage = self.storage.clone();
+        tokio::spawn(async move {
+            if let Err(e) = storage.store_trace(trace).await {
+                eprintln!("Failed to store initial trace: {}", e);
+            }
+        });
 
         trace_id
     }
@@ -253,9 +255,9 @@ impl FlowTracingFramework {
             match event {
                 EnhancedNetworkEvent::FlowTrace { trace_id, event } => {
                     // Update trace with new event
-                    if let Ok(Some(mut trace)) = storage.get_trace(&trace_id) {
+                    if let Ok(Some(mut trace)) = storage.get_trace(trace_id).await {
                         trace.events.push(event);
-                        let _ = storage.store_trace(&trace);
+                        let _ = storage.store_trace(trace).await;
                     }
                 }
                 _ => {
@@ -281,18 +283,18 @@ impl FlowTracingFramework {
     }
 
     /// Get trace by ID
-    pub fn get_trace(&self, trace_id: &TraceId) -> Result<Option<FlowTrace>, storage::TraceStorageError> {
-        self.storage.get_trace(trace_id)
+    pub async fn get_trace(&self, trace_id: TraceId) -> Result<Option<FlowTrace>> {
+        self.storage.get_trace(trace_id).await
     }
 
     /// Query traces
-    pub fn query_traces(&self, query: &TraceQuery) -> Result<Vec<FlowTrace>, storage::TraceStorageError> {
-        self.storage.query_traces(query)
+    pub async fn query_traces(&self, query: TraceQuery) -> Result<Vec<FlowTrace>> {
+        self.storage.query_traces(query).await
     }
 
-    /// Get flow versions
-    pub fn get_flow_versions(&self, flow_id: &FlowId) -> Result<Vec<FlowVersion>, storage::TraceStorageError> {
-        self.storage.get_flow_versions(flow_id)
+    /// Get storage stats
+    pub async fn get_stats(&self) -> Result<crate::storage::StorageStats> {
+        self.storage.get_stats().await
     }
 }
 
