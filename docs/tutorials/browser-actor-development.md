@@ -1,4 +1,4 @@
-# WASM Actor Development Tutorial
+# Browser Actor Development Tutorial
 
 Learn how to develop actors specifically for browser environments using Reflow's WebAssembly bindings.
 
@@ -10,7 +10,7 @@ This tutorial covers creating actors that leverage browser APIs, handle asynchro
 
 - Basic understanding of JavaScript and async programming
 - Familiarity with [Reflow's actor concepts](../getting-started/basic-concepts.md)
-- [WASM setup completed](../deployment/browser-deployment.md)
+- [Browser setup completed](../deployment/browser-deployment.md)
 
 ## Tutorial Structure
 
@@ -1328,8 +1328,8 @@ class UIInteractionActor {
 Let's build a complete application that uses all the actors we've created:
 
 ```javascript
-// Complete WASM Actor Demo Application
-class WASMActorDemo {
+// Complete Browser Actor Demo Application
+class BrowserDemo {
     constructor() {
         this.graph = null;
         this.network = null;
@@ -1337,7 +1337,7 @@ class WASMActorDemo {
     }
 
     async initialize() {
-        // Initialize WASM
+        // Initialize Browser
         await init();
         init_panic_hook();
 
@@ -1350,12 +1350,12 @@ class WASMActorDemo {
         // Setup UI
         this.setupUI();
         
-        console.log("✅ WASM Actor Demo initialized");
+        console.log("✅ Browser Actor Demo initialized");
     }
 
     createDemoGraph() {
-        this.graph = new Graph("WASMActorDemo", true, {
-            description: "Comprehensive WASM actor demonstration",
+        this.graph = new Graph("BrowserActorDemo", true, {
+            description: "Comprehensive Browser actor demonstration",
             version: "1.0.0"
         });
 
@@ -1413,7 +1413,7 @@ class WASMActorDemo {
     setupUI() {
         document.body.innerHTML = `
             <div id="demo-app">
-                <h1>WASM Actor Development Demo</h1>
+                <h1>Browser Actor Development Demo</h1>
                 
                 <div class="controls">
                     <button id="startNetwork">Start Network</button>
@@ -1571,7 +1571,7 @@ class WASMActorDemo {
 
 // Initialize the demo when the page loads
 document.addEventListener('DOMContentLoaded', async () => {
-    const demo = new WASMActorDemo();
+    const demo = new BrowserActorDemo();
     await demo.initialize();
 });
 ```
@@ -1683,7 +1683,7 @@ class MemoryAwareActor {
 
 ## Conclusion
 
-This tutorial covered the essential patterns for developing WASM actors in browser environments:
+This tutorial covered the essential patterns for developing Browser actors in browser environments:
 
 1. **Data Transformation** - Processing and manipulating data with stateful operations
 2. **Web API Integration** - Making HTTP requests with retry logic and error handling
@@ -1701,9 +1701,9 @@ This tutorial covered the essential patterns for developing WASM actors in brows
 
 ### Next Steps
 
-- **[Complete WASM API Reference](../api/wasm/getting-started.md)** - Full API documentation
+- **[Complete Browser API Reference](../api/wasm/getting-started.md)** - Full API documentation
 - **[Browser Actors Guide](../api/wasm/actors-in-browser.md)** - Detailed actor patterns
 - **[Browser Workflow Editor](browser-workflow-editor.md)** - Building visual editors
 - **[Performance Optimization](performance-optimization.md)** - Advanced optimization techniques
 
-The examples in this tutorial provide a solid foundation for building sophisticated browser-based workflow applications using Reflow's WASM bindings.
+The examples in this tutorial provide a solid foundation for building sophisticated browser-based workflow applications using Reflow's Browser bindings.

@@ -17,6 +17,9 @@ tracing ={ version = "0.1.41"}
 flume = "0.11.0"
 # Force consistent sqlite version across all dependencies
 libsqlite3-sys = "0.32.0"
+futures = { version = "0.3" }
+bitcode = { version = "0.6.4", features = ["serde"] }
+
 
 [profile.release]
 opt-level = 3

@@ -38,10 +38,9 @@ impl ExtismEngine {
         let send_output = Function::new(
             "__send_output",
             vec![ValType::I64],
-            vec![ValType::I64],
+            vec![],
             user_data.clone(),
             move |plugin, args, ret, _data| {
-                ret[0] = Val::I64(0);
                 let output =
                     plugin.memory_get_val::<Json<HashMap<String, serde_json::Value>>>(&args[0])?;
                 // Convert output to HashMap<String, Message>
@@ -102,7 +101,7 @@ impl ExtismEngine {
         let set_state = Function::new(
             "__set_state",
             vec![ValType::I64, ValType::I64],
-            vec![ValType::I64],
+            vec![],
             user_data,
             move |plugin, args, ret, _data| {
                 let key = plugin.memory_get_val::<String>(&args[0])?;
@@ -110,7 +109,6 @@ impl ExtismEngine {
 
                 // Extract the value from Json wrapper
                 let state_value = value.into_inner();
-                ret[0] = Val::I64(0);
                 // Set the state value
                 let mut state_guard = state_clone.lock();
                 if let Some(memory_state) = state_guard.as_mut_any().downcast_mut::<MemoryState>() {
@@ -172,30 +170,145 @@ impl ScriptEngine for ExtismEngine {
 
         let mut plugin = Plugin::new(manifest, host_functions, true)?;
 
-        // Convert script context to serializable format
-        let serializable_context = context.to_serializable()?;
-
         // Get the config with the entry point
         let config = self
             .config
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Missing configuration"))?;
 
-        // Call the plugin function with the JSON data
-        let output = plugin
-            .call::<Json<serde_json::Value>, Json<HashMap<String, serde_json::Value>>>(
+        // Get current state from the actor
+        let current_state = if let Some(memory_state) = context.state.lock().as_any().downcast_ref::<reflow_actor::MemoryState>() {
+            // Convert the HashMap to a JSON object
+            let state_map: serde_json::Map<String, serde_json::Value> = memory_state.0
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            serde_json::Value::Object(state_map)
+        } else {
+            serde_json::json!({})
+        };
+
+        // Convert ScriptContext to ActorContext format for the plugin
+        let actor_context = serde_json::json!({
+            "payload": context.inputs.iter().map(|(k, v)| {
+                // Convert Message to the plugin's message format
+                let msg_value = match v {
+                    Message::Flow => json!({"type": "Flow", "data": null}),
+                    Message::Event(e) => json!({"type": "Event", "data": e}),
+                    Message::Boolean(b) => json!({"type": "Boolean", "data": b}),
+                    Message::Integer(i) => json!({"type": "Integer", "data": i}),
+                    Message::Float(f) => json!({"type": "Float", "data": f}),
+                    Message::String(s) => json!({"type": "String", "data": s}),
+                    Message::Object(o) => json!({"type": "Object", "data": o}),
+                    Message::Array(a) => {
+                        // Convert EncodableValue objects to their JSON representation
+                        let json_array: Vec<serde_json::Value> = a.iter()
+                            .map(|encodable_value| encodable_value.clone().into())
+                            .collect();
+                        json!({"type": "Array", "data": json_array})
+                    },
+                    Message::Stream(s) => json!({"type": "Stream", "data": s.as_ref().clone()}),
+                    Message::Optional(o) => json!({"type": "Optional", "data": o}),
+                    Message::Any(a) => json!({"type": "Any", "data": a}),
+                    Message::Error(e) => json!({"type": "Error", "data": e}),
+                    Message::Encoded(e) => {
+                        // Encoded messages are handled as binary data
+                        json!({"type": "Stream", "data": e.as_ref().clone()})
+                    },
+                    Message::RemoteReference { network_id, actor_id, port } => {
+                        json!({"type": "Any", "data": {
+                            "network_id": network_id,
+                            "actor_id": actor_id,
+                            "port": port
+                        }})
+                    },
+                    Message::NetworkEvent { event_type, data } => {
+                        json!({"type": "Event", "data": {
+                            "event_type": event_type,
+                            "data": data
+                        }})
+                    },
+                };
+                (k.clone(), msg_value)
+            }).collect::<HashMap<_, _>>(),
+            "config": {
+                "node_id": context.config.node.id.clone(),
+                "component": context.config.node.component.clone(),
+                "resolved_env": context.config.resolved_env.clone(),
+                "config": context.config.config.clone(),
+                "namespace": context.config.namespace.clone(),
+            },
+            "state": current_state
+        });
+
+        // Call the plugin function with ActorContext
+        let result = plugin
+            .call::<Json<serde_json::Value>, Json<serde_json::Value>>(
                 &config.entry_point,
-                json!(serializable_context.inputs).into(),
+                Json(actor_context),
             )?;
 
-        // Convert output bytes to string
-        let output_value = output
-            .into_inner()
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone().into()))
-            .collect();
+        // Parse the ActorResult from the plugin
+        let actor_result: serde_json::Value = result.into_inner();
+        
+        // Extract outputs from ActorResult
+        let outputs = actor_result
+            .get("outputs")
+            .and_then(|o| o.as_object())
+            .ok_or_else(|| anyhow::anyhow!("Invalid ActorResult: missing outputs"))?;
 
-        Ok(output_value)
+        // Convert outputs back to Message format
+        let mut output_messages = HashMap::new();
+        for (port, msg_value) in outputs {
+            if let Some(msg_obj) = msg_value.as_object() {
+                if let (Some(msg_type), Some(data)) = (msg_obj.get("type").and_then(|t| t.as_str()), msg_obj.get("data")) {
+                    let message = match msg_type {
+                        "Flow" => Message::Flow,
+                        "Event" => Message::Event(data.clone().into()),
+                        "Boolean" => Message::Boolean(data.as_bool().unwrap_or_default()),
+                        "Integer" => Message::Integer(data.as_i64().unwrap_or_default()),
+                        "Float" => Message::Float(data.as_f64().unwrap_or_default()),
+                        "String" => Message::String(Arc::new(data.as_str().unwrap_or_default().to_string())),
+                        "Object" => Message::Object(Arc::new(data.clone().into())),
+                        "Array" => Message::Array(Arc::new(data.as_array().cloned().unwrap_or_default().into_iter().map(Into::into).collect())),
+                        "Stream" => {
+                            // Handle stream data as Vec<u8>
+                            if let Ok(bytes) = serde_json::from_value::<Vec<u8>>(data.clone()) {
+                                Message::Stream(Arc::new(bytes))
+                            } else {
+                                Message::Stream(Arc::new(vec![]))
+                            }
+                        },
+                        "Optional" => {
+                            if data.is_null() {
+                                Message::Optional(None)
+                            } else {
+                                Message::Optional(Some(Arc::new(data.clone().into())))
+                            }
+                        },
+                        "Any" => Message::Any(Arc::new(data.clone().into())),
+                        "Error" => Message::Error(Arc::new(data.as_str().unwrap_or_default().to_string())),
+                        _ => continue,
+                    };
+                    output_messages.insert(port.clone(), message);
+                }
+            }
+        }
+
+        // Update state if provided in the result
+        if let Some(new_state) = actor_result.get("state") {
+            if let Some(memory_state) = context.state.lock().as_mut_any().downcast_mut::<reflow_actor::MemoryState>() {
+                // Update state by clearing and inserting new values
+                if let Some(state_obj) = new_state.as_object() {
+                    memory_state.clear();
+                    for (key, value) in state_obj {
+                        memory_state.insert(key, value.clone());
+                    }
+                }
+            }
+        }
+
+        Ok(output_messages)
     }
 
     async fn cleanup(&mut self) -> Result<()> {
@@ -232,7 +345,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_wasm_actor() -> Result<()> {
-        let wasm_binary = include_bytes!("../../../examples/wasm_actor/build/wasm_actor.wasm");
+        let wasm_binary = include_bytes!("../../../crates/reflow_wasm/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm");
 
         let mut engine = ExtismEngine::new();
         let config = test_config(wasm_binary.to_vec());
@@ -247,56 +360,46 @@ mod tests {
         // Test simple function call
         let mut inputs = HashMap::new();
         inputs.insert(
-            "operation".to_string(),
-            Message::string("increment".to_string()),
+            "increment".to_string(),
+            Message::Flow,
         );
+
+        // Create a dummy actor config for testing
+        let node = reflow_actor::types::GraphNode {
+            id: "test_node".to_string(),
+            component: "TestComponent".to_string(),
+            metadata: None,
+        };
+        
+        let actor_config = reflow_actor::ActorConfig {
+            node: node.clone(),
+            resolved_env: HashMap::new(),
+            config: HashMap::new(),
+            namespace: None,
+        };
 
         let context = crate::context::ScriptContext::new(
             config.entry_point,
-            inputs,
+            inputs.clone(),
             state.clone(),
             outports.clone(),
+            actor_config,
         );
 
         let result = engine.call(&context).await?;
-
+       
         // Verify the result
         assert!(
-            result.contains_key("value"),
-            "Result should contain 'value' key"
+            result.contains_key("info"),
+            "Result should contain 'info' key"
         );
-        assert_eq!(result["value"], Message::Integer(1));
+        assert!(matches!(result["info"], Message::Object(..)));
         assert!(
-            result.contains_key("previous"),
-            "Result should contain 'previous' key"
+            result.contains_key("count"),
+            "Result should contain 'count' key"
         );
-        assert_eq!(result["previous"], Message::Integer(0));
-        assert!(
-            result.contains_key("operation"),
-            "Result should contain 'operation' key"
-        );
-        assert_eq!(
-            result["operation"],
-            Message::string("increment".to_string())
-        );
-
-        if let Ok(msg) = outports.1.recv() {
-            // Verify the message
-            assert_eq!(msg.len(), 3);
-            assert!(msg.contains_key("value"));
-            assert_eq!(msg["value"], Message::Integer(1));
-            assert!(msg.contains_key("previous"));
-            assert_eq!(msg["previous"], Message::Integer(0));
-            assert!(msg.contains_key("operation"));
-            assert_eq!(msg["operation"], Message::string("increment".to_string()));
-        }
-
-        // Print state
-        let state_guard = state.lock();
-        assert_eq!(
-            state_guard.0,
-            HashMap::from_iter([("counter".to_string(), json!(1))])
-        );
+        assert_eq!(result["count"], Message::Integer(1));
+        
 
         engine.cleanup().await?;
         Ok(())

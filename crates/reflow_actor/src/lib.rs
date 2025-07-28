@@ -409,15 +409,15 @@ impl ActorContext {
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub struct WasmActorContext {
+pub struct BrowserActorContext {
     context: ActorContext,
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-impl WasmActorContext {
+impl BrowserActorContext {
     #[wasm_bindgen(constructor)]
-    pub fn new(payload: JsValue, config: JsValue) -> Result<WasmActorContext, JsValue> {
+    pub fn new(payload: JsValue, config: JsValue) -> Result<BrowserActorContext, JsValue> {
         let payload_map = payload
             .into_serde::<HashMap<String, Value>>()
             .map_err(|e| JsValue::from_str(&format!("Failed to parse payload: {}", e)))?
@@ -447,7 +447,7 @@ impl WasmActorContext {
             namespace: None,
         };
 
-        Ok(WasmActorContext {
+        Ok(BrowserActorContext {
             context: ActorContext::new(payload_map, outports, state, actor_config, load),
         })
     }
@@ -935,13 +935,13 @@ extern "C" {
 
 }
 
-trait WasmActorState: ActorState {
+trait BrowserActorState: ActorState {
     fn get_object(&self) -> HashMap<String, Value>;
     fn set_object(&mut self, state: HashMap<String, Value>);
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl WasmActorState for MemoryState {
+impl BrowserActorState for MemoryState {
     fn get_object(&self) -> HashMap<String, Value> {
         self.0.clone()
     }
@@ -952,7 +952,7 @@ impl WasmActorState for MemoryState {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl WasmActorState for MemoryState {
+impl BrowserActorState for MemoryState {
     fn get_object(&self) -> HashMap<String, Value> {
         self.get_hashmap()
     }
@@ -963,7 +963,7 @@ impl WasmActorState for MemoryState {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub struct WasmActor {
+pub struct BrowserActor {
     inports: Port,
     outports: Port,
     inports_size: usize,
@@ -977,17 +977,17 @@ pub struct WasmActor {
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub struct JsWasmActor {
-    actor: Arc<WasmActor>,
+pub struct JsBrowserActor {
+    actor: Arc<BrowserActor>,
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-impl JsWasmActor {
+impl JsBrowserActor {
     #[wasm_bindgen(constructor)]
     pub fn new(extern_actor: ExternActor) -> Self {
-        JsWasmActor {
-            actor: Arc::new(WasmActor::new(extern_actor)),
+        JsBrowserActor {
+            actor: Arc::new(BrowserActor::new(extern_actor)),
         }
     }
 
@@ -1052,7 +1052,7 @@ impl JsWasmActor {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl Actor for JsWasmActor {
+impl Actor for JsBrowserActor {
     fn get_behavior(&self) -> ActorBehavior {
         // Clone the Arc to get a new reference to the behavior
         let behavior = self.actor.behavior.clone();
@@ -1079,7 +1079,7 @@ impl Actor for JsWasmActor {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl WasmActor {
+impl BrowserActor {
     pub fn new(extern_actor: ExternActor) -> Self {
         use serde_json::json;
 
@@ -1178,7 +1178,7 @@ impl WasmActor {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl Actor for WasmActor {
+impl Actor for BrowserActor {
     fn get_behavior(&self) -> ActorBehavior {
         // Clone the Arc to get a new reference to the behavior
         let behavior = self.behavior.clone();

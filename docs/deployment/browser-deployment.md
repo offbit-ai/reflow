@@ -94,8 +94,8 @@ import init, {
     GraphNetwork,
     GraphHistory,
     MemoryState,
-    WasmActorContext,
-    JsWasmActor,
+    BrowserActorContext,
+    JsBrowserActor,
     ActorRunContext,
     init_panic_hook 
 } from './pkg/reflow_network.js';

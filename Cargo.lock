@@ -5814,9 +5814,15 @@ name = "reflow_wasm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "extism",
  "extism-pdk",
+ "parking_lot 0.12.4",
+ "reflow_actor",
+ "reflow_graph",
+ "reflow_script",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

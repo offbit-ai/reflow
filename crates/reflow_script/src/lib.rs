@@ -99,6 +99,16 @@ impl ScriptActor {
             ScriptRuntime::Extism => Arc::new(Mutex::new(extism::ExtismEngine::new())),
         };
 
+        // Initialize the engine with the config
+        {
+            let mut engine_guard = engine.lock();
+            let config_clone = config.clone();
+            // Use block_on to run the async init
+            futures::executor::block_on(async {
+                engine_guard.init(&config_clone).await.expect("Failed to initialize script engine");
+            });
+        }
+
         Self {
             config,
             engine,
@@ -121,7 +131,7 @@ impl Actor for ScriptActor {
 
                 // Create the context
                 let context =
-                    context::ScriptContext::new(entry_point, payload.clone(), context.get_state(), context.get_outports());
+                    context::ScriptContext::new(entry_point, payload.clone(), context.get_state(), context.get_outports(), context.get_config().clone());
 
                 // Return a future that owns all its data
                 Box::pin(async move {
@@ -331,71 +341,59 @@ __return_value=np.array(inputs.get("packet").data).sum()
     #[cfg(feature = "extism")]
     #[tokio::test]
     async fn test_extism_actor() {
-        // Initialize the extism engine first
-        let mut engine = extism::ExtismEngine::new();
-        // Create an extism script config
+        use reflow_actor::types::GraphNode;
+        
+        // Create an extism script config using the counter_actor example
         let config = ScriptConfig {
             environment: ScriptEnvironment::SYSTEM,
             runtime: ScriptRuntime::Extism,
-            source: include_bytes!("../../../examples/wasm_actor/build/wasm_actor.wasm").to_vec(),
+            source: include_bytes!("../../../crates/reflow_wasm/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm").to_vec(),
             entry_point: "process".to_string(),
             packages: None,
         };
-        // Initialize the engine with the config
-        let _ = engine
-            .init(&config)
-            .await
-            .expect("Failed to initialize engine");
-        // Create the script actor with the initialized engine
-        let actor = ScriptActor {
-            config: config.clone(),
-            engine: Arc::new(Mutex::new(engine)),
-            inports_channel: flume::unbounded(),
-            outports_channel: flume::unbounded(),
-        };
-        // Get behavior function
-        // let behavior = actor.get_behavior();
-        // Create state and ports
-        // let state: Arc<Mutex<dyn ActorState>> = Arc::new(Mutex::new(MemoryState::default()));
-
-        // Create a test payload with the correct port name
-        let mut payload = HashMap::new();
-        payload.insert(
-            "operation".to_string(),
-            Message::string("increment".to_string()),
-        );
-
-        let actor_config = ActorConfig::default();
-        // Call the behavior function
-        // let result = behavior(payload, state, outports.clone()).await;
-        let _ = tokio::spawn(actor.create_process(actor_config, None));
-
+        
+        // Create the script actor
+        let actor = ScriptActor::new(config);
+        
+        // Create actor config with initial counter value
+        let mut metadata = HashMap::new();
+        metadata.insert("initial_value".to_string(), serde_json::json!(10));
+        
+        let actor_config = ActorConfig::from_node(GraphNode {
+            id: "test_counter".to_string(),
+            component: "CounterActor".to_string(),
+            metadata: Some(metadata),
+        }).unwrap();
+        
+        // Start the actor process
+        let process = actor.create_process(actor_config, None);
+        let _handle = tokio::spawn(process);
+        
+        // Get ports
+        let inports = actor.get_inports();
         let outports = actor.get_outports();
-        let _ = actor.get_inports().0.send_async(payload.clone()).await;
-
-        let result = outports.1.recv_async().await;
-
+        
+        // Test increment operation
+        let mut payload = HashMap::new();
+        payload.insert("increment".to_string(), Message::Flow);
+        
+        inports.0.send_async(payload).await.unwrap();
+        let result = outports.1.recv_async().await.unwrap();
+        
         // Verify the result
-        assert!(result.is_ok());
-        if let Ok(output) = result {
-            assert!(
-                output.contains_key("value"),
-                "Result should contain 'value' key"
-            );
-            assert_eq!(output["value"], Message::Integer(1));
-            assert!(
-                output.contains_key("previous"),
-                "Result should contain 'previous' key"
-            );
-            assert_eq!(output["previous"], Message::Integer(0));
-            assert!(
-                output.contains_key("operation"),
-                "Result should contain 'operation' key"
-            );
-            assert_eq!(
-                output["operation"],
-                Message::string("increment".to_string())
-            );
-        }
+        assert!(result.contains_key("count"), "Result should contain 'count' key");
+        assert_eq!(result["count"], Message::Integer(11)); // 10 + 1 = 11
+        assert!(result.contains_key("changed"), "Result should contain 'changed' key");
+        assert_eq!(result["changed"], Message::Boolean(true));
+        
+        // Test decrement operation
+        let mut payload = HashMap::new();
+        payload.insert("decrement".to_string(), Message::Flow);
+        
+        inports.0.send_async(payload).await.unwrap();
+        let result = outports.1.recv_async().await.unwrap();
+        
+        assert_eq!(result["count"], Message::Integer(10)); // 11 - 1 = 10
+        assert_eq!(result["changed"], Message::Boolean(true));
     }
 }

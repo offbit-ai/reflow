@@ -17,10 +17,10 @@ Reflow's WebAssembly (WASM) bindings provide a complete JavaScript interface for
 │ ├─ AnotherActor.run(context)                       │
 │ └─ CustomActor.run(context)                        │
 ├─────────────────────────────────────────────────────┤
-│ WASM JavaScript Bindings                           │
+│ Browser JavaScript Bindings                           │
 │ ├─ Graph, GraphNetwork, GraphHistory               │
 │ ├─ Network, MemoryState, ActorRunContext           │
-│ └─ WasmActorContext, JsWasmActor                   │
+│ └─ BrowserActorContext, JsBrowserActor                   │
 ├─────────────────────────────────────────────────────┤
 │ WebAssembly Runtime                                 │
 │ ├─ Rust Actor System (compiled to WASM)           │

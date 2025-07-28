@@ -55,7 +55,7 @@
   - [Remote Actors](api/distributed/remote-actors.md)
   - [Discovery & Registration](api/distributed/discovery-registration.md)
   - [Conflict Resolution](api/distributed/conflict-resolution.md)
-- [WASM API]()
+- [Browser API]()
   - [Getting Started](api/wasm/getting-started.md)
   - [Actors in Browser](api/wasm/actors-in-browser.md)
 
@@ -65,7 +65,7 @@
 
 - [Standard Component Library](components/standard-library.md)
 - [JavaScript & Deno Runtime](scripting/javascript/deno-runtime.md)
-
+- [WASM Actor Plugin Runtime](scripting/wasm/wasm-runtime.md)
 ---
 
 # Tutorials
@@ -75,7 +75,7 @@
 - [Performance Optimization](tutorials/performance-optimization.md)
 - [Distributed Workflow Example](tutorials/distributed-workflow-example.md)
 - [Multi-Graph Workspace](tutorials/multi-graph-workspace.md)
-- [WASM Actor Development](tutorials/wasm-actor-development.md)
+- [Browser Actor Development](tutorials/browser-actor-development.md)
 
 ---
 

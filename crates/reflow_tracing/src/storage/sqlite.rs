@@ -21,11 +21,11 @@ pub enum TraceStorageError {
     NotFound,
 }
 
-impl From<TraceStorageError> for anyhow::Error {
-    fn from(err: TraceStorageError) -> Self {
-        anyhow::anyhow!(err.to_string())
-    }
-}
+// impl From<TraceStorageError> for anyhow::Error {
+//     fn from(err: TraceStorageError) -> Self {
+//         anyhow::anyhow!(err.to_string())
+//     }
+// }
 
 #[cfg(feature = "storage")]
 use sqlx::{SqlitePool, Row};
@@ -685,7 +685,7 @@ impl CompressionEngine {
                 use brotli::enc::BrotliEncoderParams;
                 let params = BrotliEncoderParams::default();
                 let mut output = Vec::new();
-                brotli::BrotliCompress(&mut data.as_ref(), &mut output, &params)
+                brotli::BrotliCompress::<&[u8], Vec<u8>>(&mut data.as_ref(), &mut output, &params)
                     .map_err(|e| anyhow::anyhow!("Brotli compression failed: {}", e))?;
                 Ok(output)
             }
@@ -714,7 +714,7 @@ impl CompressionEngine {
             }
             CompressionAlgorithm::Brotli => {
                 let mut output = Vec::new();
-                brotli::BrotliDecompress(&mut data.as_ref(), &mut output)
+                brotli::BrotliDecompress::<&[u8], Vec<u8>>(&mut data.as_ref(), &mut output)
                     .map_err(|e| anyhow::anyhow!("Brotli decompression failed: {}", e))?;
                 Ok(output)
             }

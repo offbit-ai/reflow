@@ -284,13 +284,13 @@ mod tests {
         );
 
         // Create ActorConfig for test
-        let node = reflow_network::graph::types::GraphNode {
+        let node = reflow_actor::types::GraphNode {
             id: "test_actor".to_string(),
             component: "DatabaseActor".to_string(),
             metadata: Some(HashMap::new()),
         };
 
-        let actor_config = reflow_network::actor::ActorConfig {
+        let actor_config = reflow_actor::ActorConfig {
             node,
             resolved_env: HashMap::new(),
             config: HashMap::new(),

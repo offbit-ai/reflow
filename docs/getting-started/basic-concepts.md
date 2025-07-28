@@ -228,12 +228,46 @@ __return_value = data.sum()
 
 #### WebAssembly
 ```rust
-// WASM actor (compiled from Rust, C++, etc.)
-#[no_mangle]
-pub extern "C" fn process(input: &str) -> String {
-    // Process input and return result
-    format!("Processed: {}", input)
+// WASM actor using Reflow Plugin SDK (reflow_wasm)
+use reflow_wasm::*;
+use std::collections::HashMap;
+
+// Define plugin metadata
+fn metadata() -> PluginMetadata {
+    PluginMetadata {
+        component: "ProcessorActor".to_string(),
+        description: "Processes input data".to_string(),
+        inports: vec![
+            port_def!("input", "Input data", "String", required),
+        ],
+        outports: vec![
+            port_def!("output", "Processed output", "String"),
+        ],
+        config_schema: None,
+    }
 }
+
+// Implement actor behavior
+fn process_actor(context: ActorContext) -> Result<ActorResult, Box<dyn std::error::Error>> {
+    let mut outputs = HashMap::new();
+    
+    // Get input and process it
+    if let Some(Message::String(input)) = context.payload.get("input") {
+        let processed = format!("Processed: {}", input);
+        outputs.insert("output".to_string(), Message::String(processed));
+    }
+    
+    Ok(ActorResult {
+        outputs,
+        state: None, // No state changes
+    })
+}
+
+// Register the plugin
+actor_plugin!(
+    metadata: metadata(),
+    process: process_actor
+);
 ```
 
 ## Message Passing Patterns

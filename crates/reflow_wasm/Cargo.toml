@@ -2,11 +2,22 @@
 name = "reflow_wasm"
 version = "0.1.0"
 edition = "2021"
-description = "WebAssembly Actor Development Kit"
+description = "WebAssembly Plugin SDK for Reflow - Build actors as WASM plugins"
 license = "MIT"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-extism-pdk = {version = "1.4.0"}
+extism-pdk = { version = "1.4.0" }
 anyhow = { workspace = true }
+
+[dev-dependencies]
+# For testing plugins
+extism = "1.4"
+reflow_script = { path = "../reflow_script", features = ["extism"] }
+reflow_actor = { path = "../reflow_actor" }
+reflow_graph = { path = "../reflow_graph" }
+parking_lot = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["full"] }

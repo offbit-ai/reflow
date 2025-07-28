@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use parking_lot::Mutex;
-use reflow_actor::{ActorState, Port, message::Message};
+use reflow_actor::{ActorState, ActorConfig, Port, message::Message};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -17,6 +17,8 @@ pub struct ScriptContext {
     pub state: Arc<Mutex<dyn ActorState>>,
     /// Output port for sending results
     pub outports: Port,
+    /// Actor configuration
+    pub config: ActorConfig,
 }
 
 /// Serializable representation of the context for passing to script engines
@@ -32,12 +34,13 @@ pub struct SerializableContext {
 
 impl ScriptContext {
     /// Create a new script context
-    pub fn new(method: String, inputs: HashMap<String, Message>, state: Arc<Mutex<dyn ActorState>>, outports: Port) -> Self {
+    pub fn new(method: String, inputs: HashMap<String, Message>, state: Arc<Mutex<dyn ActorState>>, outports: Port, config: ActorConfig) -> Self {
         Self {
             method,
             inputs,
             state,
             outports,
+            config,
         }
     }
     

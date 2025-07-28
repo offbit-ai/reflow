@@ -126,9 +126,9 @@ impl Network {
     #[cfg(target_arch = "wasm32")]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = registerActor))]
     pub fn _register_actor(&mut self, name: &str, actor: ExternActor) -> Result<(), JsValue> {
-        use crate::actor::JsWasmActor;
+        use crate::actor::JsBrowserActor;
 
-        self.register_actor(name, JsWasmActor::new(actor))
+        self.register_actor(name, JsBrowserActor::new(actor))
             .map_err(|err| JsValue::from_str(format!("{}", err.to_string()).as_str()))?;
         Ok(())
     }
@@ -136,13 +136,13 @@ impl Network {
     #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen(js_name = createActor)]
     pub fn create_actor(&mut self, name: &str, actor: ExternActor) -> Result<JsValue, JsValue> {
-        use crate::actor::{JsWasmActor, WasmActor};
+        use crate::actor::{JsBrowserActor, BrowserActor};
 
         // Register the actor in the network
         self._register_actor(name, actor.clone())?;
 
-        // Create a JsWasmActor wrapper for the actor
-        let js_actor = JsWasmActor::new(actor);
+        // Create a JsBrowserActor wrapper for the actor
+        let js_actor = JsBrowserActor::new(actor);
 
         Ok(JsValue::from(js_actor))
     }
