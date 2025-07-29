@@ -8,6 +8,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
+use base64;
 
 pub struct ExtismEngine {
     pub(crate) manifest: Option<Manifest>,
@@ -40,7 +41,7 @@ impl ExtismEngine {
             vec![ValType::I64],
             vec![],
             user_data.clone(),
-            move |plugin, args, ret, _data| {
+            move |plugin, args, _ret, _data| {
                 let output =
                     plugin.memory_get_val::<Json<HashMap<String, serde_json::Value>>>(&args[0])?;
                 // Convert output to HashMap<String, Message>
@@ -67,6 +68,7 @@ impl ExtismEngine {
             vec![ValType::I64],
             user_data,
             move |plugin, args, ret, _data| {
+                // Original format: key as string (for Rust WASM SDK compatibility)
                 let key = plugin.memory_get_val::<String>(&args[0])?;
 
                 // Get the state value from the actor state
@@ -102,13 +104,13 @@ impl ExtismEngine {
             "__set_state",
             vec![ValType::I64, ValType::I64],
             vec![],
-            user_data,
-            move |plugin, args, ret, _data| {
+            user_data.clone(),
+            move |plugin, args, _ret, _data| {
+                // Original Rust WASM SDK format: separate key and value arguments
                 let key = plugin.memory_get_val::<String>(&args[0])?;
                 let value = plugin.memory_get_val::<Json<serde_json::Value>>(&args[1])?;
-
-                // Extract the value from Json wrapper
                 let state_value = value.into_inner();
+
                 // Set the state value
                 let mut state_guard = state_clone.lock();
                 if let Some(memory_state) = state_guard.as_mut_any().downcast_mut::<MemoryState>() {
@@ -249,7 +251,33 @@ impl ScriptEngine for ExtismEngine {
             )?;
 
         // Parse the ActorResult from the plugin
-        let actor_result: serde_json::Value = result.into_inner();
+        let mut actor_result: serde_json::Value = result.into_inner();
+        
+        // Check if the result is a base64-encoded string (from Go SDK)
+        if let Some(base64_str) = actor_result.as_str() {
+            // println!("Detected base64 string from plugin, decoding...");
+            // Try to decode the base64 string
+            use base64::{Engine as _, engine::general_purpose};
+            match general_purpose::STANDARD.decode(base64_str) {
+                Ok(decoded_bytes) => {
+                    // Parse the decoded bytes as JSON
+                    match serde_json::from_slice::<serde_json::Value>(&decoded_bytes) {
+                        Ok(decoded_json) => {
+                            // println!("Successfully decoded base64 to JSON");
+                            actor_result = decoded_json;
+                        }
+                        Err(e) => {
+                            return Err(anyhow::anyhow!("Failed to parse decoded base64 as JSON: {}", e));
+                        }
+                    }
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("Failed to decode base64 string: {}", e));
+                }
+            }
+        }
+        
+        // println!("Actor result: {:?}", actor_result);
         
         // Extract outputs from ActorResult
         let outputs = actor_result

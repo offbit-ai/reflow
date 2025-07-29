@@ -137,7 +137,7 @@ The WASM runtime provides several security features:
 - **Cross-Boundary Calls**: Data serialization between host and plugin has a cost
 - **Optimization**: Use release builds and wasm-opt for best performance
 
-## Example: Stateful Counter
+## Example: Stateful Counter (Rust)
 
 ```rust
 use reflow_wasm::*;
@@ -204,6 +204,120 @@ actor_plugin!(
     metadata: metadata(),
     process: process_actor
 );
+```
+
+## Example: Stateful Counter (Go)
+
+```go
+package main
+
+import (
+    reflow "github.com/darmie/reflow/reflow_wasm_go/sdk"
+)
+
+func processCounter(context reflow.ActorContext) (reflow.ActorResult, error) {
+    outputs := make(map[string]interface{})
+    
+    // Get current count from state using host function
+    currentCount := int64(0)
+    if stateValue, err := reflow.GetState("count"); err == nil && stateValue != nil {
+        if countFloat, ok := stateValue.(float64); ok {
+            currentCount = int64(countFloat)
+        }
+    }
+    
+    // Handle operations
+    if operation, exists := context.Payload["operation"]; exists {
+        if operation.Type == "String" {
+            op := operation.Data.(string)
+            
+            switch op {
+            case "increment":
+                currentCount++
+            case "decrement":
+                currentCount--
+            case "reset":
+                currentCount = 0
+            case "double":
+                currentCount *= 2
+            }
+            
+            // Save new count to state
+            reflow.SetState("count", currentCount)
+            
+            outputs["value"] = reflow.NewIntegerMessage(currentCount).ToSerializable()
+            outputs["operation"] = reflow.NewStringMessage(op).ToSerializable()
+            
+            // Send async output via host function
+            asyncOutputs := map[string]interface{}{
+                "status": "Processing complete",
+                "count": currentCount,
+            }
+            reflow.SendOutput(asyncOutputs)
+        }
+    } else {
+        // No operation, just return current count
+        outputs["value"] = reflow.NewIntegerMessage(currentCount).ToSerializable()
+    }
+    
+    // Update state
+    newState := map[string]interface{}{
+        "count": currentCount,
+    }
+    
+    return reflow.ActorResult{
+        Outputs: outputs,
+        State:   newState,
+    }, nil
+}
+
+func getMetadata() reflow.PluginMetadata {
+    return reflow.PluginMetadata{
+        Component:   "GoCounter",
+        Description: "Stateful counter actor implemented in Go",
+        Inports: []reflow.PortDefinition{
+            reflow.NewOptionalPort("operation", "Operation to perform", "String"),
+        },
+        Outports: []reflow.PortDefinition{
+            reflow.NewOptionalPort("value", "Current counter value", "Integer"),
+            reflow.NewOptionalPort("operation", "Operation performed", "String"),
+        },
+        ConfigSchema: nil,
+    }
+}
+
+func init() {
+    reflow.RegisterPlugin(getMetadata(), processCounter)
+}
+
+// Export functions required by Extism
+//export get_metadata
+func get_metadata() int32 {
+    return reflow.GetMetadata()
+}
+
+//export process
+func process() int32 {
+    return reflow.Process()
+}
+
+func main() {}
+```
+
+### Building Go WASM Plugins
+
+To build Go plugins for Reflow, you'll need [TinyGo](https://tinygo.org/) installed:
+
+```bash
+tinygo build -o counter.wasm -target wasi -no-debug main.go
+```
+
+Important considerations for Go WASM plugins:
+- Use TinyGo for smaller binary sizes and better WASM compatibility
+- Avoid using `fmt` package as it can cause runtime panics in WASM
+- JSON numbers are decoded as float64, so cast to int64 when needed
+- Use `//export` directives (not `//go:wasmexport`) for better compatibility
+- The main function should be empty
 ```
 
 ## Debugging

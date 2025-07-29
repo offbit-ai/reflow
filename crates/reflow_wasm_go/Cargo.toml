@@ -1,0 +1,19 @@
+[package]
+name = "reflow_wasm_go"
+version = "0.1.0"
+edition = "2021"
+description = "Go SDK for building Reflow actors as WebAssembly plugins"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+# For testing Go plugins with Rust tests
+extism = "1.4"
+reflow_script = { path = "../reflow_script", features = ["extism"] }
+reflow_actor = { path = "../reflow_actor" }
+reflow_graph = { path = "../reflow_graph" }
+parking_lot = { workspace = true }
+tokio = { version = "1", features = ["full"] }

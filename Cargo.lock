@@ -5826,6 +5826,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_wasm_go"
+version = "0.1.0"
+dependencies = [
+ "extism",
+ "parking_lot 0.12.4",
+ "reflow_actor",
+ "reflow_graph",
+ "reflow_script",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "regalloc2"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
