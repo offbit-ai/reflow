@@ -1,6 +1,6 @@
 {
   "name": "@offbit-ai/reflow",
-  "version": "0.1.1",
+  "version": "0.1.57",
   "description": "Reflow - Flow-Based Programming Framework",
   "main": "index.js",
   "module": "index.mjs",
@@ -29,6 +29,7 @@
     "index.mjs",
     "auto.js",
     "auto.mjs",
+    "auto.d.ts",
     "wasm/",
     "native/",
     "package.json",

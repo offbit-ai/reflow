@@ -1010,4 +1010,108 @@ impl GraphNetwork {
             network._shutdown();
         }
     }
+
+    /// Create an actor
+    #[wasm_bindgen(js_name = createActor)]
+    pub fn create_actor(&mut self, name: &str, actor: ExternActor) -> Result<JsValue, JsValue> {
+        if let Ok(mut network) = self.network.lock() {
+            return network.create_actor(name, actor);
+        }
+        Err(JsValue::from_str("Error accessing network"))
+    }
+
+    /// Get actor names
+    #[wasm_bindgen(js_name = getActorNames)]
+    pub fn get_actor_names(&self) -> Vec<String> {
+        if let Ok(network) = self.network.lock() {
+            return network.get_actor_names();
+        }
+        Vec::new()
+    }
+
+    /// Get active actors
+    #[wasm_bindgen(js_name = getActiveActors)]
+    pub fn get_active_actors(&self) -> Vec<String> {
+        if let Ok(network) = self.network.lock() {
+            return network._get_active_actors();
+        }
+        Vec::new()
+    }
+
+    /// Get actor count
+    #[wasm_bindgen(js_name = getActorCount)]
+    pub fn get_actor_count(&self) -> usize {
+        if let Ok(network) = self.network.lock() {
+            return network._get_actor_count();
+        }
+        0
+    }
+
+    /// Get message queue size
+    #[wasm_bindgen(js_name = getMessageQueueSize)]
+    pub fn get_message_queue_size(&self) -> usize {
+        if let Ok(network) = self.network.lock() {
+            return network._get_message_queue_size();
+        }
+        0
+    }
+
+    /// Add a node
+    #[wasm_bindgen(js_name = addNode)]
+    pub fn add_node(&mut self, id: &str, process: &str) {
+        if let Ok(mut network) = self.network.lock() {
+            network._add_node(id, process);
+        }
+    }
+
+    /// Add a connection
+    #[wasm_bindgen(js_name = addConnection)]
+    pub fn add_connection(&mut self, connector: Connector) {
+        if let Ok(mut network) = self.network.lock() {
+            network._add_connection(connector);
+        }
+    }
+
+    /// Add initial data
+    #[wasm_bindgen(js_name = addInitial)]
+    pub fn add_initial(&mut self, connector: InitialPacket) {
+        if let Ok(mut network) = self.network.lock() {
+            network._add_initial(connector);
+        }
+    }
+
+    /// Emit data to an actor
+    #[wasm_bindgen]
+    pub fn emit(&mut self, actor_id: String, packet: JsValue) {
+        if let Ok(mut network) = self.network.lock() {
+            network.emit(actor_id, packet);
+        }
+    }
+
+    /// Send data to an actor
+    #[wasm_bindgen(js_name = sendToActor)]
+    pub fn send_to_actor(&self, actor_id: &str, port: &str, data: JsValue) -> Result<(), JsValue> {
+        if let Ok(network) = self.network.lock() {
+            return network._send_to_actor(actor_id, port, data);
+        }
+        Err(JsValue::from_str("Error accessing network"))
+    }
+
+    /// Execute an actor
+    #[wasm_bindgen(js_name = executeActor)]
+    pub async fn execute_actor(&self, actor_id: &str, data: JsValue) -> Result<JsValue, JsValue> {
+        if let Ok(network) = self.network.lock() {
+            return network._execute_actor(actor_id, data).await;
+        }
+        Err(JsValue::from_str("Error accessing network"))
+    }
+
+    /// Get a node
+    #[wasm_bindgen(js_name = getNode)]
+    pub fn get_node(&self, actor_id: &str) -> JsValue {
+        if let Ok(network) = self.network.lock() {
+            return network.get_node(actor_id);
+        }
+        JsValue::null()
+    }
 }

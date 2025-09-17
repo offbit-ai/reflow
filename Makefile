@@ -53,17 +53,20 @@ wasm-release:
 npm-package: wasm-release build-nodejs create-unified-wrapper
 	@echo "Building npm package $(NPM_PACKAGE_NAME)..."
 	@mkdir -p $(NPM_OUTPUT_DIR)
-	@# Extract version from git tag (if exists) or Cargo.toml
-	@if git describe --tags --abbrev=0 2>/dev/null; then \
-		VERSION=$$(git describe --tags --abbrev=0 | sed 's/^v//'); \
-		echo "Using version from git tag: $$VERSION"; \
+	@# Extract version: from VERSION flag, git tag, or Cargo.toml
+	@if [ -n "$(VERSION)" ]; then \
+		NPM_VERSION="$(VERSION)"; \
+		echo "Using version from VERSION flag: $$NPM_VERSION"; \
+	elif git describe --tags --abbrev=0 2>/dev/null; then \
+		NPM_VERSION=$$(git describe --tags --abbrev=0 | sed 's/^v//'); \
+		echo "Using version from git tag: $$NPM_VERSION"; \
 	else \
-		VERSION=$$(grep '^version = ' $(NETWORK_CRATE)/Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'); \
-		echo "Using version from Cargo.toml: $$VERSION"; \
+		NPM_VERSION=$$(grep '^version = ' $(NETWORK_CRATE)/Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'); \
+		echo "Using version from Cargo.toml: $$NPM_VERSION"; \
 	fi && \
-	echo "Setting npm package version to $$VERSION..." && \
+	echo "Setting npm package version to $$NPM_VERSION..." && \
 	cd npm-unified-wrapper && \
-	npm version $$VERSION --allow-same-version --no-git-tag-version && \
+	npm version $$NPM_VERSION --allow-same-version --no-git-tag-version && \
 	cd ..
 	@# Create subfolders for each implementation
 	@mkdir -p $(NPM_OUTPUT_DIR)/wasm
@@ -71,6 +74,13 @@ npm-package: wasm-release build-nodejs create-unified-wrapper
 	@# Copy WASM build to wasm subfolder
 	@echo "Copying WASM build files to wasm/..."
 	@cp -r $(NETWORK_CRATE)/pkg/release/* $(NPM_OUTPUT_DIR)/wasm/
+	@# Add index.js and index.mjs entry points for WASM module
+	@if [ -f npm-unified-wrapper/wasm-index.js ]; then \
+		cp npm-unified-wrapper/wasm-index.js $(NPM_OUTPUT_DIR)/wasm/index.js; \
+	fi
+	@if [ -f npm-unified-wrapper/wasm-index.mjs ]; then \
+		cp npm-unified-wrapper/wasm-index.mjs $(NPM_OUTPUT_DIR)/wasm/index.mjs; \
+	fi
 	@# Copy native build to native subfolder
 	@echo "Copying native build files to native/..."
 	@cp crates/reflow_node/index.node $(NPM_OUTPUT_DIR)/native/ 2>/dev/null || true
@@ -89,6 +99,10 @@ npm-package: wasm-release build-nodejs create-unified-wrapper
 	@# Copy the unified wrapper files to root
 	@echo "Adding unified wrapper..."
 	@cp -r npm-unified-wrapper/* $(NPM_OUTPUT_DIR)/ 2>/dev/null || true
+	@# Ensure auto.d.ts is copied
+	@if [ -f npm-unified-wrapper/auto.d.ts ]; then \
+		cp npm-unified-wrapper/auto.d.ts $(NPM_OUTPUT_DIR)/auto.d.ts; \
+	fi
 	@# Use the unified wrapper README
 	@if [ -f npm-unified-wrapper/README.md ]; then \
 		cp npm-unified-wrapper/README.md $(NPM_OUTPUT_DIR)/README.md; \
@@ -138,6 +152,7 @@ create-unified-wrapper:
 			"index.mjs", \
 			"auto.js", \
 			"auto.mjs", \
+			"auto.d.ts", \
 			"wasm/", \
 			"native/", \
 			"package.json", \
@@ -166,10 +181,20 @@ create-unified-wrapper:
 		} \
 	}, null, 2))' > npm-unified-wrapper/package.json
 
-# Publish npm package (requires npm login)
-npm-publish: npm-package
+# Publish npm package (requires npm login) - doesn't rebuild, uses existing package
+npm-publish:
+	@if [ ! -d "$(NPM_OUTPUT_DIR)" ]; then \
+		echo "Error: npm-package directory not found. Run 'make npm-package' first."; \
+		exit 1; \
+	fi
 	@echo "Publishing $(NPM_PACKAGE_NAME) to npm registry..."
-	cd $(NPM_OUTPUT_DIR) && npm publish --access public
+	@cd $(NPM_OUTPUT_DIR) && \
+	PACKAGE_VERSION=$$(node -p "require('./package.json').version") && \
+	echo "Publishing version: $$PACKAGE_VERSION" && \
+	npm publish --access public
+
+# Build and publish in one step (rebuilds package with version)
+npm-build-publish: npm-package npm-publish
 
 # Test npm package locally
 npm-test: npm-package
