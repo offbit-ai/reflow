@@ -1,6 +1,6 @@
 // Example of using the Reflow Network Actor System in a web application
 
-import { Network, ActorLoad, MemoryState, WasmActorContext, JsWasmActor, init_panic_hook, ActorRunContext } from '../pkg/reflow_network.js';
+import { Network, ActorLoad, MemoryState, BrowserActorContext,  init_panic_hook, ActorRunContext } from '../pkg/release/reflow_network.js';
 
 // Initialize panic hook for better error messages
 init_panic_hook();
@@ -73,7 +73,7 @@ async function main() {
     console.log("All state:", allState);
     
     // Create an actor context for more complex operations
-    const context = new WasmActorContext(
+    const context = new BrowserActorContext(
       { input: "Sample input data" },
       { timeout: 5000 }
     );

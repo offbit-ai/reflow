@@ -2,8 +2,6 @@
 resolver = "2"
 members = [
   "crates/*",
-  "examples/wasm_actor",
-  "usecase/demo",
 ]
 exclude = ["crates/reflow_components_archived"]
 

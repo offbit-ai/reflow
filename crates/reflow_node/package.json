@@ -1,7 +1,7 @@
 {
-  "name": "reflow",
+  "name": "@offbit-ai/reflow-nodejs",
   "version": "0.1.0",
-  "description": "Node.js bindings for ReFlow Network - Enhanced capabilities over WASM version",
+  "description": "Node.js bindings for Reflow flowbased programming framework",
   "main": "index.node",
 
   "keywords": [
@@ -14,7 +14,7 @@
     "neon",
     "native"
   ],
-  "author": "ReFlow Team",
+  "author": "Reflow Team",
   "license": "MIT",
   "scripts": {
     "build": "node build.js",

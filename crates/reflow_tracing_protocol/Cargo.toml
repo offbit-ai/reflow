@@ -8,20 +8,22 @@ description = "Shared protocol definitions for Reflow tracing system"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-uuid = { version = "1.0", features = ["v4", "serde"] }
+
 chrono = { version = "0.4", features = ["serde"] }
 derive_more = "0.99"
-tracing ={ workspace = true}
+tracing = { workspace = true }
 futures-util = "0.3.31"
 anyhow = { workspace = true }
-thiserror = {workspace = true}
+thiserror = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.27.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2.86"}
+uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+wasm-bindgen = { version = "0.2.86" }
 lz4_flex = "0.11.3"
 gloo-utils = "0.2"
 gloo-events = "0.2"
@@ -42,6 +44,10 @@ web-sys = { version = "0.3.77", features = [
     "RequestInit",
     "RequestMode",
     "Response",
+    "CloseEvent",
+    "ErrorEvent",
+    "MessageEvent",
+    "WebSocket",
 ] }
 tsify = { version = "0.4.5", features = ["js"] }
 wasm-bindgen-futures = "0.4.42"

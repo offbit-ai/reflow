@@ -1,0 +1,58 @@
+{
+  "name": "@offbit-ai/reflow",
+  "version": "0.1.1",
+  "description": "Reflow - Flow-Based Programming Framework",
+  "main": "index.js",
+  "module": "index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.js"
+    },
+    "./native": {
+      "require": "./native/index.js",
+      "types": "./native/index.d.ts"
+    },
+    "./wasm": {
+      "import": "./wasm/reflow.js",
+      "require": "./wasm/reflow.js",
+      "types": "./wasm/reflow.d.ts"
+    },
+    "./auto": {
+      "require": "./auto.js",
+      "import": "./auto.mjs"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.mjs",
+    "auto.js",
+    "auto.mjs",
+    "wasm/",
+    "native/",
+    "package.json",
+    "README.md"
+  ],
+  "keywords": [
+    "flow-based-programming",
+    "fbp",
+    "actor-model",
+    "wasm",
+    "webassembly",
+    "native-bindings"
+  ],
+  "author": "Offbit AI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/offbit-ai/reflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/offbit-ai/reflow/issues"
+  },
+  "homepage": "https://github.com/offbit-ai/reflow#readme",
+  "engines": {
+    "node": ">=12.20.0"
+  }
+}

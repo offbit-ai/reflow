@@ -75,6 +75,7 @@ type Result<T> = std::result::Result<T, TracingError>;
 struct ClientState {
     connection_status: ConnectionStatus,
     event_buffer: VecDeque<TraceEvent>,
+    #[cfg(not(target_arch = "wasm32"))]
     pending_requests: StdHashMap<String, tokio::sync::oneshot::Sender<TracingResponse>>,
     last_batch_time: Instant,
     reconnect_attempts: usize,
@@ -125,6 +126,7 @@ impl TracingClient {
         let state = Arc::new(Mutex::new(ClientState {
             connection_status: ConnectionStatus::Disconnected,
             event_buffer: VecDeque::new(),
+            #[cfg(not(target_arch = "wasm32"))]
             pending_requests: StdHashMap::new(),
             last_batch_time: Instant::now(),
             reconnect_attempts: 0,
@@ -255,6 +257,7 @@ impl TracingClient {
                             };
 
                             // Notify any pending requests
+                            #[cfg(not(target_arch = "wasm32"))]
                             if let Some((_, sender)) = state_guard.pending_requests.drain().next() {
                                 let _ = sender.send(converted_response);
                             };

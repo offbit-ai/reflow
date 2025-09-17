@@ -439,6 +439,7 @@ impl BrowserActorContext {
             id: "wasm_actor".to_string(),
             component: "WasmComponent".to_string(),
             metadata: Some(config_map.clone()),
+            script_runtime: None,
         };
 
         let actor_config = ActorConfig {
@@ -901,7 +902,6 @@ impl ActorRunContext {
             .collect::<HashMap<String, Message>>();
 
         self.outports
-            .out_port
             .0
             .send(messages)
             .map_err(|e| JsValue::from_str(&format!("Failed to send messages: {}", e)))?;
@@ -1074,15 +1074,15 @@ impl Actor for JsBrowserActor {
     fn create_process(
         &self,
         config: ActorConfig,
+        tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
-        self.actor.create_process(config)
+        self.actor.create_process(config, tracing_integration)
     }
 }
 
 #[cfg(target_arch = "wasm32")]
 impl BrowserActor {
     pub fn new(extern_actor: ExternActor) -> Self {
-        use serde_json::json;
 
         let inports = flume::unbounded();
         let outports = flume::unbounded();
@@ -1200,6 +1200,7 @@ impl Actor for BrowserActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
+        _tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
         use serde_json::json;

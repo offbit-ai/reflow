@@ -27,8 +27,14 @@ pub trait Command {
 /// Composite command for grouping multiple commands into a single transaction
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct CompositeCommand {
+    #[cfg(not(target_arch = "wasm32"))]
     commands: Vec<Box<dyn Command>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) commands: Vec<Box<dyn Command>>,
+    #[cfg(not(target_arch = "wasm32"))]
     description: String,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) description: String,
 }
 
 impl CompositeCommand {
@@ -63,10 +69,22 @@ impl Command for CompositeCommand {
 /// History manager for tracking and managing undo/redo operations
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct GraphHistory {
+    #[cfg(not(target_arch = "wasm32"))]
     undo_stack: Vec<Box<dyn Command>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) undo_stack: Vec<Box<dyn Command>>,
+    #[cfg(not(target_arch = "wasm32"))]
     redo_stack: Vec<Box<dyn Command>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) redo_stack: Vec<Box<dyn Command>>,
+    #[cfg(not(target_arch = "wasm32"))]
     max_history: Option<usize>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) max_history: Option<usize>,
+    #[cfg(not(target_arch = "wasm32"))]
     event_receiver: Receiver<GraphEvents>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) event_receiver: Receiver<GraphEvents>,
 }
 
 impl GraphHistory {

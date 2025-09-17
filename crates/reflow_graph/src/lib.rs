@@ -27,27 +27,71 @@ use web_sys::js_sys::Function;
 #[derive(Clone, Debug)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct Graph {
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) name: String,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub nodes: HashMap<String, GraphNode>,
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub nodes: HashMap<String, GraphNode>,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub connections: Vec<GraphConnection>,
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub connections: Vec<GraphConnection>,
     // Indexed connections for faster connection lookups
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) connection_indices: HashMap<(String, String), Vec<usize>>,
     /// Key is ((from_node, from_port), (to_node, to_port)) -> Vec<connection_indices>
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) connection_port_indices: HashMap<((String, String), (String, String)), Vec<usize>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub initializers: Vec<GraphIIP>,
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub initializers: Vec<GraphIIP>,
     // Indexed initializers for faster initializer lookups
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub initializer_indices: HashMap<String, Vec<usize>>,
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub(crate) initializer_indices: HashMap<String, Vec<usize>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub groups: Vec<GraphGroup>,
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub groups: Vec<GraphGroup>,
     // Indexed node groups for faster group membership lookups
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) node_groups: HashMap<String, HashSet<String>>,
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) inports: HashMap<String, GraphEdge>,
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) outports: HashMap<String, GraphEdge>,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub properties: HashMap<String, Value>,
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub(crate) properties: HashMap<String, Value>,
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) case_sensitive: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    pub event_channel: (flume::Sender<GraphEvents>, flume::Receiver<GraphEvents>),
+    #[cfg(target_arch = "wasm32")]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub event_channel: (flume::Sender<GraphEvents>, flume::Receiver<GraphEvents>),
     // Cached adjacency lists for faster traversal
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) adjacency_lists: HashMap<String, Vec<String>>,
 
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     pub(crate) graph_errors: Vec<GraphError>,
 }
 
@@ -703,6 +747,26 @@ impl Graph {
         }
 
         obj.into()
+    }
+    
+    #[wasm_bindgen(js_name = getNodes)]
+    pub fn get_nodes_js(&self) -> JsValue {
+        JsValue::from_serde(&self.nodes).unwrap_or_default()
+    }
+    
+    #[wasm_bindgen(js_name = getConnections)]
+    pub fn get_connections_js(&self) -> JsValue {
+        JsValue::from_serde(&self.connections).unwrap_or_default()
+    }
+    
+    #[wasm_bindgen(js_name = getInitializers)]
+    pub fn get_initializers_js(&self) -> JsValue {
+        JsValue::from_serde(&self.initializers).unwrap_or_default()
+    }
+    
+    #[wasm_bindgen(js_name = getGroups)]
+    pub fn get_groups_js(&self) -> JsValue {
+        JsValue::from_serde(&self.groups).unwrap_or_default()
     }
 }
 

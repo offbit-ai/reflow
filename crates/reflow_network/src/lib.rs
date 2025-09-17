@@ -43,8 +43,7 @@ pub fn init_panic_hook() {
 pub use actor::{
     ActorLoad, 
     MemoryState, 
-    WasmActorContext, 
-    JsWasmActor
+    BrowserActorContext, 
 };
 
 // Re-export network types for WASM

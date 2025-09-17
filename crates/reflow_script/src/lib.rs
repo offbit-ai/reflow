@@ -363,6 +363,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
             id: "test_counter".to_string(),
             component: "CounterActor".to_string(),
             metadata: Some(metadata),
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process
