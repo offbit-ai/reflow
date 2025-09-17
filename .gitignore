@@ -5,3 +5,5 @@ resource/*
 api_gen/
 node_modules
 index.node
+*_archived
+reflow_js

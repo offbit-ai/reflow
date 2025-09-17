@@ -4,32 +4,32 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reflow_actor = { path = "../reflow_actor"}
-actor_macro = { path = "../actor_macro" }
+reflow_actor = { path = "../reflow_actor" }
+reflow_graph = { path = "../reflow_graph" }
 reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
-anyhow = "1.0"
-parking_lot = "0.12"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-flume = "0.11.0"
-futures = "0.3"
-tokio = { version = "1.0", features = ["full"] }
-once_cell = "1.8"
-uuid = "1.0"
-chrono = "0.4"
+actor_macro = { path = "../actor_macro" }
 
-# http operations
-reqwest = "0.12.15"
+# Core dependencies
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+parking_lot = { workspace = true }
+flume = { workspace = true }
+futures = { workspace = true }
 
-# shell operations
-nu-command = "0.103.0"  # Provides nu commands
-nu-engine = "0.103.0"   # Core engine
-nu-parser = "0.103.0"   # Parser for nu language
-nu-protocol = "0.103.0" # Protocol definitions
+# HTTP/Network
+reqwest = { version = "0.12", features = ["json", "stream"] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3", features = ["Window", "Performance"] }
-gloo-utils = "0.2"
-tsify = "0.4"
+# File operations
+tokio = { version = "1", features = ["fs", "io-util"] }
+
+# Data processing
+regex = "1.10"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# JavaScript runtime
+rquickjs = { version = "0.6", features = ["array-buffer", "bindgen", "classes", "futures", "loader", "macro", "parallel", "properties"] }
+
+[dev-dependencies]
+reflow_server = { path = "../reflow_server" }

@@ -49,6 +49,7 @@ mod tests {
             id: "test_async".to_string(),
             component: "AsyncActor".to_string(),
             metadata: Some(metadata),
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process
@@ -214,6 +215,7 @@ mod tests {
             id: "test_async_no_progress".to_string(),
             component: "AsyncActor".to_string(),
             metadata: Some(metadata),
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process

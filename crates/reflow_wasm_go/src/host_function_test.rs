@@ -71,6 +71,7 @@ mod host_function_tests {
             id: "test_go_counter_with_state".to_string(),
             component: "GoCounterWithState".to_string(),
             metadata: None,
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process

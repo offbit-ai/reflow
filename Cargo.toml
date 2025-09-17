@@ -3,8 +3,9 @@ resolver = "2"
 members = [
   "crates/*",
   "examples/wasm_actor",
+  "usecase/demo",
 ]
-exclude = []
+exclude = ["crates/reflow_components_archived"]
 
 [workspace.dependencies]
 serde_json = "1.0.133"

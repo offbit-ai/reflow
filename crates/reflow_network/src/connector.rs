@@ -93,6 +93,20 @@ impl Connector {
                 let msg = outport_packet
                     .remove(&_from_port)
                     .unwrap_or_else(|| Message::Optional(None));
+                    
+                // Emit MessageSent event
+                let value: serde_json::Value = msg.clone().into();
+                let encodable = crate::message::EncodableValue::from(value);
+                let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+                let _ = network_event_emitter.0.send(NetworkEvent::MessageSent {
+                    from_actor: from_actor_id.clone(),
+                    from_port: _from_port.clone(),
+                    to_actor: to_actor_id.clone(),
+                    to_port: to_port.clone(),
+                    message: encodable,
+                    timestamp,
+                });
+                    
                 in_ports
                     .clone()
                     .0

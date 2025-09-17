@@ -71,6 +71,7 @@ impl Default for ActorConfig {
                 id: "default".to_string(),
                 component: "DefaultComponent".to_string(),
                 metadata: Some(HashMap::new()),
+                script_runtime: None,
             },
             resolved_env: HashMap::new(),
             config: HashMap::new(),

@@ -319,12 +319,23 @@ pub struct GlobalRateLimit {
 // API Tool Generation System
 // ============================================================================
 
+#[derive(Debug, Clone)]
+pub struct ToolMapping {
+    pub tool_id: String,
+    pub actor: ApiOperationActor,
+    pub mcp_tool: serde_json::Value,
+    pub openai_function: serde_json::Value,
+    pub service_id: String,
+    pub operation: Operation,
+}
+
 #[derive(Debug)]
 pub struct ApiToolGenerator {
     registry: ServiceRegistry,
     auth_manager: Arc<dyn AuthManager>,
     rate_limiter: Arc<dyn RateLimiter>,
     http_client: reqwest::Client,
+    tool_mappings: std::collections::HashMap<String, ToolMapping>,
 }
 
 impl ApiToolGenerator {
@@ -338,23 +349,78 @@ impl ApiToolGenerator {
             .build()
             .expect("Failed to create HTTP client");
 
-        Self {
+        let mut generator = Self {
             registry,
             auth_manager,
             rate_limiter,
             http_client,
+            tool_mappings: std::collections::HashMap::new(),
+        };
+        
+        // Initialize tool mappings
+        generator.initialize_tool_mappings().expect("Failed to initialize tool mappings");
+        generator
+    }
+
+    /// Initialize all tool mappings during construction
+    fn initialize_tool_mappings(&mut self) -> Result<()> {
+        for (service_id, service) in &self.registry.services {
+            for operation in &service.operations {
+                let tool_id = self.generate_tool_id(service_id, operation);
+                
+                // Create the actor
+                let actor = self.create_operation_actor(service_id, service, operation)?;
+                
+                // Generate MCP tool
+                let mcp_tool = self.generate_mcp_tool_for_operation(service_id, service, operation)?;
+                
+                // Generate OpenAI function
+                let openai_function = self.generate_openai_function_for_operation(service_id, service, operation)?;
+                
+                let mapping = ToolMapping {
+                    tool_id: tool_id.clone(),
+                    actor,
+                    mcp_tool,
+                    openai_function,
+                    service_id: service_id.clone(),
+                    operation: operation.clone(),
+                };
+                
+                self.tool_mappings.insert(tool_id, mapping);
+            }
         }
+        Ok(())
+    }
+
+    /// Generate consistent tool ID for service and operation
+    fn generate_tool_id(&self, service_id: &str, operation: &Operation) -> String {
+        format!("{}_{}_{}",
+            service_id.replace("-", "_"),
+            operation.verb.replace("-", "_"),
+            operation.resource.replace("-", "_")
+        )
+    }
+
+    /// Get all available tool IDs
+    pub fn get_tool_ids(&self) -> Vec<String> {
+        self.tool_mappings.keys().cloned().collect()
+    }
+
+    /// Get tool mapping by ID
+    pub fn get_tool_mapping(&self, tool_id: &str) -> Option<&ToolMapping> {
+        self.tool_mappings.get(tool_id)
+    }
+
+    /// Get all tool mappings
+    pub fn get_all_tool_mappings(&self) -> &std::collections::HashMap<String, ToolMapping> {
+        &self.tool_mappings
     }
 
     pub fn generate_all_actors(&self) -> Result<Vec<Box<dyn Actor>>> {
-        let mut actors = Vec::new();
-
-        for (service_id, service) in &self.registry.services {
-            let service_actors = self.generate_service_actors(service_id, service)?;
-            actors.extend(service_actors);
-        }
-
-        Ok(actors)
+        Ok(self.tool_mappings
+            .values()
+            .map(|mapping| Box::new(mapping.actor.clone()) as Box<dyn Actor>)
+            .collect())
     }
 
     pub fn generate_service_actors(
@@ -401,16 +467,10 @@ impl ApiToolGenerator {
     }
 
     pub fn generate_openai_functions(&self) -> Result<Vec<serde_json::Value>> {
-        let mut functions = Vec::new();
-
-        for (service_id, service) in &self.registry.services {
-            for operation in &service.operations {
-                let function = self.generate_openai_function(service_id, service, operation)?;
-                functions.push(function);
-            }
-        }
-
-        Ok(functions)
+        Ok(self.tool_mappings
+            .values()
+            .map(|mapping| mapping.openai_function.clone())
+            .collect())
     }
 
     fn generate_openai_function(
@@ -492,18 +552,252 @@ impl ApiToolGenerator {
     }
 
     pub fn generate_mcp_schema(&self) -> Result<serde_json::Value> {
-        let mut tools = Vec::new();
-
-        for (service_id, service) in &self.registry.services {
-            for operation in &service.operations {
-                let tool = self.generate_mcp_tool(service_id, service, operation)?;
-                tools.push(tool);
-            }
-        }
+        let tools: Vec<serde_json::Value> = self.tool_mappings
+            .values()
+            .map(|mapping| mapping.mcp_tool.clone())
+            .collect();
 
         Ok(serde_json::json!({
             "version": "2024-11-05",
             "tools": tools
+        }))
+    }
+
+    /// Automatic tool calling mechanism
+    /// Execute a tool by ID with the provided arguments
+    pub async fn execute_tool(&self, tool_id: &str, arguments: serde_json::Value) -> Result<std::collections::HashMap<String, Message>> {
+        let mapping = self.tool_mappings.get(tool_id)
+            .ok_or_else(|| anyhow!("Tool not found: {}", tool_id))?;
+
+        // Convert JSON arguments to Message payload
+        let payload = self.json_to_message_payload(arguments)?;
+
+        // Execute the actor with the payload
+        self.execute_actor_with_payload(&mapping.actor, payload).await
+    }
+
+    /// Execute multiple tools in sequence or parallel
+    pub async fn execute_tools(&self, tool_calls: Vec<(String, serde_json::Value)>) -> Result<Vec<std::collections::HashMap<String, Message>>> {
+        let mut results = Vec::new();
+        
+        for (tool_id, arguments) in tool_calls {
+            let result = self.execute_tool(&tool_id, arguments).await?;
+            results.push(result);
+        }
+        
+        Ok(results)
+    }
+
+    /// Execute tools in parallel for better performance
+    pub async fn execute_tools_parallel(&self, tool_calls: Vec<(String, serde_json::Value)>) -> Result<Vec<std::collections::HashMap<String, Message>>> {
+        use futures::future::try_join_all;
+        
+        let futures = tool_calls.into_iter()
+            .map(|(tool_id, arguments)| {
+                async move {
+                    self.execute_tool(&tool_id, arguments).await
+                }
+            })
+            .collect::<Vec<_>>();
+        
+        try_join_all(futures).await
+    }
+
+    /// Get LLM-ready tool definitions with consistent naming
+    pub fn get_llm_tools(&self) -> Vec<serde_json::Value> {
+        self.tool_mappings
+            .values()
+            .map(|mapping| {
+                let mut tool = mapping.mcp_tool.clone();
+                // Ensure tool name matches the tool_id for consistent calling
+                if let Some(obj) = tool.as_object_mut() {
+                    obj.insert("id".to_string(), serde_json::Value::String(mapping.tool_id.clone()));
+                }
+                tool
+            })
+            .collect()
+    }
+
+    /// Helper method to convert JSON to Message payload
+    fn json_to_message_payload(&self, json: serde_json::Value) -> Result<std::collections::HashMap<String, Message>> {
+        let mut payload = std::collections::HashMap::new();
+        
+        if let serde_json::Value::Object(obj) = json {
+            for (key, value) in obj {
+                let message = self.json_value_to_message(value)?;
+                payload.insert(key, message);
+            }
+        }
+        
+        Ok(payload)
+    }
+
+    /// Convert JSON Value to Message
+    fn json_value_to_message(&self, value: serde_json::Value) -> Result<Message> {
+        match value {
+            serde_json::Value::String(s) => Ok(Message::String(s.into())),
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    Ok(Message::Integer(i))
+                } else if let Some(f) = n.as_f64() {
+                    Ok(Message::Float(f))
+                } else {
+                    Ok(Message::String(n.to_string().into()))
+                }
+            },
+            serde_json::Value::Bool(b) => Ok(Message::Boolean(b)),
+            serde_json::Value::Array(arr) => {
+                let encoded_values: Vec<reflow_actor::message::EncodableValue> = arr.into_iter()
+                    .map(|v| v.into())
+                    .collect();
+                Ok(Message::Array(Arc::new(encoded_values)))
+            },
+            serde_json::Value::Object(_) => {
+                let encoded: reflow_actor::message::EncodableValue = value.into();
+                Ok(Message::Object(Arc::new(encoded)))
+            },
+            serde_json::Value::Null => Ok(Message::String("".to_string().into())),
+        }
+    }
+
+    /// Execute actor with payload
+    async fn execute_actor_with_payload(
+        &self,
+        actor: &ApiOperationActor,
+        payload: std::collections::HashMap<String, Message>
+    ) -> Result<std::collections::HashMap<String, Message>> {
+        // Create a minimal context for execution
+        let outports = flume::unbounded();
+        let state = Arc::new(parking_lot::Mutex::new(MemoryState::default()));
+        let load = Arc::new(parking_lot::Mutex::new(reflow_actor::ActorLoad::new(0)));
+        
+        // Create minimal config
+        let node = crate::graph::types::GraphNode {
+            id: actor.id.clone(),
+            component: "ApiOperation".to_string(),
+            metadata: Some(std::collections::HashMap::new()),
+            script_runtime: None,
+        };
+        
+        let actor_config = ActorConfig {
+            node,
+            resolved_env: std::collections::HashMap::new(),
+            config: std::collections::HashMap::new(),
+            namespace: None,
+        };
+
+        let context = ActorContext::new(
+            payload,
+            outports,
+            state,
+            actor_config,
+            load,
+        );
+
+        // Get and execute the behavior
+        let behavior = actor.get_behavior();
+        behavior(context).await
+    }
+
+    /// Create operation actor (refactored from generate_operation_actor)
+    fn create_operation_actor(
+        &self,
+        service_id: &str,
+        service: &Service,
+        operation: &Operation,
+    ) -> Result<ApiOperationActor> {
+        let actor_id = self.generate_tool_id(service_id, operation);
+
+        let base_url = service
+            .api_specs
+            .first()
+            .map(|spec| spec.base_url.clone())
+            .unwrap_or_default();
+
+        let actor = ApiOperationActor::new(
+            actor_id,
+            service_id.to_string(),
+            service.clone(),
+            operation.clone(),
+            base_url,
+            self.auth_manager.clone(),
+            self.rate_limiter.clone(),
+            self.http_client.clone(),
+        );
+
+        Ok(actor)
+    }
+
+    /// Generate MCP tool for a specific operation
+    fn generate_mcp_tool_for_operation(
+        &self,
+        service_id: &str,
+        service: &Service,
+        operation: &Operation,
+    ) -> Result<serde_json::Value> {
+        let tool_name = self.generate_tool_id(service_id, operation);
+
+        let mut properties = serde_json::Map::new();
+        let mut required = Vec::new();
+
+        if let Some(parameters) = &operation.parameters {
+            for param in parameters {
+                let param_schema = self.parameter_to_json_schema(param);
+                properties.insert(param.name.clone(), param_schema);
+
+                if param.required.unwrap_or(false) {
+                    required.push(param.name.clone());
+                }
+            }
+        }
+
+        Ok(serde_json::json!({
+            "name": tool_name,
+            "description": format!("{} {} using {} API",
+                operation.verb, operation.resource, service.name),
+            "inputSchema": {
+                "type": "object",
+                "properties": properties,
+                "required": required
+            }
+        }))
+    }
+
+    /// Generate OpenAI function for a specific operation
+    fn generate_openai_function_for_operation(
+        &self,
+        service_id: &str,
+        service: &Service,
+        operation: &Operation,
+    ) -> Result<serde_json::Value> {
+        let function_name = self.generate_tool_id(service_id, operation);
+
+        let mut properties = serde_json::Map::new();
+        let mut required = Vec::new();
+
+        if let Some(parameters) = &operation.parameters {
+            for param in parameters {
+                let param_schema = self.parameter_to_json_schema(param);
+                properties.insert(param.name.clone(), param_schema);
+
+                if param.required.unwrap_or(false) {
+                    required.push(param.name.clone());
+                }
+            }
+        }
+
+        Ok(serde_json::json!({
+            "type": "function",
+            "function": {
+                "name": function_name,
+                "description": format!("{} {} using {} API",
+                    operation.verb, operation.resource, service.name),
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                    "required": required
+                }
+            }
         }))
     }
 
@@ -546,7 +840,7 @@ impl ApiToolGenerator {
 // API Operation Actor Implementation
 // ============================================================================
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ApiOperationActor {
     pub id: String,
     pub service_id: String,
@@ -1153,6 +1447,8 @@ impl RateLimiter for DefaultRateLimiter {
 mod tests {
     use std::{env, path::PathBuf};
 
+    use serde_json::json;
+
     use crate::actor::ActorLoad;
 
     use super::*;
@@ -1264,6 +1560,7 @@ mod tests {
             id: "test_actor".to_string(),
             component: "TestComponent".to_string(),
             metadata: Some(HashMap::new()),
+            script_runtime: None,
         };
 
         let actor_config = crate::actor::ActorConfig {
@@ -1311,8 +1608,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_yaml_converter() {
+    #[tokio::test]
+    async fn test_yaml_converter() {
         let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
         let service_registry_yaml_string = manifest_dir.join("../../api_service_registry.yaml");
@@ -1332,13 +1629,20 @@ mod tests {
         let openai_functions = generator.generate_openai_functions().unwrap();
         let mcp_schema = generator.generate_mcp_schema().unwrap();
 
+        // println!("tool: {:?}",mcp_schema["tools"][0]);
+        let res =  generator.execute_tool("jira_update_issue", json!({
+            "capture_id": "PAY-1234567890"
+        })).await.expect("Tool execution failed");
+
+        println!("Tool execution result: {:?}", res);
+
         assert!(!openai_functions.is_empty());
         assert_eq!(mcp_schema["version"], "2024-11-05");
         assert!(!mcp_schema["tools"].is_null());
 
-        println!(
-            "{}",
-            serde_yaml::to_string(&mcp_schema["tools"]).unwrap()
-        );
+        // println!(
+        //     "{}",
+        //     serde_yaml::to_string(&mcp_schema["tools"]).unwrap()
+        // );
     }
 }

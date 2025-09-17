@@ -4,15 +4,28 @@ version = "0.1.0"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 
+[[bin]]
+name = "reflow_server"
+path = "src/main.rs"
+
 [dependencies]
 reflow_network = { path = "../reflow_network" }
+reflow_graph = { path = "../reflow_graph" }
+reflow_components = { path = "../reflow_components" }
 actor_macro = { path = "../actor_macro" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 dashmap = "6.1.0"
 tokio = { version = "1.32", features = ["full"] }
-tokio-tungstenite = "0.20"
+axum = { version = "0.7", features = ["ws"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
 futures-util = "0.3"
+futures = "0.3"
 uuid = { version = "1.4", features = ["v4", "serde"] }
 chrono = "0.4"
+reqwest = { version = "0.12", features = ["json"] }
+flume = "0.11"
+log = "0.4"
+env_logger = "0.11"

@@ -77,6 +77,7 @@ mod tests {
             id: "test_multiply".to_string(),
             component: "MultiplyActor".to_string(),
             metadata: Some(metadata),
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process
@@ -149,6 +150,7 @@ mod tests {
             id: "test_counter".to_string(),
             component: "CounterActor".to_string(),
             metadata: Some(metadata),
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process
@@ -244,6 +246,7 @@ mod tests {
             metadata: Some(HashMap::from([
                 ("factor".to_string(), serde_json::json!(2.0))
             ])),
+            ..Default::default()
         }).unwrap();
         
         let process = actor.create_process(actor_config, None);
@@ -316,6 +319,7 @@ mod tests {
             metadata: Some(HashMap::from([
                 ("initial_value".to_string(), serde_json::json!(0))
             ])),
+            ..Default::default()
         }).unwrap();
         
         // Start both actor processes

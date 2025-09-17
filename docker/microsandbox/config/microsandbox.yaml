@@ -1,0 +1,110 @@
+# MicroSandbox Configuration for Reflow
+# Optimized for RPC-based script execution with compression
+
+server:
+  host: 0.0.0.0
+  port: 5555
+  rpc_port: 5556
+  max_connections: 1000
+  request_timeout: 30s
+  enable_compression: true
+  compression_threshold: 1024  # Compress messages > 1KB
+
+rpc:
+  enabled: true
+  protocol: websocket
+  heartbeat_interval: 30s
+  max_message_size: 16MB
+  enable_batching: true
+  batch_timeout: 10ms
+  
+sandbox:
+  # Default limits per sandbox
+  memory_mb: 256
+  cpu_limit: 0.5
+  max_execution_time: 30s
+  max_output_size: 10MB
+  
+  # Pool configuration for performance
+  pool:
+    python:
+      min_instances: 5
+      max_instances: 50
+      idle_timeout: 300s
+    
+    nodejs:
+      min_instances: 5
+      max_instances: 50
+      idle_timeout: 300s
+
+# Redis for state management
+redis:
+  url: ${MICROSANDBOX_REDIS_URL}
+  pool_size: 10
+  namespace: microsandbox
+  ttl: 3600  # 1 hour default TTL
+
+# Security
+security:
+  enable_network: false
+  enable_filesystem: false
+  allowed_paths:
+    - /tmp
+    - /var/lib/microsandbox/scripts
+  blocked_syscalls:
+    - fork
+    - execve
+    - ptrace
+
+# Monitoring
+monitoring:
+  metrics_enabled: true
+  metrics_port: 9090
+  trace_enabled: true
+  log_level: info
+
+# Message compression settings
+compression:
+  algorithm: lz4  # Fast compression for real-time
+  level: 1        # Fastest compression
+  min_size: 1024  # Only compress messages > 1KB
+
+# RPC-specific settings for real-time behavior
+rpc_settings:
+  # Enable streaming for async outputs
+  enable_streaming: true
+  
+  # Bidirectional communication
+  allow_script_callbacks: true
+  
+  # Message routing
+  routing:
+    strategy: round_robin
+    sticky_sessions: true
+    session_timeout: 300s
+  
+  # Performance tuning
+  performance:
+    use_binary_protocol: true
+    enable_zero_copy: false  # Can't do zero-copy over network
+    buffer_size: 65536
+    
+# Script execution environment
+environment:
+  python:
+    version: "3.11"
+    packages:
+      - numpy
+      - msgpack
+      - redis
+    env_vars:
+      PYTHONUNBUFFERED: "1"
+  
+  nodejs:
+    version: "20"
+    packages:
+      - ws
+      - redis
+      - msgpack
+    env_vars:
+      NODE_ENV: "production"

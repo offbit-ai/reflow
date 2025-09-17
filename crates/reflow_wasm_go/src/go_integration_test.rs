@@ -68,6 +68,7 @@ mod go_integration_tests {
             id: "test_go_base64".to_string(),
             component: "GoCounter".to_string(),
             metadata: None,
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process

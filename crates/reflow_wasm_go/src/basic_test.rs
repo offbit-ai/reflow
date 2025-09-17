@@ -85,6 +85,7 @@ mod basic_tests {
             id: "test_basic_go_counter".to_string(),
             component: "GoCounter".to_string(),
             metadata: None,
+            ..Default::default()
         }).unwrap();
         
         // Start the actor process

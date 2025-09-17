@@ -17,6 +17,17 @@ pub struct GraphNode {
     pub component: String,
     #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, any> | undefined"))]
     pub metadata: Option<HashMap<String, Value>>,
+    
+    // Script runtime indicator (if this is a script actor)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub script_runtime: Option<ScriptRuntime>,
+}
+
+/// Runtime environment for script actors
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub enum ScriptRuntime {
+    Python,
+    JavaScript,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]

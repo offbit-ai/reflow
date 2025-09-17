@@ -40,6 +40,7 @@ async fn test_go_counter_actor() {
         id: "test_go_counter".to_string(),
         component: "GoCounter".to_string(),
         metadata: None,
+        ..Default::default()
     }).unwrap();
     
     // Start the actor process
@@ -101,6 +102,7 @@ async fn test_go_async_processor() {
         id: "test_go_async".to_string(),
         component: "GoAsyncProcessor".to_string(),
         metadata: Some(metadata),
+        ..Default::default()
     }).unwrap();
     
     // Start the actor process

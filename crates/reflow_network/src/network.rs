@@ -77,7 +77,66 @@ pub enum NetworkEvent {
     ActorEmit {
         actor_id: String,
         message: EncodableValue,
-    }
+    },
+    
+    // Actor lifecycle events
+    #[serde(rename_all = "camelCase")]
+    ActorStarted {
+        actor_id: String,
+        component: String,
+        timestamp: u64,
+    },
+    
+    #[serde(rename_all = "camelCase")]
+    ActorCompleted {
+        actor_id: String,
+        component: String,
+        outputs: Option<Value>,
+        timestamp: u64,
+    },
+    
+    #[serde(rename_all = "camelCase")]
+    ActorFailed {
+        actor_id: String,
+        component: String,
+        error: String,
+        timestamp: u64,
+    },
+    
+    // Message flow events
+    #[serde(rename_all = "camelCase")]
+    MessageSent {
+        from_actor: String,
+        from_port: String,
+        to_actor: String,
+        to_port: String,
+        message: EncodableValue,
+        timestamp: u64,
+    },
+    
+    #[serde(rename_all = "camelCase")]
+    MessageReceived {
+        actor_id: String,
+        port: String,
+        message: EncodableValue,
+        timestamp: u64,
+    },
+    
+    // Network lifecycle events
+    #[serde(rename_all = "camelCase")]
+    NetworkStarted {
+        timestamp: u64,
+    },
+    
+    #[serde(rename_all = "camelCase")]
+    NetworkIdle {
+        timestamp: u64,
+    },
+    
+    #[serde(rename_all = "camelCase")]
+    NetworkShutdown {
+        timestamp: u64,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -345,6 +404,10 @@ impl Network {
     }
 
     pub fn start(&mut self) -> Result<(), anyhow::Error> {
+        // Emit NetworkStarted event
+        let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+        let _ = self.network_event_emitter.0.send(NetworkEvent::NetworkStarted { timestamp });
+        
         let tracing_integration = self.tracing_integration.clone();
         tokio::runtime::Handle::current().spawn(async move {
             // Initialize tracing connection if enabled
@@ -374,6 +437,14 @@ impl Network {
                 self.processes.insert(id.clone(), Arc::new(Self::init_process(actor.create_process(config, tracing_integration))));
 
                 self.initialized_actors.insert(id.clone(), actor.clone());
+                
+                // Emit ActorStarted event
+                let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+                let _ = self.network_event_emitter.0.send(NetworkEvent::ActorStarted {
+                    actor_id: id.clone(),
+                    component: node.component.clone(),
+                    timestamp,
+                });
 
                 let tracing_integration = self.tracing_integration.clone();
                 let id = id.clone();
@@ -432,6 +503,17 @@ impl Network {
     pub fn send_to_actor(&self, id: &str, port: &str, data: Message) -> Result<(), anyhow::Error> {
         if let Some(node) = self.nodes.get(id) {
             let actor = self.actors.get(&node.component).unwrap();
+            
+            // Emit MessageReceived event for the target actor
+            let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+            let value: serde_json::Value = data.clone().into();
+            let encodable = EncodableValue::from(value);
+            let _ = self.network_event_emitter.0.send(NetworkEvent::MessageReceived {
+                actor_id: id.to_string(),
+                port: port.to_string(),
+                message: encodable,
+                timestamp,
+            });
 
             // Trace the message being sent
             if let Some(ref tracing) = self.tracing_integration {
@@ -467,6 +549,18 @@ impl Network {
     ) -> Result<(), anyhow::Error> {
         if let Some(node) = self.nodes.get(id) {
             let actor = self.actors.get(&node.component).unwrap();
+            
+            // Emit MessageReceived event for encoded messages
+            let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+            let msg = Message::encoded(data.0.clone());
+            let value: serde_json::Value = msg.into();
+            let encodable = EncodableValue::from(value);
+            let _ = self.network_event_emitter.0.send(NetworkEvent::MessageReceived {
+                actor_id: id.to_string(),
+                port: port.to_string(),
+                message: encodable,
+                timestamp,
+            });
 
             actor
                 .get_inports()
@@ -495,6 +589,18 @@ impl Network {
         Ok(())
     }
 
+     pub fn register_actor_arc(&mut self, name: &str, actor: Arc<dyn Actor>) -> Result<(), anyhow::Error> {
+        if self.actors.contains_key(name) {
+            return Err(anyhow::Error::msg(format!(
+                "Process '{}' already extists in Network",
+                name
+            )));
+        }
+
+        self.actors.insert(name.to_string(), actor);
+        Ok(())
+    }
+
     pub fn add_node(
         &mut self,
         id: &str,
@@ -512,6 +618,7 @@ impl Network {
             id: id.to_string(),
             component: process.to_string(),
             metadata,
+            ..Default::default()
         };
         self.nodes.insert(id.to_string(), node);
 
@@ -644,6 +751,10 @@ impl Network {
 
     /// Shutdown the network and finalize pending tasks
     pub fn shutdown(&self) {
+        // Emit NetworkShutdown event
+        let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+        let _ = self.network_event_emitter.0.send(NetworkEvent::NetworkShutdown { timestamp });
+        
         let tracing_integration = self.tracing_integration.clone();
         let _ = tokio::runtime::Handle::current().spawn(async move {
             // Shutdown tracing first to flush any pending events
@@ -686,6 +797,28 @@ impl Network {
             let load = actor.load_count();
             match actor_behavior(ActorContext::new(payload, outports, state, config, load)).await {
                 Ok(res) => {
+                    // Emit ActorCompleted event
+                    let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+                    let outputs = if !res.is_empty() {
+                        let mut output_obj = serde_json::Map::new();
+                        for (port, msg) in &res {
+                            if let Ok(value) = serde_json::to_value(msg) {
+                                output_obj.insert(port.clone(), value);
+                            }
+                        }
+                        Some(Value::Object(output_obj))
+                    } else {
+                        None
+                    };
+                    
+                    let component = self.nodes.get(actor_id).map(|n| n.component.clone()).unwrap_or_default();
+                    let _ = self.network_event_emitter.0.send(NetworkEvent::ActorCompleted {
+                        actor_id: actor_id.to_string(),
+                        component,
+                        outputs,
+                        timestamp,
+                    });
+                    
                     if let Some(tracing) = &self.tracing_integration {
                         let _ = tracing.trace_actor_completed(actor_id).await;
                     }
@@ -693,6 +826,16 @@ impl Network {
                     return Ok(res)
                 }
                 Err(err) => {
+                    // Emit ActorFailed event
+                    let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+                    let component = self.nodes.get(actor_id).map(|n| n.component.clone()).unwrap_or_default();
+                    let _ = self.network_event_emitter.0.send(NetworkEvent::ActorFailed {
+                        actor_id: actor_id.to_string(),
+                        component,
+                        error: err.to_string(),
+                        timestamp,
+                    });
+                    
                     if let Some(ref tracing) = self.tracing_integration {
                         let tracing_clone = tracing.clone();
                         let id_clone = actor_id.to_string();
@@ -719,6 +862,11 @@ impl Network {
     pub fn get_message_queue_size(&self) -> usize {
         // Return current message queue size
         0 // Placeholder
+    }
+    
+    /// Get the network event receiver for subscribing to network events
+    pub fn get_event_receiver(&self) -> flume::Receiver<NetworkEvent> {
+        self.network_event_emitter.1.clone()
     }
 }
 

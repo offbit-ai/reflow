@@ -22,6 +22,12 @@ pub mod multi_graph;
 pub mod tracing;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod api_kit;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod script_discovery;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod websocket_rpc;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod redis_state;
 #[cfg(test)]
 mod network_test;
 
