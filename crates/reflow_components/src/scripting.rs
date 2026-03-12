@@ -2,16 +2,13 @@
 //!
 //! Actors for executing scripts in various languages from Zeal templates.
 
-use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
+use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::ActorConfig;
 use reflow_actor::{message::EncodableValue, ActorContext};
-use reflow_tracing_protocol::client::TracingIntegration;
 use rquickjs::{Context as JsContext, Function as JsFunction, Runtime};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 /// JavaScript Script Actor - Compatible with tpl_javascript_script
 ///

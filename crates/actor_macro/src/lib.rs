@@ -38,7 +38,7 @@ impl Parse for PortsDefinition {
 
 struct ActorArgs {
     name: Option<syn::Ident>,
-    state: Option<syn::Ident>,
+    _state: Option<syn::Ident>,
     inports: PortsDefinition,
     outports: PortsDefinition,
     await_all_inports: bool,
@@ -49,7 +49,7 @@ impl Parse for ActorArgs {
         let mut name = None;
         let mut inports = PortsDefinition::default();
         let mut outports = PortsDefinition::default();
-        let mut state = None;
+        let mut _state = None;
         let mut await_all_inports = false;
 
         // Parse optional struct name
@@ -69,7 +69,7 @@ impl Parse for ActorArgs {
                     let content;
                     syn::parenthesized!(content in input);
                     let state_ident = content.parse::<syn::Ident>()?;
-                    state = Some(state_ident);
+                    _state = Some(state_ident);
                 }
                 "inports" => {
                     let port_def = input.parse::<PortsDefinition>()?;
@@ -97,7 +97,7 @@ impl Parse for ActorArgs {
 
         Ok(ActorArgs {
             name,
-            state,
+            _state,
             inports,
             outports,
             await_all_inports,
@@ -127,12 +127,6 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                 + &fn_name.to_string()[1..]
         ),
     };
-    let state_name = if args.state.is_none() {
-        format_ident!("MemoryState")
-    } else {
-        args.state.clone().unwrap()
-    };
-
     // Generate port initialization code
     let init_inports = args.inports.ports.iter().map(|port| {
         let name = port;
@@ -169,56 +163,48 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
         quote! {flume::unbounded()}
     };
 
+    // Re-generate port name iterators for trait methods
+    let inport_names_iter = args.inports.ports.iter().map(|port| {
+        quote! { String::from(#port) }
+    });
+    let outport_names_iter = args.outports.ports.iter().map(|port| {
+        quote! { String::from(#port) }
+    });
+
     let expanded = quote! {
 
         // Keep the original function
         #input_fn
 
         #fn_vis struct #struct_name {
-            inports: Vec<String>,
-            outports: Vec<String>,
             inports_channel: Port,
             outports_channel: Port,
-            await_all_inports: bool,
-            load: Arc<ActorLoad>,
         }
 
         impl #struct_name {
             pub fn new() -> Self {
                 Self {
-                    inports: vec![#(#init_inports),*],
-                    outports: vec![#(#init_outports),*],
                     inports_channel: #out_ports_channel,
                     outports_channel: #in_ports_channel,
-                    await_all_inports: #await_all_inports,
-                    load: Arc::new(ActorLoad::new(0)),
                 }
             }
 
             /// Get a list of available input ports
             pub fn input_ports(&self) -> Vec<String> {
-                self.inports.clone()
+                vec![#(#init_inports),*]
             }
 
             /// Get a list of available output ports
             pub fn output_ports(&self) -> Vec<String> {
-                self.outports.clone()
-            }
-
-            pub fn load(&self) -> Arc<ActorLoad> {
-                self.load.clone()
+                vec![#(#init_outports),*]
             }
         }
 
         impl Clone for #struct_name {
             fn clone(&self) -> Self {
                 Self {
-                    inports: self.inports.clone(),
-                    outports: self.outports.clone(),
                     inports_channel: self.inports_channel.clone(),
                     outports_channel: self.outports_channel.clone(),
-                    await_all_inports: self.await_all_inports,
-                    load: self.load.clone(),
                 }
             }
         }
@@ -226,8 +212,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl Actor for #struct_name {
 
             fn get_behavior(&self) -> ActorBehavior {
-
-                Box::new(|context:ActorContext| {
+                Box::new(|context: ActorContext| {
                     Box::pin(async move {
                         futures::executor::block_on(async move {
                             #fn_name(context).await
@@ -244,133 +229,20 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.inports_channel.clone()
             }
 
-            fn load_count(&self) -> Arc<ActorLoad> {
-                self.load().clone()
+            fn inport_names(&self) -> Vec<String> {
+                vec![#(#inport_names_iter),*]
             }
 
-            fn create_process(&self, config: ActorConfig, tracing_integration: Option<TracingIntegration>) ->  std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
-
-                let await_all_inports = self.await_all_inports;
-                let outports = self.get_outports();
-                let behavior = self.get_behavior();
-                let actor_state = std::sync::Arc::new(parking_lot::Mutex::new(#state_name::default()));
-                let mut load_count = self.load_count();
-
-                // let mut all_inports:std::rc::Rc<HashMap<String, Message>> =std::rc::Rc::new(HashMap::new());
-                let inports_size = self.input_ports().len();
-
-                let (_, receiver) = self.get_inports();
-
-                let config = config.clone();
-                let tracing_integration = tracing_integration.clone();
-
-                Box::pin(async move {
-                    use futures::Stream;
-                    use futures::StreamExt;
-                    use serde_json::json;
-                    use std::borrow::BorrowMut;
-
-                    let behavior_func = behavior;
-                    let mut all_inports = std::collections::HashMap::new();
-                    let mut load_count = load_count.clone();
-
-                    fn done(load_count: Arc<ActorLoad>) {
-                        load_count.reset();
-                    }
-                    fn inc(load_count: Arc<ActorLoad>) {
-                        load_count.inc();
-                    }
-
-                    let config = config.clone();
-                    let actor_id = config.get_node_id();
-                    let tracing_integration = tracing_integration.clone();
-                    loop {
-                        if let Some(packet) = receiver.clone().stream().next().await {
-                        // Increment the load count
-                            inc(load_count.clone());
-
-                            if await_all_inports {
-                                if all_inports.keys().len() < inports_size  {
-                                    all_inports.extend(packet.iter().map(|(k, v)| {(k.clone(), v.clone())}));
-                                    if all_inports.keys().len() == inports_size  {
-
-                                        let context = ActorContext::new(
-                                            all_inports.clone(),
-                                             outports.clone(),
-                                            actor_state.clone(),
-                                           config.clone(),
-                                            load_count.clone(),
-                                        );
-
-                                        // Run the behavior function
-                                        match (behavior_func)(context).await {
-                                            Ok(result) => {
-                                                if !result.is_empty() {
-                                                    let _ = outports.0.send(result)
-                                                        .expect("Expected to send message via outport");
-
-                                                }
-                                                // Decrease the load count
-                                                done(load_count.clone());
-                                                if let Some(tracing) = tracing_integration.clone() {
-                                                    let _ =  tracing.trace_actor_completed(actor_id).await;
-                                                }
-                                            },
-                                            Err(e) => {
-                                                  // Decrease the load count
-                                                done(load_count.clone());
-                                                eprintln!("Error in behavior function: {:?}", e);
-                                                if let Some(tracing) = tracing_integration.clone() {
-                                                    let _ =  tracing.trace_actor_failed(actor_id, e.to_string()).await;
-                                                }
-                                            }
-                                        }
-                                        all_inports.clear();
-                                    }
-                                    continue;
-                                }
-                            }
-
-
-                            if(!await_all_inports) {
-                                let context = ActorContext::new(
-                                            packet,
-                                             outports.clone(),
-                                            actor_state.clone(),
-                                            config.clone(),
-                                            load_count.clone(),
-                                        );
-
-                                // Run the behavior function
-                                match (behavior_func)(context).await {
-                                    Ok(result) => {
-                                        if !result.is_empty() {
-                                            let _ = outports.0.send(result)
-                                                .expect("Expected to send message via outport");
-
-                                        }
-                                         // Decrease the load count
-                                        done(load_count.clone());
-                                        if let Some(tracing) = tracing_integration.clone() {
-                                          let _ =  tracing.trace_actor_completed(actor_id).await;
-                                        }
-                                    },
-                                    Err(e) => {
-                                          // Decrease the load count
-                                                    done(load_count.clone());
-                                        eprintln!("Error in behavior function: {:?}", e);
-                                        if let Some(tracing) = tracing_integration.clone() {
-                                          let _ =  tracing.trace_actor_failed(actor_id, e.to_string()).await;
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                })
+            fn outport_names(&self) -> Vec<String> {
+                vec![#(#outport_names_iter),*]
             }
 
+            fn await_all_inports(&self) -> bool {
+                #await_all_inports
+            }
+
+            // create_process() and create_state() use the trait defaults
+            // via ActorProcess. Override only for non-MemoryState state types.
         }
     };
 

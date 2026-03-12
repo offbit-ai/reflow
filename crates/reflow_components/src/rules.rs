@@ -2,15 +2,12 @@
 //!
 //! Processes rule-based logic from Zeal node templates.
 
-use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
+use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::ActorConfig;
 use reflow_actor::{message::EncodableValue, ActorContext};
-use reflow_tracing_protocol::client::TracingIntegration;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 /// Rules Engine Actor - Processes Zeal rule sets
 ///

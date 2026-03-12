@@ -1,6 +1,7 @@
 pub mod message;
 #[cfg(test)]
 mod message_test;
+pub mod process;
 
 pub use reflow_graph::*;
 use reflow_tracing_protocol::client::TracingIntegration;
@@ -213,22 +214,72 @@ impl ActorConfig {
 
 // #[cfg(not(target_arch = "wasm32"))]
 pub trait Actor: Send + Sync + 'static {
-    /// Trait method to get actor's behavior
+    /// The actor's reaction to incoming data. This is the only thing an actor
+    /// *must* define beyond port declarations.
     fn get_behavior(&self) -> ActorBehavior;
-    /// Access all output ports
+
+    /// Access the outport channel pair (sender + receiver).
     fn get_outports(&self) -> Port;
-    /// Access all input ports
+
+    /// Access the inport channel pair (sender + receiver).
     fn get_inports(&self) -> Port;
+
+    // ── Declarative methods ──────────────────────────────────────────
+    // Implement these instead of `create_process` to let the runtime
+    // drive execution via `ActorProcess`.
+
+    /// Declared input port names. Used by the runtime dispatch loop to
+    /// know when all inports have data (for `await_all_inports`).
+    fn inport_names(&self) -> Vec<String> {
+        vec![]
+    }
+
+    /// Declared output port names.
+    fn outport_names(&self) -> Vec<String> {
+        vec![]
+    }
+
+    /// When true, the runtime accumulates packets until every declared
+    /// inport has received data before invoking the behavior.
+    fn await_all_inports(&self) -> bool {
+        false
+    }
+
+    /// Factory for the actor's mutable state. Override to provide a
+    /// custom `ActorState` implementation (e.g. Redis-backed state).
+    fn create_state(&self) -> Arc<Mutex<dyn ActorState>> {
+        Arc::new(Mutex::new(MemoryState::default()))
+    }
 
     fn load_count(&self) -> Arc<ActorLoad> {
         Arc::new(ActorLoad::new(0))
     }
 
+    /// The runtime dispatch loop. The **default implementation** builds an
+    /// [`ActorProcess`](crate::process::ActorProcess) from the declarative
+    /// methods above — most actors should not need to override this.
+    ///
+    /// Override only when you need a fundamentally different execution
+    /// model (e.g. SubgraphActor's inner-network routing).
     fn create_process(
         &self,
         config: ActorConfig,
         tracing_integration: Option<TracingIntegration>,
-    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>;
+    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
+        crate::process::ActorProcess::new(
+            config.get_node_id().to_string(),
+            self.get_behavior(),
+            self.inport_names(),
+            self.await_all_inports(),
+            self.get_inports().1,
+            self.get_outports(),
+            self.create_state(),
+            self.load_count(),
+            config,
+            tracing_integration,
+        )
+        .into_future()
+    }
 
     /// Shutdown the actor, waiting for all processes to finish
     fn shutdown(&self) {

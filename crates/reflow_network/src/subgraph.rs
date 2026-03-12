@@ -337,6 +337,7 @@ mod tests {
     use crate::graph::types::{GraphConnection, GraphEdge, GraphNode};
 
     /// Simple pass-through actor: receives on "in", sends the same message on "out".
+    /// Uses the default `create_process` via ActorProcess — no boilerplate loop.
     struct PassthroughActor {
         inports: Port,
         outports: Port,
@@ -379,35 +380,15 @@ mod tests {
             self.load.clone()
         }
 
-        fn create_process(
-            &self,
-            config: ActorConfig,
-            _tracing: Option<TracingIntegration>,
-        ) -> Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
-            let behavior = self.get_behavior();
-            let receiver = self.inports.1.clone();
-            let outports = self.outports.clone();
-            let load = self.load.clone();
-
-            Box::pin(async move {
-                while let Some(packet) = receiver.clone().stream().next().await {
-                    load.inc();
-                    let context = ActorContext::new(
-                        packet,
-                        outports.clone(),
-                        Arc::new(Mutex::new(MemoryState::default())),
-                        config.clone(),
-                        load.clone(),
-                    );
-                    if let Ok(result) = behavior(context).await {
-                        if !result.is_empty() {
-                            let _ = outports.0.send(result);
-                        }
-                    }
-                    load.dec();
-                }
-            })
+        fn inport_names(&self) -> Vec<String> {
+            vec!["in".into()]
         }
+
+        fn outport_names(&self) -> Vec<String> {
+            vec!["out".into()]
+        }
+
+        // create_process() uses the default trait impl via ActorProcess
     }
 
     /// Build a simple subgraph: one inner PassthroughActor.

@@ -3,14 +3,12 @@
 //! Specific actors for external system integration following Zeal template specifications.
 //! Each actor is purpose-built for its specific Zeal template.
 
-use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
+use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorConfig, ActorContext};
-use reflow_tracing_protocol::client::TracingIntegration;
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
-use std::sync::Arc;
 use uuid::Uuid;
 
 /// HTTP Request Actor - Compatible with tpl_http_request

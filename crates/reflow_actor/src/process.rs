@@ -1,0 +1,138 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use parking_lot::Mutex;
+use reflow_tracing_protocol::client::TracingIntegration;
+
+use crate::message::Message;
+use crate::{ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorState, Port};
+
+/// Runtime-managed execution loop for an actor node.
+///
+/// Instead of each actor implementing its own receive-loop in `create_process`,
+/// `ActorProcess` provides the single, canonical dispatch loop. The runtime
+/// constructs one per node and spawns it — actors only need to declare their
+/// behavior and port names.
+///
+/// # Event-driven model
+///
+/// Actors are passive: they declare reactions to data via [`ActorBehavior`].
+/// The runtime (this struct) drives execution by:
+///
+/// 1. Waiting for data on the actor's inport channel
+/// 2. Optionally accumulating until all declared inports have data
+/// 3. Building an [`ActorContext`] and invoking the behavior
+/// 4. Forwarding non-empty results to the outport channel
+/// 5. Managing load counters and tracing
+pub struct ActorProcess {
+    node_id: String,
+    behavior: ActorBehavior,
+    inport_names: Vec<String>,
+    await_all_inports: bool,
+    inport_rx: flume::Receiver<HashMap<String, Message>>,
+    outports: Port,
+    state: Arc<Mutex<dyn ActorState>>,
+    load: Arc<ActorLoad>,
+    config: ActorConfig,
+    tracing: Option<TracingIntegration>,
+}
+
+impl ActorProcess {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        node_id: String,
+        behavior: ActorBehavior,
+        inport_names: Vec<String>,
+        await_all_inports: bool,
+        inport_rx: flume::Receiver<HashMap<String, Message>>,
+        outports: Port,
+        state: Arc<Mutex<dyn ActorState>>,
+        load: Arc<ActorLoad>,
+        config: ActorConfig,
+        tracing: Option<TracingIntegration>,
+    ) -> Self {
+        Self {
+            node_id,
+            behavior,
+            inport_names,
+            await_all_inports,
+            inport_rx,
+            outports,
+            state,
+            load,
+            config,
+            tracing,
+        }
+    }
+
+    /// Run the canonical dispatch loop.
+    ///
+    /// This replaces the per-actor `create_process` boilerplate. The loop
+    /// exits when the inport channel closes (all senders dropped).
+    pub async fn run(self) {
+        use futures::StreamExt;
+
+        let mut accumulated: HashMap<String, Message> = HashMap::new();
+        let inports_count = self.inport_names.len();
+        let actor_id = self.config.get_node_id();
+
+        loop {
+            let packet = match self.inport_rx.clone().stream().next().await {
+                Some(p) => p,
+                None => break,
+            };
+
+            self.load.inc();
+
+            // ── Accumulate if await_all_inports ──────────────────────
+            let payload = if self.await_all_inports {
+                accumulated.extend(packet);
+                if accumulated.len() < inports_count {
+                    // Not all ports have data yet — keep waiting.
+                    // Load stays incremented to reflect queued work,
+                    // matching the existing macro-generated behavior.
+                    continue;
+                }
+                std::mem::take(&mut accumulated)
+            } else {
+                packet
+            };
+
+            // ── Build context & invoke behavior ──────────────────────
+            let context = ActorContext::new(
+                payload,
+                self.outports.clone(),
+                self.state.clone(),
+                self.config.clone(),
+                self.load.clone(),
+            );
+
+            match (self.behavior)(context).await {
+                Ok(result) => {
+                    if !result.is_empty() {
+                        let _ = self.outports.0.send(result);
+                    }
+                    self.load.reset();
+                    if let Some(ref tracing) = self.tracing {
+                        let _ = tracing.trace_actor_completed(actor_id).await;
+                    }
+                }
+                Err(e) => {
+                    self.load.reset();
+                    eprintln!("[{}] behavior error: {:?}", self.node_id, e);
+                    if let Some(ref tracing) = self.tracing {
+                        let _ = tracing.trace_actor_failed(actor_id, e.to_string()).await;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Consume self and return a boxed, pinned future suitable for
+    /// `tokio::spawn` or the Actor trait's `create_process` return type.
+    pub fn into_future(
+        self,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>> {
+        Box::pin(self.run())
+    }
+}

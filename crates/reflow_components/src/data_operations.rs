@@ -2,15 +2,12 @@
 //!
 //! Actors for data transformation and manipulation following Zeal template specifications.
 
-use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
+use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::ActorConfig;
 use reflow_actor::{message::EncodableValue, ActorContext};
-use reflow_tracing_protocol::client::TracingIntegration;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 /// Data Transform Actor - Compatible with tpl_data_transformer
 ///
