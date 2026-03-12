@@ -13,6 +13,7 @@ reflow_network = { path = "../reflow_network" }
 reflow_graph = { path = "../reflow_graph" }
 reflow_components = { path = "../reflow_components" }
 actor_macro = { path = "../actor_macro" }
+zeal-sdk = { path = "../../../zeal/packages/zeal-rust-sdk" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
