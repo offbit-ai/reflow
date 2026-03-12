@@ -13,11 +13,13 @@ use serde_json::Value;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::fs;
 
-use crate::graph::types::{GraphExport, WorkspaceGraphExport, WorkspaceMetadata, WorkspaceFileFormat, 
-    ResolvedDependency, AutoDiscoveredConnection, InterfaceAnalysis, DependencyResolutionStatus,
-    DiscoveryMethod, InterfaceTypeMismatch, MismatchSeverity};
+use crate::graph::types::{
+    AutoDiscoveredConnection, DependencyResolutionStatus, DiscoveryMethod, GraphExport,
+    InterfaceAnalysis, InterfaceTypeMismatch, MismatchSeverity, ResolvedDependency,
+    WorkspaceFileFormat, WorkspaceGraphExport, WorkspaceMetadata,
+};
 
-use super::{GraphComposition, GraphLoader, GraphSource, GraphMetadata, LoadError};
+use super::{GraphComposition, GraphLoader, GraphMetadata, GraphSource, LoadError};
 
 /// Configuration for workspace discovery
 #[derive(Debug, Clone)]
@@ -33,16 +35,16 @@ pub struct WorkspaceConfig {
 
 #[derive(Debug, Clone)]
 pub enum NamespaceStrategy {
-    FolderStructure,        // Use folder structure as namespace
-    Flatten,               // Flatten all graphs to root namespace
-    FileBasedPrefix,       // Use filename prefix as namespace
+    FolderStructure, // Use folder structure as namespace
+    Flatten,         // Flatten all graphs to root namespace
+    FileBasedPrefix, // Use filename prefix as namespace
 }
 
 #[derive(Debug, Clone)]
 pub enum DependencyResolutionStrategy {
-    Automatic,             // Automatically detect and resolve dependencies
-    Explicit,              // Only use explicitly declared dependencies
-    None,                  // No dependency resolution
+    Automatic, // Automatically detect and resolve dependencies
+    Explicit,  // Only use explicitly declared dependencies
+    None,      // No dependency resolution
 }
 
 impl Default for WorkspaceConfig {
@@ -92,30 +94,37 @@ impl WorkspaceDiscovery {
 
     /// Discover all graphs in the workspace and return enriched composition
     pub async fn discover_workspace(&self) -> Result<WorkspaceComposition, DiscoveryError> {
-        println!("🔍 Discovering graphs in workspace: {}", self.config.root_path.display());
-        
+        println!(
+            "🔍 Discovering graphs in workspace: {}",
+            self.config.root_path.display()
+        );
+
         // 1. Discover all graph files
         let discovered_files = self.discover_graph_files().await?;
         println!("📁 Found {} graph files", discovered_files.len());
-        
+
         // 2. Load base graphs (first tier - GraphExport)
         let loaded_graphs = self.load_base_graphs(&discovered_files).await?;
         println!("📊 Successfully loaded {} graphs", loaded_graphs.len());
-        
+
         // 3. Enrich with workspace metadata (second tier - WorkspaceGraphExport)
-        let workspace_graphs = self.enrich_with_workspace_metadata(loaded_graphs, &discovered_files).await?;
+        let workspace_graphs = self
+            .enrich_with_workspace_metadata(loaded_graphs, &discovered_files)
+            .await?;
         println!("✨ Enriched graphs with workspace metadata");
-        
+
         // 4. Analyze dependencies and interfaces
         let analysis = self.analyze_workspace(&workspace_graphs).await?;
         println!("🔍 Completed workspace analysis");
-        
+
         // 5. Build namespace mappings
         let namespace_mappings = self.build_namespace_mappings(&workspace_graphs)?;
-        
+
         // 6. Create composition from discovered graphs
-        let composition = self.build_graph_composition(&workspace_graphs, &analysis).await?;
-        
+        let composition = self
+            .build_graph_composition(&workspace_graphs, &analysis)
+            .await?;
+
         let workspace_composition = WorkspaceComposition {
             composition,
             discovered_graphs: workspace_graphs,
@@ -123,46 +132,48 @@ impl WorkspaceDiscovery {
             analysis,
             workspace_root: self.config.root_path.clone(),
         };
-        
-        println!("✅ Workspace discovery completed with {} namespaces", 
-            workspace_composition.discovered_namespaces.len());
-        
+
+        println!(
+            "✅ Workspace discovery completed with {} namespaces",
+            workspace_composition.discovered_namespaces.len()
+        );
+
         Ok(workspace_composition)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     async fn discover_graph_files(&self) -> Result<Vec<DiscoveredGraphFile>, DiscoveryError> {
         let mut discovered_files = Vec::new();
-        
+
         for pattern in &self.config.graph_patterns {
             let full_pattern = self.config.root_path.join(pattern);
             let pattern_str = full_pattern.to_string_lossy();
-            
+
             for entry in glob(&pattern_str).map_err(|e| DiscoveryError::GlobError(e.to_string()))? {
                 match entry {
                     Ok(path) => {
                         if self.should_exclude_path(&path)? {
                             continue;
                         }
-                        
+
                         if let Some(max_depth) = self.config.max_depth {
-                            let relative_path = path.strip_prefix(&self.config.root_path)
-                                .unwrap_or(&path);
+                            let relative_path =
+                                path.strip_prefix(&self.config.root_path).unwrap_or(&path);
                             if relative_path.components().count() > max_depth {
                                 continue;
                             }
                         }
-                        
+
                         let file_info = self.analyze_graph_file(&path).await?;
                         discovered_files.push(file_info);
-                    },
+                    }
                     Err(e) => {
                         eprintln!("⚠️  Warning: Error reading path: {}", e);
                     }
                 }
             }
         }
-        
+
         discovered_files.sort_by(|a, b| a.namespace.cmp(&b.namespace));
         Ok(discovered_files)
     }
@@ -174,88 +185,117 @@ impl WorkspaceDiscovery {
         Ok(Vec::new())
     }
 
-    async fn load_base_graphs(&self, files: &[DiscoveredGraphFile]) -> Result<Vec<GraphWithFileInfo>, DiscoveryError> {
+    async fn load_base_graphs(
+        &self,
+        files: &[DiscoveredGraphFile],
+    ) -> Result<Vec<GraphWithFileInfo>, DiscoveryError> {
         let mut graphs = Vec::new();
-        
+
         for file in files {
-            println!("📈 Loading graph: {} ({})", file.graph_name, file.path.display());
-            
+            println!(
+                "📈 Loading graph: {} ({})",
+                file.graph_name,
+                file.path.display()
+            );
+
             match self.load_base_graph_file(file).await {
                 Ok(graph_with_info) => {
                     graphs.push(graph_with_info);
-                },
+                }
                 Err(e) => {
                     eprintln!("❌ Failed to load {}: {}", file.path.display(), e);
                     // Continue with other graphs - be resilient
                 }
             }
         }
-        
+
         Ok(graphs)
     }
 
-    async fn load_base_graph_file(&self, file: &DiscoveredGraphFile) -> Result<GraphWithFileInfo, DiscoveryError> {
+    async fn load_base_graph_file(
+        &self,
+        file: &DiscoveredGraphFile,
+    ) -> Result<GraphWithFileInfo, DiscoveryError> {
         let source = GraphSource::JsonFile(file.path.to_string_lossy().to_string());
-        let mut graph_export = self.loader.load_graph(source).await
+        let mut graph_export = self
+            .loader
+            .load_graph(source)
+            .await
             .map_err(|e| DiscoveryError::LoadError(file.path.clone(), e.to_string()))?;
-        
+
         // Inject basic workspace metadata into the GraphExport properties
         self.inject_basic_metadata(&mut graph_export, file)?;
-        
+
         Ok(GraphWithFileInfo {
             graph: graph_export,
             file_info: file.clone(),
         })
     }
 
-    fn inject_basic_metadata(&self, graph: &mut GraphExport, file: &DiscoveredGraphFile) -> Result<(), DiscoveryError> {
+    fn inject_basic_metadata(
+        &self,
+        graph: &mut GraphExport,
+        file: &DiscoveredGraphFile,
+    ) -> Result<(), DiscoveryError> {
         // Ensure the graph has a name
         if !graph.properties.contains_key("name") {
-            graph.properties.insert("name".to_string(), 
-                serde_json::Value::String(file.graph_name.clone()));
+            graph.properties.insert(
+                "name".to_string(),
+                serde_json::Value::String(file.graph_name.clone()),
+            );
         }
-        
+
         // Inject namespace if not already set
         if !graph.properties.contains_key("namespace") {
-            graph.properties.insert("namespace".to_string(), 
-                serde_json::Value::String(file.namespace.clone()));
+            graph.properties.insert(
+                "namespace".to_string(),
+                serde_json::Value::String(file.namespace.clone()),
+            );
         }
-        
+
         Ok(())
     }
 
     async fn enrich_with_workspace_metadata(
-        &self, 
-        base_graphs: Vec<GraphWithFileInfo>, 
-        discovered_files: &[DiscoveredGraphFile]
+        &self,
+        base_graphs: Vec<GraphWithFileInfo>,
+        discovered_files: &[DiscoveredGraphFile],
     ) -> Result<Vec<WorkspaceGraphExport>, DiscoveryError> {
         let mut workspace_graphs = Vec::new();
-        
+
         for graph_with_info in base_graphs {
-            let workspace_metadata = self.create_workspace_metadata(&graph_with_info.file_info).await?;
-            
-            let workspace_graph = WorkspaceGraphExport::from_graph_export(
-                graph_with_info.graph,
-                workspace_metadata
-            );
-            
+            let workspace_metadata = self
+                .create_workspace_metadata(&graph_with_info.file_info)
+                .await?;
+
+            let workspace_graph =
+                WorkspaceGraphExport::from_graph_export(graph_with_info.graph, workspace_metadata);
+
             workspace_graphs.push(workspace_graph);
         }
-        
+
         Ok(workspace_graphs)
     }
 
-    async fn create_workspace_metadata(&self, file_info: &DiscoveredGraphFile) -> Result<WorkspaceMetadata, DiscoveryError> {
-        let last_modified = file_info.modified
-            .map(|time| time.duration_since(SystemTime::UNIX_EPOCH)
-                .map(|d| chrono::DateTime::from_timestamp(d.as_secs() as i64, 0)
-                    .map(|dt| dt.to_rfc3339())
-                    .unwrap_or_else(|| "unknown".to_string()))
-                .unwrap_or_else(|_| "unknown".to_string()));
+    async fn create_workspace_metadata(
+        &self,
+        file_info: &DiscoveredGraphFile,
+    ) -> Result<WorkspaceMetadata, DiscoveryError> {
+        let last_modified = file_info.modified.map(|time| {
+            time.duration_since(SystemTime::UNIX_EPOCH)
+                .map(|d| {
+                    chrono::DateTime::from_timestamp(d.as_secs() as i64, 0)
+                        .map(|dt| dt.to_rfc3339())
+                        .unwrap_or_else(|| "unknown".to_string())
+                })
+                .unwrap_or_else(|_| "unknown".to_string())
+        });
 
         Ok(WorkspaceMetadata {
             discovered_namespace: file_info.namespace.clone(),
-            source_path: file_info.path.strip_prefix(&self.config.root_path)
+            source_path: file_info
+                .path
+                .strip_prefix(&self.config.root_path)
                 .unwrap_or(&file_info.path)
                 .to_string_lossy()
                 .to_string(),
@@ -267,25 +307,36 @@ impl WorkspaceDiscovery {
             file_size: file_info.size_bytes,
             last_modified,
             resolved_dependencies: Vec::new(), // Will be populated during analysis
-            auto_connections: Vec::new(),       // Will be populated during analysis
+            auto_connections: Vec::new(),      // Will be populated during analysis
             interface_analysis: InterfaceAnalysis::default(),
         })
     }
 
-    async fn analyze_workspace(&self, workspace_graphs: &[WorkspaceGraphExport]) -> Result<WorkspaceAnalysis, DiscoveryError> {
+    async fn analyze_workspace(
+        &self,
+        workspace_graphs: &[WorkspaceGraphExport],
+    ) -> Result<WorkspaceAnalysis, DiscoveryError> {
         // Analyze dependencies
-        let dependencies = self.dependency_analyzer.analyze_dependencies(workspace_graphs)?;
-        
+        let dependencies = self
+            .dependency_analyzer
+            .analyze_dependencies(workspace_graphs)?;
+
         // Analyze interfaces
-        let (exposed_interfaces, required_interfaces) = self.interface_analyzer.analyze_interfaces(workspace_graphs)?;
-        
+        let (exposed_interfaces, required_interfaces) = self
+            .interface_analyzer
+            .analyze_interfaces(workspace_graphs)?;
+
         // Discover auto-connections
         let auto_connections = if self.config.auto_connect {
-            self.auto_connector.discover_connections(workspace_graphs, &exposed_interfaces, &required_interfaces)?
+            self.auto_connector.discover_connections(
+                workspace_graphs,
+                &exposed_interfaces,
+                &required_interfaces,
+            )?
         } else {
             Vec::new()
         };
-        
+
         Ok(WorkspaceAnalysis {
             dependencies,
             exposed_interfaces,
@@ -294,43 +345,54 @@ impl WorkspaceDiscovery {
         })
     }
 
-    async fn build_graph_composition(&self, workspace_graphs: &[WorkspaceGraphExport], analysis: &WorkspaceAnalysis) -> Result<GraphComposition, DiscoveryError> {
+    async fn build_graph_composition(
+        &self,
+        workspace_graphs: &[WorkspaceGraphExport],
+        analysis: &WorkspaceAnalysis,
+    ) -> Result<GraphComposition, DiscoveryError> {
         let mut sources = Vec::new();
-        
+
         // Convert workspace graphs back to sources
         for workspace_graph in workspace_graphs {
             let source = GraphSource::GraphExport(workspace_graph.graph.clone());
             sources.push(source);
         }
-        
+
         // TODO: Convert auto-connections to composition connections
         let connections = Vec::new();
-        
+
         let composition = GraphComposition {
             sources,
             connections,
             shared_resources: Vec::new(),
             properties: HashMap::from([
-                ("name".to_string(), serde_json::Value::String("workspace_composition".to_string())),
-                ("composed_from_workspace".to_string(), serde_json::Value::Bool(true)),
+                (
+                    "name".to_string(),
+                    serde_json::Value::String("workspace_composition".to_string()),
+                ),
+                (
+                    "composed_from_workspace".to_string(),
+                    serde_json::Value::Bool(true),
+                ),
             ]),
             case_sensitive: Some(false),
             metadata: None,
         };
-        
+
         Ok(composition)
     }
 
     // Helper methods
     #[cfg(not(target_arch = "wasm32"))]
     async fn analyze_graph_file(&self, path: &Path) -> Result<DiscoveredGraphFile, DiscoveryError> {
-        let metadata = fs::metadata(path).await
+        let metadata = fs::metadata(path)
+            .await
             .map_err(|e| DiscoveryError::FileAccessError(path.to_path_buf(), e.to_string()))?;
-        
+
         let namespace = self.namespace_builder.build_namespace(path, &self.config)?;
         let format = self.detect_file_format(path)?;
         let graph_name = self.extract_graph_name(path)?;
-        
+
         Ok(DiscoveredGraphFile {
             path: path.to_path_buf(),
             namespace,
@@ -347,55 +409,64 @@ impl WorkspaceDiscovery {
         let namespace = self.namespace_builder.build_namespace(path, &self.config)?;
         let format = self.detect_file_format(path)?;
         let graph_name = self.extract_graph_name(path)?;
-        
+
         Ok(DiscoveredGraphFile {
             path: path.to_path_buf(),
             namespace,
             graph_name,
             format,
-            size_bytes: 0, // Unknown in WASM
+            size_bytes: 0,  // Unknown in WASM
             modified: None, // Unknown in WASM
         })
     }
 
-    fn build_namespace_mappings(&self, workspace_graphs: &[WorkspaceGraphExport]) -> Result<HashMap<String, NamespaceInfo>, DiscoveryError> {
+    fn build_namespace_mappings(
+        &self,
+        workspace_graphs: &[WorkspaceGraphExport],
+    ) -> Result<HashMap<String, NamespaceInfo>, DiscoveryError> {
         let mut namespaces = HashMap::new();
-        
+
         for workspace_graph in workspace_graphs {
             let namespace = &workspace_graph.workspace_metadata.discovered_namespace;
-            let graph_name = workspace_graph.graph_name().unwrap_or("unnamed").to_string();
+            let graph_name = workspace_graph
+                .graph_name()
+                .unwrap_or("unnamed")
+                .to_string();
             let path = PathBuf::from(&workspace_graph.workspace_metadata.source_path);
-            
-            let entry = namespaces.entry(namespace.clone()).or_insert_with(|| NamespaceInfo {
-                namespace: namespace.clone(),
-                graphs: Vec::new(),
-                path: path.parent().unwrap_or(&path).to_path_buf(),
-                graph_count: 0,
-            });
-            
+
+            let entry = namespaces
+                .entry(namespace.clone())
+                .or_insert_with(|| NamespaceInfo {
+                    namespace: namespace.clone(),
+                    graphs: Vec::new(),
+                    path: path.parent().unwrap_or(&path).to_path_buf(),
+                    graph_count: 0,
+                });
+
             entry.graphs.push(graph_name);
             entry.graph_count += 1;
         }
-        
+
         println!("📊 Namespace distribution:");
         for (namespace, info) in &namespaces {
             println!("  📁 {}: {} graphs", namespace, info.graph_count);
         }
-        
+
         Ok(namespaces)
     }
 
     fn should_exclude_path(&self, path: &Path) -> Result<bool, DiscoveryError> {
         let path_str = path.to_string_lossy();
-        
+
         for exclude_pattern in &self.config.excluded_paths {
             if glob::Pattern::new(exclude_pattern)
                 .map_err(|e| DiscoveryError::GlobError(e.to_string()))?
-                .matches(&path_str) {
+                .matches(&path_str)
+            {
                 return Ok(true);
             }
         }
-        
+
         Ok(false)
     }
 
@@ -408,16 +479,17 @@ impl WorkspaceDiscovery {
     }
 
     fn extract_graph_name(&self, path: &Path) -> Result<String, DiscoveryError> {
-        let filename = path.file_stem()
+        let filename = path
+            .file_stem()
             .and_then(|s| s.to_str())
             .ok_or_else(|| DiscoveryError::InvalidFileName(path.to_path_buf()))?;
-        
+
         let name = if filename.ends_with(".graph") {
             &filename[..filename.len() - 6]
         } else {
             filename
         };
-        
+
         Ok(name.to_string())
     }
 }
@@ -431,12 +503,15 @@ impl NamespaceBuilder {
         NamespaceBuilder
     }
 
-    pub fn build_namespace(&self, path: &Path, config: &WorkspaceConfig) -> Result<String, DiscoveryError> {
+    pub fn build_namespace(
+        &self,
+        path: &Path,
+        config: &WorkspaceConfig,
+    ) -> Result<String, DiscoveryError> {
         match config.namespace_strategy {
             NamespaceStrategy::FolderStructure => {
                 if let Some(parent) = path.parent() {
-                    let relative_path = parent.strip_prefix(&config.root_path)
-                        .unwrap_or(parent);
+                    let relative_path = parent.strip_prefix(&config.root_path).unwrap_or(parent);
                     Ok(relative_path.to_string_lossy().replace('\\', "/"))
                 } else {
                     Ok("root".to_string())
@@ -444,7 +519,8 @@ impl NamespaceBuilder {
             }
             NamespaceStrategy::Flatten => Ok("default".to_string()),
             NamespaceStrategy::FileBasedPrefix => {
-                let filename = path.file_stem()
+                let filename = path
+                    .file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("unnamed");
                 let parts: Vec<&str> = filename.split('_').collect();
@@ -465,12 +541,18 @@ impl DependencyAnalyzer {
         DependencyAnalyzer
     }
 
-    pub fn analyze_dependencies(&self, workspace_graphs: &[WorkspaceGraphExport]) -> Result<Vec<DependencyInfo>, DiscoveryError> {
+    pub fn analyze_dependencies(
+        &self,
+        workspace_graphs: &[WorkspaceGraphExport],
+    ) -> Result<Vec<DependencyInfo>, DiscoveryError> {
         let mut dependencies = Vec::new();
-        
+
         for workspace_graph in workspace_graphs {
-            let graph_name = workspace_graph.graph_name().unwrap_or("unnamed").to_string();
-            
+            let graph_name = workspace_graph
+                .graph_name()
+                .unwrap_or("unnamed")
+                .to_string();
+
             // Analyze explicit dependencies from graph_dependencies
             for dep in &workspace_graph.graph.graph_dependencies {
                 dependencies.push(DependencyInfo {
@@ -479,7 +561,7 @@ impl DependencyAnalyzer {
                     dependency_type: DependencyType::Explicit,
                 });
             }
-            
+
             // Analyze dependencies from properties
             if let Some(deps_value) = workspace_graph.graph.properties.get("dependencies") {
                 if let Some(deps_array) = deps_value.as_array() {
@@ -495,7 +577,7 @@ impl DependencyAnalyzer {
                 }
             }
         }
-        
+
         Ok(dependencies)
     }
 }
@@ -507,14 +589,20 @@ impl InterfaceAnalyzer {
         InterfaceAnalyzer
     }
 
-    pub fn analyze_interfaces(&self, workspace_graphs: &[WorkspaceGraphExport]) -> Result<(Vec<InterfaceInfo>, Vec<InterfaceInfo>), DiscoveryError> {
+    pub fn analyze_interfaces(
+        &self,
+        workspace_graphs: &[WorkspaceGraphExport],
+    ) -> Result<(Vec<InterfaceInfo>, Vec<InterfaceInfo>), DiscoveryError> {
         let mut exposed_interfaces = Vec::new();
         let mut required_interfaces = Vec::new();
-        
+
         for workspace_graph in workspace_graphs {
-            let graph_name = workspace_graph.graph_name().unwrap_or("unnamed").to_string();
+            let graph_name = workspace_graph
+                .graph_name()
+                .unwrap_or("unnamed")
+                .to_string();
             let namespace = &workspace_graph.workspace_metadata.discovered_namespace;
-            
+
             // Analyze provided interfaces
             for (interface_name, interface_def) in &workspace_graph.graph.provided_interfaces {
                 exposed_interfaces.push(InterfaceInfo {
@@ -525,7 +613,7 @@ impl InterfaceAnalyzer {
                     data_type: interface_def.data_type.clone(),
                 });
             }
-            
+
             // Analyze required interfaces
             for (interface_name, interface_def) in &workspace_graph.graph.required_interfaces {
                 required_interfaces.push(InterfaceInfo {
@@ -537,7 +625,7 @@ impl InterfaceAnalyzer {
                 });
             }
         }
-        
+
         Ok((exposed_interfaces, required_interfaces))
     }
 }
@@ -556,32 +644,42 @@ impl AutoConnector {
         required_interfaces: &[InterfaceInfo],
     ) -> Result<Vec<AutoConnection>, DiscoveryError> {
         let mut auto_connections = Vec::new();
-        
+
         // Simple matching by data type
         for required in required_interfaces {
             for exposed in exposed_interfaces {
                 if required.graph_name != exposed.graph_name {
                     let confidence = self.calculate_compatibility_confidence(exposed, required);
-                    
+
                     if confidence > 0.5 {
                         auto_connections.push(AutoConnection {
                             from_graph: exposed.graph_name.clone(),
-                            from_interface: format!("{}.{}", exposed.process_name, exposed.port_name),
+                            from_interface: format!(
+                                "{}.{}",
+                                exposed.process_name, exposed.port_name
+                            ),
                             to_graph: required.graph_name.clone(),
-                            to_interface: format!("{}.{}", required.process_name, required.port_name),
+                            to_interface: format!(
+                                "{}.{}",
+                                required.process_name, required.port_name
+                            ),
                             confidence,
                         });
                     }
                 }
             }
         }
-        
+
         Ok(auto_connections)
     }
 
-    fn calculate_compatibility_confidence(&self, exposed: &InterfaceInfo, required: &InterfaceInfo) -> f64 {
+    fn calculate_compatibility_confidence(
+        &self,
+        exposed: &InterfaceInfo,
+        required: &InterfaceInfo,
+    ) -> f64 {
         let mut confidence: f64 = 0.0;
-        
+
         // Data type matching
         match (&exposed.data_type, &required.data_type) {
             (Some(exposed_type), Some(required_type)) => {
@@ -593,13 +691,20 @@ impl AutoConnector {
             }
             _ => confidence += 0.3, // Unknown types get some base score
         }
-        
+
         // Port name similarity
-        if exposed.port_name.to_lowercase().contains(&required.port_name.to_lowercase()) ||
-           required.port_name.to_lowercase().contains(&exposed.port_name.to_lowercase()) {
+        if exposed
+            .port_name
+            .to_lowercase()
+            .contains(&required.port_name.to_lowercase())
+            || required
+                .port_name
+                .to_lowercase()
+                .contains(&exposed.port_name.to_lowercase())
+        {
             confidence += 0.2;
         }
-        
+
         confidence.min(1.0)
     }
 

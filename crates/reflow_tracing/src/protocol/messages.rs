@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-use derive_more::Display;
 
 /// Unique identifier for a trace
 #[derive(Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -40,23 +40,15 @@ pub enum TracingRequest {
         event: TraceEvent,
     },
     /// Get a specific trace by ID
-    GetTrace {
-        trace_id: TraceId,
-    },
+    GetTrace { trace_id: TraceId },
     /// Query traces with filters
-    QueryTraces {
-        query: TraceQuery,
-    },
+    QueryTraces { query: TraceQuery },
     /// Get all versions of a flow
-    GetFlowVersions {
-        flow_id: FlowId,
-    },
+    GetFlowVersions { flow_id: FlowId },
     /// Health check
     Ping,
     /// Subscribe to real-time trace events
-    Subscribe {
-        filters: SubscriptionFilters,
-    },
+    Subscribe { filters: SubscriptionFilters },
     /// Unsubscribe from real-time events
     Unsubscribe,
 }
@@ -64,27 +56,21 @@ pub enum TracingRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TracingResponse {
     /// Response to StartTrace
-    TraceStarted {
-        trace_id: TraceId,
-    },
+    TraceStarted { trace_id: TraceId },
     /// Response to RecordEvent
     EventRecorded {
         success: bool,
         error: Option<String>,
     },
     /// Response to GetTrace
-    TraceData {
-        trace: Option<FlowTrace>,
-    },
+    TraceData { trace: Option<FlowTrace> },
     /// Response to QueryTraces
     QueryResults {
         traces: Vec<FlowTrace>,
         total_count: usize,
     },
     /// Response to GetFlowVersions
-    FlowVersions {
-        versions: Vec<FlowVersion>,
-    },
+    FlowVersions { versions: Vec<FlowVersion> },
     /// Response to Ping
     Pong,
     /// Real-time event notification
@@ -93,10 +79,7 @@ pub enum TracingResponse {
         event: TraceEvent,
     },
     /// Error response
-    Error {
-        message: String,
-        code: ErrorCode,
-    },
+    Error { message: String, code: ErrorCode },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

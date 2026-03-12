@@ -1,7 +1,7 @@
+use reflow_graph::types::PortType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use reflow_graph::types::PortType;
 
 /// Runtime environment for script actors
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -18,7 +18,7 @@ impl ScriptRuntime {
             _ => None,
         }
     }
-    
+
     pub fn to_string(&self) -> String {
         match self {
             ScriptRuntime::Python => "python".to_string(),

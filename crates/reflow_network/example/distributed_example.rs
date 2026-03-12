@@ -7,7 +7,8 @@ use reflow_network::{
     actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
     distributed_network::{DistributedConfig, DistributedNetwork},
     message::Message,
-    network::NetworkConfig, tracing::TracingIntegration,
+    network::NetworkConfig,
+    tracing::TracingIntegration,
 };
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::time::sleep;
@@ -102,7 +103,7 @@ impl Actor for BidirectionalActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
-        tracing_integration:Option<TracingIntegration>
+        tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
 
@@ -268,8 +269,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Give time for registration
     sleep(Duration::from_secs(2)).await;
-
-    
 
     let response_message = Message::String("Hello from server!".to_string().into());
     {

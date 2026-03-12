@@ -748,22 +748,22 @@ impl Graph {
 
         obj.into()
     }
-    
+
     #[wasm_bindgen(js_name = getNodes)]
     pub fn get_nodes_js(&self) -> JsValue {
         JsValue::from_serde(&self.nodes).unwrap_or_default()
     }
-    
+
     #[wasm_bindgen(js_name = getConnections)]
     pub fn get_connections_js(&self) -> JsValue {
         JsValue::from_serde(&self.connections).unwrap_or_default()
     }
-    
+
     #[wasm_bindgen(js_name = getInitializers)]
     pub fn get_initializers_js(&self) -> JsValue {
         JsValue::from_serde(&self.initializers).unwrap_or_default()
     }
-    
+
     #[wasm_bindgen(js_name = getGroups)]
     pub fn get_groups_js(&self) -> JsValue {
         JsValue::from_serde(&self.groups).unwrap_or_default()

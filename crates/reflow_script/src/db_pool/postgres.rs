@@ -389,9 +389,9 @@ impl DatabaseConnection for PostgresConnection {
                     let p5 = Self::value_to_simple_type(&params[4])?;
                     let p6 = Self::value_to_simple_type(&params[5])?;
                     client
-                       .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6])
-                       .await
-                       .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6])
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 7 => {
                     // Convert seven parameters
@@ -403,9 +403,9 @@ impl DatabaseConnection for PostgresConnection {
                     let p6 = Self::value_to_simple_type(&params[5])?;
                     let p7 = Self::value_to_simple_type(&params[6])?;
                     client
-                      .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7])
-                      .await
-                      .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7])
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 8 => {
                     // Convert eight parameters
@@ -418,9 +418,9 @@ impl DatabaseConnection for PostgresConnection {
                     let p7 = Self::value_to_simple_type(&params[6])?;
                     let p8 = Self::value_to_simple_type(&params[7])?;
                     client
-                      .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8])
-                      .await
-                      .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8])
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 9 => {
                     // Convert nine parameters
@@ -434,9 +434,9 @@ impl DatabaseConnection for PostgresConnection {
                     let p8 = Self::value_to_simple_type(&params[7])?;
                     let p9 = Self::value_to_simple_type(&params[8])?;
                     client
-                     .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9])
-                    .await
-                    .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9])
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 10 => {
                     // Convert ten parameters
@@ -451,9 +451,12 @@ impl DatabaseConnection for PostgresConnection {
                     let p9 = Self::value_to_simple_type(&params[8])?;
                     let p10 = Self::value_to_simple_type(&params[9])?;
                     client
-                     .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10])
-                     .await
-                     .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(
+                            &query_str,
+                            &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10],
+                        )
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 11 => {
                     // Convert eleven parameters
@@ -469,9 +472,12 @@ impl DatabaseConnection for PostgresConnection {
                     let p10 = Self::value_to_simple_type(&params[9])?;
                     let p11 = Self::value_to_simple_type(&params[10])?;
                     client
-                    .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11])
-                    .await
-                    .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(
+                            &query_str,
+                            &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11],
+                        )
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 12 => {
                     // Convert twelve parameters
@@ -488,9 +494,14 @@ impl DatabaseConnection for PostgresConnection {
                     let p11 = Self::value_to_simple_type(&params[10])?;
                     let p12 = Self::value_to_simple_type(&params[11])?;
                     client
-                   .execute(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11, &p12])
-                   .await
-                   .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
+                        .execute(
+                            &query_str,
+                            &[
+                                &p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11, &p12,
+                            ],
+                        )
+                        .await
+                        .map_err(|e| anyhow!("PostgreSQL execute error: {}", e))
                 }
                 _ => Err(anyhow!("Too many parameters (max 12 supported)")),
             }
@@ -581,7 +592,9 @@ impl DatabaseConnection for PostgresConnection {
                     let p4 = Self::value_to_simple_type(&params[3])?;
                     let p5 = Self::value_to_simple_type(&params[4])?;
                     let p6 = Self::value_to_simple_type(&params[5])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6]).await
+                    client
+                        .query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6])
+                        .await
                 }
                 7 => {
                     // Convert seven parameters
@@ -592,19 +605,23 @@ impl DatabaseConnection for PostgresConnection {
                     let p5 = Self::value_to_simple_type(&params[4])?;
                     let p6 = Self::value_to_simple_type(&params[5])?;
                     let p7 = Self::value_to_simple_type(&params[6])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7]).await    
+                    client
+                        .query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7])
+                        .await
                 }
                 8 => {
                     // Convert eight parameters
                     let p1 = Self::value_to_simple_type(&params[0])?;
                     let p2 = Self::value_to_simple_type(&params[1])?;
-                    let p3 = Self::value_to_simple_type(&params[2])?;   
+                    let p3 = Self::value_to_simple_type(&params[2])?;
                     let p4 = Self::value_to_simple_type(&params[3])?;
                     let p5 = Self::value_to_simple_type(&params[4])?;
                     let p6 = Self::value_to_simple_type(&params[5])?;
                     let p7 = Self::value_to_simple_type(&params[6])?;
                     let p8 = Self::value_to_simple_type(&params[7])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8]).await
+                    client
+                        .query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8])
+                        .await
                 }
                 9 => {
                     // Convert nine parameters
@@ -617,7 +634,9 @@ impl DatabaseConnection for PostgresConnection {
                     let p7 = Self::value_to_simple_type(&params[6])?;
                     let p8 = Self::value_to_simple_type(&params[7])?;
                     let p9 = Self::value_to_simple_type(&params[8])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9]).await
+                    client
+                        .query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9])
+                        .await
                 }
                 10 => {
                     // Convert ten parameters
@@ -631,7 +650,12 @@ impl DatabaseConnection for PostgresConnection {
                     let p8 = Self::value_to_simple_type(&params[7])?;
                     let p9 = Self::value_to_simple_type(&params[8])?;
                     let p10 = Self::value_to_simple_type(&params[9])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10]).await
+                    client
+                        .query(
+                            &query_str,
+                            &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10],
+                        )
+                        .await
                 }
                 11 => {
                     // Convert eleven parameters
@@ -646,7 +670,12 @@ impl DatabaseConnection for PostgresConnection {
                     let p9 = Self::value_to_simple_type(&params[8])?;
                     let p10 = Self::value_to_simple_type(&params[9])?;
                     let p11 = Self::value_to_simple_type(&params[10])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11]).await
+                    client
+                        .query(
+                            &query_str,
+                            &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11],
+                        )
+                        .await
                 }
                 12 => {
                     // Convert twelve parameters
@@ -662,7 +691,14 @@ impl DatabaseConnection for PostgresConnection {
                     let p10 = Self::value_to_simple_type(&params[9])?;
                     let p11 = Self::value_to_simple_type(&params[10])?;
                     let p12 = Self::value_to_simple_type(&params[11])?;
-                    client.query(&query_str, &[&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11, &p12]).await
+                    client
+                        .query(
+                            &query_str,
+                            &[
+                                &p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10, &p11, &p12,
+                            ],
+                        )
+                        .await
                 }
                 _ => {
                     return Err(anyhow!("Too many parameters (max 12 supported)"));

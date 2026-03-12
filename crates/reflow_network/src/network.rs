@@ -568,7 +568,8 @@ impl Network {
                             .await;
                     });
                 }
-                #[cfg(target_arch = "wasm32")]{
+                #[cfg(target_arch = "wasm32")]
+                {
                     spawn_local(async move {
                         let _ = tracing_clone
                             .trace_message_sent(&id_clone, &port_clone, &message_type, size_bytes)

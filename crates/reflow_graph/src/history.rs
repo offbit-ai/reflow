@@ -580,7 +580,10 @@ impl Command for AddConnectionCommand {
             &self.to_node,
             &self.to_port,
         );
-        if let Some(indices) = graph.connection_indices.get_mut(&(self.from_node.clone(), self.to_node.clone())) {
+        if let Some(indices) = graph
+            .connection_indices
+            .get_mut(&(self.from_node.clone(), self.to_node.clone()))
+        {
             indices.clear();
         }
         if let Some(indices) = graph.connection_port_indices.get_mut(&(

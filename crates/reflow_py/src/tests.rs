@@ -24,7 +24,6 @@ __return_value = 2 + 2"#,
             )
             .await?;
 
-        
         assert_eq!(result.result, Some(json!(4)));
         assert!(result.success);
         Ok(())
@@ -34,7 +33,11 @@ __return_value = 2 + 2"#,
     async fn test_package_installation() -> Result<()> {
         let mut runtime = PythonRuntime::new(false, true);
         runtime
-            .init(uuid::Uuid::new_v4(), Some(vec!["requests".to_string()]), None)
+            .init(
+                uuid::Uuid::new_v4(),
+                Some(vec!["requests".to_string()]),
+                None,
+            )
             .await?;
 
         let result = runtime
@@ -62,12 +65,18 @@ __return_value = 2 + 2"#,
         inputs.insert("y".to_string(), json!(3));
 
         let result = runtime
-            .execute(uuid::Uuid::new_v4(), r#"
+            .execute(
+                uuid::Uuid::new_v4(),
+                r#"
 inputs = Context.get_inputs()
 x = inputs.get("x").data
 y = inputs.get("y").data
 __return_value=x + y           
-            "#, inputs, None, None)
+            "#,
+                inputs,
+                None,
+                None,
+            )
             .await?;
 
         assert_eq!(result.result, Some(json!(8)));
@@ -78,7 +87,10 @@ __return_value=x + y
     #[tokio::test]
     async fn test_execution_timeout() {
         let mut runtime = PythonRuntime::new(false, true);
-        runtime.init(uuid::Uuid::new_v4(), None, None).await.unwrap();
+        runtime
+            .init(uuid::Uuid::new_v4(), None, None)
+            .await
+            .unwrap();
 
         let result = runtime
             .execute(
@@ -95,9 +107,12 @@ __return_value=x + y
     }
 
     #[tokio::test]
-    async fn test_syntax_error()-> Result<()> {
+    async fn test_syntax_error() -> Result<()> {
         let mut runtime = PythonRuntime::new(false, true);
-        runtime.init(uuid::Uuid::new_v4(), None, None).await.unwrap();
+        runtime
+            .init(uuid::Uuid::new_v4(), None, None)
+            .await
+            .unwrap();
 
         let result = runtime
             .execute(
@@ -127,7 +142,7 @@ __return_value=x + y
                 None,
             )
             .await?;
-        
+
         assert!(result.stdout.trim().contains("captured output"));
         assert!(result.success);
         Ok(())

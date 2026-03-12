@@ -14,8 +14,8 @@ use crate::{
     distributed_network::DistributedNetwork,
     graph::types::{GraphConnection, GraphEdge, GraphExport, GraphNode},
     multi_graph::{
-        CompositionConnection, CompositionEndpoint, GraphComposition, GraphLoader, GraphSource,
-        GraphComposer, GraphMetadata, NamespaceConflictPolicy,
+        CompositionConnection, CompositionEndpoint, GraphComposer, GraphComposition, GraphLoader,
+        GraphMetadata, GraphSource, NamespaceConflictPolicy,
     },
 };
 use anyhow::Result;
@@ -142,7 +142,12 @@ impl DistributedNamespaceResolver {
     }
 
     /// Register a remote graph's processes under the distributed namespace.
-    pub fn register_remote_graph(&mut self, network_id: &str, namespace: &str, graph: &GraphExport) {
+    pub fn register_remote_graph(
+        &mut self,
+        network_id: &str,
+        namespace: &str,
+        graph: &GraphExport,
+    ) {
         for (process_name, _) in &graph.processes {
             let qualified = format!("{}/{}/{}", network_id, namespace, process_name);
             self.process_locations.insert(

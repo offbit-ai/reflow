@@ -8,7 +8,7 @@ use std::time::Instant;
 use crate::db_pool::{ConnectionStatus, DatabaseConnection};
 
 #[cfg(feature = "sqlite")]
-use sqlx::{SqlitePool, SqliteConnection, Row};
+use sqlx::{Row, SqliteConnection, SqlitePool};
 
 /// SQLite database connection using SQLx
 pub struct SQLiteConnection {
@@ -51,45 +51,37 @@ impl SQLiteConnection {
     #[cfg(feature = "sqlite")]
     fn row_to_json(row: &sqlx::sqlite::SqliteRow) -> Result<serde_json::Map<String, Value>> {
         let mut map = serde_json::Map::new();
-        
+
         for column in row.columns() {
             let column_name = column.name();
-            
+
             let value = match column.type_info().name() {
                 "NULL" => Value::Null,
-                "INTEGER" => {
-                    match row.try_get::<Option<i64>, _>(column_name) {
-                        Ok(Some(i)) => Value::Number(i.into()),
-                        Ok(None) => Value::Null,
-                        Err(_) => Value::Null,
-                    }
+                "INTEGER" => match row.try_get::<Option<i64>, _>(column_name) {
+                    Ok(Some(i)) => Value::Number(i.into()),
+                    Ok(None) => Value::Null,
+                    Err(_) => Value::Null,
                 },
-                "REAL" => {
-                    match row.try_get::<Option<f64>, _>(column_name) {
-                        Ok(Some(f)) => {
-                            if let Some(num) = serde_json::Number::from_f64(f) {
-                                Value::Number(num)
-                            } else {
-                                Value::Null
-                            }
-                        },
-                        Ok(None) => Value::Null,
-                        Err(_) => Value::Null,
+                "REAL" => match row.try_get::<Option<f64>, _>(column_name) {
+                    Ok(Some(f)) => {
+                        if let Some(num) = serde_json::Number::from_f64(f) {
+                            Value::Number(num)
+                        } else {
+                            Value::Null
+                        }
                     }
+                    Ok(None) => Value::Null,
+                    Err(_) => Value::Null,
                 },
-                "TEXT" => {
-                    match row.try_get::<Option<String>, _>(column_name) {
-                        Ok(Some(s)) => Value::String(s),
-                        Ok(None) => Value::Null,
-                        Err(_) => Value::Null,
-                    }
+                "TEXT" => match row.try_get::<Option<String>, _>(column_name) {
+                    Ok(Some(s)) => Value::String(s),
+                    Ok(None) => Value::Null,
+                    Err(_) => Value::Null,
                 },
-                "BLOB" => {
-                    match row.try_get::<Option<Vec<u8>>, _>(column_name) {
-                        Ok(Some(b)) => Value::String(base64::encode(b)),
-                        Ok(None) => Value::Null,
-                        Err(_) => Value::Null,
-                    }
+                "BLOB" => match row.try_get::<Option<Vec<u8>>, _>(column_name) {
+                    Ok(Some(b)) => Value::String(base64::encode(b)),
+                    Ok(None) => Value::Null,
+                    Err(_) => Value::Null,
                 },
                 _ => {
                     // Try to get as string as fallback
@@ -110,7 +102,7 @@ impl SQLiteConnection {
     pub fn destroy(&mut self) -> Result<()> {
         *self.status.write() = ConnectionStatus::Disconnected;
         self.initialized.store(false, Ordering::SeqCst);
-        
+
         #[cfg(feature = "sqlite")]
         {
             let mut pool = self.pool.write();
@@ -119,7 +111,7 @@ impl SQLiteConnection {
                 drop(p);
             }
         }
-        
+
         // Remove the database file if it's not in-memory
         if self.connection_string != ":memory:" && !self.connection_string.contains("memory") {
             // Extract file path from connection string
@@ -128,7 +120,7 @@ impl SQLiteConnection {
             } else {
                 &self.connection_string
             };
-            
+
             if let Err(e) = std::fs::remove_file(file_path) {
                 // Only log as warning since file might not exist
                 tracing::warn!("Could not remove database file {}: {}", file_path, e);
@@ -194,7 +186,8 @@ impl DatabaseConnection for SQLiteConnection {
             };
 
             // Create the pool
-            let pool = SqlitePool::connect(&connection_string).await
+            let pool = SqlitePool::connect(&connection_string)
+                .await
                 .map_err(|e| anyhow!("Failed to create SQLite pool: {}", e))?;
 
             // Enable foreign keys
@@ -239,7 +232,7 @@ impl DatabaseConnection for SQLiteConnection {
                 .ok_or_else(|| anyhow!("SQLite pool not initialized"))?;
 
             let mut query_builder = sqlx::query(query);
-            
+
             // Bind parameters
             for param in params {
                 query_builder = match param {
@@ -253,7 +246,7 @@ impl DatabaseConnection for SQLiteConnection {
                         } else {
                             query_builder.bind(n.to_string())
                         }
-                    },
+                    }
                     Value::String(s) => query_builder.bind(s),
                     _ => {
                         let json_str = serde_json::to_string(&param)?;
@@ -262,7 +255,9 @@ impl DatabaseConnection for SQLiteConnection {
                 };
             }
 
-            let result = query_builder.execute(pool).await
+            let result = query_builder
+                .execute(pool)
+                .await
                 .map_err(|e| anyhow!("SQLite execute error: {}", e))?;
 
             Ok(result.rows_affected())
@@ -289,7 +284,7 @@ impl DatabaseConnection for SQLiteConnection {
                 .ok_or_else(|| anyhow!("SQLite pool not initialized"))?;
 
             let mut query_builder = sqlx::query(query);
-            
+
             // Bind parameters
             for param in params {
                 query_builder = match param {
@@ -303,7 +298,7 @@ impl DatabaseConnection for SQLiteConnection {
                         } else {
                             query_builder.bind(n.to_string())
                         }
-                    },
+                    }
                     Value::String(s) => query_builder.bind(s),
                     _ => {
                         let json_str = serde_json::to_string(&param)?;
@@ -312,7 +307,9 @@ impl DatabaseConnection for SQLiteConnection {
                 };
             }
 
-            let rows = query_builder.fetch_all(pool).await
+            let rows = query_builder
+                .fetch_all(pool)
+                .await
                 .map_err(|e| anyhow!("SQLite query error: {}", e))?;
 
             let mut results = Vec::new();

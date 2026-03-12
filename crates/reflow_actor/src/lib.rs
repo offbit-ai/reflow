@@ -6,7 +6,6 @@ pub use reflow_graph::*;
 use reflow_tracing_protocol::client::TracingIntegration;
 use std::{any::Any, collections::HashMap, env, pin::Pin, rc::Rc, sync::Arc};
 
-
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use parking_lot::Mutex;
@@ -22,7 +21,7 @@ use wasm_bindgen::convert::FromWasmAbi;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{types::GraphNode, message::Message};
+use crate::{message::Message, types::GraphNode};
 
 // #[cfg(not(target_arch = "wasm32"))]
 pub type ActorBehavior = Box<
@@ -1083,7 +1082,6 @@ impl Actor for JsBrowserActor {
 #[cfg(target_arch = "wasm32")]
 impl BrowserActor {
     pub fn new(extern_actor: ExternActor) -> Self {
-
         let inports = flume::unbounded();
         let outports = flume::unbounded();
 

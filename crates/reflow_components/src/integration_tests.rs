@@ -3,41 +3,41 @@
 #[cfg(test)]
 mod tests {
     use super::super::integration::{
-        HttpRequestActor, PostgreSQLPoolActor, MySQLPoolActor, 
-        MongoDbPoolActor, MongoCollectionActor
+        HttpRequestActor, MongoCollectionActor, MongoDbPoolActor, MySQLPoolActor,
+        PostgreSQLPoolActor,
     };
     use super::super::{Actor, Message};
-    use reflow_actor::{MemoryState, ActorContext, ActorConfig};
+    use parking_lot::Mutex;
+    use reflow_actor::ActorLoad;
+    use reflow_actor::{ActorConfig, ActorContext, MemoryState};
     use reflow_graph::types::GraphNode;
     use serde_json::{json, Value};
     use std::collections::HashMap;
     use std::sync::Arc;
-    use parking_lot::Mutex;
-    use reflow_actor::ActorLoad;
 
     fn create_test_context(property_values: HashMap<String, Value>) -> ActorContext {
         let mut metadata = HashMap::new();
         metadata.insert("propertyValues".to_string(), json!(property_values));
-        
+
         let node = GraphNode {
             id: "test_node".to_string(),
-            component: "TestComponent".to_string(), 
+            component: "TestComponent".to_string(),
             metadata: Some(metadata.clone()),
             ..Default::default()
         };
-        
+
         let config = ActorConfig {
             node,
             resolved_env: HashMap::new(),
             config: metadata,
             namespace: None,
         };
-        
+
         let payload = HashMap::new();
         let outports = flume::unbounded();
         let state = Arc::new(Mutex::new(MemoryState::default()));
         let load = Arc::new(Mutex::new(ActorLoad::new(0)));
-        
+
         ActorContext::new(payload, outports, state, config, load)
     }
 
@@ -62,7 +62,7 @@ mod tests {
 
         // Test that the behavior can be executed without panicking
         let result = behavior(context).await;
-        
+
         // Should return success with mock response
         assert!(result.is_ok());
         let output = result.unwrap();
@@ -79,7 +79,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should fail due to missing URL
         assert!(result.is_err());
         if let Err(e) = result {
@@ -98,7 +98,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should succeed with mock implementation, but include the invalid method in response
         assert!(result.is_ok());
         let output = result.unwrap();
@@ -125,7 +125,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should succeed with mock pool creation
         assert!(result.is_ok());
         let output = result.unwrap();
@@ -143,7 +143,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should fail due to missing host
         assert!(result.is_err());
         if let Err(e) = result {
@@ -163,7 +163,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should succeed with mock pool creation
         assert!(result.is_ok());
         let output = result.unwrap();
@@ -184,7 +184,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should succeed with mock pool creation
         assert!(result.is_ok());
         let output = result.unwrap();
@@ -204,7 +204,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should succeed with mock documents
         assert!(result.is_ok());
         let output = result.unwrap();
@@ -221,7 +221,7 @@ mod tests {
         let behavior = actor.get_behavior();
 
         let result = behavior(context).await;
-        
+
         // Should fail due to missing collection
         assert!(result.is_err());
         if let Err(e) = result {

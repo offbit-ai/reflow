@@ -100,7 +100,7 @@ pub fn benchmark_graph_operations(c: &mut Criterion) {
                 );
             }
 
-           let _ = graph.traverse_depth_first("node_10", |_| {});
+            let _ = graph.traverse_depth_first("node_10", |_| {});
         });
     });
 
@@ -122,7 +122,7 @@ pub fn benchmark_graph_operations(c: &mut Criterion) {
                 );
             }
 
-           let _ = graph.traverse_breadth_first("node_20", |_| {});
+            let _ = graph.traverse_breadth_first("node_20", |_| {});
         });
     });
 }

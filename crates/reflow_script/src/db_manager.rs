@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use dashmap::DashMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -52,29 +52,29 @@ pub enum ConnectionStatus {
 pub trait DatabaseConnection: Send + Sync {
     /// Get the connection ID
     fn get_id(&self) -> &str;
-    
+
     /// Get the connection status
     fn get_status(&self) -> ConnectionStatus;
-    
+
     /// Check if the connection is healthy
     async fn is_healthy(&self) -> bool;
-    
+
     /// Connect to the database
     async fn connect(&mut self) -> Result<()>;
-    
+
     /// Reconnect to the database if the connection is lost
     async fn reconnect(&mut self) -> Result<()>;
-    
+
     /// Execute a query that returns no results
     async fn execute(&self, query: &str, params: Vec<serde_json::Value>) -> Result<u64>;
-    
+
     /// Execute a query that returns results
     async fn query(
         &self,
         query: &str,
         params: Vec<serde_json::Value>,
     ) -> Result<Vec<serde_json::Map<String, serde_json::Value>>>;
-    
+
     /// Close the connection
     async fn close(&mut self) -> Result<()>;
 
@@ -113,16 +113,17 @@ impl DbPoolManager {
         T: DatabaseConnection + 'static,
     {
         let id = connection.get_id().to_string();
-        
+
         // Check if a connection with this ID already exists
         if self.connections.contains_key(&id) {
             return Err(anyhow!("Connection with ID '{}' already exists", id));
         }
         connection.connect().await?;
         // Store the connection
-        self.connections.insert(id.clone(), Arc::new(Mutex::new(Box::new(connection))));
+        self.connections
+            .insert(id.clone(), Arc::new(Mutex::new(Box::new(connection))));
         self.health_checks.insert(id, Instant::now());
-        
+
         Ok(())
     }
 
@@ -152,13 +153,19 @@ impl DbPoolManager {
     /// Check the health of all connections and reconnect if necessary
     pub async fn check_connections_health(&self) -> Result<()> {
         println!("Checking connections health...");
-        println!("Connections: {:?}", self.connections.iter().map(|r| r.key().clone()).collect::<Vec<_>>());
+        println!(
+            "Connections: {:?}",
+            self.connections
+                .iter()
+                .map(|r| r.key().clone())
+                .collect::<Vec<_>>()
+        );
         println!("Health checks: {:?}", self.health_checks);
         println!("Health check interval: {:?}", self.health_check_interval);
         for item in self.connections.iter() {
             let id = item.key().clone();
             let connection = item.value().clone();
-            
+
             // Check if it's time to perform a health check
             if let Some(last_check) = self.health_checks.get(&id) {
                 if last_check.elapsed() < self.health_check_interval {
@@ -166,11 +173,14 @@ impl DbPoolManager {
                     continue; // Skip this connection if it was checked recently
                 }
             }
-            
+
             // Perform health check
             let mut conn = connection.lock().await;
             if !conn.is_healthy().await {
-                println!("Database connection '{}' is not healthy.. Let's reconnect", id);
+                println!(
+                    "Database connection '{}' is not healthy.. Let's reconnect",
+                    id
+                );
                 // Attempt to reconnect
                 if let Err(err) = conn.reconnect().await {
                     tracing::error!("Failed to reconnect to database '{}': {}", id, err);
@@ -178,11 +188,11 @@ impl DbPoolManager {
                     tracing::info!("Successfully reconnected to database '{}'", id);
                 }
             }
-            
+
             // Update the last health check time
             self.health_checks.insert(id, Instant::now());
         }
-        
+
         Ok(())
     }
 
@@ -195,12 +205,15 @@ impl DbPoolManager {
     ) -> Result<Vec<serde_json::Map<String, serde_json::Value>>> {
         if let Some(connection) = self.get_connection(connection_id) {
             let conn = connection.lock().await;
-            
+
             // Check connection health before executing query
             if !conn.is_healthy().await {
-                return Err(anyhow!("Database connection '{}' is not healthy", connection_id));
+                return Err(anyhow!(
+                    "Database connection '{}' is not healthy",
+                    connection_id
+                ));
             }
-            
+
             conn.query(query, params).await
         } else {
             Err(anyhow!("Connection with ID '{}' not found", connection_id))
@@ -216,12 +229,15 @@ impl DbPoolManager {
     ) -> Result<u64> {
         if let Some(connection) = self.get_connection(connection_id) {
             let conn = connection.lock().await;
-            
+
             // Check connection health before executing command
             if !conn.is_healthy().await {
-                return Err(anyhow!("Database connection '{}' is not healthy", connection_id));
+                return Err(anyhow!(
+                    "Database connection '{}' is not healthy",
+                    connection_id
+                ));
             }
-            
+
             conn.execute(command, params).await
         } else {
             Err(anyhow!("Connection with ID '{}' not found", connection_id))
@@ -230,7 +246,10 @@ impl DbPoolManager {
 
     /// Get all connection IDs
     pub fn get_connection_ids(&self) -> Vec<String> {
-        self.connections.iter().map(|item| item.key().clone()).collect()
+        self.connections
+            .iter()
+            .map(|item| item.key().clone())
+            .collect()
     }
 
     /// Get the status of a specific connection
@@ -253,7 +272,6 @@ lazy_static::lazy_static! {
 pub fn get_db_pool_manager() -> &'static DbPoolManager {
     &DB_POOL_MANAGER
 }
-
 
 #[cfg(feature = "db")]
 #[cfg(test)]
@@ -318,7 +336,10 @@ mod tests {
         ) -> Result<Vec<serde_json::Map<String, serde_json::Value>>> {
             if self.is_healthy.load(Ordering::SeqCst) {
                 let mut map = serde_json::Map::new();
-                map.insert("result".to_string(), serde_json::Value::String("test".to_string()));
+                map.insert(
+                    "result".to_string(),
+                    serde_json::Value::String("test".to_string()),
+                );
                 Ok(vec![map])
             } else {
                 Err(anyhow!("Connection is not healthy"))
@@ -339,17 +360,17 @@ mod tests {
     async fn test_register_and_get_connection() {
         let pool = DbPoolManager::default();
         let conn = MockDatabaseConnection::new("test_db", true);
-        
+
         // Register the connection
         assert!(pool.register_connection(conn).await.is_ok());
-        
+
         // Check if the connection exists
         assert!(pool.has_connection("test_db"));
-        
+
         // Get the connection
         let conn = pool.get_connection("test_db");
         assert!(conn.is_some());
-        
+
         // Try to register a connection with the same ID
         let conn2 = MockDatabaseConnection::new("test_db", true);
         assert!(pool.register_connection(conn2).await.is_err());
@@ -359,35 +380,40 @@ mod tests {
     async fn test_execute_query() {
         let pool = DbPoolManager::default();
         let conn = MockDatabaseConnection::new("query_db", true);
-        
+
         // Register the connection
         assert!(pool.register_connection(conn).await.is_ok());
-        
+
         // Execute a query
-        let result = pool.execute_query("query_db", "SELECT * FROM test", vec![]).await;
+        let result = pool
+            .execute_query("query_db", "SELECT * FROM test", vec![])
+            .await;
         assert!(result.is_ok());
-        
+
         let rows = result.unwrap();
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0]["result"], serde_json::Value::String("test".to_string()));
+        assert_eq!(
+            rows[0]["result"],
+            serde_json::Value::String("test".to_string())
+        );
     }
 
     #[tokio::test]
     async fn test_health_check_and_reconnect() {
         let pool = DbPoolManager::new(Duration::from_millis(10)); // Short interval for testing
         let conn = MockDatabaseConnection::new("health_db", false); // Start unhealthy
-        
+
         // Register the connection
         assert!(pool.register_connection(conn).await.is_ok());
-        
+
         // Get the connection and verify it's unhealthy
         let conn_ref = pool.get_connection("health_db").unwrap();
         assert!(!conn_ref.lock().await.is_healthy().await);
-        
+
         // Run health check which should attempt to reconnect
         tokio::time::sleep(Duration::from_millis(20)).await; // Wait for health check interval
         assert!(pool.check_connections_health().await.is_ok());
-        
+
         // Verify the connection is now healthy
         assert!(conn_ref.lock().await.is_healthy().await);
     }
@@ -396,16 +422,16 @@ mod tests {
     async fn test_remove_connection() {
         let pool = DbPoolManager::default();
         let conn = MockDatabaseConnection::new("remove_db", true);
-        
+
         // Register the connection
         assert!(pool.register_connection(conn).await.is_ok());
-        
+
         // Remove the connection
         assert!(pool.remove_connection("remove_db").await.is_ok());
-        
+
         // Verify the connection is gone
         assert!(!pool.has_connection("remove_db"));
-        
+
         // Try to remove a non-existent connection
         assert!(pool.remove_connection("nonexistent").await.is_err());
     }

@@ -92,13 +92,21 @@ mod tests {
             let router = MessageRouter::new();
             let msg = crate::message::Message::String(std::sync::Arc::new("test".to_string()));
             let result = router
-                .route_message("nonexistent_network", "actor_a", "input", msg, Some("sender"))
+                .route_message(
+                    "nonexistent_network",
+                    "actor_a",
+                    "input",
+                    msg,
+                    Some("sender"),
+                )
                 .await;
             assert!(result.is_err());
-            assert!(result
-                .unwrap_err()
-                .to_string()
-                .contains("No connection to network"));
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("No connection to network")
+            );
         }
 
         #[tokio::test]
@@ -116,10 +124,12 @@ mod tests {
             };
             let result = router.handle_incoming_message(msg).await;
             assert!(result.is_err());
-            assert!(result
-                .unwrap_err()
-                .to_string()
-                .contains("No local network configured"));
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("No local network configured")
+            );
         }
 
         #[tokio::test]
@@ -166,7 +176,11 @@ mod tests {
 
         let mut composer = GraphComposer::new();
         let result = composer.compose_graphs(composition).await;
-        assert!(result.is_ok(), "Composition should succeed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Composition should succeed: {:?}",
+            result.err()
+        );
 
         let graph = result.unwrap();
         // Verify namespace isolation: processes are prefixed
@@ -221,7 +235,10 @@ mod tests {
         let ns_b = result_b.unwrap();
 
         // They should have different namespaces
-        assert_ne!(ns_a, ns_b, "Auto-resolve should assign different namespaces");
+        assert_ne!(
+            ns_a, ns_b,
+            "Auto-resolve should assign different namespaces"
+        );
     }
 
     #[test]

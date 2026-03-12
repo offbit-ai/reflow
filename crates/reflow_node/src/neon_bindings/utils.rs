@@ -1,5 +1,5 @@
 //! Utility functions for Neon bindings
-//! 
+//!
 //! Provides helper functions for converting between JS and Rust types
 
 use neon::prelude::*;
@@ -39,8 +39,7 @@ pub fn js_to_json_value<'cx>(cx: &mut Cx<'cx>, value: Handle<JsValue>) -> NeonRe
             Ok(JsonValue::Number(serde_json::Number::from(num as i64)))
         } else {
             Ok(JsonValue::Number(
-                serde_json::Number::from_f64(num)
-                    .unwrap_or(serde_json::Number::from(0))
+                serde_json::Number::from_f64(num).unwrap_or(serde_json::Number::from(0)),
             ))
         }
     } else if let Ok(s) = value.downcast::<JsString, _>(cx) {
@@ -55,7 +54,7 @@ pub fn js_to_json_value<'cx>(cx: &mut Cx<'cx>, value: Handle<JsValue>) -> NeonRe
     } else if let Ok(obj) = value.downcast::<JsObject, _>(cx) {
         let prop_names = obj.get_own_property_names(cx)?;
         let mut map = serde_json::Map::new();
-        
+
         for i in 0..prop_names.len(cx) {
             let key_val = prop_names.get::<JsValue, _, _>(cx, i)?;
             if let Ok(key_str) = key_val.downcast::<JsString, _>(cx) {
@@ -164,7 +163,10 @@ pub fn json_value_to_js<'a>(cx: &mut Cx<'a>, value: &JsonValue) -> NeonResult<Ha
 }
 
 /// Convert JS array to Vec<String>
-pub fn js_array_to_string_vec(cx: &mut FunctionContext, arr: Handle<JsArray>) -> NeonResult<Vec<String>> {
+pub fn js_array_to_string_vec(
+    cx: &mut FunctionContext,
+    arr: Handle<JsArray>,
+) -> NeonResult<Vec<String>> {
     let mut vec = Vec::new();
     for i in 0..arr.len(cx) {
         if let Ok(item) = arr.get::<JsString, _, _>(cx, i) {
@@ -175,7 +177,10 @@ pub fn js_array_to_string_vec(cx: &mut FunctionContext, arr: Handle<JsArray>) ->
 }
 
 /// Convert Vec<String> to JS array
-pub fn string_vec_to_js_array<'a>(cx: &mut FunctionContext<'a>, vec: &[String]) -> NeonResult<Handle<'a, JsArray>> {
+pub fn string_vec_to_js_array<'a>(
+    cx: &mut FunctionContext<'a>,
+    vec: &[String],
+) -> NeonResult<Handle<'a, JsArray>> {
     let js_arr = JsArray::new(cx, vec.len());
     for (i, item) in vec.iter().enumerate() {
         let js_str = cx.string(item);
@@ -185,10 +190,13 @@ pub fn string_vec_to_js_array<'a>(cx: &mut FunctionContext<'a>, vec: &[String]) 
 }
 
 /// Convert JS object to HashMap<String, JsonValue>
-pub fn js_object_to_map<'cx>(cx: &mut Cx<'cx>, obj: Handle<JsObject>) -> NeonResult<HashMap<String, JsonValue>> {
+pub fn js_object_to_map<'cx>(
+    cx: &mut Cx<'cx>,
+    obj: Handle<JsObject>,
+) -> NeonResult<HashMap<String, JsonValue>> {
     let prop_names = obj.get_own_property_names(cx)?;
     let mut map = HashMap::new();
-    
+
     for i in 0..prop_names.len(cx) {
         let key_val = prop_names.get::<JsValue, _, _>(cx, i)?;
         if let Ok(key_str) = key_val.downcast::<JsString, _>(cx) {
@@ -201,7 +209,10 @@ pub fn js_object_to_map<'cx>(cx: &mut Cx<'cx>, obj: Handle<JsObject>) -> NeonRes
 }
 
 /// Convert HashMap<String, JsonValue> to JS object
-pub fn map_to_js_object<'a>(cx: &mut FunctionContext<'a>, map: &HashMap<String, JsonValue>) -> NeonResult<Handle<'a, JsObject>> {
+pub fn map_to_js_object<'a>(
+    cx: &mut FunctionContext<'a>,
+    map: &HashMap<String, JsonValue>,
+) -> NeonResult<Handle<'a, JsObject>> {
     let js_obj = JsObject::new(cx);
     for (key, val) in map.iter() {
         match val {
@@ -243,7 +254,10 @@ pub fn map_to_js_object<'a>(cx: &mut FunctionContext<'a>, map: &HashMap<String, 
 }
 
 /// Create a Rust error from a string message
-pub fn create_error<'a>(cx: &mut FunctionContext<'a>, message: &str) -> NeonResult<Handle<'a, JsValue>> {
+pub fn create_error<'a>(
+    cx: &mut FunctionContext<'a>,
+    message: &str,
+) -> NeonResult<Handle<'a, JsValue>> {
     let error = cx.error(message)?;
     Ok(error.upcast())
 }
@@ -256,7 +270,7 @@ pub fn throw_error<T>(cx: &mut FunctionContext, message: &str) -> NeonResult<T> 
 /// Handle Result<T, E> where E: Display, converting errors to JS exceptions
 pub fn handle_result<T, E: std::fmt::Display>(
     cx: &mut FunctionContext,
-    result: Result<T, E>
+    result: Result<T, E>,
 ) -> NeonResult<T> {
     match result {
         Ok(value) => Ok(value),
@@ -272,9 +286,7 @@ where
 {
     // Note: This uses a simple blocking approach
     // In a real implementation, you might want to use a proper async runtime
-    tokio::task::block_in_place(|| {
-        tokio::runtime::Handle::current().block_on(operation)
-    })
+    tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(operation))
 }
 
 /// Get the current timestamp as a string
@@ -292,13 +304,13 @@ pub fn is_valid_identifier(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
-    
+
     let mut chars = s.chars();
     if let Some(first) = chars.next() {
         if !first.is_alphabetic() && first != '_' {
             return false;
         }
-        
+
         chars.all(|c| c.is_alphanumeric() || c == '_')
     } else {
         false
@@ -310,10 +322,10 @@ pub fn sanitize_identifier(s: &str) -> String {
     if s.is_empty() {
         return "identifier".to_string();
     }
-    
+
     let mut result = String::new();
     let mut chars = s.chars();
-    
+
     // Handle first character
     if let Some(first) = chars.next() {
         if first.is_alphabetic() || first == '_' {
@@ -325,7 +337,7 @@ pub fn sanitize_identifier(s: &str) -> String {
             result.push('_');
         }
     }
-    
+
     // Handle remaining characters
     for c in chars {
         if c.is_alphanumeric() || c == '_' {
@@ -334,10 +346,10 @@ pub fn sanitize_identifier(s: &str) -> String {
             result.push('_');
         }
     }
-    
+
     if result.is_empty() {
         result = "identifier".to_string();
     }
-    
+
     result
 }

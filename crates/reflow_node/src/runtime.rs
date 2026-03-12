@@ -1,5 +1,5 @@
 //! Tokio runtime management for async operations in Neon
-//! 
+//!
 //! Provides a shared tokio runtime for all async operations in the Node.js bindings.
 //! This allows us to use full native async capabilities instead of WASM limitations.
 

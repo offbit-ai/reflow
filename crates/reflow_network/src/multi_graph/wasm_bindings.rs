@@ -1,17 +1,20 @@
 //! WASM bindings for multi_graph functionality
 //! Provides JavaScript-accessible classes under the multi_graph namespace
 
-use wasm_bindgen::prelude::*;
 use serde_wasm_bindgen::{from_value, to_value};
 use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
 
-use crate::graph::types::GraphExport;
 use super::{
-    GraphLoader, GraphValidator, GraphNormalizer, GraphMetadata, GraphComposer,
-    GraphComposition, GraphSource, GraphNamespaceManager, NamespaceConflictPolicy,
-    LoadError, ValidationError, NamespaceError, CompositionError,
-    workspace::{WorkspaceDiscovery, WorkspaceConfig, WorkspaceComposition, NamespaceStrategy, DependencyResolutionStrategy}
+    CompositionError, GraphComposer, GraphComposition, GraphLoader, GraphMetadata,
+    GraphNamespaceManager, GraphNormalizer, GraphSource, GraphValidator, LoadError,
+    NamespaceConflictPolicy, NamespaceError, ValidationError,
+    workspace::{
+        DependencyResolutionStrategy, NamespaceStrategy, WorkspaceComposition, WorkspaceConfig,
+        WorkspaceDiscovery,
+    },
 };
+use crate::graph::types::GraphExport;
 
 // Helper function to convert Rust errors to JsValue
 fn error_to_js(error: impl std::fmt::Display) -> JsValue {
@@ -77,7 +80,7 @@ impl MultiGraphNamespace {
     pub fn graph_metadata_from_export(graph_js: &JsValue) -> Result<WasmGraphMetadata, JsValue> {
         let graph_export: GraphExport = from_value(graph_js.clone()).map_err(error_to_js)?;
         let metadata = super::GraphMetadata::from_graph_export(&graph_export);
-        
+
         Ok(WasmGraphMetadata { inner: metadata })
     }
 }
@@ -102,7 +105,7 @@ impl WasmGraphLoader {
     #[wasm_bindgen]
     pub async fn load_from_json(&self, json_content: &str) -> Result<JsValue, JsValue> {
         let source = GraphSource::JsonContent(json_content.to_string());
-        
+
         match self.inner.load_graph(source).await {
             Ok(graph_export) => to_value(&graph_export).map_err(error_to_js),
             Err(e) => Err(error_to_js(e)),
@@ -113,7 +116,7 @@ impl WasmGraphLoader {
     #[wasm_bindgen]
     pub async fn load_from_url(&self, url: &str) -> Result<JsValue, JsValue> {
         let source = GraphSource::NetworkApi(url.to_string());
-        
+
         match self.inner.load_graph(source).await {
             Ok(graph_export) => to_value(&graph_export).map_err(error_to_js),
             Err(e) => Err(error_to_js(e)),
@@ -124,17 +127,21 @@ impl WasmGraphLoader {
     #[wasm_bindgen]
     pub async fn load_multiple(&self, sources: js_sys::Array) -> Result<js_sys::Array, JsValue> {
         let mut graph_sources = Vec::new();
-        
+
         for i in 0..sources.length() {
             let source_obj = sources.get(i);
             let source_info: SourceInfo = from_value(source_obj).map_err(error_to_js)?;
-            
+
             let source = match source_info.source_type.as_str() {
                 "json" => GraphSource::JsonContent(source_info.content),
                 "url" => GraphSource::NetworkApi(source_info.content),
-                _ => return Err(JsValue::from_str("Invalid source type. Use 'json' or 'url'.")),
+                _ => {
+                    return Err(JsValue::from_str(
+                        "Invalid source type. Use 'json' or 'url'.",
+                    ));
+                }
             };
-            
+
             graph_sources.push(source);
         }
 
@@ -176,7 +183,7 @@ impl WasmGraphValidator {
     #[wasm_bindgen]
     pub fn validate(&self, graph_js: &JsValue) -> Result<(), JsValue> {
         let graph_export: GraphExport = from_value(graph_js.clone()).map_err(error_to_js)?;
-        
+
         match self.inner.validate(&graph_export) {
             Ok(()) => Ok(()),
             Err(e) => Err(error_to_js(e)),
@@ -202,7 +209,7 @@ impl WasmGraphNormalizer {
     #[wasm_bindgen]
     pub fn normalize(&self, graph_js: &JsValue) -> Result<JsValue, JsValue> {
         let mut graph_export: GraphExport = from_value(graph_js.clone()).map_err(error_to_js)?;
-        
+
         match self.inner.normalize(&mut graph_export) {
             Ok(()) => to_value(&graph_export).map_err(error_to_js),
             Err(e) => Err(error_to_js(e)),
@@ -222,7 +229,7 @@ impl WasmGraphMetadata {
     pub fn from_graph_export(graph_js: &JsValue) -> Result<WasmGraphMetadata, JsValue> {
         let graph_export: GraphExport = from_value(graph_js.clone()).map_err(error_to_js)?;
         let metadata = super::GraphMetadata::from_graph_export(&graph_export);
-        
+
         Ok(WasmGraphMetadata { inner: metadata })
     }
 
@@ -322,8 +329,9 @@ impl WasmGraphComposer {
     /// Compose multiple graphs into a single graph
     #[wasm_bindgen]
     pub async fn compose_graphs(&mut self, composition_js: &JsValue) -> Result<JsValue, JsValue> {
-        let composition: CompositionConfig = from_value(composition_js.clone()).map_err(error_to_js)?;
-        
+        let composition: CompositionConfig =
+            from_value(composition_js.clone()).map_err(error_to_js)?;
+
         // Convert JS composition to Rust GraphComposition
         let mut sources = Vec::new();
         for source_info in composition.sources {
@@ -336,14 +344,18 @@ impl WasmGraphComposer {
                         .map_err(|e| JsValue::from_str(&format!("Invalid graph JSON: {}", e)))?;
                     GraphSource::GraphExport(graph_export)
                 }
-                _ => return Err(JsValue::from_str("Invalid source type. Use 'json', 'url', or 'graph'.")),
+                _ => {
+                    return Err(JsValue::from_str(
+                        "Invalid source type. Use 'json', 'url', or 'graph'.",
+                    ));
+                }
             };
             sources.push(source);
         }
 
         let graph_composition = GraphComposition {
             sources,
-            connections: Vec::new(), // TODO: Convert from JS
+            connections: Vec::new(),      // TODO: Convert from JS
             shared_resources: Vec::new(), // TODO: Convert from JS
             properties: HashMap::new(),
             case_sensitive: Some(false),
@@ -387,7 +399,7 @@ impl WasmNamespaceManager {
     #[wasm_bindgen]
     pub fn register_graph(&mut self, graph_js: &JsValue) -> Result<String, JsValue> {
         let graph_export: GraphExport = from_value(graph_js.clone()).map_err(error_to_js)?;
-        
+
         match self.inner.register_graph(&graph_export) {
             Ok(namespace) => Ok(namespace),
             Err(e) => Err(error_to_js(e)),
@@ -442,7 +454,7 @@ impl WasmBrowserWorkspace {
     #[wasm_bindgen]
     pub fn from_graph_collection(&self, graphs: js_sys::Array) -> Result<JsValue, JsValue> {
         let mut graph_exports = Vec::new();
-        
+
         for i in 0..graphs.length() {
             let graph_js = graphs.get(i);
             let graph_export: GraphExport = from_value(graph_js).map_err(error_to_js)?;
@@ -460,17 +472,23 @@ impl WasmBrowserWorkspace {
 
     /// Save workspace to browser storage (localStorage)
     #[wasm_bindgen]
-    pub async fn save_to_browser_storage(&self, workspace_name: &str, workspace_js: &JsValue) -> Result<(), JsValue> {
+    pub async fn save_to_browser_storage(
+        &self,
+        workspace_name: &str,
+        workspace_js: &JsValue,
+    ) -> Result<(), JsValue> {
         let window = web_sys::window().ok_or_else(|| JsValue::from_str("No window object"))?;
-        let storage = window.local_storage()
+        let storage = window
+            .local_storage()
             .map_err(|_| JsValue::from_str("Failed to access localStorage"))?
             .ok_or_else(|| JsValue::from_str("localStorage not available"))?;
 
         let workspace_json = js_sys::JSON::stringify(workspace_js)
             .map_err(|_| JsValue::from_str("Failed to stringify workspace"))?;
-        
+
         let key = format!("reflow_workspace_{}", workspace_name);
-        storage.set_item(&key, &workspace_json.as_string().unwrap())
+        storage
+            .set_item(&key, &workspace_json.as_string().unwrap())
             .map_err(|_| JsValue::from_str("Failed to save to localStorage"))?;
 
         Ok(())
@@ -478,14 +496,19 @@ impl WasmBrowserWorkspace {
 
     /// Load workspace from browser storage (localStorage)
     #[wasm_bindgen]
-    pub async fn load_from_browser_storage(&self, workspace_name: &str) -> Result<JsValue, JsValue> {
+    pub async fn load_from_browser_storage(
+        &self,
+        workspace_name: &str,
+    ) -> Result<JsValue, JsValue> {
         let window = web_sys::window().ok_or_else(|| JsValue::from_str("No window object"))?;
-        let storage = window.local_storage()
+        let storage = window
+            .local_storage()
             .map_err(|_| JsValue::from_str("Failed to access localStorage"))?
             .ok_or_else(|| JsValue::from_str("localStorage not available"))?;
 
         let key = format!("reflow_workspace_{}", workspace_name);
-        let workspace_json = storage.get_item(&key)
+        let workspace_json = storage
+            .get_item(&key)
             .map_err(|_| JsValue::from_str("Failed to access localStorage"))?
             .ok_or_else(|| JsValue::from_str("Workspace not found"))?;
 
@@ -497,11 +520,13 @@ impl WasmBrowserWorkspace {
     #[wasm_bindgen]
     pub fn list_workspaces(&self) -> Result<js_sys::Array, JsValue> {
         let window = web_sys::window().ok_or_else(|| JsValue::from_str("No window object"))?;
-        let storage = window.local_storage()
+        let storage = window
+            .local_storage()
             .map_err(|_| JsValue::from_str("Failed to access localStorage"))?
             .ok_or_else(|| JsValue::from_str("localStorage not available"))?;
 
-        let length = storage.length()
+        let length = storage
+            .length()
             .map_err(|_| JsValue::from_str("Failed to get storage length"))?;
 
         let workspaces = js_sys::Array::new();

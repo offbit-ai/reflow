@@ -65,11 +65,23 @@ impl Connector {
             .get(&self.to.actor.to_owned())
             .expect("Expected to get actor process from connected node");
 
-        let from_actor = network.initialized_actors.get(&from_process.id).expect(&format!("Expected to find intitialized Actor for id {}", from_process.id));
+        let from_actor = network
+            .initialized_actors
+            .get(&from_process.id)
+            .expect(&format!(
+                "Expected to find intitialized Actor for id {}",
+                from_process.id
+            ));
         let from_actor_load_count = from_actor.load_count();
         let from_actor_id = self.from.actor.clone();
 
-        let to_actor = network.initialized_actors.get(&to_process.id).expect(&format!("Expected to find intitialized Actor for id {}", from_process.id));
+        let to_actor = network
+            .initialized_actors
+            .get(&to_process.id)
+            .expect(&format!(
+                "Expected to find intitialized Actor for id {}",
+                from_process.id
+            ));
 
         let to_actor_id = self.to.actor.clone();
 
@@ -79,7 +91,7 @@ impl Connector {
 
         let out_ports = from_actor.get_outports();
         let in_ports = to_actor.get_inports();
-        
+
         // Clone tracing integration before moving into async block
         let tracing_integration = network.tracing_integration.clone();
 
@@ -93,7 +105,7 @@ impl Connector {
                 let msg = outport_packet
                     .remove(&_from_port)
                     .unwrap_or_else(|| Message::Optional(None));
-                    
+
                 // Emit MessageSent event
                 let value: serde_json::Value = msg.clone().into();
                 let encodable = crate::message::EncodableValue::from(value);
@@ -106,7 +118,7 @@ impl Connector {
                     message: encodable,
                     timestamp,
                 });
-                    
+
                 in_ports
                     .clone()
                     .0
@@ -118,33 +130,35 @@ impl Connector {
                     .expect(
                         format!(
                             "Expected to send message from Actor '{}' to Actor '{}'",
-                            &from_actor_id,
-                            &to_actor_id
+                            &from_actor_id, &to_actor_id
                         )
                         .as_str(),
                     );
                 from_actor_load_count.clone().lock().dec();
 
-
                 // Send tracing event if tracing is enabled
                 if let Some(ref tracing) = tracing_integration {
                     let message_size = std::mem::size_of_val(&msg);
-                    let _ = tracing.trace_message_sent(
-                        from_actor_id.clone(),
-                        _from_port.clone(),
-                        format!("{:?}", std::mem::discriminant(&msg)),
-                        message_size,
-                    ).await;
-                    
+                    let _ = tracing
+                        .trace_message_sent(
+                            from_actor_id.clone(),
+                            _from_port.clone(),
+                            format!("{:?}", std::mem::discriminant(&msg)),
+                            message_size,
+                        )
+                        .await;
+
                     // Trace the data flow between actors
-                    let _ = tracing.trace_data_flow(
-                        from_actor_id.clone(),
-                        _from_port.clone(),
-                        to_actor_id.clone(),
-                        to_port.clone(),
-                        format!("{:?}", std::mem::discriminant(&msg)),
-                        message_size,
-                    ).await;
+                    let _ = tracing
+                        .trace_data_flow(
+                            from_actor_id.clone(),
+                            _from_port.clone(),
+                            to_actor_id.clone(),
+                            to_port.clone(),
+                            format!("{:?}", std::mem::discriminant(&msg)),
+                            message_size,
+                        )
+                        .await;
                 }
             }
         });

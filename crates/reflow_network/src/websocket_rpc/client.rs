@@ -1,15 +1,15 @@
 use super::types::*;
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use futures_util::{SinkExt, StreamExt};
-use serde_json::{json, Value};
+use parking_lot::RwLock;
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
-use parking_lot::RwLock;
 use tokio::net::TcpStream;
-use tokio::sync::{oneshot, Mutex};
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream, tungstenite::Message};
+use tokio::sync::{Mutex, oneshot};
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
+use tracing::{debug, error, warn};
 use uuid::Uuid;
-use tracing::{debug, warn, error};
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -34,68 +34,68 @@ impl WebSocketRpcClient {
             output_sender: Arc::new(RwLock::new(None)),
         }
     }
-    
+
     /// Set the output channel for async messages from scripts
     pub fn set_output_channel(&self, sender: flume::Sender<ScriptOutput>) {
         *self.output_sender.write() = Some(sender);
     }
-    
+
     /// Connect to the WebSocket server
     pub async fn connect(&self) -> Result<()> {
         debug!("Connecting to WebSocket RPC server: {}", self.url);
         println!("DEBUG: connect() called for URL: {}", self.url);
-        
+
         // Check if already connected
         if self.is_connected().await {
             println!("DEBUG: Already connected, skipping reconnection");
             return Ok(());
         }
-        
+
         let (ws_stream, _) = connect_async(&self.url)
             .await
             .context("Failed to connect to WebSocket server")?;
-        
+
         *self.ws.lock().await = Some(ws_stream);
         *self.running.lock().await = true;
-        
+
         // Start message handler
         self.start_handler().await;
-        
+
         debug!("Connected to WebSocket RPC server");
         println!("DEBUG: Successfully connected and handler started");
         Ok(())
     }
-    
+
     /// Disconnect from the server
     pub async fn disconnect(&self) -> Result<()> {
         *self.running.lock().await = false;
-        
+
         if let Some(mut ws) = self.ws.lock().await.take() {
             ws.close(None).await?;
         }
-        
+
         // Clear pending requests
         let mut pending = self.pending.lock().await;
         for (_, tx) in pending.drain() {
             let _ = tx.send(Value::Null);
         }
-        
+
         Ok(())
     }
-    
+
     /// Make an RPC call
     pub async fn call(&self, method: &str, params: Value) -> Result<Value> {
         println!("DEBUG: call() invoked with method: {}", method);
         let id = Uuid::new_v4().to_string();
-        
+
         let request = RpcRequest::new(id.clone(), method.to_string(), params);
         let message = serde_json::to_string(&request)?;
         println!("DEBUG: Sending RPC request: {}", message);
-        
+
         // Create response channel
         let (tx, rx) = oneshot::channel();
         self.pending.lock().await.insert(id.clone(), tx);
-        
+
         // Send message
         let mut ws_guard = self.ws.lock().await;
         if let Some(ws) = ws_guard.as_mut() {
@@ -107,18 +107,18 @@ impl WebSocketRpcClient {
             return Err(anyhow::anyhow!("Not connected to WebSocket server"));
         }
         drop(ws_guard);
-        
+
         println!("DEBUG: Waiting for response with timeout...");
         // Wait for response with timeout
         match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
             Ok(Ok(response)) => {
                 println!("DEBUG: Got response!");
                 Ok(response)
-            },
+            }
             Ok(Err(_)) => {
                 println!("DEBUG: RPC call cancelled");
                 Err(anyhow::anyhow!("RPC call cancelled"))
-            },
+            }
             Err(_) => {
                 println!("DEBUG: RPC call timed out after 30 seconds");
                 self.pending.lock().await.remove(&id);
@@ -126,14 +126,14 @@ impl WebSocketRpcClient {
             }
         }
     }
-    
+
     /// Start the message handler
     async fn start_handler(&self) {
         let ws = self.ws.clone();
         let pending = self.pending.clone();
         let running = self.running.clone();
         let output_sender = self.output_sender.clone();
-        
+
         tokio::spawn(async move {
             while *running.lock().await {
                 // Use select with timeout to avoid holding lock indefinitely
@@ -143,8 +143,10 @@ impl WebSocketRpcClient {
                         // Use timeout to avoid blocking forever
                         match tokio::time::timeout(
                             std::time::Duration::from_millis(100),
-                            ws_stream.next()
-                        ).await {
+                            ws_stream.next(),
+                        )
+                        .await
+                        {
                             Ok(Some(msg)) => Some(msg),
                             Ok(None) => None,
                             Err(_) => None, // Timeout, will continue in loop
@@ -153,16 +155,17 @@ impl WebSocketRpcClient {
                         None
                     }
                 }; // Lock released here
-                
+
                 match msg {
                     Some(Ok(Message::Text(text))) => {
                         let pending_clone = pending.clone();
                         let output_sender_clone = output_sender.clone();
                         WebSocketRpcClient::handle_message(
-                            text.to_string(), 
+                            text.to_string(),
                             &pending_clone,
-                            output_sender_clone
-                        ).await;
+                            output_sender_clone,
+                        )
+                        .await;
                     }
                     Some(Ok(Message::Close(_))) => {
                         warn!("WebSocket connection closed");
@@ -183,12 +186,12 @@ impl WebSocketRpcClient {
             }
         });
     }
-    
+
     /// Handle incoming message
     async fn handle_message(
         text: String,
         pending: &Arc<Mutex<HashMap<String, oneshot::Sender<Value>>>>,
-        output_sender: Arc<RwLock<Option<flume::Sender<ScriptOutput>>>>
+        output_sender: Arc<RwLock<Option<flume::Sender<ScriptOutput>>>>,
     ) {
         // Try to parse as WebSocketMessage (either Response or Notification)
         match serde_json::from_str::<WebSocketMessage>(&text) {
@@ -222,10 +225,12 @@ impl WebSocketRpcClient {
                             // For output, it might be wrapped
                             notification.params
                         };
-                        
+
                         if let Ok(output) = serde_json::from_value::<ScriptOutput>(output_data) {
-                            debug!("Received async output from script: {} on port {}", 
-                                output.actor_id, output.port);
+                            debug!(
+                                "Received async output from script: {} on port {}",
+                                output.actor_id, output.port
+                            );
                             let _ = sender.send(output);
                         }
                     }
@@ -245,7 +250,7 @@ impl WebSocketRpcClient {
             }
         }
     }
-    
+
     /// Check if connected
     pub async fn is_connected(&self) -> bool {
         println!("DEBUG: is_connected - acquiring running lock");
@@ -256,7 +261,7 @@ impl WebSocketRpcClient {
         println!("DEBUG: is_connected - has_ws = {}", has_ws);
         running && has_ws
     }
-    
+
     /// Reconnect if disconnected
     pub async fn ensure_connected(&self) -> Result<()> {
         println!("DEBUG: ensure_connected - checking connection");
@@ -276,7 +281,7 @@ impl Drop for WebSocketRpcClient {
         // Try to disconnect gracefully
         let ws = self.ws.clone();
         let running = self.running.clone();
-        
+
         tokio::spawn(async move {
             *running.lock().await = false;
             if let Some(mut ws_stream) = ws.lock().await.take() {
@@ -289,21 +294,21 @@ impl Drop for WebSocketRpcClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_rpc_request_serialization() {
         let request = RpcRequest::new(
             "test-id".to_string(),
             "process".to_string(),
-            json!({"foo": "bar"})
+            json!({"foo": "bar"}),
         );
-        
+
         let serialized = serde_json::to_string(&request).unwrap();
         assert!(serialized.contains("\"jsonrpc\":\"2.0\""));
         assert!(serialized.contains("\"id\":\"test-id\""));
         assert!(serialized.contains("\"method\":\"process\""));
     }
-    
+
     #[tokio::test]
     async fn test_rpc_response_deserialization() {
         let json = r#"{
@@ -311,7 +316,7 @@ mod tests {
             "id": "test-id",
             "result": {"status": "ok"}
         }"#;
-        
+
         let response: RpcResponse = serde_json::from_str(json).unwrap();
         assert_eq!(response.id, "test-id");
         assert!(response.result.is_some());

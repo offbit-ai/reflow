@@ -4,10 +4,10 @@
 //! This crate provides lightweight message types without heavy dependencies.
 
 use chrono::{DateTime, Utc};
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-use derive_more::Display;
 
 pub mod client;
 
@@ -51,23 +51,15 @@ pub enum TracingRequest {
         event: TraceEvent,
     },
     /// Get a specific trace by ID
-    GetTrace {
-        trace_id: TraceId,
-    },
+    GetTrace { trace_id: TraceId },
     /// Query traces with filters
-    QueryTraces {
-        query: TraceQuery,
-    },
+    QueryTraces { query: TraceQuery },
     /// Get all versions of a flow
-    GetFlowVersions {
-        flow_id: FlowId,
-    },
+    GetFlowVersions { flow_id: FlowId },
     /// Health check
     Ping,
     /// Subscribe to real-time trace events
-    Subscribe {
-        filters: SubscriptionFilters,
-    },
+    Subscribe { filters: SubscriptionFilters },
     /// Unsubscribe from real-time events
     Unsubscribe,
 }
@@ -75,27 +67,21 @@ pub enum TracingRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TracingResponse {
     /// Response to StartTrace
-    TraceStarted {
-        trace_id: TraceId,
-    },
+    TraceStarted { trace_id: TraceId },
     /// Response to RecordEvent
     EventRecorded {
         success: bool,
         error: Option<String>,
     },
     /// Response to GetTrace
-    TraceData {
-        trace: Option<FlowTrace>,
-    },
+    TraceData { trace: Option<FlowTrace> },
     /// Response to QueryTraces
     QueryResults {
         traces: Vec<FlowTrace>,
         total_count: usize,
     },
     /// Response to GetFlowVersions
-    FlowVersions {
-        versions: Vec<FlowVersion>,
-    },
+    FlowVersions { versions: Vec<FlowVersion> },
     /// Response to Ping
     Pong,
     /// Real-time event notification
@@ -104,10 +90,7 @@ pub enum TracingResponse {
         event: TraceEvent,
     },
     /// Error response
-    Error {
-        message: String,
-        code: ErrorCode,
-    },
+    Error { message: String, code: ErrorCode },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -153,8 +136,6 @@ pub enum ExecutionStatus {
     Cancelled,
 }
 
-
-
 /// Comprehensive trace event for all actor interactions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TraceEvent {
@@ -178,10 +159,7 @@ pub enum TraceEventType {
     StateChanged,
     PortConnected,
     PortDisconnected,
-    DataFlow {
-        to_actor: String,
-        to_port: String,
-    },
+    DataFlow { to_actor: String, to_port: String },
     NetworkEvent,
 }
 
@@ -287,11 +265,11 @@ impl TraceId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
-    
+
     pub fn from_uuid(uuid: Uuid) -> Self {
         Self(uuid)
     }
-    
+
     pub fn as_uuid(&self) -> &Uuid {
         &self.0
     }
@@ -301,11 +279,11 @@ impl ExecutionId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
-    
+
     pub fn from_uuid(uuid: Uuid) -> Self {
         Self(uuid)
     }
-    
+
     pub fn as_uuid(&self) -> &Uuid {
         &self.0
     }
@@ -315,11 +293,11 @@ impl EventId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
-    
+
     pub fn from_uuid(uuid: Uuid) -> Self {
         Self(uuid)
     }
-    
+
     pub fn as_uuid(&self) -> &Uuid {
         &self.0
     }
@@ -329,7 +307,7 @@ impl FlowId {
     pub fn new(id: impl Into<String>) -> Self {
         Self(id.into())
     }
-    
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -390,14 +368,18 @@ impl TraceEvent {
         }
     }
 
-    pub fn data_flow(from_actor: String, from_port: String, to_actor: String, to_port: String, message_type: String, size_bytes: usize) -> Self {
+    pub fn data_flow(
+        from_actor: String,
+        from_port: String,
+        to_actor: String,
+        to_port: String,
+        message_type: String,
+        size_bytes: usize,
+    ) -> Self {
         Self {
             event_id: EventId::new(),
             timestamp: Utc::now(),
-            event_type: TraceEventType::DataFlow {
-                to_actor,
-                to_port,
-            },
+            event_type: TraceEventType::DataFlow { to_actor, to_port },
             actor_id: from_actor,
             data: TraceEventData {
                 port: Some(from_port),
@@ -420,8 +402,13 @@ impl TraceEvent {
             },
         }
     }
-    
-    pub fn message_sent(actor_id: String, port: String, message_type: String, size_bytes: usize) -> Self {
+
+    pub fn message_sent(
+        actor_id: String,
+        port: String,
+        message_type: String,
+        size_bytes: usize,
+    ) -> Self {
         Self {
             event_id: EventId::new(),
             timestamp: Utc::now(),
@@ -448,7 +435,7 @@ impl TraceEvent {
             },
         }
     }
-    
+
     pub fn actor_completed(actor_id: String) -> Self {
         Self {
             event_id: EventId::new(),
@@ -471,7 +458,7 @@ impl TraceEvent {
             },
         }
     }
-    
+
     pub fn actor_failed(actor_id: String, error: String) -> Self {
         Self {
             event_id: EventId::new(),

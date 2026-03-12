@@ -47,15 +47,21 @@ pub trait GraphGenerator: Send + Sync + Debug {
 
 // Re-export the two-tier system types
 pub use crate::graph::types::{
-    WorkspaceGraphExport, WorkspaceMetadata, WorkspaceFileFormat,
-    ResolvedDependency, AutoDiscoveredConnection, InterfaceAnalysis,
-    DependencyResolutionStatus, DiscoveryMethod, InterfaceTypeMismatch,
-    MismatchSeverity,
+    AutoDiscoveredConnection,
+    DependencyResolutionStatus,
+    DiscoveryMethod,
+    ExternalConnection,
     // First tier types (already extended GraphExport)
-    GraphDependency, ExternalConnection, InterfaceDefinition
+    GraphDependency,
+    InterfaceAnalysis,
+    InterfaceDefinition,
+    InterfaceTypeMismatch,
+    MismatchSeverity,
+    ResolvedDependency,
+    WorkspaceFileFormat,
+    WorkspaceGraphExport,
+    WorkspaceMetadata,
 };
-
-
 
 // Metadata enhancement for existing GraphExport
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -199,10 +205,9 @@ impl GraphLoader {
             GraphSource::NetworkApi(url) => {
                 let response = reqwest::get(&url).await?;
                 response.json::<GraphExport>().await?
-            }
-            // GraphSource::Dynamic(generator) => {
-            //     generator.generate()?
-            // },
+            } // GraphSource::Dynamic(generator) => {
+              //     generator.generate()?
+              // },
         };
 
         // Validate the graph
@@ -220,7 +225,7 @@ impl GraphLoader {
             GraphSource::JsonFile(_path) => {
                 return Err(LoadError::IoError(std::io::Error::new(
                     std::io::ErrorKind::Unsupported,
-                    "File system access not supported in WASM target. Use JsonContent or GraphExport instead."
+                    "File system access not supported in WASM target. Use JsonContent or GraphExport instead.",
                 )));
             }
             GraphSource::JsonContent(content) => serde_json::from_str::<GraphExport>(&content)?,
@@ -228,10 +233,9 @@ impl GraphLoader {
             GraphSource::NetworkApi(url) => {
                 // Use web-sys fetch for WASM
                 return self.load_graph_from_url_wasm(&url).await;
-            }
-            // GraphSource::Dynamic(generator) => {
-            //     generator.generate()?
-            // },
+            } // GraphSource::Dynamic(generator) => {
+              //     generator.generate()?
+              // },
         };
 
         // Validate the graph
@@ -256,26 +260,30 @@ impl GraphLoader {
         let request = Request::new_with_str_and_init(url, &opts)
             .map_err(|e| LoadError::HttpError(format!("Failed to create request: {:?}", e)))?;
 
-        let window = web_sys::window().ok_or_else(|| {
-            LoadError::HttpError("Failed to get window object".to_string())
-        })?;
+        let window = web_sys::window()
+            .ok_or_else(|| LoadError::HttpError("Failed to get window object".to_string()))?;
 
         let resp_value = JsFuture::from(window.fetch_with_request(&request))
             .await
             .map_err(|e| LoadError::HttpError(format!("Network error: {:?}", e)))?;
 
-        let resp: Response = resp_value.dyn_into()
+        let resp: Response = resp_value
+            .dyn_into()
             .map_err(|e| LoadError::HttpError(format!("Invalid response: {:?}", e)))?;
 
-        let json = JsFuture::from(resp.json()
-            .map_err(|e| LoadError::HttpError(format!("Failed to get JSON: {:?}", e)))?)
-            .await
-            .map_err(|e| LoadError::HttpError(format!("Failed to parse JSON: {:?}", e)))?;
+        let json = JsFuture::from(
+            resp.json()
+                .map_err(|e| LoadError::HttpError(format!("Failed to get JSON: {:?}", e)))?,
+        )
+        .await
+        .map_err(|e| LoadError::HttpError(format!("Failed to parse JSON: {:?}", e)))?;
 
-        let graph_export: GraphExport = serde_wasm_bindgen::from_value(json)
-            .map_err(|e| LoadError::JsonError(serde_json::Error::io(
-                std::io::Error::new(std::io::ErrorKind::InvalidData, format!("WASM JSON parse error: {:?}", e))
-            )))?;
+        let graph_export: GraphExport = serde_wasm_bindgen::from_value(json).map_err(|e| {
+            LoadError::JsonError(serde_json::Error::io(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("WASM JSON parse error: {:?}", e),
+            )))
+        })?;
 
         Ok(graph_export)
     }
@@ -429,7 +437,6 @@ impl From<reqwest::Error> for LoadError {
     }
 }
 
-
 #[derive(Debug, thiserror::Error)]
 pub enum ValidationError {
     #[error("Missing required property: {0}")]
@@ -536,14 +543,17 @@ impl GraphNamespaceManager {
         Ok(namespace)
     }
 
-    fn handle_namespace_conflict(&mut self, graph_name: &str, existing: &str, namespace: &str) -> Result<String, NamespaceError> {
+    fn handle_namespace_conflict(
+        &mut self,
+        graph_name: &str,
+        existing: &str,
+        namespace: &str,
+    ) -> Result<String, NamespaceError> {
         match self.conflict_resolution {
-            NamespaceConflictPolicy::Fail => {
-                Err(NamespaceError::NamespaceConflict(format!(
-                    "Graph '{}' already registered under namespace '{}', cannot reassign to '{}'",
-                    graph_name, existing, namespace
-                )))
-            }
+            NamespaceConflictPolicy::Fail => Err(NamespaceError::NamespaceConflict(format!(
+                "Graph '{}' already registered under namespace '{}', cannot reassign to '{}'",
+                graph_name, existing, namespace
+            ))),
             NamespaceConflictPolicy::VersionSuffix => {
                 // Find next available version suffix
                 for i in 1..=999 {
@@ -939,14 +949,14 @@ impl GraphComposer {
         for shared_resource in &composition.shared_resources {
             #[cfg(not(target_arch = "wasm32"))]
             let id = uuid::Uuid::new_v4().to_string();
-            
+
             #[cfg(target_arch = "wasm32")]
             let id = {
                 use js_sys::Math;
                 // Generate a simple UUID-like string for WASM
                 format!("shared-{}-{}", Math::random(), shared_resource.name)
             };
-            
+
             let shared_process = GraphNode {
                 id,
                 component: shared_resource.component.clone(),
@@ -990,7 +1000,7 @@ pub struct CompositionEndpoint {
 #[derive(Debug, Clone)]
 pub struct SharedResource {
     pub name: String,                             // Process name in composed graph
-    pub component: String,                        // Actor 
+    pub component: String,                        // Actor
     pub metadata: Option<HashMap<String, Value>>, // Process metadata
 }
 

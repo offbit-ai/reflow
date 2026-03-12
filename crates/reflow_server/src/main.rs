@@ -1,5 +1,5 @@
-use reflow_server::{start_server, ServerConfig};
 use anyhow::Result;
+use reflow_server::{ServerConfig, start_server};
 use std::env;
 
 #[tokio::main]
@@ -7,7 +7,7 @@ async fn main() -> Result<()> {
     // Parse command line arguments for port
     let args: Vec<String> = env::args().collect();
     let mut port = 8080; // Default port
-    
+
     // Simple argument parsing for --port
     for i in 0..args.len() {
         if args[i] == "--port" && i + 1 < args.len() {
@@ -16,9 +16,9 @@ async fn main() -> Result<()> {
             }
         }
     }
-    
+
     println!("🚀 Starting Reflow Server on port {}...", port);
-    
+
     let config = ServerConfig {
         port,
         bind_address: "0.0.0.0".to_string(),
@@ -26,6 +26,6 @@ async fn main() -> Result<()> {
         cors_enabled: true,
         rate_limit_requests_per_minute: 100,
     };
-    
+
     start_server(Some(config)).await
 }

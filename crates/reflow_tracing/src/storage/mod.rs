@@ -31,17 +31,24 @@ impl StorageBackend {
     pub async fn create(config: &StorageConfig) -> Result<Box<dyn TraceStorage>> {
         match config.backend.as_str() {
             "memory" => {
-                let memory_config = config.memory.as_ref()
+                let memory_config = config
+                    .memory
+                    .as_ref()
                     .ok_or_else(|| anyhow::anyhow!("Memory storage config missing"))?;
                 Ok(Box::new(memory::MemoryStorage::new(memory_config.clone())))
             }
             "sqlite" => {
-                let sqlite_config = config.sqlite.as_ref()
+                let sqlite_config = config
+                    .sqlite
+                    .as_ref()
                     .ok_or_else(|| anyhow::anyhow!("SQLite storage config missing"))?;
                 let storage = sqlite::SqliteStorage::new(sqlite_config.clone()).await?;
                 Ok(Box::new(storage))
             }
-            _ => Err(anyhow::anyhow!("Unsupported storage backend: {}", config.backend)),
+            _ => Err(anyhow::anyhow!(
+                "Unsupported storage backend: {}",
+                config.backend
+            )),
         }
     }
 }

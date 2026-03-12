@@ -1,16 +1,13 @@
 use crate::error::ServiceError;
 use crate::python_vm;
-use crate::rpc::{handle_rpc_request, create_client_message, RpcMessage, RpcResponse};
+use crate::rpc::{create_client_message, handle_rpc_request, RpcMessage, RpcResponse};
 use futures_util::{SinkExt, StreamExt};
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, oneshot, Mutex};
-use tokio_tungstenite::{
-    accept_async,
-    tungstenite::Message,
-};
+use tokio_tungstenite::{accept_async, tungstenite::Message};
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
@@ -27,7 +24,10 @@ pub async fn accept_connections(listener: TcpListener) -> Result<(), ServiceErro
 
 async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
     let session_id = Uuid::new_v4();
-    info!("New session established: {} for client {}", session_id, addr);
+    info!(
+        "New session established: {} for client {}",
+        session_id, addr
+    );
 
     // Create a channel for Python code to send messages back to client
     let (msg_sender, mut msg_receiver) = mpsc::unbounded_channel::<String>();
@@ -46,13 +46,15 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
             let ws_sender_arc = Arc::new(Mutex::new(ws_sender));
             let ws_sender_clone = ws_sender_arc.clone();
             let session_id_clone = session_id.clone();
-            
+
             // Spawn a task to handle messages from Python to client
             let python_to_client = tokio::spawn(async move {
                 while let Some(message) = msg_receiver.recv().await {
                     match create_client_message(&session_id_clone, &message) {
                         Ok(json) => {
-                            if let Err(e) = ws_sender_clone.lock().await.send(Message::Text(json)).await {
+                            if let Err(e) =
+                                ws_sender_clone.lock().await.send(Message::Text(json)).await
+                            {
                                 error!("Error sending Python message to client: {:?}", e);
                                 break;
                             }
@@ -75,10 +77,11 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
                         match serde_json::from_str::<RpcMessage>(&text) {
                             Ok(rpc_message) => {
                                 // let session_id_copy = session_id_clone.clone();
-                                
+
                                 // Process the RPC request asynchronously
-                                let response_future = handle_rpc_request(session_id_clone, rpc_message);
-                                
+                                let response_future =
+                                    handle_rpc_request(session_id_clone, rpc_message);
+
                                 // Spawn a task to handle the RPC request
                                 let ws_sender_clone = ws_sender_arc.clone();
                                 tokio::spawn(async move {
@@ -98,7 +101,12 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
                                     match serde_json::to_string(&response) {
                                         Ok(json) => {
                                             debug!("Sending response: {}", json);
-                                            if let Err(e) = ws_sender_clone.lock().await.send(Message::Text(json)).await {
+                                            if let Err(e) = ws_sender_clone
+                                                .lock()
+                                                .await
+                                                .send(Message::Text(json))
+                                                .await
+                                            {
                                                 error!("Error sending response: {:?}", e);
                                             }
                                         }
@@ -110,24 +118,26 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
                             }
                             Err(e) => {
                                 error!("Error parsing RPC request: {:?}", e);
-                                
+
                                 // Try to parse just the ID for a proper error response
                                 let id = match serde_json::from_str::<Value>(&text) {
-                                    Ok(Value::Object(map)) => {
-                                        map.get("id").and_then(|id| id.as_str().map(|s| s.to_string()))
-                                            .unwrap_or_else(|| "unknown".to_string())
-                                    }
+                                    Ok(Value::Object(map)) => map
+                                        .get("id")
+                                        .and_then(|id| id.as_str().map(|s| s.to_string()))
+                                        .unwrap_or_else(|| "unknown".to_string()),
                                     _ => "unknown".to_string(),
                                 };
-                                
+
                                 let error_response = RpcResponse::error(
                                     Uuid::nil(),
                                     400,
                                     format!("Invalid RPC request: {}", e),
                                 );
-                                
+
                                 if let Ok(json) = serde_json::to_string(&error_response) {
-                                    if let Err(e) = ws_sender_arc.lock().await.send(Message::Text(json)).await {
+                                    if let Err(e) =
+                                        ws_sender_arc.lock().await.send(Message::Text(json)).await
+                                    {
                                         error!("Error sending error response: {:?}", e);
                                         break;
                                     }
@@ -136,10 +146,7 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
                         }
                     }
                     Ok(Message::Close(reason)) => {
-                        info!(
-                            "WebSocket closed by client: {}. Reason: {:?}",
-                            addr, reason
-                        );
+                        info!("WebSocket closed by client: {}. Reason: {:?}", addr, reason);
                         break;
                     }
                     Ok(Message::Ping(data)) => {

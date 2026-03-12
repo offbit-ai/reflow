@@ -4,12 +4,17 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Build a Go WASM plugin using TinyGo
-pub fn build_go_plugin<P: AsRef<Path>>(go_file: P, output: P) -> Result<(), Box<dyn std::error::Error>> {
+pub fn build_go_plugin<P: AsRef<Path>>(
+    go_file: P,
+    output: P,
+) -> Result<(), Box<dyn std::error::Error>> {
     let status = Command::new("tinygo")
         .args(&[
             "build",
-            "-o", output.as_ref().to_str().unwrap(),
-            "-target", "wasi",
+            "-o",
+            output.as_ref().to_str().unwrap(),
+            "-target",
+            "wasi",
             "-no-debug",
             go_file.as_ref().to_str().unwrap(),
         ])

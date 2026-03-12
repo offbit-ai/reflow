@@ -2,13 +2,13 @@ use super::{Message, ScriptConfig, ScriptEngine};
 use anyhow::Result;
 use extism::{Function, Manifest, Plugin, Val, ValType, Wasm, WasmMetadata, convert::Json};
 
+use base64;
 use reflow_actor::MemoryState;
 use serde_json::json;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
-use base64;
 
 pub struct ExtismEngine {
     pub(crate) manifest: Option<Manifest>,
@@ -179,9 +179,15 @@ impl ScriptEngine for ExtismEngine {
             .ok_or_else(|| anyhow::anyhow!("Missing configuration"))?;
 
         // Get current state from the actor
-        let current_state = if let Some(memory_state) = context.state.lock().as_any().downcast_ref::<reflow_actor::MemoryState>() {
+        let current_state = if let Some(memory_state) = context
+            .state
+            .lock()
+            .as_any()
+            .downcast_ref::<reflow_actor::MemoryState>()
+        {
             // Convert the HashMap to a JSON object
-            let state_map: serde_json::Map<String, serde_json::Value> = memory_state.0
+            let state_map: serde_json::Map<String, serde_json::Value> = memory_state
+                .0
                 .iter()
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect();
@@ -244,15 +250,14 @@ impl ScriptEngine for ExtismEngine {
         });
 
         // Call the plugin function with ActorContext
-        let result = plugin
-            .call::<Json<serde_json::Value>, Json<serde_json::Value>>(
-                &config.entry_point,
-                Json(actor_context),
-            )?;
+        let result = plugin.call::<Json<serde_json::Value>, Json<serde_json::Value>>(
+            &config.entry_point,
+            Json(actor_context),
+        )?;
 
         // Parse the ActorResult from the plugin
         let mut actor_result: serde_json::Value = result.into_inner();
-        
+
         // Check if the result is a base64-encoded string (from Go SDK)
         if let Some(base64_str) = actor_result.as_str() {
             // println!("Detected base64 string from plugin, decoding...");
@@ -267,7 +272,10 @@ impl ScriptEngine for ExtismEngine {
                             actor_result = decoded_json;
                         }
                         Err(e) => {
-                            return Err(anyhow::anyhow!("Failed to parse decoded base64 as JSON: {}", e));
+                            return Err(anyhow::anyhow!(
+                                "Failed to parse decoded base64 as JSON: {}",
+                                e
+                            ));
                         }
                     }
                 }
@@ -276,9 +284,9 @@ impl ScriptEngine for ExtismEngine {
                 }
             }
         }
-        
+
         // println!("Actor result: {:?}", actor_result);
-        
+
         // Extract outputs from ActorResult
         let outputs = actor_result
             .get("outputs")
@@ -289,16 +297,28 @@ impl ScriptEngine for ExtismEngine {
         let mut output_messages = HashMap::new();
         for (port, msg_value) in outputs {
             if let Some(msg_obj) = msg_value.as_object() {
-                if let (Some(msg_type), Some(data)) = (msg_obj.get("type").and_then(|t| t.as_str()), msg_obj.get("data")) {
+                if let (Some(msg_type), Some(data)) = (
+                    msg_obj.get("type").and_then(|t| t.as_str()),
+                    msg_obj.get("data"),
+                ) {
                     let message = match msg_type {
                         "Flow" => Message::Flow,
                         "Event" => Message::Event(data.clone().into()),
                         "Boolean" => Message::Boolean(data.as_bool().unwrap_or_default()),
                         "Integer" => Message::Integer(data.as_i64().unwrap_or_default()),
                         "Float" => Message::Float(data.as_f64().unwrap_or_default()),
-                        "String" => Message::String(Arc::new(data.as_str().unwrap_or_default().to_string())),
+                        "String" => {
+                            Message::String(Arc::new(data.as_str().unwrap_or_default().to_string()))
+                        }
                         "Object" => Message::Object(Arc::new(data.clone().into())),
-                        "Array" => Message::Array(Arc::new(data.as_array().cloned().unwrap_or_default().into_iter().map(Into::into).collect())),
+                        "Array" => Message::Array(Arc::new(
+                            data.as_array()
+                                .cloned()
+                                .unwrap_or_default()
+                                .into_iter()
+                                .map(Into::into)
+                                .collect(),
+                        )),
                         "Stream" => {
                             // Handle stream data as Vec<u8>
                             if let Ok(bytes) = serde_json::from_value::<Vec<u8>>(data.clone()) {
@@ -306,16 +326,18 @@ impl ScriptEngine for ExtismEngine {
                             } else {
                                 Message::Stream(Arc::new(vec![]))
                             }
-                        },
+                        }
                         "Optional" => {
                             if data.is_null() {
                                 Message::Optional(None)
                             } else {
                                 Message::Optional(Some(Arc::new(data.clone().into())))
                             }
-                        },
+                        }
                         "Any" => Message::Any(Arc::new(data.clone().into())),
-                        "Error" => Message::Error(Arc::new(data.as_str().unwrap_or_default().to_string())),
+                        "Error" => {
+                            Message::Error(Arc::new(data.as_str().unwrap_or_default().to_string()))
+                        }
                         _ => continue,
                     };
                     output_messages.insert(port.clone(), message);
@@ -325,7 +347,12 @@ impl ScriptEngine for ExtismEngine {
 
         // Update state if provided in the result
         if let Some(new_state) = actor_result.get("state") {
-            if let Some(memory_state) = context.state.lock().as_mut_any().downcast_mut::<reflow_actor::MemoryState>() {
+            if let Some(memory_state) = context
+                .state
+                .lock()
+                .as_mut_any()
+                .downcast_mut::<reflow_actor::MemoryState>()
+            {
                 // Update state by clearing and inserting new values
                 if let Some(state_obj) = new_state.as_object() {
                     memory_state.clear();
@@ -373,7 +400,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_wasm_actor() -> Result<()> {
-        let wasm_binary = include_bytes!("../../../crates/reflow_wasm/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm");
+        let wasm_binary = include_bytes!(
+            "../../../crates/reflow_wasm/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm"
+        );
 
         let mut engine = ExtismEngine::new();
         let config = test_config(wasm_binary.to_vec());
@@ -387,10 +416,7 @@ mod tests {
 
         // Test simple function call
         let mut inputs = HashMap::new();
-        inputs.insert(
-            "increment".to_string(),
-            Message::Flow,
-        );
+        inputs.insert("increment".to_string(), Message::Flow);
 
         // Create a dummy actor config for testing
         let node = reflow_actor::types::GraphNode {
@@ -399,7 +425,7 @@ mod tests {
             metadata: None,
             ..Default::default()
         };
-        
+
         let actor_config = reflow_actor::ActorConfig {
             node: node.clone(),
             resolved_env: HashMap::new(),
@@ -416,7 +442,7 @@ mod tests {
         );
 
         let result = engine.call(&context).await?;
-       
+
         // Verify the result
         assert!(
             result.contains_key("info"),
@@ -428,7 +454,6 @@ mod tests {
             "Result should contain 'count' key"
         );
         assert_eq!(result["count"], Message::Integer(1));
-        
 
         engine.cleanup().await?;
         Ok(())

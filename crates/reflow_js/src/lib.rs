@@ -1,32 +1,32 @@
-pub mod runtime;
-pub mod minimal_runtime;
-pub mod web;
 pub mod filesystem;
-pub mod resolver;
-pub mod networking;
-pub mod snapshot;
-pub mod process;
-pub mod minimal_test;
-pub mod minimal_runtime_test;
-pub mod phase1_test;
 pub mod flume_function_test;
+pub mod minimal_runtime;
+pub mod minimal_runtime_test;
+pub mod minimal_test;
+pub mod networking;
+pub mod phase1_test;
+pub mod process;
+pub mod resolver;
+pub mod runtime;
+pub mod snapshot;
+pub mod web;
 
-use anyhow::{Result, Error as AnyError};
+use anyhow::{Error as AnyError, Result};
 use serde_json::Value as JsonValue;
 use uuid::Uuid;
 
-use reflow_actor::message::Message;
-use std::sync::Arc;
-use std::collections::HashMap;
 use flume::Sender;
+use reflow_actor::message::Message;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
-pub use runtime::*;
-pub use web::*;
 pub use filesystem::*;
-pub use resolver::*;
 pub use networking::*;
 pub use process::*;
+pub use resolver::*;
+pub use runtime::*;
+pub use web::*;
 
 /// Simplified JavaScript runtime interface - maintains backward compatibility
 #[derive(Clone)]
@@ -68,10 +68,10 @@ impl JavascriptRuntime {
             // We're in an async context, we need to spawn a blocking task
             let runtime = std::thread::spawn(move || {
                 let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(async {
-                    CoreRuntimeFactory::create_runtime(config).await
-                })
-            }).join().map_err(|_| anyhow::anyhow!("Failed to create runtime in thread"))??;
+                rt.block_on(async { CoreRuntimeFactory::create_runtime(config).await })
+            })
+            .join()
+            .map_err(|_| anyhow::anyhow!("Failed to create runtime in thread"))??;
 
             Ok(Self {
                 worker: Arc::new(runtime),
@@ -80,9 +80,8 @@ impl JavascriptRuntime {
         } else {
             // We're not in an async context, we can block directly
             let runtime = tokio::runtime::Runtime::new()?;
-            let core_runtime = runtime.block_on(async {
-                CoreRuntimeFactory::create_runtime(config).await
-            })?;
+            let core_runtime =
+                runtime.block_on(async { CoreRuntimeFactory::create_runtime(config).await })?;
 
             Ok(Self {
                 worker: Arc::new(core_runtime),
@@ -94,7 +93,7 @@ impl JavascriptRuntime {
     /// Async constructor for proper initialization
     pub async fn new_async(config: CoreRuntimeConfig) -> Result<Self, AnyError> {
         let runtime = CoreRuntimeFactory::create_runtime(config).await?;
-        
+
         Ok(Self {
             worker: Arc::new(runtime),
             callback_registry: Arc::new(RwLock::new(HashMap::new())),
@@ -116,13 +115,18 @@ impl JavascriptRuntime {
     }
 
     /// Convert a Rust value to GlobalValue
-    pub fn convert_value_from_rust(&self, value: serde_json::Value) -> Result<GlobalValue, AnyError> {
+    pub fn convert_value_from_rust(
+        &self,
+        value: serde_json::Value,
+    ) -> Result<GlobalValue, AnyError> {
         Ok(GlobalValue::from_json(value, self.worker.clone()))
     }
 
     /// Create a number value
     pub fn create_number(&mut self, number: f64) -> GlobalValue {
-        let json_val = JsonValue::Number(serde_json::Number::from_f64(number).unwrap_or_else(|| serde_json::Number::from(0)));
+        let json_val = JsonValue::Number(
+            serde_json::Number::from_f64(number).unwrap_or_else(|| serde_json::Number::from(0)),
+        );
         GlobalValue::from_json(json_val, self.worker.clone())
     }
 
@@ -134,9 +138,7 @@ impl JavascriptRuntime {
 
     /// Create an array value
     pub fn create_array(&mut self, array: &[GlobalValue]) -> GlobalValue {
-        let json_array: Vec<JsonValue> = array.iter()
-            .map(|gv| gv.json_value.clone())
-            .collect();
+        let json_array: Vec<JsonValue> = array.iter().map(|gv| gv.json_value.clone()).collect();
         let json_val = JsonValue::Array(json_array);
         GlobalValue::from_json(json_val, self.worker.clone())
     }
@@ -170,7 +172,7 @@ impl JavascriptRuntime {
                 function_id: Uuid::new_v4().to_string(),
                 runtime_ref: self.worker.clone(),
                 callback_type: CallbackType::Generic,
-            }
+            },
         }
     }
 
@@ -180,13 +182,13 @@ impl JavascriptRuntime {
         sender: Sender<HashMap<String, Message>>,
     ) -> Result<CallbackHandle, AnyError> {
         let function_id = Uuid::new_v4().to_string();
-        
+
         // Store callback data
         let callback_data = CallbackData {
             sender: Some(sender),
             function_type: CallbackType::SendOutput,
         };
-        
+
         // Register callback asynchronously
         let registry = self.callback_registry.clone();
         let id = function_id.clone();
@@ -200,7 +202,7 @@ impl JavascriptRuntime {
                 function_id,
                 runtime_ref: self.worker.clone(),
                 callback_type: CallbackType::SendOutput,
-            }
+            },
         })
     }
 
@@ -213,16 +215,20 @@ impl JavascriptRuntime {
     ) -> GlobalObject {
         let func_marker = JsonValue::Object({
             let mut map = serde_json::Map::new();
-            map.insert("__function_id".to_string(), JsonValue::String(callback.inner.function_id));
-            map.insert("__callback_type".to_string(), JsonValue::String(
-                match callback.inner.callback_type {
+            map.insert(
+                "__function_id".to_string(),
+                JsonValue::String(callback.inner.function_id),
+            );
+            map.insert(
+                "__callback_type".to_string(),
+                JsonValue::String(match callback.inner.callback_type {
                     CallbackType::SendOutput => "send_output".to_string(),
                     CallbackType::Generic => "generic".to_string(),
-                }
-            ));
+                }),
+            );
             map
         });
-        
+
         object.properties.insert(key.to_string(), func_marker);
         object
     }
@@ -291,7 +297,8 @@ impl GlobalObject {
 
     /// Get a property from the object
     pub fn get_property(&self, key: &str) -> Option<GlobalValue> {
-        self.properties.get(key)
+        self.properties
+            .get(key)
             .map(|value| GlobalValue::from_json(value.clone(), self.runtime.clone()))
     }
 
@@ -337,7 +344,10 @@ impl CallbackHandle {
         Ok(JsonValue::Object({
             let mut map = serde_json::Map::new();
             map.insert("called".to_string(), JsonValue::Bool(true));
-            map.insert("args_count".to_string(), JsonValue::Number(serde_json::Number::from(args.len())));
+            map.insert(
+                "args_count".to_string(),
+                JsonValue::Number(serde_json::Number::from(args.len())),
+            );
             map
         }))
     }
@@ -350,82 +360,82 @@ pub type v8GlobalObject = GlobalObject;
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_javascript_runtime_creation() {
         let config = CoreRuntimeConfig::default();
         let runtime = JavascriptRuntime::new_async(config).await;
         assert!(runtime.is_ok());
     }
-    
+
     #[tokio::test]
     async fn test_basic_execution() {
         let config = CoreRuntimeConfig::default();
         let mut runtime = JavascriptRuntime::new_async(config).await.unwrap();
-        
+
         let result = runtime.execute("test", "1 + 1").await;
         assert!(result.is_ok());
-        
+
         let value = result.unwrap();
         let json = value.to_json();
-        
+
         if let JsonValue::Number(n) = json {
             assert_eq!(n.as_f64(), Some(2.0));
         } else {
             panic!("Expected number result, got: {:?}", json);
         }
     }
-    
+
     #[tokio::test]
     async fn test_value_conversion() {
         let config = CoreRuntimeConfig::default();
         let mut runtime = JavascriptRuntime::new_async(config).await.unwrap();
-        
+
         // Test number conversion
         let num_value = runtime.create_number(42.0);
         let converted: f64 = runtime.convert_value_to_rust(num_value);
         assert_eq!(converted, 42.0);
-        
+
         // Test string conversion
         let str_value = runtime.create_string("hello");
         let converted: String = runtime.convert_value_to_rust(str_value);
         assert_eq!(converted, "hello");
     }
-    
+
     #[tokio::test]
     async fn test_object_creation() {
         let config = CoreRuntimeConfig::default();
         let mut runtime = JavascriptRuntime::new_async(config).await.unwrap();
-        
+
         let mut obj = runtime.create_object();
         let key_value = runtime.create_string("value");
-        
+
         obj = runtime.object_set_property(obj, "key", key_value);
-        
+
         assert!(obj.has_property("key"));
-        
+
         let retrieved = obj.get_property("key").unwrap();
         let converted: String = runtime.convert_value_to_rust(retrieved);
         assert_eq!(converted, "value");
     }
-    
+
     #[tokio::test]
     async fn test_array_creation() {
         let config = CoreRuntimeConfig::default();
         let mut runtime = JavascriptRuntime::new_async(config).await.unwrap();
-        
+
         let values = vec![
             runtime.create_number(1.0),
             runtime.create_number(2.0),
             runtime.create_number(3.0),
         ];
-        
+
         let array = runtime.create_array(&values);
         let json = array.to_json();
-        
+
         if let JsonValue::Array(arr) = json {
             assert_eq!(arr.len(), 3);
-            
+
             for (i, item) in arr.iter().enumerate() {
                 if let JsonValue::Number(n) = item {
                     assert_eq!(n.as_f64(), Some((i + 1) as f64));
@@ -437,18 +447,20 @@ mod tests {
             panic!("Expected array result");
         }
     }
-    
+
     #[tokio::test]
     async fn test_console_log_execution() {
         let config = CoreRuntimeConfig::default();
         let mut runtime = JavascriptRuntime::new_async(config).await.unwrap();
-        
-        let result = runtime.execute("test", "console.log('Hello, World!'); 'success'").await;
+
+        let result = runtime
+            .execute("test", "console.log('Hello, World!'); 'success'")
+            .await;
         assert!(result.is_ok());
-        
+
         let value = result.unwrap();
         let json = value.to_json();
-        
+
         if let JsonValue::String(s) = json {
             assert_eq!(s, "success");
         } else {

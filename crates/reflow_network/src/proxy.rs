@@ -66,8 +66,13 @@ impl Actor for RemoteActorProxy {
 
                 // Forward all input messages to remote actor
                 for (port, message) in payload.iter() {
-                    tracing::info!("[PROXY {}] Forwarding to {}::{} on port {}",
-                        proxy_id, remote_network_id, remote_actor_id, port);
+                    tracing::info!(
+                        "[PROXY {}] Forwarding to {}::{} on port {}",
+                        proxy_id,
+                        remote_network_id,
+                        remote_actor_id,
+                        port
+                    );
 
                     let send_future = bridge.send_remote_message(
                         &remote_network_id,
@@ -80,28 +85,41 @@ impl Actor for RemoteActorProxy {
                     // Wrap the send with a timeout to prevent indefinite hangs
                     match tokio::time::timeout(PROXY_FORWARD_TIMEOUT, send_future).await {
                         Ok(Ok(_)) => {
-                            tracing::info!("[PROXY {}] Successfully forwarded to remote actor", proxy_id);
+                            tracing::info!(
+                                "[PROXY {}] Successfully forwarded to remote actor",
+                                proxy_id
+                            );
                         }
                         Ok(Err(e)) => {
-                            tracing::error!("[PROXY {}] Failed to forward to remote actor: {}", proxy_id, e);
+                            tracing::error!(
+                                "[PROXY {}] Failed to forward to remote actor: {}",
+                                proxy_id,
+                                e
+                            );
                             had_error = true;
                             result.insert(
                                 "error".to_string(),
                                 Message::String(Arc::new(format!(
-                                    "proxy:{}: forward failed: {}", proxy_id, e
+                                    "proxy:{}: forward failed: {}",
+                                    proxy_id, e
                                 ))),
                             );
                         }
                         Err(_) => {
-                            tracing::error!("[PROXY {}] Timed out forwarding to {}::{} ({}s)",
-                                proxy_id, remote_network_id, remote_actor_id,
-                                PROXY_FORWARD_TIMEOUT.as_secs());
+                            tracing::error!(
+                                "[PROXY {}] Timed out forwarding to {}::{} ({}s)",
+                                proxy_id,
+                                remote_network_id,
+                                remote_actor_id,
+                                PROXY_FORWARD_TIMEOUT.as_secs()
+                            );
                             had_error = true;
                             result.insert(
                                 "error".to_string(),
                                 Message::String(Arc::new(format!(
                                     "proxy:{}: forward timed out after {}s",
-                                    proxy_id, PROXY_FORWARD_TIMEOUT.as_secs()
+                                    proxy_id,
+                                    PROXY_FORWARD_TIMEOUT.as_secs()
                                 ))),
                             );
                         }

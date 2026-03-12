@@ -1,18 +1,18 @@
 use super::types::*;
 use crate::actor::Actor;
-use crate::websocket_rpc::{WebSocketRpcClient, WebSocketScriptActor};
 use crate::redis_state::RedisActorState;
+use crate::websocket_rpc::{WebSocketRpcClient, WebSocketScriptActor};
 use anyhow::Result;
 use async_trait::async_trait;
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 /// Factory for creating script actor instances
 #[async_trait]
 pub trait ActorFactory: Send + Sync {
     /// Create a new actor instance
     async fn create_instance(&self) -> Result<Box<dyn Actor>>;
-    
+
     /// Get actor metadata
     fn get_metadata(&self) -> &DiscoveredScriptActor;
 }
@@ -34,7 +34,7 @@ impl ScriptActorFactory {
                 .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
         })
     }
-    
+
     pub fn with_urls(
         metadata: DiscoveredScriptActor,
         websocket_url: String,
@@ -53,20 +53,18 @@ impl ActorFactory for ScriptActorFactory {
     async fn create_instance(&self) -> Result<Box<dyn Actor>> {
         // Create WebSocket RPC client
         let rpc_client = Arc::new(WebSocketRpcClient::new(self.websocket_url.clone()));
-        
+
         // Note: We don't connect here as the connection should be managed
         // by the actor itself during initialization
-        
+
         // Create WebSocketScriptActor which implements Actor trait
-        let actor = WebSocketScriptActor::new(
-            self.metadata.clone(),
-            rpc_client,
-            self.redis_url.clone(),
-        ).await;
-        
+        let actor =
+            WebSocketScriptActor::new(self.metadata.clone(), rpc_client, self.redis_url.clone())
+                .await;
+
         Ok(Box::new(actor))
     }
-    
+
     fn get_metadata(&self) -> &DiscoveredScriptActor {
         &self.metadata
     }
@@ -93,7 +91,7 @@ impl ActorFactory for PythonActorFactory {
         // Python-specific initialization
         self.base_factory.create_instance().await
     }
-    
+
     fn get_metadata(&self) -> &DiscoveredScriptActor {
         self.base_factory.get_metadata()
     }
@@ -120,7 +118,7 @@ impl ActorFactory for JavaScriptActorFactory {
         // JavaScript-specific initialization
         self.base_factory.create_instance().await
     }
-    
+
     fn get_metadata(&self) -> &DiscoveredScriptActor {
         self.base_factory.get_metadata()
     }

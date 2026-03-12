@@ -3,13 +3,13 @@
 //! This crate provides actor implementations that are fully compatible with Zeal workflow templates.
 //! Each actor is designed to work seamlessly with the metadata and configuration provided by Zeal.
 
-pub mod integration;
-pub mod flow_control;
 pub mod data_operations;
 pub mod data_ops;
+pub mod flow_control;
+pub mod integration;
+pub mod registry;
 pub mod rules;
 pub mod scripting;
-pub mod registry;
 
 #[cfg(test)]
 pub mod integration_tests;
@@ -19,8 +19,8 @@ pub mod end_to_end_tests;
 
 // Re-export common types
 pub use reflow_actor::{
-    Actor, ActorContext, ActorLoad, ActorBehavior, ActorPayload, ActorState, MemoryState, Port,
-    message::Message,
+    message::Message, Actor, ActorBehavior, ActorContext, ActorLoad, ActorPayload, ActorState,
+    MemoryState, Port,
 };
 
 // Re-export registry functions

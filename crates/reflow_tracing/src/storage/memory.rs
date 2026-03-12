@@ -5,8 +5,8 @@ use dashmap::DashMap;
 use std::sync::Arc;
 
 use crate::config::MemoryConfig;
-use reflow_tracing_protocol::{FlowTrace, TraceId, TraceQuery};
 use crate::storage::{StorageStats, TraceStorage};
+use reflow_tracing_protocol::{FlowTrace, TraceId, TraceQuery};
 
 pub struct MemoryStorage {
     traces: Arc<DashMap<TraceId, FlowTrace>>,
@@ -105,7 +105,11 @@ impl MemoryStorage {
 
         // Check actor filter (simple string contains for now)
         if let Some(ref actor_filter) = query.actor_filter {
-            if !trace.events.iter().any(|e| e.actor_id.contains(actor_filter)) {
+            if !trace
+                .events
+                .iter()
+                .any(|e| e.actor_id.contains(actor_filter))
+            {
                 return false;
             }
         }
@@ -118,15 +122,18 @@ impl MemoryStorage {
 impl TraceStorage for MemoryStorage {
     async fn store_trace(&self, trace: FlowTrace) -> Result<TraceId> {
         self.check_capacity()?;
-        
+
         let trace_id = trace.trace_id.clone();
         self.traces.insert(trace_id.clone(), trace);
-        
+
         Ok(trace_id)
     }
 
     async fn get_trace(&self, trace_id: TraceId) -> Result<Option<FlowTrace>> {
-        Ok(self.traces.get(&trace_id).map(|entry| entry.value().clone()))
+        Ok(self
+            .traces
+            .get(&trace_id)
+            .map(|entry| entry.value().clone()))
     }
 
     async fn query_traces(&self, query: TraceQuery) -> Result<Vec<FlowTrace>> {
@@ -160,26 +167,39 @@ impl TraceStorage for MemoryStorage {
     }
 
     async fn get_stats(&self) -> Result<StorageStats> {
-        let traces: Vec<FlowTrace> = self.traces.iter().map(|entry| entry.value().clone()).collect();
-        
+        let traces: Vec<FlowTrace> = self
+            .traces
+            .iter()
+            .map(|entry| entry.value().clone())
+            .collect();
+
         let total_traces = traces.len();
         let total_events: usize = traces.iter().map(|t| t.events.len()).sum();
-        
+
         let mut oldest_trace_timestamp = None;
         let mut newest_trace_timestamp = None;
-        
+
         for trace in &traces {
-            if oldest_trace_timestamp.is_none() || trace.start_time < oldest_trace_timestamp.unwrap() {
+            if oldest_trace_timestamp.is_none()
+                || trace.start_time < oldest_trace_timestamp.unwrap()
+            {
                 oldest_trace_timestamp = Some(trace.start_time);
             }
-            if newest_trace_timestamp.is_none() || trace.start_time > newest_trace_timestamp.unwrap() {
+            if newest_trace_timestamp.is_none()
+                || trace.start_time > newest_trace_timestamp.unwrap()
+            {
                 newest_trace_timestamp = Some(trace.start_time);
             }
         }
 
         // Rough estimate of memory usage
         let storage_size_bytes = traces.len() * std::mem::size_of::<FlowTrace>()
-            + traces.iter().map(|t| t.events.len() * std::mem::size_of::<reflow_tracing_protocol::TraceEvent>()).sum::<usize>();
+            + traces
+                .iter()
+                .map(|t| {
+                    t.events.len() * std::mem::size_of::<reflow_tracing_protocol::TraceEvent>()
+                })
+                .sum::<usize>();
 
         Ok(StorageStats {
             total_traces,
@@ -232,17 +252,17 @@ mod tests {
             eviction_policy: "lru".to_string(),
         };
         let storage = MemoryStorage::new(config);
-        
+
         let trace = create_test_trace();
         let trace_id = trace.trace_id.clone();
-        
+
         // Store trace
         storage.store_trace(trace.clone()).await.unwrap();
-        
+
         // Retrieve trace
         let retrieved = storage.get_trace(trace_id).await.unwrap();
         assert!(retrieved.is_some());
-        
+
         let retrieved_trace = retrieved.unwrap();
         assert_eq!(retrieved_trace.trace_id, trace.trace_id);
         assert_eq!(retrieved_trace.flow_id, trace.flow_id);
@@ -255,19 +275,19 @@ mod tests {
             eviction_policy: "lru".to_string(),
         };
         let storage = MemoryStorage::new(config);
-        
+
         // Store 3 traces (should trigger eviction)
         let trace1 = create_test_trace();
         let trace2 = create_test_trace();
         let trace3 = create_test_trace();
-        
+
         storage.store_trace(trace1.clone()).await.unwrap();
         storage.store_trace(trace2.clone()).await.unwrap();
         storage.store_trace(trace3.clone()).await.unwrap();
-        
+
         // Should only have 2 traces now
         assert_eq!(storage.traces.len(), 2);
-        
+
         // The first trace should be evicted
         assert!(storage.get_trace(trace1.trace_id).await.unwrap().is_none());
         assert!(storage.get_trace(trace2.trace_id).await.unwrap().is_some());

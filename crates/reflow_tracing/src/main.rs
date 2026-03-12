@@ -9,8 +9,8 @@ use tracing::{info, warn};
 use tracing_subscriber;
 
 mod config;
-mod server;
 mod protocol;
+mod server;
 mod storage;
 
 use config::Config;
@@ -24,11 +24,10 @@ async fn main() -> Result<()> {
     info!("Starting Reflow Tracing Server...");
 
     // Load configuration
-    let config = Config::load()
-        .unwrap_or_else(|_| {
-            warn!("Could not load config file, using defaults");
-            Config::default()
-        });
+    let config = Config::load().unwrap_or_else(|_| {
+        warn!("Could not load config file, using defaults");
+        Config::default()
+    });
 
     // Create the server
     let server = TraceServer::new(config.clone()).await?;
@@ -36,7 +35,7 @@ async fn main() -> Result<()> {
     // Start the server
     let addr: SocketAddr = format!("{}:{}", config.server.host, config.server.port).parse()?;
     let listener = TcpListener::bind(addr).await?;
-    
+
     info!("Tracing server listening on {}", addr);
 
     // Run the server

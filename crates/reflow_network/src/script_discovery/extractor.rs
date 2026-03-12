@@ -1,12 +1,10 @@
-
-use anyhow::{Result, Context};
+use super::types::*;
+use anyhow::{Context, Result};
 use reflow_graph::types::PortType;
 use serde_json;
 use std::path::Path;
 use std::process::Command;
 use tracing::debug;
-use super::types::*;
-
 
 pub struct MetadataExtractor;
 
@@ -14,11 +12,11 @@ impl MetadataExtractor {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Extract metadata from a Python actor file
     pub async fn extract_python_metadata(&self, file: &Path) -> Result<ExtractedMetadata> {
         debug!("Extracting Python metadata from: {}", file.display());
-        
+
         // Python extraction script
         let extraction_script = r#"
 import ast
@@ -120,7 +118,7 @@ if __name__ == '__main__':
         print(json.dumps({'error': str(e)}))
         sys.exit(1)
 "#;
-        
+
         // Execute Python script
         let output = Command::new("python3")
             .arg("-c")
@@ -128,28 +126,28 @@ if __name__ == '__main__':
             .arg(file)
             .output()
             .context("Failed to execute Python extraction script")?;
-        
+
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(anyhow::anyhow!("Python extraction failed: {}", stderr));
         }
-        
+
         // Parse JSON output
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let result: serde_json::Value = serde_json::from_str(&stdout)
-            .context("Failed to parse Python extraction output")?;
-        
+        let result: serde_json::Value =
+            serde_json::from_str(&stdout).context("Failed to parse Python extraction output")?;
+
         if let Some(error) = result.get("error") {
             return Err(anyhow::anyhow!("Extraction error: {}", error));
         }
-        
+
         self.parse_extracted_metadata(result)
     }
-    
+
     /// Extract metadata from a JavaScript actor file
     pub async fn extract_javascript_metadata(&self, file: &Path) -> Result<ExtractedMetadata> {
         debug!("Extracting JavaScript metadata from: {}", file.display());
-        
+
         // JavaScript extraction script
         let extraction_script = r#"
 const fs = require('fs');
@@ -250,7 +248,7 @@ try {
     process.exit(1);
 }
 "#;
-        
+
         // Execute Node.js script
         let output = Command::new("node")
             .arg("-e")
@@ -259,40 +257,43 @@ try {
             .arg(file)
             .output()
             .context("Failed to execute JavaScript extraction script")?;
-        
+
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(anyhow::anyhow!("JavaScript extraction failed: {}", stderr));
         }
-        
+
         // Parse JSON output
         let stdout = String::from_utf8_lossy(&output.stdout);
         let result: serde_json::Value = serde_json::from_str(&stdout)
             .context("Failed to parse JavaScript extraction output")?;
-        
+
         if let Some(error) = result.get("error") {
             return Err(anyhow::anyhow!("Extraction error: {}", error));
         }
-        
+
         self.parse_extracted_metadata(result)
     }
-    
+
     /// Parse extracted metadata from JSON
     fn parse_extracted_metadata(&self, json: serde_json::Value) -> Result<ExtractedMetadata> {
         // Parse port definitions
         let inports = self.parse_ports(json.get("inports"))?;
         let outports = self.parse_ports(json.get("outports"))?;
-        
+
         Ok(ExtractedMetadata {
-            component: json.get("component")
+            component: json
+                .get("component")
                 .and_then(|v| v.as_str())
                 .unwrap_or("UnknownActor")
                 .to_string(),
-            description: json.get("description")
+            description: json
+                .get("description")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
-            version: json.get("version")
+            version: json
+                .get("version")
                 .and_then(|v| v.as_str())
                 .unwrap_or("1.0.0")
                 .to_string(),
@@ -301,22 +302,23 @@ try {
             dependencies: self.parse_string_array(json.get("dependencies"))?,
             config_schema: json.get("config_schema").cloned(),
             tags: self.parse_string_array(json.get("tags"))?,
-            category: json.get("category")
+            category: json
+                .get("category")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
         })
     }
-    
+
     /// Parse port definitions from JSON
     fn parse_ports(&self, value: Option<&serde_json::Value>) -> Result<Vec<PortDefinition>> {
         let Some(ports_value) = value else {
             return Ok(Vec::new());
         };
-        
+
         let Some(ports_array) = ports_value.as_array() else {
             return Ok(Vec::new());
         };
-        
+
         let mut ports = Vec::new();
         for port_value in ports_array {
             let port = if let Some(port_str) = port_value.as_str() {
@@ -331,15 +333,18 @@ try {
             } else if let Some(port_obj) = port_value.as_object() {
                 // Detailed port definition
                 PortDefinition {
-                    name: port_obj.get("name")
+                    name: port_obj
+                        .get("name")
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .to_string(),
                     port_type: self.parse_port_type(port_obj.get("port_type"))?,
-                    required: port_obj.get("required")
+                    required: port_obj
+                        .get("required")
                         .and_then(|v| v.as_bool())
                         .unwrap_or(true),
-                    description: port_obj.get("description")
+                    description: port_obj
+                        .get("description")
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .to_string(),
@@ -348,19 +353,19 @@ try {
             } else {
                 continue;
             };
-            
+
             ports.push(port);
         }
-        
+
         Ok(ports)
     }
-    
+
     /// Parse port type from JSON
     fn parse_port_type(&self, value: Option<&serde_json::Value>) -> Result<PortType> {
         let Some(type_value) = value else {
             return Ok(PortType::Any);
         };
-        
+
         if let Some(type_str) = type_value.as_str() {
             // Simple string type
             match type_str {
@@ -389,7 +394,8 @@ try {
                         Ok(PortType::Array(Box::new(PortType::Any)))
                     }
                     "object" => {
-                        let schema = type_obj.get("value")
+                        let schema = type_obj
+                            .get("value")
                             .and_then(|v| v.as_str())
                             .unwrap_or("{}");
                         Ok(PortType::Object(schema.to_string()))
@@ -403,18 +409,19 @@ try {
             Ok(PortType::Any)
         }
     }
-    
+
     /// Parse string array from JSON
     fn parse_string_array(&self, value: Option<&serde_json::Value>) -> Result<Vec<String>> {
         let Some(array_value) = value else {
             return Ok(Vec::new());
         };
-        
+
         let Some(array) = array_value.as_array() else {
             return Ok(Vec::new());
         };
-        
-        Ok(array.iter()
+
+        Ok(array
+            .iter()
             .filter_map(|v| v.as_str())
             .map(|s| s.to_string())
             .collect())

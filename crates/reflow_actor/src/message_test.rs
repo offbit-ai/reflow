@@ -1,8 +1,13 @@
-use std::{collections::HashMap, io::{Read, Write}, iter, sync::Arc};
+use std::{
+    collections::HashMap,
+    io::{Read, Write},
+    iter,
+    sync::Arc,
+};
 
 use crate::message::{
-    CompressionConfig, CompressionStats, CompressionStrategy, EncodableValue, EncodedMessage,
-    Message, MessageError, COMPRESSION_THRESHOLD,
+    COMPRESSION_THRESHOLD, CompressionConfig, CompressionStats, CompressionStrategy,
+    EncodableValue, EncodedMessage, Message, MessageError,
 };
 use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -42,11 +47,14 @@ fn test_encode_boolean_message() {
 
 #[test]
 fn test_encode_array_message() {
-    let msg = Message::Array(vec![
-        json!(1).into(),
-        json!("test".to_string()).into(),
-        json!(false).into(),
-    ].into());
+    let msg = Message::Array(
+        vec![
+            json!(1).into(),
+            json!("test".to_string()).into(),
+            json!(false).into(),
+        ]
+        .into(),
+    );
     let encoded = EncodedMessage::new(&msg);
     let decoded: Message = bitcode::decode(&encoded.0).unwrap();
     assert_eq!(msg, decoded);
@@ -383,10 +391,12 @@ fn test_deserialize_string_values() {
     // Test invalid string value
     let result = serde_json::from_value::<CompressionStrategy>(json!("Invalid"));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy: Invalid"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy: Invalid")
+    );
 }
 
 #[test]
@@ -413,26 +423,32 @@ fn test_deserialize_object_values() {
     // Test invalid object values
     let result = serde_json::from_value::<CompressionStrategy>(json!({"strategy": "Invalid"}));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy: Invalid"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy: Invalid")
+    );
 
     // Test missing strategy field
     let result = serde_json::from_value::<CompressionStrategy>(json!({}));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy object"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy object")
+    );
 
     // Test invalid strategy field type
     let result = serde_json::from_value::<CompressionStrategy>(json!({"strategy": 123}));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy object"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy object")
+    );
 }
 
 #[test]
@@ -440,34 +456,42 @@ fn test_deserialize_invalid_types() {
     // Test number
     let result = serde_json::from_value::<CompressionStrategy>(json!(123));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy value"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy value")
+    );
 
     // Test boolean
     let result = serde_json::from_value::<CompressionStrategy>(json!(true));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy value"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy value")
+    );
 
     // Test null
     let result = serde_json::from_value::<CompressionStrategy>(json!(null));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy value"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy value")
+    );
 
     // Test array
     let result = serde_json::from_value::<CompressionStrategy>(json!([]));
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("Invalid compression strategy value"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid compression strategy value")
+    );
 }
 
 #[test]
@@ -1150,7 +1174,6 @@ fn test_encode_json_values() {
     assert!(result.0.len() > 0);
 }
 
-
 #[test]
 fn test_compress_data_normal() {
     let message = Message::default();
@@ -1173,10 +1196,8 @@ fn test_compress_data_normal() {
 fn test_compress_data_streaming() {
     let message = Message::default();
     // Create data larger than threshold
-    let large_data: Vec<u8> = iter::repeat(42u8)
-        .take(2048)
-        .collect();
-    
+    let large_data: Vec<u8> = iter::repeat(42u8).take(2048).collect();
+
     let config = CompressionConfig {
         enabled: true,
         level: 3,
@@ -1225,16 +1246,13 @@ fn test_compress_data_empty() {
     assert!(compressed.is_empty());
 }
 
-
 #[test]
 fn test_compress_data_different_levels() {
     let message = Message::default();
-    let data: Vec<u8> = iter::repeat(42u8)
-        .take(1000)
-        .collect();
-    
+    let data: Vec<u8> = iter::repeat(42u8).take(1000).collect();
+
     let mut sizes = Vec::new();
-    
+
     for level in 1..=9 {
         let config = CompressionConfig {
             enabled: true,
@@ -1242,17 +1260,16 @@ fn test_compress_data_different_levels() {
             streaming_threshold: 1024,
             ..Default::default()
         };
-        
+
         let result = message.compress_data(&data, &config).unwrap();
         sizes.push(result.len());
     }
-    
+
     // Higher compression levels should generally produce smaller or equal output
     for i in 1..sizes.len() {
-        assert!(sizes[i] <= sizes[i-1]);
+        assert!(sizes[i] <= sizes[i - 1]);
     }
 }
-
 
 #[test]
 fn test_compress_streaming_empty() {
@@ -1262,14 +1279,13 @@ fn test_compress_streaming_empty() {
         level: 3,
         ..Default::default()
     };
-    
+
     let result = message.compress_streaming(&[], &config);
     assert!(result.is_ok());
-    
+
     let compressed = result.unwrap();
     assert!(!compressed.is_empty());
 }
-
 
 #[test]
 fn test_compress_streaming_small_data() {
@@ -1279,14 +1295,14 @@ fn test_compress_streaming_small_data() {
         level: 3,
         ..Default::default()
     };
-    
+
     let data = b"Hello, World!".repeat(10);
     let result = message.compress_streaming(&data, &config);
     assert!(result.is_ok());
-    
+
     let compressed = result.unwrap();
     assert!(compressed.len() < data.len());
-    
+
     // Verify decompression
     let mut decoder = zstd::Decoder::new(&compressed[..]).unwrap();
     let mut decompressed = Vec::new();
@@ -1302,15 +1318,15 @@ fn test_compress_streaming_large_data() {
         level: 3,
         ..Default::default()
     };
-    
+
     // Create data larger than chunk size (64KB)
     let data = b"Large data block for testing".repeat(4000); // ~100KB
     let result = message.compress_streaming(&data, &config);
     assert!(result.is_ok());
-    
+
     let compressed = result.unwrap();
     assert!(compressed.len() < data.len());
-    
+
     // Verify decompression
     let mut decoder = zstd::Decoder::new(&compressed[..]).unwrap();
     let mut decompressed = Vec::new();
@@ -1322,7 +1338,7 @@ fn test_compress_streaming_large_data() {
 fn test_compress_streaming_different_levels() {
     let message = Message::default();
     let data = b"Compression test data".repeat(1000);
-    
+
     // Test different compression levels
     for level in 1..=9 {
         let config = CompressionConfig {
@@ -1330,13 +1346,13 @@ fn test_compress_streaming_different_levels() {
             level,
             ..Default::default()
         };
-        
+
         let result = message.compress_streaming(&data, &config);
         assert!(result.is_ok());
-        
+
         let compressed = result.unwrap();
         assert!(compressed.len() < data.len());
-        
+
         // Verify decompression
         let mut decoder = zstd::Decoder::new(&compressed[..]).unwrap();
         let mut decompressed = Vec::new();
@@ -1345,19 +1361,18 @@ fn test_compress_streaming_different_levels() {
     }
 }
 
-
 #[test]
 fn test_compress_streaming_invalid_level() {
     let message = Message::default();
     let data = b"Test data";
-    
+
     // Test with invalid compression level
     let config = CompressionConfig {
         enabled: true,
         level: 100, // Invalid level
         ..Default::default()
     };
-    
+
     let result = message.compress_streaming(data, &config);
     assert!(result.is_err());
     match result {
@@ -1372,12 +1387,12 @@ fn test_compress_streaming_chunk_boundaries() {
     // Create data exactly CHUNK_SIZE (64KB)
     let data: Vec<u8> = iter::repeat(1u8).take(64 * 1024).collect();
     let config = CompressionConfig::default();
-    
+
     let result = message.compress_streaming(&data, &config).unwrap();
-    
+
     // The compressed data should be smaller than the original
     assert!(result.len() < data.len());
-    
+
     // Verify we can decompress it back
     let mut decoder = zstd::Decoder::new(&result[..]).unwrap();
     let mut decompressed = Vec::new();
@@ -1389,7 +1404,7 @@ fn test_compress_streaming_chunk_boundaries() {
 fn test_compress_streaming_config_levels() {
     let message = Message::default();
     let data: Vec<u8> = vec![1, 2, 3, 4, 5];
-    
+
     // Test different compression levels
     for level in 1..=9 {
         let config = CompressionConfig {
@@ -1397,7 +1412,7 @@ fn test_compress_streaming_config_levels() {
             level,
             ..Default::default()
         };
-        
+
         let result = message.compress_streaming(&data, &config);
         assert!(result.is_ok());
     }
@@ -1407,10 +1422,10 @@ fn test_compress_streaming_config_levels() {
 fn test_compression_decision_stream() {
     let msg = Message::Stream(vec![0u8; 1000].into());
     let data = vec![0u8; 1000];
-    
+
     // First call should compress due to size
     assert!(msg.should_compress_adaptive(&data));
-    
+
     // Second call should use historical data
     assert!(msg.should_compress_adaptive(&data));
 }

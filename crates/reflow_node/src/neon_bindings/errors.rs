@@ -1,5 +1,5 @@
 //! Error type bindings for Neon
-//! 
+//!
 //! Provides clean error types that mirror the WASM version but without prefixes
 
 use neon::prelude::*;

@@ -13,7 +13,6 @@
 // #[derive(Clone, Serialize, Deserialize)]
 // pub struct JournalStore(pub GraphEvents);
 
-
 // impl undo::Edit for JournalStore {
 //     type Target = GraphEvents;
 
@@ -82,8 +81,6 @@
 //         }
 //     }
 // }
-
-
 
 // #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 // pub struct Journal {

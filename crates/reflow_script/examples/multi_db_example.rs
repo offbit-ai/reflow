@@ -1,8 +1,8 @@
 //! Example of using multiple database connections with the DB pool wrapper
 
 use anyhow::Result;
-use reflow_actor::{Actor, ActorConfig, ActorContext, ActorLoad};
 use reflow_actor::message::Message;
+use reflow_actor::{Actor, ActorConfig, ActorContext, ActorLoad};
 use reflow_script::db_actor::DatabaseActor;
 use reflow_script::db_manager::get_db_pool_manager;
 use reflow_script::db_pool::SQLiteConnection;
@@ -99,9 +99,7 @@ async fn main() -> Result<()> {
     let products_behavior = products_actor.get_behavior();
 
     // Create state and ports
-    let state = std::sync::Arc::new(parking_lot::Mutex::new(
-        reflow_actor::MemoryState::default(),
-    ));
+    let state = std::sync::Arc::new(parking_lot::Mutex::new(reflow_actor::MemoryState::default()));
     let users_outports = users_actor.get_outports();
     let products_outports = products_actor.get_outports();
 

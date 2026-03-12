@@ -33,8 +33,8 @@ use std::sync::Arc;
 
 use crate::{
     actor::ActorConfig,
-    bridge::NetworkBridge,
     actor::message::Message,
+    bridge::NetworkBridge,
     network::{Network, NetworkConfig},
 };
 
@@ -78,12 +78,10 @@ impl DistributedNetwork {
     }
 
     pub async fn start(&mut self) -> Result<(), anyhow::Error> {
-       
-
         // Start distributed bridge
         self.bridge.start(self.local_network.clone()).await?;
 
-         // Start local network
+        // Start local network
         self.local_network.clone().write().start()?;
 
         Ok(())
@@ -94,7 +92,8 @@ impl DistributedNetwork {
         actor_id: &str,
         remote_network_id: &str,
     ) -> Result<(), anyhow::Error> {
-        self.register_remote_actor_with_capabilities(actor_id, remote_network_id, None).await
+        self.register_remote_actor_with_capabilities(actor_id, remote_network_id, None)
+            .await
     }
 
     pub async fn register_remote_actor_with_capabilities(
@@ -122,15 +121,21 @@ impl DistributedNetwork {
             network.register_actor(&proxy_name, proxy)?;
 
             // Add as a node and start the proxy actor process
-            network.add_node(&proxy_name, &proxy_name, Some(HashMap::from([
-                ("remote_actor_proxy".to_string(), serde_json::Value::Bool(true)),
-            ])))?;
+            network.add_node(
+                &proxy_name,
+                &proxy_name,
+                Some(HashMap::from([(
+                    "remote_actor_proxy".to_string(),
+                    serde_json::Value::Bool(true),
+                )])),
+            )?;
 
             // Start the proxy actor process
             if let Some(actor_impl) = network.actors.get(&proxy_name) {
                 let actor_config =
                     ActorConfig::from_node(network.nodes.get(&proxy_name).cloned().unwrap())?;
-                let process = actor_impl.create_process(actor_config, network.tracing_integration.clone());
+                let process =
+                    actor_impl.create_process(actor_config, network.tracing_integration.clone());
                 tokio::spawn(process);
             }
         }
@@ -171,7 +176,7 @@ impl DistributedNetwork {
         &self,
         actor_id: &str,
         actor: T,
-        metadata: Option<HashMap<String, Value>>
+        metadata: Option<HashMap<String, Value>>,
     ) -> Result<(), anyhow::Error> {
         let mut network = self.local_network.write();
         // Register the actor

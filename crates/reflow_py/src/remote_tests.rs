@@ -139,7 +139,6 @@ data['text'] = data['text'].upper()
 __return_value=data
                 "#,
                 inputs,
-                
                 None,
                 Some(tx),
             )
@@ -151,7 +150,7 @@ __return_value=data
         assert_eq!(result_obj["numbers"], json!([1, 2, 3, 4]));
 
         // while let Ok(_) = rx.recv_async().await {
-            
+
         // }
 
         Ok(())

@@ -1,6 +1,3 @@
-use std::{
-    collections::HashMap, net, pin::Pin, sync::Arc, thread::{self, sleep}, time::Duration
-};
 use crate::actor::ActorConfig;
 use crate::{
     actor::{ActorContext, ActorPayload},
@@ -10,6 +7,14 @@ use crate::{
 use actor_macro::actor;
 use parking_lot::Mutex;
 use reflow_tracing_protocol::client::TracingIntegration;
+use std::{
+    collections::HashMap,
+    net,
+    pin::Pin,
+    sync::Arc,
+    thread::{self, sleep},
+    time::Duration,
+};
 
 use serde_json::{Map, Value};
 
@@ -155,10 +160,10 @@ async fn test_network() -> Result<(), anyhow::Error> {
 
     // Start the network
     network.start()?;
-    
+
     tokio::time::sleep(Duration::from_secs(2)).await;
     network.shutdown();
-   
+
     Ok(())
 }
 
@@ -254,10 +259,7 @@ async fn aggregator_actor(
     result.insert("Sum".to_owned(), Message::Integer(sum));
     result.insert("Count".to_owned(), Message::Integer(count));
 
-    println!(
-        "AggregatorActor: Sum = {}, Count = {}",
-        sum, count
-    );
+    println!("AggregatorActor: Sum = {}, Count = {}", sum, count);
 
     Ok(result)
 }

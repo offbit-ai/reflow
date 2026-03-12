@@ -209,8 +209,8 @@ async def process(context):
         let actor_path = "/tmp/test_multiplier.py";
         std::fs::write(actor_path, python_actor)?;
 
-        use futures_util::StreamExt;
         use futures_util::SinkExt;
+        use futures_util::StreamExt;
         use tokio_tungstenite::tungstenite::Message;
 
         // Start the server in background
@@ -249,7 +249,9 @@ async def process(context):
         });
 
         println!("Loading actor from {}", actor_path);
-        ws_sender.send(Message::text(load_request.to_string())).await?;
+        ws_sender
+            .send(Message::text(load_request.to_string()))
+            .await?;
 
         // Wait for load response
         if let Some(Ok(Message::Text(response))) = ws_receiver.next().await {
@@ -293,7 +295,10 @@ async def process(context):
                 } else if json["id"] == "2" {
                     // This is the response to our process request
                     println!("Process response: {}", json);
-                    assert!(json["result"]["outputs"].is_object(), "Actor execution failed - MicroSandbox portal issue needs to be fixed");
+                    assert!(
+                        json["result"]["outputs"].is_object(),
+                        "Actor execution failed - MicroSandbox portal issue needs to be fixed"
+                    );
                     break;
                 }
             }

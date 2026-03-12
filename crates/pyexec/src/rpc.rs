@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -121,9 +121,14 @@ pub async fn handle_rpc_request(
             requirements,
             timeout_seconds,
         } => {
-           
-            let result =
-                python_vm::execute_script_with_timeout(&session_id, &code, inputs, requirements, timeout_seconds).await?;
+            let result = python_vm::execute_script_with_timeout(
+                &session_id,
+                &code,
+                inputs,
+                requirements,
+                timeout_seconds,
+            )
+            .await?;
             Ok(RpcResponse::success(
                 message.id,
                 RpcResult::ExecutionResult {

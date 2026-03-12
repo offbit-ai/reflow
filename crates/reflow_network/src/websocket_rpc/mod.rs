@@ -1,10 +1,10 @@
 pub mod client;
-pub mod types;
 pub mod script_actor;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
 pub use client::*;
-pub use types::*;
 pub use script_actor::*;
+pub use types::*;

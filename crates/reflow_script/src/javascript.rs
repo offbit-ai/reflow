@@ -5,7 +5,7 @@ use anyhow::Result;
 use flume::{Receiver, Sender};
 use futures::executor::block_on;
 use parking_lot::Mutex;
-use reflow_js::{JavascriptRuntime, CallbackHandle};
+use reflow_js::{CallbackHandle, JavascriptRuntime};
 use serde_json::{Value, json};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
@@ -31,12 +31,12 @@ fn convert_js_message_to_script_message(js_msg: reflow_js::Message) -> Message {
                 .collect();
             Message::Object(converted)
         }
-        reflow_js::Message::Optional(opt) => {
-            match opt {
-                Some(boxed_msg) => Message::Optional(Some(Box::new(convert_js_message_to_script_message(*boxed_msg)))),
-                None => Message::Optional(None),
-            }
-        }
+        reflow_js::Message::Optional(opt) => match opt {
+            Some(boxed_msg) => Message::Optional(Some(Box::new(
+                convert_js_message_to_script_message(*boxed_msg),
+            ))),
+            None => Message::Optional(None),
+        },
         reflow_js::Message::Any(value) => Message::Any(value),
     }
 }
@@ -173,7 +173,7 @@ impl JavaScriptEngine {
     }
 }
 
-unsafe impl Send for JavaScriptEngine{}
+unsafe impl Send for JavaScriptEngine {}
 
 #[async_trait::async_trait]
 impl ScriptEngine for JavaScriptEngine {
@@ -181,7 +181,9 @@ impl ScriptEngine for JavaScriptEngine {
         let use_web_worker = cfg!(target_arch = "wasm32") || cfg!(feature = "webworker");
 
         if config.packages.is_some() {
-            return Err(anyhow::anyhow!("JavaScript engine does not currently support packages"));
+            return Err(anyhow::anyhow!(
+                "JavaScript engine does not currently support packages"
+            ));
         }
 
         if !use_web_worker {
@@ -261,7 +263,7 @@ impl ScriptEngine for JavaScriptEngine {
             let mut runtime = runtime.lock();
 
             let (outports_send, _) = context.outports.clone();
-            
+
             // Convert reflow_script Message to reflow_js Message for the callback
             let js_sender = {
                 let (tx, rx) = flume::unbounded();
@@ -280,12 +282,12 @@ impl ScriptEngine for JavaScriptEngine {
 
             // Use the factory method to create the callback
             let send_output_fn = runtime.create_send_output_callback(js_sender);
-            
+
             let _context_obj = runtime.create_object();
             let _context_obj = runtime.object_set_property_with_callback(
-                _context_obj, 
-                "send_output", 
-                send_output_fn
+                _context_obj,
+                "send_output",
+                send_output_fn,
             );
             let context_obj = runtime.obj_to_value(_context_obj);
             let inputs = runtime
@@ -313,8 +315,8 @@ impl ScriptEngine for JavaScriptEngine {
                         return Ok(results);
                     }
                     let value: Message = serde_json::from_value::<serde_json::Value>(value)
-                       .unwrap()
-                       .into();
+                        .unwrap()
+                        .into();
                     results.insert("out".to_string(), value);
                     return Ok(results);
                 }
@@ -483,7 +485,10 @@ mod tests {
             outports.clone(),
         );
         let result = engine.call(&context).await?;
-        assert_eq!(result.get("out").unwrap(), &Message::String("foobar".into()));
+        assert_eq!(
+            result.get("out").unwrap(),
+            &Message::String("foobar".into())
+        );
 
         // Test object serialization
         let inputs = HashMap::new();
@@ -509,7 +514,7 @@ mod tests {
             outports.clone(),
         );
         let result = engine.call(&context).await?;
-        let expected:Message = json!(vec![1, 2, 3]).into();
+        let expected: Message = json!(vec![1, 2, 3]).into();
         assert_eq!(result.get("out").unwrap(), &expected);
 
         engine.cleanup().await?;
@@ -612,9 +617,7 @@ mod tests {
 
         // Call the function and check the result
         let result = engine.call(&context).await?;
-        let expected = HashMap::from_iter([
-            ("success".to_string(), Message::Boolean(true)),
-        ]);
+        let expected = HashMap::from_iter([("success".to_string(), Message::Boolean(true))]);
 
         assert_eq!(result, expected, "Result doesn't match expected value");
 

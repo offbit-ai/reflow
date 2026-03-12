@@ -135,25 +135,25 @@ impl Config {
 
         // Load from individual environment variables
         let mut config = Config::default();
-        
+
         if let Ok(host) = env::var("REFLOW_TRACING_HOST") {
             config.server.host = host;
         }
-        
+
         if let Ok(port) = env::var("REFLOW_TRACING_PORT") {
             config.server.port = port.parse()?;
         }
-        
+
         if let Ok(backend) = env::var("REFLOW_TRACING_STORAGE_BACKEND") {
             config.storage.backend = backend;
         }
-        
+
         if let Ok(db_path) = env::var("REFLOW_TRACING_SQLITE_PATH") {
             if let Some(ref mut sqlite) = config.storage.sqlite {
                 sqlite.database_path = db_path;
             }
         }
-        
+
         if let Ok(pg_url) = env::var("REFLOW_TRACING_POSTGRES_URL") {
             config.storage.postgres = Some(PostgresConfig {
                 connection_url: pg_url,
@@ -165,42 +165,53 @@ impl Config {
 
         Ok(config)
     }
-    
+
     pub fn validate(&self) -> Result<()> {
         if self.server.port == 0 {
             return Err(anyhow::anyhow!("Server port cannot be 0"));
         }
-        
+
         if self.server.max_connections == 0 {
             return Err(anyhow::anyhow!("Max connections cannot be 0"));
         }
-        
+
         match self.storage.backend.as_str() {
             "sqlite" => {
                 if self.storage.sqlite.is_none() {
-                    return Err(anyhow::anyhow!("SQLite config required when backend is sqlite"));
+                    return Err(anyhow::anyhow!(
+                        "SQLite config required when backend is sqlite"
+                    ));
                 }
             }
             "postgres" => {
                 if self.storage.postgres.is_none() {
-                    return Err(anyhow::anyhow!("PostgreSQL config required when backend is postgres"));
+                    return Err(anyhow::anyhow!(
+                        "PostgreSQL config required when backend is postgres"
+                    ));
                 }
             }
             "mongodb" => {
                 if self.storage.mongodb.is_none() {
-                    return Err(anyhow::anyhow!("MongoDB config required when backend is mongodb"));
+                    return Err(anyhow::anyhow!(
+                        "MongoDB config required when backend is mongodb"
+                    ));
                 }
             }
             "memory" => {
                 if self.storage.memory.is_none() {
-                    return Err(anyhow::anyhow!("Memory config required when backend is memory"));
+                    return Err(anyhow::anyhow!(
+                        "Memory config required when backend is memory"
+                    ));
                 }
             }
             _ => {
-                return Err(anyhow::anyhow!("Unsupported storage backend: {}", self.storage.backend));
+                return Err(anyhow::anyhow!(
+                    "Unsupported storage backend: {}",
+                    self.storage.backend
+                ));
             }
         }
-        
+
         Ok(())
     }
 }

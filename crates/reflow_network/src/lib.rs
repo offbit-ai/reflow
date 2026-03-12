@@ -1,39 +1,39 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod discovery;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod distributed_network;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod bridge;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod router;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod proxy;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod distributed_composition;
-pub mod network;
-pub mod connector;
-pub mod types;
-pub mod ports;
-pub mod message;
 pub mod actor;
-mod helper;
-pub mod graph;
-pub mod multi_graph;
-pub mod tracing;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod api_kit;
 #[cfg(not(target_arch = "wasm32"))]
-pub mod script_discovery;
+pub mod bridge;
+pub mod connector;
 #[cfg(not(target_arch = "wasm32"))]
-pub mod websocket_rpc;
+pub mod discovery;
 #[cfg(not(target_arch = "wasm32"))]
-pub mod redis_state;
-#[cfg(test)]
-mod network_test;
+pub mod distributed_composition;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod distributed_network;
+pub mod graph;
+mod helper;
 #[cfg(test)]
 mod integration_tests;
+pub mod message;
+pub mod multi_graph;
+pub mod network;
+#[cfg(test)]
+mod network_test;
+pub mod ports;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod proxy;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod redis_state;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod router;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod script_discovery;
+pub mod tracing;
+pub mod types;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod websocket_rpc;
 
 // Export WASM bindings
 #[cfg(target_arch = "wasm32")]
@@ -44,18 +44,11 @@ pub fn init_panic_hook() {
 
 // Re-export actor system types for WASM
 #[cfg(target_arch = "wasm32")]
-pub use actor::{
-    ActorLoad, 
-    MemoryState, 
-    BrowserActorContext, 
-};
+pub use actor::{ActorLoad, BrowserActorContext, MemoryState};
 
 // Re-export network types for WASM
 #[cfg(target_arch = "wasm32")]
-pub use network::{
-    Network,
-    GraphNetwork
-};
+pub use network::{GraphNetwork, Network};
 
 // Re-export multi_graph types for WASM (under multi_graph namespace)
 #[cfg(target_arch = "wasm32")]

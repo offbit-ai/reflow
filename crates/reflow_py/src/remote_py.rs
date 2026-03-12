@@ -1,7 +1,6 @@
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, warn};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::path::Path;
@@ -14,6 +13,7 @@ use tokio::time::sleep;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use tracing::{debug, error, info, warn};
 use url::Url;
 use uuid::Uuid;
 
@@ -219,7 +219,8 @@ struct ClientState {
     /// Connection state
     connection_state: ConnectionState,
     /// Pending responses map (id -> oneshot sender)
-    pending_responses: HashMap<String, (flume::Sender<PyExecMessage>, flume::Receiver<PyExecMessage>)>,
+    pending_responses:
+        HashMap<String, (flume::Sender<PyExecMessage>, flume::Receiver<PyExecMessage>)>,
     /// Reconnection attempts
     reconnect_attempts: u32,
 }
@@ -561,41 +562,51 @@ impl PyExecClient {
 
     /// Establish a WebSocket connection to the server
     async fn establish_connection(&self) -> Result<(WSSender, SplitStream<WSStream>), PyExecError> {
-        info!("Attempting to establish WebSocket connection to {}", self.server_url);
+        info!(
+            "Attempting to establish WebSocket connection to {}",
+            self.server_url
+        );
         let url = Url::parse(&self.server_url)?;
         info!("Parsed URL: {}", url);
-    
+
         // Set up a timeout for the connection attempt
         let connect_timeout = Duration::from_secs(10); // 10-second timeout for actual connection
-        
-        info!("Starting connection with {} second timeout", connect_timeout.as_secs());
+
+        info!(
+            "Starting connection with {} second timeout",
+            connect_timeout.as_secs()
+        );
         let connection_result = tokio::time::timeout(connect_timeout, async {
             match connect_async(url.as_str().into_client_request().unwrap()).await {
                 Ok(result) => {
                     info!("WebSocket connection successful");
                     Ok(result)
-                },
+                }
                 Err(e) => {
                     error!("WebSocket connection failed: {}", e);
                     Err(PyExecError::Connection(format!("Failed to connect: {}", e)))
                 }
             }
-        }).await;
-    
+        })
+        .await;
+
         match connection_result {
             Ok(Ok((ws_stream, _))) => {
                 info!("Successfully created WebSocket stream");
                 let (ws_sender, ws_receiver) = ws_stream.split();
                 Ok((ws_sender, ws_receiver))
-            },
+            }
             Ok(Err(e)) => {
                 error!("Connection error: {}", e);
                 Err(e)
-            },
+            }
             Err(_) => {
                 error!("Connection attempt timed out after {:?}", connect_timeout);
-                Err(PyExecError::Timeout(format!("Connection attempt timed out after {:?}", connect_timeout)))
-            },
+                Err(PyExecError::Timeout(format!(
+                    "Connection attempt timed out after {:?}",
+                    connect_timeout
+                )))
+            }
         }
     }
 
@@ -775,20 +786,25 @@ impl PyExecClient {
         if self.connection_state().await != ConnectionState::Connected {
             // For pings, we'll fail immediately if not connected since they may be part of reconnection logic
             if method == "ping" {
-                return Err(PyExecError::Connection("Not connected to server".to_string()));
+                return Err(PyExecError::Connection(
+                    "Not connected to server".to_string(),
+                ));
             }
-            
+
             // For other methods, attempt to wait for connection
             match self.wait_for_connection(Some(10)).await {
                 Ok(_) => {
                     // We're connected now, continue
-                },
+                }
                 Err(e) => {
-                    return Err(PyExecError::Connection(format!("Failed to connect to server: {}", e)));
+                    return Err(PyExecError::Connection(format!(
+                        "Failed to connect to server: {}",
+                        e
+                    )));
                 }
             }
         }
-    
+
         // Rest of the original send_rpc implementation
         let id = Uuid::new_v4().to_string();
         let request = RpcMessage {
@@ -796,26 +812,28 @@ impl PyExecClient {
             method: method.to_string(),
             params,
         };
-    
+
         let json = serde_json::to_string(&request)?;
-    
+
         // Register the response channel before sending the request
         let (sender, rx) = flume::unbounded();
         {
             let mut state = self.state.write().await;
             state.pending_responses.insert(id.clone(), (sender, rx));
         }
-    
+
         // Send the request
         {
             let mut state = self.state.write().await;
             if let Some(ref mut sender) = state.ws_sender {
                 sender.send(Message::Text(json.into())).await?;
             } else {
-                return Err(PyExecError::Connection("WebSocket sender not available".to_string()));
+                return Err(PyExecError::Connection(
+                    "WebSocket sender not available".to_string(),
+                ));
             }
         }
-    
+
         Ok(id)
     }
 
@@ -828,23 +846,31 @@ impl PyExecClient {
         let timeout = timeout_ms
             .map(Duration::from_millis)
             .unwrap_or(Duration::from_secs(60));
-    
-        info!("Waiting for response with ID: {} (timeout: {:?})", id, timeout);
-    
+
+        info!(
+            "Waiting for response with ID: {} (timeout: {:?})",
+            id, timeout
+        );
+
         // Get the receiver directly, to avoid state lock issues
         let receiver = {
             let state = self.state.read().await;
             match state.pending_responses.get(id) {
                 Some((_, rx)) => rx.clone(),
-                None => return Err(PyExecError::Connection(format!("No pending response for ID {}", id)))
+                None => {
+                    return Err(PyExecError::Connection(format!(
+                        "No pending response for ID {}",
+                        id
+                    )));
+                }
             }
         };
-    
+
         // Wait for the response with timeout
         match tokio::time::timeout(timeout, receiver.recv_async()).await {
             Ok(Ok(message)) => {
                 info!("Received response for ID: {}", id);
-                
+
                 // Check if the response indicates an error
                 match &message {
                     PyExecMessage::Response(response) => {
@@ -854,19 +880,22 @@ impl PyExecClient {
                                 message: error.message.clone(),
                             });
                         }
-                    },
+                    }
                     PyExecMessage::Error(error_msg) => {
                         return Err(PyExecError::Connection(error_msg.clone()));
-                    },
+                    }
                     _ => {}
                 }
-    
+
                 Ok(message)
-            },
+            }
             Ok(Err(e)) => {
                 error!("Response channel error for ID {}: {}", id, e);
-                Err(PyExecError::Connection(format!("Response channel error: {}", e)))
-            },
+                Err(PyExecError::Connection(format!(
+                    "Response channel error: {}",
+                    e
+                )))
+            }
             Err(_) => {
                 // Remove the pending response on timeout
                 {
@@ -874,7 +903,7 @@ impl PyExecClient {
                     state.pending_responses.remove(id);
                     info!("Removed pending response for ID {} due to timeout", id);
                 }
-    
+
                 Err(PyExecError::Timeout(format!(
                     "Response timed out after {}ms",
                     timeout.as_millis()

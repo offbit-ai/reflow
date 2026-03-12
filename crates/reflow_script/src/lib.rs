@@ -1,8 +1,8 @@
 use anyhow::Result;
 use parking_lot::{Mutex, RwLock};
 use reflow_actor::{
-    Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState, MemoryState, Port,
-    message::Message,
+    Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState,
+    MemoryState, Port, message::Message,
 };
 use reflow_tracing_protocol::client::TracingIntegration;
 use serde::{Deserialize, Serialize};
@@ -105,7 +105,10 @@ impl ScriptActor {
             let config_clone = config.clone();
             // Use block_on to run the async init
             futures::executor::block_on(async {
-                engine_guard.init(&config_clone).await.expect("Failed to initialize script engine");
+                engine_guard
+                    .init(&config_clone)
+                    .await
+                    .expect("Failed to initialize script engine");
             });
         }
 
@@ -123,27 +126,30 @@ impl Actor for ScriptActor {
         let engine = self.engine.clone();
         let entry_point = self.config.entry_point.clone();
 
-        Box::new(
-            move |context:ActorContext| {
-                let engine = engine.clone();
-                let entry_point = entry_point.clone();
-                let payload = context.get_payload();
+        Box::new(move |context: ActorContext| {
+            let engine = engine.clone();
+            let entry_point = entry_point.clone();
+            let payload = context.get_payload();
 
-                // Create the context
-                let context =
-                    context::ScriptContext::new(entry_point, payload.clone(), context.get_state(), context.get_outports(), context.get_config().clone());
+            // Create the context
+            let context = context::ScriptContext::new(
+                entry_point,
+                payload.clone(),
+                context.get_state(),
+                context.get_outports(),
+                context.get_config().clone(),
+            );
 
-                // Return a future that owns all its data
-                Box::pin(async move {
-                    let mut engine_guard = engine.lock();
+            // Return a future that owns all its data
+            Box::pin(async move {
+                let mut engine_guard = engine.lock();
 
-                    // We need to block on the future since we're in a blocking context
-                    let result = futures::executor::block_on(engine_guard.call(&context))?;
+                // We need to block on the future since we're in a blocking context
+                let result = futures::executor::block_on(engine_guard.call(&context))?;
 
-                    Ok(result)
-                })
-            },
-        )
+                Ok(result)
+            })
+        })
     }
 
     fn get_outports(&self) -> Port {
@@ -157,7 +163,7 @@ impl Actor for ScriptActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
-        tracing_integration: Option<TracingIntegration>
+        tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
@@ -342,7 +348,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
     #[tokio::test]
     async fn test_extism_actor() {
         use reflow_actor::types::GraphNode;
-        
+
         // Create an extism script config using the counter_actor example
         let config = ScriptConfig {
             environment: ScriptEnvironment::SYSTEM,
@@ -351,49 +357,56 @@ __return_value=np.array(inputs.get("packet").data).sum()
             entry_point: "process".to_string(),
             packages: None,
         };
-        
+
         // Create the script actor
         let actor = ScriptActor::new(config);
-        
+
         // Create actor config with initial counter value
         let mut metadata = HashMap::new();
         metadata.insert("initial_value".to_string(), serde_json::json!(10));
-        
+
         let actor_config = ActorConfig::from_node(GraphNode {
             id: "test_counter".to_string(),
             component: "CounterActor".to_string(),
             metadata: Some(metadata),
             ..Default::default()
-        }).unwrap();
-        
+        })
+        .unwrap();
+
         // Start the actor process
         let process = actor.create_process(actor_config, None);
         let _handle = tokio::spawn(process);
-        
+
         // Get ports
         let inports = actor.get_inports();
         let outports = actor.get_outports();
-        
+
         // Test increment operation
         let mut payload = HashMap::new();
         payload.insert("increment".to_string(), Message::Flow);
-        
+
         inports.0.send_async(payload).await.unwrap();
         let result = outports.1.recv_async().await.unwrap();
-        
+
         // Verify the result
-        assert!(result.contains_key("count"), "Result should contain 'count' key");
+        assert!(
+            result.contains_key("count"),
+            "Result should contain 'count' key"
+        );
         assert_eq!(result["count"], Message::Integer(11)); // 10 + 1 = 11
-        assert!(result.contains_key("changed"), "Result should contain 'changed' key");
+        assert!(
+            result.contains_key("changed"),
+            "Result should contain 'changed' key"
+        );
         assert_eq!(result["changed"], Message::Boolean(true));
-        
+
         // Test decrement operation
         let mut payload = HashMap::new();
         payload.insert("decrement".to_string(), Message::Flow);
-        
+
         inports.0.send_async(payload).await.unwrap();
         let result = outports.1.recv_async().await.unwrap();
-        
+
         assert_eq!(result["count"], Message::Integer(10)); // 11 - 1 = 10
         assert_eq!(result["changed"], Message::Boolean(true));
     }

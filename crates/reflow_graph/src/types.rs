@@ -17,7 +17,7 @@ pub struct GraphNode {
     pub component: String,
     #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, any> | undefined"))]
     pub metadata: Option<HashMap<String, Value>>,
-    
+
     // Script runtime indicator (if this is a script actor)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub script_runtime: Option<ScriptRuntime>,
@@ -240,7 +240,6 @@ export type PortType =
 //     // }
 // }
 
-
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
@@ -351,18 +350,30 @@ pub struct GraphExport {
     pub processes: HashMap<String, GraphNode>,
     #[serde(default = "default_connections")]
     pub connections: Vec<GraphConnection>,
-    
+
     // New workspace fields (Optional for backward compatibility)
-    #[serde(default = "default_graph_dependencies", skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default = "default_graph_dependencies",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub graph_dependencies: Vec<GraphDependency>,
-    
-    #[serde(default = "default_external_connections", skip_serializing_if = "Vec::is_empty")]
+
+    #[serde(
+        default = "default_external_connections",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub external_connections: Vec<ExternalConnection>,
-    
-    #[serde(default = "default_provided_interfaces", skip_serializing_if = "HashMap::is_empty")]
+
+    #[serde(
+        default = "default_provided_interfaces",
+        skip_serializing_if = "HashMap::is_empty"
+    )]
     pub provided_interfaces: HashMap<String, InterfaceDefinition>,
-    
-    #[serde(default = "default_required_interfaces", skip_serializing_if = "HashMap::is_empty")]
+
+    #[serde(
+        default = "default_required_interfaces",
+        skip_serializing_if = "HashMap::is_empty"
+    )]
     pub required_interfaces: HashMap<String, InterfaceDefinition>,
 }
 
@@ -475,7 +486,7 @@ pub struct WorkspaceGraphExport {
     /// The core graph definition (first tier)
     #[serde(flatten)]
     pub graph: GraphExport,
-    
+
     /// Workspace discovery metadata
     pub workspace_metadata: WorkspaceMetadata,
 }
@@ -489,28 +500,28 @@ pub struct WorkspaceGraphExport {
 pub struct WorkspaceMetadata {
     /// Discovered namespace based on file structure
     pub discovered_namespace: String,
-    
+
     /// Original file path relative to workspace root
     pub source_path: String,
-    
+
     /// File format detected
     pub source_format: WorkspaceFileFormat,
-    
+
     /// Discovery timestamp
     pub discovered_at: String,
-    
+
     /// File size in bytes
     pub file_size: u64,
-    
+
     /// Last modified time of source file
     pub last_modified: Option<String>,
-    
+
     /// Resolved dependencies after analysis
     pub resolved_dependencies: Vec<ResolvedDependency>,
-    
+
     /// Auto-discovered connections to other graphs
     pub auto_connections: Vec<AutoDiscoveredConnection>,
-    
+
     /// Interface compatibility analysis
     pub interface_analysis: InterfaceAnalysis,
 }
@@ -532,16 +543,16 @@ pub enum WorkspaceFileFormat {
 pub struct ResolvedDependency {
     /// The dependency graph name
     pub target_graph: String,
-    
+
     /// Target graph's namespace
     pub target_namespace: String,
-    
+
     /// Whether dependency was resolved successfully
     pub resolved: bool,
-    
+
     /// Version constraint if specified
     pub version_constraint: Option<String>,
-    
+
     /// Resolution status
     pub resolution_status: DependencyResolutionStatus,
 }
@@ -565,28 +576,28 @@ pub enum DependencyResolutionStatus {
 pub struct AutoDiscoveredConnection {
     /// Unique identifier for this connection
     pub connection_id: String,
-    
+
     /// Source graph name
     pub from_graph: String,
-    
+
     /// Source graph namespace
     pub from_namespace: String,
-    
+
     /// Source interface name
     pub from_interface: String,
-    
+
     /// Target graph name
     pub to_graph: String,
-    
+
     /// Target graph namespace
     pub to_namespace: String,
-    
+
     /// Target interface name
     pub to_interface: String,
-    
+
     /// Confidence score (0.0 to 1.0)
     pub confidence: f64,
-    
+
     /// How this connection was discovered
     pub discovery_method: DiscoveryMethod,
 }
@@ -611,19 +622,19 @@ pub enum DiscoveryMethod {
 pub struct InterfaceAnalysis {
     /// Number of provided interfaces
     pub provided_count: usize,
-    
+
     /// Number of required interfaces
     pub required_count: usize,
-    
+
     /// Compatibility scores with other graphs
     pub compatibility_scores: HashMap<String, f64>,
-    
+
     /// Interface type mismatches found
     pub type_mismatches: Vec<InterfaceTypeMismatch>,
-    
+
     /// Unused provided interfaces
     pub unused_provided: Vec<String>,
-    
+
     /// Unsatisfied required interfaces
     pub unsatisfied_required: Vec<String>,
 }
@@ -660,48 +671,54 @@ impl WorkspaceGraphExport {
             workspace_metadata,
         }
     }
-    
+
     /// Extract the base GraphExport
     pub fn into_graph_export(self) -> GraphExport {
         self.graph
     }
-    
+
     /// Get a reference to the base GraphExport
     pub fn graph_export(&self) -> &GraphExport {
         &self.graph
     }
-    
+
     /// Get a mutable reference to the base GraphExport
     pub fn graph_export_mut(&mut self) -> &mut GraphExport {
         &mut self.graph
     }
-    
+
     /// Get the graph name
     pub fn graph_name(&self) -> Option<&str> {
         self.graph.properties.get("name").and_then(|v| v.as_str())
     }
-    
+
     /// Get the discovered namespace
     pub fn namespace(&self) -> &str {
         &self.workspace_metadata.discovered_namespace
     }
-    
+
     /// Check if this graph has unresolved dependencies
     pub fn has_unresolved_dependencies(&self) -> bool {
-        self.workspace_metadata.resolved_dependencies.iter()
+        self.workspace_metadata
+            .resolved_dependencies
+            .iter()
             .any(|dep| !dep.resolved)
     }
-    
+
     /// Get all auto-discovered connections with confidence above threshold
     pub fn get_confident_auto_connections(&self, threshold: f64) -> Vec<&AutoDiscoveredConnection> {
-        self.workspace_metadata.auto_connections.iter()
+        self.workspace_metadata
+            .auto_connections
+            .iter()
             .filter(|conn| conn.confidence >= threshold)
             .collect()
     }
-    
+
     /// Check interface compatibility with another graph
     pub fn is_compatible_with(&self, other_graph_name: &str) -> Option<f64> {
-        self.workspace_metadata.interface_analysis.compatibility_scores
+        self.workspace_metadata
+            .interface_analysis
+            .compatibility_scores
             .get(other_graph_name)
             .copied()
     }
@@ -849,7 +866,6 @@ impl std::fmt::Display for PortMismatch {
     }
 }
 
-
 #[derive(Clone, Debug)]
 pub struct NodePosition {
     pub x: f32,
@@ -865,20 +881,30 @@ pub struct NodeDimensions {
 
 #[derive(Clone, Debug)]
 pub struct AnchorPoint {
-    pub x: f32,  // Relative to node's left edge (0.0 to 1.0)
-    pub y: f32,  // Relative to node's top edge (0.0 to 1.0)
+    pub x: f32, // Relative to node's left edge (0.0 to 1.0)
+    pub y: f32, // Relative to node's top edge (0.0 to 1.0)
 }
-
 
 /// Optimization suggestions for graph execution
 #[derive(Clone)]
 pub enum OptimizationSuggestion {
-    ParallelizableChain { nodes: Vec<String> },
-    RedundantNode { node: String, reason: String },
-    ResourceBottleneck { resource: String, severity: f64 },
-    DataTypeOptimization { from: String, to: String, suggestion: String },
+    ParallelizableChain {
+        nodes: Vec<String>,
+    },
+    RedundantNode {
+        node: String,
+        reason: String,
+    },
+    ResourceBottleneck {
+        resource: String,
+        severity: f64,
+    },
+    DataTypeOptimization {
+        from: String,
+        to: String,
+        suggestion: String,
+    },
 }
-
 
 /// Enhanced analysis result including performance predictions
 #[derive(Default)]

@@ -45,7 +45,9 @@ impl MessageRouter {
         }
     }
 
-    pub fn with_connection_pool(connections: Arc<RwLock<HashMap<String, RemoteConnection>>>) -> Self {
+    pub fn with_connection_pool(
+        connections: Arc<RwLock<HashMap<String, RemoteConnection>>>,
+    ) -> Self {
         MessageRouter {
             remote_actor_registry: Arc::new(RwLock::new(HashMap::new())),
             connection_pool: connections,
@@ -70,8 +72,14 @@ impl MessageRouter {
         let source_network = self.get_local_network_id().await?;
         let source_actor_id = source_actor.unwrap_or("unknown").to_string();
 
-        tracing::info!("📨 ROUTER: Routing message from {}::{} to {}::{} on port {}",
-                      source_network, source_actor_id, network_id, actor_id, port);
+        tracing::info!(
+            "📨 ROUTER: Routing message from {}::{} to {}::{} on port {}",
+            source_network,
+            source_actor_id,
+            network_id,
+            actor_id,
+            port
+        );
 
         // Create remote message
         let remote_message = RemoteMessage {
@@ -88,14 +96,19 @@ impl MessageRouter {
         // Find connection for target network
         let connection = {
             let connections = self.connection_pool.read();
-            tracing::info!("🔍 ROUTER: Available connections: {:?}", 
-                          connections.keys().collect::<Vec<_>>());
+            tracing::info!(
+                "🔍 ROUTER: Available connections: {:?}",
+                connections.keys().collect::<Vec<_>>()
+            );
             connections.get(network_id).cloned()
         };
-        
+
         if let Some(connection) = connection {
-            tracing::info!("✅ ROUTER: Found connection for network {}, sending message {}", 
-                          network_id, remote_message.message_id);
+            tracing::info!(
+                "✅ ROUTER: Found connection for network {}, sending message {}",
+                network_id,
+                remote_message.message_id
+            );
             match self.send_over_connection(&connection, remote_message).await {
                 Ok(_) => {
                     tracing::info!("✅ ROUTER: Successfully sent message over connection");
@@ -108,7 +121,7 @@ impl MessageRouter {
             }
         } else {
             tracing::error!("❌ ROUTER: No connection to network: {}", network_id);
-            return Err(anyhow::anyhow!("No connection to network: {}", network_id))
+            return Err(anyhow::anyhow!("No connection to network: {}", network_id));
         }
     }
 
@@ -128,18 +141,33 @@ impl MessageRouter {
         let local_network_guard = self.local_network.read();
         if let Some(ref local_network_arc) = *local_network_guard {
             let network = local_network_arc.read();
-            
-            tracing::info!("🔍 ROUTER: Sending to local network, available actors: {:?}", 
-                          network.actors.keys().collect::<Vec<_>>());
-            tracing::info!("🔍 ROUTER: Available nodes: {:?}", 
-                          network.nodes.keys().collect::<Vec<_>>());
-            
-            match network.send_to_actor(&message.target_actor, &message.target_port, message.payload) {
+
+            tracing::info!(
+                "🔍 ROUTER: Sending to local network, available actors: {:?}",
+                network.actors.keys().collect::<Vec<_>>()
+            );
+            tracing::info!(
+                "🔍 ROUTER: Available nodes: {:?}",
+                network.nodes.keys().collect::<Vec<_>>()
+            );
+
+            match network.send_to_actor(
+                &message.target_actor,
+                &message.target_port,
+                message.payload,
+            ) {
                 Ok(_) => {
-                    tracing::info!("✅ ROUTER: Successfully routed message to local actor {}", message.target_actor);
+                    tracing::info!(
+                        "✅ ROUTER: Successfully routed message to local actor {}",
+                        message.target_actor
+                    );
                 }
                 Err(e) => {
-                    tracing::error!("❌ ROUTER: Failed to route message to local actor {}: {}", message.target_actor, e);
+                    tracing::error!(
+                        "❌ ROUTER: Failed to route message to local actor {}: {}",
+                        message.target_actor,
+                        e
+                    );
                     return Err(e);
                 }
             }
@@ -168,14 +196,24 @@ impl MessageRouter {
             }
         };
 
-        tracing::info!("📡 ROUTER: Sending message over WebSocket to {}", connection.network_id);
-        
+        tracing::info!(
+            "📡 ROUTER: Sending message over WebSocket to {}",
+            connection.network_id
+        );
+
         // Send over WebSocket using the ConnectionWebSocket's send method
-        match connection.websocket.send(tokio_tungstenite::tungstenite::Message::Text(
-            serialized.into(),
-        )).await {
+        match connection
+            .websocket
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                serialized.into(),
+            ))
+            .await
+        {
             Ok(_) => {
-                tracing::info!("✅ ROUTER: Successfully sent message {} over WebSocket", message.message_id);
+                tracing::info!(
+                    "✅ ROUTER: Successfully sent message {} over WebSocket",
+                    message.message_id
+                );
                 Ok(())
             }
             Err(e) => {
@@ -219,12 +257,16 @@ impl MessageRouter {
             network_id: remote_network_id.to_string(),
             capabilities: capabilities.unwrap_or_else(|| vec!["actor_messaging".to_string()]),
         };
-        
+
         self.remote_actor_registry
             .write()
             .insert(actor_id.to_string(), remote_info);
-            
-        tracing::info!("Registered remote actor {} from network {}", actor_id, remote_network_id);
+
+        tracing::info!(
+            "Registered remote actor {} from network {}",
+            actor_id,
+            remote_network_id
+        );
         Ok(())
     }
 }

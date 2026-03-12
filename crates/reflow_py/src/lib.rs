@@ -1,6 +1,5 @@
 use anyhow::Result;
 use core::time;
-use tracing::{error, info};
 use pyexec_service::{
     error::ServiceError,
     package_manager,
@@ -10,6 +9,7 @@ use remote_py::ClientConfig;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, mpsc};
 use tokio_tungstenite::tungstenite::http::status;
+use tracing::{error, info};
 
 mod remote_py;
 mod remote_tests;

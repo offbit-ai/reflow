@@ -2,15 +2,15 @@
 //!
 //! Processes rule-based logic from Zeal node templates.
 
-use std::collections::HashMap;
-use actor_macro::actor;
-use anyhow::{Result, Error};
-use reflow_actor::{ActorContext, message::EncodableValue};
-use serde_json::Value;
 use crate::{Actor, ActorBehavior, ActorLoad, MemoryState, Message, Port};
-use std::sync::Arc;
+use actor_macro::actor;
+use anyhow::{Error, Result};
 use reflow_actor::ActorConfig;
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_tracing_protocol::client::TracingIntegration;
+use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Rules Engine Actor - Processes Zeal rule sets
 ///
@@ -21,49 +21,51 @@ use reflow_tracing_protocol::client::TracingIntegration;
     outports::<50>(output, matched, unmatched),
     state(MemoryState)
 )]
-pub async fn rules_engine_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let mut result = HashMap::new();
     let config = context.get_config_hashmap();
     let payload = context.get_payload();
-    
+
     // Get input data
-    let data = payload.get("data")
+    let data = payload
+        .get("data")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
-    
+
     // Get rules from propertyValues (user-provided values)
-    let property_values = config.get("propertyValues")
-        .and_then(|v| v.as_object());
-    
+    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
+
     let rules = property_values
         .and_then(|pv| pv.get("rules").or_else(|| pv.get("propertyRules")))
         .and_then(|v| v.as_object());
-    
+
     if let Some(rules_obj) = rules {
         // Extract rule groups
-        let rule_type = rules_obj.get("type")
+        let rule_type = rules_obj
+            .get("type")
             .and_then(|v| v.as_str())
             .unwrap_or("IF");
-        
+
         let empty_vec = Vec::new();
-        let groups = rules_obj.get("groups")
+        let groups = rules_obj
+            .get("groups")
             .and_then(|v| v.as_array())
             .unwrap_or(&empty_vec);
-        
+
         let mut all_match = true;
-        
+
         // Process each rule group
         for group in groups {
-            let connector = group.get("connector")
+            let connector = group
+                .get("connector")
                 .and_then(|v| v.as_str())
                 .unwrap_or("AND");
-            
+
             let empty_vec = Vec::new();
-            let rules = group.get("rules")
+            let rules = group
+                .get("rules")
                 .and_then(|v| v.as_array())
                 .unwrap_or(&empty_vec);
-            
+
             let group_match = if connector == "AND" {
                 // All rules in group must match
                 rules.iter().all(|rule| evaluate_rule(rule, data))
@@ -71,7 +73,7 @@ pub async fn rules_engine_actor(
                 // Any rule in group must match
                 rules.iter().any(|rule| evaluate_rule(rule, data))
             };
-            
+
             if rule_type == "OR" {
                 // OR logic between groups
                 if group_match {
@@ -86,43 +88,44 @@ pub async fn rules_engine_actor(
                 }
             }
         }
-        
+
         // Apply actions if rules match
         if all_match {
             let mut output_data = serde_json::to_value(data)?;
-            
+
             // Apply setProperty actions
-            if let Some(set_props) = rules_obj.get("actions")
+            if let Some(set_props) = rules_obj
+                .get("actions")
                 .and_then(|a| a.get("setProperty"))
-                .and_then(|v| v.as_array()) {
-                
+                .and_then(|v| v.as_array())
+            {
                 for prop in set_props {
-                    if let (Some(key), Some(value)) = (
-                        prop.get("key").and_then(|v| v.as_str()),
-                        prop.get("value")
-                    ) {
+                    if let (Some(key), Some(value)) =
+                        (prop.get("key").and_then(|v| v.as_str()), prop.get("value"))
+                    {
                         if let Value::Object(ref mut map) = output_data {
                             map.insert(key.to_string(), value.clone());
                         }
                     }
                 }
             }
-            
+
             // Apply setOutput actions
-            if let Some(set_outputs) = rules_obj.get("actions")
+            if let Some(set_outputs) = rules_obj
+                .get("actions")
                 .and_then(|a| a.get("setOutput"))
-                .and_then(|v| v.as_array()) {
-                
+                .and_then(|v| v.as_array())
+            {
                 for output in set_outputs {
                     if let (Some(port), Some(value)) = (
                         output.get("port").and_then(|v| v.as_str()),
-                        output.get("value")
+                        output.get("value"),
                     ) {
                         result.insert(port.to_string(), json_value_to_message(value.clone()));
                     }
                 }
             }
-            
+
             result.insert("matched".to_string(), json_value_to_message(output_data));
         } else {
             result.insert("unmatched".to_string(), data.clone());
@@ -131,16 +134,19 @@ pub async fn rules_engine_actor(
         // No rules defined, pass through
         result.insert("output".to_string(), data.clone());
     }
-    
+
     Ok(result)
 }
 
 // Helper function to evaluate a single rule
 fn evaluate_rule(rule: &Value, data: &Message) -> bool {
     let field = rule.get("field").and_then(|v| v.as_str());
-    let operator = rule.get("operator").and_then(|v| v.as_str()).unwrap_or("is");
+    let operator = rule
+        .get("operator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("is");
     let rule_value = rule.get("value");
-    
+
     // Get the field value from data
     let field_value = if let Some(field_name) = field {
         if let Message::Object(obj) = data {
@@ -159,79 +165,63 @@ fn evaluate_rule(rule: &Value, data: &Message) -> bool {
             return false;
         }
     };
-    
+
     let field_value = match field_value {
         Some(v) => v,
-        None => return false
+        None => return false,
     };
-    
+
     match operator {
         "is" => rule_value.map_or(false, |v| &field_value == v),
         "is_not" => rule_value.map_or(true, |v| &field_value != v),
-        "contains" => {
-            match (&field_value, rule_value) {
-                (Value::String(s), Some(Value::String(needle))) => s.contains(needle.as_str()),
-                (Value::Array(arr), Some(val)) => arr.contains(val),
-                _ => false
+        "contains" => match (&field_value, rule_value) {
+            (Value::String(s), Some(Value::String(needle))) => s.contains(needle.as_str()),
+            (Value::Array(arr), Some(val)) => arr.contains(val),
+            _ => false,
+        },
+        "not_contains" => match (&field_value, rule_value) {
+            (Value::String(s), Some(Value::String(needle))) => !s.contains(needle.as_str()),
+            (Value::Array(arr), Some(val)) => !arr.contains(val),
+            _ => true,
+        },
+        "greater_than" => match (&field_value, rule_value) {
+            (Value::Number(a), Some(Value::Number(b))) => {
+                a.as_f64().unwrap_or(0.0) > b.as_f64().unwrap_or(0.0)
             }
-        }
-        "not_contains" => {
-            match (&field_value, rule_value) {
-                (Value::String(s), Some(Value::String(needle))) => !s.contains(needle.as_str()),
-                (Value::Array(arr), Some(val)) => !arr.contains(val),
-                _ => true
+            _ => false,
+        },
+        "less_than" => match (&field_value, rule_value) {
+            (Value::Number(a), Some(Value::Number(b))) => {
+                a.as_f64().unwrap_or(0.0) < b.as_f64().unwrap_or(0.0)
             }
-        }
-        "greater_than" => {
-            match (&field_value, rule_value) {
-                (Value::Number(a), Some(Value::Number(b))) => {
-                    a.as_f64().unwrap_or(0.0) > b.as_f64().unwrap_or(0.0)
-                }
-                _ => false
+            _ => false,
+        },
+        "greater_equal" => match (&field_value, rule_value) {
+            (Value::Number(a), Some(Value::Number(b))) => {
+                a.as_f64().unwrap_or(0.0) >= b.as_f64().unwrap_or(0.0)
             }
-        }
-        "less_than" => {
-            match (&field_value, rule_value) {
-                (Value::Number(a), Some(Value::Number(b))) => {
-                    a.as_f64().unwrap_or(0.0) < b.as_f64().unwrap_or(0.0)
-                }
-                _ => false
+            _ => false,
+        },
+        "less_equal" => match (&field_value, rule_value) {
+            (Value::Number(a), Some(Value::Number(b))) => {
+                a.as_f64().unwrap_or(0.0) <= b.as_f64().unwrap_or(0.0)
             }
-        }
-        "greater_equal" => {
-            match (&field_value, rule_value) {
-                (Value::Number(a), Some(Value::Number(b))) => {
-                    a.as_f64().unwrap_or(0.0) >= b.as_f64().unwrap_or(0.0)
-                }
-                _ => false
-            }
-        }
-        "less_equal" => {
-            match (&field_value, rule_value) {
-                (Value::Number(a), Some(Value::Number(b))) => {
-                    a.as_f64().unwrap_or(0.0) <= b.as_f64().unwrap_or(0.0)
-                }
-                _ => false
-            }
-        }
-        "empty" => {
-            match field_value {
-                Value::Null => true,
-                Value::String(s) => s.is_empty(),
-                Value::Array(arr) => arr.is_empty(),
-                Value::Object(obj) => obj.is_empty(),
-                _ => false
-            }
-        }
-        "not_empty" => {
-            match field_value {
-                Value::Null => false,
-                Value::String(s) => !s.is_empty(),
-                Value::Array(arr) => !arr.is_empty(),
-                Value::Object(obj) => !obj.is_empty(),
-                _ => true
-            }
-        }
+            _ => false,
+        },
+        "empty" => match field_value {
+            Value::Null => true,
+            Value::String(s) => s.is_empty(),
+            Value::Array(arr) => arr.is_empty(),
+            Value::Object(obj) => obj.is_empty(),
+            _ => false,
+        },
+        "not_empty" => match field_value {
+            Value::Null => false,
+            Value::String(s) => !s.is_empty(),
+            Value::Array(arr) => !arr.is_empty(),
+            Value::Object(obj) => !obj.is_empty(),
+            _ => true,
+        },
         "between" => {
             if let (Value::Number(n), Some(Value::Array(range))) = (&field_value, rule_value) {
                 if range.len() == 2 {
@@ -246,7 +236,7 @@ fn evaluate_rule(rule: &Value, data: &Message) -> bool {
                 false
             }
         }
-        _ => false
+        _ => false,
     }
 }
 
@@ -266,11 +256,9 @@ fn json_value_to_message(value: Value) -> Message {
         }
         Value::String(s) => Message::String(s.into()),
         Value::Array(arr) => {
-            let items: Vec<EncodableValue> = arr.into_iter()
-                .map(|v| v.into())
-                .collect();
+            let items: Vec<EncodableValue> = arr.into_iter().map(|v| v.into()).collect();
             Message::Array(items.into())
         }
-        Value::Object(_) => Message::object(EncodableValue::from(value))
+        Value::Object(_) => Message::object(EncodableValue::from(value)),
     }
 }

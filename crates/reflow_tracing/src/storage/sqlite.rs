@@ -1,15 +1,17 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use std::collections::{HashMap, VecDeque, BTreeMap};
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::{RwLock, Semaphore};
 use tokio::time::{Duration, Instant};
-use serde::{Serialize, Deserialize};
 
-use crate::config::SqliteConfig;
-use reflow_tracing_protocol::{FlowTrace, TraceId, TraceQuery, FlowId, FlowVersion, TraceEvent, ExecutionStatus};
 use super::{StorageStats, TraceStorage};
+use crate::config::SqliteConfig;
+use reflow_tracing_protocol::{
+    ExecutionStatus, FlowId, FlowTrace, FlowVersion, TraceEvent, TraceId, TraceQuery,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum TraceStorageError {
@@ -28,7 +30,7 @@ pub enum TraceStorageError {
 // }
 
 #[cfg(feature = "storage")]
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
 
 /// High-performance SQLite storage implementation with optimizations
 #[cfg(feature = "storage")]
@@ -165,27 +167,34 @@ impl SqliteStorage {
         } else {
             format!("sqlite:{}", config.database_path)
         };
-        
+
         let storage_config = SqliteStorageConfig::from(config);
-        
+
         // Create connection pool
-        let pool = SqlitePool::connect(&database_url).await
+        let pool = SqlitePool::connect(&database_url)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to connect to SQLite: {}", e))?;
 
         // Configure SQLite for performance
         if storage_config.enable_wal {
-            sqlx::query("PRAGMA journal_mode = WAL").execute(&pool).await
+            sqlx::query("PRAGMA journal_mode = WAL")
+                .execute(&pool)
+                .await
                 .map_err(|e| anyhow::anyhow!("Failed to set WAL mode: {}", e))?;
         }
 
         if storage_config.enable_foreign_keys {
-            sqlx::query("PRAGMA foreign_keys = ON").execute(&pool).await
+            sqlx::query("PRAGMA foreign_keys = ON")
+                .execute(&pool)
+                .await
                 .map_err(|e| anyhow::anyhow!("Failed to enable foreign keys: {}", e))?;
         }
 
         // Set cache size
         let cache_size_kb = storage_config.cache_size_mb * 1024;
-        sqlx::query(&format!("PRAGMA cache_size = -{}", cache_size_kb)).execute(&pool).await
+        sqlx::query(&format!("PRAGMA cache_size = -{}", cache_size_kb))
+            .execute(&pool)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to set cache size: {}", e))?;
 
         // Create tables if they don't exist
@@ -194,9 +203,14 @@ impl SqliteStorage {
         let storage = Self {
             pool,
             write_buffer: Arc::new(RwLock::new(WriteBuffer::new())),
-            compression_engine: CompressionEngine::new(CompressionAlgorithm::Zstd, CompressionLevel::Balanced),
+            compression_engine: CompressionEngine::new(
+                CompressionAlgorithm::Zstd,
+                CompressionLevel::Balanced,
+            ),
             indexing_engine: IndexingEngine::new(),
-            cache: Arc::new(RwLock::new(LruCache::new(storage_config.cache_size_mb * 1024 * 1024))),
+            cache: Arc::new(RwLock::new(LruCache::new(
+                storage_config.cache_size_mb * 1024 * 1024,
+            ))),
             metrics: StorageMetrics::default(),
             config: storage_config,
         };
@@ -209,7 +223,8 @@ impl SqliteStorage {
 
     async fn create_tables(pool: &SqlitePool) -> Result<()> {
         // Create optimized schema with proper indexing
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS traces (
                 trace_id TEXT PRIMARY KEY,
                 flow_id TEXT NOT NULL,
@@ -228,10 +243,14 @@ impl SqliteStorage {
                 size_bytes INTEGER NOT NULL,
                 created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
             )
-        "#).execute(pool).await
-            .map_err(|e| anyhow::anyhow!("Failed to create traces table: {}", e))?;
+        "#,
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to create traces table: {}", e))?;
 
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS trace_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 trace_id TEXT NOT NULL,
@@ -244,8 +263,11 @@ impl SqliteStorage {
                 compressed BOOLEAN NOT NULL DEFAULT FALSE,
                 FOREIGN KEY (trace_id) REFERENCES traces (trace_id) ON DELETE CASCADE
             )
-        "#).execute(pool).await
-            .map_err(|e| anyhow::anyhow!("Failed to create trace_events table: {}", e))?;
+        "#,
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to create trace_events table: {}", e))?;
 
         // Create performance indexes
         let indexes = vec![
@@ -260,7 +282,9 @@ impl SqliteStorage {
         ];
 
         for index_sql in indexes {
-            sqlx::query(index_sql).execute(pool).await
+            sqlx::query(index_sql)
+                .execute(pool)
+                .await
                 .map_err(|e| anyhow::anyhow!("Failed to create index: {}", e))?;
         }
 
@@ -275,10 +299,13 @@ impl SqliteStorage {
 
         // Periodic flush task
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_millis(config.flush_interval_ms));
+            let mut interval =
+                tokio::time::interval(Duration::from_millis(config.flush_interval_ms));
             loop {
                 interval.tick().await;
-                if let Err(e) = Self::flush_write_buffer(&write_buffer, &pool, &compression_engine).await {
+                if let Err(e) =
+                    Self::flush_write_buffer(&write_buffer, &pool, &compression_engine).await
+                {
                     eprintln!("Failed to flush write buffer: {}", e);
                 }
             }
@@ -332,7 +359,9 @@ impl SqliteStorage {
         traces: &[FlowTrace],
         compression_engine: &CompressionEngine,
     ) -> Result<()> {
-        let mut tx = pool.begin().await
+        let mut tx = pool
+            .begin()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to start transaction: {}", e))?;
 
         for trace in traces {
@@ -373,7 +402,8 @@ impl SqliteStorage {
             .map_err(|e| anyhow::anyhow!("Failed to insert trace: {}", e))?;
         }
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to commit transaction: {}", e))?;
 
         Ok(())
@@ -384,7 +414,9 @@ impl SqliteStorage {
         events: &[(TraceId, TraceEvent)],
         compression_engine: &CompressionEngine,
     ) -> Result<()> {
-        let mut tx = pool.begin().await
+        let mut tx = pool
+            .begin()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to start transaction: {}", e))?;
 
         for (trace_id, event) in events {
@@ -397,11 +429,13 @@ impl SqliteStorage {
                 (serialized, false)
             };
 
-            sqlx::query(r#"
+            sqlx::query(
+                r#"
                 INSERT OR REPLACE INTO trace_events 
                 (event_id, trace_id, actor_id, event_type, timestamp, data, causality, compressed)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            "#)
+            "#,
+            )
             .bind(&event.event_id.0.to_string())
             .bind(&trace_id.0.to_string())
             .bind(&event.actor_id)
@@ -410,11 +444,13 @@ impl SqliteStorage {
             .bind(serde_json::to_string(&event.data).unwrap())
             .bind(serde_json::to_string(&event.causality).unwrap())
             .bind(compressed)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to insert event: {}", e))?;
         }
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to commit transaction: {}", e))?;
 
         Ok(())
@@ -426,7 +462,7 @@ impl SqliteStorage {
 impl TraceStorage for SqliteStorage {
     async fn store_trace(&self, trace: FlowTrace) -> Result<TraceId> {
         let trace_id = trace.trace_id.clone();
-        
+
         // Add to write buffer for batch processing
         let mut buffer = self.write_buffer.write().await;
         buffer.traces.push_back(trace);
@@ -435,7 +471,8 @@ impl TraceStorage for SqliteStorage {
         // Force flush if buffer is full
         if buffer.pending_size >= self.config.write_buffer_size {
             drop(buffer); // Release lock before flush
-            Self::flush_write_buffer(&self.write_buffer, &self.pool, &self.compression_engine).await?;
+            Self::flush_write_buffer(&self.write_buffer, &self.pool, &self.compression_engine)
+                .await?;
         }
 
         Ok(trace_id)
@@ -453,13 +490,11 @@ impl TraceStorage for SqliteStorage {
         }
 
         // Load from database
-        let row = sqlx::query(
-            "SELECT data, compressed FROM traces WHERE trace_id = ?"
-        )
-        .bind(&trace_id.0.to_string())
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to query trace: {}", e))?;
+        let row = sqlx::query("SELECT data, compressed FROM traces WHERE trace_id = ?")
+            .bind(&trace_id.0.to_string())
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to query trace: {}", e))?;
 
         if let Some(row) = row {
             let data: Vec<u8> = row.get("data");
@@ -528,10 +563,13 @@ impl TraceStorage for SqliteStorage {
             query_builder = query_builder.bind(param);
         }
 
-        let rows = query_builder.fetch_all(&self.pool).await
+        let rows = query_builder
+            .fetch_all(&self.pool)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to query traces: {}", e))?;
 
-        let trace_ids: Result<Vec<TraceId>, _> = rows.iter()
+        let trace_ids: Result<Vec<TraceId>, _> = rows
+            .iter()
             .map(|row| {
                 let id: String = row.get("trace_id");
                 uuid::Uuid::parse_str(&id)
@@ -544,17 +582,21 @@ impl TraceStorage for SqliteStorage {
 
         // Load traces in parallel
         let semaphore = Arc::new(Semaphore::new(10)); // Limit concurrent loads
-        let futures: Vec<_> = trace_ids.into_iter().map(|trace_id| {
-            let semaphore = semaphore.clone();
-            let storage = self;
-            async move {
-                let _permit = semaphore.acquire().await.unwrap();
-                storage.get_trace(trace_id).await
-            }
-        }).collect();
+        let futures: Vec<_> = trace_ids
+            .into_iter()
+            .map(|trace_id| {
+                let semaphore = semaphore.clone();
+                let storage = self;
+                async move {
+                    let _permit = semaphore.acquire().await.unwrap();
+                    storage.get_trace(trace_id).await
+                }
+            })
+            .collect();
 
         let results = futures::future::join_all(futures).await;
-        let traces: Result<Vec<_>, _> = results.into_iter()
+        let traces: Result<Vec<_>, _> = results
+            .into_iter()
             .map(|result| result?.ok_or_else(|| anyhow::anyhow!("Trace not found")))
             .collect();
 
@@ -584,30 +626,34 @@ impl TraceStorage for SqliteStorage {
             .map_err(|e| anyhow::anyhow!("Failed to count events: {}", e))?;
 
         let storage_size_bytes: i64 = sqlx::query_scalar(
-            "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()"
+            "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()",
         )
         .fetch_one(&self.pool)
         .await
         .unwrap_or(0);
 
-        let oldest_trace_timestamp: Option<i64> = sqlx::query_scalar("SELECT MIN(start_time) FROM traces")
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to get oldest trace: {}", e))?
-            .flatten();
+        let oldest_trace_timestamp: Option<i64> =
+            sqlx::query_scalar("SELECT MIN(start_time) FROM traces")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to get oldest trace: {}", e))?
+                .flatten();
 
-        let newest_trace_timestamp: Option<i64> = sqlx::query_scalar("SELECT MAX(start_time) FROM traces")
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to get newest trace: {}", e))?
-            .flatten();
+        let newest_trace_timestamp: Option<i64> =
+            sqlx::query_scalar("SELECT MAX(start_time) FROM traces")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to get newest trace: {}", e))?
+                .flatten();
 
         Ok(StorageStats {
             total_traces: total_traces as usize,
             total_events: total_events as usize,
             storage_size_bytes: storage_size_bytes as usize,
-            oldest_trace_timestamp: oldest_trace_timestamp.and_then(|ts| DateTime::from_timestamp(ts, 0)),
-            newest_trace_timestamp: newest_trace_timestamp.and_then(|ts| DateTime::from_timestamp(ts, 0)),
+            oldest_trace_timestamp: oldest_trace_timestamp
+                .and_then(|ts| DateTime::from_timestamp(ts, 0)),
+            newest_trace_timestamp: newest_trace_timestamp
+                .and_then(|ts| DateTime::from_timestamp(ts, 0)),
         })
     }
 }
@@ -667,18 +713,18 @@ impl CompressionEngine {
                 zstd::bulk::compress(data, level)
                     .map_err(|e| anyhow::anyhow!("Zstd compression failed: {}", e))
             }
-            CompressionAlgorithm::Lz4 => {
-                Ok(lz4_flex::compress_prepend_size(data))
-            }
+            CompressionAlgorithm::Lz4 => Ok(lz4_flex::compress_prepend_size(data)),
             CompressionAlgorithm::Gzip => {
-                use flate2::write::GzEncoder;
                 use flate2::Compression;
+                use flate2::write::GzEncoder;
                 use std::io::Write;
 
                 let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-                encoder.write_all(data)
+                encoder
+                    .write_all(data)
                     .map_err(|e| anyhow::anyhow!("Gzip write failed: {}", e))?;
-                encoder.finish()
+                encoder
+                    .finish()
                     .map_err(|e| anyhow::anyhow!("Gzip finish failed: {}", e))
             }
             CompressionAlgorithm::Brotli => {
@@ -698,17 +744,16 @@ impl CompressionEngine {
                 zstd::bulk::decompress(data, 10 * 1024 * 1024) // 10MB limit
                     .map_err(|e| anyhow::anyhow!("Zstd decompression failed: {}", e))
             }
-            CompressionAlgorithm::Lz4 => {
-                lz4_flex::decompress_size_prepended(data)
-                    .map_err(|e| anyhow::anyhow!("Lz4 decompression failed: {}", e))
-            }
+            CompressionAlgorithm::Lz4 => lz4_flex::decompress_size_prepended(data)
+                .map_err(|e| anyhow::anyhow!("Lz4 decompression failed: {}", e)),
             CompressionAlgorithm::Gzip => {
                 use flate2::read::GzDecoder;
                 use std::io::Read;
 
                 let mut decoder = GzDecoder::new(data);
                 let mut decompressed = Vec::new();
-                decoder.read_to_end(&mut decompressed)
+                decoder
+                    .read_to_end(&mut decompressed)
                     .map_err(|e| anyhow::anyhow!("Gzip decompression failed: {}", e))?;
                 Ok(decompressed)
             }
@@ -756,11 +801,11 @@ impl LruCache {
     fn get(&mut self, trace_id: &TraceId) -> Option<FlowTrace> {
         if let Some(entry) = self.cache.get_mut(trace_id) {
             entry.last_accessed = Instant::now();
-            
+
             // Move to front of usage order
             self.usage_order.retain(|id| id != trace_id);
             self.usage_order.push_front(trace_id.clone());
-            
+
             Some(entry.trace.clone())
         } else {
             None
@@ -769,7 +814,7 @@ impl LruCache {
 
     fn insert(&mut self, trace_id: TraceId, trace: FlowTrace) {
         let entry_size = estimate_trace_size(&trace);
-        
+
         // Remove old entry if exists
         if let Some(old_entry) = self.cache.remove(&trace_id) {
             self.size_bytes -= old_entry.size_bytes;
@@ -802,7 +847,7 @@ impl BloomFilter {
     fn new(expected_elements: usize, false_positive_rate: f64) -> Self {
         let size = Self::optimal_size(expected_elements, false_positive_rate);
         let hash_functions = Self::optimal_hash_functions(size, expected_elements);
-        
+
         Self {
             bits: vec![false; size],
             hash_functions,
@@ -838,7 +883,7 @@ impl BloomFilter {
     fn hash(&self, item: &str, seed: usize) -> usize {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher = DefaultHasher::new();
         item.hash(&mut hasher);
         seed.hash(&mut hasher);
@@ -870,13 +915,14 @@ impl IndexingEngine {
             .push(trace.trace_id.clone());
 
         // Add actors to actor index and bloom filter
-        let mut actor_bloom = self.bloom_filters
+        let mut actor_bloom = self
+            .bloom_filters
             .entry("actors".to_string())
             .or_insert_with(|| BloomFilter::new(10000, 0.01));
 
         for event in &trace.events {
             actor_bloom.add(&event.actor_id);
-            
+
             self.actor_index
                 .entry(event.actor_id.clone())
                 .or_insert_with(Vec::new)
@@ -922,9 +968,9 @@ fn estimate_trace_size(trace: &FlowTrace) -> usize {
     // Rough estimation of trace size in memory
     let base_size = std::mem::size_of::<FlowTrace>();
     let events_size = trace.events.len() * std::mem::size_of::<TraceEvent>();
-    let string_sizes = trace.flow_id.0.len() + 
-                      trace.execution_id.0.to_string().len() +
-                      trace.events.iter().map(|e| e.actor_id.len()).sum::<usize>();
-    
+    let string_sizes = trace.flow_id.0.len()
+        + trace.execution_id.0.to_string().len()
+        + trace.events.iter().map(|e| e.actor_id.len()).sum::<usize>();
+
     base_size + events_size + string_sizes
 }
