@@ -15,9 +15,9 @@ rustc-wrapper = "sccache"
 rustflags = ["-C", "target-cpu=native"]
 
 # macOS specific configuration
+# Note: custom LLVM linker removed due to version mismatch between lld/llvm homebrew packages.
+# Using default Apple toolchain linker instead.
 [target.aarch64-apple-darwin]
-linker = "/opt/homebrew/opt/llvm/bin/clang"
-rustflags = ["-C", "link-arg=--ld-path=/opt/homebrew/bin/ld64.lld"]
 
 # Profile-specific optimization settings
 [profile.dev]

@@ -94,9 +94,18 @@ impl DistributedNetwork {
         actor_id: &str,
         remote_network_id: &str,
     ) -> Result<(), anyhow::Error> {
+        self.register_remote_actor_with_capabilities(actor_id, remote_network_id, None).await
+    }
+
+    pub async fn register_remote_actor_with_capabilities(
+        &self,
+        actor_id: &str,
+        remote_network_id: &str,
+        capabilities: Option<Vec<String>>,
+    ) -> Result<(), anyhow::Error> {
         // Register with router
         self.bridge
-            .register_remote_actor(actor_id, remote_network_id)
+            .register_remote_actor(actor_id, remote_network_id, capabilities)
             .await?;
 
         // Create proxy actor in local network
@@ -142,9 +151,10 @@ impl DistributedNetwork {
         actor_id: &str,
         port: &str,
         message: Message,
+        source_actor: Option<&str>,
     ) -> Result<(), anyhow::Error> {
         self.bridge
-            .send_remote_message(network_id, actor_id, port, message)
+            .send_remote_message(network_id, actor_id, port, message, source_actor)
             .await
     }
 

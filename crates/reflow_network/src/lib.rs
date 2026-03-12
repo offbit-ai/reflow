@@ -10,6 +10,8 @@ pub mod bridge;
 pub mod router;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod proxy;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod distributed_composition;
 pub mod network;
 pub mod connector;
 pub mod types;
@@ -30,6 +32,8 @@ pub mod websocket_rpc;
 pub mod redis_state;
 #[cfg(test)]
 mod network_test;
+#[cfg(test)]
+mod integration_tests;
 
 // Export WASM bindings
 #[cfg(target_arch = "wasm32")]

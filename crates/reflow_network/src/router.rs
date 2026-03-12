@@ -59,28 +59,25 @@ impl MessageRouter {
         *self.local_network_id.write() = network_id;
     }
 
-    pub fn set_connection_pool(&self, connections: Arc<RwLock<HashMap<String, RemoteConnection>>>) {
-        // Note: connection_pool is already shared via Arc, so we'll reference it directly
-        // This method is kept for API compatibility but doesn't need to reassign
-    }
-
     pub async fn route_message(
         &self,
         network_id: &str,
         actor_id: &str,
         port: &str,
         message: Message,
+        source_actor: Option<&str>,
     ) -> Result<()> {
-        let source_network =  self.get_local_network_id().await?;
-        
-        tracing::info!("📨 ROUTER: Routing message from {} to {}::{} on port {}", 
-                      source_network, network_id, actor_id, port);
-        
+        let source_network = self.get_local_network_id().await?;
+        let source_actor_id = source_actor.unwrap_or("unknown").to_string();
+
+        tracing::info!("📨 ROUTER: Routing message from {}::{} to {}::{} on port {}",
+                      source_network, source_actor_id, network_id, actor_id, port);
+
         // Create remote message
         let remote_message = RemoteMessage {
             message_id: uuid::Uuid::new_v4().to_string(),
             source_network,
-            source_actor: "".to_string(), // TODO: Get from context
+            source_actor: source_actor_id,
             target_network: network_id.to_string(),
             target_actor: actor_id.to_string(),
             target_port: port.to_string(),
@@ -192,15 +189,35 @@ impl MessageRouter {
         Ok(self.local_network_id.read().clone())
     }
 
+    /// Returns actor info for all actors registered in the local network.
+    pub fn get_local_actor_list(&self) -> Vec<crate::bridge::ActorInfo> {
+        let local_network_guard = self.local_network.read();
+        if let Some(ref local_network_arc) = *local_network_guard {
+            let network = local_network_arc.read();
+            network
+                .actors
+                .keys()
+                .map(|actor_id| crate::bridge::ActorInfo {
+                    actor_id: actor_id.clone(),
+                    capabilities: vec!["actor_messaging".to_string()],
+                    description: None,
+                })
+                .collect()
+        } else {
+            vec![]
+        }
+    }
+
     pub async fn register_remote_actor(
         &self,
         actor_id: &str,
         remote_network_id: &str,
+        capabilities: Option<Vec<String>>,
     ) -> Result<(), anyhow::Error> {
         let remote_info = RemoteActorInfo {
             actor_id: actor_id.to_string(),
             network_id: remote_network_id.to_string(),
-            capabilities: vec!["actor_messaging".to_string()], // TODO: Get from discovery
+            capabilities: capabilities.unwrap_or_else(|| vec!["actor_messaging".to_string()]),
         };
         
         self.remote_actor_registry

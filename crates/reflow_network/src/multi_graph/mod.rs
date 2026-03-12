@@ -536,8 +536,35 @@ impl GraphNamespaceManager {
         Ok(namespace)
     }
 
-    fn handle_namespace_conflict(&mut self, graph_name:&str, existing: &str, namespace: &str) -> Result<String, NamespaceError> {
-        unimplemented!("Resolve namespace conflict");
+    fn handle_namespace_conflict(&mut self, graph_name: &str, existing: &str, namespace: &str) -> Result<String, NamespaceError> {
+        match self.conflict_resolution {
+            NamespaceConflictPolicy::Fail => {
+                Err(NamespaceError::NamespaceConflict(format!(
+                    "Graph '{}' already registered under namespace '{}', cannot reassign to '{}'",
+                    graph_name, existing, namespace
+                )))
+            }
+            NamespaceConflictPolicy::VersionSuffix => {
+                // Find next available version suffix
+                for i in 1..=999 {
+                    let candidate = format!("{}_{}", namespace, i);
+                    if self.is_namespace_available(&candidate) {
+                        return Ok(candidate);
+                    }
+                }
+                Err(NamespaceError::NoAvailableNamespace(namespace.to_string()))
+            }
+            NamespaceConflictPolicy::AutoResolve => {
+                // Generate an alternative namespace by appending incrementing suffix
+                for i in 1..=999 {
+                    let candidate = format!("{}_{}", namespace, i);
+                    if self.is_namespace_available(&candidate) {
+                        return Ok(candidate);
+                    }
+                }
+                Err(NamespaceError::NoAvailableNamespace(namespace.to_string()))
+            }
+        }
     }
 
     fn extract_graph_name(&self, graph: &GraphExport) -> String {

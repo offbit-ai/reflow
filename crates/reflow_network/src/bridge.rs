@@ -23,6 +23,8 @@ pub struct NetworkBridge {
     transport: Arc<TransportLayer>,
     local_network: Arc<RwLock<Option<Arc<RwLock<Network>>>>>,
     shutdown_signal: Arc<tokio::sync::Notify>,
+    /// Pending discovery requests awaiting responses, keyed by request_id
+    pending_discovery: Arc<RwLock<HashMap<String, tokio::sync::oneshot::Sender<ActorDiscoveryResponse>>>>,
 }
 
 unsafe impl Sync for NetworkBridge {}
@@ -38,6 +40,7 @@ impl Clone for NetworkBridge {
             transport: self.transport.clone(),
             local_network: self.local_network.clone(),
             shutdown_signal: self.shutdown_signal.clone(),
+            pending_discovery: self.pending_discovery.clone(),
         }
     }
 }
@@ -216,6 +219,7 @@ impl NetworkBridge {
             transport,
             local_network: Arc::new(RwLock::new(None)),
             shutdown_signal: Arc::new(tokio::sync::Notify::new()),
+            pending_discovery: Arc::new(RwLock::new(HashMap::new())),
         })
     }
 
@@ -247,6 +251,7 @@ impl NetworkBridge {
         let connections = self.connections.clone();
         let router = self.router.clone();
         let config = self.config.clone();
+        let pending_discovery = self.pending_discovery.clone();
 
         tokio::spawn(async move {
             while let Ok((stream, addr)) = listener.accept().await {
@@ -256,9 +261,10 @@ impl NetworkBridge {
                 let connections = connections.clone();
                 let router = router.clone();
                 let config = config.clone();
+                let pending_discovery = pending_discovery.clone();
 
                 tokio::spawn(async move {
-                    Self::handle_connection(websocket, addr, connections, router, config).await;
+                    Self::handle_connection(websocket, addr, connections, router, config, pending_discovery).await;
                 });
             }
         });
@@ -272,6 +278,7 @@ impl NetworkBridge {
         connections: Arc<RwLock<HashMap<String, RemoteConnection>>>,
         router: Arc<MessageRouter>,
         config: DistributedConfig,
+        pending_discovery: Arc<RwLock<HashMap<String, tokio::sync::oneshot::Sender<ActorDiscoveryResponse>>>>,
     ) {
         tracing::info!("New connection from: {}", addr);
         
@@ -292,7 +299,7 @@ impl NetworkBridge {
             tracing::info!("Established connection with network: {}", handshake.network_id);
             
             // Handle incoming messages
-            Self::handle_incoming_messages(handshake.network_id, connections.clone(), router).await;
+            Self::handle_incoming_messages(handshake.network_id, connections.clone(), router, config, pending_discovery).await;
         } else {
             tracing::warn!("Failed handshake with {}", addr);
         }
@@ -304,19 +311,21 @@ impl NetworkBridge {
         actor_id: &str,
         port: &str,
         message: Message,
+        source_actor: Option<&str>,
     ) -> Result<(), anyhow::Error> {
         let router = self.router.clone();
         router
-            .route_message(&network_id, &actor_id, &port, message).await
+            .route_message(network_id, actor_id, port, message, source_actor).await
     }
 
     pub async fn register_remote_actor(
         &self,
         actor_id: &str,
         remote_network_id: &str,
+        capabilities: Option<Vec<String>>,
     ) -> Result<(), anyhow::Error> {
         self.router
-            .register_remote_actor(actor_id, remote_network_id)
+            .register_remote_actor(actor_id, remote_network_id, capabilities)
             .await
     }
 
@@ -351,6 +360,8 @@ impl NetworkBridge {
         network_id: String,
         connections: Arc<RwLock<HashMap<String, RemoteConnection>>>,
         router: Arc<MessageRouter>,
+        config: DistributedConfig,
+        pending_discovery: Arc<RwLock<HashMap<String, tokio::sync::oneshot::Sender<ActorDiscoveryResponse>>>>,
     ) {
         loop {
             let connection = {
@@ -381,14 +392,32 @@ impl NetworkBridge {
                         }
                     } else if let Ok(discovery_request) = serde_json::from_str::<ActorDiscoveryRequest>(&text) {
                         // Handle actor discovery request
-                        if let Err(e) = Self::handle_discovery_request(discovery_request, &connection, &router).await {
+                        if let Err(e) = Self::handle_discovery_request(discovery_request, &connection, &router, &config).await {
                             tracing::error!("Failed to handle discovery request: {}", e);
                         }
                     } else if let Ok(discovery_response) = serde_json::from_str::<ActorDiscoveryResponse>(&text) {
-                        // Handle actor discovery response
-                        tracing::info!("Received actor discovery response from {}: {} actors available", 
-                                      network_id, discovery_response.actors.len());
-                        // TODO: Process discovered actors and register them
+                        tracing::info!("Received actor discovery response from {}: {} actors available",
+                                      discovery_response.network_id, discovery_response.actors.len());
+
+                        // If there's a pending request waiting for this response, fulfil it
+                        let sender = pending_discovery.write().remove(&discovery_response.request_id);
+                        if let Some(tx) = sender {
+                            let _ = tx.send(discovery_response);
+                        } else {
+                            // Unsolicited discovery response — auto-register actors
+                            for actor in &discovery_response.actors {
+                                if let Err(e) = router.register_remote_actor(
+                                    &actor.actor_id,
+                                    &discovery_response.network_id,
+                                    Some(actor.capabilities.clone()),
+                                ).await {
+                                    tracing::warn!("Failed to register discovered actor {}: {}", actor.actor_id, e);
+                                } else {
+                                    tracing::info!("Auto-registered discovered actor {} from network {}",
+                                        actor.actor_id, discovery_response.network_id);
+                                }
+                            }
+                        }
                     }
                 }
                 Some(Ok(WsMessage::Binary(_))) => {
@@ -409,58 +438,78 @@ impl NetworkBridge {
                 }
                 Some(Ok(WsMessage::Close(_))) => {
                     tracing::info!("Connection closed by remote network: {}", network_id);
+                    // Mark as failed before cleanup
+                    if let Some(conn) = connections.write().get_mut(&network_id) {
+                        conn.status = ConnectionStatus::Failed;
+                    }
                     break;
                 }
                 Some(Ok(WsMessage::Frame(_))) => {
-                    // Handle raw frames if needed
                     tracing::debug!("Received raw frame from network: {}", network_id);
                 }
                 Some(Err(e)) => {
                     tracing::error!("WebSocket error for network {}: {}", network_id, e);
+                    // Mark as reconnecting — will be cleaned up if reconnect fails
+                    if let Some(conn) = connections.write().get_mut(&network_id) {
+                        conn.status = ConnectionStatus::Reconnecting;
+                    }
                     break;
                 }
                 None => {
                     tracing::warn!("WebSocket stream ended for network: {}", network_id);
+                    if let Some(conn) = connections.write().get_mut(&network_id) {
+                        conn.status = ConnectionStatus::Reconnecting;
+                    }
                     break;
                 }
             }
         }
-        
-        // Clean up connection
-        connections.write().remove(&network_id);
-        tracing::info!("Cleaned up connection for network: {}", network_id);
+
+        // Attempt to determine if we should remove or if the connection was gracefully closed
+        let should_remove = {
+            let conns = connections.read();
+            conns.get(&network_id)
+                .map(|c| matches!(c.status, ConnectionStatus::Failed | ConnectionStatus::Reconnecting))
+                .unwrap_or(true)
+        };
+
+        if should_remove {
+            connections.write().remove(&network_id);
+            tracing::info!("Cleaned up connection for network: {}", network_id);
+        }
     }
 
     async fn start_heartbeat_monitor(&self) -> Result<()> {
         let connections = self.connections.clone();
         let heartbeat_interval = Duration::from_millis(self.config.heartbeat_interval_ms);
         let timeout_threshold = heartbeat_interval * 3; // 3 missed heartbeats = timeout
-        
+        let local_network_id = self.config.network_id.clone();
+
         tokio::spawn(async move {
             let mut interval = interval(heartbeat_interval);
-            
+
             loop {
                 interval.tick().await;
-                
+
                 let now = Instant::now();
                 let mut networks_to_remove = Vec::new();
-                
+
                 // Check for expired connections and send heartbeats
                 let connections_snapshot = {
                     let connections_read = connections.read();
                     connections_read.clone()
                 };
-                
+
                 for (network_id, connection) in connections_snapshot.iter() {
                     // Check if connection has timed out
                     if now.duration_since(connection.last_heartbeat) > timeout_threshold {
                         networks_to_remove.push(network_id.clone());
                         continue;
                     }
-                    
+
                     // Send heartbeat
                     let heartbeat = HeartbeatMessage {
-                        network_id: "local".to_string(), // TODO: Get from config
+                        network_id: local_network_id.clone(),
                         timestamp: chrono::Utc::now(),
                     };
                     
@@ -472,12 +521,15 @@ impl NetworkBridge {
                     }
                 }
                 
-                // Remove timed out connections
+                // Transition timed-out connections to Failed and remove them
                 if !networks_to_remove.is_empty() {
                     let mut connections_write = connections.write();
                     for network_id in networks_to_remove {
+                        if let Some(conn) = connections_write.get_mut(&network_id) {
+                            conn.status = ConnectionStatus::Failed;
+                        }
                         connections_write.remove(&network_id);
-                        tracing::warn!("Removed timed out connection: {}", network_id);
+                        tracing::warn!("Removed timed out connection: {} (status: Failed)", network_id);
                     }
                 }
             }
@@ -523,9 +575,11 @@ impl NetworkBridge {
                                 let connections = self.connections.clone();
                                 let router = self.router.clone();
                                 let network_id = response.network_id.clone();
-                                
+                                let config = self.config.clone();
+                                let pending_discovery = self.pending_discovery.clone();
+
                                 tokio::spawn(async move {
-                                    Self::handle_incoming_messages(network_id, connections, router).await;
+                                    Self::handle_incoming_messages(network_id, connections, router, config, pending_discovery).await;
                                 });
                                 
                                 tracing::info!("Successfully connected to network: {}", response.network_id);
@@ -549,22 +603,16 @@ impl NetworkBridge {
         request: ActorDiscoveryRequest,
         connection: &RemoteConnection,
         router: &Arc<MessageRouter>,
+        config: &DistributedConfig,
     ) -> Result<()> {
         tracing::info!("Handling actor discovery request from {}", request.requesting_network);
-        
-        // Get list of local actors (simplified implementation)
-        let actors = vec![
-            ActorInfo {
-                actor_id: "example_actor".to_string(),
-                capabilities: vec!["processing".to_string()],
-                description: Some("Example local actor".to_string()),
-            }
-            // TODO: Get actual list of local actors from the network
-        ];
-        
+
+        // Get list of local actors from the router's local network
+        let actors = router.get_local_actor_list();
+
         let response = ActorDiscoveryResponse {
             request_id: request.request_id,
-            network_id: "local".to_string(), // TODO: Get from config
+            network_id: config.network_id.clone(),
             actors,
         };
         
@@ -575,25 +623,47 @@ impl NetworkBridge {
         Ok(())
     }
 
-    /// Request actor discovery from a remote network
+    /// Request actor discovery from a remote network.
+    /// Sends a discovery request and waits for a response with a 10-second timeout.
     pub async fn discover_remote_actors(&self, network_id: &str) -> Result<Vec<ActorInfo>> {
         let request = ActorDiscoveryRequest {
             request_id: uuid::Uuid::new_v4().to_string(),
             requesting_network: self.config.network_id.clone(),
         };
-        
+
         let request_text = serde_json::to_string(&request)?;
-        
+
+        // Set up a oneshot channel to receive the response
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        self.pending_discovery.write().insert(request.request_id.clone(), tx);
+
         // Find connection and send request
         if let Some(connection) = self.connections.read().get(network_id) {
             connection.websocket.send(WsMessage::Text(request_text.into())).await?;
             tracing::info!("Sent actor discovery request to network: {}", network_id);
-            
-            // TODO: Implement response handling with timeout
-            // For now, return empty list
-            Ok(vec![])
         } else {
-            Err(anyhow::anyhow!("No connection to network: {}", network_id))
+            // Clean up the pending entry
+            self.pending_discovery.write().remove(&request.request_id);
+            return Err(anyhow::anyhow!("No connection to network: {}", network_id));
+        }
+
+        // Wait for the response with a timeout
+        match tokio::time::timeout(Duration::from_secs(10), rx).await {
+            Ok(Ok(response)) => {
+                tracing::info!("Received discovery response from {}: {} actors",
+                    network_id, response.actors.len());
+                Ok(response.actors)
+            }
+            Ok(Err(_)) => {
+                tracing::warn!("Discovery response channel closed for network: {}", network_id);
+                Err(anyhow::anyhow!("Discovery response channel closed"))
+            }
+            Err(_) => {
+                // Timeout — clean up the pending entry
+                self.pending_discovery.write().remove(&request.request_id);
+                tracing::warn!("Discovery request to {} timed out", network_id);
+                Err(anyhow::anyhow!("Discovery request timed out after 10s"))
+            }
         }
     }
 
