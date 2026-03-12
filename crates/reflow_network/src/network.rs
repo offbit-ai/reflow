@@ -483,10 +483,65 @@ impl Network {
         }
 
         // Warm up all connectors to begin to recieve messages
-
+        //
+        // On native targets, use tokio::sync::broadcast for fan-out: a single
+        // forwarder reads from each source actor's flume outport and broadcasts
+        // to all downstream connectors, so every connector receives every message.
+        #[cfg(not(target_arch = "wasm32"))]
         {
-            // use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+            use std::collections::HashMap as StdHashMap;
 
+            // Group connectors by source actor node_id and set up one broadcast
+            // forwarder per source actor. Outport packets are wrapped in Arc so
+            // broadcast only bumps a ref count per subscriber instead of cloning
+            // the entire HashMap.
+            let mut broadcast_senders: StdHashMap<
+                String,
+                tokio::sync::broadcast::Sender<std::sync::Arc<StdHashMap<String, Message>>>,
+            > = StdHashMap::new();
+
+            for connector in &self.connectors {
+                let source_id = &connector.from.actor;
+
+                if !broadcast_senders.contains_key(source_id) {
+                    let from_process = self
+                        .nodes
+                        .get(source_id)
+                        .unwrap_or_else(|| panic!("Expected node for actor {}", source_id));
+
+                    let from_actor = self
+                        .initialized_actors
+                        .get(&from_process.id)
+                        .unwrap_or_else(|| {
+                            panic!("Expected initialized actor for id {}", from_process.id)
+                        });
+
+                    let out_ports = from_actor.get_outports();
+                    let load_count = from_actor.load_count();
+
+                    let (tx, _) = tokio::sync::broadcast::channel(1024);
+                    broadcast_senders.insert(source_id.clone(), tx.clone());
+
+                    // Forwarder: flume outport receiver → Arc-wrapped broadcast
+                    tokio::spawn(async move {
+                        while let Some(packet) = out_ports.1.clone().stream().next().await {
+                            load_count.lock().dec();
+                            if tx.send(std::sync::Arc::new(packet)).is_err() {
+                                break; // all receivers dropped
+                            }
+                        }
+                    });
+                }
+
+                let broadcast_tx = broadcast_senders.get(&connector.from.actor).unwrap();
+                let broadcast_rx = broadcast_tx.subscribe();
+                connector.init_broadcast(self, broadcast_rx);
+            }
+        }
+
+        // On WASM, fall back to direct flume receiver (no broadcast available)
+        #[cfg(target_arch = "wasm32")]
+        {
             for connector in &self.connectors {
                 connector.init(self);
             }

@@ -30,6 +30,7 @@ pub mod redis_state;
 pub mod router;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod script_discovery;
+pub mod subgraph;
 pub mod tracing;
 pub mod types;
 #[cfg(not(target_arch = "wasm32"))]

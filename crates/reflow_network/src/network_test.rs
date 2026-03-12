@@ -323,3 +323,117 @@ async fn test_complex_network() -> Result<(), anyhow::Error> {
     network.shutdown();
     Ok(())
 }
+
+// Forward actor: receives on "In", sends same message on "Out"
+#[actor(
+    ForwardActor,
+    inports::<100>(In),
+    outports::<100>(Out)
+)]
+async fn forward_actor(context: ActorContext) -> Result<HashMap<String, Message>, anyhow::Error> {
+    let payload = context.get_payload();
+    let input = payload.get("In").expect("expected input on In port");
+    Ok([("Out".to_owned(), input.clone())].into())
+}
+
+/// Test fan-out: one actor's outport connected to two downstream actors.
+/// With broadcast, both collectors should receive every message.
+#[tokio::test]
+async fn test_fanout_broadcast() -> Result<(), anyhow::Error> {
+    let mut network = Network::new(NetworkConfig::default());
+
+    // Source actor transforms input, two forward actors receive the output
+    network.register_actor("transform", TransformActor::new())?;
+    network.register_actor("forward_a", ForwardActor::new())?;
+    network.register_actor("forward_b", ForwardActor::new())?;
+
+    network.add_node("source", "transform", None)?;
+    network.add_node("sink_a", "forward_a", None)?;
+    network.add_node("sink_b", "forward_b", None)?;
+
+    // Fan-out: source:Output → sink_a:In AND source:Output → sink_b:In
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "source".to_owned(),
+            port: "Output".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "sink_a".to_owned(),
+            port: "In".to_owned(),
+            ..Default::default()
+        },
+    });
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "source".to_owned(),
+            port: "Output".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "sink_b".to_owned(),
+            port: "In".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    // Send 3 messages to the source
+    for i in 1..=3 {
+        network.add_initial(InitialPacket {
+            to: ConnectionPoint {
+                actor: "source".to_owned(),
+                port: "Input".to_owned(),
+                initial_data: Some(Message::Integer(i)),
+            },
+        });
+    }
+
+    network.start()?;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // Both forward actors should have received all 3 messages on their outports
+    let forward_a_outport = network.actors.get("forward_a").unwrap().get_outports().1;
+    let forward_b_outport = network.actors.get("forward_b").unwrap().get_outports().1;
+
+    let mut a_messages = Vec::new();
+    while let Ok(pkt) = forward_a_outport.try_recv() {
+        if let Some(msg) = pkt.get("Out") {
+            a_messages.push(msg.clone());
+        }
+    }
+
+    let mut b_messages = Vec::new();
+    while let Ok(pkt) = forward_b_outport.try_recv() {
+        if let Some(msg) = pkt.get("Out") {
+            b_messages.push(msg.clone());
+        }
+    }
+
+    println!(
+        "forward_a received {} messages: {:?}",
+        a_messages.len(),
+        a_messages
+    );
+    println!(
+        "forward_b received {} messages: {:?}",
+        b_messages.len(),
+        b_messages
+    );
+
+    // With broadcast fan-out, BOTH should receive all 3 messages
+    assert_eq!(
+        a_messages.len(),
+        3,
+        "forward_a should have received all 3 messages (got {})",
+        a_messages.len()
+    );
+    assert_eq!(
+        b_messages.len(),
+        3,
+        "forward_b should have received all 3 messages (got {})",
+        b_messages.len()
+    );
+
+    network.shutdown();
+    Ok(())
+}
