@@ -10,7 +10,6 @@ use std::collections::{HashMap as StdHashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tracing::{debug, error, info, warn};
-use uuid::Uuid;
 
 #[cfg(not(target_arch = "wasm32"))]
 use futures_util::{SinkExt, StreamExt};
@@ -87,6 +86,7 @@ struct ClientState {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 enum ConnectionStatus {
     Disconnected,
     Connecting,
@@ -99,6 +99,7 @@ pub struct TracingClient {
     config: TracingConfig,
     state: Arc<Mutex<ClientState>>,
     #[cfg(not(target_arch = "wasm32"))]
+    #[allow(dead_code)]
     runtime: Option<tokio::runtime::Handle>,
 }
 
@@ -156,8 +157,10 @@ impl TracingClient {
 
     /// Create a new tracing client with custom server URL
     pub fn with_server_url(url: impl Into<String>) -> Self {
-        let mut config = TracingConfig::default();
-        config.server_url = url.into();
+        let config = TracingConfig {
+            server_url: url.into(),
+            ..TracingConfig::default()
+        };
         Self::new(config)
     }
 

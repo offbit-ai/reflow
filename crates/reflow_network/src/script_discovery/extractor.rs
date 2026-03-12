@@ -8,6 +8,12 @@ use tracing::debug;
 
 pub struct MetadataExtractor;
 
+impl Default for MetadataExtractor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MetadataExtractor {
     pub fn new() -> Self {
         Self

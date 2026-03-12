@@ -37,6 +37,7 @@ pub struct JavascriptRuntime {
 
 /// Internal callback data storage
 #[derive(Clone)]
+#[allow(dead_code)]
 struct CallbackData {
     sender: Option<Sender<HashMap<String, Message>>>,
     function_type: CallbackType,
@@ -64,7 +65,7 @@ impl JavascriptRuntime {
         };
 
         // Check if we're already in a tokio runtime context
-        if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        if let Ok(_handle) = tokio::runtime::Handle::try_current() {
             // We're in an async context, we need to spawn a blocking task
             let runtime = std::thread::spawn(move || {
                 let rt = tokio::runtime::Runtime::new().unwrap();
@@ -246,6 +247,7 @@ impl JavascriptRuntime {
 #[derive(Clone)]
 pub struct GlobalValue {
     json_value: JsonValue,
+    #[allow(dead_code)]
     runtime: Arc<CoreRuntime>,
 }
 
@@ -325,6 +327,7 @@ pub struct CallbackHandle {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct CallbackValue {
     function_id: String,
     runtime_ref: Arc<CoreRuntime>,
@@ -354,7 +357,9 @@ impl CallbackHandle {
 }
 
 // Convenience type aliases for backward compatibility
+#[allow(non_camel_case_types)]
 pub type v8GlobalValue = GlobalValue;
+#[allow(non_camel_case_types)]
 pub type v8GlobalObject = GlobalObject;
 
 #[cfg(test)]

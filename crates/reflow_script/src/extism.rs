@@ -15,6 +15,12 @@ pub struct ExtismEngine {
     pub(crate) config: Option<ScriptConfig>,
 }
 
+impl Default for ExtismEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExtismEngine {
     pub fn new() -> Self {
         Self {
@@ -296,69 +302,68 @@ impl ScriptEngine for ExtismEngine {
         // Convert outputs back to Message format
         let mut output_messages = HashMap::new();
         for (port, msg_value) in outputs {
-            if let Some(msg_obj) = msg_value.as_object() {
-                if let (Some(msg_type), Some(data)) = (
+            if let Some(msg_obj) = msg_value.as_object()
+                && let (Some(msg_type), Some(data)) = (
                     msg_obj.get("type").and_then(|t| t.as_str()),
                     msg_obj.get("data"),
-                ) {
-                    let message = match msg_type {
-                        "Flow" => Message::Flow,
-                        "Event" => Message::Event(data.clone().into()),
-                        "Boolean" => Message::Boolean(data.as_bool().unwrap_or_default()),
-                        "Integer" => Message::Integer(data.as_i64().unwrap_or_default()),
-                        "Float" => Message::Float(data.as_f64().unwrap_or_default()),
-                        "String" => {
-                            Message::String(Arc::new(data.as_str().unwrap_or_default().to_string()))
+                )
+            {
+                let message = match msg_type {
+                    "Flow" => Message::Flow,
+                    "Event" => Message::Event(data.clone().into()),
+                    "Boolean" => Message::Boolean(data.as_bool().unwrap_or_default()),
+                    "Integer" => Message::Integer(data.as_i64().unwrap_or_default()),
+                    "Float" => Message::Float(data.as_f64().unwrap_or_default()),
+                    "String" => {
+                        Message::String(Arc::new(data.as_str().unwrap_or_default().to_string()))
+                    }
+                    "Object" => Message::Object(Arc::new(data.clone().into())),
+                    "Array" => Message::Array(Arc::new(
+                        data.as_array()
+                            .cloned()
+                            .unwrap_or_default()
+                            .into_iter()
+                            .map(Into::into)
+                            .collect(),
+                    )),
+                    "Stream" => {
+                        // Handle stream data as Vec<u8>
+                        if let Ok(bytes) = serde_json::from_value::<Vec<u8>>(data.clone()) {
+                            Message::Stream(Arc::new(bytes))
+                        } else {
+                            Message::Stream(Arc::new(vec![]))
                         }
-                        "Object" => Message::Object(Arc::new(data.clone().into())),
-                        "Array" => Message::Array(Arc::new(
-                            data.as_array()
-                                .cloned()
-                                .unwrap_or_default()
-                                .into_iter()
-                                .map(Into::into)
-                                .collect(),
-                        )),
-                        "Stream" => {
-                            // Handle stream data as Vec<u8>
-                            if let Ok(bytes) = serde_json::from_value::<Vec<u8>>(data.clone()) {
-                                Message::Stream(Arc::new(bytes))
-                            } else {
-                                Message::Stream(Arc::new(vec![]))
-                            }
+                    }
+                    "Optional" => {
+                        if data.is_null() {
+                            Message::Optional(None)
+                        } else {
+                            Message::Optional(Some(Arc::new(data.clone().into())))
                         }
-                        "Optional" => {
-                            if data.is_null() {
-                                Message::Optional(None)
-                            } else {
-                                Message::Optional(Some(Arc::new(data.clone().into())))
-                            }
-                        }
-                        "Any" => Message::Any(Arc::new(data.clone().into())),
-                        "Error" => {
-                            Message::Error(Arc::new(data.as_str().unwrap_or_default().to_string()))
-                        }
-                        _ => continue,
-                    };
-                    output_messages.insert(port.clone(), message);
-                }
+                    }
+                    "Any" => Message::Any(Arc::new(data.clone().into())),
+                    "Error" => {
+                        Message::Error(Arc::new(data.as_str().unwrap_or_default().to_string()))
+                    }
+                    _ => continue,
+                };
+                output_messages.insert(port.clone(), message);
             }
         }
 
         // Update state if provided in the result
-        if let Some(new_state) = actor_result.get("state") {
-            if let Some(memory_state) = context
+        if let Some(new_state) = actor_result.get("state")
+            && let Some(memory_state) = context
                 .state
                 .lock()
                 .as_mut_any()
                 .downcast_mut::<reflow_actor::MemoryState>()
-            {
-                // Update state by clearing and inserting new values
-                if let Some(state_obj) = new_state.as_object() {
-                    memory_state.clear();
-                    for (key, value) in state_obj {
-                        memory_state.insert(key, value.clone());
-                    }
+        {
+            // Update state by clearing and inserting new values
+            if let Some(state_obj) = new_state.as_object() {
+                memory_state.clear();
+                for (key, value) in state_obj {
+                    memory_state.insert(key, value.clone());
                 }
             }
         }

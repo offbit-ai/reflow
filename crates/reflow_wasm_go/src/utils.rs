@@ -9,7 +9,7 @@ pub fn build_go_plugin<P: AsRef<Path>>(
     output: P,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let status = Command::new("tinygo")
-        .args(&[
+        .args([
             "build",
             "-o",
             output.as_ref().to_str().unwrap(),

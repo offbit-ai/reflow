@@ -7,11 +7,10 @@ use pyo3::types::*;
 use pyo3::Python;
 use pyo3::{prelude::*, PyNativeType};
 use serde_json::Value as JsonValue;
-use std::io::{self, Write};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{mpsc, oneshot, Mutex};
+use tokio::sync::{mpsc, Mutex};
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -32,6 +31,12 @@ pub struct Interpreter {
     pub stdout_capture: Vec<u8>,
     pub stderr_capture: Vec<u8>,
     pub globals: Option<PyObject>,
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Interpreter {
@@ -79,7 +84,7 @@ impl Messenger {
         }
     }
 
-    fn send_message<'a>(&self, message: &'a PyAny) -> PyResult<bool> {
+    fn send_message(&self, message: &PyAny) -> PyResult<bool> {
         match Uuid::from_str(&self.session_id) {
             Ok(uuid) => {
                 if let Some(sender) = MESSAGE_SENDERS.get(&uuid) {
@@ -214,6 +219,7 @@ pub fn unregister_session(session_id: &Uuid) {
 }
 
 // Helper function to convert Python objects to JSON
+#[allow(clippy::only_used_in_recursion)]
 fn py_to_json(py: Python, obj: &PyAny) -> Result<JsonValue, ServiceError> {
     if obj.is_none() {
         return Ok(JsonValue::Null);
@@ -450,7 +456,7 @@ class _InputParameterList:
                 ServiceError::Python(format!("Failed to get InputParameterList class: {}", e))
             })?;
 
-        let args = PyTuple::new(py, &[py_inputs_list]);
+        let args = PyTuple::new(py, [py_inputs_list]);
         let inputs_obj = input_param_class.call1(args).map_err(|e| {
             ServiceError::Python(format!(
                 "Failed to create InputParameterList instance: {}",
@@ -485,7 +491,7 @@ class _InputParameterList:
         sys.setattr("stderr", stderr_io)?;
 
         // Import JSON for send_json helper
-        let json = py.import("json")?;
+        let _json = py.import("json")?;
 
         // Setup stdout/stderr redirection
         py.run(
@@ -524,7 +530,7 @@ class Context:
         )?;
 
         // First try to evaluate the code as an expression
-        let result = match py.eval(code, Some(globals), None) {
+        match py.eval(code, Some(globals), None) {
             Ok(result) => {
                 // Convert the result to JSON if it's not None
                 if !result.is_none() {
@@ -542,25 +548,23 @@ class Context:
                     }
                 }
             }
-            Err(err) => {
+            Err(_err) => {
                 // If evaluation failed, try running as a statement
                 match py.run(code, Some(globals), None) {
                     Ok(_) => {
                         // Try to get a special return value variable
-                        if let Ok(return_value) = globals.get_item("__return_value") {
-                            if !return_value.is_none() {
-                                match py_to_json(py, return_value.unwrap()) {
-                                    Ok(json_val) => {
-                                        result_value = Some(json_val);
-                                    }
-                                    Err(e) => {
-                                        // Capture the error in stderr
-                                        let err_str = format!("Error: {}\n", e);
-                                        let mut std_err_lock = stderr_capture.try_lock();
-                                        let stderr_capture_lock = std_err_lock.as_mut().unwrap();
-                                        stderr_capture_lock.extend_from_slice(err_str.as_bytes());
-                                        success = false;
-                                    }
+                        if let Ok(Some(return_value)) = globals.get_item("__return_value") {
+                            match py_to_json(py, return_value) {
+                                Ok(json_val) => {
+                                    result_value = Some(json_val);
+                                }
+                                Err(e) => {
+                                    // Capture the error in stderr
+                                    let err_str = format!("Error: {}\n", e);
+                                    let mut std_err_lock = stderr_capture.try_lock();
+                                    let stderr_capture_lock = std_err_lock.as_mut().unwrap();
+                                    stderr_capture_lock.extend_from_slice(err_str.as_bytes());
+                                    success = false;
                                 }
                             }
                         }
@@ -620,7 +624,7 @@ class Context:
         sys.setattr("stdout", orig_stdout)?;
         sys.setattr("stderr", orig_stderr)?;
 
-        Ok(result)
+        Ok(())
     })?;
 
     // Store the final globals back
@@ -633,7 +637,7 @@ class Context:
     // Convert captured output to strings
     let stdout = {
         if let Ok(guard) = &stdout_capture.try_lock() {
-            String::from_utf8_lossy(&guard).to_string()
+            String::from_utf8_lossy(guard).to_string()
         } else {
             String::new()
         }
@@ -641,7 +645,7 @@ class Context:
 
     let stderr = {
         if let Ok(guard) = &stderr_capture.try_lock() {
-            String::from_utf8_lossy(&guard).to_string()
+            String::from_utf8_lossy(guard).to_string()
         } else {
             String::new()
         }
@@ -676,7 +680,7 @@ pub async fn execute_script_with_timeout(
         }
     };
 
-    let session_id = session_id.clone();
+    let session_id = *session_id;
     let code = code.to_string();
     let timeout_duration =
         Duration::from_secs(timeout_seconds.unwrap_or(DEFAULT_EXECUTION_TIMEOUT));
@@ -757,14 +761,17 @@ pub async fn execute_script_with_timeout(
     }
 }
 
+#[allow(dead_code)]
 pub fn create_number(py: Python<'_>, num: f64) -> &'_ PyFloat {
     PyFloat::new(py, num)
 }
 
+#[allow(dead_code)]
 pub fn create_string(py: Python<'_>, val: String) -> &'_ PyString {
     PyString::new(py, &val)
 }
 
+#[allow(dead_code)]
 pub fn create_bool(py: Python<'_>, val: bool) -> &'_ PyBool {
     PyBool::new(py, val)
 }
@@ -773,27 +780,32 @@ pub fn create_list(py: Python<'_>, val: Vec<impl ToPyObject>) -> &'_ PyList {
     PyList::new(py, &val)
 }
 
+#[allow(dead_code)]
 pub fn create_dict(py: Python<'_>) -> &'_ PyDict {
     PyDict::new(py)
 }
 
+#[allow(dead_code)]
 pub fn dict_set_property(py: Python<'_>, dict: &'_ PyDict, key: &str, value: impl ToPyObject) {
     dict.set_item(key, value.to_object(py)).unwrap();
 }
 
-pub fn dict_get_property<'a>(py: Python<'a>, dict: &'a PyDict, key: &'a str) -> Option<&'a PyAny> {
+#[allow(dead_code)]
+pub fn dict_get_property<'a>(_py: Python<'a>, dict: &'a PyDict, key: &'a str) -> Option<&'a PyAny> {
     dict.get_item(key).expect("Failed to get property")
 }
 
+#[allow(dead_code)]
 pub fn create_function<'a>(
     py: Python<'a>,
     name: String,
     func: impl Fn(&PyTuple, Option<&PyDict>) -> PyResult<&'a PyAny> + Send + 'static,
 ) -> PyResult<&'a PyCFunction> {
     let name: &'static str = Box::leak(Box::new(name));
-    PyCFunction::new_closure(py, Some(&name), None, func)
+    PyCFunction::new_closure(py, Some(name), None, func)
 }
 
+#[allow(dead_code)]
 pub fn dict_set_function<'a>(
     py: Python<'a>,
     dict: &'a PyDict,

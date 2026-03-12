@@ -1,10 +1,9 @@
-use std::{collections::HashMap, pin::Pin};
+use std::collections::HashMap;
 
 use crate::{actor::message::Message, network::Network};
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
 #[cfg(target_arch = "wasm32")]
@@ -49,9 +48,8 @@ impl Connector {
 
 impl Connector {
     pub fn init(&self, network: &Network) {
-        use futures::{Stream, StreamExt, task::Poll};
+        use futures::StreamExt;
 
-        use crate::network::FlowStub;
         use crate::network::NetworkEvent;
         let network_event_emitter = network.network_event_emitter.clone();
 
@@ -68,20 +66,24 @@ impl Connector {
         let from_actor = network
             .initialized_actors
             .get(&from_process.id)
-            .expect(&format!(
-                "Expected to find intitialized Actor for id {}",
-                from_process.id
-            ));
+            .unwrap_or_else(|| {
+                panic!(
+                    "Expected to find intitialized Actor for id {}",
+                    from_process.id
+                )
+            });
         let from_actor_load_count = from_actor.load_count();
         let from_actor_id = self.from.actor.clone();
 
         let to_actor = network
             .initialized_actors
             .get(&to_process.id)
-            .expect(&format!(
-                "Expected to find intitialized Actor for id {}",
-                from_process.id
-            ));
+            .unwrap_or_else(|| {
+                panic!(
+                    "Expected to find intitialized Actor for id {}",
+                    from_process.id
+                )
+            });
 
         let to_actor_id = self.to.actor.clone();
 
@@ -95,7 +97,7 @@ impl Connector {
         // Clone tracing integration before moving into async block
         let tracing_integration = network.tracing_integration.clone();
 
-        let mut routine = Box::pin(async move {
+        let routine = Box::pin(async move {
             while let Some(mut outport_packet) = out_ports.1.clone().stream().next().await {
                 let _from_port = _from_port.clone();
                 let to_port = to_port.clone();
@@ -104,7 +106,7 @@ impl Connector {
 
                 let msg = outport_packet
                     .remove(&_from_port)
-                    .unwrap_or_else(|| Message::Optional(None));
+                    .unwrap_or(Message::Optional(None));
 
                 // Emit MessageSent event
                 let value: serde_json::Value = msg.clone().into();
@@ -127,13 +129,12 @@ impl Connector {
                         msg.clone(),
                     )]))
                     .await
-                    .expect(
-                        format!(
+                    .unwrap_or_else(|_| {
+                        panic!(
                             "Expected to send message from Actor '{}' to Actor '{}'",
                             &from_actor_id, &to_actor_id
                         )
-                        .as_str(),
-                    );
+                    });
                 from_actor_load_count.clone().lock().dec();
 
                 // Send tracing event if tracing is enabled
@@ -165,7 +166,7 @@ impl Connector {
 
         // Start a loop to recieve messages from the first and send to second actor
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = tokio::spawn(async move { (&mut routine).await });
+        tokio::spawn(routine);
         // network.thread_pool.lock().unwrap().spawn(routine);
 
         #[cfg(target_arch = "wasm32")]

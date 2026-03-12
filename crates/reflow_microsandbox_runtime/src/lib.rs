@@ -33,6 +33,7 @@ pub struct MicroSandboxRuntime {
 }
 
 /// Represents a loaded actor script
+#[allow(dead_code)]
 struct LoadedActor {
     /// Actor name/ID
     name: String,
@@ -167,7 +168,7 @@ impl MicroSandboxRuntime {
             let actor = actors
                 .get(actor_id)
                 .ok_or_else(|| anyhow::anyhow!("Actor not found: {}", actor_id))?;
-            (actor.source.clone(), actor.runtime.clone())
+            (actor.source.clone(), actor.runtime)
         };
 
         // Prepare the execution context with connection ID for callbacks
@@ -190,9 +191,6 @@ impl MicroSandboxRuntime {
             ScriptRuntime::JavaScript => {
                 self.execute_javascript_actor(&actor_source, context, connection_id)
                     .await?
-            }
-            _ => {
-                return Err(anyhow::anyhow!("Unsupported runtime: {:?}", actor_runtime));
             }
         };
 
@@ -309,8 +307,7 @@ except Exception as e:
     print(json.dumps({{"error": str(e)}}), file=sys.stderr)
     sys.exit(1)
 "#,
-            source,
-            context.to_string()
+            source, context
         );
 
         // Execute in Python sandbox
@@ -456,8 +453,7 @@ const actorContext = new ActorContext(context);
     }}
 }})();
 "#,
-            source,
-            context.to_string()
+            source, context
         );
 
         // Execute in Node sandbox
@@ -580,28 +576,25 @@ const actorContext = new ActorContext(context);
 
         // Handle incoming messages
         while let Some(msg) = ws_receiver.next().await {
-            if let Ok(msg) = msg {
-                if let Message::Text(text) = msg {
-                    debug!("Received message: {}", text);
-                    // Try to parse as RPC request
-                    if let Ok(request) = serde_json::from_str::<RpcRequest>(&text) {
-                        // Handle request
-                        let response = self.handle_rpc_request(request, &connection_id).await;
+            if let Ok(Message::Text(text)) = msg {
+                debug!("Received message: {}", text);
+                // Try to parse as RPC request
+                if let Ok(request) = serde_json::from_str::<RpcRequest>(&text) {
+                    // Handle request
+                    let response = self.handle_rpc_request(request, &connection_id).await;
 
-                        // Send response directly
-                        let response_text = serde_json::to_string(&response).unwrap();
-                        debug!("Sending response: {}", response_text);
-                        if ws_sender.send(Message::text(response_text)).await.is_err() {
-                            break;
-                        }
+                    // Send response directly
+                    let response_text = serde_json::to_string(&response).unwrap();
+                    debug!("Sending response: {}", response_text);
+                    if ws_sender.send(Message::text(response_text)).await.is_err() {
+                        break;
                     }
-                    // Try to parse as RPC notification (for output messages from scripts)
-                    else if let Ok(notification) = serde_json::from_str::<RpcNotification>(&text)
-                    {
-                        if notification.method == "output" {
-                            // For now, just log it - in a full implementation this would forward to other connections
-                            debug!("Received output notification: {:?}", notification);
-                        }
+                }
+                // Try to parse as RPC notification (for output messages from scripts)
+                else if let Ok(notification) = serde_json::from_str::<RpcNotification>(&text) {
+                    if notification.method == "output" {
+                        // For now, just log it - in a full implementation this would forward to other connections
+                        debug!("Received output notification: {:?}", notification);
                     }
                 }
             }

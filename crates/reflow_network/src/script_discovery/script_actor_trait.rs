@@ -1,4 +1,4 @@
-use super::types::{PortDefinition, ScriptActorMetadata, ScriptRuntime};
+use super::types::{PortDefinition, ScriptActorMetadata};
 use anyhow::Result;
 use async_trait::async_trait;
 use reflow_actor::message::Message;
@@ -46,7 +46,7 @@ pub trait ScriptActor: Send + Sync + 'static {
     }
 
     /// Set state (for restoration)
-    async fn set_state(&mut self, state: Value) -> Result<()> {
+    async fn set_state(&mut self, _state: Value) -> Result<()> {
         Ok(())
     }
 }

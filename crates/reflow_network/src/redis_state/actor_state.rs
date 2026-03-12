@@ -5,7 +5,6 @@ use redis::{AsyncCommands, Client};
 use serde_json::Value;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::debug;
 
 /// Redis-backed actor state
 pub struct RedisActorState {
@@ -55,8 +54,7 @@ impl RedisActorState {
 
         match value {
             Some(json_str) => {
-                let parsed =
-                    serde_json::from_str(&json_str).unwrap_or_else(|_| Value::String(json_str));
+                let parsed = serde_json::from_str(&json_str).unwrap_or(Value::String(json_str));
                 Ok(Some(parsed))
             }
             None => Ok(None),
@@ -119,8 +117,7 @@ impl RedisActorState {
 
         match value {
             Some(json_str) => {
-                let parsed =
-                    serde_json::from_str(&json_str).unwrap_or_else(|_| Value::String(json_str));
+                let parsed = serde_json::from_str(&json_str).unwrap_or(Value::String(json_str));
                 Ok(Some(parsed))
             }
             None => Ok(None),

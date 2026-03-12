@@ -10,19 +10,21 @@ pub enum ScriptRuntime {
     JavaScript,
 }
 
+impl std::fmt::Display for ScriptRuntime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ScriptRuntime::Python => write!(f, "python"),
+            ScriptRuntime::JavaScript => write!(f, "javascript"),
+        }
+    }
+}
+
 impl ScriptRuntime {
     pub fn from_extension(ext: &str) -> Option<Self> {
         match ext {
             "py" => Some(ScriptRuntime::Python),
             "js" | "mjs" => Some(ScriptRuntime::JavaScript),
             _ => None,
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        match self {
-            ScriptRuntime::Python => "python".to_string(),
-            ScriptRuntime::JavaScript => "javascript".to_string(),
         }
     }
 }

@@ -1,6 +1,5 @@
 use anyhow::{Result, anyhow};
 use dashmap::DashMap;
-use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -101,12 +100,15 @@ impl DbPoolManager {
             health_check_interval,
         }
     }
+}
 
-    /// Create a new database connection pool manager with default settings
-    pub fn default() -> Self {
+impl Default for DbPoolManager {
+    fn default() -> Self {
         Self::new(Duration::from_secs(60)) // Default health check every 60 seconds
     }
+}
 
+impl DbPoolManager {
     /// Register a new database connection
     pub async fn register_connection<T>(&self, mut connection: T) -> Result<()>
     where
@@ -167,11 +169,11 @@ impl DbPoolManager {
             let connection = item.value().clone();
 
             // Check if it's time to perform a health check
-            if let Some(last_check) = self.health_checks.get(&id) {
-                if last_check.elapsed() < self.health_check_interval {
-                    println!("Skipping health check for database '{}'", id);
-                    continue; // Skip this connection if it was checked recently
-                }
+            if let Some(last_check) = self.health_checks.get(&id)
+                && last_check.elapsed() < self.health_check_interval
+            {
+                println!("Skipping health check for database '{}'", id);
+                continue; // Skip this connection if it was checked recently
             }
 
             // Perform health check

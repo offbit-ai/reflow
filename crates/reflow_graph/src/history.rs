@@ -1,5 +1,4 @@
-use flume::{Receiver, Sender};
-use futures::future::Shared;
+use flume::Receiver;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -16,7 +15,6 @@ use web_sys::IdbDatabase;
 use gloo_utils::format::JsValueSerdeExt;
 
 use crate::{types::*, Graph};
-use std::sync::{Arc, Mutex};
 
 /// Command trait defining the interface for all graph operations
 pub trait Command {
@@ -32,6 +30,7 @@ pub struct CompositeCommand {
     #[cfg(target_arch = "wasm32")]
     pub(crate) commands: Vec<Box<dyn Command>>,
     #[cfg(not(target_arch = "wasm32"))]
+    #[allow(dead_code)]
     description: String,
     #[cfg(target_arch = "wasm32")]
     pub(crate) description: String,
@@ -82,6 +81,7 @@ pub struct GraphHistory {
     #[cfg(target_arch = "wasm32")]
     pub(crate) max_history: Option<usize>,
     #[cfg(not(target_arch = "wasm32"))]
+    #[allow(dead_code)]
     event_receiver: Receiver<GraphEvents>,
     #[cfg(target_arch = "wasm32")]
     pub(crate) event_receiver: Receiver<GraphEvents>,
@@ -1156,6 +1156,7 @@ interface Graph {
 "#;
 
 #[derive(Serialize, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct HistorySnapshot {
     pub(crate) graph_state: GraphExport,
     pub(crate) undo_stack_size: usize,

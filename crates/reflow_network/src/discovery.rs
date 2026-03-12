@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::distributed_network::DistributedConfig;
 use anyhow::Result;
@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 pub struct DiscoveryService {
     config: DistributedConfig,
+    #[allow(dead_code)]
     known_networks: Arc<RwLock<HashMap<String, NetworkInfo>>>,
     registration_client: Option<reqwest::Client>,
 }
@@ -58,7 +59,7 @@ impl DiscoveryService {
         for endpoint in &self.config.discovery_endpoints {
             if let Some(client) = &self.registration_client {
                 let result = client
-                    .post(&format!("{}/register", endpoint))
+                    .post(format!("{}/register", endpoint))
                     .json(&registration)
                     .send()
                     .await;
@@ -78,7 +79,7 @@ impl DiscoveryService {
 
         for endpoint in &self.config.discovery_endpoints {
             if let Some(client) = &self.registration_client {
-                match client.get(&format!("{}/networks", endpoint)).send().await {
+                match client.get(format!("{}/networks", endpoint)).send().await {
                     Ok(response) => {
                         if let Ok(networks) = response.json::<Vec<NetworkInfo>>().await {
                             all_networks.extend(networks);

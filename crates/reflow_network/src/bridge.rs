@@ -167,6 +167,7 @@ pub enum ConnectionType {
 #[derive(Debug, Clone)]
 pub enum ConnectionStatus {
     Connected,
+    #[allow(dead_code)]
     Reconnecting,
     Failed,
 }
@@ -211,6 +212,7 @@ pub struct ActorDiscoveryResponse {
 pub struct ActorInfo {
     pub actor_id: String,
     pub capabilities: Vec<String>,
+    #[allow(dead_code)]
     pub description: Option<String>,
 }
 
@@ -368,26 +370,26 @@ impl NetworkBridge {
         config: &DistributedConfig,
     ) -> Option<NetworkHandshake> {
         // Wait for handshake message
-        if let Some(Ok(WsMessage::Text(text))) = websocket.next().await {
-            if let Ok(handshake) = serde_json::from_str::<NetworkHandshake>(&text) {
-                tracing::info!("Received handshake from network: {}", handshake.network_id);
+        if let Some(Ok(WsMessage::Text(text))) = websocket.next().await
+            && let Ok(handshake) = serde_json::from_str::<NetworkHandshake>(&text)
+        {
+            tracing::info!("Received handshake from network: {}", handshake.network_id);
 
-                // Validate protocol version and auth (simplified for now)
-                let response = HandshakeResponse {
-                    success: true,
-                    network_id: config.network_id.clone(),
-                    instance_id: config.instance_id.clone(),
-                    error: None,
-                };
+            // Validate protocol version and auth (simplified for now)
+            let response = HandshakeResponse {
+                success: true,
+                network_id: config.network_id.clone(),
+                instance_id: config.instance_id.clone(),
+                error: None,
+            };
 
-                if let Ok(response_text) = serde_json::to_string(&response) {
-                    let _ = websocket.send(WsMessage::Text(response_text.into())).await;
-                    tracing::info!(
-                        "Sent handshake response to network: {}",
-                        handshake.network_id
-                    );
-                    return Some(handshake);
-                }
+            if let Ok(response_text) = serde_json::to_string(&response) {
+                let _ = websocket.send(WsMessage::Text(response_text.into())).await;
+                tracing::info!(
+                    "Sent handshake response to network: {}",
+                    handshake.network_id
+                );
+                return Some(handshake);
             }
         }
         None
@@ -426,9 +428,9 @@ impl NetworkBridge {
                         if let Err(e) = router.handle_incoming_message(remote_message).await {
                             tracing::error!("Failed to handle incoming message: {}", e);
                         }
-                    } else if let Ok(heartbeat) = serde_json::from_str::<HeartbeatMessage>(&text) {
+                    } else if let Ok(_heartbeat) = serde_json::from_str::<HeartbeatMessage>(&text) {
                         // Update heartbeat timestamp
-                        if let Some(mut conn) = connections.write().get_mut(&network_id) {
+                        if let Some(conn) = connections.write().get_mut(&network_id) {
                             conn.last_heartbeat = Instant::now();
                         }
                     } else if let Ok(discovery_request) =
@@ -499,7 +501,7 @@ impl NetworkBridge {
                 }
                 Some(Ok(WsMessage::Pong(_))) => {
                     // Update heartbeat on pong
-                    if let Some(mut conn) = connections.write().get_mut(&network_id) {
+                    if let Some(conn) = connections.write().get_mut(&network_id) {
                         conn.last_heartbeat = Instant::now();
                     }
                 }
@@ -586,15 +588,14 @@ impl NetworkBridge {
                         timestamp: chrono::Utc::now(),
                     };
 
-                    if let Ok(heartbeat_text) = serde_json::to_string(&heartbeat) {
-                        if let Err(e) = connection
+                    if let Ok(heartbeat_text) = serde_json::to_string(&heartbeat)
+                        && let Err(e) = connection
                             .websocket
                             .send(WsMessage::Text(heartbeat_text.into()))
                             .await
-                        {
-                            tracing::warn!("Failed to send heartbeat to {}: {}", network_id, e);
-                            networks_to_remove.push(network_id.clone());
-                        }
+                    {
+                        tracing::warn!("Failed to send heartbeat to {}: {}", network_id, e);
+                        networks_to_remove.push(network_id.clone());
                     }
                 }
 
@@ -639,51 +640,47 @@ impl NetworkBridge {
                         .await?;
 
                     // Wait for response
-                    if let Some(Ok(WsMessage::Text(response_text))) = websocket.next().await {
-                        if let Ok(response) =
+                    if let Some(Ok(WsMessage::Text(response_text))) = websocket.next().await
+                        && let Ok(response) =
                             serde_json::from_str::<HandshakeResponse>(&response_text)
-                        {
-                            if response.success {
-                                let connection = RemoteConnection {
-                                    network_id: response.network_id.clone(),
-                                    instance_id: response.instance_id.clone(),
-                                    connection_type: ConnectionType::Client,
-                                    websocket: ConnectionWebSocket::from_client_websocket(
-                                        websocket,
-                                    ),
-                                    last_heartbeat: Instant::now(),
-                                    status: ConnectionStatus::Connected,
-                                };
+                        && response.success
+                    {
+                        let connection = RemoteConnection {
+                            network_id: response.network_id.clone(),
+                            instance_id: response.instance_id.clone(),
+                            connection_type: ConnectionType::Client,
+                            websocket: ConnectionWebSocket::from_client_websocket(websocket),
+                            last_heartbeat: Instant::now(),
+                            status: ConnectionStatus::Connected,
+                        };
 
-                                self.connections
-                                    .write()
-                                    .insert(response.network_id.clone(), connection);
+                        self.connections
+                            .write()
+                            .insert(response.network_id.clone(), connection);
 
-                                // Handle incoming messages
-                                let connections = self.connections.clone();
-                                let router = self.router.clone();
-                                let network_id = response.network_id.clone();
-                                let config = self.config.clone();
-                                let pending_discovery = self.pending_discovery.clone();
+                        // Handle incoming messages
+                        let connections = self.connections.clone();
+                        let router = self.router.clone();
+                        let network_id = response.network_id.clone();
+                        let config = self.config.clone();
+                        let pending_discovery = self.pending_discovery.clone();
 
-                                tokio::spawn(async move {
-                                    Self::handle_incoming_messages(
-                                        network_id,
-                                        connections,
-                                        router,
-                                        config,
-                                        pending_discovery,
-                                    )
-                                    .await;
-                                });
+                        tokio::spawn(async move {
+                            Self::handle_incoming_messages(
+                                network_id,
+                                connections,
+                                router,
+                                config,
+                                pending_discovery,
+                            )
+                            .await;
+                        });
 
-                                tracing::info!(
-                                    "Successfully connected to network: {}",
-                                    response.network_id
-                                );
-                                return Ok(());
-                            }
-                        }
+                        tracing::info!(
+                            "Successfully connected to network: {}",
+                            response.network_id
+                        );
+                        return Ok(());
                     }
                 }
             }
@@ -750,7 +747,8 @@ impl NetworkBridge {
             .insert(request.request_id.clone(), tx);
 
         // Find connection and send request
-        if let Some(connection) = self.connections.read().get(network_id) {
+        let connection = self.connections.read().get(network_id).cloned();
+        if let Some(connection) = connection {
             connection
                 .websocket
                 .send(WsMessage::Text(request_text.into()))
@@ -819,7 +817,7 @@ impl NetworkBridge {
 pub struct TransportLayer;
 
 impl TransportLayer {
-    pub fn new(config: DistributedConfig) -> Self {
+    pub fn new(_config: DistributedConfig) -> Self {
         Self
     }
 }

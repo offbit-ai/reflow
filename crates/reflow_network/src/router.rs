@@ -1,9 +1,8 @@
 use crate::{bridge::RemoteConnection, message::Message, network::Network};
 use anyhow::Result;
-use futures::SinkExt;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, pin::Pin, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Clone)]
 pub struct MessageRouter {
@@ -33,6 +32,12 @@ pub struct RemoteMessage {
     pub target_port: String,
     pub payload: Message,
     pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+impl Default for MessageRouter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MessageRouter {
@@ -121,7 +126,7 @@ impl MessageRouter {
             }
         } else {
             tracing::error!("❌ ROUTER: No connection to network: {}", network_id);
-            return Err(anyhow::anyhow!("No connection to network: {}", network_id));
+            Err(anyhow::anyhow!("No connection to network: {}", network_id))
         }
     }
 

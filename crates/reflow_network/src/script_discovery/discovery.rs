@@ -82,17 +82,15 @@ impl ScriptActorDiscovery {
 
             debug!("Searching for pattern: {}", pattern_str);
 
-            for entry in glob(&pattern_str)? {
-                if let Ok(path) = entry {
-                    if self.should_exclude(&path) {
-                        debug!("Excluding: {}", path.display());
-                        continue;
-                    }
+            for path in glob(&pattern_str)?.flatten() {
+                if self.should_exclude(&path) {
+                    debug!("Excluding: {}", path.display());
+                    continue;
+                }
 
-                    if self.check_depth(&path) {
-                        debug!("Found actor file: {}", path.display());
-                        files.push(path);
-                    }
+                if self.check_depth(&path) {
+                    debug!("Found actor file: {}", path.display());
+                    files.push(path);
                 }
             }
         }
@@ -250,7 +248,7 @@ impl ScriptActorDiscovery {
             let namespace = &actor.workspace_metadata.namespace;
             namespaces
                 .entry(namespace.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(actor.component.clone());
         }
 
@@ -258,7 +256,7 @@ impl ScriptActorDiscovery {
     }
 
     /// Validate discovered actors
-    async fn validate_actors(&self, actors: &mut Vec<DiscoveredScriptActor>) -> Result<()> {
+    async fn validate_actors(&self, actors: &mut [DiscoveredScriptActor]) -> Result<()> {
         for actor in actors.iter_mut() {
             // Validate port definitions
             for port in &actor.inports {

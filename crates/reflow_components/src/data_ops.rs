@@ -9,7 +9,7 @@ use reflow_actor::ActorConfig;
 use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_tracing_protocol::client::TracingIntegration;
 use regex::Regex;
-use rquickjs::{Context as JsContext, Function as JsFunction, Runtime};
+use rquickjs::{Context as JsContext, Runtime};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -141,8 +141,8 @@ fn extract_input_value(expr: &str, inputs: &HashMap<String, Message>) -> Option<
             let rest = &expr[cap.get(0)?.end()..];
             if !rest.is_empty() {
                 // Remove leading .data if present
-                let field_path = if rest.starts_with(".data") {
-                    &rest[5..]
+                let field_path = if let Some(stripped) = rest.strip_prefix(".data") {
+                    stripped
                 } else {
                     rest
                 };
@@ -358,7 +358,7 @@ fn process_group_operation(
                             _ => "undefined".to_string(),
                         };
 
-                        groups.entry(key).or_insert_with(Vec::new).push(item);
+                        groups.entry(key).or_default().push(item);
                     }
 
                     Ok(json!(groups))

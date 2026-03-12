@@ -1,3 +1,6 @@
+#![allow(clippy::result_large_err)]
+#![allow(non_local_definitions)]
+
 mod error;
 mod package_manager;
 mod python_vm;
@@ -5,7 +8,7 @@ mod rpc;
 mod websocket;
 
 use anyhow::Result;
-use std::{net::SocketAddr, os};
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;

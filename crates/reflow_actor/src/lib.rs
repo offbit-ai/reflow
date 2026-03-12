@@ -4,13 +4,11 @@ mod message_test;
 
 pub use reflow_graph::*;
 use reflow_tracing_protocol::client::TracingIntegration;
-use std::{any::Any, collections::HashMap, env, pin::Pin, rc::Rc, sync::Arc};
+use std::{any::Any, collections::HashMap, env, sync::Arc};
 
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use parking_lot::Mutex;
-#[cfg(not(target_arch = "wasm32"))]
-use rayon::ThreadPool;
 use serde_json::Value;
 #[cfg(target_arch = "wasm32")]
 use std::fmt::Debug;
@@ -109,22 +107,21 @@ impl ActorConfig {
         }
 
         // Process environment variable requirements
-        if let Some(metadata) = &node.metadata {
-            if let Some(env_vars) = metadata.get("env_vars") {
-                if let Some(env_vars_obj) = env_vars.as_object() {
-                    for (env_key, requirement) in env_vars_obj {
-                        let requirement_str = requirement.as_str().unwrap_or("required");
+        if let Some(metadata) = &node.metadata
+            && let Some(env_vars) = metadata.get("env_vars")
+            && let Some(env_vars_obj) = env_vars.as_object()
+        {
+            for (env_key, requirement) in env_vars_obj {
+                let requirement_str = requirement.as_str().unwrap_or("required");
 
-                        match Self::resolve_env_var(env_key, requirement_str)? {
-                            Some(value) => {
-                                resolved_env.insert(env_key.clone(), value.clone());
-                                // Also add to config for backwards compatibility
-                                config.insert(env_key.clone(), Value::String(value));
-                            }
-                            None => {
-                                // Optional environment variable not found - that's OK
-                            }
-                        }
+                match Self::resolve_env_var(env_key, requirement_str)? {
+                    Some(value) => {
+                        resolved_env.insert(env_key.clone(), value.clone());
+                        // Also add to config for backwards compatibility
+                        config.insert(env_key.clone(), Value::String(value));
+                    }
+                    None => {
+                        // Optional environment variable not found - that's OK
                     }
                 }
             }
@@ -562,6 +559,9 @@ impl MemoryState {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 // WASM-specific MemoryState using HashMap (Send + Sync safe)
@@ -935,6 +935,7 @@ extern "C" {
 
 }
 
+#[allow(dead_code)]
 trait BrowserActorState: ActorState {
     fn get_object(&self) -> HashMap<String, Value>;
     fn set_object(&mut self, state: HashMap<String, Value>);

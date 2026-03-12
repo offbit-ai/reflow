@@ -1,6 +1,6 @@
 use crate::graph::{
     Graph,
-    types::{GraphConnection, GraphEdge, GraphExport, GraphGroup, GraphNode},
+    types::{GraphConnection, GraphEdge, GraphExport, GraphNode},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -21,6 +21,7 @@ pub type GenerationError = anyhow::Error;
 
 // Graph source management using existing types
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum GraphSource {
     JsonFile(String),         // Path to JSON file
     JsonContent(String),      // JSON string content
@@ -185,6 +186,12 @@ pub struct GraphLoader {
     normalizer: GraphNormalizer,
 }
 
+impl Default for GraphLoader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphLoader {
     pub fn new() -> Self {
         GraphLoader {
@@ -308,6 +315,12 @@ pub struct GraphValidator {
     // Validation rules for GraphExport
 }
 
+impl Default for GraphValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphValidator {
     pub fn new() -> Self {
         GraphValidator {}
@@ -321,7 +334,7 @@ impl GraphValidator {
 
         // Validate processes exist for all connections
         for connection in &graph.connections {
-            if let Some(data) = &connection.data {
+            if let Some(_data) = &connection.data {
                 // This is an IIP (Initial Information Packet)
                 if !graph.processes.contains_key(&connection.to.node_id) {
                     return Err(ValidationError::InvalidConnection(format!(
@@ -347,7 +360,7 @@ impl GraphValidator {
         }
 
         // Validate inports/outports reference valid processes
-        for (_, inport) in &graph.inports {
+        for inport in graph.inports.values() {
             if !graph.processes.contains_key(&inport.node_id) {
                 return Err(ValidationError::InvalidPort(format!(
                     "Inport references non-existent process '{}'",
@@ -356,7 +369,7 @@ impl GraphValidator {
             }
         }
 
-        for (_, outport) in &graph.outports {
+        for outport in graph.outports.values() {
             if !graph.processes.contains_key(&outport.node_id) {
                 return Err(ValidationError::InvalidPort(format!(
                     "Outport references non-existent process '{}'",
@@ -384,6 +397,12 @@ impl GraphValidator {
 #[derive(Serialize, Deserialize)]
 pub struct GraphNormalizer;
 
+impl Default for GraphNormalizer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphNormalizer {
     pub fn new() -> Self {
         GraphNormalizer
@@ -406,7 +425,7 @@ impl GraphNormalizer {
         }
 
         // Normalize process metadata
-        for (_, process) in &mut graph.processes {
+        for process in graph.processes.values_mut() {
             if process.metadata.is_none() {
                 process.metadata = Some(HashMap::new());
             }
@@ -526,10 +545,10 @@ impl GraphNamespaceManager {
 
         // Check for conflicts
         let graph_name = self.extract_graph_name(graph);
-        if let Some(existing) = self.namespace_mappings.get(&graph_name).cloned() {
-            if &existing != &namespace {
-                return self.handle_namespace_conflict(&graph_name, &existing, &namespace);
-            }
+        if let Some(existing) = self.namespace_mappings.get(&graph_name).cloned()
+            && existing != namespace
+        {
+            return self.handle_namespace_conflict(&graph_name, &existing, &namespace);
         }
 
         // Register processes in namespace
@@ -597,10 +616,10 @@ impl GraphNamespaceManager {
         // 3. Graph name with version suffix
         // 4. Generated unique namespace
 
-        if let Some(requested_namespace) = &metadata.namespace {
-            if self.is_namespace_available(requested_namespace) {
-                return Ok(requested_namespace.clone());
-            }
+        if let Some(requested_namespace) = &metadata.namespace
+            && self.is_namespace_available(requested_namespace)
+        {
+            return Ok(requested_namespace.clone());
         }
 
         // Try graph name
@@ -729,10 +748,10 @@ impl GraphNamespaceManager {
         let namespace = parts[0];
         let process_name = parts[1];
 
-        if let Some(process_namespace) = self.process_registry.get(namespace) {
-            if let Some(process_ref) = process_namespace.processes.get(process_name) {
-                return Ok(process_ref);
-            }
+        if let Some(process_namespace) = self.process_registry.get(namespace)
+            && let Some(process_ref) = process_namespace.processes.get(process_name)
+        {
+            return Ok(process_ref);
         }
 
         Err(NamespaceError::ProcessNotFound(path.to_string()))
@@ -782,6 +801,12 @@ pub struct GraphComposer {
     loader: GraphLoader,
     namespace_manager: GraphNamespaceManager,
     dependency_resolver: DependencyResolver,
+}
+
+impl Default for GraphComposer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GraphComposer {
@@ -1006,6 +1031,12 @@ pub struct SharedResource {
 
 // Dependency resolution for graphs
 pub struct DependencyResolver;
+
+impl Default for DependencyResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl DependencyResolver {
     pub fn new() -> Self {

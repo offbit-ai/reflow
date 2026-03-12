@@ -3,12 +3,11 @@ use super::types::*;
 use crate::redis_state::RedisActorState;
 use crate::script_discovery::types::DiscoveredScriptActor;
 use anyhow::Result;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use futures::Future;
 use parking_lot::{Mutex, RwLock};
 use reflow_actor::{
     Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorState, MemoryState, Port,
-    message::{EncodableValue, Message},
+    message::Message,
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -28,6 +27,7 @@ pub struct WebSocketScriptActor {
     /// Channel to receive async outputs from scripts
     output_receiver: Arc<Mutex<Option<flume::Receiver<ScriptOutput>>>>,
     /// Redis state for persistent actor state
+    #[allow(dead_code)]
     redis_state: Option<Arc<RedisActorState>>,
 }
 
@@ -248,14 +248,14 @@ impl Actor for WebSocketScriptActor {
 
                         // Process outputs
                         let mut output_map = HashMap::new();
-                        if let Some(outputs_value) = result.get("outputs") {
-                            if let Some(outputs_obj) = outputs_value.as_object() {
-                                for (port, value) in outputs_obj {
-                                    // Convert JSON back to Message
-                                    // For simplicity, using Message::from(Value)
-                                    let msg = Message::from(value.clone());
-                                    output_map.insert(port.clone(), msg);
-                                }
+                        if let Some(outputs_value) = result.get("outputs")
+                            && let Some(outputs_obj) = outputs_value.as_object()
+                        {
+                            for (port, value) in outputs_obj {
+                                // Convert JSON back to Message
+                                // For simplicity, using Message::from(Value)
+                                let msg = Message::from(value.clone());
+                                output_map.insert(port.clone(), msg);
                             }
                         }
 
@@ -341,11 +341,11 @@ impl Actor for WebSocketScriptActor {
                 match behavior(context).await {
                     Ok(result) => {
                         // Only send if there are results (sync outputs)
-                        if !result.is_empty() {
-                            if let Err(e) = outports.0.send_async(result).await {
-                                error!("Failed to send output: {}", e);
-                                break;
-                            }
+                        if !result.is_empty()
+                            && let Err(e) = outports.0.send_async(result).await
+                        {
+                            error!("Failed to send output: {}", e);
+                            break;
                         }
                     }
                     Err(e) => {

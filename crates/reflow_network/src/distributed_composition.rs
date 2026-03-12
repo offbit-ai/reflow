@@ -10,19 +10,14 @@
 //! - **Execution targets**: Metadata declaring which network should execute a subgraph
 
 use crate::{
-    bridge::NetworkBridge,
     distributed_network::DistributedNetwork,
-    graph::types::{GraphConnection, GraphEdge, GraphExport, GraphNode},
-    multi_graph::{
-        CompositionConnection, CompositionEndpoint, GraphComposer, GraphComposition, GraphLoader,
-        GraphMetadata, GraphSource, NamespaceConflictPolicy,
-    },
+    graph::types::GraphExport,
+    multi_graph::{CompositionConnection, CompositionEndpoint, GraphComposition, GraphSource},
 };
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 /// Configuration for a graph that should be loaded from or executed on a remote network.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -127,7 +122,7 @@ impl DistributedNamespaceResolver {
 
     /// Register a local graph's processes under the distributed namespace.
     pub fn register_local_graph(&mut self, namespace: &str, graph: &GraphExport) {
-        for (process_name, _) in &graph.processes {
+        for process_name in graph.processes.keys() {
             let qualified = format!("{}/{}/{}", self.local_network_id, namespace, process_name);
             self.process_locations.insert(
                 qualified,
@@ -148,7 +143,7 @@ impl DistributedNamespaceResolver {
         namespace: &str,
         graph: &GraphExport,
     ) {
-        for (process_name, _) in &graph.processes {
+        for process_name in graph.processes.keys() {
             let qualified = format!("{}/{}/{}", network_id, namespace, process_name);
             self.process_locations.insert(
                 qualified,

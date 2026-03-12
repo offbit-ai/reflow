@@ -117,7 +117,7 @@ pub async fn conditional_branch_actor(
                 if let Message::Object(obj) = data {
                     let obj_value = serde_json::to_value(obj)?;
                     if let Some(field_value) = obj_value.get(field) {
-                        condition_value.map_or(false, |cv| field_value == cv)
+                        condition_value == Some(field_value)
                     } else {
                         false
                     }
@@ -127,7 +127,7 @@ pub async fn conditional_branch_actor(
             } else {
                 // Direct comparison
                 let data_value = serde_json::to_value(data)?;
-                condition_value.map_or(false, |cv| &data_value == cv)
+                condition_value == Some(&data_value)
             }
         }
         "greater_than" => {
@@ -135,20 +135,20 @@ pub async fn conditional_branch_actor(
             match data {
                 Message::Integer(i) => condition_value
                     .and_then(|v| v.as_i64())
-                    .map_or(false, |cv| *i > cv),
+                    .is_some_and(|cv| *i > cv),
                 Message::Float(f) => condition_value
                     .and_then(|v| v.as_f64())
-                    .map_or(false, |cv| *f > cv),
+                    .is_some_and(|cv| *f > cv),
                 _ => false,
             }
         }
         "less_than" => match data {
             Message::Integer(i) => condition_value
                 .and_then(|v| v.as_i64())
-                .map_or(false, |cv| *i < cv),
+                .is_some_and(|cv| *i < cv),
             Message::Float(f) => condition_value
                 .and_then(|v| v.as_f64())
-                .map_or(false, |cv| *f < cv),
+                .is_some_and(|cv| *f < cv),
             _ => false,
         },
         "contains" => {
@@ -156,13 +156,10 @@ pub async fn conditional_branch_actor(
             match data {
                 Message::String(s) => condition_value
                     .and_then(|v| v.as_str())
-                    .map_or(false, |cv| s.contains(cv)),
-                Message::Array(arr) => condition_value.map_or(false, |cv| {
-                    arr.iter().any(|item| {
-                        serde_json::to_value(item)
-                            .ok()
-                            .map_or(false, |iv| iv == *cv)
-                    })
+                    .is_some_and(|cv| s.contains(cv)),
+                Message::Array(arr) => condition_value.is_some_and(|cv| {
+                    arr.iter()
+                        .any(|item| serde_json::to_value(item).ok().is_some_and(|iv| iv == *cv))
                 }),
                 _ => false,
             }
@@ -218,12 +215,10 @@ fn evaluate_condition(rule: &Value, data: &Message) -> bool {
         } else {
             None
         }
+    } else if let Ok(data_value) = serde_json::to_value(data) {
+        Some(data_value)
     } else {
-        if let Ok(data_value) = serde_json::to_value(data) {
-            Some(data_value)
-        } else {
-            return false;
-        }
+        return false;
     };
 
     let field_value = match field_value {
@@ -232,8 +227,8 @@ fn evaluate_condition(rule: &Value, data: &Message) -> bool {
     };
 
     match operator {
-        "is" => rule_value.map_or(false, |v| &field_value == v),
-        "is_not" => rule_value.map_or(true, |v| &field_value != v),
+        "is" => rule_value == Some(&field_value),
+        "is_not" => rule_value != Some(&field_value),
         "contains" => match (&field_value, rule_value) {
             (Value::String(s), Some(Value::String(needle))) => s.contains(needle.as_str()),
             (Value::Array(arr), Some(val)) => arr.contains(val),
@@ -335,10 +330,10 @@ pub async fn switch_case_actor(context: ActorContext) -> Result<HashMap<String, 
 
     // Match against cases
     let output_port = match switch_value {
-        Some(val) if case1_value.map_or(false, |cv| cv == &val) => "case1",
-        Some(val) if case2_value.map_or(false, |cv| cv == &val) => "case2",
-        Some(val) if case3_value.map_or(false, |cv| cv == &val) => "case3",
-        Some(val) if case4_value.map_or(false, |cv| cv == &val) => "case4",
+        Some(val) if case1_value == Some(&val) => "case1",
+        Some(val) if case2_value == Some(&val) => "case2",
+        Some(val) if case3_value == Some(&val) => "case3",
+        Some(val) if case4_value == Some(&val) => "case4",
         _ => "default",
     };
 
@@ -357,7 +352,7 @@ pub async fn switch_case_actor(context: ActorContext) -> Result<HashMap<String, 
 )]
 pub async fn loop_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let mut result = HashMap::new();
-    let config = context.get_config_hashmap();
+    let _config = context.get_config_hashmap();
     let payload = context.get_payload();
     let state = context.get_state();
 

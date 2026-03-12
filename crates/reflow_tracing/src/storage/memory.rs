@@ -76,42 +76,41 @@ impl MemoryStorage {
 
     fn matches_query(&self, trace: &FlowTrace, query: &TraceQuery) -> bool {
         // Check flow_id filter
-        if let Some(ref flow_id) = query.flow_id {
-            if trace.flow_id != *flow_id {
-                return false;
-            }
+        if let Some(ref flow_id) = query.flow_id
+            && trace.flow_id != *flow_id
+        {
+            return false;
         }
 
         // Check execution_id filter
-        if let Some(ref execution_id) = query.execution_id {
-            if trace.execution_id != *execution_id {
-                return false;
-            }
+        if let Some(ref execution_id) = query.execution_id
+            && trace.execution_id != *execution_id
+        {
+            return false;
         }
 
         // Check time range filter
-        if let Some((start, end)) = query.time_range {
-            if trace.start_time < start || trace.start_time > end {
-                return false;
-            }
+        if let Some((start, end)) = query.time_range
+            && (trace.start_time < start || trace.start_time > end)
+        {
+            return false;
         }
 
         // Check status filter
-        if let Some(ref status) = query.status {
-            if trace.status != *status {
-                return false;
-            }
+        if let Some(ref status) = query.status
+            && trace.status != *status
+        {
+            return false;
         }
 
         // Check actor filter (simple string contains for now)
-        if let Some(ref actor_filter) = query.actor_filter {
-            if !trace
+        if let Some(ref actor_filter) = query.actor_filter
+            && !trace
                 .events
                 .iter()
                 .any(|e| e.actor_id.contains(actor_filter))
-            {
-                return false;
-            }
+        {
+            return false;
         }
 
         true

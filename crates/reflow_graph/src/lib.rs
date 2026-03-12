@@ -9,7 +9,6 @@ use std::collections::{HashMap, HashSet, VecDeque};
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use history::*;
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
@@ -46,6 +45,7 @@ pub struct Graph {
     pub(crate) connection_indices: HashMap<(String, String), Vec<usize>>,
     /// Key is ((from_node, from_port), (to_node, to_port)) -> Vec<connection_indices>
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
+    #[allow(clippy::type_complexity)]
     pub(crate) connection_port_indices: HashMap<((String, String), (String, String)), Vec<usize>>,
     #[cfg(not(target_arch = "wasm32"))]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
@@ -427,7 +427,7 @@ impl Graph {
     /// Connecting nodes
     ///
     /// Nodes can be connected by adding connection between a node's outport
-    ///	and another node's inport:
+    ///    and another node's inport:
     /// ```no_run
     /// myGraph.addConnection("Read", "out", "Display", "in");
     /// myGraph.addConnectionIndex("Read", "out", null, "Display", "in", 2);
@@ -543,7 +543,7 @@ impl Graph {
     /// Disconnected nodes
     ///
     /// Connections between nodes can be removed by providing the
-    ///	nodes and ports to disconnect.
+    ///    nodes and ports to disconnect.
     /// ```
     /// graph.removeConnection("Display", "out", "Foo", "in");
     /// ```
@@ -804,6 +804,7 @@ impl Graph {
     }
 
     // Helper method for event emission
+    #[allow(dead_code)]
     fn emit_event(&self, event: GraphEvents) {
         if let Err(e) = self.event_channel.0.send(event) {
             eprintln!("Failed to emit graph event: {}", e);
@@ -838,7 +839,7 @@ impl Graph {
                 "new": self.properties.clone(),
                 "before": before
             })))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         self
     }
 
@@ -899,7 +900,7 @@ impl Graph {
         self.event_channel
             .0
             .send(GraphEvents::AddNode(json!(node)))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
 
         self
     }
@@ -913,7 +914,7 @@ impl Graph {
         port_id: &str,
         node_id: &str,
         port_key: &str,
-        port_type: PortType,
+        _port_type: PortType,
         metadata: Option<HashMap<String, Value>>,
     ) -> &mut Self {
         // Check that node exists
@@ -941,7 +942,7 @@ impl Graph {
                 "id": port_id,
                 "port": val
             })))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
 
         self
     }
@@ -984,7 +985,7 @@ impl Graph {
                 "id": port_id,
                 "port": val
             }))))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
 
         self
     }
@@ -1006,7 +1007,7 @@ impl Graph {
     /// the `add_graph_initial` or `add_graph_initial_index` methods.
     /// ```no_run
     /// my_graph.add_graph_initial("somefile.txt", "file", None);
-    ///	my_graph.add_graph_initial_index("somefile.txt", "file", Some(2), None);
+    ///    my_graph.add_graph_initial_index("somefile.txt", "file", Some(2), None);
     /// ```
     ///
     pub fn add_initial(
@@ -1051,7 +1052,7 @@ impl Graph {
                 .send(GraphEvents::AddInitial(json!(
                     self.initializers[initializer_idx]
                 )))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1090,14 +1091,14 @@ impl Graph {
 
             self.initializer_indices
                 .entry(node.to_owned())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(initializer_idx);
 
             // Send add_initial event
             self.event_channel
                 .0
                 .send(GraphEvents::AddInitial(json!(self.initializers[index])))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1131,7 +1132,7 @@ impl Graph {
     /// Connecting nodes
     ///
     /// Nodes can be connected by adding connection between a node's outport
-    ///	and another node's inport:
+    ///    and another node's inport:
     /// ```no_run
     /// my_graph.add_connection("Read", "out", "Display", "in", None);
     /// ```
@@ -1199,13 +1200,13 @@ impl Graph {
 
         self.connection_indices
             .entry(connection_key)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(connection_idx);
 
         // Update adjacency list
-        self.adjacency_lists
-            .get_mut(out_node)
-            .map(|list| list.push(in_node.to_owned()));
+        if let Some(list) = self.adjacency_lists.get_mut(out_node) {
+            list.push(in_node.to_owned())
+        }
 
         self.event_channel
             .0
@@ -1222,12 +1223,7 @@ impl Graph {
         nodes: Vec<String>,
         metadata: Option<HashMap<String, Value>>,
     ) -> &mut Self {
-        if self
-            .groups
-            .iter()
-            .find(|group| group.id == group_id)
-            .is_some()
-        {
+        if self.groups.iter().any(|group| group.id == group_id) {
             return self;
         }
         let g = &GraphGroup {
@@ -1241,7 +1237,7 @@ impl Graph {
         self.event_channel
             .0
             .send(GraphEvents::AddGroup(json!(g)))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
 
         self
     }
@@ -1264,7 +1260,7 @@ impl Graph {
                 "id": port_name.clone(),
                 "port": inp.get(&(port_name.clone()))
             })))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
 
         self
     }
@@ -1287,7 +1283,7 @@ impl Graph {
                 "id": port_name.clone(),
                 "port": inp.get(&(port_name.clone()))
             })))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
 
         self
     }
@@ -1314,7 +1310,7 @@ impl Graph {
                 self.event_channel
                     .0
                     .send(GraphEvents::RemoveInitial(json!(iip)))
-                    .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                    .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
             } else {
                 _initializers.push(iip);
             }
@@ -1337,16 +1333,16 @@ impl Graph {
             .clone()
             .iter()
             .filter(|v| {
-                if v.id == group_id.to_owned() {
+                if v.id == group_id {
                     self.event_channel
                         .0
                         .send(GraphEvents::RemoveGroup(json!(v)))
-                        .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                        .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
                     return false;
                 }
-                return true;
+                true
             })
-            .map(|v| v.clone())
+            .cloned()
             .collect();
 
         self
@@ -1355,7 +1351,7 @@ impl Graph {
     pub fn add_to_group(&mut self, group_id: &str, node_id: &str) {
         self.node_groups
             .entry(node_id.to_owned())
-            .or_insert_with(HashSet::new)
+            .or_default()
             .insert(group_id.to_owned());
     }
 
@@ -1427,7 +1423,7 @@ impl Graph {
     /// Disconnected nodes
     ///
     /// Connections between nodes can be removed by providing the
-    ///	nodes and ports to disconnect.
+    ///    nodes and ports to disconnect.
     /// ```no_run
     /// my_graph.remove_connection("Display", "out", "Foo", "in");
     /// ```
@@ -1556,7 +1552,7 @@ impl Graph {
                     "old": old_port_name.clone(),
                     "new": new_port_name.clone()
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1585,7 +1581,7 @@ impl Graph {
                     "old": old_port_name.clone(),
                     "new": new_port_name.clone()
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1596,44 +1592,40 @@ impl Graph {
     /// Nodes IDs can be changed by calling this method.
     pub fn rename_node(&mut self, old_id: &str, new_id: &str) -> &mut Self {
         if let Some(node) = self.get_node_mut(old_id) {
-            (*node).id = new_id.to_owned();
+            node.id = new_id.to_owned();
 
-            let _ = self.connections.iter_mut().for_each(|edge| {
-                if edge.from.node_id == old_id.to_owned() {
-                    (*edge).from.node_id = new_id.to_owned()
+            self.connections.iter_mut().for_each(|edge| {
+                if edge.from.node_id == old_id {
+                    edge.from.node_id = new_id.to_owned()
                 }
-                if edge.to.node_id == old_id.to_owned() {
-                    (*edge).to.node_id = new_id.to_owned()
+                if edge.to.node_id == old_id {
+                    edge.to.node_id = new_id.to_owned()
                 }
             });
 
-            let _ = self.initializers.iter_mut().for_each(|iip| {
-                if iip.to.node_id == old_id.to_owned() {
+            self.initializers.iter_mut().for_each(|iip| {
+                if iip.to.node_id == old_id {
                     iip.to.node_id = new_id.to_owned()
                 }
             });
 
-            let _ = self.inports.clone().keys().for_each(|port| {
+            self.inports.clone().keys().for_each(|port| {
                 if let Some(private) = self.inports.get_mut(port) {
-                    if private.node_id == old_id.to_owned() {
+                    if private.node_id == old_id {
                         private.node_id = new_id.to_owned();
                     }
                 }
             });
-            let _ = self.outports.clone().keys().for_each(|port| {
+            self.outports.clone().keys().for_each(|port| {
                 if let Some(private) = self.outports.get_mut(port) {
-                    if private.node_id == old_id.to_owned() {
+                    if private.node_id == old_id {
                         private.node_id = new_id.to_owned();
                     }
                 }
             });
 
-            let _ = self.groups.iter_mut().for_each(|group| {
-                if let Some(index) = group
-                    .nodes
-                    .iter()
-                    .position(|n| n.to_owned() == old_id.to_owned())
-                {
+            self.groups.iter_mut().for_each(|group| {
+                if let Some(index) = group.nodes.iter().position(|n| *n == old_id) {
                     group.nodes[index] = new_id.to_owned();
                 }
             });
@@ -1644,7 +1636,7 @@ impl Graph {
                     "old": old_id,
                     "new": new_id,
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
         self
     }
@@ -1654,14 +1646,14 @@ impl Graph {
             let before = node.metadata.clone();
 
             if node.metadata.is_none() {
-                (*node).metadata = Some(HashMap::new());
+                node.metadata = Some(HashMap::new());
             }
 
             if metadata.keys().len() == 0 {
-                (*node).metadata = Some(HashMap::new());
+                node.metadata = Some(HashMap::new());
             }
 
-            let _ = metadata.clone().keys().for_each(|item| {
+            metadata.clone().keys().for_each(|item| {
                 let meta = metadata.clone();
                 let val = meta.get(item);
 
@@ -1682,7 +1674,7 @@ impl Graph {
                     "old_metadata": before,
                     "new_metadata": metadata
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1706,7 +1698,7 @@ impl Graph {
 
         let edge = edge.unwrap();
         if edge.metadata.is_none() {
-            (*edge).metadata = Some(HashMap::new());
+            edge.metadata = Some(HashMap::new());
         }
         let before = edge.metadata.clone();
         for item in metadata.clone().keys() {
@@ -1728,7 +1720,7 @@ impl Graph {
                 "old_metadata": before,
                 "new_metadata": metadata
             })))
-            .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+            .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         self
     }
 
@@ -1764,7 +1756,6 @@ impl Graph {
                     self.inports.insert(port_name.clone(), p.clone());
                 } else {
                     // iter.next();
-                    return;
                 }
             });
 
@@ -1776,7 +1767,7 @@ impl Graph {
                         "old_metadata": before,
                         "new_metadata": metadata
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1814,7 +1805,6 @@ impl Graph {
                     self.outports.insert(port_name.clone(), p.clone());
                 } else {
                     // iter.next();
-                    return;
                 }
             });
 
@@ -1826,7 +1816,7 @@ impl Graph {
                         "old_metadata": before,
                         "new_metadata": metadata
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
 
         self
@@ -1838,7 +1828,7 @@ impl Graph {
         metadata: HashMap<String, Value>,
     ) -> &mut Self {
         for (i, group) in self.groups.clone().iter_mut().enumerate() {
-            if group.id != group_id.to_owned() {
+            if group.id != group_id {
                 continue;
             }
             let before = group.metadata.clone();
@@ -1860,7 +1850,7 @@ impl Graph {
                     "old_metadata": before,
                     "new_metadata": metadata
                 })))
-                .expect(format!("{:?}", "Expecetd to emit Graph event").as_str());
+                .unwrap_or_else(|_| panic!("{:?}", "Expecetd to emit Graph event"));
         }
         self
     }
@@ -1877,7 +1867,7 @@ impl Graph {
 
             self.connection_port_indices
                 .entry(key)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(idx);
         }
     }
@@ -1934,9 +1924,9 @@ impl Graph {
             .iter()
             .filter(|(((_from_node, _from_port), (to_node, _to_port)), _)| to_node == node_id)
             .flat_map(|(_, indices)| {
-                indices.iter().filter_map(|&idx| {
+                indices.iter().map(|&idx| {
                     let conn = &self.connections[idx];
-                    Some((&conn.from.node_id[..], &conn.from.port_id[..], conn))
+                    (&conn.from.node_id[..], &conn.from.port_id[..], conn)
                 })
             })
             .collect()
@@ -1949,9 +1939,9 @@ impl Graph {
             .iter()
             .filter(|(((from_node, _from_port), (_to_node, _to_port)), _)| from_node == node_id)
             .flat_map(|(_, indices)| {
-                indices.iter().filter_map(|&idx| {
+                indices.iter().map(|&idx| {
                     let conn = &self.connections[idx];
-                    Some((&conn.to.node_id[..], &conn.to.port_id[..], conn))
+                    (&conn.to.node_id[..], &conn.to.port_id[..], conn)
                 })
             })
             .collect()
@@ -1971,9 +1961,9 @@ impl Graph {
                 to_node == node_id && to_port == &port_id
             })
             .flat_map(|(_, indices)| {
-                indices.iter().filter_map(|&idx| {
+                indices.iter().map(|&idx| {
                     let conn = &self.connections[idx];
-                    Some((&conn.from.node_id[..], &conn.from.port_id[..], conn))
+                    (&conn.from.node_id[..], &conn.from.port_id[..], conn)
                 })
             })
             .collect()
@@ -1993,9 +1983,9 @@ impl Graph {
                 from_node == node_id && from_port == &port_id
             })
             .flat_map(|(_, indices)| {
-                indices.iter().filter_map(|&idx| {
+                indices.iter().map(|&idx| {
                     let conn = &self.connections[idx];
-                    Some((&conn.to.node_id[..], &conn.to.port_id[..], conn))
+                    (&conn.to.node_id[..], &conn.to.port_id[..], conn)
                 })
             })
             .collect()
@@ -2216,7 +2206,7 @@ impl Graph {
                 if v.0 != "name" {
                     return true;
                 }
-                return false;
+                false
             }),
         ));
 
@@ -2240,7 +2230,7 @@ impl Graph {
                     graph.add_initial(
                         data,
                         &conn.to.node_id,
-                        &graph.get_port_name(&&conn.to.port_id),
+                        &graph.get_port_name(&conn.to.port_id),
                         conn.metadata,
                     );
                 }
@@ -2492,7 +2482,7 @@ impl Graph {
         } else {
             // Continue tracing each branch
             for (next_node_id, _, _) in next_nodes {
-                self.trace_flow_recursive(&next_node_id, visited, current_path, paths)?;
+                self.trace_flow_recursive(next_node_id, visited, current_path, paths)?;
             }
         }
 
@@ -2575,7 +2565,8 @@ impl Graph {
         // Get outgoing connections grouped by port
         let mut port_connections: HashMap<String, Vec<&GraphConnection>> = HashMap::new();
 
-        for (target_node, target_port, connection) in self.get_outgoing_connections(current_node) {
+        for (_target_node, _target_port, connection) in self.get_outgoing_connections(current_node)
+        {
             port_connections
                 .entry(connection.from.port_id.clone())
                 .or_default()
@@ -2591,7 +2582,7 @@ impl Graph {
             let mut is_branching = false;
             let mut is_parallel = false;
 
-            for (port_id, connections) in &port_connections {
+            for connections in port_connections.values() {
                 if connections.len() > 1 {
                     // Check if this is a branching or parallel execution
                     if let Some(first_conn) = connections.first() {
@@ -2779,7 +2770,7 @@ impl Graph {
         visited.insert(start_node.to_string());
 
         // Add node to subgraph
-        if let Some(node) = self.get_node(start_node) {
+        if let Some(_node) = self.get_node(start_node) {
             subgraph.nodes.push(start_node.to_string());
 
             // Check if this is an entry point (has no incoming connections)
@@ -2795,7 +2786,7 @@ impl Graph {
             }
 
             // Add and explore incoming connections
-            for (source_node, source_port, connection) in incoming {
+            for (source_node, _source_port, connection) in incoming {
                 // Add connection to subgraph
                 subgraph.internal_connections.push(connection.clone());
 
@@ -2806,7 +2797,7 @@ impl Graph {
             }
 
             // Add and explore outgoing connections
-            for (target_node, target_port, connection) in outgoing {
+            for (target_node, _target_port, connection) in outgoing {
                 // Add connection to subgraph
                 subgraph.internal_connections.push(connection.clone());
 
@@ -2942,7 +2933,7 @@ impl Graph {
             };
 
             // Find nodes whose dependencies are all in previous stages
-            for (node_id, _) in &self.nodes {
+            for node_id in self.nodes.keys() {
                 if assigned.contains(node_id) {
                     continue;
                 }
@@ -3147,7 +3138,7 @@ impl Graph {
             if analysis
                 .longest_cycle
                 .as_ref()
-                .map_or(true, |c| length > c.len())
+                .is_none_or(|c| length > c.len())
             {
                 analysis.longest_cycle = Some(cycle.clone());
             }
@@ -3156,7 +3147,7 @@ impl Graph {
             if analysis
                 .shortest_cycle
                 .as_ref()
-                .map_or(true, |c| length < c.len())
+                .is_none_or(|c| length < c.len())
             {
                 analysis.shortest_cycle = Some(cycle.clone());
             }
@@ -3330,14 +3321,14 @@ impl Graph {
 
         // Check all connections
         for connection in &self.connections {
-            if let Some(mismatch) = self.validate_connection_types(&connection) {
+            if let Some(mismatch) = self.validate_connection_types(connection) {
                 mismatches.push(mismatch);
             }
         }
 
         // Check all initializers
         for initializer in &self.initializers {
-            if let Some(mismatch) = self.validate_initializer_types(&initializer) {
+            if let Some(mismatch) = self.validate_initializer_types(initializer) {
                 mismatches.push(mismatch);
             }
         }
@@ -3566,10 +3557,10 @@ impl Graph {
             if let [from_node, to_node] = window {
                 // Find the connection between these nodes
                 if let Some(connections) = self.get_connections_between(from_node, to_node) {
-                    for (from_port, to_port, connection) in connections {
+                    for (_from_port, _to_port, connection) in connections {
                         let transform = DataTransform {
                             node: to_node.clone(),
-                            operation: self.infer_operation(to_node, &connection),
+                            operation: self.infer_operation(to_node, connection),
                             input_type: self.get_port_type_string(&connection.from.port_type),
                             output_type: self.get_port_type_string(&connection.to.port_type),
                         };
@@ -3590,7 +3581,7 @@ impl Graph {
     ) -> Option<Vec<(String, String, &GraphConnection)>> {
         let mut connections = Vec::new();
 
-        for (target, target_port, connection) in self.get_outgoing_connections(from_node) {
+        for (target, _target_port, connection) in self.get_outgoing_connections(from_node) {
             if target == to_node {
                 connections.push((
                     connection.from.port_id.clone(),
@@ -3608,7 +3599,7 @@ impl Graph {
     }
 
     /// Infers the operation type based on node and connection metadata
-    fn infer_operation(&self, node_id: &str, connection: &GraphConnection) -> String {
+    fn infer_operation(&self, node_id: &str, _connection: &GraphConnection) -> String {
         if let Some(node) = self.nodes.get(node_id) {
             // Check node metadata first
             if let Some(metadata) = &node.metadata {
@@ -3652,7 +3643,7 @@ impl Graph {
             PortType::Any => "any".to_string(),
             // PortType::Generic(name) => format!("generic<{}>", name),
             PortType::Option(inner) => format!("option<{}>", self.get_port_type_string(inner)),
-            PortType::Encoded => format!("encoded"),
+            PortType::Encoded => "encoded".to_string(),
             // PortType::Tuple(types) => format!(
             //     "tuple<{}>",
             //     types
@@ -3666,24 +3657,13 @@ impl Graph {
 
     /// Performs comprehensive analysis of the graph for runtime optimization
     pub fn analyze_for_runtime(&self) -> EnhancedGraphAnalysis {
-        let mut analysis = EnhancedGraphAnalysis::default();
-
-        // Analyze parallelism opportunities
-        analysis.parallelism = self.analyze_parallelism();
-
-        // Estimate execution time based on metadata and graph structure
-        analysis.estimated_execution_time = self.estimate_execution_time();
-
-        // Analyze resource requirements
-        analysis.resource_requirements = self.analyze_resource_requirements();
-
-        // Find optimization opportunities
-        analysis.optimization_suggestions = self.find_optimization_opportunities();
-
-        // Identify performance bottlenecks
-        analysis.performance_bottlenecks = self.detect_bottlenecks();
-
-        analysis
+        EnhancedGraphAnalysis {
+            parallelism: self.analyze_parallelism(),
+            estimated_execution_time: self.estimate_execution_time(),
+            resource_requirements: self.analyze_resource_requirements(),
+            optimization_suggestions: self.find_optimization_opportunities(),
+            performance_bottlenecks: self.detect_bottlenecks(),
+        }
     }
 
     /// Estimates total execution time based on node metadata and graph structure
@@ -3831,7 +3811,7 @@ impl Graph {
                 // Only process if not already assigned to a higher layer
                 if layer_assignments
                     .get(next_node)
-                    .map_or(true, |&l| l < next_layer)
+                    .is_none_or(|&l| l < next_layer)
                 {
                     layer_assignments.insert(next_node.to_string(), next_layer);
                     *layer_counts.entry(next_layer).or_insert(0) += 1;
@@ -3871,11 +3851,9 @@ impl Graph {
                     );
                     positions.insert(node_id.clone(), position);
                     current_x += dimensions.width + 50.0;
-                } else {
-                    if let Some(pos) = positions.get_mut(&node_id) {
-                        pos.x = current_x + horizontal_spacing / 2.0;
-                        current_x += horizontal_spacing;
-                    }
+                } else if let Some(pos) = positions.get_mut(&node_id) {
+                    pos.x = current_x + horizontal_spacing / 2.0;
+                    current_x += horizontal_spacing;
                 }
             }
         }

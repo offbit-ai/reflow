@@ -28,6 +28,7 @@ pub struct FlowVersion {
 
 /// WebSocket protocol messages for tracing communication
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::large_enum_variant)]
 pub enum TracingRequest {
     /// Start a new flow trace
     StartTrace {
@@ -268,6 +269,7 @@ pub enum TraceMessage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::large_enum_variant)]
 pub enum TraceResponse {
     TraceStored { trace_id: TraceId },
     TracesFound { traces: Vec<FlowTrace> },

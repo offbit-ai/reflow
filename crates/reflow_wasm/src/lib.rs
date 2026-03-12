@@ -93,9 +93,9 @@ impl From<serde_json::Value> for Message {
     }
 }
 
-impl Into<serde_json::Value> for Message {
-    fn into(self) -> serde_json::Value {
-        match self {
+impl From<Message> for serde_json::Value {
+    fn from(val: Message) -> Self {
+        match val {
             Message::Flow => serde_json::Value::String("flow".to_string()),
             Message::Event(v) => v,
             Message::Boolean(b) => serde_json::Value::Bool(b),

@@ -3,13 +3,13 @@ use dashmap::DashMap;
 use directories::UserDirs;
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyModule};
+use pyo3::types::PyDict;
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use uuid::Uuid;
 
 // Global store for session-specific virtual environments
@@ -51,6 +51,7 @@ static USE_SHARED_VENV: Lazy<std::sync::Mutex<bool>> =
     Lazy::new(|| std::sync::Mutex::new(std::env::var("USE_SHARED_VENV").is_ok()));
 
 /// Set whether to use the shared environment or not
+#[allow(dead_code)]
 pub fn set_use_shared_environment(use_shared: bool) {
     let mut flag = USE_SHARED_VENV.lock().unwrap();
     *flag = use_shared;
@@ -87,7 +88,7 @@ pub fn initialize_venv(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
         })?;
         // Initialize virtual environment using Python's venv module
         let status = Command::new("python3")
-            .args(&["-m", "venv", venv_path.to_str().unwrap()])
+            .args(["-m", "venv", venv_path.to_str().unwrap()])
             .status()
             .map_err(|e| {
                 ServiceError::Internal(format!("Failed to create virtual environment: {}", e))
@@ -125,7 +126,7 @@ pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
 
         // Initialize virtual environment using Python's venv module
         let status = Command::new("python3")
-            .args(&["-m", "venv", venv_path.to_str().unwrap()])
+            .args(["-m", "venv", venv_path.to_str().unwrap()])
             .status()
             .map_err(|e| {
                 ServiceError::Internal(format!(
@@ -166,14 +167,12 @@ pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
         })?;
 
         let mut python_dir = None;
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let name = entry.file_name();
-                let name_str = name.to_string_lossy();
-                if name_str.starts_with("python") {
-                    python_dir = Some(name);
-                    break;
-                }
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            if name_str.starts_with("python") {
+                python_dir = Some(name);
+                break;
             }
         }
 
@@ -209,33 +208,31 @@ pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
         let initial_count = shared_packages.len();
 
         // Process each entry in the directory
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
+        for entry in entries.flatten() {
+            let path = entry.path();
 
-                // Check if it's a directory and looks like a package
-                if path.is_dir() {
-                    let file_name = path
-                        .file_name()
-                        .and_then(|name| name.to_str())
-                        .unwrap_or("");
+            // Check if it's a directory and looks like a package
+            if path.is_dir() {
+                let file_name = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("");
 
-                    // Skip if it starts with . or _ (hidden or special directories)
-                    if !file_name.starts_with('.') && !file_name.starts_with('_') {
-                        // Check if it's a dist-info directory
-                        if file_name.ends_with(".dist-info") {
-                            if let Some(pkg_name) = file_name.split('-').next() {
-                                if !shared_packages.contains(pkg_name) {
-                                    shared_packages.insert(pkg_name.to_string());
-                                    info!("Found installed package from dist-info: {}", pkg_name);
-                                }
+                // Skip if it starts with . or _ (hidden or special directories)
+                if !file_name.starts_with('.') && !file_name.starts_with('_') {
+                    // Check if it's a dist-info directory
+                    if file_name.ends_with(".dist-info") {
+                        if let Some(pkg_name) = file_name.split('-').next() {
+                            if !shared_packages.contains(pkg_name) {
+                                shared_packages.insert(pkg_name.to_string());
+                                info!("Found installed package from dist-info: {}", pkg_name);
                             }
-                        } else {
-                            // Regular package directory
-                            if !shared_packages.contains(file_name) {
-                                shared_packages.insert(file_name.to_string());
-                                info!("Found installed package: {}", file_name);
-                            }
+                        }
+                    } else {
+                        // Regular package directory
+                        if !shared_packages.contains(file_name) {
+                            shared_packages.insert(file_name.to_string());
+                            info!("Found installed package: {}", file_name);
                         }
                     }
                 }
@@ -262,6 +259,7 @@ pub fn initialize_shared_venv() -> Result<PathBuf, ServiceError> {
     Ok(venv_path)
 }
 
+#[allow(dead_code)]
 pub fn force_rescan_packages() -> Result<(), ServiceError> {
     let mut scanned = PACKAGES_SCANNED.lock().unwrap();
     *scanned = false;
@@ -269,7 +267,8 @@ pub fn force_rescan_packages() -> Result<(), ServiceError> {
 }
 
 /// Determine if a package is already installed in the appropriate environment
-async fn is_package_installed(package: &str, session_id: &Uuid) -> bool {
+#[allow(dead_code)]
+async fn is_package_installed(package: &str, _session_id: &Uuid) -> bool {
     if is_using_shared_environment() {
         let installed = SHARED_INSTALLED_PACKAGES
             .lock()
@@ -361,7 +360,7 @@ pub async fn install_packages(
 
     // Install packages
     let progress_sender_clone = progress_sender.clone();
-    let _session_id = session_id.clone();
+    let _session_id = *session_id;
     // Spawn a blocking task to install packages
     let installation_result = tokio::task::spawn_blocking(move || {
         let packages = packages_to_install.clone();
@@ -369,7 +368,7 @@ pub async fn install_packages(
         let progress_sender = progress_sender_clone.clone();
         let using_shared = is_using_shared_environment();
         let session = _session_id;
-        
+
         Box::pin(async move || {
             // Install each package
             for pkg in &packages {
@@ -378,7 +377,7 @@ pub async fn install_packages(
                 } else {
                     info!("Installing package for session {}: {}", session, pkg);
                 }
-                
+
                 // Send progress update
                 if let Some(sender) = &progress_sender {
                     let _ = sender.lock().await.send(serde_json::to_string(&serde_json::json!({
@@ -388,17 +387,17 @@ pub async fn install_packages(
                         "message": format!("Installing {}", pkg)
                     })).unwrap());
                 }
-                
+
                 let output = Command::new(&pip)
-                    .args(&["install", pkg])
+                    .args(["install", pkg])
                     .output();
-                
+
                 match output {
                     Ok(output) => {
                         if !output.status.success() {
                             let error_msg = String::from_utf8_lossy(&output.stderr).to_string();
                             error!("Failed to install package {}: {}", pkg, error_msg);
-                            
+
                             if let Some(sender) = &progress_sender {
                                 let _ = sender.lock().await.send(serde_json::to_string(&serde_json::json!({
                                     "type": "package_install",
@@ -407,7 +406,7 @@ pub async fn install_packages(
                                     "message": format!("Failed to install {}: {}", pkg, error_msg)
                                 })).unwrap());
                             }
-                            
+
                             return Err(ServiceError::Internal(
                                 format!("Failed to install package {}: {}", pkg, error_msg)
                             ));
@@ -422,7 +421,7 @@ pub async fn install_packages(
                                 installed.insert(pkg.clone());
                                 info!("Package {} installed for session {}", pkg, session);
                             }
-                            
+
                             if let Some(sender) = &progress_sender {
                                 let _ = sender.lock().await.send(serde_json::to_string(&serde_json::json!({
                                     "type": "package_install",
@@ -435,7 +434,7 @@ pub async fn install_packages(
                     },
                     Err(e) => {
                         error!("Error executing pip command: {}", e);
-                        
+
                         if let Some(sender) = &progress_sender {
                             let _ = sender.lock().await.send(serde_json::to_string(&serde_json::json!({
                                 "type": "package_install",
@@ -444,14 +443,14 @@ pub async fn install_packages(
                                 "message": format!("Error installing {}: {}", pkg, e)
                             })).unwrap());
                         }
-                        
+
                         return Err(ServiceError::Internal(
                             format!("Error executing pip command: {}", e)
                         ));
                     }
                 }
             }
-            
+
             Ok(())
         })
     }).await;
@@ -490,6 +489,7 @@ pub async fn install_packages(
 }
 
 /// Get the Python executable path for a session's virtual environment
+#[allow(dead_code)]
 pub async fn get_python_path(session_id: &Uuid) -> Result<PathBuf, ServiceError> {
     let venv_path = if is_using_shared_environment() {
         initialize_shared_venv()?
@@ -518,6 +518,7 @@ pub async fn get_python_path(session_id: &Uuid) -> Result<PathBuf, ServiceError>
 }
 
 /// Clean up a session's virtual environment
+#[allow(dead_code)]
 pub fn cleanup_venv(session_id: &Uuid) -> Result<(), ServiceError> {
     // Don't clean up the shared environment
     if is_using_shared_environment() {
@@ -553,7 +554,7 @@ pub fn setup_venv_for_interpreter<'a>(
     let site_packages = if cfg!(windows) {
         venv_path.join("Lib").join("site-packages")
     } else {
-        let mut path = venv_path.join("lib");
+        let path = venv_path.join("lib");
 
         // Find the Python version directory (e.g., python3.8)
         let entries = std::fs::read_dir(&path).map_err(|e| {
@@ -561,14 +562,12 @@ pub fn setup_venv_for_interpreter<'a>(
         })?;
 
         let mut python_dir = None;
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let name = entry.file_name();
-                let name_str = name.to_string_lossy();
-                if name_str.starts_with("python") {
-                    python_dir = Some(name);
-                    break;
-                }
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            if name_str.starts_with("python") {
+                python_dir = Some(name);
+                break;
             }
         }
 
@@ -609,6 +608,7 @@ if site_packages not in sys.path:
 }
 
 /// Get a list of all packages installed in the shared environment
+#[allow(dead_code)]
 pub async fn list_shared_packages() -> Vec<String> {
     let installed = SHARED_INSTALLED_PACKAGES
         .lock()
@@ -618,6 +618,7 @@ pub async fn list_shared_packages() -> Vec<String> {
 }
 
 /// Check if a package is installed in the shared environment
+#[allow(dead_code)]
 pub async fn is_shared_package_installed(package: &str) -> bool {
     let installed = SHARED_INSTALLED_PACKAGES
         .lock()

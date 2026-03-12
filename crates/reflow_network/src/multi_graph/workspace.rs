@@ -8,18 +8,14 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use glob::glob;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::fs;
 
 use crate::graph::types::{
-    AutoDiscoveredConnection, DependencyResolutionStatus, DiscoveryMethod, GraphExport,
-    InterfaceAnalysis, InterfaceTypeMismatch, MismatchSeverity, ResolvedDependency,
-    WorkspaceFileFormat, WorkspaceGraphExport, WorkspaceMetadata,
+    GraphExport, InterfaceAnalysis, WorkspaceFileFormat, WorkspaceGraphExport, WorkspaceMetadata,
 };
 
-use super::{GraphComposition, GraphLoader, GraphMetadata, GraphSource, LoadError};
+use super::{GraphComposition, GraphLoader, GraphSource};
 
 /// Configuration for workspace discovery
 #[derive(Debug, Clone)]
@@ -259,7 +255,7 @@ impl WorkspaceDiscovery {
     async fn enrich_with_workspace_metadata(
         &self,
         base_graphs: Vec<GraphWithFileInfo>,
-        discovered_files: &[DiscoveredGraphFile],
+        _discovered_files: &[DiscoveredGraphFile],
     ) -> Result<Vec<WorkspaceGraphExport>, DiscoveryError> {
         let mut workspace_graphs = Vec::new();
 
@@ -348,7 +344,7 @@ impl WorkspaceDiscovery {
     async fn build_graph_composition(
         &self,
         workspace_graphs: &[WorkspaceGraphExport],
-        analysis: &WorkspaceAnalysis,
+        _analysis: &WorkspaceAnalysis,
     ) -> Result<GraphComposition, DiscoveryError> {
         let mut sources = Vec::new();
 
@@ -484,11 +480,7 @@ impl WorkspaceDiscovery {
             .and_then(|s| s.to_str())
             .ok_or_else(|| DiscoveryError::InvalidFileName(path.to_path_buf()))?;
 
-        let name = if filename.ends_with(".graph") {
-            &filename[..filename.len() - 6]
-        } else {
-            filename
-        };
+        let name = filename.strip_suffix(".graph").unwrap_or(filename);
 
         Ok(name.to_string())
     }
@@ -563,16 +555,16 @@ impl DependencyAnalyzer {
             }
 
             // Analyze dependencies from properties
-            if let Some(deps_value) = workspace_graph.graph.properties.get("dependencies") {
-                if let Some(deps_array) = deps_value.as_array() {
-                    for dep_value in deps_array {
-                        if let Some(dep_name) = dep_value.as_str() {
-                            dependencies.push(DependencyInfo {
-                                dependent: graph_name.clone(),
-                                dependency: dep_name.to_string(),
-                                dependency_type: DependencyType::Explicit,
-                            });
-                        }
+            if let Some(deps_value) = workspace_graph.graph.properties.get("dependencies")
+                && let Some(deps_array) = deps_value.as_array()
+            {
+                for dep_value in deps_array {
+                    if let Some(dep_name) = dep_value.as_str() {
+                        dependencies.push(DependencyInfo {
+                            dependent: graph_name.clone(),
+                            dependency: dep_name.to_string(),
+                            dependency_type: DependencyType::Explicit,
+                        });
                     }
                 }
             }
@@ -604,7 +596,7 @@ impl InterfaceAnalyzer {
             let namespace = &workspace_graph.workspace_metadata.discovered_namespace;
 
             // Analyze provided interfaces
-            for (interface_name, interface_def) in &workspace_graph.graph.provided_interfaces {
+            for interface_def in workspace_graph.graph.provided_interfaces.values() {
                 exposed_interfaces.push(InterfaceInfo {
                     namespace: namespace.clone(),
                     graph_name: graph_name.clone(),
@@ -615,7 +607,7 @@ impl InterfaceAnalyzer {
             }
 
             // Analyze required interfaces
-            for (interface_name, interface_def) in &workspace_graph.graph.required_interfaces {
+            for interface_def in workspace_graph.graph.required_interfaces.values() {
                 required_interfaces.push(InterfaceInfo {
                     namespace: namespace.clone(),
                     graph_name: graph_name.clone(),
@@ -710,12 +702,15 @@ impl AutoConnector {
 
     fn are_compatible_types(&self, type1: &str, type2: &str) -> bool {
         // Simple type compatibility rules
-        match (type1.to_lowercase().as_str(), type2.to_lowercase().as_str()) {
-            ("string", "text") | ("text", "string") => true,
-            ("int", "integer") | ("integer", "int") => true,
-            ("float", "number") | ("number", "float") => true,
-            _ => false,
-        }
+        matches!(
+            (type1.to_lowercase().as_str(), type2.to_lowercase().as_str()),
+            ("string", "text")
+                | ("text", "string")
+                | ("int", "integer")
+                | ("integer", "int")
+                | ("float", "number")
+                | ("number", "float")
+        )
     }
 }
 

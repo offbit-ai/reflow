@@ -1,8 +1,9 @@
+#![allow(unexpected_cfgs)]
 use anyhow::Result;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use reflow_actor::{
-    Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorPayload, ActorState,
-    MemoryState, Port, message::Message,
+    Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorState, MemoryState, Port,
+    message::Message,
 };
 use reflow_tracing_protocol::client::TracingIntegration;
 use serde::{Deserialize, Serialize};
@@ -163,7 +164,7 @@ impl Actor for ScriptActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
-        tracing_integration: Option<TracingIntegration>,
+        _tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();

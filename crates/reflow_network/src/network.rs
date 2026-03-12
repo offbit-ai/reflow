@@ -7,11 +7,7 @@ use futures::TryFutureExt;
 use futures::future::lazy;
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
-#[cfg(not(target_arch = "wasm32"))]
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use reflow_actor::ActorContext;
-#[cfg(not(target_arch = "wasm32"))]
-use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 #[cfg(not(target_arch = "wasm32"))]
@@ -25,10 +21,7 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::*;
 
 // use rusty_pool::ThreadPool;
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::rc::Rc;
-use std::time::Duration;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsValue;
 #[cfg(target_arch = "wasm32")]
@@ -37,17 +30,16 @@ use wasm_bindgen_futures::spawn_local;
 #[cfg(target_arch = "wasm32")]
 use crate::actor::ExternActor;
 
-use crate::actor::{Actor, ActorConfig, ActorState, MemoryState, Port};
+use crate::actor::{Actor, ActorConfig, MemoryState};
 
 #[cfg(target_arch = "wasm32")]
 use crate::actor::ActorChannel;
 use crate::graph::Graph;
-use crate::graph::types::{GraphConnection, GraphEdge, GraphEvents, GraphIIP, GraphNode};
-use crate::message::{CompressionConfig, EncodableValue, EncodedMessage, Message, MessageError};
+use crate::graph::types::{GraphConnection, GraphEvents, GraphIIP, GraphNode};
+use crate::message::{CompressionConfig, EncodableValue, EncodedMessage, Message};
 use crate::tracing::{TracingClient, TracingConfig, TracingIntegration};
 
 use crate::connector::{ConnectionPoint, Connector, InitialPacket};
-use serde_json::json;
 use std::sync::{Arc, Mutex};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -59,6 +51,7 @@ pub struct NetworkConfig {
     pub tracing: TracingConfig,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
@@ -149,6 +142,7 @@ pub struct FlowStub {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 #[derive(Clone)]
 pub struct Network {
+    #[allow(dead_code)]
     config: NetworkConfig,
     pub(crate) actors: HashMap<String, Arc<dyn Actor>>,
     pub(crate) initialized_actors: HashMap<String, Arc<dyn Actor>>,
@@ -430,10 +424,9 @@ impl Network {
         // Warm up all processes
         {
             for (id, node) in self.nodes.clone() {
-                let actor = self.actors.get(&node.component).expect(&format!(
-                    "Expected to find actor {} for node {}",
-                    node.component, id
-                ));
+                let actor = self.actors.get(&node.component).unwrap_or_else(|| {
+                    panic!("Expected to find actor {} for node {}", node.component, id)
+                });
                 let config = ActorConfig::from_node(node.clone())?;
                 #[cfg(not(target_arch = "wasm32"))]
                 {
@@ -469,9 +462,9 @@ impl Network {
                     let tracing_integration = self.tracing_integration.clone();
                     let id = id.clone();
                     // Trace actor creation
-                    let _ = tokio::runtime::Handle::current().spawn(async move {
+                    tokio::runtime::Handle::current().spawn(async move {
                         if let Some(ref tracing) = tracing_integration {
-                            let _ = tracing.trace_actor_created(&id);
+                            let _ = tracing.trace_actor_created(&id).await;
                         }
                     });
                 }
@@ -522,7 +515,7 @@ impl Network {
     pub(crate) fn init_process(
         actor_process: std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>,
     ) -> JoinHandle<()> {
-        return tokio::spawn(async move { actor_process.await });
+        tokio::spawn(actor_process)
     }
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn init_process(
@@ -583,11 +576,11 @@ impl Network {
                 .0
                 .clone()
                 .send(HashMap::from_iter([(port.to_owned(), data)]))
-                .expect(format!("Expected initial packet to Actor '{}'", id).as_str());
+                .unwrap_or_else(|_| panic!("Expected initial packet to Actor '{}'", id));
 
             return Ok(());
         }
-        return Err(anyhow::Error::msg("Actor not found"));
+        Err(anyhow::Error::msg("Actor not found"))
     }
 
     pub fn send_to_actor_encoded(
@@ -622,11 +615,11 @@ impl Network {
                     port.to_owned(),
                     Message::encoded(data.0),
                 )]))
-                .expect(format!("Expected initial packet to Actor '{}'", id).as_str());
+                .unwrap_or_else(|_| panic!("Expected initial packet to Actor '{}'", id));
 
             return Ok(());
         }
-        return Err(anyhow::Error::msg("Actor not found"));
+        Err(anyhow::Error::msg("Actor not found"))
     }
 
     pub fn register_actor(&mut self, name: &str, actor: impl Actor) -> Result<(), anyhow::Error> {
@@ -747,7 +740,7 @@ impl Network {
                                     from: ConnectionPoint {
                                         actor: edge.from.node_id,
                                         port: edge.from.port_name,
-                                        initial_data: edge.data.map(|d| Message::from(d)),
+                                        initial_data: edge.data.map(Message::from),
                                     },
                                     to: ConnectionPoint {
                                         actor: edge.to.node_id,
@@ -796,13 +789,13 @@ impl Network {
         // Bind graph events to network
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let _ = tokio::spawn(event_worker);
+            tokio::spawn(event_worker);
         }
 
         #[cfg(target_arch = "wasm32")]
         spawn_local(event_worker);
 
-        return network;
+        network
     }
 
     /// Shutdown the network and finalize pending tasks
@@ -817,12 +810,12 @@ impl Network {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let tracing_integration = self.tracing_integration.clone();
-            let _ = tokio::runtime::Handle::current().spawn(async move {
+            tokio::runtime::Handle::current().spawn(async move {
                 // Shutdown tracing first to flush any pending events
-                if let Some(ref tracing) = tracing_integration {
-                    if let Err(e) = tracing.client().shutdown().await {
-                        tracing::warn!("Failed to shutdown tracing client: {}", e);
-                    }
+                if let Some(ref tracing) = tracing_integration
+                    && let Err(e) = tracing.client().shutdown().await
+                {
+                    tracing::warn!("Failed to shutdown tracing client: {}", e);
                 }
             });
         }

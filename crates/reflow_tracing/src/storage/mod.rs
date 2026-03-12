@@ -5,8 +5,10 @@ use crate::config::StorageConfig;
 use reflow_tracing_protocol::{FlowTrace, TraceId, TraceQuery};
 
 pub mod memory;
+#[allow(dead_code)]
 pub mod sqlite;
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait TraceStorage: Send + Sync {
     async fn store_trace(&self, trace: FlowTrace) -> Result<TraceId>;
@@ -17,6 +19,7 @@ pub trait TraceStorage: Send + Sync {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct StorageStats {
     pub total_traces: usize,
     pub total_events: usize,

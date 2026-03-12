@@ -184,19 +184,12 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
 
         if !has_incoming {
             // Create initial packet if the node has property values
-            if let Some(property_values) = &zeal_node.property_values {
-                if !property_values.is_empty() {
-                    // Find an input port
-                    if let Some(input_port) =
-                        zeal_node.ports.iter().find(|p| p.port_type == "input")
-                    {
-                        graph.add_initial(
-                            json!(property_values),
-                            &zeal_node.id,
-                            &input_port.id,
-                            None,
-                        );
-                    }
+            if let Some(property_values) = &zeal_node.property_values
+                && !property_values.is_empty()
+            {
+                // Find an input port
+                if let Some(input_port) = zeal_node.ports.iter().find(|p| p.port_type == "input") {
+                    graph.add_initial(json!(property_values), &zeal_node.id, &input_port.id, None);
                 }
             }
         }

@@ -5,9 +5,9 @@ use std::time::Instant;
 use anyhow::{Result, anyhow};
 use axum::{
     Router,
-    extract::{Path, State, WebSocketUpgrade, ws},
+    extract::{State, WebSocketUpgrade, ws},
     http::StatusCode,
-    response::{IntoResponse, Json, Response},
+    response::{IntoResponse, Json},
     routing::{get, post},
 };
 use dashmap::DashMap;
@@ -17,7 +17,6 @@ use reflow_network::api_kit::{
 };
 use reflow_network::graph::{Graph, types::GraphExport};
 use reflow_network::network::{Network, NetworkConfig};
-use reqwest;
 use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
 
@@ -28,7 +27,6 @@ mod zeal_converter;
 use zeal_converter::{ZealWorkflow, convert_zeal_to_graph_export};
 
 // Import reflow_components for Zeal actor registry
-use reflow_components;
 
 // ============================================================================
 // WORKFLOW EXECUTION TYPES
@@ -193,6 +191,12 @@ pub struct AppState {
     executions: Arc<DashMap<String, ExecutionState>>,
 }
 
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AppState {
     pub fn new() -> Self {
         Self {
@@ -341,13 +345,13 @@ impl AppState {
         let _ = event_sender.send(workflow_event.clone());
 
         // Send trace event if tracing is enabled
-        if request.metadata.enable_tracing.unwrap_or(false) {
-            if let Some(trace_url) = &request.metadata.trace_webhook_url {
-                Self::send_trace_event(trace_url, &workflow_event).await;
-            }
+        if request.metadata.enable_tracing.unwrap_or(false)
+            && let Some(trace_url) = &request.metadata.trace_webhook_url
+        {
+            Self::send_trace_event(trace_url, &workflow_event).await;
         }
 
-        let start_time = Instant::now();
+        let _start_time = Instant::now();
         let mut success = false;
         let mut final_result = serde_json::Value::Null;
         let mut errors = Vec::new();
@@ -404,10 +408,10 @@ impl AppState {
             let _ = event_sender.send(completion_event.clone());
 
             // Send trace event for completion
-            if request.metadata.enable_tracing.unwrap_or(false) {
-                if let Some(trace_url) = &request.metadata.trace_webhook_url {
-                    Self::send_trace_event(trace_url, &completion_event).await;
-                }
+            if request.metadata.enable_tracing.unwrap_or(false)
+                && let Some(trace_url) = &request.metadata.trace_webhook_url
+            {
+                Self::send_trace_event(trace_url, &completion_event).await;
             }
         }
 
@@ -476,7 +480,7 @@ impl AppState {
         // Find terminal nodes (nodes without outbound connections)
         let mut terminal_nodes = Vec::new();
 
-        for (node_id, _node) in &graph.nodes {
+        for node_id in graph.nodes.keys() {
             let has_outputs = graph
                 .connections
                 .iter()
@@ -629,17 +633,17 @@ impl AppState {
         let template_mappings = reflow_components::get_template_mapping();
         for (template_id, actor_name) in template_mappings {
             // Register by template ID
-            if let Some(actor) = reflow_components::get_actor_for_template(&template_id) {
-                if let Err(_e) = network.register_actor_arc(&template_id, actor) {
-                    // Silently ignore registration errors for actors that might not be needed
-                }
+            if let Some(actor) = reflow_components::get_actor_for_template(&template_id)
+                && let Err(_e) = network.register_actor_arc(&template_id, actor)
+            {
+                // Silently ignore registration errors for actors that might not be needed
             }
 
             // Also register by actor name
-            if let Some(actor) = reflow_components::get_actor_for_template(&template_id) {
-                if let Err(_e) = network.register_actor_arc(&actor_name, actor) {
-                    // Silently ignore registration errors for duplicate names
-                }
+            if let Some(actor) = reflow_components::get_actor_for_template(&template_id)
+                && let Err(_e) = network.register_actor_arc(&actor_name, actor)
+            {
+                // Silently ignore registration errors for duplicate names
             }
         }
 
@@ -1024,37 +1028,24 @@ async fn handle_ws_message(
 
                                         // Task 1: Stream network events
                                         let events_task = tokio::spawn(async move {
-                                            loop {
-                                                // Try to receive network events
-                                                match event_receiver.recv_async().await {
-                                                    Ok(network_event) => {
-                                                        let event = serde_json::json!({
-                                                            "type": "network_event",
-                                                            "execution_id": &exec_id_events,
-                                                            "event": network_event,
-                                                            "timestamp": chrono::Utc::now().timestamp_millis(),
-                                                        });
+                                            while let Ok(network_event) =
+                                                event_receiver.recv_async().await
+                                            {
+                                                let event = serde_json::json!({
+                                                    "type": "network_event",
+                                                    "execution_id": &exec_id_events,
+                                                    "event": network_event,
+                                                    "timestamp": chrono::Utc::now().timestamp_millis(),
+                                                });
 
-                                                        if let Ok(msg) =
-                                                            serde_json::to_string(&event)
-                                                        {
-                                                            if tx_clone_events
-                                                                .send(msg)
-                                                                .await
-                                                                .is_err()
-                                                            {
-                                                                debug!(
-                                                                    "Client disconnected from workflow events {}",
-                                                                    exec_id_events
-                                                                );
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                    Err(_) => {
-                                                        // Channel closed or error
-                                                        break;
-                                                    }
+                                                if let Ok(msg) = serde_json::to_string(&event)
+                                                    && tx_clone_events.send(msg).await.is_err()
+                                                {
+                                                    debug!(
+                                                        "Client disconnected from workflow events {}",
+                                                        exec_id_events
+                                                    );
+                                                    break;
                                                 }
                                             }
                                         });
@@ -1193,14 +1184,14 @@ async fn handle_ws_message(
                                                 "data": event.data,
                                             });
 
-                                            if let Ok(msg) = serde_json::to_string(&ws_event) {
-                                                if tx_clone.send(msg).await.is_err() {
-                                                    warn!(
-                                                        "Failed to send workflow event to WebSocket for execution: {}",
-                                                        exec_id
-                                                    );
-                                                    break;
-                                                }
+                                            if let Ok(msg) = serde_json::to_string(&ws_event)
+                                                && tx_clone.send(msg).await.is_err()
+                                            {
+                                                warn!(
+                                                    "Failed to send workflow event to WebSocket for execution: {}",
+                                                    exec_id
+                                                );
+                                                break;
                                             }
 
                                             // Check if workflow is complete

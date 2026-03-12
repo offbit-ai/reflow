@@ -3,14 +3,12 @@ use bitcode::{Decode, Encode};
 #[cfg(target_arch = "wasm32")]
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
-use ordered_float::OrderedFloat;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_json::json;
 use std::collections::HashMap;
-use std::hash::Hash;
-use std::io::{self, Read, Write};
+use std::io::Read;
 use std::sync::Arc;
 #[cfg(target_arch = "wasm32")]
 use tsify::*;
@@ -190,23 +188,23 @@ impl<'de> Deserialize<'de> for CompressionConfig {
             .map(|l| l as u32)
             .unwrap_or(6); // Default compression level
         let mut type_strategies = HashMap::new();
-        if let Some(strategies) = value.get("type_strategies") {
-            if let Some(map) = strategies.as_object() {
-                for (type_name, strategy) in map {
-                    let strategy = match strategy.as_str() {
-                        Some("Never") => CompressionStrategy::Never,
-                        Some("Always") => CompressionStrategy::Always,
-                        Some("SizeThreshold") => CompressionStrategy::SizeThreshold,
-                        Some("Adaptive") => CompressionStrategy::Adaptive,
-                        _ => {
-                            return Err(serde::de::Error::custom(format!(
-                                "Invalid compression strategy: {}",
-                                strategy
-                            )));
-                        }
-                    };
-                    type_strategies.insert(type_name.to_string(), strategy);
-                }
+        if let Some(strategies) = value.get("type_strategies")
+            && let Some(map) = strategies.as_object()
+        {
+            for (type_name, strategy) in map {
+                let strategy = match strategy.as_str() {
+                    Some("Never") => CompressionStrategy::Never,
+                    Some("Always") => CompressionStrategy::Always,
+                    Some("SizeThreshold") => CompressionStrategy::SizeThreshold,
+                    Some("Adaptive") => CompressionStrategy::Adaptive,
+                    _ => {
+                        return Err(serde::de::Error::custom(format!(
+                            "Invalid compression strategy: {}",
+                            strategy
+                        )));
+                    }
+                };
+                type_strategies.insert(type_name.to_string(), strategy);
             }
         }
 
@@ -432,11 +430,7 @@ impl Message {
     pub fn encode(&self) -> Result<Vec<u8>, MessageError> {
         let encoded = bitcode::encode(self);
 
-        if encoded.len() < COMPRESSION_THRESHOLD {
-            Ok(encoded)
-        } else {
-            Ok(encoded) // For now returning uncompressed, will add compression in next implementation
-        }
+        Ok(encoded)
     }
 
     /// Decode message
@@ -460,7 +454,7 @@ impl Message {
             Message::Integer(_) => PortType::Integer,
             Message::Float(_) => PortType::Float,
             Message::String(_) => PortType::String,
-            Message::Object(v) => {
+            Message::Object(_v) => {
                 // Expensive operation
                 // let value: Value = v.as_ref().clone().into();
                 // if let Some(type_name) = value.get("type").and_then(|t| t.as_str()) {
@@ -470,9 +464,9 @@ impl Message {
                 // }
                 PortType::Object("Dynamic".to_string())
             }
-            Message::Array(arr) => PortType::Array(Box::new(PortType::Any)),
+            Message::Array(_arr) => PortType::Array(Box::new(PortType::Any)),
             Message::Stream(_) => PortType::Stream,
-            Message::Optional(opt) => PortType::Option(Box::new(PortType::Any)),
+            Message::Optional(_opt) => PortType::Option(Box::new(PortType::Any)),
             Message::Any(_) => PortType::Any,
             Message::Error(_) => PortType::String,
             Message::Encoded(..) => PortType::Encoded,
@@ -491,15 +485,12 @@ impl Message {
             (Message::Integer(_), PortType::Float) => Ok(()),
 
             // Array type validation
-            (Message::Array(arr), PortType::Array(elem_type)) => {
+            (Message::Array(arr), PortType::Array(_elem_type)) => {
                 arr.iter().try_for_each(|_elem| Ok(()))
             }
 
             // Optional type validation
-            (Message::Optional(opt), PortType::Option(inner_type)) => match opt {
-                Some(inner) => Ok(()),
-                None => Ok(()),
-            },
+            (Message::Optional(_opt), PortType::Option(_inner_type)) => Ok(()),
 
             // Tuple type validation
             // (Message::Tuple(items), PortType::Tuple(types)) => {
@@ -761,7 +752,7 @@ impl Message {
             // Try normal decompression first
             match flate2::read::GzDecoder::new(bytes).read_to_end(decoded) {
                 Ok(_) => {
-                    bitcode::decode(&decoded).map_err(|e| MessageError::Decoding(e.to_string()))
+                    bitcode::decode(decoded).map_err(|e| MessageError::Decoding(e.to_string()))
                 }
                 Err(_) => {
                     // If decompression fails, try decoding as uncompressed
@@ -847,9 +838,9 @@ impl From<Value> for Message {
     }
 }
 
-impl Into<Value> for Message {
-    fn into(self) -> Value {
-        match self {
+impl From<Message> for Value {
+    fn from(val: Message) -> Self {
+        match val {
             Message::Flow => Value::String("flow".to_string()),
             Message::Event(v) => v.into(),
             Message::Boolean(b) => Value::Bool(b),
@@ -1006,6 +997,7 @@ impl EncodableValue {
         bitcode::decode(&self.data).ok()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn len(&self) -> usize {
         self.data.len()
     }
@@ -1067,6 +1059,6 @@ impl Message {
     }
 
     pub fn optional(msg: Option<EncodableValue>) -> Self {
-        Message::Optional(msg.map(|d| Arc::new(d)))
+        Message::Optional(msg.map(Arc::new))
     }
 }

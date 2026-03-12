@@ -13,9 +13,7 @@ use reflow_network::{
         GraphNormalizer, GraphSource, GraphValidator, NamespaceConflictPolicy,
     },
 };
-use serde_json::Value as JsonValue;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 // ===== GraphLoader =====
@@ -523,29 +521,29 @@ impl NodeWorkspace {
 // ===== Export functions =====
 
 pub fn create_graph_loader(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraphLoader::new)?)
+    JsFunction::new(&mut cx, NodeGraphLoader::new)
 }
 
 pub fn create_graph_validator(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraphValidator::new)?)
+    JsFunction::new(&mut cx, NodeGraphValidator::new)
 }
 
 pub fn create_graph_normalizer(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraphNormalizer::new)?)
+    JsFunction::new(&mut cx, NodeGraphNormalizer::new)
 }
 
 pub fn create_graph_metadata(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraphMetadata::new)?)
+    JsFunction::new(&mut cx, NodeGraphMetadata::new)
 }
 
 pub fn create_graph_composer(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeGraphComposer::new)?)
+    JsFunction::new(&mut cx, NodeGraphComposer::new)
 }
 
 pub fn create_namespace_manager(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeNamespaceManager::new)?)
+    JsFunction::new(&mut cx, NodeNamespaceManager::new)
 }
 
 pub fn create_workspace(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NodeWorkspace::new)?)
+    JsFunction::new(&mut cx, NodeWorkspace::new)
 }

@@ -1,10 +1,8 @@
 use super::types::*;
 use crate::actor::Actor;
-use crate::redis_state::RedisActorState;
 use crate::websocket_rpc::{WebSocketRpcClient, WebSocketScriptActor};
 use anyhow::Result;
 use async_trait::async_trait;
-use parking_lot::RwLock;
 use std::sync::Arc;
 
 /// Factory for creating script actor instances
@@ -73,6 +71,7 @@ impl ActorFactory for ScriptActorFactory {
 /// Python-specific actor factory
 pub struct PythonActorFactory {
     base_factory: ScriptActorFactory,
+    #[allow(dead_code)]
     python_path: Option<String>,
 }
 
@@ -100,6 +99,7 @@ impl ActorFactory for PythonActorFactory {
 /// JavaScript-specific actor factory
 pub struct JavaScriptActorFactory {
     base_factory: ScriptActorFactory,
+    #[allow(dead_code)]
     node_path: Option<String>,
 }
 

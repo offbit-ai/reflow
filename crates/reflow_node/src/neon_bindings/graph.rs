@@ -6,8 +6,6 @@
 use crate::neon_bindings::utils::*;
 use neon::prelude::*;
 use parking_lot::RwLock as ParkingRwLock;
-use reflow_network::graph;
-use reflow_network::graph::history::{Command, CompositeCommand, GraphHistory};
 use reflow_network::{graph::types::*, graph::Graph};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -265,9 +263,7 @@ impl NodeGraph {
         let props = this.inner.read().get_properties();
         let props_json = JsonValue::Object(props.into_iter().collect());
 
-        let v = json_value_to_js(&mut cx, &props_json);
-
-        v
+        json_value_to_js(&mut cx, &props_json)
     }
 
     fn export(mut cx: FunctionContext) -> JsResult<JsValue> {
@@ -536,7 +532,7 @@ impl NodeGraph {
 
 /// Create Graph constructor function with all methods
 pub fn create_graph(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    let constructor = JsFunction::new(&mut cx, |cx| NodeGraph::js_new(cx))?;
+    let constructor = JsFunction::new(&mut cx, NodeGraph::js_new)?;
 
     // Add static methods
     let load_fn = JsFunction::new(&mut cx, NodeGraph::import)?;

@@ -158,12 +158,10 @@ fn evaluate_rule(rule: &Value, data: &Message) -> bool {
         } else {
             None
         }
+    } else if let Ok(data_value) = serde_json::to_value(data) {
+        Some(data_value)
     } else {
-        if let Ok(data_value) = serde_json::to_value(data) {
-            Some(data_value)
-        } else {
-            return false;
-        }
+        return false;
     };
 
     let field_value = match field_value {
@@ -172,8 +170,8 @@ fn evaluate_rule(rule: &Value, data: &Message) -> bool {
     };
 
     match operator {
-        "is" => rule_value.map_or(false, |v| &field_value == v),
-        "is_not" => rule_value.map_or(true, |v| &field_value != v),
+        "is" => rule_value == Some(&field_value),
+        "is_not" => rule_value != Some(&field_value),
         "contains" => match (&field_value, rule_value) {
             (Value::String(s), Some(Value::String(needle))) => s.contains(needle.as_str()),
             (Value::Array(arr), Some(val)) => arr.contains(val),

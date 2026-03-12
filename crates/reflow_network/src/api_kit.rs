@@ -480,6 +480,7 @@ impl ApiToolGenerator {
             .collect())
     }
 
+    #[allow(dead_code)]
     fn generate_openai_function(
         &self,
         service_id: &str,
@@ -818,6 +819,7 @@ impl ApiToolGenerator {
         }))
     }
 
+    #[allow(dead_code)]
     fn generate_mcp_tool(
         &self,
         service_id: &str,
@@ -872,6 +874,7 @@ pub struct ApiOperationActor {
 }
 
 impl ApiOperationActor {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: String,
         service_id: String,
@@ -961,11 +964,11 @@ impl ApiOperationActor {
         // Replace path parameters
         if let Some(parameters) = &self.operation.parameters {
             for param in parameters {
-                if param.location == "path" {
-                    if let Some(value) = context.payload.get(&param.name) {
-                        let string_value = self.message_to_string(value)?;
-                        endpoint = endpoint.replace(&format!("{{{}}}", param.name), &string_value);
-                    }
+                if param.location == "path"
+                    && let Some(value) = context.payload.get(&param.name)
+                {
+                    let string_value = self.message_to_string(value)?;
+                    endpoint = endpoint.replace(&format!("{{{}}}", param.name), &string_value);
                 }
             }
         }
@@ -1032,11 +1035,11 @@ impl ApiOperationActor {
 
         if let Some(parameters) = &self.operation.parameters {
             for param in parameters {
-                if param.location == "query" {
-                    if let Some(value) = context.payload.get(&param.name) {
-                        let string_value = self.message_to_string(value)?;
-                        params.push((param.name.clone(), string_value));
-                    }
+                if param.location == "query"
+                    && let Some(value) = context.payload.get(&param.name)
+                {
+                    let string_value = self.message_to_string(value)?;
+                    params.push((param.name.clone(), string_value));
                 }
             }
         }
@@ -1050,11 +1053,11 @@ impl ApiOperationActor {
 
         if let Some(parameters) = &self.operation.parameters {
             for param in parameters {
-                if param.location == "body" {
-                    if let Some(value) = context.payload.get(&param.name) {
-                        body.insert(param.name.clone(), value.clone().into());
-                        has_body_params = true;
-                    }
+                if param.location == "body"
+                    && let Some(value) = context.payload.get(&param.name)
+                {
+                    body.insert(param.name.clone(), value.clone().into());
+                    has_body_params = true;
                 }
             }
         }
@@ -1173,7 +1176,7 @@ impl Actor for ApiOperationActor {
     fn create_process(
         &self,
         config: ActorConfig,
-        tracing_integration: Option<TracingIntegration>,
+        _tracing_integration: Option<TracingIntegration>,
     ) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();
@@ -1241,6 +1244,7 @@ pub struct DefaultAuthManager {
 struct TokenInfo {
     token: String,
     expires_at: Option<std::time::SystemTime>,
+    #[allow(dead_code)]
     refresh_token: Option<String>,
 }
 
@@ -1400,9 +1404,7 @@ impl RateLimiter for DefaultRateLimiter {
 
                 // Scope for mutex lock
                 let mut timestamps = self.request_timestamps.lock().unwrap();
-                let service_timestamps = timestamps
-                    .entry(service_id.to_string())
-                    .or_insert_with(Vec::new);
+                let service_timestamps = timestamps.entry(service_id.to_string()).or_default();
 
                 // Clean old timestamps
                 service_timestamps.retain(|&timestamp| timestamp > one_minute_ago);
@@ -1435,28 +1437,24 @@ impl RateLimiter for DefaultRateLimiter {
 
     async fn record_request(&self, service_id: &str, _operation: &str) {
         let mut timestamps = self.request_timestamps.lock().unwrap();
-        let service_timestamps = timestamps
-            .entry(service_id.to_string())
-            .or_insert_with(Vec::new);
+        let service_timestamps = timestamps.entry(service_id.to_string()).or_default();
         service_timestamps.push(std::time::Instant::now());
     }
 
     async fn get_remaining(&self, service_id: &str) -> Option<u32> {
         if let Some(limit) = self.service_limits.get(service_id) {
             let timestamps = self.request_timestamps.lock().unwrap();
-            if let Some(service_timestamps) = timestamps.get(service_id) {
-                if let Some(requests_per_minute) = limit.requests_per_minute {
-                    let now = std::time::Instant::now();
-                    let one_minute_ago = now - std::time::Duration::from_secs(60);
-                    let recent_requests = service_timestamps
-                        .iter()
-                        .filter(|&&timestamp| timestamp > one_minute_ago)
-                        .count();
+            if let Some(service_timestamps) = timestamps.get(service_id)
+                && let Some(requests_per_minute) = limit.requests_per_minute
+            {
+                let now = std::time::Instant::now();
+                let one_minute_ago = now - std::time::Duration::from_secs(60);
+                let recent_requests = service_timestamps
+                    .iter()
+                    .filter(|&&timestamp| timestamp > one_minute_ago)
+                    .count();
 
-                    return Some(
-                        (requests_per_minute as usize).saturating_sub(recent_requests) as u32,
-                    );
-                }
+                return Some((requests_per_minute as usize).saturating_sub(recent_requests) as u32);
             }
         }
         None

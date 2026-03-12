@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::collections::HashSet;
 #[cfg(target_arch = "wasm32")]
@@ -102,7 +102,8 @@ impl TryFrom<JsValue> for PortType {
 
 // TypeScript type generation
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(typescript_custom_section))]
-const TS_PORT_TYPE_DEF: &'static str = r#"
+#[allow(dead_code)]
+const TS_PORT_TYPE_DEF: &str = r#"
 export type PortType =
   | { type: "flow" }
   | { type: "event" }
@@ -378,39 +379,39 @@ pub struct GraphExport {
 }
 
 pub fn default_properties() -> HashMap<String, Value> {
-    return HashMap::from_iter([("name".to_string(), json!("My Graph"))]);
+    HashMap::from_iter([("name".to_string(), json!("My Graph"))])
 }
 
 pub fn default_processes() -> HashMap<String, GraphNode> {
-    return HashMap::new();
+    HashMap::new()
 }
 
 pub fn default_port() -> HashMap<String, GraphEdge> {
-    return HashMap::new();
+    HashMap::new()
 }
 
 pub fn default_groups() -> Vec<GraphGroup> {
-    return Vec::new();
+    Vec::new()
 }
 
 pub fn default_connections() -> Vec<GraphConnection> {
-    return Vec::new();
+    Vec::new()
 }
 
 pub fn default_graph_dependencies() -> Vec<GraphDependency> {
-    return Vec::new();
+    Vec::new()
 }
 
 pub fn default_external_connections() -> Vec<ExternalConnection> {
-    return Vec::new();
+    Vec::new()
 }
 
 pub fn default_provided_interfaces() -> HashMap<String, InterfaceDefinition> {
-    return HashMap::new();
+    HashMap::new()
 }
 
 pub fn default_required_interfaces() -> HashMap<String, InterfaceDefinition> {
-    return HashMap::new();
+    HashMap::new()
 }
 
 type EventValue = Value;
@@ -619,6 +620,7 @@ pub enum DiscoveryMethod {
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub struct InterfaceAnalysis {
     /// Number of provided interfaces
     pub provided_count: usize,
@@ -736,19 +738,6 @@ impl Default for WorkspaceMetadata {
             resolved_dependencies: Vec::new(),
             auto_connections: Vec::new(),
             interface_analysis: InterfaceAnalysis::default(),
-        }
-    }
-}
-
-impl Default for InterfaceAnalysis {
-    fn default() -> Self {
-        InterfaceAnalysis {
-            provided_count: 0,
-            required_count: 0,
-            compatibility_scores: HashMap::new(),
-            type_mismatches: Vec::new(),
-            unused_provided: Vec::new(),
-            unsatisfied_required: Vec::new(),
         }
     }
 }

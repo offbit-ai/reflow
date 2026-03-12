@@ -18,6 +18,7 @@ use crate::db_manager::{ConnectionStatus, get_db_pool_manager};
 /// Database actor for executing queries and commands
 pub struct DatabaseActor {
     /// Actor ID
+    #[allow(dead_code)]
     id: String,
     /// Database connection ID
     connection_id: String,
@@ -33,12 +34,14 @@ impl DatabaseActor {
     }
 
     /// Convert a Message to a JSON Value
+    #[allow(dead_code)]
     fn message_to_value(message: &Message) -> Result<Value> {
         serde_json::to_value(message)
             .map_err(|e| anyhow!("Could not convert message to JSON: {}", e))
     }
 
     /// Convert a JSON Value to a Message
+    #[allow(dead_code)]
     fn value_to_message(value: &Value) -> Message {
         value.clone().into()
     }
@@ -210,7 +213,7 @@ impl Actor for DatabaseActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
-        tracing_integration: Option<TracingIntegration>,
+        _tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         let inports = self.get_inports();
         let behavior = self.get_behavior();

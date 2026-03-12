@@ -1,6 +1,5 @@
 use anyhow::Result;
 use futures::{SinkExt, StreamExt};
-use serde_json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
@@ -23,6 +22,7 @@ pub struct SubscriptionManager {
 
 #[derive(Debug, Clone)]
 pub struct Subscription {
+    #[allow(dead_code)]
     pub id: String,
     pub filters: SubscriptionFilters,
     pub sender:
@@ -153,23 +153,23 @@ impl SubscriptionManager {
         notification: &EventNotification,
     ) -> bool {
         // Check flow_ids filter
-        if let Some(flow_ids) = &filters.flow_ids {
+        if let Some(_flow_ids) = &filters.flow_ids {
             // For now, we don't have flow_id in the event itself, so we skip this filter
             // In a real implementation, you'd need to resolve the trace_id to get the flow_id
         }
 
         // Check actor_ids filter
-        if let Some(actor_ids) = &filters.actor_ids {
-            if !actor_ids.contains(&notification.event.actor_id) {
-                return false;
-            }
+        if let Some(actor_ids) = &filters.actor_ids
+            && !actor_ids.contains(&notification.event.actor_id)
+        {
+            return false;
         }
 
         // Check event_types filter
-        if let Some(event_types) = &filters.event_types {
-            if !event_types.contains(&notification.event.event_type) {
-                return false;
-            }
+        if let Some(event_types) = &filters.event_types
+            && !event_types.contains(&notification.event.event_type)
+        {
+            return false;
         }
 
         // Check status_filter (would need trace status, skipping for now)
@@ -298,7 +298,10 @@ impl TraceServer {
         client_id: String,
     ) -> Result<TracingResponse> {
         match request {
-            TracingRequest::StartTrace { flow_id, version } => {
+            TracingRequest::StartTrace {
+                flow_id,
+                version: _,
+            } => {
                 let trace_id = TraceId::new();
                 // For now, just return the trace ID. In a real implementation,
                 // you'd create a new FlowTrace and store it
@@ -456,9 +459,9 @@ impl TraceServer {
                     }),
                 }
             }
-            TraceMessage::Subscribe { filter } => {
+            TraceMessage::Subscribe { filter: _ } => {
                 // Legacy subscription support - redirect to new subscription manager
-                let filters = SubscriptionFilters {
+                let _filters = SubscriptionFilters {
                     flow_ids: None,
                     actor_ids: None,
                     event_types: None,

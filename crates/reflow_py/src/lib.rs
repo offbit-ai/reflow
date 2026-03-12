@@ -8,7 +8,6 @@ use pyexec_service::{
 use remote_py::ClientConfig;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, mpsc};
-use tokio_tungstenite::tungstenite::http::status;
 use tracing::{error, info};
 
 mod remote_py;
@@ -68,7 +67,7 @@ impl PythonRuntime {
             while let Some(message) = progress_reciever.recv().await {
                 let value = serde_json::from_str::<serde_json::Value>(&message)?;
                 if let Some(status) = value.get("status") {
-                    if status.to_string() == "complete" {
+                    if *status == "complete" {
                         break;
                     }
                     info!(
@@ -117,7 +116,7 @@ impl PythonRuntime {
             let options = remote_py::ExecutionOptions {
                 packages: self.requirements.clone(),
                 inputs: Some(input_params),
-                timeout: timeout_duration.map(|d| d.as_secs() as u64),
+                timeout: timeout_duration.map(|d| d.as_secs()),
             };
 
             // Create message callback if message_rx is provided
@@ -165,7 +164,7 @@ impl PythonRuntime {
                     while let Some(progress) = progress_receiver.recv().await {
                         let progress_message = serde_json::to_value(progress)
                             .expect("Failed to parse progress message");
-                        let _ = sender.send(progress_message.clone()).unwrap();
+                        sender.send(progress_message.clone()).unwrap();
                     }
                 });
             }
@@ -185,27 +184,27 @@ impl PythonRuntime {
 
             // Install required packages if specified
             let mut installed_packages = Vec::new();
-            if let Some(reqs) = &self.requirements {
-                if !reqs.is_empty() {
-                    // Initialize the virtual environment and install packages
-                    match package_manager::install_packages(
-                        &session_id,
-                        reqs,
-                        Some(Arc::new(Mutex::new(progress_sender))),
-                    )
-                    .await
-                    {
-                        Ok(_) => {
-                            installed_packages = reqs.clone();
-                            info!("Successfully installed packages: {:?}", installed_packages);
-                        }
-                        Err(e) => {
-                            error!("Failed to install packages: {}", e);
-                            return Err(ServiceError::Internal(format!(
-                                "Failed to install packages: {}",
-                                e
-                            )));
-                        }
+            if let Some(reqs) = &self.requirements
+                && !reqs.is_empty()
+            {
+                // Initialize the virtual environment and install packages
+                match package_manager::install_packages(
+                    &session_id,
+                    reqs,
+                    Some(Arc::new(Mutex::new(progress_sender))),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        installed_packages = reqs.clone();
+                        info!("Successfully installed packages: {:?}", installed_packages);
+                    }
+                    Err(e) => {
+                        error!("Failed to install packages: {}", e);
+                        return Err(ServiceError::Internal(format!(
+                            "Failed to install packages: {}",
+                            e
+                        )));
                     }
                 }
             }
@@ -262,7 +261,7 @@ impl PythonRuntime {
             .iter()
             .for_each(|v| {
                 let session_id = v.key();
-                let _ = package_manager::cleanup_venv(session_id).expect("Failed to cleanup venv");
+                package_manager::cleanup_venv(session_id).expect("Failed to cleanup venv");
             });
         pyexec_service::python_vm::INTERPRETERS.clear();
         pyexec_service::python_vm::MESSAGE_SENDERS.clear();

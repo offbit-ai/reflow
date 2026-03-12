@@ -1,12 +1,11 @@
 use anyhow::{Result, anyhow};
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use reflow_actor::message::Message;
 use serde_json::Value;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
-use tokio_postgres::types::ToSql;
 
 use crate::db_pool::{ConnectionStatus, DatabaseConnection};
 
@@ -87,6 +86,7 @@ impl PostgresConnection {
 
     /// Convert a Rust value to a PostgreSQL parameter
     #[cfg(feature = "postgres")]
+    #[allow(dead_code)]
     fn value_to_param(value: &Value) -> Result<Box<dyn tokio_postgres::types::ToSql + Sync>> {
         match value {
             Value::Null => Ok(Box::new(Option::<String>::None)),

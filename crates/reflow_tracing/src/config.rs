@@ -148,10 +148,10 @@ impl Config {
             config.storage.backend = backend;
         }
 
-        if let Ok(db_path) = env::var("REFLOW_TRACING_SQLITE_PATH") {
-            if let Some(ref mut sqlite) = config.storage.sqlite {
-                sqlite.database_path = db_path;
-            }
+        if let Ok(db_path) = env::var("REFLOW_TRACING_SQLITE_PATH")
+            && let Some(ref mut sqlite) = config.storage.sqlite
+        {
+            sqlite.database_path = db_path;
         }
 
         if let Ok(pg_url) = env::var("REFLOW_TRACING_POSTGRES_URL") {

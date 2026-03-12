@@ -8,7 +8,7 @@ use std::time::Instant;
 use crate::db_pool::{ConnectionStatus, DatabaseConnection};
 
 #[cfg(feature = "sqlite")]
-use sqlx::{Row, SqliteConnection, SqlitePool};
+use sqlx::{Column, Row, SqlitePool, TypeInfo};
 
 /// SQLite database connection using SQLx
 pub struct SQLiteConnection {
@@ -79,7 +79,10 @@ impl SQLiteConnection {
                     Err(_) => Value::Null,
                 },
                 "BLOB" => match row.try_get::<Option<Vec<u8>>, _>(column_name) {
-                    Ok(Some(b)) => Value::String(base64::encode(b)),
+                    Ok(Some(b)) => {
+                        use base64::Engine;
+                        Value::String(base64::engine::general_purpose::STANDARD.encode(b))
+                    }
                     Ok(None) => Value::Null,
                     Err(_) => Value::Null,
                 },
@@ -144,9 +147,11 @@ impl DatabaseConnection for SQLiteConnection {
     async fn is_healthy(&self) -> bool {
         #[cfg(feature = "sqlite")]
         {
-            let pool_guard = self.pool.read();
-            if let Some(pool) = pool_guard.as_ref() {
-                // Execute a simple query to check if the connection is healthy
+            let pool = {
+                let pool_guard = self.pool.read();
+                pool_guard.clone()
+            };
+            if let Some(pool) = pool.as_ref() {
                 match sqlx::query("SELECT 1").fetch_one(pool).await {
                     Ok(_) => return true,
                     Err(e) => {
@@ -226,8 +231,11 @@ impl DatabaseConnection for SQLiteConnection {
 
         #[cfg(feature = "sqlite")]
         {
-            let pool_guard = self.pool.read();
-            let pool = pool_guard
+            let pool_option = {
+                let pool_guard = self.pool.read();
+                pool_guard.clone()
+            };
+            let pool = pool_option
                 .as_ref()
                 .ok_or_else(|| anyhow!("SQLite pool not initialized"))?;
 
@@ -278,8 +286,11 @@ impl DatabaseConnection for SQLiteConnection {
 
         #[cfg(feature = "sqlite")]
         {
-            let pool_guard = self.pool.read();
-            let pool = pool_guard
+            let pool_option = {
+                let pool_guard = self.pool.read();
+                pool_guard.clone()
+            };
+            let pool = pool_option
                 .as_ref()
                 .ok_or_else(|| anyhow!("SQLite pool not initialized"))?;
 
@@ -329,8 +340,11 @@ impl DatabaseConnection for SQLiteConnection {
     async fn close(&mut self) -> Result<()> {
         #[cfg(feature = "sqlite")]
         {
-            let mut pool = self.pool.write();
-            if let Some(p) = pool.take() {
+            let taken_pool = {
+                let mut pool = self.pool.write();
+                pool.take()
+            };
+            if let Some(p) = taken_pool {
                 p.close().await;
             }
         }

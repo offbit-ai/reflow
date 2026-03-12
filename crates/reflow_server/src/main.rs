@@ -10,10 +10,11 @@ async fn main() -> Result<()> {
 
     // Simple argument parsing for --port
     for i in 0..args.len() {
-        if args[i] == "--port" && i + 1 < args.len() {
-            if let Ok(p) = args[i + 1].parse::<u16>() {
-                port = p;
-            }
+        if args[i] == "--port"
+            && i + 1 < args.len()
+            && let Ok(p) = args[i + 1].parse::<u16>()
+        {
+            port = p;
         }
     }
 

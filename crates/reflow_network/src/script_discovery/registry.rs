@@ -33,6 +33,12 @@ pub struct ComponentRegistry {
     component_index: HashMap<String, ComponentType>,
 }
 
+impl Default for ComponentRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ComponentRegistry {
     pub fn new() -> Self {
         Self {
@@ -48,7 +54,7 @@ impl ComponentRegistry {
         name: &str,
         metadata: DiscoveredScriptActor,
     ) -> Result<()> {
-        let runtime = metadata.runtime.clone();
+        let runtime = metadata.runtime;
 
         // Create appropriate factory based on runtime
         let factory: Arc<dyn ActorFactory> = match runtime {
@@ -174,6 +180,12 @@ pub struct ActorRegistry {
     namespace_index: Arc<RwLock<HashMap<String, Vec<String>>>>,
 }
 
+impl Default for ActorRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ActorRegistry {
     pub fn new() -> Self {
         Self {
@@ -208,13 +220,13 @@ impl ActorRegistry {
         self.component_index
             .write()
             .entry(component_name.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(namespace.clone());
 
         self.namespace_index
             .write()
             .entry(namespace)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(component_name.clone());
 
         debug!("Registered actor: {}", component_name);

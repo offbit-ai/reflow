@@ -6,9 +6,9 @@ use serde_json::Value;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{mpsc, oneshot, Mutex};
+use tokio::sync::{mpsc, Mutex};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 use uuid::Uuid;
 
 pub async fn accept_connections(listener: TcpListener) -> Result<(), ServiceError> {
@@ -33,7 +33,7 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
     let (msg_sender, mut msg_receiver) = mpsc::unbounded_channel::<String>();
 
     // Initialize a Python interpreter for this session and register the message sender
-    let interpreter = python_vm::register_session(session_id);
+    let _interpreter = python_vm::register_session(session_id);
     python_vm::register_message_sender(session_id, msg_sender);
 
     match accept_async(stream).await {
@@ -45,7 +45,7 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
             // Handle messages from Python to client
             let ws_sender_arc = Arc::new(Mutex::new(ws_sender));
             let ws_sender_clone = ws_sender_arc.clone();
-            let session_id_clone = session_id.clone();
+            let session_id_clone = session_id;
 
             // Spawn a task to handle messages from Python to client
             let python_to_client = tokio::spawn(async move {
@@ -66,7 +66,7 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
                 }
             });
 
-            let session_id_clone = session_id.clone();
+            let session_id_clone = session_id;
             // Handle incoming WebSocket messages from client
             while let Some(msg) = ws_receiver.next().await {
                 match msg {
@@ -120,7 +120,7 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
                                 error!("Error parsing RPC request: {:?}", e);
 
                                 // Try to parse just the ID for a proper error response
-                                let id = match serde_json::from_str::<Value>(&text) {
+                                let _id = match serde_json::from_str::<Value>(&text) {
                                     Ok(Value::Object(map)) => map
                                         .get("id")
                                         .and_then(|id| id.as_str().map(|s| s.to_string()))

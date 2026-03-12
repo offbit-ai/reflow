@@ -1,17 +1,18 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, VecDeque};
+#[cfg(feature = "storage")]
 use std::sync::Arc;
+#[cfg(feature = "storage")]
 use tokio::sync::{RwLock, Semaphore};
-use tokio::time::{Duration, Instant};
+#[cfg(feature = "storage")]
+use tokio::time::Duration;
+use tokio::time::Instant;
 
 use super::{StorageStats, TraceStorage};
 use crate::config::SqliteConfig;
-use reflow_tracing_protocol::{
-    ExecutionStatus, FlowId, FlowTrace, FlowVersion, TraceEvent, TraceId, TraceQuery,
-};
+use reflow_tracing_protocol::{ExecutionStatus, FlowTrace, TraceEvent, TraceId, TraceQuery};
 
 #[derive(Debug, thiserror::Error)]
 pub enum TraceStorageError {
@@ -78,7 +79,7 @@ impl From<SqliteConfig> for SqliteStorageConfig {
             write_buffer_size: 1000,
             flush_interval_ms: 1000,
             compression_threshold_bytes: 1024,
-            cache_size_mb: config.cache_size.abs() as usize / 1024, // Convert from KB
+            cache_size_mb: config.cache_size.unsigned_abs() as usize / 1024, // Convert from KB
             enable_wal: config.wal_mode,
             enable_foreign_keys: true,
             vacuum_interval_hours: 24,
@@ -731,7 +732,7 @@ impl CompressionEngine {
                 use brotli::enc::BrotliEncoderParams;
                 let params = BrotliEncoderParams::default();
                 let mut output = Vec::new();
-                brotli::BrotliCompress::<&[u8], Vec<u8>>(&mut data.as_ref(), &mut output, &params)
+                brotli::BrotliCompress::<&[u8], Vec<u8>>(&mut &*data, &mut output, &params)
                     .map_err(|e| anyhow::anyhow!("Brotli compression failed: {}", e))?;
                 Ok(output)
             }
@@ -759,7 +760,7 @@ impl CompressionEngine {
             }
             CompressionAlgorithm::Brotli => {
                 let mut output = Vec::new();
-                brotli::BrotliDecompress::<&[u8], Vec<u8>>(&mut data.as_ref(), &mut output)
+                brotli::BrotliDecompress::<&[u8], Vec<u8>>(&mut &*data, &mut output)
                     .map_err(|e| anyhow::anyhow!("Brotli decompression failed: {}", e))?;
                 Ok(output)
             }
@@ -823,10 +824,10 @@ impl LruCache {
 
         // Evict entries if necessary
         while self.size_bytes + entry_size > self.capacity && !self.usage_order.is_empty() {
-            if let Some(lru_id) = self.usage_order.pop_back() {
-                if let Some(entry) = self.cache.remove(&lru_id) {
-                    self.size_bytes -= entry.size_bytes;
-                }
+            if let Some(lru_id) = self.usage_order.pop_back()
+                && let Some(entry) = self.cache.remove(&lru_id)
+            {
+                self.size_bytes -= entry.size_bytes;
             }
         }
 
@@ -905,17 +906,17 @@ impl IndexingEngine {
         // Add to time index
         self.time_index
             .entry(trace.start_time)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(trace.trace_id.clone());
 
         // Add to status index
         self.status_index
             .entry(trace.status.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(trace.trace_id.clone());
 
         // Add actors to actor index and bloom filter
-        let mut actor_bloom = self
+        let actor_bloom = self
             .bloom_filters
             .entry("actors".to_string())
             .or_insert_with(|| BloomFilter::new(10000, 0.01));
@@ -925,7 +926,7 @@ impl IndexingEngine {
 
             self.actor_index
                 .entry(event.actor_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(trace.trace_id.clone());
         }
     }
@@ -939,10 +940,10 @@ impl IndexingEngine {
 
     fn query_by_actor(&self, actor_id: &str) -> Option<&Vec<TraceId>> {
         // Check bloom filter first
-        if let Some(bloom) = self.bloom_filters.get("actors") {
-            if !bloom.contains(actor_id) {
-                return None;
-            }
+        if let Some(bloom) = self.bloom_filters.get("actors")
+            && !bloom.contains(actor_id)
+        {
+            return None;
         }
 
         self.actor_index.get(actor_id)

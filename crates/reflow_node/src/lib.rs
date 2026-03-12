@@ -10,6 +10,7 @@
 use neon::prelude::*;
 
 mod neon_bindings;
+#[allow(dead_code)]
 mod runtime;
 
 // Import all the binding functions
@@ -22,7 +23,7 @@ use neon_bindings::{
     // actor::create_actor,
     multi_graph::{
         create_graph_composer, create_graph_loader, create_graph_metadata, create_graph_normalizer,
-        create_graph_validator, create_namespace_manager, create_workspace,
+        create_namespace_manager, create_workspace,
     },
     network::{create_graph_network, create_network},
 };

@@ -1,10 +1,9 @@
 use crate::error::ServiceError;
 use crate::package_manager;
-use crate::python_vm::{self, ExecutionResult};
+use crate::python_vm::{self};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
 
@@ -193,12 +192,12 @@ pub async fn handle_rpc_request(
 
 // Create a JSON message from Python script to client
 pub fn create_client_message(session_id: &Uuid, message: &str) -> Result<String, ServiceError> {
-    let parsed: JsonValue = serde_json::from_str(message).map_err(|e| ServiceError::Json(e))?;
+    let parsed: JsonValue = serde_json::from_str(message).map_err(ServiceError::Json)?;
 
     let client_message = ClientMessage {
         session_id: *session_id,
         message: parsed,
     };
 
-    serde_json::to_string(&client_message).map_err(|e| ServiceError::Json(e))
+    serde_json::to_string(&client_message).map_err(ServiceError::Json)
 }

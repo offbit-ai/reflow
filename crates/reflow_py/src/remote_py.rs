@@ -39,6 +39,7 @@ pub enum PyExecError {
     Execution(String),
 
     #[error("Package installation error: {0}")]
+    #[allow(dead_code)]
     PackageInstall(String),
 
     #[error("Timeout: {0}")]
@@ -79,6 +80,7 @@ pub enum RpcResult {
         #[serde(default)]
         packages_installed: Vec<String>,
     },
+    #[allow(dead_code)]
     PackageInstallResult {
         success: bool,
         message: String,
@@ -98,6 +100,7 @@ pub struct RpcError {
 
 #[derive(Debug, Deserialize)]
 struct ClientMessage {
+    #[allow(dead_code)]
     session_id: String,
     message: JsonValue,
 }
@@ -110,8 +113,10 @@ pub enum PyExecMessage {
     /// A real-time message from a Python script
     ScriptMessage(JsonValue),
     /// A message about a connection event
+    #[allow(dead_code)]
     ConnectionEvent(String),
     /// A message about connection state changes
+    #[allow(dead_code)]
     ConnectionState(ConnectionState),
     /// A message about an error
     Error(String),
@@ -181,6 +186,7 @@ pub struct ExecutionResult {
 
 /// Results from package installation
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct PackageInstallResult {
     /// Whether installation was successful
     pub success: bool,
@@ -201,9 +207,9 @@ pub struct PackageInstallProgress {
     pub package: Option<String>,
 }
 
-impl Into<JsonValue> for PackageInstallProgress {
-    fn into(self) -> JsonValue {
-        serde_json::to_value(self).unwrap_or_default()
+impl From<PackageInstallProgress> for JsonValue {
+    fn from(val: PackageInstallProgress) -> Self {
+        serde_json::to_value(val).unwrap_or_default()
     }
 }
 
@@ -365,6 +371,7 @@ impl PyExecClient {
     /// # Returns
     ///
     /// A PyExecClient instance or an error
+    #[allow(dead_code)]
     pub async fn connect(
         server_url: &str,
         config: Option<ClientConfig>,
@@ -442,6 +449,7 @@ impl PyExecClient {
     }
 
     /// Subscribe to connection state changes
+    #[allow(dead_code)]
     pub fn subscribe_to_state_changes(&self) -> broadcast::Receiver<ConnectionState> {
         self.state_tx.subscribe()
     }
@@ -734,7 +742,7 @@ impl PyExecClient {
 
             // Fail all pending responses
             for (_, (sender, _)) in state.pending_responses.drain() {
-                let _ = sender.send(PyExecMessage::Error("Connection lost".to_string()).into());
+                let _ = sender.send(PyExecMessage::Error("Connection lost".to_string()));
             }
         }
 
@@ -921,6 +929,7 @@ impl PyExecClient {
     /// # Returns
     ///
     /// A PackageInstallResult or an error
+    #[allow(dead_code)]
     pub async fn install_packages<F>(
         &self,
         packages: Vec<String>,
@@ -947,23 +956,21 @@ impl PyExecClient {
             .await?;
 
         // If we have a progress callback, set up a listener for progress messages
-        let message_rx = if progress_callback.is_some() {
+        let _message_rx = if progress_callback.is_some() {
             let mut callback = progress_callback;
             let message_rx = self.message_rx.clone();
 
             // Clone the message receiver for the progress listener
             let message_rx_clone = message_rx.clone();
 
-            let progress_task = tokio::spawn(async move {
+            let _progress_task = tokio::spawn(async move {
                 while let Ok(message) = message_rx_clone.recv_async().await {
-                    if let PyExecMessage::ScriptMessage(json) = &message {
-                        if let Some(msg_type) = json.get("type").and_then(|t| t.as_str()) {
-                            if msg_type == "package_install" {
-                                if let Some(ref mut cb) = callback {
-                                    cb(json.clone());
-                                }
-                            }
-                        }
+                    if let PyExecMessage::ScriptMessage(json) = &message
+                        && let Some(msg_type) = json.get("type").and_then(|t| t.as_str())
+                        && msg_type == "package_install"
+                        && let Some(ref mut cb) = callback
+                    {
+                        cb(json.clone());
                     }
                 }
             });
@@ -1027,10 +1034,11 @@ impl PyExecClient {
         let options = options.unwrap_or_default();
 
         // Install packages if requested (unless we're passing them directly to execute_script)
-        if let Some(packages) = &options.packages {
-            if !packages.is_empty() && !code.is_empty() {
-                // We'll pass the packages directly to execute_script
-            }
+        if let Some(packages) = &options.packages
+            && !packages.is_empty()
+            && !code.is_empty()
+        {
+            // We'll pass the packages directly to execute_script
         }
 
         // Prepare inputs for the script
@@ -1061,19 +1069,19 @@ impl PyExecClient {
             .await?;
 
         // If we have a message callback, set up a listener for real-time messages
-        let message_rx = if message_callback.is_some() {
+        let _message_rx = if message_callback.is_some() {
             let mut callback = message_callback;
             let message_rx = self.message_rx.clone();
 
             // Clone the message receiver for the message listener
             let message_rx_clone = message_rx.clone();
 
-            let message_task = tokio::spawn(async move {
+            let _message_task = tokio::spawn(async move {
                 while let Ok(message) = message_rx_clone.recv_async().await {
-                    if let PyExecMessage::ScriptMessage(json) = &message {
-                        if let Some(ref mut cb) = callback {
-                            cb(json.clone());
-                        }
+                    if let PyExecMessage::ScriptMessage(json) = &message
+                        && let Some(ref mut cb) = callback
+                    {
+                        cb(json.clone());
                     }
                 }
             });
@@ -1126,6 +1134,7 @@ impl PyExecClient {
     /// # Returns
     ///
     /// An ExecutionResult or an error
+    #[allow(dead_code)]
     pub async fn execute_file<P, F>(
         &self,
         file_path: P,
@@ -1170,6 +1179,7 @@ impl PyExecClient {
     /// Close the connection to the server explicitly
     ///
     /// This will stop the automatic reconnection behavior and shut down the client.
+    #[allow(dead_code)]
     pub async fn close(&self) -> Result<(), PyExecError> {
         // Mark as shutdown requested
         {

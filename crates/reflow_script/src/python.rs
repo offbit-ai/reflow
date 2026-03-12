@@ -93,7 +93,7 @@ impl ScriptEngine for PythonEngine {
                             let message = message.as_object().unwrap();
                             result = message
                                 .iter()
-                                .map(|(k, v)| (k.clone(), Message::from(v.clone()).into()))
+                                .map(|(k, v)| (k.clone(), Message::from(v.clone())))
                                 .collect();
                             let _ = tx.send_async(result).await;
                             return;

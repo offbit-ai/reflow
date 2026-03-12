@@ -3,17 +3,11 @@
 //! Provides Node.js bindings for Actor functionality
 
 use crate::neon_bindings::utils::*;
-use crate::runtime;
 use neon::prelude::*;
-use parking_lot::{lock_api::RwLock, Mutex, RwLock as ParkingRwLock};
+use parking_lot::{Mutex, RwLock as ParkingRwLock};
 use reflow_network::{
-    actor::{
-        Actor, ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorState, MemoryState, Port,
-    },
-    connector::{ConnectionPoint, Connector, InitialPacket},
-    graph::{types::GraphExport, Graph},
-    message::{EncodableValue, Message},
-    network::{Network, NetworkConfig},
+    actor::{Actor, ActorConfig, ActorContext, ActorLoad, MemoryState, Port},
+    message::Message,
     tracing::TracingIntegration,
 };
 use serde_json::{json, Value as JsonValue};
@@ -84,7 +78,7 @@ impl Actor for JavaScriptActor {
                 channel.send(move |mut cx| {
                     let result = call_js_actor(&mut cx, js_actor, &context, &state).map_or(
                         Err(anyhow::Error::msg("Failed to call JavaScript actor")),
-                        |outputs| Ok(outputs),
+                        Ok,
                     );
                     let _ = sender.send(result);
                     Ok(())
@@ -111,7 +105,7 @@ impl Actor for JavaScriptActor {
     fn create_process(
         &self,
         mut config: ActorConfig,
-        tracing_integration: Option<TracingIntegration>,
+        _tracing_integration: Option<TracingIntegration>,
     ) -> Pin<Box<dyn Future<Output = ()> + 'static + Send>> {
         use futures_util::StreamExt;
 
@@ -121,7 +115,7 @@ impl Actor for JavaScriptActor {
         let state = Arc::clone(&self.state);
         let load = Arc::clone(&self.load);
 
-        config.config.extend(self.config.clone().into_iter());
+        config.config.extend(self.config.clone());
 
         let inports_size = self.inports.len();
         let inport_keys = self.inports.clone();
@@ -140,36 +134,34 @@ impl Actor for JavaScriptActor {
                     // Increment load counter
                     load.lock().inc();
 
-                    if await_all_inports {
-                        if all_inports.keys().len() < inports_size {
-                            all_inports.extend(
-                                packet
-                                    .iter()
-                                    .filter(|(k, _)| inport_keys.contains(k))
-                                    .map(|(k, v)| (k.clone(), v.clone())),
+                    if await_all_inports && all_inports.keys().len() < inports_size {
+                        all_inports.extend(
+                            packet
+                                .iter()
+                                .filter(|(k, _)| inport_keys.contains(k))
+                                .map(|(k, v)| (k.clone(), v.clone())),
+                        );
+                        if all_inports.keys().len() == inports_size {
+                            // Run the behavior function
+                            let context = ActorContext::new(
+                                all_inports.clone(),
+                                outports.clone(),
+                                state.clone(),
+                                config.clone(),
+                                load.clone(),
                             );
-                            if all_inports.keys().len() == inports_size {
-                                // Run the behavior function
-                                let context = ActorContext::new(
-                                    all_inports.clone(),
-                                    outports.clone(),
-                                    state.clone(),
-                                    config.clone(),
-                                    load.clone(),
-                                );
 
-                                if let Ok(result) = behavior(context).await {
-                                    if !result.is_empty() {
-                                        let _ = outports
-                                            .0
-                                            .send(result)
-                                            .expect("Expected to send message via outport");
-                                        load.lock().reset();
-                                    }
+                            if let Ok(result) = behavior(context).await {
+                                if !result.is_empty() {
+                                    outports
+                                        .0
+                                        .send(result)
+                                        .expect("Expected to send message via outport");
+                                    load.lock().reset();
                                 }
                             }
-                            continue;
                         }
+                        continue;
                     }
 
                     if !await_all_inports {
@@ -184,7 +176,7 @@ impl Actor for JavaScriptActor {
 
                         if let Ok(result) = behavior(context).await {
                             if !result.is_empty() {
-                                let _ = outports
+                                outports
                                     .0
                                     .send(result)
                                     .expect("Expected to send message via outport");
@@ -295,7 +287,7 @@ impl JavaScriptActorState {
             .map_err(|_| cx.throw_error("Expected an object").unwrap())
             .and_then(|v| js_object_to_map(&mut cx, v))?;
         let mut state = this.inner.lock();
-        (*state).0 = data_json;
+        state.0 = data_json;
 
         Ok(cx.undefined())
     }
@@ -324,7 +316,7 @@ fn call_js_actor(
 ) -> Result<HashMap<String, Message>, String> {
     // Convert inputs to JavaScript
     let input_json = match serde_json::to_value(
-        &context
+        context
             .payload
             .iter()
             .map(|(k, v)| (k.clone(), v.clone().into()))
@@ -359,7 +351,7 @@ fn call_js_actor(
             .map_err(|e| format!("Failed to send outputs: {:?}", e))
         {
             Ok(_) => Ok(cx.undefined()),
-            Err(e) => return cx.throw_error(format!("Send function error: {}", e)),
+            Err(e) => cx.throw_error(format!("Send function error: {}", e)),
         }
     })
     .map_err(|e| format!("Send function creation error: {:?}", e))?;

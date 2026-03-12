@@ -8,7 +8,7 @@ use crate::{
     runtime,
 };
 use neon::prelude::*;
-use parking_lot::{lock_api::RwLock, Mutex as ParkingMutex, RwLock as ParkingRwLock};
+use parking_lot::{lock_api::RwLock, RwLock as ParkingRwLock};
 use reflow_network::{
     connector::{ConnectionPoint, Connector, InitialPacket},
     graph::{types::GraphExport, Graph},
@@ -17,10 +17,7 @@ use reflow_network::{
 };
 use serde_json::Value as JsonValue;
 use std::sync::Mutex as StdMutex;
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 pub struct NodeNetwork {
     inner: Arc<ParkingRwLock<Network>>,
@@ -88,8 +85,8 @@ impl NodeNetwork {
         runtime::spawn(async move {
             let result = {
                 let mut net = network.write();
-                let res = net.start();
-                res
+
+                net.start()
             };
 
             deferred.settle_with(&channel, move |mut cx| match result {
@@ -246,7 +243,7 @@ impl NodeNetwork {
     }
 
     fn get_state(mut cx: FunctionContext) -> JsResult<JsValue> {
-        let this = cx.argument::<JsBox<NodeNetwork>>(0)?;
+        let _this = cx.argument::<JsBox<NodeNetwork>>(0)?;
 
         let state = cx.empty_object();
 

@@ -82,17 +82,17 @@ impl NamespaceError {
 
 /// Export functions for creating error instances
 pub fn create_composition_error(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, CompositionError::new)?)
+    JsFunction::new(&mut cx, CompositionError::new)
 }
 
 pub fn create_validation_error(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, ValidationError::new)?)
+    JsFunction::new(&mut cx, ValidationError::new)
 }
 
 pub fn create_load_error(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, LoadError::new)?)
+    JsFunction::new(&mut cx, LoadError::new)
 }
 
 pub fn create_namespace_error(mut cx: FunctionContext) -> JsResult<JsFunction> {
-    Ok(JsFunction::new(&mut cx, NamespaceError::new)?)
+    JsFunction::new(&mut cx, NamespaceError::new)
 }

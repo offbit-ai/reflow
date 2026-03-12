@@ -12,9 +12,6 @@ pub enum ServiceError {
     #[error("Python execution error: {0}")]
     Python(String),
 
-    #[error("Invalid RPC request: {0}")]
-    InvalidRpc(String),
-
     #[error("Internal server error: {0}")]
     Internal(String),
 }

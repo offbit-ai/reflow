@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 //! # Reflow Tracing Server
 //!
 //! A standalone tracing server for the Reflow actor system.
@@ -6,7 +7,6 @@ use anyhow::Result;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::{info, warn};
-use tracing_subscriber;
 
 mod config;
 mod protocol;

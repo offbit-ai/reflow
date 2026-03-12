@@ -8,12 +8,6 @@ pub fn extract_metadata(source: &str, runtime: ScriptRuntime) -> Result<Value> {
     match runtime {
         ScriptRuntime::Python => extract_python_metadata(source),
         ScriptRuntime::JavaScript => extract_javascript_metadata(source),
-        _ => Ok(json!({
-            "component": "unknown",
-            "description": "No metadata found",
-            "inports": [],
-            "outports": []
-        })),
     }
 }
 

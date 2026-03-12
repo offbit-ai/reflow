@@ -175,7 +175,7 @@ impl Actor for RemoteActorProxy {
 
                     match behavior(context).await {
                         Ok(result) if !result.is_empty() => {
-                            let _ = outports
+                            outports
                                 .0
                                 .send(result)
                                 .expect("Expected to send message via outport");

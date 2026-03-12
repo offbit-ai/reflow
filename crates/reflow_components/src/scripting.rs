@@ -147,7 +147,7 @@ pub async fn sql_script_actor(context: ActorContext) -> Result<HashMap<String, M
 pub async fn python_script_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let mut result = HashMap::new();
     let config = context.get_config_hashmap();
-    let payload = context.get_payload();
+    let _payload = context.get_payload();
 
     // Get script from propertyValues
     let property_values = config.get("propertyValues").and_then(|v| v.as_object());
