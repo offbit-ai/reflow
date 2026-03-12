@@ -36,7 +36,7 @@ mod tests {
         let payload = HashMap::new();
         let outports = flume::unbounded();
         let state = Arc::new(Mutex::new(MemoryState::default()));
-        let load = Arc::new(Mutex::new(ActorLoad::new(0)));
+        let load = Arc::new(ActorLoad::new(0));
 
         ActorContext::new(payload, outports, state, config, load)
     }

@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
         users_outports.clone(),
         state.clone(),
         actor_config,
-        Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        Arc::new(ActorLoad::new(0)),
     );
     let users_result = users_behavior(context).await?;
 
@@ -143,7 +143,7 @@ async fn main() -> Result<()> {
         products_outports.clone(),
         state.clone(),
         actor_config,
-        Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        Arc::new(ActorLoad::new(0)),
     );
     let products_result = products_behavior(context).await?;
 
@@ -200,7 +200,7 @@ async fn main() -> Result<()> {
         users_outports.clone(),
         state.clone(),
         actor_config,
-        Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+        Arc::new(ActorLoad::new(0)),
     );
     let users_result = users_behavior(context).await?;
     println!("\nUsers count after reconnection:");

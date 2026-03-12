@@ -57,7 +57,7 @@ struct DataGenerator {
     message_count: usize,
     inports: Port,
     outports: Port,
-    load: Arc<ParkingLotMutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
 }
 
 impl DataGenerator {
@@ -66,7 +66,7 @@ impl DataGenerator {
             message_count,
             inports: flume::unbounded(),
             outports: flume::unbounded(),
-            load: Arc::new(ParkingLotMutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
         }
     }
 }
@@ -182,7 +182,7 @@ impl Actor for DataGenerator {
 struct MessageProcessor {
     inports: Port,
     outports: Port,
-    load: Arc<ParkingLotMutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
 }
 
 impl MessageProcessor {
@@ -190,7 +190,7 @@ impl MessageProcessor {
         Self {
             inports: flume::unbounded(),
             outports: flume::unbounded(),
-            load: Arc::new(ParkingLotMutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
         }
     }
 }

@@ -18,7 +18,7 @@ struct BidirectionalActor {
     prefix: String,
     inports: Port,
     outports: Port,
-    load: Arc<parking_lot::Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
 }
 
 impl BidirectionalActor {
@@ -27,9 +27,7 @@ impl BidirectionalActor {
             prefix,
             inports: flume::unbounded(),
             outports: flume::unbounded(),
-            load: Arc::new(parking_lot::Mutex::new(
-                reflow_network::actor::ActorLoad::new(0),
-            )),
+            load: Arc::new(ActorLoad::new(0)),
         }
     }
 }
@@ -96,7 +94,7 @@ impl Actor for BidirectionalActor {
         self.outports.clone()
     }
 
-    fn load_count(&self) -> Arc<parking_lot::Mutex<reflow_network::actor::ActorLoad>> {
+    fn load_count(&self) -> Arc<ActorLoad> {
         self.load.clone()
     }
 
@@ -148,7 +146,7 @@ impl Actor for BidirectionalActor {
                                 .0
                                 .send(result)
                                 .expect("Expected to send message via outport");
-                            load.lock().reset();
+                            load.reset();
                         } else {
                             tracing::debug!("[{}] No output messages to send", prefix);
                         }

@@ -137,7 +137,7 @@ mod tests {
         let payload = HashMap::new();
         let outports = flume::unbounded();
         let state = std::sync::Arc::new(parking_lot::Mutex::new(MemoryState::default()));
-        let load = std::sync::Arc::new(parking_lot::Mutex::new(reflow_actor::ActorLoad::new(0)));
+        let load = std::sync::Arc::new(reflow_actor::ActorLoad::new(0));
 
         let context = ActorContext::new(payload, outports, state, config, load);
 
@@ -182,7 +182,7 @@ mod tests {
         let payload = HashMap::new();
         let outports = flume::unbounded();
         let state = std::sync::Arc::new(parking_lot::Mutex::new(MemoryState::default()));
-        let load = std::sync::Arc::new(parking_lot::Mutex::new(reflow_actor::ActorLoad::new(0)));
+        let load = std::sync::Arc::new(reflow_actor::ActorLoad::new(0));
 
         let context = ActorContext::new(payload, outports, state, config, load);
 
@@ -282,7 +282,7 @@ mod tests {
         let payload = HashMap::new();
         let outports = flume::unbounded();
         let state = std::sync::Arc::new(parking_lot::Mutex::new(MemoryState::default()));
-        let load = std::sync::Arc::new(parking_lot::Mutex::new(reflow_actor::ActorLoad::new(0)));
+        let load = std::sync::Arc::new(reflow_actor::ActorLoad::new(0));
 
         let context = ActorContext::new(payload, outports, state, config, load);
 

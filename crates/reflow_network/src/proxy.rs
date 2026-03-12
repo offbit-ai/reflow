@@ -24,7 +24,7 @@ pub struct RemoteActorProxy {
     bridge: Arc<NetworkBridge>,
     inports: Port,
     outports: Port,
-    load: Arc<Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
 }
 
 impl RemoteActorProxy {
@@ -41,7 +41,7 @@ impl RemoteActorProxy {
             bridge,
             inports: flume::unbounded(),
             outports: flume::unbounded(),
-            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
         }
     }
 }
@@ -146,7 +146,7 @@ impl Actor for RemoteActorProxy {
         self.outports.clone()
     }
 
-    fn load_count(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
+    fn load_count(&self) -> Arc<ActorLoad> {
         self.load.clone()
     }
 
@@ -179,7 +179,7 @@ impl Actor for RemoteActorProxy {
                                 .0
                                 .send(result)
                                 .expect("Expected to send message via outport");
-                            load.lock().reset();
+                            load.reset();
                         }
                         Err(e) => {
                             tracing::error!("[PROXY] Behavior error: {}", e);
@@ -190,7 +190,7 @@ impl Actor for RemoteActorProxy {
                                 Message::String(Arc::new(format!("proxy behavior error: {}", e))),
                             );
                             let _ = outports.0.send(error_result);
-                            load.lock().reset();
+                            load.reset();
                         }
                         _ => {}
                     }

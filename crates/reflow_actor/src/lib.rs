@@ -4,6 +4,7 @@ mod message_test;
 
 pub use reflow_graph::*;
 use reflow_tracing_protocol::client::TracingIntegration;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{any::Any, collections::HashMap, env, sync::Arc};
 
 #[cfg(target_arch = "wasm32")]
@@ -219,8 +220,8 @@ pub trait Actor: Send + Sync + 'static {
     /// Access all input ports
     fn get_inports(&self) -> Port;
 
-    fn load_count(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
-        Arc::new(Mutex::new(ActorLoad::new(0)))
+    fn load_count(&self) -> Arc<ActorLoad> {
+        Arc::new(ActorLoad::new(0))
     }
 
     fn create_process(
@@ -231,7 +232,7 @@ pub trait Actor: Send + Sync + 'static {
 
     /// Shutdown the actor, waiting for all processes to finish
     fn shutdown(&self) {
-        while self.load_count().clone().lock().get() > 0 {
+        while self.load_count().get() > 0 {
             // Wait for all processes to finish
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
@@ -242,73 +243,78 @@ pub trait Actor: Send + Sync + 'static {
     }
 }
 
-// Native ActorLoad for non-WASM targets (tuple struct)
+// Native ActorLoad for non-WASM targets — lock-free via AtomicUsize
 #[cfg(not(target_arch = "wasm32"))]
-pub struct ActorLoad(pub usize);
+pub struct ActorLoad(AtomicUsize);
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ActorLoad {
     pub fn new(load: usize) -> Self {
-        ActorLoad(load)
+        ActorLoad(AtomicUsize::new(load))
     }
 
-    pub fn inc(&mut self) {
-        self.0 += 1;
+    pub fn inc(&self) {
+        self.0.fetch_add(1, Ordering::Relaxed);
     }
 
-    pub fn dec(&mut self) {
-        if self.0 > 0 {
-            self.0 -= 1;
-        }
+    pub fn dec(&self) {
+        let _ = self
+            .0
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| {
+                Some(v.saturating_sub(1))
+            });
     }
 
     pub fn get(&self) -> usize {
-        self.0
+        self.0.load(Ordering::Relaxed)
     }
 
-    pub fn reset(&mut self) {
-        self.0 = 0;
+    pub fn reset(&self) {
+        self.0.store(0, Ordering::Relaxed);
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0 == 0
+        self.get() == 0
     }
 }
 
-// WASM-specific ActorLoad (regular struct)
+// WASM-specific ActorLoad — AtomicUsize works on wasm32 (single-threaded)
 #[cfg(target_arch = "wasm32")]
-#[derive(Debug, Clone)]
 #[wasm_bindgen]
 pub struct ActorLoad {
-    value: usize,
+    value: AtomicUsize,
 }
 
 #[cfg(target_arch = "wasm32")]
 impl ActorLoad {
     pub fn new(load: usize) -> Self {
-        ActorLoad { value: load }
-    }
-
-    pub fn inc(&mut self) {
-        self.value += 1;
-    }
-
-    pub fn dec(&mut self) {
-        if self.value > 0 {
-            self.value -= 1;
+        ActorLoad {
+            value: AtomicUsize::new(load),
         }
     }
 
-    pub fn get(&self) -> usize {
-        self.value
+    pub fn inc(&self) {
+        self.value.fetch_add(1, Ordering::Relaxed);
     }
 
-    pub fn reset(&mut self) {
-        self.value = 0;
+    pub fn dec(&self) {
+        let _ = self
+            .value
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| {
+                Some(v.saturating_sub(1))
+            });
+    }
+
+    pub fn get(&self) -> usize {
+        self.value.load(Ordering::Relaxed)
+    }
+
+    pub fn reset(&self) {
+        self.value.store(0, Ordering::Relaxed);
     }
 
     pub fn is_empty(&self) -> bool {
-        self.value == 0
+        self.get() == 0
     }
 }
 
@@ -321,12 +327,12 @@ impl ActorLoad {
     }
 
     #[wasm_bindgen(js_name = increment)]
-    pub fn increment(&mut self) {
+    pub fn increment(&self) {
         self.inc()
     }
 
     #[wasm_bindgen(js_name = decrement)]
-    pub fn decrement(&mut self) {
+    pub fn decrement(&self) {
         self.dec()
     }
 
@@ -336,7 +342,7 @@ impl ActorLoad {
     }
 
     #[wasm_bindgen(js_name = reset)]
-    pub fn reset_load(&mut self) {
+    pub fn reset_load(&self) {
         self.reset()
     }
 
@@ -352,7 +358,7 @@ pub struct ActorContext {
     pub outports: Port,
     pub state: Arc<Mutex<dyn ActorState>>,
     pub config: ActorConfig,
-    load: Arc<Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
 }
 
 impl ActorContext {
@@ -362,7 +368,7 @@ impl ActorContext {
         outports: Port,
         state: Arc<Mutex<dyn ActorState>>,
         config: ActorConfig,
-        load: Arc<Mutex<ActorLoad>>,
+        load: Arc<ActorLoad>,
     ) -> Self {
         ActorContext {
             // id,
@@ -387,7 +393,7 @@ impl ActorContext {
         self.config.as_hashmap()
     }
 
-    pub fn get_load(&self) -> Arc<Mutex<ActorLoad>> {
+    pub fn get_load(&self) -> Arc<ActorLoad> {
         self.load.clone()
     }
     // pub fn get_id(&self) -> &str {
@@ -400,7 +406,7 @@ impl ActorContext {
         self.outports.clone()
     }
     pub fn done(&self) {
-        self.load.lock().reset();
+        self.load.reset();
     }
 }
 
@@ -428,7 +434,7 @@ impl BrowserActorContext {
 
         let outports = flume::unbounded();
         let state = Arc::new(Mutex::new(MemoryState::default()));
-        let load = Arc::new(Mutex::new(ActorLoad::new(0)));
+        let load = Arc::new(ActorLoad::new(0));
 
         // Create ActorConfig from HashMap for backwards compatibility
         let node = GraphNode {
@@ -969,7 +975,7 @@ pub struct BrowserActor {
     outports: Port,
     inports_size: usize,
     outports_size: usize,
-    load: Arc<Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
     state: Arc<Mutex<dyn ActorState>>,
     behavior: Arc<ActorBehavior>,
     config: HashMap<String, Value>,
@@ -1048,7 +1054,7 @@ impl JsBrowserActor {
 
     #[wasm_bindgen(js_name = getLoad)]
     pub fn get_load(&self) -> usize {
-        self.actor.load.lock().get()
+        self.actor.load.get()
     }
 }
 
@@ -1104,7 +1110,7 @@ impl BrowserActor {
         extern_actor.set_state(state_handle.clone());
 
         let actor = extern_actor.clone();
-        let load = Arc::new(Mutex::new(ActorLoad::new(0)));
+        let load = Arc::new(ActorLoad::new(0));
         let config = extern_actor
             .config()
             .into_serde::<HashMap<String, Value>>()
@@ -1172,7 +1178,7 @@ impl BrowserActor {
         self.state.clone()
     }
 
-    fn load_count(&self) -> Arc<Mutex<ActorLoad>> {
+    fn load_count(&self) -> Arc<ActorLoad> {
         self.load.clone()
     }
 }
@@ -1225,7 +1231,7 @@ impl Actor for BrowserActor {
             loop {
                 if let Some(packet) = receiver.clone().stream().next().await {
                     // Increment load counter
-                    load.lock().inc();
+                    load.inc();
 
                     if await_all_inports {
                         if all_inports.keys().len() < inports_size {
@@ -1246,7 +1252,7 @@ impl Actor for BrowserActor {
                                             .0
                                             .send(result)
                                             .expect("Expected to send message via outport");
-                                        load.lock().dec();
+                                        load.dec();
                                     }
                                 }
                             }
@@ -1270,7 +1276,7 @@ impl Actor for BrowserActor {
                                     .0
                                     .send(result)
                                     .expect("Expected to send message via outport");
-                                load.lock().reset();
+                                load.reset();
                             }
                         }
                     }

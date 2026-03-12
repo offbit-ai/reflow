@@ -3,7 +3,6 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use futures::StreamExt;
-use parking_lot::Mutex;
 use reflow_tracing_protocol::client::TracingIntegration;
 
 use crate::actor::{Actor, ActorBehavior, ActorConfig, ActorLoad, Port};
@@ -24,7 +23,7 @@ struct OutportBridge {
     inner_port_name: String,
     inports: Port,
     outports: Port,
-    load: Arc<Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
 }
 
 impl OutportBridge {
@@ -39,7 +38,7 @@ impl OutportBridge {
             inner_port_name,
             inports: flume::unbounded(),
             outports: flume::unbounded(),
-            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
         }
     }
 }
@@ -58,7 +57,7 @@ impl Actor for OutportBridge {
         self.outports.clone()
     }
 
-    fn load_count(&self) -> Arc<Mutex<ActorLoad>> {
+    fn load_count(&self) -> Arc<ActorLoad> {
         self.load.clone()
     }
 
@@ -109,7 +108,7 @@ pub struct SubgraphActor {
     /// External outports — parent network reads messages from here
     outports: Port,
     /// Load counter
-    load: Arc<Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
     /// Cancellation signal — send `true` to stop the inbound routing loop
     shutdown_tx: Arc<tokio::sync::watch::Sender<bool>>,
     shutdown_rx: tokio::sync::watch::Receiver<bool>,
@@ -196,7 +195,7 @@ impl SubgraphActor {
             outport_map,
             inports: flume::unbounded(),
             outports,
-            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
             shutdown_tx: Arc::new(shutdown_tx),
             shutdown_rx,
         })
@@ -216,7 +215,7 @@ impl SubgraphActor {
             outport_map,
             inports: flume::unbounded(),
             outports: flume::unbounded(),
-            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
             shutdown_tx: Arc::new(shutdown_tx),
             shutdown_rx,
         }
@@ -253,7 +252,7 @@ impl Actor for SubgraphActor {
         self.outports.clone()
     }
 
-    fn load_count(&self) -> Arc<Mutex<ActorLoad>> {
+    fn load_count(&self) -> Arc<ActorLoad> {
         self.load.clone()
     }
 
@@ -292,7 +291,7 @@ impl Actor for SubgraphActor {
                     packet = inport_stream.next() => {
                         match packet {
                             Some(pkt) => {
-                                load.lock().inc();
+                                load.inc();
                                 for (port_name, message) in pkt {
                                     if let Some((inner_actor_id, inner_port)) = inport_map.get(&port_name) {
                                         let network = inner_network.lock();
@@ -306,7 +305,7 @@ impl Actor for SubgraphActor {
                                         tracing::warn!("[SUBGRAPH] No inport mapping for port '{}'", port_name);
                                     }
                                 }
-                                load.lock().dec();
+                                load.dec();
                             }
                             None => break,
                         }
@@ -341,7 +340,7 @@ mod tests {
     struct PassthroughActor {
         inports: Port,
         outports: Port,
-        load: Arc<Mutex<ActorLoad>>,
+        load: Arc<ActorLoad>,
     }
 
     impl PassthroughActor {
@@ -349,7 +348,7 @@ mod tests {
             Self {
                 inports: flume::unbounded(),
                 outports: flume::unbounded(),
-                load: Arc::new(Mutex::new(ActorLoad::new(0))),
+                load: Arc::new(ActorLoad::new(0)),
             }
         }
     }
@@ -376,7 +375,7 @@ mod tests {
             self.outports.clone()
         }
 
-        fn load_count(&self) -> Arc<Mutex<ActorLoad>> {
+        fn load_count(&self) -> Arc<ActorLoad> {
             self.load.clone()
         }
 
@@ -392,7 +391,7 @@ mod tests {
 
             Box::pin(async move {
                 while let Some(packet) = receiver.clone().stream().next().await {
-                    load.lock().inc();
+                    load.inc();
                     let context = ActorContext::new(
                         packet,
                         outports.clone(),
@@ -405,7 +404,7 @@ mod tests {
                             let _ = outports.0.send(result);
                         }
                     }
-                    load.lock().dec();
+                    load.dec();
                 }
             })
         }
@@ -643,6 +642,6 @@ mod tests {
 
         // Verify load is zero after shutdown
         let sub_actor = parent.actors.get("SubgraphComponent").unwrap();
-        assert_eq!(sub_actor.load_count().lock().get(), 0);
+        assert_eq!(sub_actor.load_count().get(), 0);
     }
 }

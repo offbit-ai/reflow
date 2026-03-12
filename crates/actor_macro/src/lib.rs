@@ -180,7 +180,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             inports_channel: Port,
             outports_channel: Port,
             await_all_inports: bool,
-            load: Arc<parking_lot::Mutex<ActorLoad>>,
+            load: Arc<ActorLoad>,
         }
 
         impl #struct_name {
@@ -191,7 +191,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     inports_channel: #out_ports_channel,
                     outports_channel: #in_ports_channel,
                     await_all_inports: #await_all_inports,
-                    load: Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+                    load: Arc::new(ActorLoad::new(0)),
                 }
             }
 
@@ -205,7 +205,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.outports.clone()
             }
 
-            pub fn load(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
+            pub fn load(&self) -> Arc<ActorLoad> {
                 self.load.clone()
             }
         }
@@ -244,7 +244,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.inports_channel.clone()
             }
 
-            fn load_count(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
+            fn load_count(&self) -> Arc<ActorLoad> {
                 self.load().clone()
             }
 
@@ -274,15 +274,11 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
                     let mut all_inports = std::collections::HashMap::new();
                     let mut load_count = load_count.clone();
 
-                    fn done(load_count: Arc<parking_lot::Mutex<ActorLoad>>) {
-                        let load_count_guard = load_count.clone();
-                        let mut load = load_count_guard.lock();
-                        load.reset();
+                    fn done(load_count: Arc<ActorLoad>) {
+                        load_count.reset();
                     }
-                    fn inc(load_count: Arc<parking_lot::Mutex<ActorLoad>>) {
-                        let load_count_guard = load_count.clone();
-                        let mut load = load_count_guard.lock();
-                        load.inc();
+                    fn inc(load_count: Arc<ActorLoad>) {
+                        load_count.inc();
                     }
 
                     let config = config.clone();

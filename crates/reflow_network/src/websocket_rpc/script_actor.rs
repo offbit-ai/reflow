@@ -297,7 +297,7 @@ impl Actor for WebSocketScriptActor {
         let behavior = self.get_behavior();
         let state: Arc<Mutex<dyn ActorState>> = Arc::new(Mutex::new(MemoryState::default()));
         let outports = self.get_outports();
-        let load_count = Arc::new(Mutex::new(ActorLoad::new(0)));
+        let load_count = Arc::new(ActorLoad::new(0));
         let output_receiver = self.output_receiver.clone();
         let metadata = self.metadata.clone();
 

@@ -222,7 +222,7 @@ impl Actor for DatabaseActor {
 
         Box::pin(async move {
             let (_, receiver) = inports;
-            let load = Arc::new(parking_lot::Mutex::new(ActorLoad::new(0)));
+            let load = Arc::new(ActorLoad::new(0));
 
             while let Ok(payload) = receiver.recv_async().await {
                 let context = ActorContext::new(
@@ -304,7 +304,7 @@ mod tests {
             outports.clone(),
             state.clone(),
             actor_config.clone(),
-            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+            Arc::new(ActorLoad::new(0)),
         );
         let result = behavior(context).await?;
         assert!(result.contains_key("affectedRows"));
@@ -326,7 +326,7 @@ mod tests {
             outports.clone(),
             state.clone(),
             actor_config.clone(),
-            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+            Arc::new(ActorLoad::new(0)),
         );
         let result = behavior(context).await?;
         assert!(result.contains_key("affectedRows"));
@@ -343,7 +343,7 @@ mod tests {
             outports.clone(),
             state.clone(),
             actor_config.clone(),
-            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+            Arc::new(ActorLoad::new(0)),
         );
         let result = behavior(context).await?;
         assert!(result.contains_key("rows"));

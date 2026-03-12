@@ -1,3 +1,15 @@
+#![allow(unused_imports)]
+
+use std::collections::HashMap;
+
+use serde_json::json;
+
+use crate::{
+    history::{AddConnectionCommand, AddNodeCommand, GraphHistory},
+    types::{GraphError, PortType},
+    Graph,
+};
+
 #[test]
 fn test_graph_basic_operations() {
     let mut graph = Graph::new("test_graph", true, None);

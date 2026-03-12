@@ -113,7 +113,7 @@ impl Actor for TracedActor {
             
             // Simple message processing loop
             while let Ok(messages) = inports.1.recv_async().await {
-                load.lock().inc();
+                load.inc();
 
                 let context = ActorContext::new(
                     messages,
@@ -143,15 +143,15 @@ impl Actor for TracedActor {
                     }
                 }
 
-                load.lock().dec();
+                load.dec();
             }
 
             info!("Actor {} stopped", actor_name);
         })
     }
 
-    fn load_count(&self) -> Arc<Mutex<ActorLoad>> {
-        Arc::new(Mutex::new(ActorLoad::new(0)))
+    fn load_count(&self) -> Arc<ActorLoad> {
+        Arc::new(ActorLoad::new(0))
     }
 
     fn shutdown(&self) {

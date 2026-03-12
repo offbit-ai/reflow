@@ -88,8 +88,8 @@ impl Actor for ScriptActorBridge {
         (tx, rx)
     }
     
-    fn load_count(&self) -> Arc<parking_lot::Mutex<ActorLoad>> {
-        Arc::new(parking_lot::Mutex::new(ActorLoad::new(0)))
+    fn load_count(&self) -> Arc<ActorLoad> {
+        Arc::new(ActorLoad::new(0))
     }
     
     fn create_process(
@@ -122,7 +122,7 @@ impl Actor for ScriptActorBridge {
                 // Wait for incoming messages
                 if let Ok(messages) = inports.1.recv_async().await {
                     // Increment load count
-                    load_count.lock().inc();
+                    load_count.inc();
                     
                     // Create context
                     let context = ActorContext::new(
@@ -139,7 +139,7 @@ impl Actor for ScriptActorBridge {
                     }
                     
                     // Decrement load count
-                    load_count.lock().dec();
+                    load_count.dec();
                 }
             }
         })

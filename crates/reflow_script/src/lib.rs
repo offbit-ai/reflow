@@ -177,7 +177,7 @@ impl Actor for ScriptActor {
                     outports.clone(),
                     state.clone(),
                     actor_config.clone(),
-                    Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+                    Arc::new(ActorLoad::new(0)),
                 );
                 let result = behavior(context).await;
 
@@ -327,7 +327,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
             outports.clone(),
             state.clone(),
             actor_config.clone(),
-            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+            Arc::new(ActorLoad::new(0)),
         );
         // Call the behavior function
         let result = behavior(context).await;

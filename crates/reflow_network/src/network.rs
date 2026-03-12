@@ -525,7 +525,7 @@ impl Network {
                     // Forwarder: flume outport receiver → Arc-wrapped broadcast
                     tokio::spawn(async move {
                         while let Some(packet) = out_ports.1.clone().stream().next().await {
-                            load_count.lock().dec();
+                            load_count.dec();
                             if tx.send(std::sync::Arc::new(packet)).is_err() {
                                 break; // all receivers dropped
                             }
@@ -983,7 +983,7 @@ impl Network {
     pub fn get_active_actors(&self) -> Vec<String> {
         self.initialized_actors
             .iter()
-            .filter(|(_, actor)| actor.load_count().lock().get() > 0)
+            .filter(|(_, actor)| actor.load_count().get() > 0)
             .map(|(id, _)| id.clone())
             .collect()
     }

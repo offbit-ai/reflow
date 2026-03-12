@@ -693,7 +693,7 @@ impl ApiToolGenerator {
         // Create a minimal context for execution
         let outports = flume::unbounded();
         let state = Arc::new(parking_lot::Mutex::new(MemoryState::default()));
-        let load = Arc::new(parking_lot::Mutex::new(reflow_actor::ActorLoad::new(0)));
+        let load = Arc::new(reflow_actor::ActorLoad::new(0));
 
         // Create minimal config
         let node = crate::graph::types::GraphNode {
@@ -1187,10 +1187,7 @@ impl Actor for ApiOperationActor {
 
         Box::pin(async move {
             while let Ok(payload) = inports.1.recv_async().await {
-                {
-                    let mut load_guard = load.lock();
-                    load_guard.inc();
-                }
+                load.inc();
 
                 let context = ActorContext::new(
                     payload,
@@ -1213,10 +1210,7 @@ impl Actor for ApiOperationActor {
                     }
                 }
 
-                {
-                    let mut load_guard = load.lock();
-                    load_guard.dec();
-                }
+                load.dec();
             }
         })
     }
@@ -1593,7 +1587,7 @@ mod tests {
             actor.get_outports(),
             Arc::new(parking_lot::Mutex::new(MemoryState::default())),
             actor_config,
-            Arc::new(parking_lot::Mutex::new(ActorLoad::new(0))),
+            Arc::new(ActorLoad::new(0)),
         );
 
         let url = actor.build_request_url(&context).unwrap();

@@ -32,7 +32,7 @@ pub struct JavaScriptActor {
     /// Shared state
     state: Arc<Mutex<MemoryState>>,
     /// Load counter
-    load: Arc<Mutex<ActorLoad>>,
+    load: Arc<ActorLoad>,
     /// Event channel for Neon callbacks
     channel: Channel,
 }
@@ -52,7 +52,7 @@ impl JavaScriptActor {
             outports_channel: flume::unbounded(),
             outports,
             state: Arc::new(Mutex::new(MemoryState::default())),
-            load: Arc::new(Mutex::new(ActorLoad::new(0))),
+            load: Arc::new(ActorLoad::new(0)),
             channel: channel.clone(),
             js_actor: js_actor.clone(),
         }
@@ -132,7 +132,7 @@ impl Actor for JavaScriptActor {
             loop {
                 if let Some(packet) = inports.1.clone().stream().next().await {
                     // Increment load counter
-                    load.lock().inc();
+                    load.inc();
 
                     if await_all_inports && all_inports.keys().len() < inports_size {
                         all_inports.extend(
@@ -157,7 +157,7 @@ impl Actor for JavaScriptActor {
                                         .0
                                         .send(result)
                                         .expect("Expected to send message via outport");
-                                    load.lock().reset();
+                                    load.reset();
                                 }
                             }
                         }
@@ -180,7 +180,7 @@ impl Actor for JavaScriptActor {
                                     .0
                                     .send(result)
                                     .expect("Expected to send message via outport");
-                                load.lock().reset();
+                                load.reset();
                             }
                         }
                     }
@@ -193,7 +193,7 @@ impl Actor for JavaScriptActor {
         // Cleanup any resources
     }
 
-    fn load_count(&self) -> Arc<Mutex<ActorLoad>> {
+    fn load_count(&self) -> Arc<ActorLoad> {
         Arc::clone(&self.load)
     }
 }

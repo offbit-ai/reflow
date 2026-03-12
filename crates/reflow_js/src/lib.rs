@@ -1,9 +1,14 @@
 pub mod filesystem;
+
+#[cfg(test)]
 pub mod flume_function_test;
 pub mod minimal_runtime;
+#[cfg(test)]
 pub mod minimal_runtime_test;
+#[cfg(test)]
 pub mod minimal_test;
 pub mod networking;
+#[cfg(test)]
 pub mod phase1_test;
 pub mod process;
 pub mod resolver;

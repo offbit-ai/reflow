@@ -69,14 +69,14 @@ pub async fn simple_timer_actor(
             let load = context.get_load();
             
             // Increase load count for the background task
-            load.lock().inc();
+            load.inc();
             
             tokio::spawn(async move {
                 let mut tick_count = 0;
                 
                 // Ensure we decrease load count when the task finishes
                 let _load_guard = scopeguard::guard(load.clone(), |load| {
-                    load.lock().dec();
+                    load.dec();
                 });
                 
                 loop {

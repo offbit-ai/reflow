@@ -137,7 +137,7 @@ impl Connector {
                             &from_actor_id, &to_actor_id
                         )
                     });
-                from_actor_load_count.clone().lock().dec();
+                from_actor_load_count.dec();
 
                 // Send tracing event if tracing is enabled
                 if let Some(ref tracing) = tracing_integration {
@@ -228,8 +228,7 @@ impl Connector {
 
                         // Capture tracing info from &msg before moving
                         let message_size = std::mem::size_of_val(&msg);
-                        let msg_discriminant =
-                            format!("{:?}", std::mem::discriminant(&msg));
+                        let msg_discriminant = format!("{:?}", std::mem::discriminant(&msg));
 
                         // Emit MessageSent event
                         let value: serde_json::Value = msg.clone().into();
