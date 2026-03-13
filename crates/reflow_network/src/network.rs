@@ -35,7 +35,7 @@ use crate::actor::{Actor, ActorConfig, MemoryState};
 #[cfg(target_arch = "wasm32")]
 use crate::actor::ActorChannel;
 use crate::graph::Graph;
-use crate::graph::types::{GraphConnection, GraphEvents, GraphIIP, GraphNode};
+use crate::graph::types::{ComponentSpec, GraphConnection, GraphEvents, GraphIIP, GraphNode};
 use crate::message::{CompressionConfig, EncodableValue, EncodedMessage, Message};
 use crate::tracing::{TracingClient, TracingConfig, TracingIntegration};
 
@@ -232,7 +232,6 @@ impl Network {
             id: id.to_string(),
             component: process.to_string(),
             metadata: None,
-            script_runtime: None,
         };
         self.nodes.insert(id.to_string(), node);
     }
@@ -851,6 +850,218 @@ impl Network {
         spawn_local(event_worker);
 
         network
+    }
+
+    /// Resolve component specifications from graph node metadata.
+    ///
+    /// Scans all nodes for `componentSpec` metadata entries and auto-registers
+    /// actors that haven't been manually registered yet. This bridges the gap
+    /// between graph definition and runtime — the graph declares *what* a
+    /// component is (`ComponentSpec`), and this method provisions the actual
+    /// actor implementation.
+    ///
+    /// Call between `with_graph()` and `start()`:
+    /// ```ignore
+    /// let network = Network::with_graph(config, &graph);
+    /// network.lock().unwrap().resolve_components(&registry).await?;
+    /// network.lock().unwrap().start()?;
+    /// ```
+    ///
+    /// Resolution rules:
+    ///   - `ComponentSpec::Native` → expects actor already registered by name
+    ///   - `ComponentSpec::Script { .. }` → creates actor via `ComponentRegistry`
+    ///   - `ComponentSpec::Wasm { .. }` → reserved (not yet implemented)
+    ///   - `ComponentSpec::Subgraph { .. }` → reserved (handled by SubgraphActor)
+    ///   - No `componentSpec` → expects actor already registered by name (legacy)
+    /// Collect unresolved component specs from graph nodes.
+    ///
+    /// Returns `(node_id, component_name, spec)` for every node whose
+    /// component isn't yet registered and has a `componentSpec` in metadata.
+    fn unresolved_component_specs(&self) -> Vec<(String, String, ComponentSpec)> {
+        self.nodes
+            .iter()
+            .filter(|(_, node)| !self.actors.contains_key(&node.component))
+            .filter_map(|(id, node)| {
+                node.component_spec()
+                    .map(|spec| (id.clone(), node.component.clone(), spec))
+            })
+            .collect()
+    }
+
+    /// Resolve component specifications from graph node metadata.
+    ///
+    /// Scans all nodes for `componentSpec` metadata entries and auto-registers
+    /// actors that haven't been manually registered yet. This bridges the gap
+    /// between graph definition and runtime — the graph declares *what* a
+    /// component is (`ComponentSpec`), and this method provisions the actual
+    /// actor implementation.
+    ///
+    /// Call between `with_graph()` and `start()`:
+    /// ```ignore
+    /// let network = Network::with_graph(config, &graph);
+    /// network.lock().unwrap().resolve_components(&registry).await?;
+    /// network.lock().unwrap().start()?;
+    /// ```
+    ///
+    /// Resolution rules:
+    ///   - `ComponentSpec::Native` → expects actor already registered by name
+    ///   - `ComponentSpec::Script { .. }` → creates actor via `ComponentRegistry`
+    ///   - `ComponentSpec::Wasm { .. }` → reserved (not yet implemented)
+    ///   - `ComponentSpec::Subgraph { .. }` → reserved (handled by SubgraphActor)
+    ///   - No `componentSpec` → expects actor already registered by name (legacy)
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn resolve_components(
+        &mut self,
+        registry: &crate::script_discovery::registry::ComponentRegistry,
+    ) -> Result<(), anyhow::Error> {
+        use tracing::{debug, info, warn};
+
+        let unresolved = self.unresolved_component_specs();
+        let mut resolved = 0u32;
+
+        // Warn about nodes with no spec and no actor
+        for (id, node) in &self.nodes {
+            if !self.actors.contains_key(&node.component) && node.component_spec().is_none() {
+                warn!(
+                    "Node '{}' references unregistered component '{}' with no componentSpec",
+                    id, node.component
+                );
+            }
+        }
+
+        for (id, component, spec) in unresolved {
+            match spec {
+                ComponentSpec::Native => {
+                    warn!(
+                        "Node '{}' has componentSpec=native but component '{}' is not registered",
+                        id, component
+                    );
+                }
+                ComponentSpec::Script { .. } => {
+                    let actor = registry.get_actor(&component).await.map_err(|e| {
+                        anyhow::anyhow!(
+                            "Failed to resolve script component '{}' for node '{}': {}",
+                            component,
+                            id,
+                            e
+                        )
+                    })?;
+
+                    self.actors.insert(component.clone(), actor);
+                    info!(
+                        "Resolved script component '{}' for node '{}'",
+                        component, id
+                    );
+                    resolved += 1;
+                }
+                ComponentSpec::Wasm { source, handler } => {
+                    warn!(
+                        "Node '{}' has componentSpec=wasm (source={}, handler={}), not yet implemented",
+                        id, source, handler
+                    );
+                }
+                ComponentSpec::Subgraph { graph } => {
+                    debug!(
+                        "Node '{}' references subgraph '{}', expecting SubgraphActor registration",
+                        id, graph
+                    );
+                }
+            }
+        }
+
+        if resolved > 0 {
+            info!("Resolved {} component(s) from graph metadata", resolved);
+        }
+
+        Ok(())
+    }
+
+    /// WASM variant of component resolution.
+    ///
+    /// Scans graph nodes for `componentSpec`, deploys inline scripts to
+    /// dynASB via browser `fetch`, and creates `BrowserRpcClient`-backed
+    /// actors that communicate over `web-sys::WebSocket`.
+    ///
+    /// The `dynasb_api_url` is the base URL of the dynASB instance
+    /// (e.g. `"https://dynasb.example.com"`).
+    #[cfg(target_arch = "wasm32")]
+    pub async fn resolve_components(&mut self, dynasb_api_url: &str) -> Result<(), anyhow::Error> {
+        use crate::graph::types::ScriptSourceType;
+        use crate::websocket_rpc::browser_client;
+
+        let unresolved = self.unresolved_component_specs();
+        let mut errors = Vec::new();
+
+        for (id, component, spec) in unresolved {
+            match spec {
+                ComponentSpec::Native => {
+                    errors.push(format!(
+                        "Node '{}': native component '{}' not registered",
+                        id, component
+                    ));
+                }
+                ComponentSpec::Script { script } => {
+                    // Get the inline code
+                    let code = match script.source {
+                        ScriptSourceType::Inline => script.code.ok_or_else(|| {
+                            anyhow::anyhow!("Node '{}': inline script has no code", id)
+                        })?,
+                        ScriptSourceType::File => {
+                            errors.push(format!(
+                                "Node '{}': file-based scripts not available in browser",
+                                id
+                            ));
+                            continue;
+                        }
+                    };
+
+                    // Deploy to dynASB via fetch
+                    let (function_id, ws_url) = browser_client::browser_deploy_script(
+                        dynasb_api_url,
+                        &component,
+                        &script.runtime,
+                        &code,
+                        &script.handler,
+                        if script.dependencies.is_empty() {
+                            None
+                        } else {
+                            Some(script.dependencies)
+                        },
+                        script.timeout_seconds,
+                    )
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Node '{}': deploy failed: {}", id, e))?;
+
+                    // Inject deployment metadata into the node
+                    if let Some(node) = self.nodes.get_mut(&id) {
+                        node.set_metadata("dynasb.function_id", &function_id);
+                        node.set_metadata("dynasb.ws_url", &ws_url);
+                    }
+
+                    // TODO: create BrowserRpcClient-backed actor and register
+                    // For now, deployment metadata is set — actor creation
+                    // requires a browser-compatible ScriptActor implementation
+                }
+                ComponentSpec::Wasm { .. } => {
+                    errors.push(format!(
+                        "Node '{}': WASM component auto-loading not yet implemented",
+                        id
+                    ));
+                }
+                ComponentSpec::Subgraph { .. } => {
+                    // Subgraphs handled separately
+                }
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "Unresolved components:\n  {}",
+                errors.join("\n  ")
+            ))
+        }
     }
 
     /// Shutdown the network and finalize pending tasks

@@ -4,7 +4,7 @@ use super::factory::{
 };
 use super::types::*;
 use crate::actor::Actor;
-use crate::websocket_rpc::{DynASBClient, DynASBConfig, DeploymentStatus, DynASBFunction};
+use crate::websocket_rpc::{DeploymentStatus, DynASBClient, DynASBConfig, DynASBFunction};
 use anyhow::Result;
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -58,9 +58,7 @@ impl ComponentRegistry {
 
     /// Configure the dynASB backend for remote script execution
     pub fn set_dynasb_config(&mut self, config: DynASBConfig) {
-        self.dynasb_client = Some(Arc::new(tokio::sync::Mutex::new(
-            DynASBClient::new(config),
-        )));
+        self.dynasb_client = Some(Arc::new(tokio::sync::Mutex::new(DynASBClient::new(config))));
     }
 
     /// Register a script actor for remote execution on dynASB.
@@ -70,14 +68,11 @@ impl ComponentRegistry {
         name: &str,
         metadata: DiscoveredScriptActor,
     ) -> Result<()> {
-        let client = self.dynasb_client.clone()
-            .ok_or_else(|| anyhow::anyhow!(
-                "dynASB not configured. Call set_dynasb_config() first."
-            ))?;
+        let client = self.dynasb_client.clone().ok_or_else(|| {
+            anyhow::anyhow!("dynASB not configured. Call set_dynasb_config() first.")
+        })?;
 
-        let factory: Arc<dyn ActorFactory> = Arc::new(
-            DynASBActorFactory::new(metadata, client),
-        );
+        let factory: Arc<dyn ActorFactory> = Arc::new(DynASBActorFactory::new(metadata, client));
 
         self.script_actors.insert(name.to_string(), factory);
         self.component_index
@@ -121,15 +116,16 @@ impl ComponentRegistry {
     /// Get an actor instance — creates via factory for script/dynASB actors
     pub async fn get_actor(&self, name: &str) -> Result<Arc<dyn Actor>> {
         match self.component_index.get(name) {
-            Some(ComponentType::Native) => {
-                self.native_actors
-                    .get(name)
-                    .cloned()
-                    .ok_or_else(|| anyhow::anyhow!("Native actor not found: {}", name))
-            }
+            Some(ComponentType::Native) => self
+                .native_actors
+                .get(name)
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Native actor not found: {}", name)),
             Some(ComponentType::Script(_)) | Some(ComponentType::DynASB) => {
                 // Create actor instance via factory (deploys to dynASB if DynASB type)
-                let factory = self.script_actors.get(name)
+                let factory = self
+                    .script_actors
+                    .get(name)
                     .ok_or_else(|| anyhow::anyhow!("Script actor factory not found: {}", name))?;
                 let actor = factory.create_instance().await?;
                 Ok(Arc::from(actor))
@@ -186,7 +182,8 @@ impl ComponentRegistry {
 
         let client = self.dynasb_client.as_ref()?;
         let guard = client.lock().await;
-        guard.deployed_functions()
+        guard
+            .deployed_functions()
             .values()
             .find(|f| f.name == name)
             .cloned()
@@ -202,7 +199,8 @@ impl ComponentRegistry {
         let mut guard = client.lock().await;
 
         // Find the function_id for this component name
-        let function_id = guard.deployed_functions()
+        let function_id = guard
+            .deployed_functions()
             .values()
             .find(|f| f.name == name)
             .map(|f| f.function_id.clone())?;
@@ -212,7 +210,10 @@ impl ComponentRegistry {
 
     /// Get deployment metadata for a dynASB component as a flat map,
     /// suitable for merging into `GraphNode.metadata`.
-    pub async fn get_deployment_metadata(&self, name: &str) -> Option<HashMap<String, serde_json::Value>> {
+    pub async fn get_deployment_metadata(
+        &self,
+        name: &str,
+    ) -> Option<HashMap<String, serde_json::Value>> {
         if !matches!(self.component_index.get(name), Some(ComponentType::DynASB)) {
             return None;
         }
@@ -220,7 +221,8 @@ impl ComponentRegistry {
         let client = self.dynasb_client.as_ref()?;
         let guard = client.lock().await;
 
-        let function_id = guard.deployed_functions()
+        let function_id = guard
+            .deployed_functions()
             .values()
             .find(|f| f.name == name)
             .map(|f| f.function_id.clone())?;

@@ -9,13 +9,12 @@
 ///   2. DynASBClient::create_actor() → returns WebSocketScriptActor pointing at dynASB WS
 ///   3. Actor runs normally via JSON-RPC "process" calls
 ///   4. DynASBClient::undeploy() → POST /api/v1/functions/:id/undeploy
-
 use super::client::WebSocketRpcClient;
 use super::script_actor::WebSocketScriptActor;
 use crate::script_discovery::types::DiscoveredScriptActor;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -127,7 +126,8 @@ impl DynASBClient {
         let url = format!("{}/api/v1/functions", self.config.api_url);
         info!("Deploying function '{}' to dynASB", name);
 
-        let response: DeployResponse = self.http
+        let response: DeployResponse = self
+            .http
             .post(&url)
             .json(&body)
             .send()
@@ -140,11 +140,14 @@ impl DynASBClient {
         if !response.success {
             return Err(anyhow::anyhow!(
                 "Deployment failed: {}",
-                response.error.unwrap_or_else(|| "unknown error".to_string())
+                response
+                    .error
+                    .unwrap_or_else(|| "unknown error".to_string())
             ));
         }
 
-        let function_id = response.function_id
+        let function_id = response
+            .function_id
             .ok_or_else(|| anyhow::anyhow!("No function_id in deploy response"))?;
 
         info!(
@@ -179,11 +182,8 @@ impl DynASBClient {
         let ws_url = format!("{}/{}", self.config.ws_url, func.function_id);
         let rpc_client = Arc::new(WebSocketRpcClient::new(ws_url));
 
-        let actor = WebSocketScriptActor::new(
-            metadata,
-            rpc_client,
-            self.config.redis_url.clone(),
-        ).await;
+        let actor =
+            WebSocketScriptActor::new(metadata, rpc_client, self.config.redis_url.clone()).await;
 
         Ok(actor)
     }
@@ -195,7 +195,8 @@ impl DynASBClient {
             self.config.api_url, function_id
         );
 
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .send()
             .await
             .context("Failed to undeploy function")?;
@@ -219,12 +220,10 @@ impl DynASBClient {
     /// Maps the remote state string to a `DeploymentStatus` and updates
     /// the local tracking record.
     pub async fn health_check(&mut self, function_id: &str) -> Result<DeploymentStatus> {
-        let url = format!(
-            "{}/api/v1/functions/{}",
-            self.config.api_url, function_id
-        );
+        let url = format!("{}/api/v1/functions/{}", self.config.api_url, function_id);
 
-        let resp: FunctionStatusResponse = self.http
+        let resp: FunctionStatusResponse = self
+            .http
             .get(&url)
             .send()
             .await
@@ -273,20 +272,28 @@ impl DynASBClient {
                     return Ok(status);
                 }
                 DeploymentStatus::Unhealthy | DeploymentStatus::Stopped => {
-                    warn!("Function {} entered terminal state: {:?}", function_id, status);
+                    warn!(
+                        "Function {} entered terminal state: {:?}",
+                        function_id, status
+                    );
                     return Err(anyhow::anyhow!(
                         "Function {} is {:?}, cannot become ready",
-                        function_id, status
+                        function_id,
+                        status
                     ));
                 }
                 DeploymentStatus::Deploying | DeploymentStatus::Stopping => {
                     if tokio::time::Instant::now() >= deadline {
                         return Err(anyhow::anyhow!(
                             "Timed out waiting for function {} to become ready (last status: {:?})",
-                            function_id, status
+                            function_id,
+                            status
                         ));
                     }
-                    debug!("Function {} still {:?}, polling again in {:?}", function_id, status, poll_interval);
+                    debug!(
+                        "Function {} still {:?}, polling again in {:?}",
+                        function_id, status, poll_interval
+                    );
                     tokio::time::sleep(poll_interval).await;
                 }
             }
@@ -304,14 +311,18 @@ impl DynASBClient {
             meta.insert("dynasb.function_id".into(), json!(func.function_id));
             meta.insert("dynasb.status".into(), json!(func.status));
             meta.insert("dynasb.runtime".into(), json!(func.runtime));
-            meta.insert("dynasb.deployment_time_ms".into(), json!(func.deployment_time_ms));
+            meta.insert(
+                "dynasb.deployment_time_ms".into(),
+                json!(func.deployment_time_ms),
+            );
             if let Some(vm_id) = &func.vm_id {
                 meta.insert("dynasb.vm_id".into(), json!(vm_id));
             }
             meta.insert("dynasb.api_url".into(), json!(self.config.api_url));
-            meta.insert("dynasb.ws_url".into(), json!(format!(
-                "{}/{}", self.config.ws_url, func.function_id
-            )));
+            meta.insert(
+                "dynasb.ws_url".into(),
+                json!(format!("{}/{}", self.config.ws_url, func.function_id)),
+            );
         }
 
         meta

@@ -15,18 +15,65 @@ use wasm_bindgen::prelude::*;
 pub struct GraphNode {
     pub id: String,
     pub component: String,
+    /// Flexible metadata bag — carries all extension data including
+    /// component specs, deployment state, and user-defined key-value pairs.
+    /// Reserved keys (accessed via typed helpers):
+    ///   - `"componentSpec"` → `ComponentSpec`
+    ///   - `"dynasb.*"` → deployment metadata from DynASBClient
     #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, any> | undefined"))]
     pub metadata: Option<HashMap<String, Value>>,
+}
 
-    // Script runtime indicator (if this is a script actor)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub script_runtime: Option<ScriptRuntime>,
+impl GraphNode {
+    /// Read the component specification from metadata.
+    pub fn component_spec(&self) -> Option<ComponentSpec> {
+        self.metadata
+            .as_ref()
+            .and_then(|m| m.get("componentSpec"))
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+    }
 
-    /// Component specification — defines the component type, source, and
-    /// runtime requirements. When present, the network uses this to detect
-    /// and deploy the component automatically.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_spec: Option<ComponentSpec>,
+    /// Set the component specification in metadata.
+    pub fn set_component_spec(&mut self, spec: ComponentSpec) {
+        let meta = self.metadata.get_or_insert_with(HashMap::new);
+        if let Ok(v) = serde_json::to_value(&spec) {
+            meta.insert("componentSpec".to_string(), v);
+        }
+    }
+
+    /// Derive the script runtime from the component spec.
+    /// Returns `None` if no component spec is set or if the spec is not a script.
+    pub fn script_runtime(&self) -> Option<&str> {
+        match self.component_spec() {
+            Some(ComponentSpec::Script { script }) => Some(
+                // Leak avoided by matching known runtimes to static strs
+                match script.runtime.as_str() {
+                    "python" => "python",
+                    "nodejs" => "nodejs",
+                    "ruby" => "ruby",
+                    "lua" => "lua",
+                    _ => return None,
+                },
+            ),
+            _ => None,
+        }
+    }
+
+    /// Get a typed value from metadata by key.
+    pub fn get_metadata<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
+        self.metadata
+            .as_ref()
+            .and_then(|m| m.get(key))
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+    }
+
+    /// Set a typed value in metadata by key.
+    pub fn set_metadata<T: Serialize>(&mut self, key: &str, value: &T) {
+        let meta = self.metadata.get_or_insert_with(HashMap::new);
+        if let Ok(v) = serde_json::to_value(value) {
+            meta.insert(key.to_string(), v);
+        }
+    }
 }
 
 /// Runtime environment for script actors
@@ -62,15 +109,15 @@ pub enum ScriptRuntime {
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[derive(Default)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ComponentSpec {
     /// A pre-registered native Rust actor — resolved by component name
+    #[default]
     Native,
 
     /// A script actor — deployed to a runtime (dynASB, embedded, etc.)
-    Script {
-        script: ScriptSpec,
-    },
+    Script { script: ScriptSpec },
 
     /// A WASM actor — loaded from a .wasm binary
     Wasm {
@@ -87,11 +134,6 @@ pub enum ComponentSpec {
     },
 }
 
-impl Default for ComponentSpec {
-    fn default() -> Self {
-        ComponentSpec::Native
-    }
-}
 
 /// Script source and runtime specification.
 ///
@@ -144,7 +186,10 @@ pub struct ScriptSpec {
     /// Package dependencies: { "package_name": "version_spec" }
     /// Node.js: npm packages, Python: pip packages, Ruby: gems, Lua: rocks
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, string> | undefined"))]
+    #[cfg_attr(
+        target_arch = "wasm32",
+        tsify(type = "Map<string, string> | undefined")
+    )]
     pub dependencies: HashMap<String, String>,
 
     /// Timeout in seconds for script execution

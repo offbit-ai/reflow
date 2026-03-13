@@ -33,7 +33,6 @@ pub mod script_discovery;
 pub mod subgraph;
 pub mod tracing;
 pub mod types;
-#[cfg(not(target_arch = "wasm32"))]
 pub mod websocket_rpc;
 
 // Export WASM bindings

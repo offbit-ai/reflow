@@ -162,11 +162,13 @@ impl ActorFactory for DynASBActorFactory {
         let metadata = &self.metadata;
 
         // Read script source from the discovered file path
-        let code = std::fs::read_to_string(&metadata.file_path)
-            .map_err(|e| anyhow::anyhow!(
+        let code = std::fs::read_to_string(&metadata.file_path).map_err(|e| {
+            anyhow::anyhow!(
                 "Failed to read script source at {:?}: {}",
-                metadata.file_path, e
-            ))?;
+                metadata.file_path,
+                e
+            )
+        })?;
 
         // Map ScriptRuntime to dynASB runtime string
         let runtime_str = match metadata.runtime {
@@ -175,28 +177,34 @@ impl ActorFactory for DynASBActorFactory {
         };
 
         // Convert dependencies list to package manifest map
-        let dependencies: Option<HashMap<String, String>> = if metadata.workspace_metadata.dependencies.is_empty() {
-            None
-        } else {
-            Some(
-                metadata.workspace_metadata.dependencies.iter()
-                    .map(|dep| (dep.clone(), "*".to_string()))
-                    .collect()
-            )
-        };
+        let dependencies: Option<HashMap<String, String>> =
+            if metadata.workspace_metadata.dependencies.is_empty() {
+                None
+            } else {
+                Some(
+                    metadata
+                        .workspace_metadata
+                        .dependencies
+                        .iter()
+                        .map(|dep| (dep.clone(), "*".to_string()))
+                        .collect(),
+                )
+            };
 
         let timeout = metadata.workspace_metadata.runtime_requirements.timeout;
 
         // Deploy to dynASB
         let mut client = self.client.lock().await;
-        let func = client.deploy(
-            &metadata.component,
-            runtime_str,
-            &code,
-            &metadata.component, // handler = component name
-            dependencies,
-            Some(timeout),
-        ).await?;
+        let func = client
+            .deploy(
+                &metadata.component,
+                runtime_str,
+                &code,
+                &metadata.component, // handler = component name
+                dependencies,
+                Some(timeout),
+            )
+            .await?;
 
         info!(
             "Deployed script actor '{}' to dynASB as function '{}'",
@@ -206,11 +214,13 @@ impl ActorFactory for DynASBActorFactory {
         // Wait for the function to become ready before handing back the actor.
         // Status is tracked on DynASBClient.deployed — the ComponentRegistry
         // can query it via DynASBClient::deployed_functions() / health_check().
-        client.wait_until_ready(
-            &func.function_id,
-            Duration::from_secs(timeout as u64),
-            Duration::from_millis(500),
-        ).await?;
+        client
+            .wait_until_ready(
+                &func.function_id,
+                Duration::from_secs(timeout as u64),
+                Duration::from_millis(500),
+            )
+            .await?;
 
         // Create actor connected to this deployed function
         let actor = client.create_actor(&func, metadata.clone()).await?;

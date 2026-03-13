@@ -87,6 +87,18 @@ impl DistributedNetwork {
         Ok(())
     }
 
+    /// Resolve component specifications on the local network.
+    /// See [`Network::resolve_components`] for details.
+    pub async fn resolve_components(
+        &self,
+        registry: &crate::script_discovery::registry::ComponentRegistry,
+    ) -> Result<(), anyhow::Error> {
+        self.local_network
+            .write()
+            .resolve_components(registry)
+            .await
+    }
+
     pub async fn register_remote_actor(
         &self,
         actor_id: &str,

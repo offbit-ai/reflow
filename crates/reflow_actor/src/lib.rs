@@ -70,8 +70,6 @@ impl Default for ActorConfig {
                 id: "default".to_string(),
                 component: "DefaultComponent".to_string(),
                 metadata: Some(HashMap::new()),
-                script_runtime: None,
-                component_spec: None,
             },
             resolved_env: HashMap::new(),
             config: HashMap::new(),
@@ -493,7 +491,6 @@ impl BrowserActorContext {
             id: "wasm_actor".to_string(),
             component: "WasmComponent".to_string(),
             metadata: Some(config_map.clone()),
-            script_runtime: None,
         };
 
         let actor_config = ActorConfig {

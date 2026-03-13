@@ -700,8 +700,6 @@ impl ApiToolGenerator {
             id: actor.id.clone(),
             component: "ApiOperation".to_string(),
             metadata: Some(std::collections::HashMap::new()),
-            script_runtime: None,
-            component_spec: None,
         };
 
         let actor_config = ActorConfig {
@@ -1573,7 +1571,6 @@ mod tests {
             id: "test_actor".to_string(),
             component: "TestComponent".to_string(),
             metadata: Some(HashMap::new()),
-            script_runtime: None,
         };
 
         let actor_config = crate::actor::ActorConfig {

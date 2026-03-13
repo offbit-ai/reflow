@@ -402,7 +402,6 @@ mod tests {
                     id: "pass".to_string(),
                     component: "Passthrough".to_string(),
                     metadata: None,
-                    script_runtime: None,
                 },
             )]),
             inports: HashMap::from([(
@@ -505,7 +504,6 @@ mod tests {
                         id: "actor_a".to_string(),
                         component: "PassthroughA".to_string(),
                         metadata: None,
-                        script_runtime: None,
                     },
                 ),
                 (
@@ -514,7 +512,6 @@ mod tests {
                         id: "actor_b".to_string(),
                         component: "PassthroughB".to_string(),
                         metadata: None,
-                        script_runtime: None,
                     },
                 ),
             ]),
