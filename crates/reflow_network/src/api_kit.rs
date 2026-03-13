@@ -1,4 +1,5 @@
 use anyhow::{Result, anyhow};
+use base64::Engine;
 use reflow_tracing_protocol::client::TracingIntegration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,6 +9,27 @@ use std::path::Path;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use tracing::{error, info, warn};
+
+/// Simple URL-safe percent encoding for query parameter values.
+fn url_encode(s: &str) -> String {
+    let mut encoded = String::with_capacity(s.len());
+    for byte in s.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            _ => {
+                encoded.push_str(&format!("%{:02X}", byte));
+            }
+        }
+    }
+    encoded
+}
+
+/// Base64 encode bytes.
+fn base64_encode(data: &[u8]) -> String {
+    base64::engine::general_purpose::STANDARD.encode(data)
+}
 
 use crate::actor::message::Message;
 use crate::actor::{Actor, ActorBehavior, ActorConfig, ActorContext, MemoryState, Port};
@@ -77,8 +99,11 @@ pub struct Service {
     pub operations: Vec<Operation>,
     pub webhooks: Option<WebhookConfig>,
     pub sdks: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub documentation: Option<Documentation>,
+    #[serde(default)]
     pub status: ServiceStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pricing_model: Option<PricingModel>,
     pub compliance: Option<Vec<String>>,
 }
@@ -100,6 +125,7 @@ pub enum ServiceCategory {
     Location,
     News,
     Entertainment,
+    SocialMedia,
     Other,
 }
 
@@ -193,11 +219,24 @@ pub struct RateLimits {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateLimit {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub requests_per_second: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub requests_per_minute: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub requests_per_hour: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub requests_per_day: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub requests_per_month: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub requests_per_100_seconds: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub concurrent_requests: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_tokens_per_minute: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_tokens_per_minute: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -214,12 +253,22 @@ pub struct Operation {
     pub resource: String,
     pub method: String,
     pub endpoint_pattern: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub graphql_operation: Option<GraphQLOperation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<Vec<Parameter>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub required_scopes: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rate_limit_cost: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub batch_capable: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub webhook_events: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_schema: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -235,13 +284,20 @@ pub struct Parameter {
     #[serde(rename = "type")]
     pub param_type: String,
     pub location: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub example: Option<serde_json::Value>,
-    #[serde(rename = "enum")]
+    #[serde(rename = "enum", skip_serializing_if = "Option::is_none")]
     pub enum_values: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -281,9 +337,10 @@ pub struct Documentation {
     pub postman_collection: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ServiceStatus {
+    #[default]
     Active,
     Beta,
     Deprecated,
@@ -487,35 +544,7 @@ impl ApiToolGenerator {
         service: &Service,
         operation: &Operation,
     ) -> Result<serde_json::Value> {
-        let function_name = format!("{}_{}_{}", service_id, operation.verb, operation.resource);
-
-        let mut properties = serde_json::Map::new();
-        let mut required = Vec::new();
-
-        if let Some(parameters) = &operation.parameters {
-            for param in parameters {
-                let param_schema = self.parameter_to_json_schema(param);
-                properties.insert(param.name.clone(), param_schema);
-
-                if param.required.unwrap_or(false) {
-                    required.push(param.name.clone());
-                }
-            }
-        }
-
-        Ok(serde_json::json!({
-            "type": "function",
-            "function": {
-                "name": function_name,
-                "description": format!("{} {} using {} API",
-                    operation.verb, operation.resource, service.name),
-                "parameters": {
-                    "type": "object",
-                    "properties": properties,
-                    "required": required
-                }
-            }
-        }))
+        self.generate_openai_function_for_operation(service_id, service, operation)
     }
 
     fn parameter_to_json_schema(&self, param: &Parameter) -> serde_json::Value {
@@ -745,6 +774,16 @@ impl ApiToolGenerator {
         Ok(actor)
     }
 
+    /// Build a description string for an operation, preferring the enriched description.
+    fn operation_description(&self, service: &Service, operation: &Operation) -> String {
+        operation.description.clone().unwrap_or_else(|| {
+            format!(
+                "{} {} using {} API",
+                operation.verb, operation.resource, service.name
+            )
+        })
+    }
+
     /// Generate MCP tool for a specific operation
     fn generate_mcp_tool_for_operation(
         &self,
@@ -753,6 +792,7 @@ impl ApiToolGenerator {
         operation: &Operation,
     ) -> Result<serde_json::Value> {
         let tool_name = self.generate_tool_id(service_id, operation);
+        let description = self.operation_description(service, operation);
 
         let mut properties = serde_json::Map::new();
         let mut required = Vec::new();
@@ -770,8 +810,7 @@ impl ApiToolGenerator {
 
         Ok(serde_json::json!({
             "name": tool_name,
-            "description": format!("{} {} using {} API",
-                operation.verb, operation.resource, service.name),
+            "description": description,
             "inputSchema": {
                 "type": "object",
                 "properties": properties,
@@ -788,6 +827,7 @@ impl ApiToolGenerator {
         operation: &Operation,
     ) -> Result<serde_json::Value> {
         let function_name = self.generate_tool_id(service_id, operation);
+        let description = self.operation_description(service, operation);
 
         let mut properties = serde_json::Map::new();
         let mut required = Vec::new();
@@ -807,8 +847,7 @@ impl ApiToolGenerator {
             "type": "function",
             "function": {
                 "name": function_name,
-                "description": format!("{} {} using {} API",
-                    operation.verb, operation.resource, service.name),
+                "description": description,
                 "parameters": {
                     "type": "object",
                     "properties": properties,
@@ -825,32 +864,7 @@ impl ApiToolGenerator {
         service: &Service,
         operation: &Operation,
     ) -> Result<serde_json::Value> {
-        let tool_name = format!("{}_{}_{}", service_id, operation.verb, operation.resource);
-
-        let mut properties = serde_json::Map::new();
-        let mut required = Vec::new();
-
-        if let Some(parameters) = &operation.parameters {
-            for param in parameters {
-                let param_schema = self.parameter_to_json_schema(param);
-                properties.insert(param.name.clone(), param_schema);
-
-                if param.required.unwrap_or(false) {
-                    required.push(param.name.clone());
-                }
-            }
-        }
-
-        Ok(serde_json::json!({
-            "name": tool_name,
-            "description": format!("{} {} using {} API",
-                operation.verb, operation.resource, service.name),
-            "inputSchema": {
-                "type": "object",
-                "properties": properties,
-                "required": required
-            }
-        }))
+        self.generate_mcp_tool_for_operation(service_id, service, operation)
     }
 }
 
@@ -908,7 +922,7 @@ impl ApiOperationActor {
             .await?;
 
         // Build the request URL
-        let url = self.build_request_url(context)?;
+        let mut url = self.build_request_url(context)?;
 
         // Prepare headers
         let mut headers = reqwest::header::HeaderMap::new();
@@ -917,8 +931,8 @@ impl ApiOperationActor {
             reqwest::header::HeaderValue::from_static("application/json"),
         );
 
-        // Add authentication
-        self.add_authentication(&mut headers).await?;
+        // Add authentication (may modify URL for query-based API keys)
+        self.add_authentication(&mut headers, &mut url).await?;
 
         // Build request
         let mut request_builder = match self.operation.method.as_str() {
@@ -927,6 +941,7 @@ impl ApiOperationActor {
             "PUT" => self.http_client.put(&url),
             "PATCH" => self.http_client.patch(&url),
             "DELETE" => self.http_client.delete(&url),
+            "HEAD" => self.http_client.head(&url),
             _ => {
                 return Err(anyhow!(
                     "Unsupported HTTP method: {}",
@@ -935,15 +950,18 @@ impl ApiOperationActor {
             }
         };
 
+        // Add header parameters from operation definition
+        self.add_header_parameters(&mut headers, context)?;
         request_builder = request_builder.headers(headers);
 
-        // Add query parameters and body
-        if self.operation.method == "GET" || self.operation.method == "DELETE" {
-            let query_params = self.extract_query_parameters(context)?;
-            if !query_params.is_empty() {
-                request_builder = request_builder.query(&query_params);
-            }
-        } else {
+        // Query parameters apply to ALL HTTP methods
+        let query_params = self.extract_query_parameters(context)?;
+        if !query_params.is_empty() {
+            request_builder = request_builder.query(&query_params);
+        }
+
+        // Body only for methods that support it
+        if matches!(self.operation.method.as_str(), "POST" | "PUT" | "PATCH") {
             let body = self.build_request_body(context)?;
             if let Some(body) = body {
                 request_builder = request_builder.json(&body);
@@ -983,7 +1001,33 @@ impl ApiOperationActor {
         Ok(url)
     }
 
-    async fn add_authentication(&self, headers: &mut reqwest::header::HeaderMap) -> Result<()> {
+    /// Add parameters with location="header" to the request headers.
+    fn add_header_parameters(
+        &self,
+        headers: &mut reqwest::header::HeaderMap,
+        context: &ActorContext,
+    ) -> Result<()> {
+        if let Some(parameters) = &self.operation.parameters {
+            for param in parameters {
+                if param.location == "header" {
+                    if let Some(value) = context.payload.get(&param.name) {
+                        let string_value = self.message_to_string(value)?;
+                        headers.insert(
+                            reqwest::header::HeaderName::from_bytes(param.name.as_bytes())?,
+                            reqwest::header::HeaderValue::from_str(&string_value)?,
+                        );
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    async fn add_authentication(
+        &self,
+        headers: &mut reqwest::header::HeaderMap,
+        url: &mut String,
+    ) -> Result<()> {
         match self.service.authentication.primary_method {
             AuthMethod::OAuth2 => {
                 let token = self.auth_manager.get_oauth_token(&self.service_id).await?;
@@ -992,7 +1036,7 @@ impl ApiOperationActor {
                     reqwest::header::HeaderValue::from_str(&format!("Bearer {}", token))?,
                 );
             }
-            AuthMethod::BearerToken => {
+            AuthMethod::BearerToken | AuthMethod::Jwt => {
                 let token = self.auth_manager.get_bearer_token(&self.service_id).await?;
                 headers.insert(
                     reqwest::header::AUTHORIZATION,
@@ -1002,27 +1046,62 @@ impl ApiOperationActor {
             AuthMethod::ApiKey => {
                 if let Some(config) = &self.service.authentication.api_key_config {
                     let api_key = self.auth_manager.get_api_key(&self.service_id).await?;
-                    let header_value = if let Some(prefix) = &config.prefix {
+                    let value = if let Some(prefix) = &config.prefix {
                         format!("{} {}", prefix, api_key)
                     } else {
                         api_key
                     };
 
-                    if config.location == "header" {
-                        headers.insert(
-                            reqwest::header::HeaderName::from_bytes(
-                                config.parameter_name.as_bytes(),
-                            )?,
-                            reqwest::header::HeaderValue::from_str(&header_value)?,
-                        );
+                    match config.location.as_str() {
+                        "header" => {
+                            headers.insert(
+                                reqwest::header::HeaderName::from_bytes(
+                                    config.parameter_name.as_bytes(),
+                                )?,
+                                reqwest::header::HeaderValue::from_str(&value)?,
+                            );
+                        }
+                        "query" => {
+                            // Append API key as query parameter
+                            let separator = if url.contains('?') { "&" } else { "?" };
+                            url.push_str(&format!(
+                                "{}{}={}",
+                                separator,
+                                url_encode(&config.parameter_name),
+                                url_encode(&value)
+                            ));
+                        }
+                        _ => {
+                            warn!(
+                                "Unsupported API key location: {} for service {}",
+                                config.location, self.service_id
+                            );
+                        }
                     }
                 }
             }
-            _ => {
-                warn!(
-                    "Unsupported authentication method: {:?}",
-                    self.service.authentication.primary_method
+            AuthMethod::BasicAuth => {
+                // Use api_key as "username:password" or get bearer token as fallback
+                let credentials = self
+                    .auth_manager
+                    .get_api_key(&self.service_id)
+                    .await
+                    .unwrap_or_default();
+                let encoded = base64_encode(credentials.as_bytes());
+                headers.insert(
+                    reqwest::header::AUTHORIZATION,
+                    reqwest::header::HeaderValue::from_str(&format!("Basic {}", encoded))?,
                 );
+            }
+            AuthMethod::Hmac | AuthMethod::Custom => {
+                // HMAC and Custom auth require service-specific implementation.
+                // The auth_manager should handle these via get_bearer_token or get_api_key.
+                if let Ok(token) = self.auth_manager.get_bearer_token(&self.service_id).await {
+                    headers.insert(
+                        reqwest::header::AUTHORIZATION,
+                        reqwest::header::HeaderValue::from_str(&token)?,
+                    );
+                }
             }
         }
 
@@ -1498,7 +1577,11 @@ mod tests {
                     requests_per_minute: Some(600.0),
                     requests_per_hour: None,
                     requests_per_day: None,
+                    requests_per_month: None,
+                    requests_per_100_seconds: None,
                     concurrent_requests: None,
+                    input_tokens_per_minute: None,
+                    output_tokens_per_minute: None,
                 }),
                 tier_based_limits: None,
                 endpoint_specific: None,
@@ -1520,6 +1603,7 @@ mod tests {
             resource: "user".to_string(),
             method: "GET".to_string(),
             endpoint_pattern: "/users/{id}".to_string(),
+            description: Some("Get a user by ID".to_string()),
             graphql_operation: None,
             parameters: Some(vec![Parameter {
                 name: "id".to_string(),
@@ -1531,11 +1615,13 @@ mod tests {
                 enum_values: None,
                 format: None,
                 pattern: None,
+                default: None,
             }]),
             required_scopes: None,
             rate_limit_cost: None,
             batch_capable: None,
             webhook_events: None,
+            response_schema: None,
         };
 
         let credentials = HashMap::from([(
@@ -1594,8 +1680,17 @@ mod tests {
 
     #[test]
     fn test_tool_schema_generation() {
-        let service_registry_json_string = include_str!("../../../api_service_registry.json");
-        let registry: ServiceRegistry = serde_json::from_str(service_registry_json_string).unwrap();
+        let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+        let registry_path = manifest_dir.join("../../api_service_registry_enriched.json");
+        let full_registry = ServiceRegistry::from_json_file(&registry_path).unwrap();
+
+        // Use a subset (5 services) to avoid massive memory usage from 6700+ tool mappings
+        let subset: HashMap<String, Service> = full_registry.services.into_iter().take(5).collect();
+        let registry = ServiceRegistry {
+            schema_version: full_registry.schema_version,
+            services: subset,
+            global_settings: full_registry.global_settings,
+        };
 
         let auth_manager = Arc::new(DefaultAuthManager::new(HashMap::new()));
         let rate_limiter = Arc::new(DefaultRateLimiter::new(HashMap::new()));
@@ -1612,9 +1707,21 @@ mod tests {
         assert_eq!(mcp_schema["version"], "2024-11-05");
         assert!(!mcp_schema["tools"].is_null());
 
+        // Verify enriched descriptions are used (not just "verb resource using API")
+        let tools = mcp_schema["tools"].as_array().unwrap();
+        let has_enriched = tools.iter().any(|t| {
+            let desc = t["description"].as_str().unwrap_or("");
+            !desc.contains("using") || desc.len() > 50
+        });
+        assert!(
+            has_enriched,
+            "Should have enriched descriptions from registry"
+        );
+
         println!(
-            "{}",
-            serde_json::to_string_pretty(&mcp_schema["tools"]).unwrap()
+            "Generated {} tools, {} OpenAI functions",
+            tools.len(),
+            openai_functions.len()
         );
     }
 
@@ -1639,26 +1746,58 @@ mod tests {
         let openai_functions = generator.generate_openai_functions().unwrap();
         let mcp_schema = generator.generate_mcp_schema().unwrap();
 
-        // println!("tool: {:?}",mcp_schema["tools"][0]);
-        let res = generator
-            .execute_tool(
-                "jira_update_issue",
-                json!({
-                    "capture_id": "PAY-1234567890"
-                }),
-            )
-            .await
-            .expect("Tool execution failed");
-
-        println!("Tool execution result: {:?}", res);
-
         assert!(!openai_functions.is_empty());
         assert_eq!(mcp_schema["version"], "2024-11-05");
         assert!(!mcp_schema["tools"].is_null());
+    }
 
-        // println!(
-        //     "{}",
-        //     serde_yaml::to_string(&mcp_schema["tools"]).unwrap()
-        // );
+    #[test]
+    fn test_enriched_registry_roundtrip() {
+        let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+        let registry_path = manifest_dir.join("../../api_service_registry_enriched.json");
+        let registry = ServiceRegistry::from_json_file(&registry_path).unwrap();
+
+        // Verify we can load the enriched data
+        assert!(registry.services.len() >= 80, "Should have 80+ services");
+
+        // Verify operations have descriptions
+        let total_ops: usize = registry.services.values().map(|s| s.operations.len()).sum();
+        assert!(total_ops > 6000, "Should have 6000+ enriched operations");
+
+        let ops_with_desc: usize = registry
+            .services
+            .values()
+            .flat_map(|s| &s.operations)
+            .filter(|op| op.description.is_some())
+            .count();
+        let desc_pct = (ops_with_desc as f64 / total_ops as f64) * 100.0;
+        assert!(
+            desc_pct > 90.0,
+            "Should have >90% ops with descriptions, got {:.1}%",
+            desc_pct
+        );
+
+        // Verify round-trip on a subset to avoid serializing 17MB
+        let subset: HashMap<String, Service> = registry
+            .services
+            .iter()
+            .take(3)
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        let small_registry = ServiceRegistry {
+            schema_version: registry.schema_version.clone(),
+            services: subset,
+            global_settings: registry.global_settings.clone(),
+        };
+        let json = small_registry.to_json().unwrap();
+        let registry2: ServiceRegistry = serde_json::from_str(&json).unwrap();
+        assert_eq!(small_registry.services.len(), registry2.services.len());
+
+        println!(
+            "Enriched registry: {} services, {} operations, {:.1}% with descriptions",
+            registry.services.len(),
+            total_ops,
+            desc_pct
+        );
     }
 }

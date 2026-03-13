@@ -1,0 +1,23 @@
+[package]
+name = "api_schema_gen"
+version = "0.1.0"
+edition = "2021"
+description = "OpenAPI spec discovery and schema generation tool for api_kit service registry"
+
+[[bin]]
+name = "api-schema-gen"
+path = "src/main.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+anyhow = { workspace = true }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = "2.5"
+indexmap = { version = "2", features = ["serde"] }
+futures = { workspace = true }

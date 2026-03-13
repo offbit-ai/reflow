@@ -4,6 +4,7 @@
 //! Script execution (JavaScript, Python, SQL, etc.) is handled by dynASB
 //! via ComponentSpec::Script — this crate only contains native actors.
 
+pub mod api;
 pub mod flow_control;
 pub mod integration;
 pub mod logic;

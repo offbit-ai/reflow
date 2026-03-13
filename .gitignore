@@ -9,4 +9,4 @@ index.node
 reflow_js
 .env.*
 npm-package/
-crates/*/pkg/
+crawl_output/
