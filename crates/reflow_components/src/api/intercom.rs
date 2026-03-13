@@ -41,7 +41,7 @@ pub async fn intercom_create_contact(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts".to_string();
+    let endpoint = "/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -131,7 +131,7 @@ pub async fn intercom_send_message(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/messages".to_string();
+    let endpoint = "/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -212,7 +212,7 @@ pub async fn intercom_list_admins(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admins".to_string();
+    let endpoint = "/admins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -264,7 +264,7 @@ pub async fn intercom_list_activity_logs(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admins/activity_logs".to_string();
+    let endpoint = "/admins/activity_logs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -448,7 +448,7 @@ pub async fn intercom_list_articles(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/articles".to_string();
+    let endpoint = "/articles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -511,7 +511,7 @@ pub async fn intercom_create_article(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/articles".to_string();
+    let endpoint = "/articles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -592,7 +592,7 @@ pub async fn intercom_search_articles(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/articles/search".to_string();
+    let endpoint = "/articles/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -855,7 +855,7 @@ pub async fn intercom_create_or_update_company(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/companies".to_string();
+    let endpoint = "/companies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -939,7 +939,7 @@ pub async fn intercom_list_companies(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/companies".to_string();
+    let endpoint = "/companies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1014,7 +1014,7 @@ pub async fn intercom_list_all_companies(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/companies/list".to_string();
+    let endpoint = "/companies/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1366,7 +1366,7 @@ pub async fn intercom_list_contacts(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts".to_string();
+    let endpoint = "/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1432,7 +1432,7 @@ pub async fn intercom_merge_contacts(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts/merge".to_string();
+    let endpoint = "/contacts/merge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1495,7 +1495,7 @@ pub async fn intercom_search_contacts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts/search".to_string();
+    let endpoint = "/contacts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2600,7 +2600,7 @@ pub async fn intercom_list_conversations(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations".to_string();
+    let endpoint = "/conversations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2663,7 +2663,7 @@ pub async fn intercom_create_conversation(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations".to_string();
+    let endpoint = "/conversations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2729,7 +2729,7 @@ pub async fn intercom_create_conversations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations/redact".to_string();
+    let endpoint = "/conversations/redact".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2781,7 +2781,7 @@ pub async fn intercom_search_conversations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations/search".to_string();
+    let endpoint = "/conversations/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3039,7 +3039,7 @@ pub async fn intercom_create_data_attribute(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data_attributes".to_string();
+    let endpoint = "/data_attributes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3114,7 +3114,7 @@ pub async fn intercom_list_data_attributes(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data_attributes".to_string();
+    let endpoint = "/data_attributes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3304,7 +3304,7 @@ pub async fn intercom_list_data_events(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/events".to_string();
+    let endpoint = "/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3373,7 +3373,7 @@ pub async fn intercom_create_data_event(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/events".to_string();
+    let endpoint = "/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3448,7 +3448,7 @@ pub async fn intercom_create_data_events(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/events/summaries".to_string();
+    let endpoint = "/events/summaries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3566,7 +3566,7 @@ pub async fn intercom_create_data_export(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/export/content/data".to_string();
+    let endpoint = "/export/content/data".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3684,7 +3684,7 @@ pub async fn intercom_list_all_collections(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/help_center/collections".to_string();
+    let endpoint = "/help_center/collections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3747,7 +3747,7 @@ pub async fn intercom_create_collection(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/help_center/collections".to_string();
+    let endpoint = "/help_center/collections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4001,7 +4001,7 @@ pub async fn intercom_list_help_centers(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/help_center/help_centers".to_string();
+    let endpoint = "/help_center/help_centers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4064,7 +4064,7 @@ pub async fn intercom_create_message(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/messages".to_string();
+    let endpoint = "/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4145,7 +4145,7 @@ pub async fn intercom_create_news_item(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/news/news_items".to_string();
+    let endpoint = "/news/news_items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4226,7 +4226,7 @@ pub async fn intercom_list_news_items(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/news/news_items".to_string();
+    let endpoint = "/news/news_items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4472,7 +4472,7 @@ pub async fn intercom_list_newsfeeds(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/news/newsfeeds".to_string();
+    let endpoint = "/news/newsfeeds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4634,7 +4634,7 @@ pub async fn intercom_create_phone_switch(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/phone_call_redirects".to_string();
+    let endpoint = "/phone_call_redirects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4697,7 +4697,7 @@ pub async fn intercom_list_segments(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/segments".to_string();
+    let endpoint = "/segments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4812,7 +4812,7 @@ pub async fn intercom_list_subscription_types(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscription_types".to_string();
+    let endpoint = "/subscription_types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4864,7 +4864,7 @@ pub async fn intercom_create_tag(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tags".to_string();
+    let endpoint = "/tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4916,7 +4916,7 @@ pub async fn intercom_list_tags(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tags".to_string();
+    let endpoint = "/tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5078,7 +5078,7 @@ pub async fn intercom_list_teams(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams".to_string();
+    let endpoint = "/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5185,7 +5185,7 @@ pub async fn intercom_list_ticket_types(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ticket_types".to_string();
+    let endpoint = "/ticket_types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5237,7 +5237,7 @@ pub async fn intercom_create_ticket_type(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ticket_types".to_string();
+    let endpoint = "/ticket_types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5625,7 +5625,7 @@ pub async fn intercom_create_ticket(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tickets".to_string();
+    let endpoint = "/tickets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5697,7 +5697,7 @@ pub async fn intercom_search_tickets(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tickets/search".to_string();
+    let endpoint = "/tickets/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5948,7 +5948,7 @@ pub async fn intercom_update_visitor(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/visitors".to_string();
+    let endpoint = "/visitors".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6017,7 +6017,7 @@ pub async fn intercom_list_visitors(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/visitors".to_string();
+    let endpoint = "/visitors".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6077,7 +6077,7 @@ pub async fn intercom_create_visitors(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/visitors/convert".to_string();
+    let endpoint = "/visitors/convert".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

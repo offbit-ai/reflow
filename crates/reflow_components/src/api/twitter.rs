@@ -41,7 +41,7 @@ pub async fn twitter_create_tweet(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets".to_string();
+    let endpoint = "/tweets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -98,7 +98,7 @@ pub async fn twitter_search_tweets(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets/search/recent".to_string();
+    let endpoint = "/tweets/search/recent".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -282,7 +282,7 @@ pub async fn twitter_read_tweets(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets".to_string();
+    let endpoint = "/tweets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -348,7 +348,7 @@ pub async fn twitter_read_tweet_counts(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets/counts/recent".to_string();
+    let endpoint = "/tweets/counts/recent".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -480,7 +480,7 @@ pub async fn twitter_read_users(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users".to_string();
+    let endpoint = "/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -543,7 +543,7 @@ pub async fn twitter_read_me(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/me".to_string();
+    let endpoint = "/users/me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1377,7 +1377,7 @@ pub async fn twitter_create_list(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lists".to_string();
+    let endpoint = "/lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1756,7 +1756,7 @@ pub async fn twitter_send_dm(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dm_conversations".to_string();
+    let endpoint = "/dm_conversations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1822,7 +1822,7 @@ pub async fn twitter_list_spaces(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/spaces/search".to_string();
+    let endpoint = "/spaces/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2236,7 +2236,7 @@ pub async fn twitter_create_stream_rule(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets/search/stream/rules".to_string();
+    let endpoint = "/tweets/search/stream/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2296,7 +2296,7 @@ pub async fn twitter_list_stream_rules(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets/search/stream/rules".to_string();
+    let endpoint = "/tweets/search/stream/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2353,7 +2353,7 @@ pub async fn twitter_read_stream(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tweets/search/stream".to_string();
+    let endpoint = "/tweets/search/stream".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

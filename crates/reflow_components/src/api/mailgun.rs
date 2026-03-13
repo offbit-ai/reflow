@@ -203,7 +203,7 @@ pub async fn mailgun_list_domains(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/domains".to_string();
+    let endpoint = "/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -318,7 +318,7 @@ pub async fn mailgun_create_domain(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/domains".to_string();
+    let endpoint = "/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1409,7 +1409,7 @@ pub async fn mailgun_list_routes(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/routes".to_string();
+    let endpoint = "/routes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1521,7 +1521,7 @@ pub async fn mailgun_create_route(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/routes".to_string();
+    let endpoint = "/routes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1708,7 +1708,7 @@ pub async fn mailgun_list_mailing_lists(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lists/pages".to_string();
+    let endpoint = "/lists/pages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1820,7 +1820,7 @@ pub async fn mailgun_create_mailing_list(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lists".to_string();
+    let endpoint = "/lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2585,7 +2585,7 @@ pub async fn mailgun_read_email_validation(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v4/address/validate".to_string();
+    let endpoint = "/v4/address/validate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

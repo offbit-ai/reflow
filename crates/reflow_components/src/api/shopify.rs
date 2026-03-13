@@ -41,7 +41,7 @@ pub async fn shopify_list_products(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/products.json".to_string();
+    let endpoint = "/products.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn shopify_create_product(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/products.json".to_string();
+    let endpoint = "/products.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -158,7 +158,7 @@ pub async fn shopify_list_orders(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orders.json".to_string();
+    let endpoint = "/orders.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -218,7 +218,7 @@ pub async fn shopify_create_graphql_query(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -281,7 +281,7 @@ pub async fn shopify_read_product(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -341,7 +341,7 @@ pub async fn shopify_update_product(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -401,7 +401,7 @@ pub async fn shopify_delete_product(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -461,7 +461,7 @@ pub async fn shopify_read_order(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -521,7 +521,7 @@ pub async fn shopify_update_order(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -581,7 +581,7 @@ pub async fn shopify_create_order(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -641,7 +641,7 @@ pub async fn shopify_list_customers(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -701,7 +701,7 @@ pub async fn shopify_read_customer(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -761,7 +761,7 @@ pub async fn shopify_create_customer(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -821,7 +821,7 @@ pub async fn shopify_update_customer(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -881,7 +881,7 @@ pub async fn shopify_list_collections(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -941,7 +941,7 @@ pub async fn shopify_create_collection(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1001,7 +1001,7 @@ pub async fn shopify_list_inventory_items(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1061,7 +1061,7 @@ pub async fn shopify_update_inventory_level(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1121,7 +1121,7 @@ pub async fn shopify_list_fulfillments(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1181,7 +1181,7 @@ pub async fn shopify_create_fulfillment(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1241,7 +1241,7 @@ pub async fn shopify_list_webhooks(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1301,7 +1301,7 @@ pub async fn shopify_create_webhook(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1361,7 +1361,7 @@ pub async fn shopify_delete_webhook(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1421,7 +1421,7 @@ pub async fn shopify_read_shop(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1481,7 +1481,7 @@ pub async fn shopify_list_discounts(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1541,7 +1541,7 @@ pub async fn shopify_create_discount(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1601,7 +1601,7 @@ pub async fn shopify_list_metafields(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1661,7 +1661,7 @@ pub async fn shopify_create_metafield(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1721,7 +1721,7 @@ pub async fn shopify_delete_metafield(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1781,7 +1781,7 @@ pub async fn shopify_create_refund(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1841,7 +1841,7 @@ pub async fn shopify_list_locations(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1901,7 +1901,7 @@ pub async fn shopify_list_draft_orders(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1961,7 +1961,7 @@ pub async fn shopify_create_draft_order(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2021,7 +2021,7 @@ pub async fn shopify_create_bulk_operation(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/api/2024-10/graphql.json".to_string();
+    let endpoint = "/admin/api/2024-10/graphql.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

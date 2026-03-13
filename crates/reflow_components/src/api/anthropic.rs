@@ -41,7 +41,7 @@ pub async fn anthropic_generate_message(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/messages".to_string();
+    let endpoint = "/v1/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -110,7 +110,7 @@ pub async fn anthropic_create_message(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/messages".to_string();
+    let endpoint = "/v1/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -209,7 +209,7 @@ pub async fn anthropic_create_message_batch(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/messages/batches".to_string();
+    let endpoint = "/v1/messages/batches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -269,7 +269,7 @@ pub async fn anthropic_list_message_batches(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/messages/batches".to_string();
+    let endpoint = "/v1/messages/batches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -555,7 +555,7 @@ pub async fn anthropic_list_models(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/models".to_string();
+    let endpoint = "/v1/models".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -676,7 +676,7 @@ pub async fn anthropic_upload_file(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/files".to_string();
+    let endpoint = "/v1/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -736,7 +736,7 @@ pub async fn anthropic_list_files(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/files".to_string();
+    let endpoint = "/v1/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -967,7 +967,7 @@ pub async fn anthropic_create_token_count(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/messages/count_tokens".to_string();
+    let endpoint = "/v1/messages/count_tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

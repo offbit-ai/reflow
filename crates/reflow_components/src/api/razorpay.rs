@@ -41,7 +41,7 @@ pub async fn razorpay_create_order(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orders".to_string();
+    let endpoint = "/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn razorpay_create_payment(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments".to_string();
+    let endpoint = "/payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn razorpay_list_orders(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orders".to_string();
+    let endpoint = "/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -397,7 +397,7 @@ pub async fn razorpay_list_payments(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments".to_string();
+    let endpoint = "/payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -707,7 +707,7 @@ pub async fn razorpay_list_refunds(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/refunds".to_string();
+    let endpoint = "/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -885,7 +885,7 @@ pub async fn razorpay_create_customer(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/customers".to_string();
+    let endpoint = "/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -954,7 +954,7 @@ pub async fn razorpay_list_customers(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/customers".to_string();
+    let endpoint = "/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1135,7 +1135,7 @@ pub async fn razorpay_create_subscription(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions".to_string();
+    let endpoint = "/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1210,7 +1210,7 @@ pub async fn razorpay_list_subscriptions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions".to_string();
+    let endpoint = "/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1391,7 +1391,7 @@ pub async fn razorpay_create_invoice(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invoices".to_string();
+    let endpoint = "/invoices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1463,7 +1463,7 @@ pub async fn razorpay_list_invoices(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invoices".to_string();
+    let endpoint = "/invoices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1584,7 +1584,7 @@ pub async fn razorpay_create_payment_link(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payment_links".to_string();
+    let endpoint = "/payment_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1668,7 +1668,7 @@ pub async fn razorpay_list_payment_links(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payment_links".to_string();
+    let endpoint = "/payment_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1849,7 +1849,7 @@ pub async fn razorpay_create_payout(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payouts".to_string();
+    let endpoint = "/payouts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1982,7 +1982,7 @@ pub async fn razorpay_list_settlements(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/settlements".to_string();
+    let endpoint = "/settlements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

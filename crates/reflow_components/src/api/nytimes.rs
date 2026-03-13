@@ -41,7 +41,7 @@ pub async fn nytimes_search_articles(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/v2/articlesearch.json".to_string();
+    let endpoint = "/search/v2/articlesearch.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

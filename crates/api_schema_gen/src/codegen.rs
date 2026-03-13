@@ -4,7 +4,9 @@
 //! Each actor uses the `#[actor]` macro, reads API keys from env vars,
 //! and produces pre-generated source files for source control.
 
-use crate::registry::{AuthMethod, Operation, Parameter, Service, ServiceRegistry};
+use crate::registry::{
+    AuthMethod, Operation, Parameter, Service, ServiceCategory, ServiceRegistry,
+};
 use anyhow::Result;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -71,27 +73,126 @@ fn actor_name(service_id: &str, op: &Operation) -> String {
 /// Convert a verb_resource pair to a snake_case function name.
 /// Includes service prefix for graph-level uniqueness.
 fn fn_name(service_id: &str, op: &Operation) -> String {
-    format!(
+    let mut name = format!(
         "{}_{}_{}",
         sanitize_segment(service_id),
         sanitize_segment(&op.verb),
         sanitize_segment(&op.resource)
-    )
+    );
+    // Collapse any consecutive underscores from joining segments
+    while name.contains("__") {
+        name = name.replace("__", "_");
+    }
+    name
 }
 
 /// Template ID for registry mapping
 fn template_id(service_id: &str, op: &Operation) -> String {
-    format!(
+    let mut id = format!(
         "api_{}_{}_{}",
         service_id.replace('-', "_"),
         op.verb.replace('-', "_"),
         op.resource.replace('-', "_")
-    )
+    );
+    while id.contains("__") {
+        id = id.replace("__", "_");
+    }
+    id.trim_end_matches('_').to_string()
 }
 
 /// Env var name for a service's API credential
 fn env_var_name(service_id: &str) -> String {
     format!("{}_API_KEY", service_id.to_uppercase().replace('-', "_"))
+}
+
+/// Map a service_id to a Zeal-compatible icon name.
+/// Uses brand icons from Zeal's react-icons registry where available,
+/// falls back to "plug" (lucide) for unrecognized services.
+fn service_icon(service_id: &str) -> &'static str {
+    match service_id {
+        // Brand icons available in Zeal's FlatBrandIconRegistry
+        "github" => "github",
+        "gitlab" => "gitlab",
+        "slack" => "slack",
+        "discord" => "discord",
+        "telegram" => "telegram",
+        "whatsapp_business" => "whatsapp",
+        "stripe" => "stripe",
+        "paypal" => "paypal",
+        "shopify" => "shopify",
+        "salesforce" => "salesforce",
+        "hubspot" => "hubspot",
+        "openai" => "openai",
+        "anthropic" => "anthropic",
+        "cohere" | "replicate" | "stability_ai" => "brain",
+        "hugging_face" => "huggingface",
+        "google_sheets" => "google-sheets",
+        "google_maps" | "google_analytics" => "google",
+        "dropbox" => "dropbox",
+        "trello" => "trello",
+        "asana" => "asana",
+        "notion" => "notion",
+        "airtable" => "airtable",
+        "clickup" => "clickup",
+        "jira" | "bitbucket" => "atlassian",
+        "monday" => "calendar",
+        "linear" => "layout-list",
+        "spotify" => "spotify",
+        "youtube" => "youtube",
+        "twitch" => "twitch",
+        "twitter" => "twitter",
+        "facebook" | "instagram" => "facebook",
+        "linkedin" => "linkedin",
+        "pinterest" => "pinterest",
+        "microsoft_teams" => "microsoft",
+        "zoom" => "zoom",
+        "firebase" | "supabase" => "database",
+        "mongodb_atlas" => "mongodb",
+        "aws_s3" | "aws_dynamodb" => "aws",
+        "cloudflare" => "cloud",
+        "vercel" => "vercel",
+        "netlify" => "netlify",
+        "circleci" => "circleci",
+        "docker" => "docker",
+        "twilio" | "vonage" => "phone",
+        "sendgrid" | "mailgun" => "mail",
+        "mapbox" | "here" | "tomtom" => "map-pin",
+        "openweathermap" | "weatherbit" | "accuweather" => "cloud-sun",
+        "nasa" => "rocket",
+        "newsapi" | "nytimes" => "newspaper",
+        "coinbase" | "binance" | "alphavantage" | "currencyapi" => "dollar-sign",
+        "pexels" | "unsplash" | "giphy" => "image",
+        "tmdb" | "omdb" => "film",
+        "auth0" | "okta" => "shield",
+        "mixpanel" | "segment" | "amplitude" | "posthog" => "bar-chart",
+        "adyen" | "braintree" | "razorpay" | "square" => "credit-card",
+        "pipedrive" | "intercom" | "freshworks" => "users",
+        "ipgeolocation" => "globe",
+        "spoonacular" => "utensils",
+        _ => "plug",
+    }
+}
+
+/// Map ServiceCategory to a Zeal template category string
+fn category_string(cat: &ServiceCategory) -> &'static str {
+    match cat {
+        ServiceCategory::Communication => "communication",
+        ServiceCategory::CrmSales => "crm",
+        ServiceCategory::DataStorage => "data",
+        ServiceCategory::AiServices => "ai",
+        ServiceCategory::Development => "development",
+        ServiceCategory::ProjectManagement => "productivity",
+        ServiceCategory::Payment => "payment",
+        ServiceCategory::Analytics => "analytics",
+        ServiceCategory::Security => "security",
+        ServiceCategory::Weather => "data",
+        ServiceCategory::Finance => "finance",
+        ServiceCategory::Location => "data",
+        ServiceCategory::News => "data",
+        ServiceCategory::Entertainment => "media",
+        ServiceCategory::SocialMedia => "social",
+        ServiceCategory::Other => "integration",
+    }
 }
 
 /// Sanitize a parameter name to be a valid Rust identifier.
@@ -169,7 +270,7 @@ fn generate_service_module(service_id: &str, service: &Service) -> Result<String
     let env_key = env_var_name(service_id);
     let _pascal_service = to_pascal_case(service_id);
 
-    // Suppress clippy on generated code
+    // Suppress clippy and rustfmt on generated code
     writeln!(out, "#![allow(clippy::all, unused_imports, dead_code)]")?;
     writeln!(out)?;
 
@@ -353,9 +454,20 @@ fn generate_operation_actor(
     writeln!(out)?;
 
     // Build URL with path param substitution
+    let has_path_params = op
+        .parameters
+        .as_ref()
+        .map(|ps| ps.iter().any(|p| p.location == "path"))
+        .unwrap_or(false);
+    let endpoint_let = if has_path_params {
+        "let mut endpoint"
+    } else {
+        "let endpoint"
+    };
     writeln!(
         out,
-        "    let mut endpoint = \"{}\".to_string();",
+        "    {} = \"{}\".to_string();",
+        endpoint_let,
         escape_str(&op.endpoint_pattern)
     )?;
 
@@ -545,6 +657,10 @@ fn generate_mod_rs(service_ids: &[String]) -> Result<String> {
     )?;
     writeln!(out)?;
 
+    // api_registry module (template info + actor lookup)
+    writeln!(out, "pub mod api_registry;")?;
+    writeln!(out)?;
+
     for sid in service_ids {
         writeln!(out, "pub mod {};", sid.replace('-', "_"))?;
     }
@@ -597,6 +713,27 @@ fn generate_registry_entries(registry: &ServiceRegistry) -> Result<String> {
     writeln!(out, "use std::sync::Arc;")?;
     writeln!(out, "use crate::Actor;")?;
     writeln!(out)?;
+
+    // ApiTemplateInfo struct
+    writeln!(
+        out,
+        "/// Metadata for an API template, used during ZIP registration."
+    )?;
+    writeln!(out, "#[derive(Debug, Clone)]")?;
+    writeln!(out, "pub struct ApiTemplateInfo {{")?;
+    writeln!(out, "    pub template_id: &'static str,")?;
+    writeln!(out, "    pub title: &'static str,")?;
+    writeln!(out, "    pub description: &'static str,")?;
+    writeln!(out, "    pub icon: &'static str,")?;
+    writeln!(out, "    pub category: &'static str,")?;
+    writeln!(out, "    pub subcategory: &'static str,")?;
+    writeln!(out, "    pub env_var: &'static str,")?;
+    writeln!(out, "    pub inports: &'static [&'static str],")?;
+    writeln!(out, "    pub outports: &'static [&'static str],")?;
+    writeln!(out, "}}")?;
+    writeln!(out)?;
+
+    // get_api_actor_for_template (existing)
     writeln!(out, "/// Get an API actor by template ID.")?;
     writeln!(
         out,
@@ -617,7 +754,7 @@ fn generate_registry_entries(registry: &ServiceRegistry) -> Result<String> {
             let actor = actor_name(service_id, op);
             writeln!(
                 out,
-                "        \"{}\" => Some(Arc::new(super::api::{}::{}::new())),",
+                "        \"{}\" => Some(Arc::new(super::{}::{}::new())),",
                 tpl_id, mod_name, actor
             )?;
         }
@@ -625,6 +762,80 @@ fn generate_registry_entries(registry: &ServiceRegistry) -> Result<String> {
 
     writeln!(out, "        _ => None,")?;
     writeln!(out, "    }}")?;
+    writeln!(out, "}}")?;
+    writeln!(out)?;
+
+    // get_api_template_infos — returns all template metadata for ZIP registration
+    writeln!(
+        out,
+        "/// Get metadata for all API templates (for ZIP registration with Zeal)."
+    )?;
+    writeln!(
+        out,
+        "pub fn get_api_template_infos() -> &'static [ApiTemplateInfo] {{"
+    )?;
+    writeln!(out, "    static INFOS: &[ApiTemplateInfo] = &[")?;
+
+    for (service_id, service) in &registry.services {
+        let icon = service_icon(service_id);
+        let category = category_string(&service.category);
+        let env_key = env_var_name(service_id);
+        let mut seen_fns = std::collections::HashSet::new();
+
+        for op in &service.operations {
+            let func = fn_name(service_id, op);
+            if seen_fns.contains(&func) {
+                continue;
+            }
+            seen_fns.insert(func);
+
+            let tpl_id = template_id(service_id, op);
+            let inports = inport_names(op);
+            let title = format!("{}: {} {}", service.name, op.verb, op.resource);
+            // Truncate raw description first, then escape for Rust string literal
+            let raw_desc = op
+                .description
+                .as_deref()
+                .unwrap_or("")
+                .replace('\n', " ")
+                .replace('\r', " ");
+            let raw_desc = if raw_desc.len() > 200 {
+                format!("{}...", &raw_desc[..197])
+            } else {
+                raw_desc
+            };
+
+            writeln!(out, "        ApiTemplateInfo {{")?;
+            writeln!(out, "            template_id: \"{}\",", escape_str(&tpl_id))?;
+            writeln!(out, "            title: \"{}\",", escape_str(&title))?;
+            writeln!(
+                out,
+                "            description: \"{}\",",
+                escape_str(&raw_desc)
+            )?;
+            writeln!(out, "            icon: \"{}\",", icon)?;
+            writeln!(out, "            category: \"{}\",", category)?;
+            writeln!(
+                out,
+                "            subcategory: \"{}\",",
+                escape_str(&service.name)
+            )?;
+            writeln!(out, "            env_var: \"{}\",", escape_str(&env_key))?;
+            write!(out, "            inports: &[")?;
+            for (i, port) in inports.iter().enumerate() {
+                if i > 0 {
+                    write!(out, ", ")?;
+                }
+                write!(out, "\"{}\"", escape_str(port))?;
+            }
+            writeln!(out, "],")?;
+            writeln!(out, "            outports: &[\"response\", \"error\"],")?;
+            writeln!(out, "        }},")?;
+        }
+    }
+
+    writeln!(out, "    ];")?;
+    writeln!(out, "    INFOS")?;
     writeln!(out, "}}")?;
 
     Ok(out)

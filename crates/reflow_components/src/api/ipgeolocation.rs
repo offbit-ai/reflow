@@ -41,7 +41,7 @@ pub async fn ipgeolocation_read_geolocation(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ipgeo".to_string();
+    let endpoint = "/ipgeo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn ipgeolocation_batch_geolocation(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ipgeo-bulk".to_string();
+    let endpoint = "/ipgeo-bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn ipgeolocation_read_timezone(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/timezone".to_string();
+    let endpoint = "/timezone".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -224,7 +224,7 @@ pub async fn ipgeolocation_read_ip_geolocation(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ipgeo".to_string();
+    let endpoint = "/ipgeo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -299,7 +299,7 @@ pub async fn ipgeolocation_read_bulk_ip_geolocation(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ipgeo-bulk".to_string();
+    let endpoint = "/ipgeo-bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -376,7 +376,7 @@ pub async fn ipgeolocation_read_client_ip(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getip".to_string();
+    let endpoint = "/getip".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -433,7 +433,7 @@ pub async fn ipgeolocation_read_ip_security(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ipgeo".to_string();
+    let endpoint = "/ipgeo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -499,7 +499,7 @@ pub async fn ipgeolocation_read_asn(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/asn".to_string();
+    let endpoint = "/asn".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -568,7 +568,7 @@ pub async fn ipgeolocation_read_abuse_contact(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/abuse-contact".to_string();
+    let endpoint = "/abuse-contact".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -631,7 +631,7 @@ pub async fn ipgeolocation_read_user_agent(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user-agent".to_string();
+    let endpoint = "/user-agent".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -694,7 +694,7 @@ pub async fn ipgeolocation_read_astronomy(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/astronomy".to_string();
+    let endpoint = "/astronomy".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -148,7 +148,7 @@ pub async fn salesforce_search_records(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query/".to_string();
+    let endpoint = "/query/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

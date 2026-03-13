@@ -41,7 +41,7 @@ pub async fn amplitude_send_event(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/httpapi".to_string();
+    let endpoint = "/httpapi".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn amplitude_create_batch_event(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/batch".to_string();
+    let endpoint = "/batch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -164,7 +164,7 @@ pub async fn amplitude_update_user_property(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/identify".to_string();
+    let endpoint = "/identify".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -233,7 +233,7 @@ pub async fn amplitude_read_event_segmentation(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/events/segmentation".to_string();
+    let endpoint = "/events/segmentation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -314,7 +314,7 @@ pub async fn amplitude_read_funnel(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/funnels".to_string();
+    let endpoint = "/funnels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -389,7 +389,7 @@ pub async fn amplitude_read_retention(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/retention".to_string();
+    let endpoint = "/retention".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -464,7 +464,7 @@ pub async fn amplitude_read_user_activity(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/useractivity".to_string();
+    let endpoint = "/useractivity".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -533,7 +533,7 @@ pub async fn amplitude_read_user_search(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/usersearch".to_string();
+    let endpoint = "/usersearch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -590,7 +590,7 @@ pub async fn amplitude_read_events_list(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/taxonomy/event".to_string();
+    let endpoint = "/taxonomy/event".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -713,7 +713,7 @@ pub async fn amplitude_read_user_properties(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/taxonomy/user-property".to_string();
+    let endpoint = "/taxonomy/user-property".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -773,7 +773,7 @@ pub async fn amplitude_read_cohort(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/cohorts".to_string();
+    let endpoint = "/cohorts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -885,7 +885,7 @@ pub async fn amplitude_read_dashboard(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dashboards".to_string();
+    let endpoint = "/dashboards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -934,7 +934,7 @@ pub async fn amplitude_delete_user_data(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deletions/users".to_string();
+    let endpoint = "/deletions/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1003,7 +1003,7 @@ pub async fn amplitude_read_deletion_job(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deletions/users".to_string();
+    let endpoint = "/deletions/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1063,7 +1063,7 @@ pub async fn amplitude_read_revenue_ltv(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/revenue/ltv".to_string();
+    let endpoint = "/revenue/ltv".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

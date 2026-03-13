@@ -905,7 +905,7 @@ pub async fn instagram_search_ig_hashtag(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ig_hashtag_search".to_string();
+    let endpoint = "/ig_hashtag_search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

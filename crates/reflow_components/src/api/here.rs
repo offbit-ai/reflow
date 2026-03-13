@@ -41,7 +41,7 @@ pub async fn here_read_route(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/routes".to_string();
+    let endpoint = "/routes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -107,7 +107,7 @@ pub async fn here_geocode_address(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geocode".to_string();
+    let endpoint = "/geocode".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -167,7 +167,7 @@ pub async fn here_read_matrix_route(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/matrix".to_string();
+    let endpoint = "/matrix".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -245,7 +245,7 @@ pub async fn here_read_isoline(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/isolines".to_string();
+    let endpoint = "/isolines".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

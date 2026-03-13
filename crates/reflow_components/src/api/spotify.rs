@@ -41,7 +41,7 @@ pub async fn spotify_search_tracks(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search".to_string();
+    let endpoint = "/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -110,7 +110,7 @@ pub async fn spotify_read_user_profile(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me".to_string();
+    let endpoint = "/me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -159,7 +159,7 @@ pub async fn spotify_list_playlists(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/playlists".to_string();
+    let endpoint = "/me/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -219,7 +219,7 @@ pub async fn spotify_read_an_album(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/albums/{id}".to_string();
+    let endpoint = "/albums/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -268,7 +268,7 @@ pub async fn spotify_read_an_albums_tracks(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/albums/{id}/tracks".to_string();
+    let endpoint = "/albums/{id}/tracks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -317,7 +317,7 @@ pub async fn spotify_read_an_artist(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/artists/{id}".to_string();
+    let endpoint = "/artists/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -366,7 +366,7 @@ pub async fn spotify_read_an_artists_albums(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/artists/{id}/albums".to_string();
+    let endpoint = "/artists/{id}/albums".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -423,7 +423,7 @@ pub async fn spotify_read_an_audiobook(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/audiobooks/{id}".to_string();
+    let endpoint = "/audiobooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -472,7 +472,7 @@ pub async fn spotify_read_audiobook_chapters(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/audiobooks/{id}/chapters".to_string();
+    let endpoint = "/audiobooks/{id}/chapters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -521,7 +521,7 @@ pub async fn spotify_read_a_chapter(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chapters/{id}".to_string();
+    let endpoint = "/chapters/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -622,7 +622,7 @@ pub async fn spotify_read_users_saved_albums(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/albums".to_string();
+    let endpoint = "/me/albums".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -671,7 +671,7 @@ pub async fn spotify_read_users_saved_audiobooks(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/audiobooks".to_string();
+    let endpoint = "/me/audiobooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -720,7 +720,7 @@ pub async fn spotify_read_users_saved_episodes(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/episodes".to_string();
+    let endpoint = "/me/episodes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -769,7 +769,7 @@ pub async fn spotify_read_followed(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/following".to_string();
+    let endpoint = "/me/following".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -832,7 +832,7 @@ pub async fn spotify_delete_library_items(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/library".to_string();
+    let endpoint = "/me/library".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -889,7 +889,7 @@ pub async fn spotify_update_library(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/library".to_string();
+    let endpoint = "/me/library".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -946,7 +946,7 @@ pub async fn spotify_list_library(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/library/contains".to_string();
+    let endpoint = "/me/library/contains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1003,7 +1003,7 @@ pub async fn spotify_update_player(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player".to_string();
+    let endpoint = "/me/player".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1063,7 +1063,7 @@ pub async fn spotify_read_information_about_the_users_current_playback(context: 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player".to_string();
+    let endpoint = "/me/player".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1112,7 +1112,7 @@ pub async fn spotify_read_the_users_currently_playing_track(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/currently-playing".to_string();
+    let endpoint = "/me/player/currently-playing".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1161,7 +1161,7 @@ pub async fn spotify_read_a_users_available_devices(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/devices".to_string();
+    let endpoint = "/me/player/devices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1210,7 +1210,7 @@ pub async fn spotify_create_player(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/next".to_string();
+    let endpoint = "/me/player/next".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1267,7 +1267,7 @@ pub async fn spotify_pause_player(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/pause".to_string();
+    let endpoint = "/me/player/pause".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1324,7 +1324,7 @@ pub async fn spotify_start_a_users_playback(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/play".to_string();
+    let endpoint = "/me/player/play".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1398,7 +1398,7 @@ pub async fn spotify_read_queue(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/queue".to_string();
+    let endpoint = "/me/player/queue".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1447,7 +1447,7 @@ pub async fn spotify_read_recently_played(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/player/recently-played".to_string();
+    let endpoint = "/me/player/recently-played".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1510,7 +1510,7 @@ pub async fn spotify_create_playlist(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/playlists".to_string();
+    let endpoint = "/me/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1576,7 +1576,7 @@ pub async fn spotify_read_a_list_of_current_users_playlists(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/playlists".to_string();
+    let endpoint = "/me/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1633,7 +1633,7 @@ pub async fn spotify_read_users_saved_shows(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/shows".to_string();
+    let endpoint = "/me/shows".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1742,7 +1742,7 @@ pub async fn spotify_read_users_saved_tracks(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/tracks".to_string();
+    let endpoint = "/me/tracks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1791,7 +1791,7 @@ pub async fn spotify_read_playlist(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}".to_string();
+    let endpoint = "/playlists/{playlist_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1848,7 +1848,7 @@ pub async fn spotify_update_playlists(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}".to_string();
+    let endpoint = "/playlists/{playlist_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1914,7 +1914,7 @@ pub async fn spotify_read_playlist_cover(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}/images".to_string();
+    let endpoint = "/playlists/{playlist_id}/images".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1963,7 +1963,7 @@ pub async fn spotify_upload_custom_playlist_cover(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}/images".to_string();
+    let endpoint = "/playlists/{playlist_id}/images".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2020,7 +2020,7 @@ pub async fn spotify_create_playlists(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}/items".to_string();
+    let endpoint = "/playlists/{playlist_id}/items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2091,7 +2091,7 @@ pub async fn spotify_read_playlists_items(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}/items".to_string();
+    let endpoint = "/playlists/{playlist_id}/items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2148,7 +2148,7 @@ pub async fn spotify_delete_items_playlist(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists/{playlist_id}/items".to_string();
+    let endpoint = "/playlists/{playlist_id}/items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2197,7 +2197,7 @@ pub async fn spotify_read_a_show(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/shows/{id}".to_string();
+    let endpoint = "/shows/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2246,7 +2246,7 @@ pub async fn spotify_read_a_shows_episodes(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/shows/{id}/episodes".to_string();
+    let endpoint = "/shows/{id}/episodes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

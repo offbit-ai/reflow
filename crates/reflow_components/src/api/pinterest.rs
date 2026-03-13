@@ -41,7 +41,7 @@ pub async fn pinterest_list_boards(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/boards".to_string();
+    let endpoint = "/boards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -98,7 +98,7 @@ pub async fn pinterest_create_pin(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins".to_string();
+    let endpoint = "/pins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -182,7 +182,7 @@ pub async fn pinterest_create_ad_accounts(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts".to_string();
+    let endpoint = "/ad_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -248,7 +248,7 @@ pub async fn pinterest_list_ad_accounts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts".to_string();
+    let endpoint = "/ad_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -305,7 +305,7 @@ pub async fn pinterest_read_ad_accounts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -354,7 +354,7 @@ pub async fn pinterest_create_ad_groups(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ad_groups".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ad_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -411,7 +411,7 @@ pub async fn pinterest_update_ad_groups(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ad_groups".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ad_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -468,7 +468,7 @@ pub async fn pinterest_read_ad_groups(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ad_groups".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ad_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -517,7 +517,7 @@ pub async fn pinterest_create_ads(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ad_previews".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ad_previews".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -566,7 +566,7 @@ pub async fn pinterest_read_ads(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ads".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -615,7 +615,7 @@ pub async fn pinterest_update_ads(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ads".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -672,7 +672,7 @@ pub async fn pinterest_read_billing(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ads_credit/discounts".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ads_credit/discounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -721,7 +721,7 @@ pub async fn pinterest_create_billing(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ads_credit/redeem".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ads_credit/redeem".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -781,7 +781,7 @@ pub async fn pinterest_read_conversions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/advertiser_defined_events".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/advertiser_defined_events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -830,7 +830,7 @@ pub async fn pinterest_read_audience_insights(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audience_insights".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audience_insights".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -879,7 +879,7 @@ pub async fn pinterest_create_audiences(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audiences".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audiences".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -936,7 +936,7 @@ pub async fn pinterest_read_audiences(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audiences".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audiences".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -996,7 +996,7 @@ pub async fn pinterest_update_ad_account_to_ad_account_shared_audience(context: 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audiences/ad_accounts/shared".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audiences/ad_accounts/shared".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1053,7 +1053,7 @@ pub async fn pinterest_update_ad_account_to_business_shared_audience(context: Ac
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audiences/businesses/shared".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audiences/businesses/shared".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1110,7 +1110,7 @@ pub async fn pinterest_read_audience_sharing(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audiences/shared/accounts".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audiences/shared/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1159,7 +1159,7 @@ pub async fn pinterest_update_audiences(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/audiences/{audience_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/audiences/{audience_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1216,7 +1216,7 @@ pub async fn pinterest_download_billing(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/billing_invoice/{billing_invoice_id}/download".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/billing_invoice/{billing_invoice_id}/download".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1265,7 +1265,7 @@ pub async fn pinterest_download_bulk(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/bulk/download".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/bulk/download".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1334,7 +1334,7 @@ pub async fn pinterest_create_bulk(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/bulk/upsert".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/bulk/upsert".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1394,7 +1394,7 @@ pub async fn pinterest_read_bulk(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/bulk/{bulk_request_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/bulk/{bulk_request_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1443,7 +1443,7 @@ pub async fn pinterest_read_campaigns(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/campaigns".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/campaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1492,7 +1492,7 @@ pub async fn pinterest_create_campaigns(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/campaigns".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/campaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1549,7 +1549,7 @@ pub async fn pinterest_update_campaigns(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/campaigns".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/campaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1606,7 +1606,7 @@ pub async fn pinterest_read_conversion_eqs(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/conversion_eqs".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/conversion_eqs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1655,7 +1655,7 @@ pub async fn pinterest_create_conversion_tags(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/conversion_tags".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/conversion_tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1736,7 +1736,7 @@ pub async fn pinterest_read_conversion_tags(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/conversion_tags".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/conversion_tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1785,7 +1785,7 @@ pub async fn pinterest_create_customer_lists(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/customer_lists".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/customer_lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1848,7 +1848,7 @@ pub async fn pinterest_read_customer_lists(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/customer_lists".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/customer_lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1897,7 +1897,7 @@ pub async fn pinterest_update_customer_lists(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/customer_lists/{customer_list_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/customer_lists/{customer_list_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1957,7 +1957,7 @@ pub async fn pinterest_create_customer_list_uploads(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/customer_lists/{customer_list_id}/uploads".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/customer_lists/{customer_list_id}/uploads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2017,7 +2017,7 @@ pub async fn pinterest_read_customer_list_uploads(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/customer_lists/{customer_list_id}/uploads/{customer_list_upload_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/customer_lists/{customer_list_id}/uploads/{customer_list_upload_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2066,7 +2066,7 @@ pub async fn pinterest_create_conversion_events(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/events".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2131,7 +2131,7 @@ pub async fn pinterest_read_keywords(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/keywords".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/keywords".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2188,7 +2188,7 @@ pub async fn pinterest_create_keywords(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/keywords".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/keywords".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2248,7 +2248,7 @@ pub async fn pinterest_update_keywords(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/keywords".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/keywords".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2305,7 +2305,7 @@ pub async fn pinterest_update_labels(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/labels".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/labels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2362,7 +2362,7 @@ pub async fn pinterest_create_labels(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/labels".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/labels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2422,7 +2422,7 @@ pub async fn pinterest_read_labels(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/labels".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/labels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2471,7 +2471,7 @@ pub async fn pinterest_update_lead_forms(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/lead_forms".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/lead_forms".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2528,7 +2528,7 @@ pub async fn pinterest_create_lead_forms(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/lead_forms".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/lead_forms".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2585,7 +2585,7 @@ pub async fn pinterest_read_lead_forms(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/lead_forms".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/lead_forms".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2634,7 +2634,7 @@ pub async fn pinterest_create_lead_ads(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/leads/subscriptions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/leads/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2697,7 +2697,7 @@ pub async fn pinterest_read_lead_ads(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/leads/subscriptions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/leads/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2746,7 +2746,7 @@ pub async fn pinterest_delete_lead_ads(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/leads/subscriptions/{subscription_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/leads/subscriptions/{subscription_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2795,7 +2795,7 @@ pub async fn pinterest_create_leads_export(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/leads_export".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/leads_export".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2910,7 +2910,7 @@ pub async fn pinterest_create_msot_events(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/msot/events".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/msot/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3003,7 +3003,7 @@ pub async fn pinterest_read_order_lines(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/order_lines".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/order_lines".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3052,7 +3052,7 @@ pub async fn pinterest_update_product_group_promotions(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/product_group_promotions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/product_group_promotions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3112,7 +3112,7 @@ pub async fn pinterest_create_product_group_promotions(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/product_group_promotions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/product_group_promotions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3172,7 +3172,7 @@ pub async fn pinterest_read_product_group_promotions(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/product_group_promotions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/product_group_promotions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3221,7 +3221,7 @@ pub async fn pinterest_read_promotions(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/promotions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/promotions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3270,7 +3270,7 @@ pub async fn pinterest_create_promotions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/promotions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/promotions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3327,7 +3327,7 @@ pub async fn pinterest_update_promotions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/promotions".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/promotions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3384,7 +3384,7 @@ pub async fn pinterest_delete_promotions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/promotions/{promotion_id}".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/promotions/{promotion_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3433,7 +3433,7 @@ pub async fn pinterest_delete_ad_accounts(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/sandbox".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/sandbox".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3482,7 +3482,7 @@ pub async fn pinterest_update_billing(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/ssio/insertion_orders".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/ssio/insertion_orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3539,7 +3539,7 @@ pub async fn pinterest_update_targeting_template(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/targeting_templates".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/targeting_templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3602,7 +3602,7 @@ pub async fn pinterest_read_targeting_template(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/targeting_templates".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/targeting_templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3662,7 +3662,7 @@ pub async fn pinterest_create_targeting_template(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/targeting_templates".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/targeting_templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3719,7 +3719,7 @@ pub async fn pinterest_read_terms_of_service(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ad_accounts/{ad_account_id}/terms_of_service".to_string();
+    let endpoint = "/ad_accounts/{ad_account_id}/terms_of_service".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3768,7 +3768,7 @@ pub async fn pinterest_create_advanced_auction(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/advanced_auction/items/get".to_string();
+    let endpoint = "/advanced_auction/items/get".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3828,7 +3828,7 @@ pub async fn pinterest_create_boards(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/boards".to_string();
+    let endpoint = "/boards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3894,7 +3894,7 @@ pub async fn pinterest_delete_boards(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/boards/{board_id}".to_string();
+    let endpoint = "/boards/{board_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3943,7 +3943,7 @@ pub async fn pinterest_read_boards(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/boards/{board_id}".to_string();
+    let endpoint = "/boards/{board_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3992,7 +3992,7 @@ pub async fn pinterest_update_boards(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/boards/{board_id}".to_string();
+    let endpoint = "/boards/{board_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4055,7 +4055,7 @@ pub async fn pinterest_create_business_access_relationships(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/business_access/business_hierarchy/{business_hierarchy_id}/brand_accounts".to_string();
+    let endpoint = "/business_access/business_hierarchy/{business_hierarchy_id}/brand_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4198,11 +4198,11 @@ pub async fn pinterest_update_business_access_relationships(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn pinterest_read__business_employers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn pinterest_read_business_employers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/employers".to_string();
+    let endpoint = "/businesses/employers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4251,7 +4251,7 @@ pub async fn pinterest_update_business_access_invite(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/invites".to_string();
+    let endpoint = "/businesses/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4308,7 +4308,7 @@ pub async fn pinterest_create_business_access_assets(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/asset_groups".to_string();
+    let endpoint = "/businesses/{business_id}/asset_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4371,7 +4371,7 @@ pub async fn pinterest_update_business_access_assets(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/asset_groups".to_string();
+    let endpoint = "/businesses/{business_id}/asset_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4428,7 +4428,7 @@ pub async fn pinterest_delete_business_access_assets(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/asset_groups".to_string();
+    let endpoint = "/businesses/{business_id}/asset_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4477,7 +4477,7 @@ pub async fn pinterest_read_business_access_assets(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/assets".to_string();
+    let endpoint = "/businesses/{business_id}/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4540,7 +4540,7 @@ pub async fn pinterest_update_business_to_ad_account_shared_audience(context: Ac
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/audiences/ad_accounts/shared".to_string();
+    let endpoint = "/businesses/{business_id}/audiences/ad_accounts/shared".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4597,7 +4597,7 @@ pub async fn pinterest_update_business_to_business_shared_audience(context: Acto
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/audiences/businesses/shared".to_string();
+    let endpoint = "/businesses/{business_id}/audiences/businesses/shared".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4650,11 +4650,11 @@ pub async fn pinterest_update_business_to_business_shared_audience(context: Acto
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn pinterest_read__invites(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn pinterest_read_invites(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/invites".to_string();
+    let endpoint = "/businesses/{business_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4703,7 +4703,7 @@ pub async fn pinterest_create_membership_or_partnership_invites(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/invites".to_string();
+    let endpoint = "/businesses/{business_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4769,7 +4769,7 @@ pub async fn pinterest_cancel_invites_or_requests(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/invites".to_string();
+    let endpoint = "/businesses/{business_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4818,7 +4818,7 @@ pub async fn pinterest_create_asset_invites(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/invites/assets/access".to_string();
+    let endpoint = "/businesses/{business_id}/invites/assets/access".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4871,11 +4871,11 @@ pub async fn pinterest_create_asset_invites(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn pinterest_read__business_members(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn pinterest_read_business_members(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/members".to_string();
+    let endpoint = "/businesses/{business_id}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4935,7 +4935,7 @@ pub async fn pinterest_delete_business_membership(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/members".to_string();
+    let endpoint = "/businesses/{business_id}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4980,11 +4980,11 @@ pub async fn pinterest_delete_business_membership(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn pinterest_update__business_memberships(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn pinterest_update_business_memberships(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/members".to_string();
+    let endpoint = "/businesses/{business_id}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5037,11 +5037,11 @@ pub async fn pinterest_update__business_memberships(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn pinterest_read__business_partners(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn pinterest_read_business_partners(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/partners".to_string();
+    let endpoint = "/businesses/{business_id}/partners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5098,7 +5098,7 @@ pub async fn pinterest_delete_business_partners(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/partners".to_string();
+    let endpoint = "/businesses/{business_id}/partners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5147,7 +5147,7 @@ pub async fn pinterest_update_partner_asset_access_handler_impl(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/partners/assets".to_string();
+    let endpoint = "/businesses/{business_id}/partners/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5204,7 +5204,7 @@ pub async fn pinterest_delete_partner_asset_access_handler_impl(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/partners/assets".to_string();
+    let endpoint = "/businesses/{business_id}/partners/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5253,7 +5253,7 @@ pub async fn pinterest_create_business_access_invite(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/businesses/{business_id}/requests/assets/access".to_string();
+    let endpoint = "/businesses/{business_id}/requests/assets/access".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5310,7 +5310,7 @@ pub async fn pinterest_list_catalogs(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs".to_string();
+    let endpoint = "/catalogs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5359,7 +5359,7 @@ pub async fn pinterest_create_catalogs(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs".to_string();
+    let endpoint = "/catalogs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5419,7 +5419,7 @@ pub async fn pinterest_list_catalog_feeds(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/feeds".to_string();
+    let endpoint = "/catalogs/feeds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5468,7 +5468,7 @@ pub async fn pinterest_create_catalog_feeds(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/feeds".to_string();
+    let endpoint = "/catalogs/feeds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5517,7 +5517,7 @@ pub async fn pinterest_read_catalog_feeds(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/feeds/{feed_id}".to_string();
+    let endpoint = "/catalogs/feeds/{feed_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5566,7 +5566,7 @@ pub async fn pinterest_update_catalog_feeds(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/feeds/{feed_id}".to_string();
+    let endpoint = "/catalogs/feeds/{feed_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5615,7 +5615,7 @@ pub async fn pinterest_delete_catalog_feeds(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/feeds/{feed_id}".to_string();
+    let endpoint = "/catalogs/feeds/{feed_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5664,7 +5664,7 @@ pub async fn pinterest_create_catalog_items(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/items".to_string();
+    let endpoint = "/catalogs/items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5727,7 +5727,7 @@ pub async fn pinterest_read_catalog_items(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/items/batch/{batch_id}".to_string();
+    let endpoint = "/catalogs/items/batch/{batch_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5776,7 +5776,7 @@ pub async fn pinterest_list_catalog_product_groups(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/product_groups".to_string();
+    let endpoint = "/catalogs/product_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5825,7 +5825,7 @@ pub async fn pinterest_create_catalog_product_groups(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/product_groups".to_string();
+    let endpoint = "/catalogs/product_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5874,7 +5874,7 @@ pub async fn pinterest_delete_catalog_product_groups(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/product_groups/multiple".to_string();
+    let endpoint = "/catalogs/product_groups/multiple".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5923,7 +5923,7 @@ pub async fn pinterest_update_catalog_product_groups(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/product_groups/{product_group_id}".to_string();
+    let endpoint = "/catalogs/product_groups/{product_group_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5972,7 +5972,7 @@ pub async fn pinterest_read_catalog_product_groups(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/product_groups/{product_group_id}".to_string();
+    let endpoint = "/catalogs/product_groups/{product_group_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6021,7 +6021,7 @@ pub async fn pinterest_list_catalog_reports(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/reports".to_string();
+    let endpoint = "/catalogs/reports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6070,7 +6070,7 @@ pub async fn pinterest_create_catalog_reports(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/catalogs/reports".to_string();
+    let endpoint = "/catalogs/reports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6127,7 +6127,7 @@ pub async fn pinterest_list_integrations(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/integrations".to_string();
+    let endpoint = "/integrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6176,7 +6176,7 @@ pub async fn pinterest_create_integrations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/integrations/commerce".to_string();
+    let endpoint = "/integrations/commerce".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6269,7 +6269,7 @@ pub async fn pinterest_read_integrations(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/integrations/commerce/{external_business_id}".to_string();
+    let endpoint = "/integrations/commerce/{external_business_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6318,7 +6318,7 @@ pub async fn pinterest_delete_integrations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/integrations/commerce/{external_business_id}".to_string();
+    let endpoint = "/integrations/commerce/{external_business_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6367,7 +6367,7 @@ pub async fn pinterest_update_integrations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/integrations/commerce/{external_business_id}".to_string();
+    let endpoint = "/integrations/commerce/{external_business_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6457,7 +6457,7 @@ pub async fn pinterest_create_media(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/media".to_string();
+    let endpoint = "/media".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6514,7 +6514,7 @@ pub async fn pinterest_list_media(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/media".to_string();
+    let endpoint = "/media".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6563,7 +6563,7 @@ pub async fn pinterest_read_media(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/media/{media_id}".to_string();
+    let endpoint = "/media/{media_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6612,7 +6612,7 @@ pub async fn pinterest_create_notification(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/notifications".to_string();
+    let endpoint = "/notifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6661,7 +6661,7 @@ pub async fn pinterest_create_oauth(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/conversion_token".to_string();
+    let endpoint = "/oauth/conversion_token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6710,7 +6710,7 @@ pub async fn pinterest_list_pins(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins".to_string();
+    let endpoint = "/pins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6759,7 +6759,7 @@ pub async fn pinterest_update_pins(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins/{pin_id}".to_string();
+    let endpoint = "/pins/{pin_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6834,7 +6834,7 @@ pub async fn pinterest_delete_pins(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins/{pin_id}".to_string();
+    let endpoint = "/pins/{pin_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6883,7 +6883,7 @@ pub async fn pinterest_read_pins(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins/{pin_id}".to_string();
+    let endpoint = "/pins/{pin_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6932,7 +6932,7 @@ pub async fn pinterest_list_resources(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/resources/ad_account_countries".to_string();
+    let endpoint = "/resources/ad_account_countries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6981,7 +6981,7 @@ pub async fn pinterest_read_resources(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/resources/targeting/interests/{interest_id}".to_string();
+    let endpoint = "/resources/targeting/interests/{interest_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7030,7 +7030,7 @@ pub async fn pinterest_search_user_boards_get(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/boards".to_string();
+    let endpoint = "/search/boards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7079,7 +7079,7 @@ pub async fn pinterest_search_partner_pins(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/partner/pins".to_string();
+    let endpoint = "/search/partner/pins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7139,7 +7139,7 @@ pub async fn pinterest_search_user_pins_list(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/pins".to_string();
+    let endpoint = "/search/pins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7188,7 +7188,7 @@ pub async fn pinterest_list_terms(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/terms/related".to_string();
+    let endpoint = "/terms/related".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7237,7 +7237,7 @@ pub async fn pinterest_list_product_categories(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/trends/product_categories/details".to_string();
+    let endpoint = "/trends/product_categories/details".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7286,7 +7286,7 @@ pub async fn pinterest_list_user_account(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user_account".to_string();
+    let endpoint = "/user_account".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7335,7 +7335,7 @@ pub async fn pinterest_create_user_account(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user_account/following/{username}".to_string();
+    let endpoint = "/user_account/following/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7392,7 +7392,7 @@ pub async fn pinterest_delete_user_account(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user_account/websites".to_string();
+    let endpoint = "/user_account/websites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

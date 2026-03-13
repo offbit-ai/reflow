@@ -41,7 +41,7 @@ pub async fn github_list_repositories(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/repos".to_string();
+    let endpoint = "/user/repos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -255,7 +255,7 @@ pub async fn github_list_meta(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/".to_string();
+    let endpoint = "/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -304,7 +304,7 @@ pub async fn github_list_security_advisories(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/advisories".to_string();
+    let endpoint = "/advisories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -403,7 +403,7 @@ pub async fn github_read_security_advisories(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/advisories/{ghsa_id}".to_string();
+    let endpoint = "/advisories/{ghsa_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -452,7 +452,7 @@ pub async fn github_list_apps(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/app".to_string();
+    let endpoint = "/app".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -553,7 +553,7 @@ pub async fn github_update_apps(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/app/hook/config".to_string();
+    let endpoint = "/app/hook/config".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -619,7 +619,7 @@ pub async fn github_read_apps(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/app/hook/deliveries/{delivery_id}".to_string();
+    let endpoint = "/app/hook/deliveries/{delivery_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -668,7 +668,7 @@ pub async fn github_delete_apps(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/app/installations/{installation_id}".to_string();
+    let endpoint = "/app/installations/{installation_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -717,7 +717,7 @@ pub async fn github_read_classroom(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/assignments/{assignment_id}".to_string();
+    let endpoint = "/assignments/{assignment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -766,7 +766,7 @@ pub async fn github_list_classroom(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/classrooms".to_string();
+    let endpoint = "/classrooms".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -815,7 +815,7 @@ pub async fn github_list_codes_of_conduct(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/codes_of_conduct".to_string();
+    let endpoint = "/codes_of_conduct".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -916,7 +916,7 @@ pub async fn github_create_credentials(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/credentials/revoke".to_string();
+    let endpoint = "/credentials/revoke".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -973,7 +973,7 @@ pub async fn github_list_emojis(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/emojis".to_string();
+    let endpoint = "/emojis".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1022,7 +1022,7 @@ pub async fn github_read_actions(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/actions/cache/retention-limit".to_string();
+    let endpoint = "/enterprises/{enterprise}/actions/cache/retention-limit".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1071,7 +1071,7 @@ pub async fn github_update_actions(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/actions/cache/retention-limit".to_string();
+    let endpoint = "/enterprises/{enterprise}/actions/cache/retention-limit".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1128,7 +1128,7 @@ pub async fn github_create_code_security(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/code-security/configurations".to_string();
+    let endpoint = "/enterprises/{enterprise}/code-security/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1251,7 +1251,7 @@ pub async fn github_read_code_security(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/code-security/configurations".to_string();
+    let endpoint = "/enterprises/{enterprise}/code-security/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1308,7 +1308,7 @@ pub async fn github_delete_code_security(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/code-security/configurations/{configuration_id}".to_string();
+    let endpoint = "/enterprises/{enterprise}/code-security/configurations/{configuration_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1357,7 +1357,7 @@ pub async fn github_update_code_security(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/code-security/configurations/{configuration_id}".to_string();
+    let endpoint = "/enterprises/{enterprise}/code-security/configurations/{configuration_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1480,7 +1480,7 @@ pub async fn github_read_dependabot(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/dependabot/alerts".to_string();
+    let endpoint = "/enterprises/{enterprise}/dependabot/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1529,7 +1529,7 @@ pub async fn github_read_enterprise_teams(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1578,7 +1578,7 @@ pub async fn github_create_enterprise_teams(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1647,7 +1647,7 @@ pub async fn github_read_enterprise_team_memberships(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1696,7 +1696,7 @@ pub async fn github_create_enterprise_team_memberships(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships/add".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships/add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1753,7 +1753,7 @@ pub async fn github_update_enterprise_team_memberships(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1802,7 +1802,7 @@ pub async fn github_delete_enterprise_team_memberships(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1851,7 +1851,7 @@ pub async fn github_read_enterprise_team_organizations(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1900,7 +1900,7 @@ pub async fn github_create_enterprise_team_organizations(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations/add".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations/add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1957,7 +1957,7 @@ pub async fn github_update_enterprise_team_organizations(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2006,7 +2006,7 @@ pub async fn github_delete_enterprise_team_organizations(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2055,7 +2055,7 @@ pub async fn github_delete_enterprise_teams(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{team_slug}".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{team_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2104,7 +2104,7 @@ pub async fn github_update_enterprise_teams(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/enterprises/{enterprise}/teams/{team_slug}".to_string();
+    let endpoint = "/enterprises/{enterprise}/teams/{team_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2173,7 +2173,7 @@ pub async fn github_list_activity(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/events".to_string();
+    let endpoint = "/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2222,7 +2222,7 @@ pub async fn github_create_gists(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gists".to_string();
+    let endpoint = "/gists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2285,7 +2285,7 @@ pub async fn github_list_gists(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gists".to_string();
+    let endpoint = "/gists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2334,7 +2334,7 @@ pub async fn github_delete_gists(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gists/{gist_id}".to_string();
+    let endpoint = "/gists/{gist_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2383,7 +2383,7 @@ pub async fn github_read_gists(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gists/{gist_id}".to_string();
+    let endpoint = "/gists/{gist_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2432,7 +2432,7 @@ pub async fn github_update_gists(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gists/{gist_id}".to_string();
+    let endpoint = "/gists/{gist_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2492,7 +2492,7 @@ pub async fn github_list_gitignore(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gitignore/templates".to_string();
+    let endpoint = "/gitignore/templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2593,7 +2593,7 @@ pub async fn github_list_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/issues".to_string();
+    let endpoint = "/issues".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2668,7 +2668,7 @@ pub async fn github_list_licenses(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/licenses".to_string();
+    let endpoint = "/licenses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2777,7 +2777,7 @@ pub async fn github_create_markdown(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/markdown".to_string();
+    let endpoint = "/markdown".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2840,7 +2840,7 @@ pub async fn github_read_activity(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/networks/{owner}/{repo}/events".to_string();
+    let endpoint = "/networks/{owner}/{repo}/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2889,7 +2889,7 @@ pub async fn github_update_activity(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/notifications".to_string();
+    let endpoint = "/notifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2949,7 +2949,7 @@ pub async fn github_delete_activity(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/notifications/threads/{thread_id}".to_string();
+    let endpoint = "/notifications/threads/{thread_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2998,7 +2998,7 @@ pub async fn github_list_orgs(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations".to_string();
+    let endpoint = "/organizations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3047,7 +3047,7 @@ pub async fn github_update_dependabot(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org}/dependabot/repository-access".to_string();
+    let endpoint = "/organizations/{org}/dependabot/repository-access".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3107,7 +3107,7 @@ pub async fn github_read_billing(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org}/settings/billing/budgets".to_string();
+    let endpoint = "/organizations/{org}/settings/billing/budgets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3170,7 +3170,7 @@ pub async fn github_update_billing(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org}/settings/billing/budgets/{budget_id}".to_string();
+    let endpoint = "/organizations/{org}/settings/billing/budgets/{budget_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3245,7 +3245,7 @@ pub async fn github_delete_billing(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org}/settings/billing/budgets/{budget_id}".to_string();
+    let endpoint = "/organizations/{org}/settings/billing/budgets/{budget_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3294,7 +3294,7 @@ pub async fn github_read_orgs(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}".to_string();
+    let endpoint = "/orgs/{org}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3343,7 +3343,7 @@ pub async fn github_delete_orgs(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}".to_string();
+    let endpoint = "/orgs/{org}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3392,7 +3392,7 @@ pub async fn github_update_orgs(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}".to_string();
+    let endpoint = "/orgs/{org}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3536,7 +3536,7 @@ pub async fn github_create_actions(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/actions/hosted-runners".to_string();
+    let endpoint = "/orgs/{org}/actions/hosted-runners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3611,7 +3611,7 @@ pub async fn github_delete_actions(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}".to_string();
+    let endpoint = "/orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3660,7 +3660,7 @@ pub async fn github_read_oidc(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/actions/oidc/customization/sub".to_string();
+    let endpoint = "/orgs/{org}/actions/oidc/customization/sub".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3709,7 +3709,7 @@ pub async fn github_update_oidc(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/actions/oidc/customization/sub".to_string();
+    let endpoint = "/orgs/{org}/actions/oidc/customization/sub".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3766,7 +3766,7 @@ pub async fn github_create_orgs(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/artifacts/metadata/deployment-record".to_string();
+    let endpoint = "/orgs/{org}/artifacts/metadata/deployment-record".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3853,7 +3853,7 @@ pub async fn github_read_campaigns(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/campaigns".to_string();
+    let endpoint = "/orgs/{org}/campaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3913,7 +3913,7 @@ pub async fn github_create_campaigns(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/campaigns".to_string();
+    let endpoint = "/orgs/{org}/campaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4121,7 +4121,7 @@ pub async fn github_read_code_scanning(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/code-scanning/alerts".to_string();
+    let endpoint = "/orgs/{org}/code-scanning/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4187,7 +4187,7 @@ pub async fn github_read_codespaces(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/codespaces".to_string();
+    let endpoint = "/orgs/{org}/codespaces".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4236,7 +4236,7 @@ pub async fn github_update_codespaces(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/codespaces/secrets/{secret_name}".to_string();
+    let endpoint = "/orgs/{org}/codespaces/secrets/{secret_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4302,7 +4302,7 @@ pub async fn github_delete_codespaces(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/codespaces/secrets/{secret_name}".to_string();
+    let endpoint = "/orgs/{org}/codespaces/secrets/{secret_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4351,7 +4351,7 @@ pub async fn github_read_copilot(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/copilot/billing".to_string();
+    let endpoint = "/orgs/{org}/copilot/billing".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4400,7 +4400,7 @@ pub async fn github_create_copilot(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/copilot/billing/selected_teams".to_string();
+    let endpoint = "/orgs/{org}/copilot/billing/selected_teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4457,7 +4457,7 @@ pub async fn github_delete_copilot(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/copilot/billing/selected_teams".to_string();
+    let endpoint = "/orgs/{org}/copilot/billing/selected_teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4506,7 +4506,7 @@ pub async fn github_update_copilot(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/copilot/content_exclusion".to_string();
+    let endpoint = "/orgs/{org}/copilot/content_exclusion".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4563,7 +4563,7 @@ pub async fn github_delete_dependabot(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/dependabot/secrets/{secret_name}".to_string();
+    let endpoint = "/orgs/{org}/dependabot/secrets/{secret_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4612,7 +4612,7 @@ pub async fn github_read_packages(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/docker/conflicts".to_string();
+    let endpoint = "/orgs/{org}/docker/conflicts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4661,7 +4661,7 @@ pub async fn github_read_interactions(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/interaction-limits".to_string();
+    let endpoint = "/orgs/{org}/interaction-limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4710,7 +4710,7 @@ pub async fn github_update_interactions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/interaction-limits".to_string();
+    let endpoint = "/orgs/{org}/interaction-limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4770,7 +4770,7 @@ pub async fn github_delete_interactions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/interaction-limits".to_string();
+    let endpoint = "/orgs/{org}/interaction-limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4819,7 +4819,7 @@ pub async fn github_read_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/issues".to_string();
+    let endpoint = "/orgs/{org}/issues".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4885,7 +4885,7 @@ pub async fn github_stop_codespaces(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/members/{username}/codespaces/{codespace_name}/stop".to_string();
+    let endpoint = "/orgs/{org}/members/{username}/codespaces/{codespace_name}/stop".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4934,7 +4934,7 @@ pub async fn github_read_migrations(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/migrations".to_string();
+    let endpoint = "/orgs/{org}/migrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4991,7 +4991,7 @@ pub async fn github_create_migrations(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/migrations".to_string();
+    let endpoint = "/orgs/{org}/migrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5072,7 +5072,7 @@ pub async fn github_archive_migrations(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/migrations/{migration_id}/archive".to_string();
+    let endpoint = "/orgs/{org}/migrations/{migration_id}/archive".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5121,7 +5121,7 @@ pub async fn github_lock_migrations(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock".to_string();
+    let endpoint = "/orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5170,7 +5170,7 @@ pub async fn github_delete_packages(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/packages/{package_type}/{package_name}".to_string();
+    let endpoint = "/orgs/{org}/packages/{package_type}/{package_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5219,7 +5219,7 @@ pub async fn github_restore_packages(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/packages/{package_type}/{package_name}/restore".to_string();
+    let endpoint = "/orgs/{org}/packages/{package_type}/{package_name}/restore".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5276,7 +5276,7 @@ pub async fn github_create_private_registries(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/private-registries".to_string();
+    let endpoint = "/orgs/{org}/private-registries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5354,7 +5354,7 @@ pub async fn github_read_private_registries(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/private-registries".to_string();
+    let endpoint = "/orgs/{org}/private-registries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5403,7 +5403,7 @@ pub async fn github_update_private_registries(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/private-registries/{secret_name}".to_string();
+    let endpoint = "/orgs/{org}/private-registries/{secret_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5481,7 +5481,7 @@ pub async fn github_delete_private_registries(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/private-registries/{secret_name}".to_string();
+    let endpoint = "/orgs/{org}/private-registries/{secret_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5530,7 +5530,7 @@ pub async fn github_read_projects(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/projectsV2".to_string();
+    let endpoint = "/orgs/{org}/projectsV2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5587,7 +5587,7 @@ pub async fn github_create_projects(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/projectsV2/{project_number}/drafts".to_string();
+    let endpoint = "/orgs/{org}/projectsV2/{project_number}/drafts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5647,7 +5647,7 @@ pub async fn github_update_projects(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/projectsV2/{project_number}/items/{item_id}".to_string();
+    let endpoint = "/orgs/{org}/projectsV2/{project_number}/items/{item_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5704,7 +5704,7 @@ pub async fn github_delete_projects(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/projectsV2/{project_number}/items/{item_id}".to_string();
+    let endpoint = "/orgs/{org}/projectsV2/{project_number}/items/{item_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5753,7 +5753,7 @@ pub async fn github_read_repos(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/repos".to_string();
+    let endpoint = "/orgs/{org}/repos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5816,7 +5816,7 @@ pub async fn github_create_repos(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/repos".to_string();
+    let endpoint = "/orgs/{org}/repos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6072,7 +6072,7 @@ pub async fn github_read_secret_scanning(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/secret-scanning/alerts".to_string();
+    let endpoint = "/orgs/{org}/secret-scanning/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6121,7 +6121,7 @@ pub async fn github_update_secret_scanning(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/secret-scanning/pattern-configurations".to_string();
+    let endpoint = "/orgs/{org}/secret-scanning/pattern-configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6184,7 +6184,7 @@ pub async fn github_read_hosted_compute(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/settings/network-configurations".to_string();
+    let endpoint = "/orgs/{org}/settings/network-configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6233,7 +6233,7 @@ pub async fn github_create_hosted_compute(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/settings/network-configurations".to_string();
+    let endpoint = "/orgs/{org}/settings/network-configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6296,7 +6296,7 @@ pub async fn github_update_hosted_compute(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/settings/network-configurations/{network_configuration_id}".to_string();
+    let endpoint = "/orgs/{org}/settings/network-configurations/{network_configuration_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6359,7 +6359,7 @@ pub async fn github_delete_hosted_compute(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/settings/network-configurations/{network_configuration_id}".to_string();
+    let endpoint = "/orgs/{org}/settings/network-configurations/{network_configuration_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6408,7 +6408,7 @@ pub async fn github_read_teams(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/teams".to_string();
+    let endpoint = "/orgs/{org}/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6457,7 +6457,7 @@ pub async fn github_create_teams(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/teams".to_string();
+    let endpoint = "/orgs/{org}/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6535,7 +6535,7 @@ pub async fn github_update_teams(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/teams/{team_slug}".to_string();
+    let endpoint = "/orgs/{org}/teams/{team_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6607,7 +6607,7 @@ pub async fn github_delete_teams(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs/{org}/teams/{team_slug}".to_string();
+    let endpoint = "/orgs/{org}/teams/{team_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6656,7 +6656,7 @@ pub async fn github_list_rate_limit(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rate_limit".to_string();
+    let endpoint = "/rate_limit".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6705,7 +6705,7 @@ pub async fn github_approve_actions(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/actions/runs/{run_id}/approve".to_string();
+    let endpoint = "/repos/{owner}/{repo}/actions/runs/{run_id}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6754,7 +6754,7 @@ pub async fn github_cancel_actions(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/actions/runs/{run_id}/cancel".to_string();
+    let endpoint = "/repos/{owner}/{repo}/actions/runs/{run_id}/cancel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6803,7 +6803,7 @@ pub async fn github_create_checks(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/check-runs".to_string();
+    let endpoint = "/repos/{owner}/{repo}/check-runs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6887,7 +6887,7 @@ pub async fn github_update_checks(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/check-runs/{check_run_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/check-runs/{check_run_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6968,7 +6968,7 @@ pub async fn github_read_checks(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/check-runs/{check_run_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/check-runs/{check_run_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7017,7 +7017,7 @@ pub async fn github_update_code_scanning(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/code-scanning/alerts/{alert_number}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/code-scanning/alerts/{alert_number}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7086,7 +7086,7 @@ pub async fn github_create_code_scanning(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix".to_string();
+    let endpoint = "/repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7195,7 +7195,7 @@ pub async fn github_create_codespaces(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/codespaces".to_string();
+    let endpoint = "/repos/{owner}/{repo}/codespaces".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7282,7 +7282,7 @@ pub async fn github_create_reactions(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/comments/{comment_id}/reactions".to_string();
+    let endpoint = "/repos/{owner}/{repo}/comments/{comment_id}/reactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7339,7 +7339,7 @@ pub async fn github_read_reactions(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/comments/{comment_id}/reactions".to_string();
+    let endpoint = "/repos/{owner}/{repo}/comments/{comment_id}/reactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7396,7 +7396,7 @@ pub async fn github_delete_reactions(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7497,7 +7497,7 @@ pub async fn github_create_dependency_graph(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/dependency-graph/snapshots".to_string();
+    let endpoint = "/repos/{owner}/{repo}/dependency-graph/snapshots".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7575,7 +7575,7 @@ pub async fn github_create_git(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/git/blobs".to_string();
+    let endpoint = "/repos/{owner}/{repo}/git/blobs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7687,7 +7687,7 @@ pub async fn github_delete_git(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/git/refs/{ref}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/git/refs/{ref}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7736,7 +7736,7 @@ pub async fn github_update_git(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/git/refs/{ref}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/git/refs/{ref}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7796,7 +7796,7 @@ pub async fn github_update_issues(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/issues/comments/{comment_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/issues/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7853,7 +7853,7 @@ pub async fn github_delete_issues(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/issues/comments/{comment_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/issues/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7902,7 +7902,7 @@ pub async fn github_lock_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/issues/{issue_number}/lock".to_string();
+    let endpoint = "/repos/{owner}/{repo}/issues/{issue_number}/lock".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7951,7 +7951,7 @@ pub async fn github_cancel_repos(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel".to_string();
+    let endpoint = "/repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8000,7 +8000,7 @@ pub async fn github_read_pulls(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/pulls".to_string();
+    let endpoint = "/repos/{owner}/{repo}/pulls".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8069,7 +8069,7 @@ pub async fn github_delete_pulls(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/pulls/comments/{comment_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/pulls/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8118,7 +8118,7 @@ pub async fn github_update_pulls(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/pulls/comments/{comment_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/pulls/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8175,7 +8175,7 @@ pub async fn github_merge_pulls(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/pulls/{pull_number}/merge".to_string();
+    let endpoint = "/repos/{owner}/{repo}/pulls/{pull_number}/merge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8224,7 +8224,7 @@ pub async fn github_create_secret_scanning(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/secret-scanning/push-protection-bypasses".to_string();
+    let endpoint = "/repos/{owner}/{repo}/secret-scanning/push-protection-bypasses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8284,7 +8284,7 @@ pub async fn github_create_security_advisories(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/security-advisories".to_string();
+    let endpoint = "/repos/{owner}/{repo}/security-advisories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8365,7 +8365,7 @@ pub async fn github_update_security_advisories(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repos/{owner}/{repo}/security-advisories/{ghsa_id}".to_string();
+    let endpoint = "/repos/{owner}/{repo}/security-advisories/{ghsa_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8527,7 +8527,7 @@ pub async fn github_list_repos(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories".to_string();
+    let endpoint = "/repositories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8572,11 +8572,11 @@ pub async fn github_list_repos(context: ActorContext) -> Result<HashMap<String, 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__code(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_code(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/code".to_string();
+    let endpoint = "/search/code".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8635,11 +8635,11 @@ pub async fn github_search__code(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__commits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_commits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/commits".to_string();
+    let endpoint = "/search/commits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8695,11 +8695,11 @@ pub async fn github_search__commits(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__issues_and_pull_requests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_issues_and_pull_requests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/issues".to_string();
+    let endpoint = "/search/issues".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8755,11 +8755,11 @@ pub async fn github_search__issues_and_pull_requests(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__labels(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_labels(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/labels".to_string();
+    let endpoint = "/search/labels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8818,11 +8818,11 @@ pub async fn github_search__labels(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__repos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_repos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/repositories".to_string();
+    let endpoint = "/search/repositories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8878,11 +8878,11 @@ pub async fn github_search__repos(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__topics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_topics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/topics".to_string();
+    let endpoint = "/search/topics".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8935,11 +8935,11 @@ pub async fn github_search__topics(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn github_search__users(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn github_search_users(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/users".to_string();
+    let endpoint = "/search/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8999,7 +8999,7 @@ pub async fn github_update_users(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9077,7 +9077,7 @@ pub async fn github_list_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9126,7 +9126,7 @@ pub async fn github_delete_users(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/blocks/{username}".to_string();
+    let endpoint = "/user/blocks/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9175,7 +9175,7 @@ pub async fn github_read_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/blocks/{username}".to_string();
+    let endpoint = "/user/blocks/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9224,7 +9224,7 @@ pub async fn github_list_codespaces(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/codespaces".to_string();
+    let endpoint = "/user/codespaces".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9273,7 +9273,7 @@ pub async fn github_publish_codespaces(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/codespaces/{codespace_name}/publish".to_string();
+    let endpoint = "/user/codespaces/{codespace_name}/publish".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9333,7 +9333,7 @@ pub async fn github_start_codespaces(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/codespaces/{codespace_name}/start".to_string();
+    let endpoint = "/user/codespaces/{codespace_name}/start".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9382,7 +9382,7 @@ pub async fn github_list_packages(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/docker/conflicts".to_string();
+    let endpoint = "/user/docker/conflicts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9431,7 +9431,7 @@ pub async fn github_create_users(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/emails".to_string();
+    let endpoint = "/user/emails".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9480,7 +9480,7 @@ pub async fn github_list_interactions(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/interaction-limits".to_string();
+    let endpoint = "/user/interaction-limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9529,7 +9529,7 @@ pub async fn github_list_migrations(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/migrations".to_string();
+    let endpoint = "/user/migrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9578,7 +9578,7 @@ pub async fn github_list_teams(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/teams".to_string();
+    let endpoint = "/user/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

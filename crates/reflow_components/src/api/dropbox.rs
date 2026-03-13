@@ -41,7 +41,7 @@ pub async fn dropbox_upload_file(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/upload".to_string();
+    let endpoint = "/files/upload".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -93,7 +93,7 @@ pub async fn dropbox_download_file(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/download".to_string();
+    let endpoint = "/files/download".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -145,7 +145,7 @@ pub async fn dropbox_list_folder(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/list_folder".to_string();
+    let endpoint = "/files/list_folder".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -202,7 +202,7 @@ pub async fn dropbox_read_file(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/get_metadata".to_string();
+    let endpoint = "/files/get_metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -265,7 +265,7 @@ pub async fn dropbox_list_files(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/list_folder".to_string();
+    let endpoint = "/files/list_folder".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -337,7 +337,7 @@ pub async fn dropbox_search_files(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/search_v2".to_string();
+    let endpoint = "/files/search_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -400,7 +400,7 @@ pub async fn dropbox_create_folder(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/create_folder_v2".to_string();
+    let endpoint = "/files/create_folder_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -460,7 +460,7 @@ pub async fn dropbox_delete_file(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/delete_v2".to_string();
+    let endpoint = "/files/delete_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -517,7 +517,7 @@ pub async fn dropbox_update_file(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/move_v2".to_string();
+    let endpoint = "/files/move_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -583,7 +583,7 @@ pub async fn dropbox_create_file(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/copy_v2".to_string();
+    let endpoint = "/files/copy_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -646,7 +646,7 @@ pub async fn dropbox_list_file_revisions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/list_revisions".to_string();
+    let endpoint = "/files/list_revisions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -706,7 +706,7 @@ pub async fn dropbox_create_shared_link(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sharing/create_shared_link_with_settings".to_string();
+    let endpoint = "/sharing/create_shared_link_with_settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -766,7 +766,7 @@ pub async fn dropbox_list_shared_links(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sharing/list_shared_links".to_string();
+    let endpoint = "/sharing/list_shared_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -829,7 +829,7 @@ pub async fn dropbox_delete_shared_link(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sharing/revoke_shared_link".to_string();
+    let endpoint = "/sharing/revoke_shared_link".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -886,7 +886,7 @@ pub async fn dropbox_create_shared_folder(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sharing/share_folder".to_string();
+    let endpoint = "/sharing/share_folder".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -955,7 +955,7 @@ pub async fn dropbox_read_shared_folder(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sharing/get_folder_metadata".to_string();
+    let endpoint = "/sharing/get_folder_metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1015,7 +1015,7 @@ pub async fn dropbox_list_shared_folder_members(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sharing/list_folder_members".to_string();
+    let endpoint = "/sharing/list_folder_members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1075,7 +1075,7 @@ pub async fn dropbox_read_account(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/get_current_account".to_string();
+    let endpoint = "/users/get_current_account".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1124,7 +1124,7 @@ pub async fn dropbox_read_space_usage(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/get_space_usage".to_string();
+    let endpoint = "/users/get_space_usage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1173,7 +1173,7 @@ pub async fn dropbox_upload_file_upload_session(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/upload_session/start".to_string();
+    let endpoint = "/files/upload_session/start".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1225,7 +1225,7 @@ pub async fn dropbox_read_file_preview(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/get_preview".to_string();
+    let endpoint = "/files/get_preview".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1277,7 +1277,7 @@ pub async fn dropbox_read_file_thumbnail(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files/get_thumbnail_v2".to_string();
+    let endpoint = "/files/get_thumbnail_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1335,7 +1335,7 @@ pub async fn dropbox_list_team_members(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team/members/list_v2".to_string();
+    let endpoint = "/team/members/list_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1395,7 +1395,7 @@ pub async fn dropbox_read_team_member(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team/members/get_info".to_string();
+    let endpoint = "/team/members/get_info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1452,7 +1452,7 @@ pub async fn dropbox_create_team_member(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team/members/add_v2".to_string();
+    let endpoint = "/team/members/add_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1512,7 +1512,7 @@ pub async fn dropbox_delete_team_member(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team/members/remove".to_string();
+    let endpoint = "/team/members/remove".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1575,7 +1575,7 @@ pub async fn dropbox_list_team_folders(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team/team_folder/list".to_string();
+    let endpoint = "/team/team_folder/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1632,7 +1632,7 @@ pub async fn dropbox_create_team_folder(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team/team_folder/create".to_string();
+    let endpoint = "/team/team_folder/create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1692,7 +1692,7 @@ pub async fn dropbox_list_events(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team_log/get_events".to_string();
+    let endpoint = "/team_log/get_events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1758,7 +1758,7 @@ pub async fn dropbox_create_file_request(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/file_requests/create".to_string();
+    let endpoint = "/file_requests/create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1824,7 +1824,7 @@ pub async fn dropbox_list_file_requests(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/file_requests/list_v2".to_string();
+    let endpoint = "/file_requests/list_v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1881,7 +1881,7 @@ pub async fn dropbox_read_file_request(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/file_requests/get".to_string();
+    let endpoint = "/file_requests/get".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1938,7 +1938,7 @@ pub async fn dropbox_update_file_request(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/file_requests/update".to_string();
+    let endpoint = "/file_requests/update".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

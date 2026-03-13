@@ -41,7 +41,7 @@ pub async fn omdb_search_movies(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/".to_string();
+    let endpoint = "/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn omdb_read_movie(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/".to_string();
+    let endpoint = "/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -164,7 +164,7 @@ pub async fn omdb_read_poster(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/".to_string();
+    let endpoint = "/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

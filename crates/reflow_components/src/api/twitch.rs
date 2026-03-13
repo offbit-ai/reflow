@@ -41,7 +41,7 @@ pub async fn twitch_read_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users".to_string();
+    let endpoint = "/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn twitch_list_streams(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/streams".to_string();
+    let endpoint = "/streams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -179,7 +179,7 @@ pub async fn twitch_read_extension_analytics(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/analytics/extensions".to_string();
+    let endpoint = "/analytics/extensions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -251,7 +251,7 @@ pub async fn twitch_read_game_analytics(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/analytics/games".to_string();
+    let endpoint = "/analytics/games".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -323,7 +323,7 @@ pub async fn twitch_read_authorization_by_user(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/authorization/users".to_string();
+    let endpoint = "/authorization/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -380,7 +380,7 @@ pub async fn twitch_read_cheermotes(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bits/cheermotes".to_string();
+    let endpoint = "/bits/cheermotes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -437,7 +437,7 @@ pub async fn twitch_update_extension_bits_product(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bits/extensions".to_string();
+    let endpoint = "/bits/extensions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -509,7 +509,7 @@ pub async fn twitch_read_extension_bits_products(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bits/extensions".to_string();
+    let endpoint = "/bits/extensions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -566,7 +566,7 @@ pub async fn twitch_read_bits_leaderboard(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bits/leaderboard".to_string();
+    let endpoint = "/bits/leaderboard".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -632,7 +632,7 @@ pub async fn twitch_read_custom_reward(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channel_points/custom_rewards".to_string();
+    let endpoint = "/channel_points/custom_rewards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -695,7 +695,7 @@ pub async fn twitch_create_custom_rewards(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channel_points/custom_rewards".to_string();
+    let endpoint = "/channel_points/custom_rewards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -796,7 +796,7 @@ pub async fn twitch_delete_custom_reward(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channel_points/custom_rewards".to_string();
+    let endpoint = "/channel_points/custom_rewards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -856,7 +856,7 @@ pub async fn twitch_update_custom_reward(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channel_points/custom_rewards".to_string();
+    let endpoint = "/channel_points/custom_rewards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -963,7 +963,7 @@ pub async fn twitch_read_custom_reward_redemption(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channel_points/custom_rewards/redemptions".to_string();
+    let endpoint = "/channel_points/custom_rewards/redemptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1038,7 +1038,7 @@ pub async fn twitch_update_redemption_status(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channel_points/custom_rewards/redemptions".to_string();
+    let endpoint = "/channel_points/custom_rewards/redemptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1109,7 +1109,7 @@ pub async fn twitch_read_channel_information(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels".to_string();
+    let endpoint = "/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1166,7 +1166,7 @@ pub async fn twitch_update_channels(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels".to_string();
+    let endpoint = "/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1249,7 +1249,7 @@ pub async fn twitch_read_ad_schedule(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/ads".to_string();
+    let endpoint = "/channels/ads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1306,7 +1306,7 @@ pub async fn twitch_create_ads(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/ads/schedule/snooze".to_string();
+    let endpoint = "/channels/ads/schedule/snooze".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1363,7 +1363,7 @@ pub async fn twitch_start_commercial(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/commercial".to_string();
+    let endpoint = "/channels/commercial".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1423,7 +1423,7 @@ pub async fn twitch_read_channel_editors(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/editors".to_string();
+    let endpoint = "/channels/editors".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1480,7 +1480,7 @@ pub async fn twitch_read_followed_channels(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/followed".to_string();
+    let endpoint = "/channels/followed".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1546,7 +1546,7 @@ pub async fn twitch_read_channel_followers(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/followers".to_string();
+    let endpoint = "/channels/followers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1612,7 +1612,7 @@ pub async fn twitch_create_moderation(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/vips".to_string();
+    let endpoint = "/channels/vips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1672,7 +1672,7 @@ pub async fn twitch_read_vips(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/vips".to_string();
+    let endpoint = "/channels/vips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1738,7 +1738,7 @@ pub async fn twitch_delete_channel_vip(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/vips".to_string();
+    let endpoint = "/channels/vips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1798,7 +1798,7 @@ pub async fn twitch_read_charity_campaign(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/charity/campaigns".to_string();
+    let endpoint = "/charity/campaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1855,7 +1855,7 @@ pub async fn twitch_read_charity_campaign_donations(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/charity/donations".to_string();
+    let endpoint = "/charity/donations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1918,7 +1918,7 @@ pub async fn twitch_send_chat_announcement(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/announcements".to_string();
+    let endpoint = "/chat/announcements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1989,7 +1989,7 @@ pub async fn twitch_read_channel_chat_badges(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/badges".to_string();
+    let endpoint = "/chat/badges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2046,7 +2046,7 @@ pub async fn twitch_read_global_chat_badges(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/badges/global".to_string();
+    let endpoint = "/chat/badges/global".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2095,7 +2095,7 @@ pub async fn twitch_read_chatters(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/chatters".to_string();
+    let endpoint = "/chat/chatters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2161,7 +2161,7 @@ pub async fn twitch_read_user_chat_color(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/color".to_string();
+    let endpoint = "/chat/color".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2218,7 +2218,7 @@ pub async fn twitch_update_user_chat_color(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/color".to_string();
+    let endpoint = "/chat/color".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2278,7 +2278,7 @@ pub async fn twitch_read_channel_emotes(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/emotes".to_string();
+    let endpoint = "/chat/emotes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2335,7 +2335,7 @@ pub async fn twitch_read_global_emotes(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/emotes/global".to_string();
+    let endpoint = "/chat/emotes/global".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2384,7 +2384,7 @@ pub async fn twitch_read_emote_sets(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/emotes/set".to_string();
+    let endpoint = "/chat/emotes/set".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2441,7 +2441,7 @@ pub async fn twitch_read_user_emotes(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/emotes/user".to_string();
+    let endpoint = "/chat/emotes/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2504,7 +2504,7 @@ pub async fn twitch_send_chat_message(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/messages".to_string();
+    let endpoint = "/chat/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2573,7 +2573,7 @@ pub async fn twitch_read_chat_settings(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/settings".to_string();
+    let endpoint = "/chat/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2633,7 +2633,7 @@ pub async fn twitch_update_chat_settings(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/settings".to_string();
+    let endpoint = "/chat/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2725,7 +2725,7 @@ pub async fn twitch_send_a_shoutout(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/shoutouts".to_string();
+    let endpoint = "/chat/shoutouts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2788,7 +2788,7 @@ pub async fn twitch_create_clip(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/clips".to_string();
+    let endpoint = "/clips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2851,7 +2851,7 @@ pub async fn twitch_read_clips(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/clips".to_string();
+    let endpoint = "/clips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2932,7 +2932,7 @@ pub async fn twitch_read_clips_download(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/clips/downloads".to_string();
+    let endpoint = "/clips/downloads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2995,7 +2995,7 @@ pub async fn twitch_read_content_classification_labels(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/content_classification_labels".to_string();
+    let endpoint = "/content_classification_labels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3052,7 +3052,7 @@ pub async fn twitch_read_drops_entitlements(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/entitlements/drops".to_string();
+    let endpoint = "/entitlements/drops".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3124,7 +3124,7 @@ pub async fn twitch_update_drops_entitlements(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/entitlements/drops".to_string();
+    let endpoint = "/entitlements/drops".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3184,7 +3184,7 @@ pub async fn twitch_read_conduits(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/conduits".to_string();
+    let endpoint = "/eventsub/conduits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3233,7 +3233,7 @@ pub async fn twitch_delete_conduit(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/conduits".to_string();
+    let endpoint = "/eventsub/conduits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3290,7 +3290,7 @@ pub async fn twitch_create_conduits(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/conduits".to_string();
+    let endpoint = "/eventsub/conduits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3347,7 +3347,7 @@ pub async fn twitch_update_conduits(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/conduits".to_string();
+    let endpoint = "/eventsub/conduits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3407,7 +3407,7 @@ pub async fn twitch_update_conduit_shards(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/conduits/shards".to_string();
+    let endpoint = "/eventsub/conduits/shards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3467,7 +3467,7 @@ pub async fn twitch_read_conduit_shards(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/conduits/shards".to_string();
+    let endpoint = "/eventsub/conduits/shards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3530,7 +3530,7 @@ pub async fn twitch_read_eventsub_subscriptions(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/subscriptions".to_string();
+    let endpoint = "/eventsub/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3599,7 +3599,7 @@ pub async fn twitch_create_eventsub_subscription(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/subscriptions".to_string();
+    let endpoint = "/eventsub/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3665,7 +3665,7 @@ pub async fn twitch_delete_eventsub_subscription(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/eventsub/subscriptions".to_string();
+    let endpoint = "/eventsub/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3722,7 +3722,7 @@ pub async fn twitch_read_extensions(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions".to_string();
+    let endpoint = "/extensions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3782,7 +3782,7 @@ pub async fn twitch_send_extension_chat_message(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/chat".to_string();
+    let endpoint = "/extensions/chat".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3853,7 +3853,7 @@ pub async fn twitch_read_extension_configuration_segment(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/configurations".to_string();
+    let endpoint = "/extensions/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3916,7 +3916,7 @@ pub async fn twitch_update_extensions(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/configurations".to_string();
+    let endpoint = "/extensions/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3985,7 +3985,7 @@ pub async fn twitch_create_extension_secret(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/jwt/secrets".to_string();
+    let endpoint = "/extensions/jwt/secrets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4045,7 +4045,7 @@ pub async fn twitch_read_extension_secrets(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/jwt/secrets".to_string();
+    let endpoint = "/extensions/jwt/secrets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4094,7 +4094,7 @@ pub async fn twitch_read_extension_live_channels(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/live".to_string();
+    let endpoint = "/extensions/live".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4157,7 +4157,7 @@ pub async fn twitch_send_extension_pubsub_message(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/pubsub".to_string();
+    let endpoint = "/extensions/pubsub".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4223,7 +4223,7 @@ pub async fn twitch_read_released_extensions(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/released".to_string();
+    let endpoint = "/extensions/released".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4283,7 +4283,7 @@ pub async fn twitch_read_extension_transactions(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/extensions/transactions".to_string();
+    let endpoint = "/extensions/transactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4349,7 +4349,7 @@ pub async fn twitch_read_games(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/games".to_string();
+    let endpoint = "/games".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4412,7 +4412,7 @@ pub async fn twitch_read_top_games(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/games/top".to_string();
+    let endpoint = "/games/top".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4475,7 +4475,7 @@ pub async fn twitch_read_creator_goals(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/goals".to_string();
+    let endpoint = "/goals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4532,7 +4532,7 @@ pub async fn twitch_read_channel_guest_star_settings(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/channel_settings".to_string();
+    let endpoint = "/guest_star/channel_settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4592,7 +4592,7 @@ pub async fn twitch_update_channel_guest_star_settings(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/channel_settings".to_string();
+    let endpoint = "/guest_star/channel_settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4669,7 +4669,7 @@ pub async fn twitch_send_guest_star_invite(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/invites".to_string();
+    let endpoint = "/guest_star/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4735,7 +4735,7 @@ pub async fn twitch_read_guest_star_invites(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/invites".to_string();
+    let endpoint = "/guest_star/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4798,7 +4798,7 @@ pub async fn twitch_delete_guest_star_invite(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/invites".to_string();
+    let endpoint = "/guest_star/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4864,7 +4864,7 @@ pub async fn twitch_delete_guest_star(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/session".to_string();
+    let endpoint = "/guest_star/session".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4924,7 +4924,7 @@ pub async fn twitch_read_guest_star_session(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/session".to_string();
+    let endpoint = "/guest_star/session".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4984,7 +4984,7 @@ pub async fn twitch_create_guest_star_session(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/session".to_string();
+    let endpoint = "/guest_star/session".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5041,7 +5041,7 @@ pub async fn twitch_delete_guest_star_slot(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/slot".to_string();
+    let endpoint = "/guest_star/slot".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5113,7 +5113,7 @@ pub async fn twitch_update_guest_star_slot(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/slot".to_string();
+    let endpoint = "/guest_star/slot".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5182,7 +5182,7 @@ pub async fn twitch_create_guest_star(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/slot".to_string();
+    let endpoint = "/guest_star/slot".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5251,7 +5251,7 @@ pub async fn twitch_update_guest_star_slot_settings(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guest_star/slot_settings".to_string();
+    let endpoint = "/guest_star/slot_settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5329,7 +5329,7 @@ pub async fn twitch_read_hype_train_status(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hypetrain/status".to_string();
+    let endpoint = "/hypetrain/status".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5386,7 +5386,7 @@ pub async fn twitch_update_automod_settings(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/automod/settings".to_string();
+    let endpoint = "/moderation/automod/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5478,7 +5478,7 @@ pub async fn twitch_read_automod_settings(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/automod/settings".to_string();
+    let endpoint = "/moderation/automod/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5538,7 +5538,7 @@ pub async fn twitch_read_banned_users(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/banned".to_string();
+    let endpoint = "/moderation/banned".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5607,7 +5607,7 @@ pub async fn twitch_delete_moderation(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/bans".to_string();
+    let endpoint = "/moderation/bans".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5670,7 +5670,7 @@ pub async fn twitch_delete_blocked_term(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/blocked_terms".to_string();
+    let endpoint = "/moderation/blocked_terms".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5733,7 +5733,7 @@ pub async fn twitch_read_blocked_terms(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/blocked_terms".to_string();
+    let endpoint = "/moderation/blocked_terms".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5799,7 +5799,7 @@ pub async fn twitch_read_moderated_channels(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/channels".to_string();
+    let endpoint = "/moderation/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5862,7 +5862,7 @@ pub async fn twitch_delete_chat_messages(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/chat".to_string();
+    let endpoint = "/moderation/chat".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5925,7 +5925,7 @@ pub async fn twitch_read_moderators(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/moderators".to_string();
+    let endpoint = "/moderation/moderators".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5991,7 +5991,7 @@ pub async fn twitch_delete_channel_moderator(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/moderators".to_string();
+    let endpoint = "/moderation/moderators".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6051,7 +6051,7 @@ pub async fn twitch_read_shield_mode_status(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/shield_mode".to_string();
+    let endpoint = "/moderation/shield_mode".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6111,7 +6111,7 @@ pub async fn twitch_update_shield_mode_status(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/shield_mode".to_string();
+    let endpoint = "/moderation/shield_mode".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6179,7 +6179,7 @@ pub async fn twitch_delete_suspicious_status_from_chat_user(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/suspicious_users".to_string();
+    let endpoint = "/moderation/suspicious_users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6242,7 +6242,7 @@ pub async fn twitch_update_moderation(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/unban_requests".to_string();
+    let endpoint = "/moderation/unban_requests".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6311,7 +6311,7 @@ pub async fn twitch_read_unban_requests(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderation/unban_requests".to_string();
+    let endpoint = "/moderation/unban_requests".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6383,7 +6383,7 @@ pub async fn twitch_create_poll(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/polls".to_string();
+    let endpoint = "/polls".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6455,7 +6455,7 @@ pub async fn twitch_read_polls(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/polls".to_string();
+    let endpoint = "/polls".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6521,7 +6521,7 @@ pub async fn twitch_update_polls(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/polls".to_string();
+    let endpoint = "/polls".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6584,7 +6584,7 @@ pub async fn twitch_update_predictions(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/predictions".to_string();
+    let endpoint = "/predictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6650,7 +6650,7 @@ pub async fn twitch_read_predictions(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/predictions".to_string();
+    let endpoint = "/predictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6716,7 +6716,7 @@ pub async fn twitch_create_prediction(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/predictions".to_string();
+    let endpoint = "/predictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6782,7 +6782,7 @@ pub async fn twitch_cancel_a_raid(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/raids".to_string();
+    let endpoint = "/raids".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6839,7 +6839,7 @@ pub async fn twitch_start_a_raid(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/raids".to_string();
+    let endpoint = "/raids".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6899,7 +6899,7 @@ pub async fn twitch_read_channel_stream_schedule(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schedule".to_string();
+    let endpoint = "/schedule".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6971,7 +6971,7 @@ pub async fn twitch_read_channel_icalendar(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schedule/icalendar".to_string();
+    let endpoint = "/schedule/icalendar".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7028,7 +7028,7 @@ pub async fn twitch_update_channel_stream_schedule_segment(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schedule/segment".to_string();
+    let endpoint = "/schedule/segment".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7111,7 +7111,7 @@ pub async fn twitch_delete_channel_stream_schedule_segment(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schedule/segment".to_string();
+    let endpoint = "/schedule/segment".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7171,7 +7171,7 @@ pub async fn twitch_create_channel_stream_schedule_segment(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schedule/segment".to_string();
+    let endpoint = "/schedule/segment".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7251,7 +7251,7 @@ pub async fn twitch_update_channel_stream_schedule(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schedule/settings".to_string();
+    let endpoint = "/schedule/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7320,7 +7320,7 @@ pub async fn twitch_search_categories(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/categories".to_string();
+    let endpoint = "/search/categories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7383,7 +7383,7 @@ pub async fn twitch_search_channels(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/channels".to_string();
+    let endpoint = "/search/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7449,7 +7449,7 @@ pub async fn twitch_read_shared_chat_session(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/shared_chat/session".to_string();
+    let endpoint = "/shared_chat/session".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7506,7 +7506,7 @@ pub async fn twitch_read_streams(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/streams".to_string();
+    let endpoint = "/streams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7584,7 +7584,7 @@ pub async fn twitch_read_followed_streams(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/streams/followed".to_string();
+    let endpoint = "/streams/followed".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7647,7 +7647,7 @@ pub async fn twitch_read_stream_key(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/streams/key".to_string();
+    let endpoint = "/streams/key".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7704,7 +7704,7 @@ pub async fn twitch_create_stream_marker(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/streams/markers".to_string();
+    let endpoint = "/streams/markers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7764,7 +7764,7 @@ pub async fn twitch_read_stream_markers(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/streams/markers".to_string();
+    let endpoint = "/streams/markers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7833,7 +7833,7 @@ pub async fn twitch_read_broadcaster_subscriptions(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions".to_string();
+    let endpoint = "/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7902,7 +7902,7 @@ pub async fn twitch_list_subscriptions(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions/user".to_string();
+    let endpoint = "/subscriptions/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7962,7 +7962,7 @@ pub async fn twitch_read_teams(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams".to_string();
+    let endpoint = "/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8022,7 +8022,7 @@ pub async fn twitch_read_channel_teams(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/channel".to_string();
+    let endpoint = "/teams/channel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8079,7 +8079,7 @@ pub async fn twitch_update_user(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users".to_string();
+    let endpoint = "/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8136,7 +8136,7 @@ pub async fn twitch_delete_users(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/blocks".to_string();
+    let endpoint = "/users/blocks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8193,7 +8193,7 @@ pub async fn twitch_read_user_block_list(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/blocks".to_string();
+    let endpoint = "/users/blocks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8256,7 +8256,7 @@ pub async fn twitch_update_users(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/blocks".to_string();
+    let endpoint = "/users/blocks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8319,7 +8319,7 @@ pub async fn twitch_read_user_active_extensions(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/extensions".to_string();
+    let endpoint = "/users/extensions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8376,7 +8376,7 @@ pub async fn twitch_update_user_extensions(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/extensions".to_string();
+    let endpoint = "/users/extensions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8433,7 +8433,7 @@ pub async fn twitch_read_user_extensions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/extensions/list".to_string();
+    let endpoint = "/users/extensions/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8482,7 +8482,7 @@ pub async fn twitch_delete_videos(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8539,7 +8539,7 @@ pub async fn twitch_read_videos(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8623,7 +8623,7 @@ pub async fn twitch_create_clip_from_vod(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos/clips".to_string();
+    let endpoint = "/videos/clips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8695,7 +8695,7 @@ pub async fn twitch_send_whisper(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/whispers".to_string();
+    let endpoint = "/whispers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn paypal_create_order(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/checkout/orders".to_string();
+    let endpoint = "/checkout/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -205,7 +205,7 @@ pub async fn paypal_create_orders(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/checkout/orders".to_string();
+    let endpoint = "/v2/checkout/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -274,7 +274,7 @@ pub async fn paypal_create_externalcallback(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/checkout/orders/order-update-callback".to_string();
+    let endpoint = "/v2/checkout/orders/order-update-callback".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -340,7 +340,7 @@ pub async fn paypal_read_orders(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/checkout/orders/{id}".to_string();
+    let endpoint = "/v2/checkout/orders/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -389,7 +389,7 @@ pub async fn paypal_update_orders(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/checkout/orders/{id}".to_string();
+    let endpoint = "/v2/checkout/orders/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -438,7 +438,7 @@ pub async fn paypal_update_trackers(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/checkout/orders/{id}/trackers/{tracker_id}".to_string();
+    let endpoint = "/v2/checkout/orders/{id}/trackers/{tracker_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

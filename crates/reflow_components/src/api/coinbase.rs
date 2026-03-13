@@ -41,7 +41,7 @@ pub async fn coinbase_list_accounts(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts".to_string();
+    let endpoint = "/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -90,7 +90,7 @@ pub async fn coinbase_read_exchange_rates(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/exchange-rates".to_string();
+    let endpoint = "/exchange-rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -147,7 +147,7 @@ pub async fn coinbase_read_user(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -199,7 +199,7 @@ pub async fn coinbase_update_user(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -265,7 +265,7 @@ pub async fn coinbase_read_auth_info(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/auth".to_string();
+    let endpoint = "/user/auth".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1840,7 +1840,7 @@ pub async fn coinbase_list_payment_methods(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payment-methods".to_string();
+    let endpoint = "/payment-methods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1947,7 +1947,7 @@ pub async fn coinbase_read_exchange_rate(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/exchange-rates".to_string();
+    let endpoint = "/exchange-rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2062,7 +2062,7 @@ pub async fn coinbase_list_currencies(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/currencies".to_string();
+    let endpoint = "/currencies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2114,7 +2114,7 @@ pub async fn coinbase_read_time(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/time".to_string();
+    let endpoint = "/time".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

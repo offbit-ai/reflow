@@ -41,7 +41,7 @@ pub async fn binance_read_ticker(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ticker/price".to_string();
+    let endpoint = "/ticker/price".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -98,7 +98,7 @@ pub async fn binance_create_order(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/order".to_string();
+    let endpoint = "/order".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

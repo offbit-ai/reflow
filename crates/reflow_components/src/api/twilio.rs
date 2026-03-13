@@ -41,7 +41,7 @@ pub async fn twilio_send_message(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/Accounts/{AccountSid}/Messages.json".to_string();
+    let endpoint = "/Accounts/{AccountSid}/Messages.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn twilio_create_call(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/Accounts/{AccountSid}/Calls.json".to_string();
+    let endpoint = "/Accounts/{AccountSid}/Calls.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -167,7 +167,7 @@ pub async fn twilio_create_account(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts.json".to_string();
+    let endpoint = "/2010-04-01/Accounts.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -224,7 +224,7 @@ pub async fn twilio_list_account(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts.json".to_string();
+    let endpoint = "/2010-04-01/Accounts.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

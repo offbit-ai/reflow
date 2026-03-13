@@ -41,7 +41,7 @@ pub async fn youtube_search_videos(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search".to_string();
+    let endpoint = "/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn youtube_read_video(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn youtube_list_videos(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -242,7 +242,7 @@ pub async fn youtube_upload_video(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -319,7 +319,7 @@ pub async fn youtube_update_video(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -399,7 +399,7 @@ pub async fn youtube_delete_video(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos".to_string();
+    let endpoint = "/videos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -456,7 +456,7 @@ pub async fn youtube_search_search_results(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search".to_string();
+    let endpoint = "/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -549,7 +549,7 @@ pub async fn youtube_list_channels(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels".to_string();
+    let endpoint = "/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -621,7 +621,7 @@ pub async fn youtube_update_channel(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels".to_string();
+    let endpoint = "/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -692,7 +692,7 @@ pub async fn youtube_list_playlists(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists".to_string();
+    let endpoint = "/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -764,7 +764,7 @@ pub async fn youtube_create_playlist(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists".to_string();
+    let endpoint = "/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -838,7 +838,7 @@ pub async fn youtube_update_playlist(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists".to_string();
+    let endpoint = "/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -912,7 +912,7 @@ pub async fn youtube_delete_playlist(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlists".to_string();
+    let endpoint = "/playlists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -969,7 +969,7 @@ pub async fn youtube_list_playlist_items(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlistItems".to_string();
+    let endpoint = "/playlistItems".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1038,7 +1038,7 @@ pub async fn youtube_create_playlist_item(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlistItems".to_string();
+    let endpoint = "/playlistItems".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1109,7 +1109,7 @@ pub async fn youtube_delete_playlist_item(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/playlistItems".to_string();
+    let endpoint = "/playlistItems".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1166,7 +1166,7 @@ pub async fn youtube_list_comments(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/comments".to_string();
+    let endpoint = "/comments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1238,7 +1238,7 @@ pub async fn youtube_create_comment(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/comments".to_string();
+    let endpoint = "/comments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1306,7 +1306,7 @@ pub async fn youtube_delete_comment(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/comments".to_string();
+    let endpoint = "/comments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1363,7 +1363,7 @@ pub async fn youtube_list_comment_threads(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/commentThreads".to_string();
+    let endpoint = "/commentThreads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1441,7 +1441,7 @@ pub async fn youtube_create_comment_thread(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/commentThreads".to_string();
+    let endpoint = "/commentThreads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1512,7 +1512,7 @@ pub async fn youtube_list_subscriptions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions".to_string();
+    let endpoint = "/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1590,7 +1590,7 @@ pub async fn youtube_create_subscription(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions".to_string();
+    let endpoint = "/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1655,7 +1655,7 @@ pub async fn youtube_delete_subscription(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscriptions".to_string();
+    let endpoint = "/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1712,7 +1712,7 @@ pub async fn youtube_list_video_categories(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videoCategories".to_string();
+    let endpoint = "/videoCategories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1778,7 +1778,7 @@ pub async fn youtube_read_video_rating(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos/getRating".to_string();
+    let endpoint = "/videos/getRating".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1835,7 +1835,7 @@ pub async fn youtube_update_video_rating(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/videos/rate".to_string();
+    let endpoint = "/videos/rate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1895,7 +1895,7 @@ pub async fn youtube_read_i18n_language(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/i18nLanguages".to_string();
+    let endpoint = "/i18nLanguages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1955,7 +1955,7 @@ pub async fn youtube_read_i18n_region(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/i18nRegions".to_string();
+    let endpoint = "/i18nRegions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2015,7 +2015,7 @@ pub async fn youtube_list_live_broadcasts(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveBroadcasts".to_string();
+    let endpoint = "/liveBroadcasts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2087,7 +2087,7 @@ pub async fn youtube_create_live_broadcast(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveBroadcasts".to_string();
+    let endpoint = "/liveBroadcasts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2164,7 +2164,7 @@ pub async fn youtube_delete_live_broadcast(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveBroadcasts".to_string();
+    let endpoint = "/liveBroadcasts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2221,7 +2221,7 @@ pub async fn youtube_update_live_broadcast_status(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveBroadcasts/transition".to_string();
+    let endpoint = "/liveBroadcasts/transition".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2284,7 +2284,7 @@ pub async fn youtube_list_live_streams(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveStreams".to_string();
+    let endpoint = "/liveStreams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2353,7 +2353,7 @@ pub async fn youtube_create_live_stream(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveStreams".to_string();
+    let endpoint = "/liveStreams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2424,7 +2424,7 @@ pub async fn youtube_delete_live_stream(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/liveStreams".to_string();
+    let endpoint = "/liveStreams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2481,7 +2481,7 @@ pub async fn youtube_list_captions(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/captions".to_string();
+    let endpoint = "/captions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2544,7 +2544,7 @@ pub async fn youtube_upload_caption(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/captions".to_string();
+    let endpoint = "/captions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2678,7 +2678,7 @@ pub async fn youtube_delete_caption(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/captions".to_string();
+    let endpoint = "/captions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2735,7 +2735,7 @@ pub async fn youtube_list_channel_sections(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channelSections".to_string();
+    let endpoint = "/channelSections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2804,7 +2804,7 @@ pub async fn youtube_create_channel_section(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channelSections".to_string();
+    let endpoint = "/channelSections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2878,7 +2878,7 @@ pub async fn youtube_delete_channel_section(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channelSections".to_string();
+    let endpoint = "/channelSections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2935,7 +2935,7 @@ pub async fn youtube_list_members(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/members".to_string();
+    let endpoint = "/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3001,7 +3001,7 @@ pub async fn youtube_list_membership_levels(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/membershipsLevels".to_string();
+    let endpoint = "/membershipsLevels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3058,7 +3058,7 @@ pub async fn youtube_list_super_chat_events(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/superChatEvents".to_string();
+    let endpoint = "/superChatEvents".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3124,7 +3124,7 @@ pub async fn youtube_upload_thumbnail(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/thumbnails/set".to_string();
+    let endpoint = "/thumbnails/set".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3181,7 +3181,7 @@ pub async fn youtube_list_watermarks(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/watermarks/set".to_string();
+    let endpoint = "/watermarks/set".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

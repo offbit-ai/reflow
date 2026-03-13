@@ -41,7 +41,7 @@ pub async fn adyen_create_payment(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments".to_string();
+    let endpoint = "/payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn adyen_create_payment_session(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sessions".to_string();
+    let endpoint = "/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -167,7 +167,7 @@ pub async fn adyen_create_payment_details(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments/details".to_string();
+    let endpoint = "/payments/details".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -233,7 +233,7 @@ pub async fn adyen_list_payment_methods(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/paymentMethods".to_string();
+    let endpoint = "/paymentMethods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -647,7 +647,7 @@ pub async fn adyen_create_payment_link(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/paymentLinks".to_string();
+    let endpoint = "/paymentLinks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -840,7 +840,7 @@ pub async fn adyen_create_order(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orders".to_string();
+    let endpoint = "/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -909,7 +909,7 @@ pub async fn adyen_delete_order(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orders/cancel".to_string();
+    let endpoint = "/orders/cancel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -972,7 +972,7 @@ pub async fn adyen_read_payment_result(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments/result".to_string();
+    let endpoint = "/payments/result".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1032,7 +1032,7 @@ pub async fn adyen_create_stored_payment_method(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/storedPaymentMethods".to_string();
+    let endpoint = "/storedPaymentMethods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1098,7 +1098,7 @@ pub async fn adyen_list_stored_payment_methods(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/storedPaymentMethods".to_string();
+    let endpoint = "/storedPaymentMethods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1227,7 +1227,7 @@ pub async fn adyen_create_donation(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/donations".to_string();
+    let endpoint = "/donations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1299,7 +1299,7 @@ pub async fn adyen_create_apple_pay_session(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applePay/sessions".to_string();
+    let endpoint = "/applePay/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

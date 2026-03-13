@@ -41,7 +41,7 @@ pub async fn stripe_create_payment_intent(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payment_intents".to_string();
+    let endpoint = "/payment_intents".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn stripe_create_customer(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/customers".to_string();
+    let endpoint = "/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -158,7 +158,7 @@ pub async fn stripe_list_charges(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/charges".to_string();
+    let endpoint = "/charges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -215,7 +215,7 @@ pub async fn stripe_read_account(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/account".to_string();
+    let endpoint = "/v1/account".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -272,7 +272,7 @@ pub async fn stripe_create_account_links(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/account_links".to_string();
+    let endpoint = "/v1/account_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -347,7 +347,7 @@ pub async fn stripe_create_account_sessions(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/account_sessions".to_string();
+    let endpoint = "/v1/account_sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -410,7 +410,7 @@ pub async fn stripe_read_accounts(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/accounts".to_string();
+    let endpoint = "/v1/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -479,7 +479,7 @@ pub async fn stripe_create_accounts(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/accounts".to_string();
+    let endpoint = "/v1/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2746,7 +2746,7 @@ pub async fn stripe_create_apple_pay_domains(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/apple_pay/domains".to_string();
+    let endpoint = "/v1/apple_pay/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2806,7 +2806,7 @@ pub async fn stripe_read_apple_pay_domains(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/apple_pay/domains".to_string();
+    let endpoint = "/v1/apple_pay/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2987,7 +2987,7 @@ pub async fn stripe_read_application_fees(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/application_fees".to_string();
+    let endpoint = "/v1/application_fees".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3449,7 +3449,7 @@ pub async fn stripe_create_apps_secrets(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/apps/secrets".to_string();
+    let endpoint = "/v1/apps/secrets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3518,7 +3518,7 @@ pub async fn stripe_read_apps_secrets(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/apps/secrets".to_string();
+    let endpoint = "/v1/apps/secrets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3587,7 +3587,7 @@ pub async fn stripe_create_apps_secrets_delete(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/apps/secrets/delete".to_string();
+    let endpoint = "/v1/apps/secrets/delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3650,7 +3650,7 @@ pub async fn stripe_read_apps_secrets_find(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/apps/secrets/find".to_string();
+    let endpoint = "/v1/apps/secrets/find".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3713,7 +3713,7 @@ pub async fn stripe_read_balance(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/balance".to_string();
+    let endpoint = "/v1/balance".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3770,7 +3770,7 @@ pub async fn stripe_read_balance_history(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/balance/history".to_string();
+    let endpoint = "/v1/balance/history".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3911,7 +3911,7 @@ pub async fn stripe_create_balance_settings(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/balance_settings".to_string();
+    let endpoint = "/v1/balance_settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3971,7 +3971,7 @@ pub async fn stripe_read_balance_settings(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/balance_settings".to_string();
+    let endpoint = "/v1/balance_settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4028,7 +4028,7 @@ pub async fn stripe_read_balance_transactions(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/balance_transactions".to_string();
+    let endpoint = "/v1/balance_transactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4169,7 +4169,7 @@ pub async fn stripe_read_billing_alerts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/alerts".to_string();
+    let endpoint = "/v1/billing/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4241,7 +4241,7 @@ pub async fn stripe_create_billing_alerts(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/alerts".to_string();
+    let endpoint = "/v1/billing/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4547,7 +4547,7 @@ pub async fn stripe_read_billing_credit_balance_summary(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/credit_balance_summary".to_string();
+    let endpoint = "/v1/billing/credit_balance_summary".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4613,7 +4613,7 @@ pub async fn stripe_read_billing_credit_balance_transactions(context: ActorConte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/credit_balance_transactions".to_string();
+    let endpoint = "/v1/billing/credit_balance_transactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4748,7 +4748,7 @@ pub async fn stripe_read_billing_credit_grants(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/credit_grants".to_string();
+    let endpoint = "/v1/billing/credit_grants".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4820,7 +4820,7 @@ pub async fn stripe_create_billing_credit_grants(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/credit_grants".to_string();
+    let endpoint = "/v1/billing/credit_grants".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5153,7 +5153,7 @@ pub async fn stripe_create_billing_meter_event_adjustments(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/meter_event_adjustments".to_string();
+    let endpoint = "/v1/billing/meter_event_adjustments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5219,7 +5219,7 @@ pub async fn stripe_create_billing_meter_events(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/meter_events".to_string();
+    let endpoint = "/v1/billing/meter_events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5288,7 +5288,7 @@ pub async fn stripe_read_billing_meters(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/meters".to_string();
+    let endpoint = "/v1/billing/meters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5357,7 +5357,7 @@ pub async fn stripe_create_billing_meters(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/meters".to_string();
+    let endpoint = "/v1/billing/meters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5756,7 +5756,7 @@ pub async fn stripe_read_billing_portal_configurations(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing_portal/configurations".to_string();
+    let endpoint = "/v1/billing_portal/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5828,7 +5828,7 @@ pub async fn stripe_create_billing_portal_configurations(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing_portal/configurations".to_string();
+    let endpoint = "/v1/billing_portal/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6044,7 +6044,7 @@ pub async fn stripe_create_billing_portal_sessions(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing_portal/sessions".to_string();
+    let endpoint = "/v1/billing_portal/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6122,7 +6122,7 @@ pub async fn stripe_create_charges(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/charges".to_string();
+    let endpoint = "/v1/charges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6236,7 +6236,7 @@ pub async fn stripe_read_charges(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/charges".to_string();
+    let endpoint = "/v1/charges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6314,7 +6314,7 @@ pub async fn stripe_read_charges_search(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/charges/search".to_string();
+    let endpoint = "/v1/charges/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7163,7 +7163,7 @@ pub async fn stripe_read_checkout_sessions(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/checkout/sessions".to_string();
+    let endpoint = "/v1/checkout/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7253,7 +7253,7 @@ pub async fn stripe_create_checkout_sessions(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/checkout/sessions".to_string();
+    let endpoint = "/v1/checkout/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7715,7 +7715,7 @@ pub async fn stripe_read_climate_orders(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/climate/orders".to_string();
+    let endpoint = "/v1/climate/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7781,7 +7781,7 @@ pub async fn stripe_create_climate_orders(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/climate/orders".to_string();
+    let endpoint = "/v1/climate/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8042,7 +8042,7 @@ pub async fn stripe_read_climate_products(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/climate/products".to_string();
+    let endpoint = "/v1/climate/products".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8168,7 +8168,7 @@ pub async fn stripe_read_climate_suppliers(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/climate/suppliers".to_string();
+    let endpoint = "/v1/climate/suppliers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8354,7 +8354,7 @@ pub async fn stripe_read_country_specs(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/country_specs".to_string();
+    let endpoint = "/v1/country_specs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8480,7 +8480,7 @@ pub async fn stripe_read_coupons(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/coupons".to_string();
+    let endpoint = "/v1/coupons".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8549,7 +8549,7 @@ pub async fn stripe_create_coupons(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/coupons".to_string();
+    let endpoint = "/v1/coupons".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8823,7 +8823,7 @@ pub async fn stripe_create_credit_notes(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/credit_notes".to_string();
+    let endpoint = "/v1/credit_notes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8919,7 +8919,7 @@ pub async fn stripe_read_credit_notes(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/credit_notes".to_string();
+    let endpoint = "/v1/credit_notes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8997,7 +8997,7 @@ pub async fn stripe_read_credit_notes_preview(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/credit_notes/preview".to_string();
+    let endpoint = "/v1/credit_notes/preview".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9093,7 +9093,7 @@ pub async fn stripe_read_credit_notes_preview_lines(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/credit_notes/preview/lines".to_string();
+    let endpoint = "/v1/credit_notes/preview/lines".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9453,7 +9453,7 @@ pub async fn stripe_create_customer_sessions(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/customer_sessions".to_string();
+    let endpoint = "/v1/customer_sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9519,7 +9519,7 @@ pub async fn stripe_read_customers(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/customers".to_string();
+    let endpoint = "/v1/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9594,7 +9594,7 @@ pub async fn stripe_create_customers(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/customers".to_string();
+    let endpoint = "/v1/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9714,7 +9714,7 @@ pub async fn stripe_read_customers_search(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/customers/search".to_string();
+    let endpoint = "/v1/customers/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12689,7 +12689,7 @@ pub async fn stripe_read_disputes(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/disputes".to_string();
+    let endpoint = "/v1/disputes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12953,7 +12953,7 @@ pub async fn stripe_read_entitlements_active_entitlements(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/entitlements/active_entitlements".to_string();
+    let endpoint = "/v1/entitlements/active_entitlements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13082,7 +13082,7 @@ pub async fn stripe_create_entitlements_features(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/entitlements/features".to_string();
+    let endpoint = "/v1/entitlements/features".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13148,7 +13148,7 @@ pub async fn stripe_read_entitlements_features(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/entitlements/features".to_string();
+    let endpoint = "/v1/entitlements/features".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13349,7 +13349,7 @@ pub async fn stripe_create_ephemeral_keys(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/ephemeral_keys".to_string();
+    let endpoint = "/v1/ephemeral_keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13470,7 +13470,7 @@ pub async fn stripe_read_events(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/events".to_string();
+    let endpoint = "/v1/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13608,7 +13608,7 @@ pub async fn stripe_read_exchange_rates(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/exchange_rates".to_string();
+    let endpoint = "/v1/exchange_rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13839,7 +13839,7 @@ pub async fn stripe_create_file_links(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/file_links".to_string();
+    let endpoint = "/v1/file_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13905,7 +13905,7 @@ pub async fn stripe_read_file_links(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/file_links".to_string();
+    let endpoint = "/v1/file_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14106,7 +14106,7 @@ pub async fn stripe_read_files(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/files".to_string();
+    let endpoint = "/v1/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14178,7 +14178,7 @@ pub async fn stripe_create_files(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/files".to_string();
+    let endpoint = "/v1/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14304,7 +14304,7 @@ pub async fn stripe_read_financial_connections_accounts(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/financial_connections/accounts".to_string();
+    let endpoint = "/v1/financial_connections/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14757,7 +14757,7 @@ pub async fn stripe_create_financial_connections_sessions(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/financial_connections/sessions".to_string();
+    let endpoint = "/v1/financial_connections/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14889,7 +14889,7 @@ pub async fn stripe_read_financial_connections_transactions(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/financial_connections/transactions".to_string();
+    let endpoint = "/v1/financial_connections/transactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15024,7 +15024,7 @@ pub async fn stripe_create_forwarding_requests(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/forwarding/requests".to_string();
+    let endpoint = "/v1/forwarding/requests".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15096,7 +15096,7 @@ pub async fn stripe_read_forwarding_requests(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/forwarding/requests".to_string();
+    let endpoint = "/v1/forwarding/requests".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15225,7 +15225,7 @@ pub async fn stripe_read_identity_verification_reports(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/identity/verification_reports".to_string();
+    let endpoint = "/v1/identity/verification_reports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15363,7 +15363,7 @@ pub async fn stripe_read_identity_verification_sessions(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/identity/verification_sessions".to_string();
+    let endpoint = "/v1/identity/verification_sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15444,7 +15444,7 @@ pub async fn stripe_create_identity_verification_sessions(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/identity/verification_sessions".to_string();
+    let endpoint = "/v1/identity/verification_sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15783,7 +15783,7 @@ pub async fn stripe_read_invoice_payments(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoice_payments".to_string();
+    let endpoint = "/v1/invoice_payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15921,7 +15921,7 @@ pub async fn stripe_read_invoice_rendering_templates(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoice_rendering_templates".to_string();
+    let endpoint = "/v1/invoice_rendering_templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16173,7 +16173,7 @@ pub async fn stripe_read_invoiceitems(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoiceitems".to_string();
+    let endpoint = "/v1/invoiceitems".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16254,7 +16254,7 @@ pub async fn stripe_create_invoiceitems(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoiceitems".to_string();
+    let endpoint = "/v1/invoiceitems".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16576,7 +16576,7 @@ pub async fn stripe_create_invoices(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoices".to_string();
+    let endpoint = "/v1/invoices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16729,7 +16729,7 @@ pub async fn stripe_read_invoices(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoices".to_string();
+    let endpoint = "/v1/invoices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16816,7 +16816,7 @@ pub async fn stripe_create_invoices_create_preview(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoices/create_preview".to_string();
+    let endpoint = "/v1/invoices/create_preview".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16915,7 +16915,7 @@ pub async fn stripe_read_invoices_search(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/invoices/search".to_string();
+    let endpoint = "/v1/invoices/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17981,7 +17981,7 @@ pub async fn stripe_read_issuing_authorizations(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/authorizations".to_string();
+    let endpoint = "/v1/issuing/authorizations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18182,7 +18182,7 @@ pub async fn stripe_read_issuing_cardholders(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/cardholders".to_string();
+    let endpoint = "/v1/issuing/cardholders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18263,7 +18263,7 @@ pub async fn stripe_create_issuing_cardholders(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/cardholders".to_string();
+    let endpoint = "/v1/issuing/cardholders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18500,7 +18500,7 @@ pub async fn stripe_create_issuing_cards(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/cards".to_string();
+    let endpoint = "/v1/issuing/cards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18602,7 +18602,7 @@ pub async fn stripe_read_issuing_cards(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/cards".to_string();
+    let endpoint = "/v1/issuing/cards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18833,7 +18833,7 @@ pub async fn stripe_read_issuing_disputes(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/disputes".to_string();
+    let endpoint = "/v1/issuing/disputes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18908,7 +18908,7 @@ pub async fn stripe_create_issuing_disputes(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/disputes".to_string();
+    let endpoint = "/v1/issuing/disputes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19172,7 +19172,7 @@ pub async fn stripe_read_issuing_personalization_designs(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/personalization_designs".to_string();
+    let endpoint = "/v1/issuing/personalization_designs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19247,7 +19247,7 @@ pub async fn stripe_create_issuing_personalization_designs(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/personalization_designs".to_string();
+    let endpoint = "/v1/issuing/personalization_designs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19472,7 +19472,7 @@ pub async fn stripe_read_issuing_physical_bundles(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/physical_bundles".to_string();
+    let endpoint = "/v1/issuing/physical_bundles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19727,7 +19727,7 @@ pub async fn stripe_read_issuing_tokens(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/tokens".to_string();
+    let endpoint = "/v1/issuing/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19925,7 +19925,7 @@ pub async fn stripe_read_issuing_transactions(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/issuing/transactions".to_string();
+    let endpoint = "/v1/issuing/transactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20126,7 +20126,7 @@ pub async fn stripe_create_link_account_sessions(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/link_account_sessions".to_string();
+    let endpoint = "/v1/link_account_sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20258,7 +20258,7 @@ pub async fn stripe_read_linked_accounts(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/linked_accounts".to_string();
+    let endpoint = "/v1/linked_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20645,7 +20645,7 @@ pub async fn stripe_read_payment_attempt_records(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_attempt_records".to_string();
+    let endpoint = "/v1/payment_attempt_records".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20771,7 +20771,7 @@ pub async fn stripe_read_payment_intents(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_intents".to_string();
+    let endpoint = "/v1/payment_intents".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20846,7 +20846,7 @@ pub async fn stripe_create_payment_intents(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_intents".to_string();
+    let endpoint = "/v1/payment_intents".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -21011,7 +21011,7 @@ pub async fn stripe_read_payment_intents_search(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_intents/search".to_string();
+    let endpoint = "/v1/payment_intents/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -21839,7 +21839,7 @@ pub async fn stripe_create_payment_links(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_links".to_string();
+    let endpoint = "/v1/payment_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -21983,7 +21983,7 @@ pub async fn stripe_read_payment_links(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_links".to_string();
+    let endpoint = "/v1/payment_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22310,7 +22310,7 @@ pub async fn stripe_read_payment_method_configurations(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_method_configurations".to_string();
+    let endpoint = "/v1/payment_method_configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22379,7 +22379,7 @@ pub async fn stripe_create_payment_method_configurations(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_method_configurations".to_string();
+    let endpoint = "/v1/payment_method_configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22904,7 +22904,7 @@ pub async fn stripe_create_payment_method_domains(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_method_domains".to_string();
+    let endpoint = "/v1/payment_method_domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22967,7 +22967,7 @@ pub async fn stripe_read_payment_method_domains(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_method_domains".to_string();
+    let endpoint = "/v1/payment_method_domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23222,7 +23222,7 @@ pub async fn stripe_create_payment_methods(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_methods".to_string();
+    let endpoint = "/v1/payment_methods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23456,7 +23456,7 @@ pub async fn stripe_read_payment_methods(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_methods".to_string();
+    let endpoint = "/v1/payment_methods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23798,7 +23798,7 @@ pub async fn stripe_create_payment_records_report_payment(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payment_records/report_payment".to_string();
+    let endpoint = "/v1/payment_records/report_payment".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24383,7 +24383,7 @@ pub async fn stripe_create_payouts(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payouts".to_string();
+    let endpoint = "/v1/payouts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24467,7 +24467,7 @@ pub async fn stripe_read_payouts(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/payouts".to_string();
+    let endpoint = "/v1/payouts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24791,7 +24791,7 @@ pub async fn stripe_read_plans(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/plans".to_string();
+    let endpoint = "/v1/plans".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24866,7 +24866,7 @@ pub async fn stripe_create_plans(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/plans".to_string();
+    let endpoint = "/v1/plans".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25161,7 +25161,7 @@ pub async fn stripe_read_prices(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/prices".to_string();
+    let endpoint = "/v1/prices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25248,7 +25248,7 @@ pub async fn stripe_create_prices(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/prices".to_string();
+    let endpoint = "/v1/prices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25359,7 +25359,7 @@ pub async fn stripe_read_prices_search(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/prices/search".to_string();
+    let endpoint = "/v1/prices/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25566,7 +25566,7 @@ pub async fn stripe_read_products(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/products".to_string();
+    let endpoint = "/v1/products".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25647,7 +25647,7 @@ pub async fn stripe_create_products(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/products".to_string();
+    let endpoint = "/v1/products".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25746,7 +25746,7 @@ pub async fn stripe_read_products_search(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/products/search".to_string();
+    let endpoint = "/v1/products/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26273,7 +26273,7 @@ pub async fn stripe_read_promotion_codes(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/promotion_codes".to_string();
+    let endpoint = "/v1/promotion_codes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26357,7 +26357,7 @@ pub async fn stripe_create_promotion_codes(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/promotion_codes".to_string();
+    let endpoint = "/v1/promotion_codes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26570,7 +26570,7 @@ pub async fn stripe_read_quotes(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/quotes".to_string();
+    let endpoint = "/v1/quotes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26648,7 +26648,7 @@ pub async fn stripe_create_quotes(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/quotes".to_string();
+    let endpoint = "/v1/quotes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27320,7 +27320,7 @@ pub async fn stripe_read_radar_early_fraud_warnings(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/radar/early_fraud_warnings".to_string();
+    let endpoint = "/v1/radar/early_fraud_warnings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27455,7 +27455,7 @@ pub async fn stripe_create_radar_payment_evaluations(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/radar/payment_evaluations".to_string();
+    let endpoint = "/v1/radar/payment_evaluations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27524,7 +27524,7 @@ pub async fn stripe_create_radar_value_list_items(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/radar/value_list_items".to_string();
+    let endpoint = "/v1/radar/value_list_items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27587,7 +27587,7 @@ pub async fn stripe_read_radar_value_list_items(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/radar/value_list_items".to_string();
+    let endpoint = "/v1/radar/value_list_items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27774,7 +27774,7 @@ pub async fn stripe_create_radar_value_lists(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/radar/value_lists".to_string();
+    let endpoint = "/v1/radar/value_lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27843,7 +27843,7 @@ pub async fn stripe_read_radar_value_lists(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/radar/value_lists".to_string();
+    let endpoint = "/v1/radar/value_lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28099,7 +28099,7 @@ pub async fn stripe_read_refunds(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/refunds".to_string();
+    let endpoint = "/v1/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28174,7 +28174,7 @@ pub async fn stripe_create_refunds(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/refunds".to_string();
+    let endpoint = "/v1/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28447,7 +28447,7 @@ pub async fn stripe_read_reporting_report_runs(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/reporting/report_runs".to_string();
+    let endpoint = "/v1/reporting/report_runs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28516,7 +28516,7 @@ pub async fn stripe_create_reporting_report_runs(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/reporting/report_runs".to_string();
+    let endpoint = "/v1/reporting/report_runs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28639,7 +28639,7 @@ pub async fn stripe_read_reporting_report_types(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/reporting/report_types".to_string();
+    let endpoint = "/v1/reporting/report_types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28756,7 +28756,7 @@ pub async fn stripe_read_reviews(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/reviews".to_string();
+    let endpoint = "/v1/reviews".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28945,7 +28945,7 @@ pub async fn stripe_read_setup_attempts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/setup_attempts".to_string();
+    let endpoint = "/v1/setup_attempts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29017,7 +29017,7 @@ pub async fn stripe_create_setup_intents(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/setup_intents".to_string();
+    let endpoint = "/v1/setup_intents".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29137,7 +29137,7 @@ pub async fn stripe_read_setup_intents(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/setup_intents".to_string();
+    let endpoint = "/v1/setup_intents".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29593,7 +29593,7 @@ pub async fn stripe_read_shipping_rates(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/shipping_rates".to_string();
+    let endpoint = "/v1/shipping_rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29668,7 +29668,7 @@ pub async fn stripe_create_shipping_rates(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/shipping_rates".to_string();
+    let endpoint = "/v1/shipping_rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29944,7 +29944,7 @@ pub async fn stripe_read_sigma_scheduled_query_runs(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/sigma/scheduled_query_runs".to_string();
+    let endpoint = "/v1/sigma/scheduled_query_runs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30070,7 +30070,7 @@ pub async fn stripe_create_sources(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/sources".to_string();
+    let endpoint = "/v1/sources".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30568,7 +30568,7 @@ pub async fn stripe_read_subscription_items(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscription_items".to_string();
+    let endpoint = "/v1/subscription_items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30637,7 +30637,7 @@ pub async fn stripe_create_subscription_items(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscription_items".to_string();
+    let endpoint = "/v1/subscription_items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30932,7 +30932,7 @@ pub async fn stripe_read_subscription_schedules(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscription_schedules".to_string();
+    let endpoint = "/v1/subscription_schedules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31019,7 +31019,7 @@ pub async fn stripe_create_subscription_schedules(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscription_schedules".to_string();
+    let endpoint = "/v1/subscription_schedules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31367,7 +31367,7 @@ pub async fn stripe_create_subscriptions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscriptions".to_string();
+    let endpoint = "/v1/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31526,7 +31526,7 @@ pub async fn stripe_read_subscriptions(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscriptions".to_string();
+    let endpoint = "/v1/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31622,7 +31622,7 @@ pub async fn stripe_read_subscriptions_search(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/subscriptions/search".to_string();
+    let endpoint = "/v1/subscriptions/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32134,7 +32134,7 @@ pub async fn stripe_read_tax_associations_find(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/associations/find".to_string();
+    let endpoint = "/v1/tax/associations/find".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32194,7 +32194,7 @@ pub async fn stripe_create_tax_calculations(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/calculations".to_string();
+    let endpoint = "/v1/tax/calculations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32401,7 +32401,7 @@ pub async fn stripe_create_tax_registrations(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/registrations".to_string();
+    let endpoint = "/v1/tax/registrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32470,7 +32470,7 @@ pub async fn stripe_read_tax_registrations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/registrations".to_string();
+    let endpoint = "/v1/tax/registrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32665,7 +32665,7 @@ pub async fn stripe_read_tax_settings(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/settings".to_string();
+    let endpoint = "/v1/tax/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32722,7 +32722,7 @@ pub async fn stripe_create_tax_settings(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/settings".to_string();
+    let endpoint = "/v1/tax/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32785,7 +32785,7 @@ pub async fn stripe_create_tax_transactions_create_from_calculation(context: Act
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/transactions/create_from_calculation".to_string();
+    let endpoint = "/v1/tax/transactions/create_from_calculation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32854,7 +32854,7 @@ pub async fn stripe_create_tax_transactions_create_reversal(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax/transactions/create_reversal".to_string();
+    let endpoint = "/v1/tax/transactions/create_reversal".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33061,7 +33061,7 @@ pub async fn stripe_read_tax_codes(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax_codes".to_string();
+    let endpoint = "/v1/tax_codes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33187,7 +33187,7 @@ pub async fn stripe_read_tax_ids(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax_ids".to_string();
+    let endpoint = "/v1/tax_ids".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33256,7 +33256,7 @@ pub async fn stripe_create_tax_ids(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax_ids".to_string();
+    let endpoint = "/v1/tax_ids".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33434,7 +33434,7 @@ pub async fn stripe_create_tax_rates(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax_rates".to_string();
+    let endpoint = "/v1/tax_rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33521,7 +33521,7 @@ pub async fn stripe_read_tax_rates(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tax_rates".to_string();
+    let endpoint = "/v1/tax_rates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33740,7 +33740,7 @@ pub async fn stripe_read_terminal_configurations(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/configurations".to_string();
+    let endpoint = "/v1/terminal/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33809,7 +33809,7 @@ pub async fn stripe_create_terminal_configurations(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/configurations".to_string();
+    let endpoint = "/v1/terminal/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -34104,7 +34104,7 @@ pub async fn stripe_create_terminal_connection_tokens(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/connection_tokens".to_string();
+    let endpoint = "/v1/terminal/connection_tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -34164,7 +34164,7 @@ pub async fn stripe_read_terminal_locations(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/locations".to_string();
+    let endpoint = "/v1/terminal/locations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -34230,7 +34230,7 @@ pub async fn stripe_create_terminal_locations(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/locations".to_string();
+    let endpoint = "/v1/terminal/locations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -34513,7 +34513,7 @@ pub async fn stripe_create_terminal_onboarding_links(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/onboarding_links".to_string();
+    let endpoint = "/v1/terminal/onboarding_links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -34579,7 +34579,7 @@ pub async fn stripe_read_terminal_readers(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/readers".to_string();
+    let endpoint = "/v1/terminal/readers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -34657,7 +34657,7 @@ pub async fn stripe_create_terminal_readers(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/readers".to_string();
+    let endpoint = "/v1/terminal/readers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -35444,7 +35444,7 @@ pub async fn stripe_create_terminal_refunds(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/terminal/refunds".to_string();
+    let endpoint = "/v1/terminal/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -35522,7 +35522,7 @@ pub async fn stripe_create_test_helpers_confirmation_tokens(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/confirmation_tokens".to_string();
+    let endpoint = "/v1/test_helpers/confirmation_tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -35666,7 +35666,7 @@ pub async fn stripe_create_test_helpers_issuing_authorizations(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/issuing/authorizations".to_string();
+    let endpoint = "/v1/test_helpers/issuing/authorizations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -36644,7 +36644,7 @@ pub async fn stripe_create_test_helpers_issuing_settlements(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/issuing/settlements".to_string();
+    let endpoint = "/v1/test_helpers/issuing/settlements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -36788,7 +36788,7 @@ pub async fn stripe_create_test_helpers_issuing_transactions_create_force_captur
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/issuing/transactions/create_force_capture".to_string();
+    let endpoint = "/v1/test_helpers/issuing/transactions/create_force_capture".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -36860,7 +36860,7 @@ pub async fn stripe_create_test_helpers_issuing_transactions_create_unlinked_ref
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/issuing/transactions/create_unlinked_refund".to_string();
+    let endpoint = "/v1/test_helpers/issuing/transactions/create_unlinked_refund".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -37253,7 +37253,7 @@ pub async fn stripe_create_test_helpers_test_clocks(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/test_clocks".to_string();
+    let endpoint = "/v1/test_helpers/test_clocks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -37316,7 +37316,7 @@ pub async fn stripe_read_test_helpers_test_clocks(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/test_clocks".to_string();
+    let endpoint = "/v1/test_helpers/test_clocks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38232,7 +38232,7 @@ pub async fn stripe_create_test_helpers_treasury_received_credits(context: Actor
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/treasury/received_credits".to_string();
+    let endpoint = "/v1/test_helpers/treasury/received_credits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38307,7 +38307,7 @@ pub async fn stripe_create_test_helpers_treasury_received_debits(context: ActorC
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/test_helpers/treasury/received_debits".to_string();
+    let endpoint = "/v1/test_helpers/treasury/received_debits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38382,7 +38382,7 @@ pub async fn stripe_create_tokens(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/tokens".to_string();
+    let endpoint = "/v1/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38520,7 +38520,7 @@ pub async fn stripe_create_topups(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/topups".to_string();
+    let endpoint = "/v1/topups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38598,7 +38598,7 @@ pub async fn stripe_read_topups(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/topups".to_string();
+    let endpoint = "/v1/topups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38859,7 +38859,7 @@ pub async fn stripe_create_transfers(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/transfers".to_string();
+    let endpoint = "/v1/transfers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -38940,7 +38940,7 @@ pub async fn stripe_read_transfers(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/transfers".to_string();
+    let endpoint = "/v1/transfers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -39411,7 +39411,7 @@ pub async fn stripe_create_treasury_credit_reversals(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/credit_reversals".to_string();
+    let endpoint = "/v1/treasury/credit_reversals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -39474,7 +39474,7 @@ pub async fn stripe_read_treasury_credit_reversals(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/credit_reversals".to_string();
+    let endpoint = "/v1/treasury/credit_reversals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -39609,7 +39609,7 @@ pub async fn stripe_read_treasury_debit_reversals(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/debit_reversals".to_string();
+    let endpoint = "/v1/treasury/debit_reversals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -39687,7 +39687,7 @@ pub async fn stripe_create_treasury_debit_reversals(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/debit_reversals".to_string();
+    let endpoint = "/v1/treasury/debit_reversals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -39810,7 +39810,7 @@ pub async fn stripe_read_treasury_financial_accounts(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/financial_accounts".to_string();
+    let endpoint = "/v1/treasury/financial_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -39882,7 +39882,7 @@ pub async fn stripe_create_treasury_financial_accounts(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/financial_accounts".to_string();
+    let endpoint = "/v1/treasury/financial_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -40293,7 +40293,7 @@ pub async fn stripe_read_treasury_inbound_transfers(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/inbound_transfers".to_string();
+    let endpoint = "/v1/treasury/inbound_transfers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -40365,7 +40365,7 @@ pub async fn stripe_create_treasury_inbound_transfers(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/inbound_transfers".to_string();
+    let endpoint = "/v1/treasury/inbound_transfers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -40563,7 +40563,7 @@ pub async fn stripe_read_treasury_outbound_payments(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/outbound_payments".to_string();
+    let endpoint = "/v1/treasury/outbound_payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -40641,7 +40641,7 @@ pub async fn stripe_create_treasury_outbound_payments(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/outbound_payments".to_string();
+    let endpoint = "/v1/treasury/outbound_payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -40851,7 +40851,7 @@ pub async fn stripe_create_treasury_outbound_transfers(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/outbound_transfers".to_string();
+    let endpoint = "/v1/treasury/outbound_transfers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -40935,7 +40935,7 @@ pub async fn stripe_read_treasury_outbound_transfers(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/outbound_transfers".to_string();
+    let endpoint = "/v1/treasury/outbound_transfers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -41127,7 +41127,7 @@ pub async fn stripe_read_treasury_received_credits(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/received_credits".to_string();
+    let endpoint = "/v1/treasury/received_credits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -41262,7 +41262,7 @@ pub async fn stripe_read_treasury_received_debits(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/received_debits".to_string();
+    let endpoint = "/v1/treasury/received_debits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -41394,7 +41394,7 @@ pub async fn stripe_read_treasury_transaction_entries(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/transaction_entries".to_string();
+    let endpoint = "/v1/treasury/transaction_entries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -41535,7 +41535,7 @@ pub async fn stripe_read_treasury_transactions(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/treasury/transactions".to_string();
+    let endpoint = "/v1/treasury/transactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -41676,7 +41676,7 @@ pub async fn stripe_create_webhook_endpoints(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/webhook_endpoints".to_string();
+    let endpoint = "/v1/webhook_endpoints".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -41751,7 +41751,7 @@ pub async fn stripe_read_webhook_endpoints(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/webhook_endpoints".to_string();
+    let endpoint = "/v1/webhook_endpoints".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn netlify_create_site(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites".to_string();
+    let endpoint = "/sites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -204,7 +204,7 @@ pub async fn netlify_create_account(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts".to_string();
+    let endpoint = "/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -273,7 +273,7 @@ pub async fn netlify_list_accounts_for_user(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts".to_string();
+    let endpoint = "/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -330,7 +330,7 @@ pub async fn netlify_list_account_types_for_user(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/types".to_string();
+    let endpoint = "/accounts/types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -379,7 +379,7 @@ pub async fn netlify_read_account(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}".to_string();
+    let endpoint = "/accounts/{account_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -428,7 +428,7 @@ pub async fn netlify_cancel_account(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}".to_string();
+    let endpoint = "/accounts/{account_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -477,7 +477,7 @@ pub async fn netlify_update_account(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}".to_string();
+    let endpoint = "/accounts/{account_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -552,7 +552,7 @@ pub async fn netlify_read_account_aigateway_token(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/ai-gateway/token".to_string();
+    let endpoint = "/accounts/{account_id}/ai-gateway/token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -601,7 +601,7 @@ pub async fn netlify_list_account_audit_events(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/audit".to_string();
+    let endpoint = "/accounts/{account_id}/audit".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1144,7 +1144,7 @@ pub async fn netlify_create_agent_runner(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners".to_string();
+    let endpoint = "/agent_runners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1225,7 +1225,7 @@ pub async fn netlify_list_agent_runners(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners".to_string();
+    let endpoint = "/agent_runners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1303,7 +1303,7 @@ pub async fn netlify_create_agent_runner_upload_url(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/upload_url".to_string();
+    let endpoint = "/agent_runners/upload_url".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1366,7 +1366,7 @@ pub async fn netlify_update_agent_runner(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1415,7 +1415,7 @@ pub async fn netlify_delete_agent_runner(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1464,7 +1464,7 @@ pub async fn netlify_read_agent_runner(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1513,7 +1513,7 @@ pub async fn netlify_archive_agent_runner(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}/archive".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}/archive".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1562,7 +1562,7 @@ pub async fn netlify_list_agent_runner_sessions(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}/sessions".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1628,7 +1628,7 @@ pub async fn netlify_create_agent_runner_session(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}/sessions".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}/sessions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1694,7 +1694,7 @@ pub async fn netlify_update_agent_runner_session(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1751,7 +1751,7 @@ pub async fn netlify_delete_agent_runner_session(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1800,7 +1800,7 @@ pub async fn netlify_read_agent_runner_session(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}".to_string();
+    let endpoint = "/agent_runners/{agent_runner_id}/sessions/{agent_runner_session_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1849,7 +1849,7 @@ pub async fn netlify_read_aigateway_providers(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ai-gateway/providers".to_string();
+    let endpoint = "/ai-gateway/providers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1961,7 +1961,7 @@ pub async fn netlify_list_payment_methods_for_user(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/billing/payment_methods".to_string();
+    let endpoint = "/billing/payment_methods".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2010,7 +2010,7 @@ pub async fn netlify_read_site_build(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/builds/{build_id}".to_string();
+    let endpoint = "/builds/{build_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2059,7 +2059,7 @@ pub async fn netlify_update_site_build_log(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/builds/{build_id}/log".to_string();
+    let endpoint = "/builds/{build_id}/log".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2108,7 +2108,7 @@ pub async fn netlify_start_build(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/builds/{build_id}/start".to_string();
+    let endpoint = "/builds/{build_id}/start".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2157,7 +2157,7 @@ pub async fn netlify_list_deploy_keys(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy_keys".to_string();
+    let endpoint = "/deploy_keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2206,7 +2206,7 @@ pub async fn netlify_create_deploy_key(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy_keys".to_string();
+    let endpoint = "/deploy_keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2255,7 +2255,7 @@ pub async fn netlify_delete_deploy_key(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy_keys/{key_id}".to_string();
+    let endpoint = "/deploy_keys/{key_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2304,7 +2304,7 @@ pub async fn netlify_read_deploy_key(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy_keys/{key_id}".to_string();
+    let endpoint = "/deploy_keys/{key_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2902,7 +2902,7 @@ pub async fn netlify_create_dns_zone(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones".to_string();
+    let endpoint = "/dns_zones".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2965,7 +2965,7 @@ pub async fn netlify_read_dns_zones(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones".to_string();
+    let endpoint = "/dns_zones".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3022,7 +3022,7 @@ pub async fn netlify_delete_dns_zone(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}".to_string();
+    let endpoint = "/dns_zones/{zone_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3071,7 +3071,7 @@ pub async fn netlify_read_dns_zone(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}".to_string();
+    let endpoint = "/dns_zones/{zone_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3120,7 +3120,7 @@ pub async fn netlify_create_dns_record(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}/dns_records".to_string();
+    let endpoint = "/dns_zones/{zone_id}/dns_records".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3201,7 +3201,7 @@ pub async fn netlify_read_dns_records(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}/dns_records".to_string();
+    let endpoint = "/dns_zones/{zone_id}/dns_records".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3250,7 +3250,7 @@ pub async fn netlify_delete_dns_record(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}/dns_records/{dns_record_id}".to_string();
+    let endpoint = "/dns_zones/{zone_id}/dns_records/{dns_record_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3299,7 +3299,7 @@ pub async fn netlify_read_individual_dns_record(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}/dns_records/{dns_record_id}".to_string();
+    let endpoint = "/dns_zones/{zone_id}/dns_records/{dns_record_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3348,7 +3348,7 @@ pub async fn netlify_update_dns_zone(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dns_zones/{zone_id}/transfer".to_string();
+    let endpoint = "/dns_zones/{zone_id}/transfer".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3449,7 +3449,7 @@ pub async fn netlify_list_hooks_by_site_id(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks".to_string();
+    let endpoint = "/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3506,7 +3506,7 @@ pub async fn netlify_create_hook_by_site_id(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks".to_string();
+    let endpoint = "/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3592,7 +3592,7 @@ pub async fn netlify_list_hook_types(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks/types".to_string();
+    let endpoint = "/hooks/types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3641,7 +3641,7 @@ pub async fn netlify_update_hook(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks/{hook_id}".to_string();
+    let endpoint = "/hooks/{hook_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3719,7 +3719,7 @@ pub async fn netlify_delete_hook(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks/{hook_id}".to_string();
+    let endpoint = "/hooks/{hook_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3768,7 +3768,7 @@ pub async fn netlify_read_hook(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks/{hook_id}".to_string();
+    let endpoint = "/hooks/{hook_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3817,7 +3817,7 @@ pub async fn netlify_create_hook(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hooks/{hook_id}/enable".to_string();
+    let endpoint = "/hooks/{hook_id}/enable".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3866,7 +3866,7 @@ pub async fn netlify_create_ticket(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/tickets".to_string();
+    let endpoint = "/oauth/tickets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4035,7 +4035,7 @@ pub async fn netlify_create_purge(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/purge".to_string();
+    let endpoint = "/purge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4098,7 +4098,7 @@ pub async fn netlify_read_services(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/services/".to_string();
+    let endpoint = "/services/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4147,7 +4147,7 @@ pub async fn netlify_read_service(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/services/{addonName}".to_string();
+    let endpoint = "/services/{addonName}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4196,7 +4196,7 @@ pub async fn netlify_list_sites(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites".to_string();
+    let endpoint = "/sites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4256,7 +4256,7 @@ pub async fn netlify_read_site(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}".to_string();
+    let endpoint = "/sites/{site_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4313,7 +4313,7 @@ pub async fn netlify_update_site(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}".to_string();
+    let endpoint = "/sites/{site_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4362,7 +4362,7 @@ pub async fn netlify_delete_site(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}".to_string();
+    let endpoint = "/sites/{site_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4411,7 +4411,7 @@ pub async fn netlify_read_aigateway_token(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/ai-gateway/token".to_string();
+    let endpoint = "/sites/{site_id}/ai-gateway/token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4460,7 +4460,7 @@ pub async fn netlify_list_site_assets(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/assets".to_string();
+    let endpoint = "/sites/{site_id}/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4509,7 +4509,7 @@ pub async fn netlify_create_site_asset(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/assets".to_string();
+    let endpoint = "/sites/{site_id}/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4575,7 +4575,7 @@ pub async fn netlify_update_site_asset(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/assets/{asset_id}".to_string();
+    let endpoint = "/sites/{site_id}/assets/{asset_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4632,7 +4632,7 @@ pub async fn netlify_delete_site_asset(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/assets/{asset_id}".to_string();
+    let endpoint = "/sites/{site_id}/assets/{asset_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4681,7 +4681,7 @@ pub async fn netlify_read_site_asset_info(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/assets/{asset_id}".to_string();
+    let endpoint = "/sites/{site_id}/assets/{asset_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4730,7 +4730,7 @@ pub async fn netlify_read_site_asset_public_signature(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/assets/{asset_id}/public_signature".to_string();
+    let endpoint = "/sites/{site_id}/assets/{asset_id}/public_signature".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4779,7 +4779,7 @@ pub async fn netlify_list_site_build_hooks(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/build_hooks".to_string();
+    let endpoint = "/sites/{site_id}/build_hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4828,7 +4828,7 @@ pub async fn netlify_create_site_build_hook(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/build_hooks".to_string();
+    let endpoint = "/sites/{site_id}/build_hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4888,7 +4888,7 @@ pub async fn netlify_read_site_build_hook(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/build_hooks/{id}".to_string();
+    let endpoint = "/sites/{site_id}/build_hooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4937,7 +4937,7 @@ pub async fn netlify_update_site_build_hook(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/build_hooks/{id}".to_string();
+    let endpoint = "/sites/{site_id}/build_hooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4997,7 +4997,7 @@ pub async fn netlify_delete_site_build_hook(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/build_hooks/{id}".to_string();
+    let endpoint = "/sites/{site_id}/build_hooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5046,7 +5046,7 @@ pub async fn netlify_create_site_build(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/builds".to_string();
+    let endpoint = "/sites/{site_id}/builds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5115,7 +5115,7 @@ pub async fn netlify_list_site_builds(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/builds".to_string();
+    let endpoint = "/sites/{site_id}/builds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5164,7 +5164,7 @@ pub async fn netlify_read_site_database(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database".to_string();
+    let endpoint = "/sites/{site_id}/database".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5213,7 +5213,7 @@ pub async fn netlify_create_site_database(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database".to_string();
+    let endpoint = "/sites/{site_id}/database".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5270,7 +5270,7 @@ pub async fn netlify_delete_site_database(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database".to_string();
+    let endpoint = "/sites/{site_id}/database".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5319,7 +5319,7 @@ pub async fn netlify_create_site_database_branch(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/branch".to_string();
+    let endpoint = "/sites/{site_id}/database/branch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5379,7 +5379,7 @@ pub async fn netlify_read_site_database_branch(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/branch/{deploy_id}".to_string();
+    let endpoint = "/sites/{site_id}/database/branch/{deploy_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5428,7 +5428,7 @@ pub async fn netlify_delete_site_database_branch(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/branch/{deploy_id}".to_string();
+    let endpoint = "/sites/{site_id}/database/branch/{deploy_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5477,7 +5477,7 @@ pub async fn netlify_create_site_database_snapshot(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/snapshot".to_string();
+    let endpoint = "/sites/{site_id}/database/snapshot".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5537,7 +5537,7 @@ pub async fn netlify_delete_site_database_snapshot(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/snapshot/{snapshot_id}".to_string();
+    let endpoint = "/sites/{site_id}/database/snapshot/{snapshot_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5586,7 +5586,7 @@ pub async fn netlify_restore_database(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/snapshot/{snapshot_id}/restore".to_string();
+    let endpoint = "/sites/{site_id}/database/snapshot/{snapshot_id}/restore".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5643,7 +5643,7 @@ pub async fn netlify_list_site_database_snapshots(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/database/snapshots".to_string();
+    let endpoint = "/sites/{site_id}/database/snapshots".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5692,7 +5692,7 @@ pub async fn netlify_list_site_deployed_branches(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/deployed-branches".to_string();
+    let endpoint = "/sites/{site_id}/deployed-branches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5741,7 +5741,7 @@ pub async fn netlify_list_site_deploys(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/deploys".to_string();
+    let endpoint = "/sites/{site_id}/deploys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6056,7 +6056,7 @@ pub async fn netlify_list_site_dev_server_hooks(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_server_hooks".to_string();
+    let endpoint = "/sites/{site_id}/dev_server_hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6105,7 +6105,7 @@ pub async fn netlify_create_site_dev_server_hook(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_server_hooks".to_string();
+    let endpoint = "/sites/{site_id}/dev_server_hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6168,7 +6168,7 @@ pub async fn netlify_read_site_dev_server_hook(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_server_hooks/{id}".to_string();
+    let endpoint = "/sites/{site_id}/dev_server_hooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6217,7 +6217,7 @@ pub async fn netlify_delete_site_dev_server_hook(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_server_hooks/{id}".to_string();
+    let endpoint = "/sites/{site_id}/dev_server_hooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6266,7 +6266,7 @@ pub async fn netlify_update_site_dev_server_hook(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_server_hooks/{id}".to_string();
+    let endpoint = "/sites/{site_id}/dev_server_hooks/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6329,7 +6329,7 @@ pub async fn netlify_delete_site_dev_servers(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_servers".to_string();
+    let endpoint = "/sites/{site_id}/dev_servers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6386,7 +6386,7 @@ pub async fn netlify_create_site_dev_server(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_servers".to_string();
+    let endpoint = "/sites/{site_id}/dev_servers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6443,7 +6443,7 @@ pub async fn netlify_list_site_dev_servers(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_servers".to_string();
+    let endpoint = "/sites/{site_id}/dev_servers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6492,7 +6492,7 @@ pub async fn netlify_read_site_dev_server(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_servers/{dev_server_id}".to_string();
+    let endpoint = "/sites/{site_id}/dev_servers/{dev_server_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6541,7 +6541,7 @@ pub async fn netlify_create_dev_server(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_servers/{dev_server_id}/activity".to_string();
+    let endpoint = "/sites/{site_id}/dev_servers/{dev_server_id}/activity".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6590,7 +6590,7 @@ pub async fn netlify_update_dev_server_state(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dev_servers/{dev_server_id}/state".to_string();
+    let endpoint = "/sites/{site_id}/dev_servers/{dev_server_id}/state".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6653,7 +6653,7 @@ pub async fn netlify_read_dnsfor_site(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/dns".to_string();
+    let endpoint = "/sites/{site_id}/dns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6976,7 +6976,7 @@ pub async fn netlify_read_site_metadata(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/metadata".to_string();
+    let endpoint = "/sites/{site_id}/metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7025,7 +7025,7 @@ pub async fn netlify_update_site_metadata(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/metadata".to_string();
+    let endpoint = "/sites/{site_id}/metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7208,7 +7208,7 @@ pub async fn netlify_update_deploy(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/rollback".to_string();
+    let endpoint = "/sites/{site_id}/rollback".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7257,7 +7257,7 @@ pub async fn netlify_list_service_instances_for_site(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/service-instances".to_string();
+    let endpoint = "/sites/{site_id}/service-instances".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7306,7 +7306,7 @@ pub async fn netlify_create_service_instance(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/services/{addon}/instances".to_string();
+    let endpoint = "/sites/{site_id}/services/{addon}/instances".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7363,7 +7363,7 @@ pub async fn netlify_read_service_instance(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/services/{addon}/instances/{instance_id}".to_string();
+    let endpoint = "/sites/{site_id}/services/{addon}/instances/{instance_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7412,7 +7412,7 @@ pub async fn netlify_delete_service_instance(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/services/{addon}/instances/{instance_id}".to_string();
+    let endpoint = "/sites/{site_id}/services/{addon}/instances/{instance_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7461,7 +7461,7 @@ pub async fn netlify_update_service_instance(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/services/{addon}/instances/{instance_id}".to_string();
+    let endpoint = "/sites/{site_id}/services/{addon}/instances/{instance_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7518,7 +7518,7 @@ pub async fn netlify_list_site_snippets(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/snippets".to_string();
+    let endpoint = "/sites/{site_id}/snippets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7567,7 +7567,7 @@ pub async fn netlify_create_site_snippet(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/snippets".to_string();
+    let endpoint = "/sites/{site_id}/snippets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7642,7 +7642,7 @@ pub async fn netlify_read_site_snippet(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/snippets/{snippet_id}".to_string();
+    let endpoint = "/sites/{site_id}/snippets/{snippet_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7691,7 +7691,7 @@ pub async fn netlify_delete_site_snippet(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/snippets/{snippet_id}".to_string();
+    let endpoint = "/sites/{site_id}/snippets/{snippet_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7740,7 +7740,7 @@ pub async fn netlify_update_site_snippet(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/snippets/{snippet_id}".to_string();
+    let endpoint = "/sites/{site_id}/snippets/{snippet_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8045,7 +8045,7 @@ pub async fn netlify_create_split_test(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/traffic_splits".to_string();
+    let endpoint = "/sites/{site_id}/traffic_splits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8102,7 +8102,7 @@ pub async fn netlify_read_split_tests(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/traffic_splits".to_string();
+    let endpoint = "/sites/{site_id}/traffic_splits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8151,7 +8151,7 @@ pub async fn netlify_read_split_test(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}".to_string();
+    let endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8200,7 +8200,7 @@ pub async fn netlify_update_split_test(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}".to_string();
+    let endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8257,7 +8257,7 @@ pub async fn netlify_publish_split_test(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}/publish".to_string();
+    let endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}/publish".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8306,7 +8306,7 @@ pub async fn netlify_unpublish_split_test(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}/unpublish".to_string();
+    let endpoint = "/sites/{site_id}/traffic_splits/{split_test_id}/unpublish".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8355,7 +8355,7 @@ pub async fn netlify_list_form_submission(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/submissions/{submission_id}".to_string();
+    let endpoint = "/submissions/{submission_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8412,7 +8412,7 @@ pub async fn netlify_delete_submission(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/submissions/{submission_id}".to_string();
+    let endpoint = "/submissions/{submission_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8461,7 +8461,7 @@ pub async fn netlify_read_current_user(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8510,7 +8510,7 @@ pub async fn netlify_read_account_build_status(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/{account_id}/builds/status".to_string();
+    let endpoint = "/{account_id}/builds/status".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8559,7 +8559,7 @@ pub async fn netlify_list_members_for_account(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/{account_slug}/members".to_string();
+    let endpoint = "/{account_slug}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8608,7 +8608,7 @@ pub async fn netlify_create_member(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/{account_slug}/members".to_string();
+    let endpoint = "/{account_slug}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8668,7 +8668,7 @@ pub async fn netlify_read_account_member(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/{account_slug}/members/{member_id}".to_string();
+    let endpoint = "/{account_slug}/members/{member_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8717,7 +8717,7 @@ pub async fn netlify_delete_account_member(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/{account_slug}/members/{member_id}".to_string();
+    let endpoint = "/{account_slug}/members/{member_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8766,7 +8766,7 @@ pub async fn netlify_update_account_member(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/{account_slug}/members/{member_id}".to_string();
+    let endpoint = "/{account_slug}/members/{member_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

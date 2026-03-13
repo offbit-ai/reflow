@@ -41,7 +41,7 @@ pub async fn linear_create_issue(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn linear_list_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn linear_read_issue(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -218,7 +218,7 @@ pub async fn linear_update_issue(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -296,7 +296,7 @@ pub async fn linear_delete_issue(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -356,7 +356,7 @@ pub async fn linear_list_teams(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -416,7 +416,7 @@ pub async fn linear_read_team(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -476,7 +476,7 @@ pub async fn linear_create_team(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -542,7 +542,7 @@ pub async fn linear_list_projects(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -605,7 +605,7 @@ pub async fn linear_create_project(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -677,7 +677,7 @@ pub async fn linear_update_project(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -746,7 +746,7 @@ pub async fn linear_list_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -806,7 +806,7 @@ pub async fn linear_read_user(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -863,7 +863,7 @@ pub async fn linear_list_labels(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -923,7 +923,7 @@ pub async fn linear_create_label(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -989,7 +989,7 @@ pub async fn linear_list_workflow_states(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1049,7 +1049,7 @@ pub async fn linear_create_comment(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1112,7 +1112,7 @@ pub async fn linear_list_cycles(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1172,7 +1172,7 @@ pub async fn linear_create_cycle(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1241,7 +1241,7 @@ pub async fn linear_list_milestones(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1301,7 +1301,7 @@ pub async fn linear_upload_file(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/graphql".to_string();
+    let endpoint = "/graphql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

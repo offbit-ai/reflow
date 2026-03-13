@@ -41,7 +41,7 @@ pub async fn weatherbit_read_current_weather(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/current".to_string();
+    let endpoint = "/current".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -107,7 +107,7 @@ pub async fn weatherbit_read_forecast(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/daily".to_string();
+    let endpoint = "/forecast/daily".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -170,7 +170,7 @@ pub async fn weatherbit_read_weather_alerts(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/alerts".to_string();
+    let endpoint = "/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -245,7 +245,7 @@ pub async fn weatherbit_read_current_air_quality(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/current/airquality".to_string();
+    let endpoint = "/current/airquality".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -320,7 +320,7 @@ pub async fn weatherbit_read_current_lightning(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/current/lightning".to_string();
+    let endpoint = "/current/lightning".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -386,7 +386,7 @@ pub async fn weatherbit_read_forecast_daily(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/daily".to_string();
+    let endpoint = "/forecast/daily".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -470,7 +470,7 @@ pub async fn weatherbit_read_forecast_hourly(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/hourly".to_string();
+    let endpoint = "/forecast/hourly".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -554,7 +554,7 @@ pub async fn weatherbit_read_forecast_minutely(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/minutely".to_string();
+    let endpoint = "/forecast/minutely".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -620,7 +620,7 @@ pub async fn weatherbit_read_forecast_air_quality(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/airquality".to_string();
+    let endpoint = "/forecast/airquality".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -695,7 +695,7 @@ pub async fn weatherbit_read_forecast_energy(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/energy".to_string();
+    let endpoint = "/forecast/energy".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -776,7 +776,7 @@ pub async fn weatherbit_read_forecast_agweather(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/agweather".to_string();
+    let endpoint = "/forecast/agweather".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -842,7 +842,7 @@ pub async fn weatherbit_read_history_daily(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/daily".to_string();
+    let endpoint = "/history/daily".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -926,7 +926,7 @@ pub async fn weatherbit_read_history_hourly(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/hourly".to_string();
+    let endpoint = "/history/hourly".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1010,7 +1010,7 @@ pub async fn weatherbit_read_history_subhourly(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/subhourly".to_string();
+    let endpoint = "/history/subhourly".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1085,7 +1085,7 @@ pub async fn weatherbit_read_history_air_quality(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/airquality".to_string();
+    let endpoint = "/history/airquality".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1163,7 +1163,7 @@ pub async fn weatherbit_read_history_energy(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/energy".to_string();
+    let endpoint = "/history/energy".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1250,7 +1250,7 @@ pub async fn weatherbit_read_history_agweather(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/agweather".to_string();
+    let endpoint = "/history/agweather".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1325,7 +1325,7 @@ pub async fn weatherbit_read_history_lightning(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/lightning".to_string();
+    let endpoint = "/history/lightning".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1397,7 +1397,7 @@ pub async fn weatherbit_read_climate_normals(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/normals".to_string();
+    let endpoint = "/normals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1475,7 +1475,7 @@ pub async fn weatherbit_read_geocoding(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geocoding/search".to_string();
+    let endpoint = "/geocoding/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1538,7 +1538,7 @@ pub async fn weatherbit_read_subscription_usage(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subscription/usage".to_string();
+    let endpoint = "/subscription/usage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

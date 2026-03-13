@@ -16,7 +16,10 @@ use zeal_sdk::events::{
     ExecutionError, NodeError, create_execution_completed_event, create_execution_failed_event,
     create_execution_started_event, create_node_completed_event, create_node_failed_event,
 };
-use zeal_sdk::types::{NodeTemplate, RegisterTemplatesRequest, RuntimeRequirements};
+use zeal_sdk::types::{
+    NodeTemplate, Port as ZealPort, PortPosition, PortType, RegisterTemplatesRequest,
+    RuntimeRequirements,
+};
 use zeal_sdk::{ClientConfig, ZealClient};
 
 use crate::engine::{EngineEvent, EngineEventType, ExecutionEngine};
@@ -108,10 +111,18 @@ impl ZipSession {
     }
 
     /// Register all reflow_components templates with the connected Zeal instance.
+    ///
+    /// Registers both native actors (HTTP, flow control, media, etc.) and
+    /// all pre-generated API service actors with their required env vars,
+    /// brand icons, and port declarations.
     async fn register_templates(&self) -> Result<()> {
         let template_mappings = reflow_components::get_template_mapping();
         let mut templates: Vec<NodeTemplate> = Vec::new();
 
+        let version = Some(env!("CARGO_PKG_VERSION").to_string());
+        let capabilities = Some(self.config.capabilities.clone());
+
+        // 1. Register native actor templates
         for template_id in template_mappings.keys() {
             templates.push(NodeTemplate {
                 id: template_id.clone(),
@@ -130,9 +141,64 @@ impl ZipSession {
                 property_rules: None,
                 runtime: Some(RuntimeRequirements {
                     executor: "reflow".to_string(),
-                    version: Some(env!("CARGO_PKG_VERSION").to_string()),
+                    version: version.clone(),
                     required_env_vars: None,
-                    capabilities: Some(self.config.capabilities.clone()),
+                    capabilities: capabilities.clone(),
+                }),
+            });
+        }
+
+        // 2. Register pre-generated API actor templates with full metadata
+        let api_infos = reflow_components::get_api_template_infos();
+        for info in api_infos {
+            let mut ports = Vec::new();
+
+            // Declare inports
+            for port_name in info.inports {
+                ports.push(ZealPort {
+                    id: port_name.to_string(),
+                    label: port_name.replace('_', " "),
+                    port_type: PortType::Input,
+                    position: PortPosition::Left,
+                    data_type: Some("any".to_string()),
+                    required: None,
+                    multiple: None,
+                });
+            }
+
+            // Declare outports
+            for port_name in info.outports {
+                ports.push(ZealPort {
+                    id: port_name.to_string(),
+                    label: port_name.replace('_', " "),
+                    port_type: PortType::Output,
+                    position: PortPosition::Right,
+                    data_type: Some("any".to_string()),
+                    required: None,
+                    multiple: None,
+                });
+            }
+
+            templates.push(NodeTemplate {
+                id: info.template_id.to_string(),
+                type_name: info.template_id.to_string(),
+                title: info.title.to_string(),
+                subtitle: Some(info.subcategory.to_string()),
+                category: info.category.to_string(),
+                subcategory: Some(info.subcategory.to_string()),
+                description: info.description.to_string(),
+                icon: info.icon.to_string(),
+                variant: None,
+                shape: None,
+                size: None,
+                ports,
+                properties: None,
+                property_rules: None,
+                runtime: Some(RuntimeRequirements {
+                    executor: "reflow".to_string(),
+                    version: version.clone(),
+                    required_env_vars: Some(vec![info.env_var.to_string()]),
+                    capabilities: capabilities.clone(),
                 }),
             });
         }
@@ -143,6 +209,7 @@ impl ZipSession {
         }
 
         let count = templates.len();
+        let api_count = api_infos.len();
         let request = RegisterTemplatesRequest {
             namespace: self.config.namespace.clone(),
             templates,
@@ -152,8 +219,11 @@ impl ZipSession {
         match self.client.templates().register(request).await {
             Ok(response) => {
                 info!(
-                    "Registered {} templates with Zeal (acknowledged: {})",
-                    count, response.registered
+                    "Registered {} templates with Zeal ({} native + {} API actors, acknowledged: {})",
+                    count,
+                    count - api_count,
+                    api_count,
+                    response.registered
                 );
             }
             Err(e) => {

@@ -358,14 +358,25 @@ impl ExecutionEngine {
             });
         }
 
-        // Register all actors from reflow_components
+        // Register all actors from reflow_components (native + API)
+        // First register native actors by both template_id and actor_name
         let template_mappings = reflow_components::get_template_mapping();
-        for (template_id, actor_name) in template_mappings {
-            if let Some(actor) = reflow_components::get_actor_for_template(&template_id) {
-                let _ = network.register_actor_arc(&template_id, actor);
+        for (template_id, actor_name) in &template_mappings {
+            if let Some(actor) = reflow_components::get_actor_for_template(template_id) {
+                let _ = network.register_actor_arc(template_id, actor);
             }
-            if let Some(actor) = reflow_components::get_actor_for_template(&template_id) {
-                let _ = network.register_actor_arc(&actor_name, actor);
+            if let Some(actor) = reflow_components::get_actor_for_template(template_id) {
+                let _ = network.register_actor_arc(actor_name, actor);
+            }
+        }
+
+        // Register any graph node components not covered by native templates
+        // (e.g. api_github_create_issue, api_slack_send_message, etc.)
+        for node in graph.nodes.values() {
+            if !template_mappings.contains_key(&node.component) {
+                if let Some(actor) = reflow_components::get_actor_for_template(&node.component) {
+                    let _ = network.register_actor_arc(&node.component, actor);
+                }
             }
         }
 

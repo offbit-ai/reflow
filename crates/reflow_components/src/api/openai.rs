@@ -41,7 +41,7 @@ pub async fn openai_generate_completion(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/completions".to_string();
+    let endpoint = "/chat/completions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -113,7 +113,7 @@ pub async fn openai_generate_embedding(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/embeddings".to_string();
+    let endpoint = "/embeddings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -173,7 +173,7 @@ pub async fn openai_generate_image(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/images/generations".to_string();
+    let endpoint = "/images/generations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -239,7 +239,7 @@ pub async fn openai_create_response(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/responses".to_string();
+    let endpoint = "/responses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -490,7 +490,7 @@ pub async fn openai_create_chat_completion(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/completions".to_string();
+    let endpoint = "/chat/completions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -626,7 +626,7 @@ pub async fn openai_list_chat_completions(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat/completions".to_string();
+    let endpoint = "/chat/completions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -689,7 +689,7 @@ pub async fn openai_create_image(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/images/generations".to_string();
+    let endpoint = "/images/generations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -761,7 +761,7 @@ pub async fn openai_create_image_edit(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/images/edits".to_string();
+    let endpoint = "/images/edits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -833,7 +833,7 @@ pub async fn openai_create_image_variation(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/images/variations".to_string();
+    let endpoint = "/images/variations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -899,7 +899,7 @@ pub async fn openai_create_transcription(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/audio/transcriptions".to_string();
+    let endpoint = "/audio/transcriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -971,7 +971,7 @@ pub async fn openai_create_translation(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/audio/translations".to_string();
+    let endpoint = "/audio/translations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1040,7 +1040,7 @@ pub async fn openai_create_speech(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/audio/speech".to_string();
+    let endpoint = "/audio/speech".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1109,7 +1109,7 @@ pub async fn openai_create_embedding(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/embeddings".to_string();
+    let endpoint = "/embeddings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1175,7 +1175,7 @@ pub async fn openai_create_moderation(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/moderations".to_string();
+    let endpoint = "/moderations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1235,7 +1235,7 @@ pub async fn openai_list_models(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/models".to_string();
+    let endpoint = "/models".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1388,7 +1388,7 @@ pub async fn openai_upload_file(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files".to_string();
+    let endpoint = "/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1448,7 +1448,7 @@ pub async fn openai_list_files(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files".to_string();
+    let endpoint = "/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1667,7 +1667,7 @@ pub async fn openai_create_fine_tuning_job(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/fine_tuning/jobs".to_string();
+    let endpoint = "/fine_tuning/jobs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1739,7 +1739,7 @@ pub async fn openai_list_fine_tuning_jobs(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/fine_tuning/jobs".to_string();
+    let endpoint = "/fine_tuning/jobs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2029,7 +2029,7 @@ pub async fn openai_create_batch(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/batches".to_string();
+    let endpoint = "/batches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2199,7 +2199,7 @@ pub async fn openai_list_batches(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/batches".to_string();
+    let endpoint = "/batches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2259,7 +2259,7 @@ pub async fn openai_create_vector_store(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/vector_stores".to_string();
+    let endpoint = "/vector_stores".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2328,7 +2328,7 @@ pub async fn openai_list_vector_stores(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/vector_stores".to_string();
+    let endpoint = "/vector_stores".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2970,7 +2970,7 @@ pub async fn openai_create_eval(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/evals".to_string();
+    let endpoint = "/evals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3036,7 +3036,7 @@ pub async fn openai_list_evals(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/evals".to_string();
+    let endpoint = "/evals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3681,7 +3681,7 @@ pub async fn openai_create_upload(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/uploads".to_string();
+    let endpoint = "/uploads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

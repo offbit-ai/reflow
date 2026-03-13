@@ -104,7 +104,7 @@ pub async fn microsoft_teams_list_teams(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/joinedTeams".to_string();
+    let endpoint = "/me/joinedTeams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -153,7 +153,7 @@ pub async fn microsoft_teams_create_team(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams".to_string();
+    let endpoint = "/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1244,7 +1244,7 @@ pub async fn microsoft_teams_list_chats(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/chats".to_string();
+    let endpoint = "/me/chats".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1307,7 +1307,7 @@ pub async fn microsoft_teams_create_chat(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chats".to_string();
+    let endpoint = "/chats".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1562,7 +1562,7 @@ pub async fn microsoft_teams_list_online_meetings(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/onlineMeetings".to_string();
+    let endpoint = "/me/onlineMeetings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1622,7 +1622,7 @@ pub async fn microsoft_teams_create_online_meeting(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/onlineMeetings".to_string();
+    let endpoint = "/me/onlineMeetings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

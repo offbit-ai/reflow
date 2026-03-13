@@ -41,7 +41,7 @@ pub async fn mixpanel_send_event(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/track".to_string();
+    let endpoint = "/track".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn mixpanel_read_events(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/events".to_string();
+    let endpoint = "/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -164,7 +164,7 @@ pub async fn mixpanel_create_event(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/import".to_string();
+    let endpoint = "/import".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -241,7 +241,7 @@ pub async fn mixpanel_update_group_profile(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/groups".to_string();
+    let endpoint = "/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -315,7 +315,7 @@ pub async fn mixpanel_update_user_profile(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/engage".to_string();
+    let endpoint = "/engage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -407,7 +407,7 @@ pub async fn mixpanel_create_identity(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/identity/create".to_string();
+    let endpoint = "/identity/create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -475,7 +475,7 @@ pub async fn mixpanel_create_alias(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/identity/create-alias".to_string();
+    let endpoint = "/identity/create-alias".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -543,7 +543,7 @@ pub async fn mixpanel_create_identity_merge(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/identity/merge".to_string();
+    let endpoint = "/identity/merge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -608,7 +608,7 @@ pub async fn mixpanel_list_cohorts(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/engage".to_string();
+    let endpoint = "/engage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -673,7 +673,7 @@ pub async fn mixpanel_read_profiles(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/engage".to_string();
+    let endpoint = "/engage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -747,7 +747,7 @@ pub async fn mixpanel_read_funnel_report(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/funnels".to_string();
+    let endpoint = "/funnels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -828,7 +828,7 @@ pub async fn mixpanel_list_funnels(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/funnels/list".to_string();
+    let endpoint = "/funnels/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -885,7 +885,7 @@ pub async fn mixpanel_read_insights_report(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/insights".to_string();
+    let endpoint = "/insights".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -951,7 +951,7 @@ pub async fn mixpanel_read_segmentation_report(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/segmentation".to_string();
+    let endpoint = "/segmentation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1032,7 +1032,7 @@ pub async fn mixpanel_read_retention_report(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/retention".to_string();
+    let endpoint = "/retention".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1107,7 +1107,7 @@ pub async fn mixpanel_download_event_export(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/export".to_string();
+    let endpoint = "/export".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1179,7 +1179,7 @@ pub async fn mixpanel_create_schema(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schemas".to_string();
+    let endpoint = "/schemas".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1244,7 +1244,7 @@ pub async fn mixpanel_list_schemas(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schemas".to_string();
+    let endpoint = "/schemas".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1301,7 +1301,7 @@ pub async fn mixpanel_delete_schemas(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/schemas".to_string();
+    let endpoint = "/schemas".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1358,7 +1358,7 @@ pub async fn mixpanel_create_pipeline(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data-pipelines/v1/pipeline".to_string();
+    let endpoint = "/data-pipelines/v1/pipeline".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1429,7 +1429,7 @@ pub async fn mixpanel_list_pipelines(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data-pipelines/v1/pipelines".to_string();
+    let endpoint = "/data-pipelines/v1/pipelines".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1546,7 +1546,7 @@ pub async fn mixpanel_create_service_account(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/service-accounts".to_string();
+    let endpoint = "/service-accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1614,7 +1614,7 @@ pub async fn mixpanel_list_service_accounts(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/service-accounts".to_string();
+    let endpoint = "/service-accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1671,7 +1671,7 @@ pub async fn mixpanel_create_annotation(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/annotations".to_string();
+    let endpoint = "/annotations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1742,7 +1742,7 @@ pub async fn mixpanel_list_annotations(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/annotations".to_string();
+    let endpoint = "/annotations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1865,7 +1865,7 @@ pub async fn mixpanel_create_gdpr_retrieval(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data-retrievals/v3".to_string();
+    let endpoint = "/data-retrievals/v3".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1993,7 +1993,7 @@ pub async fn mixpanel_create_gdpr_deletion(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data-deletions/v3".to_string();
+    let endpoint = "/data-deletions/v3".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

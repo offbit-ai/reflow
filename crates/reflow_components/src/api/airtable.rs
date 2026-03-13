@@ -492,7 +492,7 @@ pub async fn airtable_list_bases(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/meta/bases".to_string();
+    let endpoint = "/meta/bases".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn gitlab_list_projects(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects".to_string();
+    let endpoint = "/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -230,7 +230,7 @@ pub async fn gitlab_read_api_v4_admin_batched_background_migrations(context: Act
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/batched_background_migrations".to_string();
+    let endpoint = "/admin/batched_background_migrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -467,7 +467,7 @@ pub async fn gitlab_create_api_v4_admin_ci_variables(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/ci/variables".to_string();
+    let endpoint = "/admin/ci/variables".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -539,7 +539,7 @@ pub async fn gitlab_read_api_v4_admin_ci_variables(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/ci/variables".to_string();
+    let endpoint = "/admin/ci/variables".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -775,7 +775,7 @@ pub async fn gitlab_read_api_v4_admin_clusters(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/clusters".to_string();
+    let endpoint = "/admin/clusters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -824,7 +824,7 @@ pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/clusters/add".to_string();
+    let endpoint = "/admin/clusters/add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1223,7 +1223,7 @@ pub async fn gitlab_update_api_v4_application_appearance(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/application/appearance".to_string();
+    let endpoint = "/application/appearance".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1325,7 +1325,7 @@ pub async fn gitlab_read_api_v4_application_appearance(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/application/appearance".to_string();
+    let endpoint = "/application/appearance".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1374,7 +1374,7 @@ pub async fn gitlab_read_api_v4_application_plan_limits(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/application/plan_limits".to_string();
+    let endpoint = "/application/plan_limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1431,7 +1431,7 @@ pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/application/plan_limits".to_string();
+    let endpoint = "/application/plan_limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1545,7 +1545,7 @@ pub async fn gitlab_create_api_v4_applications(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications".to_string();
+    let endpoint = "/applications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1611,7 +1611,7 @@ pub async fn gitlab_read_api_v4_applications(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications".to_string();
+    let endpoint = "/applications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1712,7 +1712,7 @@ pub async fn gitlab_read_api_v4_avatar(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/avatar".to_string();
+    let endpoint = "/avatar".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1772,7 +1772,7 @@ pub async fn gitlab_create_api_v4_broadcast_messages(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/broadcast_messages".to_string();
+    let endpoint = "/broadcast_messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1853,7 +1853,7 @@ pub async fn gitlab_read_api_v4_broadcast_messages(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/broadcast_messages".to_string();
+    let endpoint = "/broadcast_messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2101,7 +2101,7 @@ pub async fn gitlab_read_api_v4_bulk_imports(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bulk_imports".to_string();
+    let endpoint = "/bulk_imports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2167,7 +2167,7 @@ pub async fn gitlab_create_api_v4_bulk_imports(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bulk_imports".to_string();
+    let endpoint = "/bulk_imports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2245,7 +2245,7 @@ pub async fn gitlab_read_api_v4_bulk_imports_entities(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bulk_imports/entities".to_string();
+    let endpoint = "/bulk_imports/entities".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3091,7 +3091,7 @@ pub async fn gitlab_read_api_v4_metadata(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/metadata".to_string();
+    let endpoint = "/metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3140,7 +3140,7 @@ pub async fn gitlab_read_api_v4_projects_id_access_requests(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/access_requests".to_string();
+    let endpoint = "/projects/{id}/access_requests".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3200,7 +3200,7 @@ pub async fn gitlab_create_api_v4_projects_id_access_requests(context: ActorCont
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/access_requests".to_string();
+    let endpoint = "/projects/{id}/access_requests".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3652,7 +3652,7 @@ pub async fn gitlab_create_api_v4_projects_id_badges(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/badges".to_string();
+    let endpoint = "/projects/{id}/badges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3715,7 +3715,7 @@ pub async fn gitlab_read_api_v4_projects_id_badges(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/badges".to_string();
+    let endpoint = "/projects/{id}/badges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3778,7 +3778,7 @@ pub async fn gitlab_read_api_v4_projects_id_badges_render(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/badges/render".to_string();
+    let endpoint = "/projects/{id}/badges/render".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4008,7 +4008,7 @@ pub async fn gitlab_list_project_jobs(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/jobs".to_string();
+    let endpoint = "/projects/{id}/jobs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4177,7 +4177,7 @@ pub async fn gitlab_read_api_v4_projects_id_repository_branches(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/repository/branches".to_string();
+    let endpoint = "/projects/{id}/repository/branches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4249,7 +4249,7 @@ pub async fn gitlab_create_api_v4_projects_id_repository_branches(context: Actor
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/repository/branches".to_string();
+    let endpoint = "/projects/{id}/repository/branches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4580,7 +4580,7 @@ pub async fn gitlab_delete_api_v4_projects_id_repository_merged_branches(context
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/repository/merged_branches".to_string();
+    let endpoint = "/projects/{id}/repository/merged_branches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4629,7 +4629,7 @@ pub async fn gitlab_read_api_v4_version(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/version".to_string();
+    let endpoint = "/version".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

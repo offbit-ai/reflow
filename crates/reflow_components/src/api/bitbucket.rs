@@ -156,7 +156,7 @@ pub async fn bitbucket_update_addon(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon".to_string();
+    let endpoint = "/addon".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -205,7 +205,7 @@ pub async fn bitbucket_delete_addon(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon".to_string();
+    let endpoint = "/addon".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -254,7 +254,7 @@ pub async fn bitbucket_read_addon_linkers(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/linkers".to_string();
+    let endpoint = "/addon/linkers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -303,7 +303,7 @@ pub async fn bitbucket_read_addon_linkers_by_linker_key(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/linkers/{linker_key}".to_string();
+    let endpoint = "/addon/linkers/{linker_key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -352,7 +352,7 @@ pub async fn bitbucket_read_addon_linkers_by_linker_key_values(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/linkers/{linker_key}/values".to_string();
+    let endpoint = "/addon/linkers/{linker_key}/values".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -401,7 +401,7 @@ pub async fn bitbucket_delete_addon_linkers_by_linker_key_values(context: ActorC
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/linkers/{linker_key}/values".to_string();
+    let endpoint = "/addon/linkers/{linker_key}/values".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -450,7 +450,7 @@ pub async fn bitbucket_create_addon_linkers_by_linker_key_values(context: ActorC
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/linkers/{linker_key}/values".to_string();
+    let endpoint = "/addon/linkers/{linker_key}/values".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -499,7 +499,7 @@ pub async fn bitbucket_update_addon_linkers_by_linker_key_values(context: ActorC
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/linkers/{linker_key}/values".to_string();
+    let endpoint = "/addon/linkers/{linker_key}/values".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -548,7 +548,7 @@ pub async fn bitbucket_create_addon_users_by_target_user_events_by_event_key(con
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/addon/users/{target_user}/events/{event_key}".to_string();
+    let endpoint = "/addon/users/{target_user}/events/{event_key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -597,7 +597,7 @@ pub async fn bitbucket_read_hook_events(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/hook_events".to_string();
+    let endpoint = "/hook_events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -758,7 +758,7 @@ pub async fn bitbucket_read_repositories(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories".to_string();
+    let endpoint = "/repositories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -815,7 +815,7 @@ pub async fn bitbucket_read_repositories_by_username(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}".to_string();
+    let endpoint = "/repositories/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -872,7 +872,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug(context: Act
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -921,7 +921,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug(context: Actor
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -970,7 +970,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug(context: Act
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1027,7 +1027,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug(context: Act
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1076,7 +1076,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_branchrestri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1125,7 +1125,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrict
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1185,7 +1185,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrict
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions/{id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1234,7 +1234,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_branchrestri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions/{id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1283,7 +1283,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchrestri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions/{id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branch-restrictions/{id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1332,7 +1332,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branching-model".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branching-model".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1381,7 +1381,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchingmod
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branching-model/settings".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branching-model/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1430,7 +1430,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/branching-model/settings".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/branching-model/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1479,7 +1479,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1528,7 +1528,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/approve".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1577,7 +1577,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_commit_by_no
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/approve".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1626,7 +1626,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/comments".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/comments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1730,7 +1730,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/comments/{comment_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1779,7 +1779,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1828,7 +1828,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1877,7 +1877,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1926,7 +1926,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_commit_by_no
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1975,7 +1975,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits(cont
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commits".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2024,7 +2024,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits(contex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commits".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2073,7 +2073,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits_by_r
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commits/{revision}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commits/{revision}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2122,7 +2122,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits_by_rev
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/commits/{revision}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/commits/{revision}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2171,7 +2171,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components(con
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/components".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/components".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2220,7 +2220,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/components/{component_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/components/{component_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2269,7 +2269,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewe
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/default-reviewers".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2318,7 +2318,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_defaultrevie
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2367,7 +2367,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewe
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2416,7 +2416,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_defaultrevie
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2465,7 +2465,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys(con
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/deploy-keys".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/deploy-keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2514,7 +2514,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_deploykeys(c
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/deploy-keys".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/deploy-keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2563,7 +2563,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_deploykeys_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/deploy-keys/{key_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/deploy-keys/{key_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2612,7 +2612,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_deploykeys_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/deploy-keys/{key_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/deploy-keys/{key_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2661,7 +2661,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/deploy-keys/{key_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/deploy-keys/{key_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2710,7 +2710,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diff_by_spec(c
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/diff/{spec}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/diff/{spec}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2776,7 +2776,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diffstat_by_sp
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/diffstat/{spec}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/diffstat/{spec}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2825,7 +2825,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads(cont
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/downloads".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/downloads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2874,7 +2874,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_downloads(co
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/downloads".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/downloads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2923,7 +2923,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_downloads_by
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/downloads/{filename}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/downloads/{filename}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2972,7 +2972,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads_by_f
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/downloads/{filename}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/downloads/{filename}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3021,7 +3021,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_filehistory_by
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/filehistory/{node}/{path}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/filehistory/{node}/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3139,7 +3139,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_forks(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/forks".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/forks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3188,7 +3188,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/hooks".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3237,7 +3237,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_hooks(contex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/hooks".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3442,7 +3442,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues(conte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3491,7 +3491,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues(context
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3766,7 +3766,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3815,7 +3815,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3864,7 +3864,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4017,7 +4017,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4066,7 +4066,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4115,7 +4115,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4193,7 +4193,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4253,7 +4253,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes/{change_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes/{change_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4594,7 +4594,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/vote".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/vote".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4643,7 +4643,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/vote".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/vote".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4692,7 +4692,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/vote".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/vote".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4741,7 +4741,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/watch".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/watch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4790,7 +4790,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/watch".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/watch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4839,7 +4839,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/watch".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/watch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4888,7 +4888,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones(con
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/milestones".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/milestones".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4937,7 +4937,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/milestones/{milestone_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/milestones/{milestone_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4986,7 +4986,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_patch_by_spec(
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/patch/{spec}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/patch/{spec}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5385,7 +5385,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5434,7 +5434,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5599,7 +5599,7 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5648,7 +5648,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5697,7 +5697,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5746,7 +5746,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/commits".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/commits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5795,7 +5795,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/decline".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/decline".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5844,7 +5844,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diff".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diff".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5893,7 +5893,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diffstat".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diffstat".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5942,7 +5942,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/merge".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/merge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6008,7 +6008,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/patch".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/patch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6057,7 +6057,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/statuses".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6238,7 +6238,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_branche
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/refs/branches".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/refs/branches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6287,7 +6287,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_branche
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/refs/branches/{name}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/refs/branches/{name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6336,7 +6336,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/refs/branches/{name}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/refs/branches/{name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6451,7 +6451,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_tags(co
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/refs/tags".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/refs/tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6500,7 +6500,7 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_tags_by
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/refs/tags/{name}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/refs/tags/{name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6549,7 +6549,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags_by_n
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/refs/tags/{name}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/refs/tags/{name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6598,7 +6598,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src(context: A
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/src".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/src".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6655,7 +6655,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_src(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/src".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/src".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6727,7 +6727,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src_by_node_by
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/src/{node}/{path}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/src/{node}/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6793,7 +6793,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions(conte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/versions".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/versions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6842,7 +6842,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions_by_ve
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/versions/{version_id}".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/versions/{version_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6891,7 +6891,7 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_watchers(conte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/watchers".to_string();
+    let endpoint = "/repositories/{username}/{repo_slug}/watchers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7766,7 +7766,7 @@ pub async fn bitbucket_update_repositories_by_workspace_by_repo_slug_pipelines_b
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/remote-triggers/{trigger_key}".to_string();
+    let endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/remote-triggers/{trigger_key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7995,7 +7995,7 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/logs/{log_uuid}".to_string();
+    let endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/logs/{log_uuid}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8044,7 +8044,7 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports".to_string();
+    let endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8093,7 +8093,7 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports/test_cases".to_string();
+    let endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports/test_cases".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8142,7 +8142,7 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports/test_cases/{test_case_uuid}/test_case_reasons".to_string();
+    let endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/test_reports/test_cases/{test_case_uuid}/test_case_reasons".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9861,7 +9861,7 @@ pub async fn bitbucket_read_snippets(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets".to_string();
+    let endpoint = "/snippets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9918,7 +9918,7 @@ pub async fn bitbucket_create_snippets(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets".to_string();
+    let endpoint = "/snippets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10027,7 +10027,7 @@ pub async fn bitbucket_create_snippets_by_username(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}".to_string();
+    let endpoint = "/snippets/{username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10232,7 +10232,7 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/comments".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/comments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10281,7 +10281,7 @@ pub async fn bitbucket_create_snippets_by_username_by_encoded_id_comments(contex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/comments".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/comments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10330,7 +10330,7 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_comments_by_com
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/comments/{comment_id}".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10379,7 +10379,7 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_comments_by_com
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/comments/{comment_id}".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10428,7 +10428,7 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments_by_comme
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/comments/{comment_id}".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10477,7 +10477,7 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits(context: 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/commits".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/commits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10526,7 +10526,7 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits_by_revisi
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/commits/{revision}".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/commits/{revision}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10575,7 +10575,7 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_files_by_path(con
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/files/{path}".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/files/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10942,7 +10942,7 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id_files_
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/snippets/{username}/{encoded_id}/{node_id}/files/{path}".to_string();
+    let endpoint = "/snippets/{username}/{encoded_id}/{node_id}/files/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11109,7 +11109,7 @@ pub async fn bitbucket_read_teams(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams".to_string();
+    let endpoint = "/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11322,7 +11322,7 @@ pub async fn bitbucket_read_teams_by_username_hooks(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/hooks".to_string();
+    let endpoint = "/teams/{username}/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11371,7 +11371,7 @@ pub async fn bitbucket_create_teams_by_username_hooks(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/hooks".to_string();
+    let endpoint = "/teams/{username}/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11576,7 +11576,7 @@ pub async fn bitbucket_read_teams_by_username_members(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/members".to_string();
+    let endpoint = "/teams/{username}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12086,7 +12086,7 @@ pub async fn bitbucket_create_teams_by_username_projects(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/projects/".to_string();
+    let endpoint = "/teams/{username}/projects/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12135,7 +12135,7 @@ pub async fn bitbucket_read_teams_by_username_projects(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/projects/".to_string();
+    let endpoint = "/teams/{username}/projects/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12184,7 +12184,7 @@ pub async fn bitbucket_read_teams_by_username_projects_by_project_key(context: A
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/projects/{project_key}".to_string();
+    let endpoint = "/teams/{username}/projects/{project_key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12233,7 +12233,7 @@ pub async fn bitbucket_delete_teams_by_username_projects_by_project_key(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/projects/{project_key}".to_string();
+    let endpoint = "/teams/{username}/projects/{project_key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12282,7 +12282,7 @@ pub async fn bitbucket_update_teams_by_username_projects_by_project_key(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/projects/{project_key}".to_string();
+    let endpoint = "/teams/{username}/projects/{project_key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12331,7 +12331,7 @@ pub async fn bitbucket_read_teams_by_username_repositories(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teams/{username}/repositories".to_string();
+    let endpoint = "/teams/{username}/repositories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12446,7 +12446,7 @@ pub async fn bitbucket_read_user(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12495,7 +12495,7 @@ pub async fn bitbucket_read_user_emails(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/emails".to_string();
+    let endpoint = "/user/emails".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12544,7 +12544,7 @@ pub async fn bitbucket_read_user_emails_by_email(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/emails/{email}".to_string();
+    let endpoint = "/user/emails/{email}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12593,7 +12593,7 @@ pub async fn bitbucket_read_user_permissions_repositories(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/permissions/repositories".to_string();
+    let endpoint = "/user/permissions/repositories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12653,7 +12653,7 @@ pub async fn bitbucket_read_user_permissions_teams(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/permissions/teams".to_string();
+    let endpoint = "/user/permissions/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12869,7 +12869,7 @@ pub async fn bitbucket_create_users_by_username_hooks(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/{username}/hooks".to_string();
+    let endpoint = "/users/{username}/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12918,7 +12918,7 @@ pub async fn bitbucket_read_users_by_username_hooks(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/{username}/hooks".to_string();
+    let endpoint = "/users/{username}/hooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13123,7 +13123,7 @@ pub async fn bitbucket_read_users_by_username_members(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/{username}/members".to_string();
+    let endpoint = "/users/{username}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13615,7 +13615,7 @@ pub async fn bitbucket_read_users_by_username_repositories(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/{username}/repositories".to_string();
+    let endpoint = "/users/{username}/repositories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

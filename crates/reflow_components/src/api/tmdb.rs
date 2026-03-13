@@ -41,7 +41,7 @@ pub async fn tmdb_search_movies(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/movie".to_string();
+    let endpoint = "/search/movie".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -164,7 +164,7 @@ pub async fn tmdb_list_movies(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/movie/popular".to_string();
+    let endpoint = "/movie/popular".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -620,7 +620,7 @@ pub async fn tmdb_list_tv_shows(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tv/popular".to_string();
+    let endpoint = "/tv/popular".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1082,7 +1082,7 @@ pub async fn tmdb_search_tv_shows(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/tv".to_string();
+    let endpoint = "/search/tv".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1154,7 +1154,7 @@ pub async fn tmdb_search_people(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/person".to_string();
+    let endpoint = "/search/person".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1226,7 +1226,7 @@ pub async fn tmdb_search_multi(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/multi".to_string();
+    let endpoint = "/search/multi".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1298,7 +1298,7 @@ pub async fn tmdb_list_genres(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/genre/movie/list".to_string();
+    let endpoint = "/genre/movie/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1358,7 +1358,7 @@ pub async fn tmdb_read_configuration(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/configuration".to_string();
+    let endpoint = "/configuration".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

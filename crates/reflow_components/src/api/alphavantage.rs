@@ -41,7 +41,7 @@ pub async fn alphavantage_read_time_series(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/".to_string();
+    let endpoint = "/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn alphavantage_search_symbols(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/".to_string();
+    let endpoint = "/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -164,7 +164,7 @@ pub async fn alphavantage_read_time_series_intraday(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -248,7 +248,7 @@ pub async fn alphavantage_read_time_series_daily(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -317,7 +317,7 @@ pub async fn alphavantage_read_time_series_daily_adjusted(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -386,7 +386,7 @@ pub async fn alphavantage_read_time_series_weekly(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -452,7 +452,7 @@ pub async fn alphavantage_read_time_series_weekly_adjusted(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -518,7 +518,7 @@ pub async fn alphavantage_read_time_series_monthly(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -584,7 +584,7 @@ pub async fn alphavantage_read_time_series_monthly_adjusted(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -650,7 +650,7 @@ pub async fn alphavantage_read_global_quote(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -716,7 +716,7 @@ pub async fn alphavantage_read_realtime_bulk_quotes(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -782,7 +782,7 @@ pub async fn alphavantage_read_market_status(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -842,7 +842,7 @@ pub async fn alphavantage_read_realtime_options(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -911,7 +911,7 @@ pub async fn alphavantage_read_historical_options(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -980,7 +980,7 @@ pub async fn alphavantage_read_news_sentiment(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1058,7 +1058,7 @@ pub async fn alphavantage_read_earnings_call_transcript(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1124,7 +1124,7 @@ pub async fn alphavantage_read_top_gainers_losers(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1184,7 +1184,7 @@ pub async fn alphavantage_read_insider_transactions(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1247,7 +1247,7 @@ pub async fn alphavantage_read_institutional_holdings(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1310,7 +1310,7 @@ pub async fn alphavantage_analyze_analytics_fixed_window(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1385,7 +1385,7 @@ pub async fn alphavantage_analyze_analytics_sliding_window(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1460,7 +1460,7 @@ pub async fn alphavantage_read_company_overview(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1523,7 +1523,7 @@ pub async fn alphavantage_read_etf_profile(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1586,7 +1586,7 @@ pub async fn alphavantage_read_dividends(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1649,7 +1649,7 @@ pub async fn alphavantage_read_splits(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1712,7 +1712,7 @@ pub async fn alphavantage_read_income_statement(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1775,7 +1775,7 @@ pub async fn alphavantage_read_balance_sheet(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1838,7 +1838,7 @@ pub async fn alphavantage_read_cash_flow(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1901,7 +1901,7 @@ pub async fn alphavantage_read_shares_outstanding(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1964,7 +1964,7 @@ pub async fn alphavantage_read_earnings(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2027,7 +2027,7 @@ pub async fn alphavantage_read_earnings_calendar(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2096,7 +2096,7 @@ pub async fn alphavantage_read_listing_status(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2162,7 +2162,7 @@ pub async fn alphavantage_read_ipo_calendar(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2222,7 +2222,7 @@ pub async fn alphavantage_read_fx_exchange_rate(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2288,7 +2288,7 @@ pub async fn alphavantage_read_fx_intraday(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2363,7 +2363,7 @@ pub async fn alphavantage_read_fx_daily(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2435,7 +2435,7 @@ pub async fn alphavantage_read_fx_weekly(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2504,7 +2504,7 @@ pub async fn alphavantage_read_fx_monthly(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2573,7 +2573,7 @@ pub async fn alphavantage_read_crypto_exchange_rate(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2639,7 +2639,7 @@ pub async fn alphavantage_read_crypto_intraday(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2714,7 +2714,7 @@ pub async fn alphavantage_read_crypto_daily(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2783,7 +2783,7 @@ pub async fn alphavantage_read_crypto_weekly(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2849,7 +2849,7 @@ pub async fn alphavantage_read_crypto_monthly(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2915,7 +2915,7 @@ pub async fn alphavantage_read_wti_crude_oil(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2981,7 +2981,7 @@ pub async fn alphavantage_read_brent_crude_oil(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3047,7 +3047,7 @@ pub async fn alphavantage_read_natural_gas(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3113,7 +3113,7 @@ pub async fn alphavantage_read_commodity_prices(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3179,7 +3179,7 @@ pub async fn alphavantage_read_real_gdp(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3245,7 +3245,7 @@ pub async fn alphavantage_read_real_gdp_per_capita(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3308,7 +3308,7 @@ pub async fn alphavantage_read_treasury_yield(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3377,7 +3377,7 @@ pub async fn alphavantage_read_federal_funds_rate(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3443,7 +3443,7 @@ pub async fn alphavantage_read_cpi(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3509,7 +3509,7 @@ pub async fn alphavantage_read_inflation(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3572,7 +3572,7 @@ pub async fn alphavantage_read_retail_sales(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3635,7 +3635,7 @@ pub async fn alphavantage_read_unemployment_rate(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3698,7 +3698,7 @@ pub async fn alphavantage_read_nonfarm_payroll(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3761,7 +3761,7 @@ pub async fn alphavantage_read_technical_indicator_sma(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3836,7 +3836,7 @@ pub async fn alphavantage_read_technical_indicator_ema(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3911,7 +3911,7 @@ pub async fn alphavantage_read_technical_indicator_rsi(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3986,7 +3986,7 @@ pub async fn alphavantage_read_technical_indicator_macd(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4067,7 +4067,7 @@ pub async fn alphavantage_read_technical_indicator_bbands(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4151,7 +4151,7 @@ pub async fn alphavantage_read_technical_indicator_stoch(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4229,7 +4229,7 @@ pub async fn alphavantage_read_technical_indicator_adx(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4301,7 +4301,7 @@ pub async fn alphavantage_read_technical_indicator_cci(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4373,7 +4373,7 @@ pub async fn alphavantage_read_technical_indicator_aroon(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4445,7 +4445,7 @@ pub async fn alphavantage_read_technical_indicator_obv(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/query".to_string();
+    let endpoint = "/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

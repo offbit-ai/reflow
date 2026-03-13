@@ -41,7 +41,7 @@ pub async fn auth0_create_user(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users".to_string();
+    let endpoint = "/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -156,7 +156,7 @@ pub async fn auth0_list_users(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users".to_string();
+    let endpoint = "/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -216,7 +216,7 @@ pub async fn auth0_list_authorize_user(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/authorize".to_string();
+    let endpoint = "/authorize".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -309,7 +309,7 @@ pub async fn auth0_create_db_connections(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dbconnections/change_password".to_string();
+    let endpoint = "/dbconnections/change_password".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -375,7 +375,7 @@ pub async fn auth0_create_sso(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/login/callback".to_string();
+    let endpoint = "/login/callback".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -440,7 +440,7 @@ pub async fn auth0_create_mfa(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/mfa/associate".to_string();
+    let endpoint = "/mfa/associate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -515,7 +515,7 @@ pub async fn auth0_list_mfa(context: ActorContext) -> Result<HashMap<String, Mes
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/mfa/authenticators".to_string();
+    let endpoint = "/mfa/authenticators".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -622,7 +622,7 @@ pub async fn auth0_create_device_flow(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/device/code".to_string();
+    let endpoint = "/oauth/device/code".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -685,7 +685,7 @@ pub async fn auth0_create_revoke_refresh_token(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/revoke".to_string();
+    let endpoint = "/oauth/revoke".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -754,7 +754,7 @@ pub async fn auth0_create_oauth_token(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/token".to_string();
+    let endpoint = "/oauth/token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -806,7 +806,7 @@ pub async fn auth0_list_logout(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oidc/logout".to_string();
+    let endpoint = "/oidc/logout".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -881,7 +881,7 @@ pub async fn auth0_create_oidc(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oidc/register".to_string();
+    let endpoint = "/oidc/register".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -944,7 +944,7 @@ pub async fn auth0_start_passwordless(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/passwordless/start".to_string();
+    let endpoint = "/passwordless/start".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1137,7 +1137,7 @@ pub async fn auth0_list_user_profile(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/userinfo".to_string();
+    let endpoint = "/userinfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1189,7 +1189,7 @@ pub async fn auth0_list_ws_fed(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/wsfed/FederationMetadata/2007-06/FederationMetadata.xml".to_string();
+    let endpoint = "/wsfed/FederationMetadata/2007-06/FederationMetadata.xml".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

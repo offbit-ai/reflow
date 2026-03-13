@@ -153,7 +153,7 @@ pub async fn mongodb_atlas_list_projects(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/groups".to_string();
+    let endpoint = "/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -216,7 +216,7 @@ pub async fn mongodb_atlas_create_project(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/groups".to_string();
+    let endpoint = "/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1112,7 +1112,7 @@ pub async fn mongodb_atlas_list_organizations(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/orgs".to_string();
+    let endpoint = "/orgs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

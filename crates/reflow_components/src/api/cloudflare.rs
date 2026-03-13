@@ -41,7 +41,7 @@ pub async fn cloudflare_list_zones(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones".to_string();
+    let endpoint = "/zones".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -191,7 +191,7 @@ pub async fn cloudflare_create_accounts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts".to_string();
+    let endpoint = "/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -254,7 +254,7 @@ pub async fn cloudflare_list_accounts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts".to_string();
+    let endpoint = "/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -320,7 +320,7 @@ pub async fn cloudflare_move_accounts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/move".to_string();
+    let endpoint = "/accounts/move".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7084,7 +7084,7 @@ pub async fn cloudflare_read_dls_regional_services(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/addressing/regional_hostnames/regions".to_string();
+    let endpoint = "/accounts/{account_id}/addressing/regional_hostnames/regions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13293,7 +13293,7 @@ pub async fn cloudflare_read_billable_usage(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/billing/usage/paygo".to_string();
+    let endpoint = "/accounts/{account_id}/billing/usage/paygo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13471,7 +13471,7 @@ pub async fn cloudflare_update_brand_protection(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/alerts".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13520,7 +13520,7 @@ pub async fn cloudflare_read_brand_protection(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/alerts".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/alerts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13569,7 +13569,7 @@ pub async fn cloudflare_verify_brand_protection(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/alerts/verify".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/alerts/verify".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13618,7 +13618,7 @@ pub async fn cloudflare_create_brand_protection(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/brands".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/brands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13667,7 +13667,7 @@ pub async fn cloudflare_delete_brand_protection(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/brands".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/brands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13716,7 +13716,7 @@ pub async fn cloudflare_read_logo_match(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/logo-matches".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/logo-matches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13779,7 +13779,7 @@ pub async fn cloudflare_download_logo_match(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/logo-matches/download".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/logo-matches/download".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13842,7 +13842,7 @@ pub async fn cloudflare_create_logo_match(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/logos".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/logos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13913,7 +13913,7 @@ pub async fn cloudflare_delete_logo_match(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/logos/{logo_id}".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/logos/{logo_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13962,7 +13962,7 @@ pub async fn cloudflare_read_domain_search(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/matches".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/matches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14028,7 +14028,7 @@ pub async fn cloudflare_download_domain_search(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/matches/download".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/matches/download".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14094,7 +14094,7 @@ pub async fn cloudflare_update_domain_search(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/queries".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/queries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14143,7 +14143,7 @@ pub async fn cloudflare_delete_domain_search(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/queries".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/queries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14206,7 +14206,7 @@ pub async fn cloudflare_create_domain_search(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/queries".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/queries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14289,7 +14289,7 @@ pub async fn cloudflare_search_domain_search(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/brand-protection/search".to_string();
+    let endpoint = "/accounts/{account_id}/brand-protection/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14525,7 +14525,7 @@ pub async fn cloudflare_read_account_limits(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/account/limits".to_string();
+    let endpoint = "/accounts/{account_id}/builds/account/limits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14574,7 +14574,7 @@ pub async fn cloudflare_read_builds_by_version_ids(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/builds".to_string();
+    let endpoint = "/accounts/{account_id}/builds/builds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14631,7 +14631,7 @@ pub async fn cloudflare_read_latest_builds_by_scripts(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/builds/latest".to_string();
+    let endpoint = "/accounts/{account_id}/builds/builds/latest".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14688,7 +14688,7 @@ pub async fn cloudflare_read_build_by_uuid(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/builds/{build_uuid}".to_string();
+    let endpoint = "/accounts/{account_id}/builds/builds/{build_uuid}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14737,7 +14737,7 @@ pub async fn cloudflare_cancel_build_by_uuid(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/builds/{build_uuid}/cancel".to_string();
+    let endpoint = "/accounts/{account_id}/builds/builds/{build_uuid}/cancel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14786,7 +14786,7 @@ pub async fn cloudflare_read_build_logs(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/builds/{build_uuid}/logs".to_string();
+    let endpoint = "/accounts/{account_id}/builds/builds/{build_uuid}/logs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14843,7 +14843,7 @@ pub async fn cloudflare_update_repository_connections(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/repos/connections".to_string();
+    let endpoint = "/accounts/{account_id}/builds/repos/connections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14912,7 +14912,7 @@ pub async fn cloudflare_delete_repo_connection(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/repos/connections/{repo_connection_uuid}".to_string();
+    let endpoint = "/accounts/{account_id}/builds/repos/connections/{repo_connection_uuid}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15030,7 +15030,7 @@ pub async fn cloudflare_list_build_tokens(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/tokens".to_string();
+    let endpoint = "/accounts/{account_id}/builds/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15079,7 +15079,7 @@ pub async fn cloudflare_create_build_token(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/tokens".to_string();
+    let endpoint = "/accounts/{account_id}/builds/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15194,7 +15194,7 @@ pub async fn cloudflare_create_trigger(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15284,7 +15284,7 @@ pub async fn cloudflare_update_trigger(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15368,7 +15368,7 @@ pub async fn cloudflare_delete_trigger(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15417,7 +15417,7 @@ pub async fn cloudflare_create_manual_build(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/builds".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/builds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15480,7 +15480,7 @@ pub async fn cloudflare_list_environment_variables(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/environment_variables".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/environment_variables".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15529,7 +15529,7 @@ pub async fn cloudflare_update_environment_variables(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/environment_variables".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/environment_variables".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15638,7 +15638,7 @@ pub async fn cloudflare_create_triggers(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/purge_build_cache".to_string();
+    let endpoint = "/accounts/{account_id}/builds/triggers/{trigger_uuid}/purge_build_cache".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16646,7 +16646,7 @@ pub async fn cloudflare_create_turnstile(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/challenges/widgets".to_string();
+    let endpoint = "/accounts/{account_id}/challenges/widgets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16724,7 +16724,7 @@ pub async fn cloudflare_read_turnstile(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/challenges/widgets".to_string();
+    let endpoint = "/accounts/{account_id}/challenges/widgets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16773,7 +16773,7 @@ pub async fn cloudflare_delete_turnstile(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/challenges/widgets/{sitekey}".to_string();
+    let endpoint = "/accounts/{account_id}/challenges/widgets/{sitekey}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16822,7 +16822,7 @@ pub async fn cloudflare_update_turnstile(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/challenges/widgets/{sitekey}".to_string();
+    let endpoint = "/accounts/{account_id}/challenges/widgets/{sitekey}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25088,7 +25088,7 @@ pub async fn cloudflare_read_containers(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/containers".to_string();
+    let endpoint = "/accounts/{account_id}/containers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -51574,7 +51574,7 @@ pub async fn cloudflare_create_app(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/realtime/kit/apps".to_string();
+    let endpoint = "/accounts/{account_id}/realtime/kit/apps".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -51744,7 +51744,7 @@ pub async fn cloudflare_read_live_streams(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/realtime/kit/{app_id}/livestreams".to_string();
+    let endpoint = "/accounts/{account_id}/realtime/kit/{app_id}/livestreams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -51819,7 +51819,7 @@ pub async fn cloudflare_create_live_streams(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/realtime/kit/{app_id}/livestreams".to_string();
+    let endpoint = "/accounts/{account_id}/realtime/kit/{app_id}/livestreams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -52439,7 +52439,7 @@ pub async fn cloudflare_read_active_session(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/realtime/kit/{app_id}/meetings/{meeting_id}/active-session".to_string();
+    let endpoint = "/accounts/{account_id}/realtime/kit/{app_id}/meetings/{meeting_id}/active-session".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -63832,7 +63832,7 @@ pub async fn cloudflare_create_destinations(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/workers/observability/destinations".to_string();
+    let endpoint = "/accounts/{account_id}/workers/observability/destinations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -63898,7 +63898,7 @@ pub async fn cloudflare_read_destinations(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/workers/observability/destinations".to_string();
+    let endpoint = "/accounts/{account_id}/workers/observability/destinations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -64079,7 +64079,7 @@ pub async fn cloudflare_create_keys(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/workers/observability/telemetry/keys".to_string();
+    let endpoint = "/accounts/{account_id}/workers/observability/telemetry/keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -64154,7 +64154,7 @@ pub async fn cloudflare_create_query_run(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/workers/observability/telemetry/query".to_string();
+    let endpoint = "/accounts/{account_id}/workers/observability/telemetry/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -64250,7 +64250,7 @@ pub async fn cloudflare_create_values(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/accounts/{account_id}/workers/observability/telemetry/values".to_string();
+    let endpoint = "/accounts/{account_id}/workers/observability/telemetry/values".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -67585,7 +67585,7 @@ pub async fn cloudflare_list_origin_ca(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/certificates".to_string();
+    let endpoint = "/certificates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -67654,7 +67654,7 @@ pub async fn cloudflare_create_origin_ca(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/certificates".to_string();
+    let endpoint = "/certificates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -67824,7 +67824,7 @@ pub async fn cloudflare_list_cloudflare_ips(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ips".to_string();
+    let endpoint = "/ips".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -67881,7 +67881,7 @@ pub async fn cloudflare_list_brand_protection(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/live".to_string();
+    let endpoint = "/live".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -67930,7 +67930,7 @@ pub async fn cloudflare_list_user_s_account_memberships(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/memberships".to_string();
+    let endpoint = "/memberships".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -68169,7 +68169,7 @@ pub async fn cloudflare_list_organizations(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations".to_string();
+    let endpoint = "/organizations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -68218,7 +68218,7 @@ pub async fn cloudflare_create_organizations(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations".to_string();
+    let endpoint = "/organizations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -68755,7 +68755,7 @@ pub async fn cloudflare_list_radar_ai_bots(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ai/bots/timeseries".to_string();
+    let endpoint = "/radar/ai/bots/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -68938,7 +68938,7 @@ pub async fn cloudflare_list_radar_annotations(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/annotations".to_string();
+    let endpoint = "/radar/annotations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -69115,7 +69115,7 @@ pub async fn cloudflare_list_radar_as112(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/as112/timeseries".to_string();
+    let endpoint = "/radar/as112/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -69292,7 +69292,7 @@ pub async fn cloudflare_list_radar_layer_3_attacks(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/attacks/layer3/timeseries".to_string();
+    let endpoint = "/radar/attacks/layer3/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -69484,7 +69484,7 @@ pub async fn cloudflare_list_radar_layer_7_attacks(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/attacks/layer7/timeseries".to_string();
+    let endpoint = "/radar/attacks/layer7/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -69580,7 +69580,7 @@ pub async fn cloudflare_list_radar_bgp(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/bgp/hijacks/events".to_string();
+    let endpoint = "/radar/bgp/hijacks/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -69682,7 +69682,7 @@ pub async fn cloudflare_list_radar_bots(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/bots".to_string();
+    let endpoint = "/radar/bots".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -69943,7 +69943,7 @@ pub async fn cloudflare_list_authorities(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ct/authorities".to_string();
+    let endpoint = "/radar/ct/authorities".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -70066,7 +70066,7 @@ pub async fn cloudflare_list_logs(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ct/logs".to_string();
+    let endpoint = "/radar/ct/logs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -70312,7 +70312,7 @@ pub async fn cloudflare_list_timeseries(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ct/timeseries".to_string();
+    let endpoint = "/radar/ct/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -70555,7 +70555,7 @@ pub async fn cloudflare_list_radar_datasets(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/datasets".to_string();
+    let endpoint = "/radar/datasets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -70624,7 +70624,7 @@ pub async fn cloudflare_download_radar_datasets(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/datasets/download".to_string();
+    let endpoint = "/radar/datasets/download".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -70861,7 +70861,7 @@ pub async fn cloudflare_list_radar_dns(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/dns/timeseries".to_string();
+    let endpoint = "/radar/dns/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -71161,7 +71161,7 @@ pub async fn cloudflare_list_radar_email_security(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/email/security/top/tlds".to_string();
+    let endpoint = "/radar/email/security/top/tlds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -71251,7 +71251,7 @@ pub async fn cloudflare_list_radar_autonomous_systems(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/entities/asns".to_string();
+    let endpoint = "/radar/entities/asns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -71383,7 +71383,7 @@ pub async fn cloudflare_list_radar_ip(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/entities/ip".to_string();
+    let endpoint = "/radar/entities/ip".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -71443,7 +71443,7 @@ pub async fn cloudflare_list_radar_locations(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/entities/locations".to_string();
+    let endpoint = "/radar/entities/locations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -71578,7 +71578,7 @@ pub async fn cloudflare_list_radar_geolocations(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/geolocations".to_string();
+    let endpoint = "/radar/geolocations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -71815,7 +71815,7 @@ pub async fn cloudflare_list_radar_http(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/http/timeseries".to_string();
+    let endpoint = "/radar/http/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72016,7 +72016,7 @@ pub async fn cloudflare_list_radar_net_flows(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/netflows/timeseries".to_string();
+    let endpoint = "/radar/netflows/timeseries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72106,7 +72106,7 @@ pub async fn cloudflare_list_radar_origins(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/origins".to_string();
+    let endpoint = "/radar/origins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72325,7 +72325,7 @@ pub async fn cloudflare_list_radar_post_quantum(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/post_quantum/tls/support".to_string();
+    let endpoint = "/radar/post_quantum/tls/support".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72382,7 +72382,7 @@ pub async fn cloudflare_list_radar_quality(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/quality/iqi/summary".to_string();
+    let endpoint = "/radar/quality/iqi/summary".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72538,7 +72538,7 @@ pub async fn cloudflare_list_categories(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ranking/internet_services/categories".to_string();
+    let endpoint = "/radar/ranking/internet_services/categories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72604,7 +72604,7 @@ pub async fn cloudflare_list_timeseries_groups(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ranking/internet_services/timeseries_groups".to_string();
+    let endpoint = "/radar/ranking/internet_services/timeseries_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72679,7 +72679,7 @@ pub async fn cloudflare_list_top(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ranking/internet_services/top".to_string();
+    let endpoint = "/radar/ranking/internet_services/top".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72748,7 +72748,7 @@ pub async fn cloudflare_list_radar_domains_ranking(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/ranking/timeseries_groups".to_string();
+    let endpoint = "/radar/ranking/timeseries_groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72832,7 +72832,7 @@ pub async fn cloudflare_list_radar_robots_txt(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/robots_txt/top/domain_categories".to_string();
+    let endpoint = "/radar/robots_txt/top/domain_categories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72901,7 +72901,7 @@ pub async fn cloudflare_search_radar_search(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/search/global".to_string();
+    let endpoint = "/radar/search/global".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -72973,7 +72973,7 @@ pub async fn cloudflare_list_radar_tcp_resets_and_timeouts(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/tcp_resets_timeouts/summary".to_string();
+    let endpoint = "/radar/tcp_resets_timeouts/summary".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73051,7 +73051,7 @@ pub async fn cloudflare_list_radar_top_level_domains(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/tlds".to_string();
+    let endpoint = "/radar/tlds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73183,7 +73183,7 @@ pub async fn cloudflare_list_radar_traffic_anomalies(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/radar/traffic_anomalies".to_string();
+    let endpoint = "/radar/traffic_anomalies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73270,7 +73270,7 @@ pub async fn cloudflare_list_logo_match(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/signed-url".to_string();
+    let endpoint = "/signed-url".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73371,7 +73371,7 @@ pub async fn cloudflare_list_user(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73420,7 +73420,7 @@ pub async fn cloudflare_update_user(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user".to_string();
+    let endpoint = "/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73489,7 +73489,7 @@ pub async fn cloudflare_list_audit_logs(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/audit_logs".to_string();
+    let endpoint = "/user/audit_logs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73579,7 +73579,7 @@ pub async fn cloudflare_create_ip_access_rules_for_a_user(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/firewall/access_rules/rules".to_string();
+    let endpoint = "/user/firewall/access_rules/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73642,7 +73642,7 @@ pub async fn cloudflare_list_ip_access_rules_for_a_user(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/firewall/access_rules/rules".to_string();
+    let endpoint = "/user/firewall/access_rules/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73838,7 +73838,7 @@ pub async fn cloudflare_list_user_s_invites(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/invites".to_string();
+    let endpoint = "/user/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -73999,7 +73999,7 @@ pub async fn cloudflare_list_load_balancer_monitors(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/load_balancers/monitors".to_string();
+    let endpoint = "/user/load_balancers/monitors".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74048,7 +74048,7 @@ pub async fn cloudflare_create_load_balancer_monitors(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/load_balancers/monitors".to_string();
+    let endpoint = "/user/load_balancers/monitors".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74253,7 +74253,7 @@ pub async fn cloudflare_list_load_balancer_pools(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/load_balancers/pools".to_string();
+    let endpoint = "/user/load_balancers/pools".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74310,7 +74310,7 @@ pub async fn cloudflare_update_load_balancer_pools(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/load_balancers/pools".to_string();
+    let endpoint = "/user/load_balancers/pools".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74367,7 +74367,7 @@ pub async fn cloudflare_create_load_balancer_pools(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/load_balancers/pools".to_string();
+    let endpoint = "/user/load_balancers/pools".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74570,7 +74570,7 @@ pub async fn cloudflare_list_events(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/load_balancing_analytics/events".to_string();
+    let endpoint = "/user/load_balancing_analytics/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74645,7 +74645,7 @@ pub async fn cloudflare_list_user_subscription(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/subscriptions".to_string();
+    let endpoint = "/user/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74836,7 +74836,7 @@ pub async fn cloudflare_create_user_api_tokens(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/tokens".to_string();
+    let endpoint = "/user/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74905,7 +74905,7 @@ pub async fn cloudflare_list_user_api_tokens(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/tokens".to_string();
+    let endpoint = "/user/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -74968,7 +74968,7 @@ pub async fn cloudflare_verify_user_api_tokens(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/tokens/verify".to_string();
+    let endpoint = "/user/tokens/verify".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -75173,7 +75173,7 @@ pub async fn cloudflare_create_zone(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones".to_string();
+    let endpoint = "/zones".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77477,7 +77477,7 @@ pub async fn cloudflare_create_dls_regional_services(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/addressing/regional_hostnames".to_string();
+    let endpoint = "/zones/{zone_id}/addressing/regional_hostnames".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77540,7 +77540,7 @@ pub async fn cloudflare_update_dls_regional_services(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/addressing/regional_hostnames/{hostname}".to_string();
+    let endpoint = "/zones/{zone_id}/addressing/regional_hostnames/{hostname}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77597,7 +77597,7 @@ pub async fn cloudflare_delete_dls_regional_services(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/addressing/regional_hostnames/{hostname}".to_string();
+    let endpoint = "/zones/{zone_id}/addressing/regional_hostnames/{hostname}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77706,7 +77706,7 @@ pub async fn cloudflare_read_api_shield_settings(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/configuration".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/configuration".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77755,7 +77755,7 @@ pub async fn cloudflare_update_api_shield_settings(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/configuration".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/configuration".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77804,7 +77804,7 @@ pub async fn cloudflare_read_api_shield_api_discovery(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/discovery".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/discovery".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77853,7 +77853,7 @@ pub async fn cloudflare_update_api_shield_api_discovery(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/discovery/operations".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/discovery/operations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77910,7 +77910,7 @@ pub async fn cloudflare_create_fallthrough(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/expression-template/fallthrough".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/expression-template/fallthrough".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -77967,7 +77967,7 @@ pub async fn cloudflare_read_operations(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/operations".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/operations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -78024,7 +78024,7 @@ pub async fn cloudflare_create_operations(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/operations".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/operations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -78081,7 +78081,7 @@ pub async fn cloudflare_delete_operations(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/operations".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/operations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -78130,7 +78130,7 @@ pub async fn cloudflare_create_item(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/operations/item".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/operations/item".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -78193,7 +78193,7 @@ pub async fn cloudflare_read_schemas(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/api_gateway/schemas".to_string();
+    let endpoint = "/zones/{zone_id}/api_gateway/schemas".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87604,7 +87604,7 @@ pub async fn cloudflare_create_schema_validation(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/schemas".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/schemas".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87653,7 +87653,7 @@ pub async fn cloudflare_read_schema_validation(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/schemas".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/schemas".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87710,7 +87710,7 @@ pub async fn cloudflare_delete_schema_validation(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/schemas/{schema_id}".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/schemas/{schema_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87759,7 +87759,7 @@ pub async fn cloudflare_update_schema_validation(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/schemas/{schema_id}".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/schemas/{schema_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87808,7 +87808,7 @@ pub async fn cloudflare_update_schema_validation_settings(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/settings".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87857,7 +87857,7 @@ pub async fn cloudflare_read_schema_validation_settings(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/settings".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -87906,7 +87906,7 @@ pub async fn cloudflare_delete_schema_validation_settings(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/schema_validation/settings/operations/{operation_id}".to_string();
+    let endpoint = "/zones/{zone_id}/schema_validation/settings/operations/{operation_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -91772,7 +91772,7 @@ pub async fn cloudflare_update_credentials(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/token_validation/config/{config_id}/credentials".to_string();
+    let endpoint = "/zones/{zone_id}/token_validation/config/{config_id}/credentials".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -91821,7 +91821,7 @@ pub async fn cloudflare_create_token_validation_token_rules(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/token_validation/rules".to_string();
+    let endpoint = "/zones/{zone_id}/token_validation/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -91870,7 +91870,7 @@ pub async fn cloudflare_read_token_validation_token_rules(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/token_validation/rules".to_string();
+    let endpoint = "/zones/{zone_id}/token_validation/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -91945,7 +91945,7 @@ pub async fn cloudflare_update_token_validation_token_rules(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/token_validation/rules/bulk".to_string();
+    let endpoint = "/zones/{zone_id}/token_validation/rules/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -91994,7 +91994,7 @@ pub async fn cloudflare_delete_token_validation_token_rules(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/zones/{zone_id}/token_validation/rules/{rule_id}".to_string();
+    let endpoint = "/zones/{zone_id}/token_validation/rules/{rule_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

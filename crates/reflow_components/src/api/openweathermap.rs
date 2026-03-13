@@ -41,7 +41,7 @@ pub async fn openweathermap_read_weather(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/weather".to_string();
+    let endpoint = "/weather".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn openweathermap_read_forecast(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast".to_string();
+    let endpoint = "/forecast".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn openweathermap_read_current_weather(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/weather".to_string();
+    let endpoint = "/weather".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -242,7 +242,7 @@ pub async fn openweathermap_read_forecast_5day(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast".to_string();
+    let endpoint = "/forecast".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -326,7 +326,7 @@ pub async fn openweathermap_read_one_call(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/onecall".to_string();
+    let endpoint = "/onecall".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -398,7 +398,7 @@ pub async fn openweathermap_read_historical_weather(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/onecall/timemachine".to_string();
+    let endpoint = "/onecall/timemachine".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -470,7 +470,7 @@ pub async fn openweathermap_read_daily_forecast_16day(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/daily".to_string();
+    let endpoint = "/forecast/daily".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -554,7 +554,7 @@ pub async fn openweathermap_read_hourly_forecast_4day(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/hourly".to_string();
+    let endpoint = "/forecast/hourly".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -632,7 +632,7 @@ pub async fn openweathermap_read_climatic_forecast_30day(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/forecast/climate".to_string();
+    let endpoint = "/forecast/climate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -710,7 +710,7 @@ pub async fn openweathermap_read_air_pollution_current(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/air_pollution".to_string();
+    let endpoint = "/air_pollution".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -773,7 +773,7 @@ pub async fn openweathermap_read_air_pollution_forecast(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/air_pollution/forecast".to_string();
+    let endpoint = "/air_pollution/forecast".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -836,7 +836,7 @@ pub async fn openweathermap_read_air_pollution_historical(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/air_pollution/history".to_string();
+    let endpoint = "/air_pollution/history".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -905,7 +905,7 @@ pub async fn openweathermap_read_geocoding_direct(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geo/1.0/direct".to_string();
+    let endpoint = "/geo/1.0/direct".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -968,7 +968,7 @@ pub async fn openweathermap_read_geocoding_reverse(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geo/1.0/reverse".to_string();
+    let endpoint = "/geo/1.0/reverse".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1034,7 +1034,7 @@ pub async fn openweathermap_read_geocoding_zip(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geo/1.0/zip".to_string();
+    let endpoint = "/geo/1.0/zip".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1163,7 +1163,7 @@ pub async fn openweathermap_read_statistical_weather(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stat/1.0/history".to_string();
+    let endpoint = "/stat/1.0/history".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1241,7 +1241,7 @@ pub async fn openweathermap_read_history_weather(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/history/city".to_string();
+    let endpoint = "/history/city".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1328,7 +1328,7 @@ pub async fn openweathermap_read_solar_irradiance(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/energy/1.0/solar/interval".to_string();
+    let endpoint = "/energy/1.0/solar/interval".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

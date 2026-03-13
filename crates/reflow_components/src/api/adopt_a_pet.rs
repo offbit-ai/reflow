@@ -41,7 +41,7 @@ pub async fn adopt_a_pet_search_pets(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pets/search".to_string();
+    let endpoint = "/pets/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

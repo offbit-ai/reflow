@@ -41,7 +41,7 @@ pub async fn linkedin_read_profile(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me".to_string();
+    let endpoint = "/me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -90,7 +90,7 @@ pub async fn linkedin_create_share(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/shares".to_string();
+    let endpoint = "/shares".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -150,7 +150,7 @@ pub async fn linkedin_read_user_info(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/userinfo".to_string();
+    let endpoint = "/userinfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -199,7 +199,7 @@ pub async fn linkedin_read_email_address(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/emailAddress".to_string();
+    let endpoint = "/emailAddress".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -259,7 +259,7 @@ pub async fn linkedin_create_ugc_post(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ugcPosts".to_string();
+    let endpoint = "/ugcPosts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -484,7 +484,7 @@ pub async fn linkedin_read_organization_follower_statistics(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizationalEntityFollowerStatistics".to_string();
+    let endpoint = "/organizationalEntityFollowerStatistics".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -544,7 +544,7 @@ pub async fn linkedin_read_organization_page_statistics(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizationPageStatistics".to_string();
+    let endpoint = "/organizationPageStatistics".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -604,7 +604,7 @@ pub async fn linkedin_read_share_statistics(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/shareStatistics".to_string();
+    let endpoint = "/shareStatistics".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -969,7 +969,7 @@ pub async fn linkedin_upload_asset(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/assets".to_string();
+    let endpoint = "/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1078,7 +1078,7 @@ pub async fn linkedin_list_ad_accounts(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/adAccounts".to_string();
+    let endpoint = "/adAccounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1144,7 +1144,7 @@ pub async fn linkedin_list_campaigns(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/adCampaigns".to_string();
+    let endpoint = "/adCampaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1210,7 +1210,7 @@ pub async fn linkedin_create_campaign(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/adCampaigns".to_string();
+    let endpoint = "/adCampaigns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1291,7 +1291,7 @@ pub async fn linkedin_read_ad_analytics(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/adAnalytics".to_string();
+    let endpoint = "/adAnalytics".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1363,7 +1363,7 @@ pub async fn linkedin_create_message(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/messages".to_string();
+    let endpoint = "/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1426,7 +1426,7 @@ pub async fn linkedin_list_connections(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/connections".to_string();
+    let endpoint = "/connections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1489,7 +1489,7 @@ pub async fn linkedin_list_job_postings(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/jobPostings".to_string();
+    let endpoint = "/jobPostings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1555,7 +1555,7 @@ pub async fn linkedin_create_job_posting(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/jobPostings".to_string();
+    let endpoint = "/jobPostings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

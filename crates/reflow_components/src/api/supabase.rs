@@ -402,7 +402,7 @@ pub async fn supabase_create_auth_user(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/signup".to_string();
+    let endpoint = "/auth/v1/signup".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -468,7 +468,7 @@ pub async fn supabase_create_auth_session(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/token".to_string();
+    let endpoint = "/auth/v1/token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -542,7 +542,7 @@ pub async fn supabase_delete_auth_session(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/logout".to_string();
+    let endpoint = "/auth/v1/logout".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -597,7 +597,7 @@ pub async fn supabase_read_auth_user(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/user".to_string();
+    let endpoint = "/auth/v1/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -652,7 +652,7 @@ pub async fn supabase_update_auth_user(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/user".to_string();
+    let endpoint = "/auth/v1/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -721,7 +721,7 @@ pub async fn supabase_create_password_recovery(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/recover".to_string();
+    let endpoint = "/auth/v1/recover".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -781,7 +781,7 @@ pub async fn supabase_create_magic_link(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/magiclink".to_string();
+    let endpoint = "/auth/v1/magiclink".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -841,7 +841,7 @@ pub async fn supabase_create_otp(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/otp".to_string();
+    let endpoint = "/auth/v1/otp".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -904,7 +904,7 @@ pub async fn supabase_list_storage_buckets(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/storage/v1/bucket".to_string();
+    let endpoint = "/storage/v1/bucket".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -959,7 +959,7 @@ pub async fn supabase_create_storage_bucket(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/storage/v1/bucket".to_string();
+    let endpoint = "/storage/v1/bucket".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1580,7 +1580,7 @@ pub async fn supabase_list_auth_users(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth/v1/admin/users".to_string();
+    let endpoint = "/auth/v1/admin/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

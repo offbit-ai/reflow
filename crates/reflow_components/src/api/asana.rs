@@ -41,7 +41,7 @@ pub async fn asana_create_task(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tasks".to_string();
+    let endpoint = "/tasks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn asana_list_projects(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects".to_string();
+    let endpoint = "/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -216,7 +216,7 @@ pub async fn asana_list_tasks(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tasks".to_string();
+    let endpoint = "/tasks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -616,7 +616,7 @@ pub async fn asana_create_project(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects".to_string();
+    let endpoint = "/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1041,7 +1041,7 @@ pub async fn asana_list_users(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users".to_string();
+    let endpoint = "/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1164,7 +1164,7 @@ pub async fn asana_list_workspaces(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/workspaces".to_string();
+    let endpoint = "/workspaces".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1341,7 +1341,7 @@ pub async fn asana_list_tags(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tags".to_string();
+    let endpoint = "/tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1401,7 +1401,7 @@ pub async fn asana_create_tag(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tags".to_string();
+    let endpoint = "/tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1710,7 +1710,7 @@ pub async fn asana_list_portfolios(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/portfolios".to_string();
+    let endpoint = "/portfolios".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1773,7 +1773,7 @@ pub async fn asana_create_portfolio(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/portfolios".to_string();
+    let endpoint = "/portfolios".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1836,7 +1836,7 @@ pub async fn asana_create_webhook(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks".to_string();
+    let endpoint = "/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1899,7 +1899,7 @@ pub async fn asana_list_webhooks(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks".to_string();
+    let endpoint = "/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2071,7 +2071,7 @@ pub async fn asana_create_custom_field(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/custom_fields".to_string();
+    let endpoint = "/custom_fields".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

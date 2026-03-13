@@ -41,7 +41,7 @@ pub async fn nasa_read_apod(context: ActorContext) -> Result<HashMap<String, Mes
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/planetary/apod".to_string();
+    let endpoint = "/planetary/apod".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn nasa_search_neo(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/neo/rest/v1/feed".to_string();
+    let endpoint = "/neo/rest/v1/feed".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn nasa_search_asteroids(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/neo/rest/v1/feed".to_string();
+    let endpoint = "/neo/rest/v1/feed".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -287,7 +287,7 @@ pub async fn nasa_list_asteroids(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/neo/rest/v1/neo/browse".to_string();
+    let endpoint = "/neo/rest/v1/neo/browse".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -350,7 +350,7 @@ pub async fn nasa_search_nasa_images(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search".to_string();
+    let endpoint = "/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -443,7 +443,7 @@ pub async fn nasa_list_earth_imagery(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/planetary/earth/imagery".to_string();
+    let endpoint = "/planetary/earth/imagery".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -515,7 +515,7 @@ pub async fn nasa_list_earth_assets(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/planetary/earth/assets".to_string();
+    let endpoint = "/planetary/earth/assets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -719,7 +719,7 @@ pub async fn nasa_list_epic_images(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/EPIC/api/natural".to_string();
+    let endpoint = "/EPIC/api/natural".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -776,7 +776,7 @@ pub async fn nasa_list_donki_cme(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/DONKI/CME".to_string();
+    let endpoint = "/DONKI/CME".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -839,7 +839,7 @@ pub async fn nasa_list_donki_flr(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/DONKI/FLR".to_string();
+    let endpoint = "/DONKI/FLR".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -902,7 +902,7 @@ pub async fn nasa_list_donki_gst(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/DONKI/GST".to_string();
+    let endpoint = "/DONKI/GST".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

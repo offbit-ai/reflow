@@ -157,7 +157,7 @@ pub async fn firebase_list_available_projects(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1beta1/availableProjects".to_string();
+    let endpoint = "/v1beta1/availableProjects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -217,7 +217,7 @@ pub async fn firebase_list_projects(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1beta1/projects".to_string();
+    let endpoint = "/v1beta1/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

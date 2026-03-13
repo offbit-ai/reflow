@@ -41,7 +41,7 @@ pub async fn sendgrid_send_email(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/mail/send".to_string();
+    let endpoint = "/mail/send".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -107,7 +107,7 @@ pub async fn sendgrid_send_mail(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/mail/send".to_string();
+    let endpoint = "/mail/send".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -197,7 +197,7 @@ pub async fn sendgrid_list_api_keys(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api_keys".to_string();
+    let endpoint = "/api_keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -254,7 +254,7 @@ pub async fn sendgrid_create_api_key(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api_keys".to_string();
+    let endpoint = "/api_keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -481,7 +481,7 @@ pub async fn sendgrid_list_contacts(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/contacts".to_string();
+    let endpoint = "/marketing/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -530,7 +530,7 @@ pub async fn sendgrid_create_contacts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/contacts".to_string();
+    let endpoint = "/marketing/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -590,7 +590,7 @@ pub async fn sendgrid_search_contacts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/contacts/search".to_string();
+    let endpoint = "/marketing/contacts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -699,7 +699,7 @@ pub async fn sendgrid_delete_contacts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/contacts".to_string();
+    let endpoint = "/marketing/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -756,7 +756,7 @@ pub async fn sendgrid_list_lists(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/lists".to_string();
+    let endpoint = "/marketing/lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -816,7 +816,7 @@ pub async fn sendgrid_create_list(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/lists".to_string();
+    let endpoint = "/marketing/lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1053,7 +1053,7 @@ pub async fn sendgrid_list_segments(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/segments/2.0".to_string();
+    let endpoint = "/marketing/segments/2.0".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1102,7 +1102,7 @@ pub async fn sendgrid_create_segment(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/segments/2.0".to_string();
+    let endpoint = "/marketing/segments/2.0".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1329,7 +1329,7 @@ pub async fn sendgrid_list_templates(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/templates".to_string();
+    let endpoint = "/templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1389,7 +1389,7 @@ pub async fn sendgrid_create_template(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/templates".to_string();
+    let endpoint = "/templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1867,7 +1867,7 @@ pub async fn sendgrid_list_suppressions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/suppression/bounces".to_string();
+    let endpoint = "/suppression/bounces".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1985,7 +1985,7 @@ pub async fn sendgrid_list_unsubscribes(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/suppression/unsubscribes".to_string();
+    let endpoint = "/suppression/unsubscribes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2051,7 +2051,7 @@ pub async fn sendgrid_list_spam_reports(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/suppression/spam_reports".to_string();
+    let endpoint = "/suppression/spam_reports".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2117,7 +2117,7 @@ pub async fn sendgrid_list_invalid_emails(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/suppression/invalid_emails".to_string();
+    let endpoint = "/suppression/invalid_emails".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2183,7 +2183,7 @@ pub async fn sendgrid_list_stats(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stats".to_string();
+    let endpoint = "/stats".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2246,7 +2246,7 @@ pub async fn sendgrid_list_subusers(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subusers".to_string();
+    let endpoint = "/subusers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2309,7 +2309,7 @@ pub async fn sendgrid_create_subuser(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/subusers".to_string();
+    let endpoint = "/subusers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2487,7 +2487,7 @@ pub async fn sendgrid_list_teammates(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teammates".to_string();
+    let endpoint = "/teammates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2547,7 +2547,7 @@ pub async fn sendgrid_create_teammate_invite(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/teammates".to_string();
+    let endpoint = "/teammates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2777,7 +2777,7 @@ pub async fn sendgrid_list_whitelabels(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/whitelabel/domains".to_string();
+    let endpoint = "/whitelabel/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2837,7 +2837,7 @@ pub async fn sendgrid_create_whitelabel(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/whitelabel/domains".to_string();
+    let endpoint = "/whitelabel/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn vercel_create_deployment(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v13/deployments".to_string();
+    let endpoint = "/v13/deployments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -148,7 +148,7 @@ pub async fn vercel_list_deployments(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v6/deployments".to_string();
+    let endpoint = "/v6/deployments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -464,7 +464,7 @@ pub async fn vercel_list_access_groups(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/access-groups".to_string();
+    let endpoint = "/v1/access-groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -542,7 +542,7 @@ pub async fn vercel_create_access_group(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/access-groups".to_string();
+    let endpoint = "/v1/access-groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1180,7 +1180,7 @@ pub async fn vercel_list_billing_charges(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/charges".to_string();
+    let endpoint = "/v1/billing/charges".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1246,7 +1246,7 @@ pub async fn vercel_list_contract_commitments(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/billing/contract-commitments".to_string();
+    let endpoint = "/v1/billing/contract-commitments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1306,7 +1306,7 @@ pub async fn vercel_delete_redirects(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/bulk-redirects".to_string();
+    let endpoint = "/v1/bulk-redirects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1369,7 +1369,7 @@ pub async fn vercel_update_bulk_redirects(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/bulk-redirects".to_string();
+    let endpoint = "/v1/bulk-redirects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1446,7 +1446,7 @@ pub async fn vercel_read_redirects(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/bulk-redirects".to_string();
+    let endpoint = "/v1/bulk-redirects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1530,7 +1530,7 @@ pub async fn vercel_restore_bulk_redirects(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/bulk-redirects/restore".to_string();
+    let endpoint = "/v1/bulk-redirects/restore".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1604,7 +1604,7 @@ pub async fn vercel_read_versions(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/bulk-redirects/versions".to_string();
+    let endpoint = "/v1/bulk-redirects/versions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1667,7 +1667,7 @@ pub async fn vercel_update_version(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/bulk-redirects/versions".to_string();
+    let endpoint = "/v1/bulk-redirects/versions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1744,7 +1744,7 @@ pub async fn vercel_list_networks(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/connect/networks".to_string();
+    let endpoint = "/v1/connect/networks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1816,7 +1816,7 @@ pub async fn vercel_create_network(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/connect/networks".to_string();
+    let endpoint = "/v1/connect/networks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2323,7 +2323,7 @@ pub async fn vercel_read_drains(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/drains".to_string();
+    let endpoint = "/v1/drains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2389,7 +2389,7 @@ pub async fn vercel_create_drain(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/drains".to_string();
+    let endpoint = "/v1/drains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2481,7 +2481,7 @@ pub async fn vercel_create_drains(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/drains/test".to_string();
+    let endpoint = "/v1/drains/test".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2776,7 +2776,7 @@ pub async fn vercel_create_edge_cache(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/edge-cache/dangerously-delete-by-src-images".to_string();
+    let endpoint = "/v1/edge-cache/dangerously-delete-by-src-images".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2850,7 +2850,7 @@ pub async fn vercel_create_edge_config(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/edge-config".to_string();
+    let endpoint = "/v1/edge-config".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2921,7 +2921,7 @@ pub async fn vercel_read_edge_configs(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/edge-config".to_string();
+    let endpoint = "/v1/edge-config".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3979,7 +3979,7 @@ pub async fn vercel_list_shared_env_variable(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/env".to_string();
+    let endpoint = "/v1/env".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4060,7 +4060,7 @@ pub async fn vercel_delete_shared_env_variable(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/env".to_string();
+    let endpoint = "/v1/env".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4120,7 +4120,7 @@ pub async fn vercel_create_shared_env_variable(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/env".to_string();
+    let endpoint = "/v1/env".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4197,7 +4197,7 @@ pub async fn vercel_update_shared_env_variable(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/env".to_string();
+    let endpoint = "/v1/env".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4394,7 +4394,7 @@ pub async fn vercel_list_event_types(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/events/types".to_string();
+    let endpoint = "/v1/events/types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5778,7 +5778,7 @@ pub async fn vercel_read_configurations(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/integrations/configurations".to_string();
+    let endpoint = "/v1/integrations/configurations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5847,7 +5847,7 @@ pub async fn vercel_list_integrations(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/integrations/git-namespaces".to_string();
+    let endpoint = "/v1/integrations/git-namespaces".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6119,7 +6119,7 @@ pub async fn vercel_search_repo(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/integrations/search-repo".to_string();
+    let endpoint = "/v1/integrations/search-repo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6194,7 +6194,7 @@ pub async fn vercel_create_authentication(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/integrations/sso/token".to_string();
+    let endpoint = "/v1/integrations/sso/token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6243,7 +6243,7 @@ pub async fn vercel_create_configurable_log_drain(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/log-drains".to_string();
+    let endpoint = "/v1/log-drains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6335,7 +6335,7 @@ pub async fn vercel_read_all_log_drains(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/log-drains".to_string();
+    let endpoint = "/v1/log-drains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9551,7 +9551,7 @@ pub async fn vercel_read_bulk_availability(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/registrar/domains/availability".to_string();
+    let endpoint = "/v1/registrar/domains/availability".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9616,7 +9616,7 @@ pub async fn vercel_create_domains_registrar(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/registrar/domains/buy".to_string();
+    let endpoint = "/v1/registrar/domains/buy".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10183,7 +10183,7 @@ pub async fn vercel_read_supported_tlds(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/registrar/tlds/supported".to_string();
+    let endpoint = "/v1/registrar/tlds/supported".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10363,7 +10363,7 @@ pub async fn vercel_list_sandboxes(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/sandboxes".to_string();
+    let endpoint = "/v1/sandboxes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10435,7 +10435,7 @@ pub async fn vercel_create_sandbox(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/sandboxes".to_string();
+    let endpoint = "/v1/sandboxes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10524,7 +10524,7 @@ pub async fn vercel_list_snapshots(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/sandboxes/snapshots".to_string();
+    let endpoint = "/v1/sandboxes/snapshots".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11360,7 +11360,7 @@ pub async fn vercel_update_attack_challenge_mode(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/attack-mode".to_string();
+    let endpoint = "/v1/security/attack-mode".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11428,7 +11428,7 @@ pub async fn vercel_read_active_attack_status(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/firewall/attack-status".to_string();
+    let endpoint = "/v1/security/firewall/attack-status".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11494,7 +11494,7 @@ pub async fn vercel_create_security(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/firewall/bypass".to_string();
+    let endpoint = "/v1/security/firewall/bypass".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11580,7 +11580,7 @@ pub async fn vercel_delete_bypass_ip(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/firewall/bypass".to_string();
+    let endpoint = "/v1/security/firewall/bypass".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11643,7 +11643,7 @@ pub async fn vercel_read_bypass_ip(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/firewall/bypass".to_string();
+    let endpoint = "/v1/security/firewall/bypass".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11721,7 +11721,7 @@ pub async fn vercel_update_firewall_config(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/firewall/config".to_string();
+    let endpoint = "/v1/security/firewall/config".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11850,7 +11850,7 @@ pub async fn vercel_read_security_firewall_events(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/security/firewall/events".to_string();
+    let endpoint = "/v1/security/firewall/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11916,7 +11916,7 @@ pub async fn vercel_create_integration_store_direct(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/storage/stores/integration/direct".to_string();
+    let endpoint = "/v1/storage/stores/integration/direct".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12011,7 +12011,7 @@ pub async fn vercel_create_team(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/teams".to_string();
+    let endpoint = "/v1/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12654,7 +12654,7 @@ pub async fn vercel_delete_user(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/user".to_string();
+    let endpoint = "/v1/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12703,7 +12703,7 @@ pub async fn vercel_read_webhooks(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/webhooks".to_string();
+    let endpoint = "/v1/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12766,7 +12766,7 @@ pub async fn vercel_create_webhook(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/webhooks".to_string();
+    let endpoint = "/v1/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12966,7 +12966,7 @@ pub async fn vercel_read_projects(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v10/projects".to_string();
+    let endpoint = "/v10/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13137,7 +13137,7 @@ pub async fn vercel_create_project(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v11/projects".to_string();
+    let endpoint = "/v11/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14092,7 +14092,7 @@ pub async fn vercel_upload_file(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/files".to_string();
+    let endpoint = "/v2/files".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14172,7 +14172,7 @@ pub async fn vercel_read_integration_log_drains(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/integrations/log-drains".to_string();
+    let endpoint = "/v2/integrations/log-drains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14232,7 +14232,7 @@ pub async fn vercel_create_log_drain(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/integrations/log-drains".to_string();
+    let endpoint = "/v2/integrations/log-drains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14763,7 +14763,7 @@ pub async fn vercel_read_teams(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/teams".to_string();
+    let endpoint = "/v2/teams".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15008,7 +15008,7 @@ pub async fn vercel_read_auth_user(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/user".to_string();
+    let endpoint = "/v2/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15210,7 +15210,7 @@ pub async fn vercel_list_user_events(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v3/events".to_string();
+    let endpoint = "/v3/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15375,7 +15375,7 @@ pub async fn vercel_create_auth_token(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v3/user/tokens".to_string();
+    let endpoint = "/v3/user/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15501,7 +15501,7 @@ pub async fn vercel_list_aliases(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v4/aliases".to_string();
+    let endpoint = "/v4/aliases".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15729,7 +15729,7 @@ pub async fn vercel_read_domains(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v5/domains".to_string();
+    let endpoint = "/v5/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15861,7 +15861,7 @@ pub async fn vercel_list_auth_tokens(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v5/user/tokens".to_string();
+    let endpoint = "/v5/user/tokens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15962,7 +15962,7 @@ pub async fn vercel_read_deployments(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v6/deployments".to_string();
+    let endpoint = "/v6/deployments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16259,7 +16259,7 @@ pub async fn vercel_create_or_transfer_domain(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v7/domains".to_string();
+    let endpoint = "/v7/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16327,7 +16327,7 @@ pub async fn vercel_create_artifacts(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v8/artifacts".to_string();
+    let endpoint = "/v8/artifacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16395,7 +16395,7 @@ pub async fn vercel_list_artifacts(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v8/artifacts/status".to_string();
+    let endpoint = "/v8/artifacts/status".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16673,7 +16673,7 @@ pub async fn vercel_create_certs(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v8/certs".to_string();
+    let endpoint = "/v8/certs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16741,7 +16741,7 @@ pub async fn vercel_upload_cert(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v8/certs".to_string();
+    let endpoint = "/v8/certs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

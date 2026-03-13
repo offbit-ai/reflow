@@ -41,7 +41,7 @@ pub async fn hubspot_create_contact(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/contacts".to_string();
+    let endpoint = "/crm/v3/objects/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -150,7 +150,7 @@ pub async fn hubspot_search_contacts(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/contacts/search".to_string();
+    let endpoint = "/crm/v3/objects/contacts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -207,7 +207,7 @@ pub async fn hubspot_list_contacts(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/contacts".to_string();
+    let endpoint = "/crm/v3/objects/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -388,7 +388,7 @@ pub async fn hubspot_list_companies(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/companies".to_string();
+    let endpoint = "/crm/v3/objects/companies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -514,7 +514,7 @@ pub async fn hubspot_create_company(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/companies".to_string();
+    let endpoint = "/crm/v3/objects/companies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -683,7 +683,7 @@ pub async fn hubspot_list_deals(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/deals".to_string();
+    let endpoint = "/crm/v3/objects/deals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -806,7 +806,7 @@ pub async fn hubspot_create_deal(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/deals".to_string();
+    let endpoint = "/crm/v3/objects/deals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -978,7 +978,7 @@ pub async fn hubspot_list_tickets(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/tickets".to_string();
+    let endpoint = "/crm/v3/objects/tickets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1041,7 +1041,7 @@ pub async fn hubspot_create_ticket(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/tickets".to_string();
+    let endpoint = "/crm/v3/objects/tickets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1332,7 +1332,7 @@ pub async fn hubspot_send_email(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/marketing/v3/transactional/single-email/send".to_string();
+    let endpoint = "/marketing/v3/transactional/single-email/send".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1398,7 +1398,7 @@ pub async fn hubspot_list_email_subscriptions(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/communication-preferences/v3/definitions".to_string();
+    let endpoint = "/communication-preferences/v3/definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1499,7 +1499,7 @@ pub async fn hubspot_update_email_subscription(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/communication-preferences/v3/subscribe".to_string();
+    let endpoint = "/communication-preferences/v3/subscribe".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1565,7 +1565,7 @@ pub async fn hubspot_list_owners(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/owners".to_string();
+    let endpoint = "/crm/v3/owners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1818,7 +1818,7 @@ pub async fn hubspot_list_engagements(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/notes".to_string();
+    let endpoint = "/crm/v3/objects/notes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1881,7 +1881,7 @@ pub async fn hubspot_create_note(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/notes".to_string();
+    let endpoint = "/crm/v3/objects/notes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1941,7 +1941,7 @@ pub async fn hubspot_create_task(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/tasks".to_string();
+    let endpoint = "/crm/v3/objects/tasks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2001,7 +2001,7 @@ pub async fn hubspot_create_meeting(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/crm/v3/objects/meetings".to_string();
+    let endpoint = "/crm/v3/objects/meetings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2297,7 +2297,7 @@ pub async fn hubspot_list_blog_posts(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/cms/v3/blogs/posts".to_string();
+    let endpoint = "/cms/v3/blogs/posts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2363,7 +2363,7 @@ pub async fn hubspot_create_blog_post(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/cms/v3/blogs/posts".to_string();
+    let endpoint = "/cms/v3/blogs/posts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

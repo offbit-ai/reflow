@@ -41,7 +41,7 @@ pub async fn freshworks_create_contact(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts".to_string();
+    let endpoint = "/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -98,7 +98,7 @@ pub async fn freshworks_create_deal(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deals".to_string();
+    let endpoint = "/deals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -155,7 +155,7 @@ pub async fn freshworks_list_contacts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts".to_string();
+    let endpoint = "/contacts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -394,7 +394,7 @@ pub async fn freshworks_search_contacts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/contacts/search".to_string();
+    let endpoint = "/contacts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -454,7 +454,7 @@ pub async fn freshworks_list_accounts(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sales_accounts".to_string();
+    let endpoint = "/sales_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -569,7 +569,7 @@ pub async fn freshworks_create_account(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sales_accounts".to_string();
+    let endpoint = "/sales_accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -756,7 +756,7 @@ pub async fn freshworks_list_deals(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deals".to_string();
+    let endpoint = "/deals".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -992,7 +992,7 @@ pub async fn freshworks_list_leads(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/leads".to_string();
+    let endpoint = "/leads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1104,7 +1104,7 @@ pub async fn freshworks_create_lead(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/leads".to_string();
+    let endpoint = "/leads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1291,7 +1291,7 @@ pub async fn freshworks_list_tasks(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tasks".to_string();
+    let endpoint = "/tasks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1351,7 +1351,7 @@ pub async fn freshworks_create_task(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/tasks".to_string();
+    let endpoint = "/tasks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1535,7 +1535,7 @@ pub async fn freshworks_list_appointments(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/appointments".to_string();
+    let endpoint = "/appointments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1598,7 +1598,7 @@ pub async fn freshworks_create_appointment(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/appointments".to_string();
+    let endpoint = "/appointments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1670,7 +1670,7 @@ pub async fn freshworks_list_notes(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/notes".to_string();
+    let endpoint = "/notes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1727,7 +1727,7 @@ pub async fn freshworks_create_note(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/notes".to_string();
+    let endpoint = "/notes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1790,7 +1790,7 @@ pub async fn freshworks_list_users(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/selector/owners".to_string();
+    let endpoint = "/selector/owners".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1839,7 +1839,7 @@ pub async fn freshworks_list_deal_stages(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deal_stages".to_string();
+    let endpoint = "/deal_stages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1888,7 +1888,7 @@ pub async fn freshworks_list_deal_pipelines(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deal_pipelines".to_string();
+    let endpoint = "/deal_pipelines".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

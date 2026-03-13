@@ -905,7 +905,7 @@ pub async fn mapbox_read_elevation(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v4/surface/elevation.json".to_string();
+    let endpoint = "/v4/surface/elevation.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

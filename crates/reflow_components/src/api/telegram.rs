@@ -41,7 +41,7 @@ pub async fn telegram_send_message(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendMessage".to_string();
+    let endpoint = "/sendMessage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn telegram_read_updates(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getUpdates".to_string();
+    let endpoint = "/getUpdates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -158,7 +158,7 @@ pub async fn telegram_read_me(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getMe".to_string();
+    let endpoint = "/getMe".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -207,7 +207,7 @@ pub async fn telegram_create_webhook(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/setWebhook".to_string();
+    let endpoint = "/setWebhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -282,7 +282,7 @@ pub async fn telegram_delete_webhook(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deleteWebhook".to_string();
+    let endpoint = "/deleteWebhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -339,7 +339,7 @@ pub async fn telegram_read_webhook_info(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getWebhookInfo".to_string();
+    let endpoint = "/getWebhookInfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -388,7 +388,7 @@ pub async fn telegram_send_photo(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendPhoto".to_string();
+    let endpoint = "/sendPhoto".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -460,7 +460,7 @@ pub async fn telegram_send_audio(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendAudio".to_string();
+    let endpoint = "/sendAudio".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -532,7 +532,7 @@ pub async fn telegram_send_document(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendDocument".to_string();
+    let endpoint = "/sendDocument".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -598,7 +598,7 @@ pub async fn telegram_send_video(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendVideo".to_string();
+    let endpoint = "/sendVideo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -670,7 +670,7 @@ pub async fn telegram_send_animation(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendAnimation".to_string();
+    let endpoint = "/sendAnimation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -733,7 +733,7 @@ pub async fn telegram_send_voice(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendVoice".to_string();
+    let endpoint = "/sendVoice".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -799,7 +799,7 @@ pub async fn telegram_send_video_note(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendVideoNote".to_string();
+    let endpoint = "/sendVideoNote".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -865,7 +865,7 @@ pub async fn telegram_send_media_group(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendMediaGroup".to_string();
+    let endpoint = "/sendMediaGroup".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -925,7 +925,7 @@ pub async fn telegram_send_location(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendLocation".to_string();
+    let endpoint = "/sendLocation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -994,7 +994,7 @@ pub async fn telegram_send_venue(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendVenue".to_string();
+    let endpoint = "/sendVenue".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1063,7 +1063,7 @@ pub async fn telegram_send_contact(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendContact".to_string();
+    let endpoint = "/sendContact".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1129,7 +1129,7 @@ pub async fn telegram_send_poll(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendPoll".to_string();
+    let endpoint = "/sendPoll".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1204,7 +1204,7 @@ pub async fn telegram_send_dice(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendDice".to_string();
+    let endpoint = "/sendDice".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1264,7 +1264,7 @@ pub async fn telegram_send_chat_action(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendChatAction".to_string();
+    let endpoint = "/sendChatAction".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1327,7 +1327,7 @@ pub async fn telegram_send_sticker(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendSticker".to_string();
+    let endpoint = "/sendSticker".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1387,7 +1387,7 @@ pub async fn telegram_read_user_profile_photos(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getUserProfilePhotos".to_string();
+    let endpoint = "/getUserProfilePhotos".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1450,7 +1450,7 @@ pub async fn telegram_read_file(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getFile".to_string();
+    let endpoint = "/getFile".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1507,7 +1507,7 @@ pub async fn telegram_delete_message(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deleteMessage".to_string();
+    let endpoint = "/deleteMessage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1567,7 +1567,7 @@ pub async fn telegram_update_message(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/editMessageText".to_string();
+    let endpoint = "/editMessageText".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1636,7 +1636,7 @@ pub async fn telegram_update_message_caption(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/editMessageCaption".to_string();
+    let endpoint = "/editMessageCaption".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1702,7 +1702,7 @@ pub async fn telegram_update_message_reply_markup(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/editMessageReplyMarkup".to_string();
+    let endpoint = "/editMessageReplyMarkup".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1765,7 +1765,7 @@ pub async fn telegram_stop_poll(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stopPoll".to_string();
+    let endpoint = "/stopPoll".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1825,7 +1825,7 @@ pub async fn telegram_read_chat(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getChat".to_string();
+    let endpoint = "/getChat".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1882,7 +1882,7 @@ pub async fn telegram_list_chat_administrators(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getChatAdministrators".to_string();
+    let endpoint = "/getChatAdministrators".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1939,7 +1939,7 @@ pub async fn telegram_read_chat_member_count(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getChatMemberCount".to_string();
+    let endpoint = "/getChatMemberCount".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1996,7 +1996,7 @@ pub async fn telegram_read_chat_member(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getChatMember".to_string();
+    let endpoint = "/getChatMember".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2056,7 +2056,7 @@ pub async fn telegram_create_chat_ban(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/banChatMember".to_string();
+    let endpoint = "/banChatMember".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2122,7 +2122,7 @@ pub async fn telegram_delete_chat_ban(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/unbanChatMember".to_string();
+    let endpoint = "/unbanChatMember".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2185,7 +2185,7 @@ pub async fn telegram_update_chat_permissions(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/restrictChatMember".to_string();
+    let endpoint = "/restrictChatMember".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2251,7 +2251,7 @@ pub async fn telegram_update_chat_administrator(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/promoteChatMember".to_string();
+    let endpoint = "/promoteChatMember".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2320,7 +2320,7 @@ pub async fn telegram_create_chat_invite_link(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/createChatInviteLink".to_string();
+    let endpoint = "/createChatInviteLink".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2389,7 +2389,7 @@ pub async fn telegram_update_chat_invite_link(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/editChatInviteLink".to_string();
+    let endpoint = "/editChatInviteLink".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2455,7 +2455,7 @@ pub async fn telegram_delete_chat_invite_link(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/revokeChatInviteLink".to_string();
+    let endpoint = "/revokeChatInviteLink".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2515,7 +2515,7 @@ pub async fn telegram_create_answer_callback_query(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/answerCallbackQuery".to_string();
+    let endpoint = "/answerCallbackQuery".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2581,7 +2581,7 @@ pub async fn telegram_create_answer_inline_query(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/answerInlineQuery".to_string();
+    let endpoint = "/answerInlineQuery".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2650,7 +2650,7 @@ pub async fn telegram_create_invoice(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sendInvoice".to_string();
+    let endpoint = "/sendInvoice".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2725,7 +2725,7 @@ pub async fn telegram_create_shipping_query_answer(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/answerShippingQuery".to_string();
+    let endpoint = "/answerShippingQuery".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2791,7 +2791,7 @@ pub async fn telegram_create_pre_checkout_query_answer(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/answerPreCheckoutQuery".to_string();
+    let endpoint = "/answerPreCheckoutQuery".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2854,7 +2854,7 @@ pub async fn telegram_create_my_commands(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/setMyCommands".to_string();
+    let endpoint = "/setMyCommands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2917,7 +2917,7 @@ pub async fn telegram_read_my_commands(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getMyCommands".to_string();
+    let endpoint = "/getMyCommands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2977,7 +2977,7 @@ pub async fn telegram_delete_my_commands(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deleteMyCommands".to_string();
+    let endpoint = "/deleteMyCommands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3037,7 +3037,7 @@ pub async fn telegram_read_my_description(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getMyDescription".to_string();
+    let endpoint = "/getMyDescription".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3094,7 +3094,7 @@ pub async fn telegram_update_my_description(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/setMyDescription".to_string();
+    let endpoint = "/setMyDescription".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3154,7 +3154,7 @@ pub async fn telegram_read_my_name(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getMyName".to_string();
+    let endpoint = "/getMyName".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3211,7 +3211,7 @@ pub async fn telegram_update_my_name(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/setMyName".to_string();
+    let endpoint = "/setMyName".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3271,7 +3271,7 @@ pub async fn telegram_read_sticker_set(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/getStickerSet".to_string();
+    let endpoint = "/getStickerSet".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3328,7 +3328,7 @@ pub async fn telegram_upload_sticker(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/uploadStickerFile".to_string();
+    let endpoint = "/uploadStickerFile".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3391,7 +3391,7 @@ pub async fn telegram_create_sticker_set(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/createNewStickerSet".to_string();
+    let endpoint = "/createNewStickerSet".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3460,7 +3460,7 @@ pub async fn telegram_create_forum_topic(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/createForumTopic".to_string();
+    let endpoint = "/createForumTopic".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3526,7 +3526,7 @@ pub async fn telegram_update_forum_topic(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/editForumTopic".to_string();
+    let endpoint = "/editForumTopic".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3589,7 +3589,7 @@ pub async fn telegram_delete_forum_topic(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deleteForumTopic".to_string();
+    let endpoint = "/deleteForumTopic".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn circleci_list_projects(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/project".to_string();
+    let endpoint = "/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -142,7 +142,7 @@ pub async fn circleci_create_context(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context".to_string();
+    let endpoint = "/context".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -202,7 +202,7 @@ pub async fn circleci_list_contexts(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context".to_string();
+    let endpoint = "/context".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -251,7 +251,7 @@ pub async fn circleci_read_context(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}".to_string();
+    let endpoint = "/context/{context_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -300,7 +300,7 @@ pub async fn circleci_delete_context(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}".to_string();
+    let endpoint = "/context/{context_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -349,7 +349,7 @@ pub async fn circleci_list_environment_variables_from_context(context: ActorCont
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}/environment-variable".to_string();
+    let endpoint = "/context/{context_id}/environment-variable".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -398,7 +398,7 @@ pub async fn circleci_update_context(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}/environment-variable/{env_var_name}".to_string();
+    let endpoint = "/context/{context_id}/environment-variable/{env_var_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -455,7 +455,7 @@ pub async fn circleci_delete_environment_variable_from_context(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}/environment-variable/{env_var_name}".to_string();
+    let endpoint = "/context/{context_id}/environment-variable/{env_var_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -504,7 +504,7 @@ pub async fn circleci_create_context_restriction(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}/restrictions".to_string();
+    let endpoint = "/context/{context_id}/restrictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -564,7 +564,7 @@ pub async fn circleci_read_context_restrictions(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}/restrictions".to_string();
+    let endpoint = "/context/{context_id}/restrictions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -613,7 +613,7 @@ pub async fn circleci_delete_context_restriction(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/context/{context_id}/restrictions/{restriction_id}".to_string();
+    let endpoint = "/context/{context_id}/restrictions/{restriction_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -662,7 +662,7 @@ pub async fn circleci_list_components(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy/components".to_string();
+    let endpoint = "/deploy/components".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -711,7 +711,7 @@ pub async fn circleci_read_component(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy/components/{component_id}".to_string();
+    let endpoint = "/deploy/components/{component_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -760,7 +760,7 @@ pub async fn circleci_list_component_versions(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy/components/{component_id}/versions".to_string();
+    let endpoint = "/deploy/components/{component_id}/versions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -809,7 +809,7 @@ pub async fn circleci_list_environments(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy/environments".to_string();
+    let endpoint = "/deploy/environments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -858,7 +858,7 @@ pub async fn circleci_read_environment(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/deploy/environments/{environment_id}".to_string();
+    let endpoint = "/deploy/environments/{environment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1623,7 +1623,7 @@ pub async fn circleci_read_current_user(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me".to_string();
+    let endpoint = "/me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1672,7 +1672,7 @@ pub async fn circleci_read_collaborations(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/me/collaborations".to_string();
+    let endpoint = "/me/collaborations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1721,7 +1721,7 @@ pub async fn circleci_delete_org_claims(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/org/{orgID}/oidc-custom-claims".to_string();
+    let endpoint = "/org/{orgID}/oidc-custom-claims".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1770,7 +1770,7 @@ pub async fn circleci_read_org_claims(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/org/{orgID}/oidc-custom-claims".to_string();
+    let endpoint = "/org/{orgID}/oidc-custom-claims".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1819,7 +1819,7 @@ pub async fn circleci_update_org_claims(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/org/{orgID}/oidc-custom-claims".to_string();
+    let endpoint = "/org/{orgID}/oidc-custom-claims".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1879,7 +1879,7 @@ pub async fn circleci_delete_project_claims(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/org/{orgID}/project/{projectID}/oidc-custom-claims".to_string();
+    let endpoint = "/org/{orgID}/project/{projectID}/oidc-custom-claims".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1928,7 +1928,7 @@ pub async fn circleci_read_project_claims(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/org/{orgID}/project/{projectID}/oidc-custom-claims".to_string();
+    let endpoint = "/org/{orgID}/project/{projectID}/oidc-custom-claims".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1977,7 +1977,7 @@ pub async fn circleci_update_project_claims(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/org/{orgID}/project/{projectID}/oidc-custom-claims".to_string();
+    let endpoint = "/org/{orgID}/project/{projectID}/oidc-custom-claims".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2037,7 +2037,7 @@ pub async fn circleci_create_organization(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organization".to_string();
+    let endpoint = "/organization".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2434,7 +2434,7 @@ pub async fn circleci_read_organization_groups(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org_id}/groups".to_string();
+    let endpoint = "/organizations/{org_id}/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2483,7 +2483,7 @@ pub async fn circleci_create_organization_group(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org_id}/groups".to_string();
+    let endpoint = "/organizations/{org_id}/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2543,7 +2543,7 @@ pub async fn circleci_read_group(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org_id}/groups/{group_id}".to_string();
+    let endpoint = "/organizations/{org_id}/groups/{group_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2592,7 +2592,7 @@ pub async fn circleci_delete_group(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org_id}/groups/{group_id}".to_string();
+    let endpoint = "/organizations/{org_id}/groups/{group_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2641,7 +2641,7 @@ pub async fn circleci_create_usage_export(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org_id}/usage_export_job".to_string();
+    let endpoint = "/organizations/{org_id}/usage_export_job".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2704,7 +2704,7 @@ pub async fn circleci_read_usage_export(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/organizations/{org_id}/usage_export_job/{usage_export_job_id}".to_string();
+    let endpoint = "/organizations/{org_id}/usage_export_job/{usage_export_job_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2753,7 +2753,7 @@ pub async fn circleci_read_decision_logs(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/decision".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/decision".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2828,7 +2828,7 @@ pub async fn circleci_create_policy_management(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/decision".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/decision".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2888,7 +2888,7 @@ pub async fn circleci_read_decision_settings(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/decision/settings".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/decision/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2937,7 +2937,7 @@ pub async fn circleci_update_policy_management(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/decision/settings".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/decision/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2994,7 +2994,7 @@ pub async fn circleci_read_decision_log(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/decision/{decisionID}".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/decision/{decisionID}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3043,7 +3043,7 @@ pub async fn circleci_read_decision_log_policy_bundle(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/decision/{decisionID}/policy-bundle".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/decision/{decisionID}/policy-bundle".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3092,7 +3092,7 @@ pub async fn circleci_read_policy_bundle(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/policy-bundle".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/policy-bundle".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3141,7 +3141,7 @@ pub async fn circleci_create_policy_bundle(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/policy-bundle".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/policy-bundle".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3206,7 +3206,7 @@ pub async fn circleci_read_policy_document(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/owner/{ownerID}/context/{context}/policy-bundle/{policyName}".to_string();
+    let endpoint = "/owner/{ownerID}/context/{context}/policy-bundle/{policyName}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3255,7 +3255,7 @@ pub async fn circleci_list_pipelines(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pipeline".to_string();
+    let endpoint = "/pipeline".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3318,7 +3318,7 @@ pub async fn circleci_create_pipeline(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pipeline/continue".to_string();
+    let endpoint = "/pipeline/continue".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4686,7 +4686,7 @@ pub async fn circleci_create_project1(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/project/{provider}/{organization}/{project}".to_string();
+    let endpoint = "/project/{provider}/{organization}/{project}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4735,7 +4735,7 @@ pub async fn circleci_update_project_settings(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/project/{provider}/{organization}/{project}/settings".to_string();
+    let endpoint = "/project/{provider}/{organization}/{project}/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4792,7 +4792,7 @@ pub async fn circleci_read_project_settings(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/project/{provider}/{organization}/{project}/settings".to_string();
+    let endpoint = "/project/{provider}/{organization}/{project}/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4841,7 +4841,7 @@ pub async fn circleci_create_pipeline_definition(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4907,7 +4907,7 @@ pub async fn circleci_list_pipeline_definitions(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4956,7 +4956,7 @@ pub async fn circleci_update_pipeline_definition(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5022,7 +5022,7 @@ pub async fn circleci_delete_pipeline_definition(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5071,7 +5071,7 @@ pub async fn circleci_read_pipeline_definition(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5120,7 +5120,7 @@ pub async fn circleci_list_pipeline_definition_triggers(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}/triggers".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}/triggers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5169,7 +5169,7 @@ pub async fn circleci_create_trigger(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}/triggers".to_string();
+    let endpoint = "/projects/{project_id}/pipeline-definitions/{pipeline_definition_id}/triggers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5241,7 +5241,7 @@ pub async fn circleci_create_rollback(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/rollback".to_string();
+    let endpoint = "/projects/{project_id}/rollback".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5316,7 +5316,7 @@ pub async fn circleci_delete_trigger(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/triggers/{trigger_id}".to_string();
+    let endpoint = "/projects/{project_id}/triggers/{trigger_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5365,7 +5365,7 @@ pub async fn circleci_read_trigger(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/triggers/{trigger_id}".to_string();
+    let endpoint = "/projects/{project_id}/triggers/{trigger_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5414,7 +5414,7 @@ pub async fn circleci_update_trigger(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{project_id}/triggers/{trigger_id}".to_string();
+    let endpoint = "/projects/{project_id}/triggers/{trigger_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5714,7 +5714,7 @@ pub async fn circleci_read_webhooks(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhook".to_string();
+    let endpoint = "/webhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5774,7 +5774,7 @@ pub async fn circleci_create_webhook(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhook".to_string();
+    let endpoint = "/webhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

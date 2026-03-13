@@ -159,7 +159,7 @@ pub async fn google_sheets_create_spreadsheet(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/spreadsheets".to_string();
+    let endpoint = "/spreadsheets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

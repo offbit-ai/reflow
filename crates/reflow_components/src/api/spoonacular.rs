@@ -41,7 +41,7 @@ pub async fn spoonacular_search_recipes(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/complexSearch".to_string();
+    let endpoint = "/recipes/complexSearch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -242,7 +242,7 @@ pub async fn spoonacular_list_recipes(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/informationBulk".to_string();
+    let endpoint = "/recipes/informationBulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -368,7 +368,7 @@ pub async fn spoonacular_list_random_recipes(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/random".to_string();
+    let endpoint = "/recipes/random".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -803,7 +803,7 @@ pub async fn spoonacular_analyze_recipe(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/extract".to_string();
+    let endpoint = "/recipes/extract".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -935,7 +935,7 @@ pub async fn spoonacular_analyze_recipe_instructions(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/analyzeInstructions".to_string();
+    let endpoint = "/recipes/analyzeInstructions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1000,7 +1000,7 @@ pub async fn spoonacular_analyze_cuisine(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/cuisine".to_string();
+    let endpoint = "/recipes/cuisine".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1071,7 +1071,7 @@ pub async fn spoonacular_analyze_recipe_search_query(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/queries/analyze".to_string();
+    let endpoint = "/recipes/queries/analyze".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1134,7 +1134,7 @@ pub async fn spoonacular_read_recipe_autocomplete(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/autocomplete".to_string();
+    let endpoint = "/recipes/autocomplete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1197,7 +1197,7 @@ pub async fn spoonacular_analyze_recipe_nutrition_estimate(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/guessNutrition".to_string();
+    let endpoint = "/recipes/guessNutrition".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1257,7 +1257,7 @@ pub async fn spoonacular_analyze_food_image(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/images/analyze".to_string();
+    let endpoint = "/food/images/analyze".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1322,7 +1322,7 @@ pub async fn spoonacular_search_ingredients(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/ingredients/search".to_string();
+    let endpoint = "/food/ingredients/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1559,7 +1559,7 @@ pub async fn spoonacular_read_ingredient_conversion(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/convert".to_string();
+    let endpoint = "/recipes/convert".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1628,7 +1628,7 @@ pub async fn spoonacular_analyze_ingredients(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/parseIngredients".to_string();
+    let endpoint = "/recipes/parseIngredients".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1702,7 +1702,7 @@ pub async fn spoonacular_read_glycemic_load(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/ingredients/glycemicLoad".to_string();
+    let endpoint = "/food/ingredients/glycemicLoad".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1767,7 +1767,7 @@ pub async fn spoonacular_search_ingredient_substitutes(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/ingredients/substitutes".to_string();
+    let endpoint = "/food/ingredients/substitutes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1827,7 +1827,7 @@ pub async fn spoonacular_read_ingredient_autocomplete(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/ingredients/autocomplete".to_string();
+    let endpoint = "/food/ingredients/autocomplete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1899,7 +1899,7 @@ pub async fn spoonacular_search_grocery_products(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/products/search".to_string();
+    let endpoint = "/food/products/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2112,7 +2112,7 @@ pub async fn spoonacular_read_product_autocomplete(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/products/suggest".to_string();
+    let endpoint = "/food/products/suggest".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2175,7 +2175,7 @@ pub async fn spoonacular_analyze_grocery_product(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/products/classify".to_string();
+    let endpoint = "/food/products/classify".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2246,7 +2246,7 @@ pub async fn spoonacular_analyze_grocery_products(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/products/classifyBatch".to_string();
+    let endpoint = "/food/products/classifyBatch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2311,7 +2311,7 @@ pub async fn spoonacular_search_menu_items(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/menuItems/search".to_string();
+    let endpoint = "/food/menuItems/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2464,7 +2464,7 @@ pub async fn spoonacular_read_menu_item_autocomplete(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/menuItems/suggest".to_string();
+    let endpoint = "/food/menuItems/suggest".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2659,7 +2659,7 @@ pub async fn spoonacular_generate_meal_plan(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/mealplanner/generate".to_string();
+    let endpoint = "/mealplanner/generate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3218,7 +3218,7 @@ pub async fn spoonacular_create_user(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/connect".to_string();
+    let endpoint = "/users/connect".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3275,7 +3275,7 @@ pub async fn spoonacular_read_wine_pairing(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/wine/pairing".to_string();
+    let endpoint = "/food/wine/pairing".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3338,7 +3338,7 @@ pub async fn spoonacular_read_dish_pairing(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/wine/dishes".to_string();
+    let endpoint = "/food/wine/dishes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3398,7 +3398,7 @@ pub async fn spoonacular_read_wine_description(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/wine/description".to_string();
+    let endpoint = "/food/wine/description".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3458,7 +3458,7 @@ pub async fn spoonacular_list_wine_recommendations(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/wine/recommendation".to_string();
+    let endpoint = "/food/wine/recommendation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3527,7 +3527,7 @@ pub async fn spoonacular_search_food(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/search".to_string();
+    let endpoint = "/food/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3605,7 +3605,7 @@ pub async fn spoonacular_search_food_videos(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/videos/search".to_string();
+    let endpoint = "/food/videos/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3692,7 +3692,7 @@ pub async fn spoonacular_read_quick_answer(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/quickAnswer".to_string();
+    let endpoint = "/recipes/quickAnswer".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3752,7 +3752,7 @@ pub async fn spoonacular_analyze_food_text(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/detect".to_string();
+    let endpoint = "/food/detect".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3817,7 +3817,7 @@ pub async fn spoonacular_search_site_content(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/site/search".to_string();
+    let endpoint = "/food/site/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3877,7 +3877,7 @@ pub async fn spoonacular_read_random_food_joke(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/jokes/random".to_string();
+    let endpoint = "/food/jokes/random".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3934,7 +3934,7 @@ pub async fn spoonacular_read_random_food_trivia(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/trivia/random".to_string();
+    let endpoint = "/food/trivia/random".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3991,7 +3991,7 @@ pub async fn spoonacular_read_chatbot(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/converse".to_string();
+    let endpoint = "/food/converse".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4054,7 +4054,7 @@ pub async fn spoonacular_list_chatbot_suggestions(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/food/converse/suggest".to_string();
+    let endpoint = "/food/converse/suggest".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4117,7 +4117,7 @@ pub async fn spoonacular_create_recipe_card(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/recipes/visualizeRecipe".to_string();
+    let endpoint = "/recipes/visualizeRecipe".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

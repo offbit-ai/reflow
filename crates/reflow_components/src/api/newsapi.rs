@@ -41,7 +41,7 @@ pub async fn newsapi_search_news(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/everything".to_string();
+    let endpoint = "/everything".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -107,7 +107,7 @@ pub async fn newsapi_list_top_headlines(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/top-headlines".to_string();
+    let endpoint = "/top-headlines".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -170,7 +170,7 @@ pub async fn newsapi_search_articles(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/everything".to_string();
+    let endpoint = "/everything".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -260,7 +260,7 @@ pub async fn newsapi_list_sources(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/top-headlines/sources".to_string();
+    let endpoint = "/top-headlines/sources".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

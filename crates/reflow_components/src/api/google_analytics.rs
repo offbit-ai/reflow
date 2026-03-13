@@ -41,7 +41,7 @@ pub async fn google_analytics_read_reports(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/reports:batchGet".to_string();
+    let endpoint = "/reports:batchGet".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -98,7 +98,7 @@ pub async fn google_analytics_list_accounts(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accounts".to_string();
+    let endpoint = "/management/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -147,7 +147,7 @@ pub async fn google_analytics_generate_report(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/reports:batchGet".to_string();
+    let endpoint = "/reports:batchGet".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -204,7 +204,7 @@ pub async fn google_analytics_read_account(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accounts".to_string();
+    let endpoint = "/management/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -437,7 +437,7 @@ pub async fn google_analytics_list_segments(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/segments".to_string();
+    let endpoint = "/management/segments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -497,7 +497,7 @@ pub async fn google_analytics_analyze_realtime_report(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data/realtime".to_string();
+    let endpoint = "/data/realtime".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -566,7 +566,7 @@ pub async fn google_analytics_analyze_ga_report(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/data/ga".to_string();
+    let endpoint = "/data/ga".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -820,7 +820,7 @@ pub async fn google_analytics_list_account_summaries(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accountSummaries".to_string();
+    let endpoint = "/management/accountSummaries".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

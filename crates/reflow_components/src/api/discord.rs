@@ -137,7 +137,7 @@ pub async fn discord_list_guilds(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/guilds".to_string();
+    let endpoint = "/users/@me/guilds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -317,7 +317,7 @@ pub async fn discord_update_my_application(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/@me".to_string();
+    let endpoint = "/applications/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -413,7 +413,7 @@ pub async fn discord_read_my_application(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/@me".to_string();
+    let endpoint = "/applications/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -462,7 +462,7 @@ pub async fn discord_update_application(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}".to_string();
+    let endpoint = "/applications/{application_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -558,7 +558,7 @@ pub async fn discord_read_application(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}".to_string();
+    let endpoint = "/applications/{application_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -607,7 +607,7 @@ pub async fn discord_read_activity_instances(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/activity-instances/{instance_id}".to_string();
+    let endpoint = "/applications/{application_id}/activity-instances/{instance_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -656,7 +656,7 @@ pub async fn discord_upload_application_attachment(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/attachment".to_string();
+    let endpoint = "/applications/{application_id}/attachment".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -713,7 +713,7 @@ pub async fn discord_update_commands(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/commands".to_string();
+    let endpoint = "/applications/{application_id}/commands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -762,7 +762,7 @@ pub async fn discord_list_application_commands(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/commands".to_string();
+    let endpoint = "/applications/{application_id}/commands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -819,7 +819,7 @@ pub async fn discord_create_application_command(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/commands".to_string();
+    let endpoint = "/applications/{application_id}/commands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -906,7 +906,7 @@ pub async fn discord_read_application_command(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/commands/{command_id}".to_string();
+    let endpoint = "/applications/{application_id}/commands/{command_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -955,7 +955,7 @@ pub async fn discord_delete_application_command(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/commands/{command_id}".to_string();
+    let endpoint = "/applications/{application_id}/commands/{command_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1004,7 +1004,7 @@ pub async fn discord_update_application_command(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/commands/{command_id}".to_string();
+    let endpoint = "/applications/{application_id}/commands/{command_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1088,7 +1088,7 @@ pub async fn discord_list_application_emojis(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/emojis".to_string();
+    let endpoint = "/applications/{application_id}/emojis".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1137,7 +1137,7 @@ pub async fn discord_create_application_emoji(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/emojis".to_string();
+    let endpoint = "/applications/{application_id}/emojis".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1197,7 +1197,7 @@ pub async fn discord_read_application_emoji(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/emojis/{emoji_id}".to_string();
+    let endpoint = "/applications/{application_id}/emojis/{emoji_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1246,7 +1246,7 @@ pub async fn discord_delete_application_emoji(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/emojis/{emoji_id}".to_string();
+    let endpoint = "/applications/{application_id}/emojis/{emoji_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1295,7 +1295,7 @@ pub async fn discord_update_application_emoji(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/emojis/{emoji_id}".to_string();
+    let endpoint = "/applications/{application_id}/emojis/{emoji_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1352,7 +1352,7 @@ pub async fn discord_create_entitlement(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/entitlements".to_string();
+    let endpoint = "/applications/{application_id}/entitlements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1415,7 +1415,7 @@ pub async fn discord_read_entitlements(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/entitlements".to_string();
+    let endpoint = "/applications/{application_id}/entitlements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1496,7 +1496,7 @@ pub async fn discord_read_entitlement(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/entitlements/{entitlement_id}".to_string();
+    let endpoint = "/applications/{application_id}/entitlements/{entitlement_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1545,7 +1545,7 @@ pub async fn discord_delete_entitlement(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/entitlements/{entitlement_id}".to_string();
+    let endpoint = "/applications/{application_id}/entitlements/{entitlement_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1594,7 +1594,7 @@ pub async fn discord_create_consume(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/entitlements/{entitlement_id}/consume".to_string();
+    let endpoint = "/applications/{application_id}/entitlements/{entitlement_id}/consume".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1643,7 +1643,7 @@ pub async fn discord_list_guild_application_commands(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1700,7 +1700,7 @@ pub async fn discord_create_guild_application_command(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1787,7 +1787,7 @@ pub async fn discord_list_guild_application_command_permissions(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/permissions".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/permissions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1836,7 +1836,7 @@ pub async fn discord_delete_guild_application_command(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1885,7 +1885,7 @@ pub async fn discord_read_guild_application_command(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1934,7 +1934,7 @@ pub async fn discord_update_guild_application_command(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2018,7 +2018,7 @@ pub async fn discord_read_guild_application_command_permissions(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2067,7 +2067,7 @@ pub async fn discord_update_permissions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions".to_string();
+    let endpoint = "/applications/{application_id}/guilds/{guild_id}/commands/{command_id}/permissions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2124,7 +2124,7 @@ pub async fn discord_update_application_role_connections_metadata(context: Actor
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/role-connections/metadata".to_string();
+    let endpoint = "/applications/{application_id}/role-connections/metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2173,7 +2173,7 @@ pub async fn discord_read_application_role_connections_metadata(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/applications/{application_id}/role-connections/metadata".to_string();
+    let endpoint = "/applications/{application_id}/role-connections/metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2222,7 +2222,7 @@ pub async fn discord_delete_channel(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}".to_string();
+    let endpoint = "/channels/{channel_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2271,7 +2271,7 @@ pub async fn discord_read_channel(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}".to_string();
+    let endpoint = "/channels/{channel_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2320,7 +2320,7 @@ pub async fn discord_update_channel(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}".to_string();
+    let endpoint = "/channels/{channel_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2369,7 +2369,7 @@ pub async fn discord_create_followers(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/followers".to_string();
+    let endpoint = "/channels/{channel_id}/followers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2426,7 +2426,7 @@ pub async fn discord_list_channel_invites(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/invites".to_string();
+    let endpoint = "/channels/{channel_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2475,7 +2475,7 @@ pub async fn discord_create_channel_invite(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/invites".to_string();
+    let endpoint = "/channels/{channel_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2524,7 +2524,7 @@ pub async fn discord_list_messages(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages".to_string();
+    let endpoint = "/channels/{channel_id}/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2590,7 +2590,7 @@ pub async fn discord_create_message(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages".to_string();
+    let endpoint = "/channels/{channel_id}/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2683,7 +2683,7 @@ pub async fn discord_create_bulk_delete(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/bulk-delete".to_string();
+    let endpoint = "/channels/{channel_id}/messages/bulk-delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2740,7 +2740,7 @@ pub async fn discord_list_pins(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/pins".to_string();
+    let endpoint = "/channels/{channel_id}/messages/pins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2800,7 +2800,7 @@ pub async fn discord_create_pin(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/pins/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/pins/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2849,7 +2849,7 @@ pub async fn discord_delete_pin(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/pins/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/pins/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2898,7 +2898,7 @@ pub async fn discord_read_message(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2947,7 +2947,7 @@ pub async fn discord_delete_message(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2996,7 +2996,7 @@ pub async fn discord_update_message(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3071,7 +3071,7 @@ pub async fn discord_create_crosspost(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/crosspost".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/crosspost".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3120,7 +3120,7 @@ pub async fn discord_delete_all_message_reactions(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/reactions".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/reactions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3169,7 +3169,7 @@ pub async fn discord_delete_all_message_reactions_by_emoji(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3218,7 +3218,7 @@ pub async fn discord_list_message_reactions_by_emoji(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3281,7 +3281,7 @@ pub async fn discord_delete_my_message_reaction(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}/@me".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3326,11 +3326,11 @@ pub async fn discord_delete_my_message_reaction(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn discord_update__me(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn discord_update_me(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}/@me".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3379,7 +3379,7 @@ pub async fn discord_delete_user_message_reaction(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}/{user_id}".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/reactions/{emoji_name}/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3428,7 +3428,7 @@ pub async fn discord_create_thread_from_message(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/messages/{message_id}/threads".to_string();
+    let endpoint = "/channels/{channel_id}/messages/{message_id}/threads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3491,7 +3491,7 @@ pub async fn discord_delete_channel_permission_overwrite(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/permissions/{overwrite_id}".to_string();
+    let endpoint = "/channels/{channel_id}/permissions/{overwrite_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3540,7 +3540,7 @@ pub async fn discord_read_pins(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/pins".to_string();
+    let endpoint = "/channels/{channel_id}/pins".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3589,7 +3589,7 @@ pub async fn discord_delete_pins(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/pins/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/pins/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3638,7 +3638,7 @@ pub async fn discord_update_pins(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/pins/{message_id}".to_string();
+    let endpoint = "/channels/{channel_id}/pins/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3687,7 +3687,7 @@ pub async fn discord_read_answer_voters(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/polls/{message_id}/answers/{answer_id}".to_string();
+    let endpoint = "/channels/{channel_id}/polls/{message_id}/answers/{answer_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3747,7 +3747,7 @@ pub async fn discord_create_expire(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/polls/{message_id}/expire".to_string();
+    let endpoint = "/channels/{channel_id}/polls/{message_id}/expire".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3796,7 +3796,7 @@ pub async fn discord_update_recipients(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/recipients/{user_id}".to_string();
+    let endpoint = "/channels/{channel_id}/recipients/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3856,7 +3856,7 @@ pub async fn discord_delete_group_dm_user(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/recipients/{user_id}".to_string();
+    let endpoint = "/channels/{channel_id}/recipients/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3905,7 +3905,7 @@ pub async fn discord_send_soundboard_sound(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/send-soundboard-sound".to_string();
+    let endpoint = "/channels/{channel_id}/send-soundboard-sound".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3965,7 +3965,7 @@ pub async fn discord_list_thread_members(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/thread-members".to_string();
+    let endpoint = "/channels/{channel_id}/thread-members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4024,11 +4024,11 @@ pub async fn discord_list_thread_members(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn discord_delete__me(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn discord_delete_me(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/thread-members/@me".to_string();
+    let endpoint = "/channels/{channel_id}/thread-members/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4077,7 +4077,7 @@ pub async fn discord_delete_thread_member(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/thread-members/{user_id}".to_string();
+    let endpoint = "/channels/{channel_id}/thread-members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4126,7 +4126,7 @@ pub async fn discord_update_thread_members(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/thread-members/{user_id}".to_string();
+    let endpoint = "/channels/{channel_id}/thread-members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4175,7 +4175,7 @@ pub async fn discord_read_thread_member(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/thread-members/{user_id}".to_string();
+    let endpoint = "/channels/{channel_id}/thread-members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4232,7 +4232,7 @@ pub async fn discord_create_thread(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/threads".to_string();
+    let endpoint = "/channels/{channel_id}/threads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4281,7 +4281,7 @@ pub async fn discord_list_private_archived_threads(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/threads/archived/private".to_string();
+    let endpoint = "/channels/{channel_id}/threads/archived/private".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4341,7 +4341,7 @@ pub async fn discord_list_public_archived_threads(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/threads/archived/public".to_string();
+    let endpoint = "/channels/{channel_id}/threads/archived/public".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4401,7 +4401,7 @@ pub async fn discord_search_search(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/threads/search".to_string();
+    let endpoint = "/channels/{channel_id}/threads/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4488,7 +4488,7 @@ pub async fn discord_create_typing(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/typing".to_string();
+    let endpoint = "/channels/{channel_id}/typing".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4537,7 +4537,7 @@ pub async fn discord_list_my_private_archived_threads(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/users/@me/threads/archived/private".to_string();
+    let endpoint = "/channels/{channel_id}/users/@me/threads/archived/private".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4597,7 +4597,7 @@ pub async fn discord_list_channel_webhooks(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/webhooks".to_string();
+    let endpoint = "/channels/{channel_id}/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4646,7 +4646,7 @@ pub async fn discord_create_webhook(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/{channel_id}/webhooks".to_string();
+    let endpoint = "/channels/{channel_id}/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4706,7 +4706,7 @@ pub async fn discord_read_gateway(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gateway".to_string();
+    let endpoint = "/gateway".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4755,7 +4755,7 @@ pub async fn discord_read_bot_gateway(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gateway/bot".to_string();
+    let endpoint = "/gateway/bot".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4804,7 +4804,7 @@ pub async fn discord_read_guild_template(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/templates/{code}".to_string();
+    let endpoint = "/guilds/templates/{code}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4853,7 +4853,7 @@ pub async fn discord_read_guild(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}".to_string();
+    let endpoint = "/guilds/{guild_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4910,7 +4910,7 @@ pub async fn discord_update_guild(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}".to_string();
+    let endpoint = "/guilds/{guild_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5027,7 +5027,7 @@ pub async fn discord_list_guild_audit_log_entries(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/audit-logs".to_string();
+    let endpoint = "/guilds/{guild_id}/audit-logs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5099,7 +5099,7 @@ pub async fn discord_create_auto_moderation_rule(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/auto-moderation/rules".to_string();
+    let endpoint = "/guilds/{guild_id}/auto-moderation/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5148,7 +5148,7 @@ pub async fn discord_list_auto_moderation_rules(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/auto-moderation/rules".to_string();
+    let endpoint = "/guilds/{guild_id}/auto-moderation/rules".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5197,7 +5197,7 @@ pub async fn discord_delete_auto_moderation_rule(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/auto-moderation/rules/{rule_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/auto-moderation/rules/{rule_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5246,7 +5246,7 @@ pub async fn discord_read_auto_moderation_rule(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/auto-moderation/rules/{rule_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/auto-moderation/rules/{rule_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5295,7 +5295,7 @@ pub async fn discord_update_auto_moderation_rule(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/auto-moderation/rules/{rule_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/auto-moderation/rules/{rule_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5344,7 +5344,7 @@ pub async fn discord_list_guild_bans(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/bans".to_string();
+    let endpoint = "/guilds/{guild_id}/bans".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5407,7 +5407,7 @@ pub async fn discord_delete_bans(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/bans/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/bans/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5456,7 +5456,7 @@ pub async fn discord_read_guild_ban(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/bans/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/bans/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5505,7 +5505,7 @@ pub async fn discord_update_bans(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/bans/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/bans/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5565,7 +5565,7 @@ pub async fn discord_create_bulk_ban(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/bulk-ban".to_string();
+    let endpoint = "/guilds/{guild_id}/bulk-ban".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5625,7 +5625,7 @@ pub async fn discord_update_channels(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/channels".to_string();
+    let endpoint = "/guilds/{guild_id}/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5682,7 +5682,7 @@ pub async fn discord_list_guild_channels(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/channels".to_string();
+    let endpoint = "/guilds/{guild_id}/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5731,7 +5731,7 @@ pub async fn discord_create_guild_emoji(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/emojis".to_string();
+    let endpoint = "/guilds/{guild_id}/emojis".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5794,7 +5794,7 @@ pub async fn discord_list_guild_emojis(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/emojis".to_string();
+    let endpoint = "/guilds/{guild_id}/emojis".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5843,7 +5843,7 @@ pub async fn discord_read_guild_emoji(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/emojis/{emoji_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/emojis/{emoji_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5892,7 +5892,7 @@ pub async fn discord_update_guild_emoji(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/emojis/{emoji_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/emojis/{emoji_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5952,7 +5952,7 @@ pub async fn discord_delete_guild_emoji(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/emojis/{emoji_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/emojis/{emoji_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6001,7 +6001,7 @@ pub async fn discord_list_guild_integrations(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/integrations".to_string();
+    let endpoint = "/guilds/{guild_id}/integrations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6050,7 +6050,7 @@ pub async fn discord_delete_guild_integration(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/integrations/{integration_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/integrations/{integration_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6099,7 +6099,7 @@ pub async fn discord_list_guild_invites(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/invites".to_string();
+    let endpoint = "/guilds/{guild_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6148,7 +6148,7 @@ pub async fn discord_list_guild_members(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members".to_string();
+    let endpoint = "/guilds/{guild_id}/members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6208,7 +6208,7 @@ pub async fn discord_update_my_guild_member(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/@me".to_string();
+    let endpoint = "/guilds/{guild_id}/members/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6274,7 +6274,7 @@ pub async fn discord_search_guild_members(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/search".to_string();
+    let endpoint = "/guilds/{guild_id}/members/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6334,7 +6334,7 @@ pub async fn discord_read_guild_member(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6383,7 +6383,7 @@ pub async fn discord_update_members(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6455,7 +6455,7 @@ pub async fn discord_delete_guild_member(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6504,7 +6504,7 @@ pub async fn discord_update_guild_member(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6579,7 +6579,7 @@ pub async fn discord_update_roles(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6628,7 +6628,7 @@ pub async fn discord_delete_guild_member_role(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6677,7 +6677,7 @@ pub async fn discord_read_guild_new_member_welcome(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/new-member-welcome".to_string();
+    let endpoint = "/guilds/{guild_id}/new-member-welcome".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6726,7 +6726,7 @@ pub async fn discord_read_guilds_onboarding(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/onboarding".to_string();
+    let endpoint = "/guilds/{guild_id}/onboarding".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6775,7 +6775,7 @@ pub async fn discord_update_guilds_onboarding(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/onboarding".to_string();
+    let endpoint = "/guilds/{guild_id}/onboarding".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6841,7 +6841,7 @@ pub async fn discord_read_guild_preview(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/preview".to_string();
+    let endpoint = "/guilds/{guild_id}/preview".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6890,7 +6890,7 @@ pub async fn discord_read_prune(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/prune".to_string();
+    let endpoint = "/guilds/{guild_id}/prune".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6950,7 +6950,7 @@ pub async fn discord_create_prune(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/prune".to_string();
+    let endpoint = "/guilds/{guild_id}/prune".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7013,7 +7013,7 @@ pub async fn discord_list_guild_voice_regions(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/regions".to_string();
+    let endpoint = "/guilds/{guild_id}/regions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7062,7 +7062,7 @@ pub async fn discord_create_guild_role(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/roles".to_string();
+    let endpoint = "/guilds/{guild_id}/roles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7140,7 +7140,7 @@ pub async fn discord_list_guild_roles(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/roles".to_string();
+    let endpoint = "/guilds/{guild_id}/roles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7189,7 +7189,7 @@ pub async fn discord_read_member_counts(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/roles/member-counts".to_string();
+    let endpoint = "/guilds/{guild_id}/roles/member-counts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7238,7 +7238,7 @@ pub async fn discord_delete_guild_role(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/roles/{role_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/roles/{role_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7287,7 +7287,7 @@ pub async fn discord_update_guild_role(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/roles/{role_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/roles/{role_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7365,7 +7365,7 @@ pub async fn discord_read_guild_role(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/roles/{role_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/roles/{role_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7414,7 +7414,7 @@ pub async fn discord_create_guild_scheduled_event(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/scheduled-events".to_string();
+    let endpoint = "/guilds/{guild_id}/scheduled-events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7463,7 +7463,7 @@ pub async fn discord_list_guild_scheduled_events(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/scheduled-events".to_string();
+    let endpoint = "/guilds/{guild_id}/scheduled-events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7520,7 +7520,7 @@ pub async fn discord_update_guild_scheduled_event(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7569,7 +7569,7 @@ pub async fn discord_delete_guild_scheduled_event(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7618,7 +7618,7 @@ pub async fn discord_read_guild_scheduled_event(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7675,7 +7675,7 @@ pub async fn discord_list_guild_scheduled_event_users(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users".to_string();
+    let endpoint = "/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7741,7 +7741,7 @@ pub async fn discord_create_guild_soundboard_sound(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/soundboard-sounds".to_string();
+    let endpoint = "/guilds/{guild_id}/soundboard-sounds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7810,7 +7810,7 @@ pub async fn discord_list_guild_soundboard_sounds(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/soundboard-sounds".to_string();
+    let endpoint = "/guilds/{guild_id}/soundboard-sounds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7859,7 +7859,7 @@ pub async fn discord_delete_guild_soundboard_sound(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/soundboard-sounds/{sound_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/soundboard-sounds/{sound_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7908,7 +7908,7 @@ pub async fn discord_read_guild_soundboard_sound(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/soundboard-sounds/{sound_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/soundboard-sounds/{sound_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7957,7 +7957,7 @@ pub async fn discord_update_guild_soundboard_sound(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/soundboard-sounds/{sound_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/soundboard-sounds/{sound_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8023,7 +8023,7 @@ pub async fn discord_list_guild_stickers(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/stickers".to_string();
+    let endpoint = "/guilds/{guild_id}/stickers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8072,7 +8072,7 @@ pub async fn discord_create_guild_sticker(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/stickers".to_string();
+    let endpoint = "/guilds/{guild_id}/stickers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8138,7 +8138,7 @@ pub async fn discord_read_guild_sticker(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/stickers/{sticker_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/stickers/{sticker_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8187,7 +8187,7 @@ pub async fn discord_delete_guild_sticker(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/stickers/{sticker_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/stickers/{sticker_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8236,7 +8236,7 @@ pub async fn discord_update_guild_sticker(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/stickers/{sticker_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/stickers/{sticker_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8299,7 +8299,7 @@ pub async fn discord_list_guild_templates(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/templates".to_string();
+    let endpoint = "/guilds/{guild_id}/templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8348,7 +8348,7 @@ pub async fn discord_create_guild_template(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/templates".to_string();
+    let endpoint = "/guilds/{guild_id}/templates".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8408,7 +8408,7 @@ pub async fn discord_update_templates(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/templates/{code}".to_string();
+    let endpoint = "/guilds/{guild_id}/templates/{code}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8457,7 +8457,7 @@ pub async fn discord_delete_guild_template(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/templates/{code}".to_string();
+    let endpoint = "/guilds/{guild_id}/templates/{code}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8506,7 +8506,7 @@ pub async fn discord_update_guild_template(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/templates/{code}".to_string();
+    let endpoint = "/guilds/{guild_id}/templates/{code}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8566,7 +8566,7 @@ pub async fn discord_read_active_guild_threads(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/threads/active".to_string();
+    let endpoint = "/guilds/{guild_id}/threads/active".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8615,7 +8615,7 @@ pub async fn discord_read_guild_vanity_url(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/vanity-url".to_string();
+    let endpoint = "/guilds/{guild_id}/vanity-url".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8664,7 +8664,7 @@ pub async fn discord_update_self_voice_state(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/voice-states/@me".to_string();
+    let endpoint = "/guilds/{guild_id}/voice-states/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8727,7 +8727,7 @@ pub async fn discord_read_self_voice_state(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/voice-states/@me".to_string();
+    let endpoint = "/guilds/{guild_id}/voice-states/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8776,7 +8776,7 @@ pub async fn discord_read_voice_state(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/voice-states/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/voice-states/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8825,7 +8825,7 @@ pub async fn discord_update_voice_state(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/voice-states/{user_id}".to_string();
+    let endpoint = "/guilds/{guild_id}/voice-states/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8885,7 +8885,7 @@ pub async fn discord_read_guild_webhooks(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/webhooks".to_string();
+    let endpoint = "/guilds/{guild_id}/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8934,7 +8934,7 @@ pub async fn discord_read_guild_welcome_screen(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/welcome-screen".to_string();
+    let endpoint = "/guilds/{guild_id}/welcome-screen".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8983,7 +8983,7 @@ pub async fn discord_update_guild_welcome_screen(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/welcome-screen".to_string();
+    let endpoint = "/guilds/{guild_id}/welcome-screen".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9046,7 +9046,7 @@ pub async fn discord_read_guild_widget_settings(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/widget".to_string();
+    let endpoint = "/guilds/{guild_id}/widget".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9095,7 +9095,7 @@ pub async fn discord_update_guild_widget_settings(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/widget".to_string();
+    let endpoint = "/guilds/{guild_id}/widget".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9155,7 +9155,7 @@ pub async fn discord_read_guild_widget(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/widget.json".to_string();
+    let endpoint = "/guilds/{guild_id}/widget.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9204,7 +9204,7 @@ pub async fn discord_read_guild_widget_png(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/guilds/{guild_id}/widget.png".to_string();
+    let endpoint = "/guilds/{guild_id}/widget.png".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9261,7 +9261,7 @@ pub async fn discord_create_interaction_response(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/interactions/{interaction_id}/{interaction_token}/callback".to_string();
+    let endpoint = "/interactions/{interaction_id}/{interaction_token}/callback".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9318,7 +9318,7 @@ pub async fn discord_delete_invites(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invites/{code}".to_string();
+    let endpoint = "/invites/{code}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9367,7 +9367,7 @@ pub async fn discord_read_invites(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invites/{code}".to_string();
+    let endpoint = "/invites/{code}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9427,7 +9427,7 @@ pub async fn discord_read_invite_target_users(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invites/{code}/target-users".to_string();
+    let endpoint = "/invites/{code}/target-users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9476,7 +9476,7 @@ pub async fn discord_update_invite_target_users(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invites/{code}/target-users".to_string();
+    let endpoint = "/invites/{code}/target-users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9533,7 +9533,7 @@ pub async fn discord_read_invite_target_users_job_status(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/invites/{code}/target-users/job-status".to_string();
+    let endpoint = "/invites/{code}/target-users/job-status".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9582,7 +9582,7 @@ pub async fn discord_create_or_join_lobby(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies".to_string();
+    let endpoint = "/lobbies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9651,7 +9651,7 @@ pub async fn discord_create_lobby(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies".to_string();
+    let endpoint = "/lobbies".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9720,7 +9720,7 @@ pub async fn discord_read_lobby(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}".to_string();
+    let endpoint = "/lobbies/{lobby_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9769,7 +9769,7 @@ pub async fn discord_update_lobbies(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}".to_string();
+    let endpoint = "/lobbies/{lobby_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9838,7 +9838,7 @@ pub async fn discord_update_channel_linking(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/channel-linking".to_string();
+    let endpoint = "/lobbies/{lobby_id}/channel-linking".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9895,7 +9895,7 @@ pub async fn discord_create_linked_lobby_guild_invite_for_self(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/members/@me/invites".to_string();
+    let endpoint = "/lobbies/{lobby_id}/members/@me/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9944,7 +9944,7 @@ pub async fn discord_create_bulk(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/members/bulk".to_string();
+    let endpoint = "/lobbies/{lobby_id}/members/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9993,7 +9993,7 @@ pub async fn discord_delete_lobby_member(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/members/{user_id}".to_string();
+    let endpoint = "/lobbies/{lobby_id}/members/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10042,7 +10042,7 @@ pub async fn discord_create_linked_lobby_guild_invite_for_user(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/members/{user_id}/invites".to_string();
+    let endpoint = "/lobbies/{lobby_id}/members/{user_id}/invites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10091,7 +10091,7 @@ pub async fn discord_read_lobby_messages(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/messages".to_string();
+    let endpoint = "/lobbies/{lobby_id}/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10148,7 +10148,7 @@ pub async fn discord_create_lobby_message(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/messages".to_string();
+    let endpoint = "/lobbies/{lobby_id}/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10241,7 +10241,7 @@ pub async fn discord_update_lobby_message_external_moderation_metadata(context: 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/lobbies/{lobby_id}/messages/{message_id}/moderation-metadata".to_string();
+    let endpoint = "/lobbies/{lobby_id}/messages/{message_id}/moderation-metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10298,7 +10298,7 @@ pub async fn discord_read_my_oauth2_authorization(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth2/@me".to_string();
+    let endpoint = "/oauth2/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10347,7 +10347,7 @@ pub async fn discord_read_my_oauth2_application(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth2/applications/@me".to_string();
+    let endpoint = "/oauth2/applications/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10396,7 +10396,7 @@ pub async fn discord_read_public_keys(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth2/keys".to_string();
+    let endpoint = "/oauth2/keys".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10445,7 +10445,7 @@ pub async fn discord_read_openid_connect_userinfo(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth2/userinfo".to_string();
+    let endpoint = "/oauth2/userinfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10494,7 +10494,7 @@ pub async fn discord_update_user_message_external_moderation_metadata(context: A
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/partner-sdk/dms/{user_id_1}/{user_id_2}/messages/{message_id}/moderation-metadata".to_string();
+    let endpoint = "/partner-sdk/dms/{user_id_1}/{user_id_2}/messages/{message_id}/moderation-metadata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10551,7 +10551,7 @@ pub async fn discord_create_unmerge(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/partner-sdk/provisional-accounts/unmerge".to_string();
+    let endpoint = "/partner-sdk/provisional-accounts/unmerge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10617,7 +10617,7 @@ pub async fn discord_create_bot(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/partner-sdk/provisional-accounts/unmerge/bot".to_string();
+    let endpoint = "/partner-sdk/provisional-accounts/unmerge/bot".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10674,7 +10674,7 @@ pub async fn discord_create_token(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/partner-sdk/token".to_string();
+    let endpoint = "/partner-sdk/token".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10740,7 +10740,7 @@ pub async fn discord_read_soundboard_default_sounds(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/soundboard-default-sounds".to_string();
+    let endpoint = "/soundboard-default-sounds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10789,7 +10789,7 @@ pub async fn discord_create_stage_instance(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stage-instances".to_string();
+    let endpoint = "/stage-instances".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10858,7 +10858,7 @@ pub async fn discord_read_stage_instance(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stage-instances/{channel_id}".to_string();
+    let endpoint = "/stage-instances/{channel_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10907,7 +10907,7 @@ pub async fn discord_update_stage_instance(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stage-instances/{channel_id}".to_string();
+    let endpoint = "/stage-instances/{channel_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10967,7 +10967,7 @@ pub async fn discord_delete_stage_instance(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stage-instances/{channel_id}".to_string();
+    let endpoint = "/stage-instances/{channel_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11016,7 +11016,7 @@ pub async fn discord_list_sticker_packs(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sticker-packs".to_string();
+    let endpoint = "/sticker-packs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11065,7 +11065,7 @@ pub async fn discord_read_sticker_pack(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sticker-packs/{pack_id}".to_string();
+    let endpoint = "/sticker-packs/{pack_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11114,7 +11114,7 @@ pub async fn discord_read_sticker(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stickers/{sticker_id}".to_string();
+    let endpoint = "/stickers/{sticker_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11163,7 +11163,7 @@ pub async fn discord_update_my_user(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me".to_string();
+    let endpoint = "/users/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11226,7 +11226,7 @@ pub async fn discord_read_my_user(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me".to_string();
+    let endpoint = "/users/@me".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11275,7 +11275,7 @@ pub async fn discord_read_current_user_application_entitlements(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/applications/{application_id}/entitlements".to_string();
+    let endpoint = "/users/@me/applications/{application_id}/entitlements".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11335,7 +11335,7 @@ pub async fn discord_update_application_user_role_connection(context: ActorConte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/applications/{application_id}/role-connection".to_string();
+    let endpoint = "/users/@me/applications/{application_id}/role-connection".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11398,7 +11398,7 @@ pub async fn discord_delete_application_user_role_connection(context: ActorConte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/applications/{application_id}/role-connection".to_string();
+    let endpoint = "/users/@me/applications/{application_id}/role-connection".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11447,7 +11447,7 @@ pub async fn discord_read_application_user_role_connection(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/applications/{application_id}/role-connection".to_string();
+    let endpoint = "/users/@me/applications/{application_id}/role-connection".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11496,7 +11496,7 @@ pub async fn discord_create_dm(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/channels".to_string();
+    let endpoint = "/users/@me/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11559,7 +11559,7 @@ pub async fn discord_list_my_connections(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/connections".to_string();
+    let endpoint = "/users/@me/connections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11608,7 +11608,7 @@ pub async fn discord_delete_guilds(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/guilds/{guild_id}".to_string();
+    let endpoint = "/users/@me/guilds/{guild_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11657,7 +11657,7 @@ pub async fn discord_read_my_guild_member(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/@me/guilds/{guild_id}/member".to_string();
+    let endpoint = "/users/@me/guilds/{guild_id}/member".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11706,7 +11706,7 @@ pub async fn discord_read_user(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users/{user_id}".to_string();
+    let endpoint = "/users/{user_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11755,7 +11755,7 @@ pub async fn discord_list_voice_regions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/voice/regions".to_string();
+    let endpoint = "/voice/regions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11804,7 +11804,7 @@ pub async fn discord_read_webhook(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}".to_string();
+    let endpoint = "/webhooks/{webhook_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11853,7 +11853,7 @@ pub async fn discord_delete_webhook(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}".to_string();
+    let endpoint = "/webhooks/{webhook_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11902,7 +11902,7 @@ pub async fn discord_update_webhook(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}".to_string();
+    let endpoint = "/webhooks/{webhook_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11965,7 +11965,7 @@ pub async fn discord_delete_webhook_by_token(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12014,7 +12014,7 @@ pub async fn discord_read_webhook_by_token(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12063,7 +12063,7 @@ pub async fn discord_create_webhooks(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12126,7 +12126,7 @@ pub async fn discord_update_webhook_by_token(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12186,7 +12186,7 @@ pub async fn discord_create_github(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/github".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/github".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12311,7 +12311,7 @@ pub async fn discord_delete_original_webhook_message(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/@original".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/@original".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12368,7 +12368,7 @@ pub async fn discord_read_original_webhook_message(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/@original".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/@original".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12425,7 +12425,7 @@ pub async fn discord_update_original_webhook_message(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/@original".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/@original".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12511,7 +12511,7 @@ pub async fn discord_read_webhook_message(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12568,7 +12568,7 @@ pub async fn discord_delete_webhook_message(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12625,7 +12625,7 @@ pub async fn discord_update_webhook_message(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12711,7 +12711,7 @@ pub async fn discord_create_slack(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/webhooks/{webhook_id}/{webhook_token}/slack".to_string();
+    let endpoint = "/webhooks/{webhook_id}/{webhook_token}/slack".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

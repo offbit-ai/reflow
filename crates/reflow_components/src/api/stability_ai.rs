@@ -101,7 +101,7 @@ pub async fn stability_ai_list_engines(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/engines/list".to_string();
+    let endpoint = "/engines/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -150,7 +150,7 @@ pub async fn stability_ai_create_v1alpha_generation(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/generation/{engine_id}/image-to-image".to_string();
+    let endpoint = "/generation/{engine_id}/image-to-image".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -210,7 +210,7 @@ pub async fn stability_ai_list_v1alpha_user(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/user/account".to_string();
+    let endpoint = "/user/account".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

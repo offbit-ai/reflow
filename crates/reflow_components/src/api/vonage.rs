@@ -41,7 +41,7 @@ pub async fn vonage_send_sms(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/sms/json".to_string();
+    let endpoint = "/sms/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn vonage_read_inbound_sms(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/messages".to_string();
+    let endpoint = "/search/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -176,7 +176,7 @@ pub async fn vonage_create_call(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/calls".to_string();
+    let endpoint = "/v1/calls".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -260,7 +260,7 @@ pub async fn vonage_list_calls(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/calls".to_string();
+    let endpoint = "/v1/calls".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -807,7 +807,7 @@ pub async fn vonage_send_message(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/messages".to_string();
+    let endpoint = "/v1/messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -897,7 +897,7 @@ pub async fn vonage_create_verify_request(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/verify/json".to_string();
+    let endpoint = "/verify/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -978,7 +978,7 @@ pub async fn vonage_create_verify_check(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/verify/check/json".to_string();
+    let endpoint = "/verify/check/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1044,7 +1044,7 @@ pub async fn vonage_delete_verify_request(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/verify/control/json".to_string();
+    let endpoint = "/verify/control/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1110,7 +1110,7 @@ pub async fn vonage_read_verify_request(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/verify/search/json".to_string();
+    let endpoint = "/verify/search/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1176,7 +1176,7 @@ pub async fn vonage_read_number_insight(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ni/basic/json".to_string();
+    let endpoint = "/ni/basic/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1242,7 +1242,7 @@ pub async fn vonage_read_number_insight_standard(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ni/standard/json".to_string();
+    let endpoint = "/ni/standard/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1311,7 +1311,7 @@ pub async fn vonage_read_number_insight_advanced(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/ni/advanced/json".to_string();
+    let endpoint = "/ni/advanced/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1383,7 +1383,7 @@ pub async fn vonage_list_numbers(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/account/numbers".to_string();
+    let endpoint = "/account/numbers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1455,7 +1455,7 @@ pub async fn vonage_search_available_numbers(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/number/search".to_string();
+    let endpoint = "/number/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1536,7 +1536,7 @@ pub async fn vonage_create_number(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/number/buy".to_string();
+    let endpoint = "/number/buy".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1602,7 +1602,7 @@ pub async fn vonage_delete_number(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/number/cancel".to_string();
+    let endpoint = "/number/cancel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1668,7 +1668,7 @@ pub async fn vonage_update_number(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/number/update".to_string();
+    let endpoint = "/number/update".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1746,7 +1746,7 @@ pub async fn vonage_read_account(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/account/get-balance".to_string();
+    let endpoint = "/account/get-balance".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1806,7 +1806,7 @@ pub async fn vonage_read_account_settings(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/account/settings".to_string();
+    let endpoint = "/account/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1866,7 +1866,7 @@ pub async fn vonage_update_account_settings(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/account/settings".to_string();
+    let endpoint = "/account/settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1932,7 +1932,7 @@ pub async fn vonage_create_application(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/applications".to_string();
+    let endpoint = "/v2/applications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1992,7 +1992,7 @@ pub async fn vonage_list_applications(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/applications".to_string();
+    let endpoint = "/v2/applications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2219,7 +2219,7 @@ pub async fn vonage_create_conversation(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/conversations".to_string();
+    let endpoint = "/v1/conversations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2285,7 +2285,7 @@ pub async fn vonage_list_conversations(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/conversations".to_string();
+    let endpoint = "/v1/conversations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2458,7 +2458,7 @@ pub async fn vonage_create_user(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/users".to_string();
+    let endpoint = "/v1/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2524,7 +2524,7 @@ pub async fn vonage_list_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v1/users".to_string();
+    let endpoint = "/v1/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

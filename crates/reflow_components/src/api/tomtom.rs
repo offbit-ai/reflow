@@ -416,7 +416,7 @@ pub async fn tomtom_read_traffic_incidents(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/traffic/services/5/incidentDetails".to_string();
+    let endpoint = "/traffic/services/5/incidentDetails".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -572,7 +572,7 @@ pub async fn tomtom_search_addresses(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search/2/structuredGeocode.json".to_string();
+    let endpoint = "/search/2/structuredGeocode.json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

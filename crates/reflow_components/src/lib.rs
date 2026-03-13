@@ -4,6 +4,7 @@
 //! Script execution (JavaScript, Python, SQL, etc.) is handled by dynASB
 //! via ComponentSpec::Script — this crate only contains native actors.
 
+#[allow(clippy::all)]
 pub mod api;
 pub mod flow_control;
 pub mod integration;
@@ -23,3 +24,6 @@ pub use reflow_actor::{
 
 // Re-export registry functions
 pub use registry::{get_actor_for_template, get_template_mapping};
+
+// Re-export API template metadata for ZIP registration
+pub use api::api_registry::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};

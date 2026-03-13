@@ -276,7 +276,7 @@ pub async fn hugging_face_search_collections(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/collections".to_string();
+    let endpoint = "/api/collections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -351,7 +351,7 @@ pub async fn hugging_face_create_collections(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/collections".to_string();
+    let endpoint = "/api/collections".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -608,7 +608,7 @@ pub async fn hugging_face_list_papers(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/daily_papers".to_string();
+    let endpoint = "/api/daily_papers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -683,7 +683,7 @@ pub async fn hugging_face_list_datasets(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/datasets-tags-by-type".to_string();
+    let endpoint = "/api/datasets-tags-by-type".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -932,7 +932,7 @@ pub async fn hugging_face_create_notifications(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/discussions/mark-as-read".to_string();
+    let endpoint = "/api/discussions/mark-as-read".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1027,7 +1027,7 @@ pub async fn hugging_face_list_docs(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/docs".to_string();
+    let endpoint = "/api/docs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1076,7 +1076,7 @@ pub async fn hugging_face_search_docs(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/docs/search".to_string();
+    let endpoint = "/api/docs/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1217,7 +1217,7 @@ pub async fn hugging_face_list_jobs(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/jobs/hardware".to_string();
+    let endpoint = "/api/jobs/hardware".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1471,7 +1471,7 @@ pub async fn hugging_face_list_models(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/models-tags-by-type".to_string();
+    let endpoint = "/api/models-tags-by-type".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1726,7 +1726,7 @@ pub async fn hugging_face_list_notifications(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/notifications".to_string();
+    let endpoint = "/api/notifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1807,7 +1807,7 @@ pub async fn hugging_face_delete_notifications(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/notifications".to_string();
+    let endpoint = "/api/notifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2463,7 +2463,7 @@ pub async fn hugging_face_create_papers(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/papers/index".to_string();
+    let endpoint = "/api/papers/index".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2520,7 +2520,7 @@ pub async fn hugging_face_search_papers(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/papers/search".to_string();
+    let endpoint = "/api/papers/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2635,7 +2635,7 @@ pub async fn hugging_face_search_repo_search(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/quicksearch".to_string();
+    let endpoint = "/api/quicksearch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2737,7 +2737,7 @@ pub async fn hugging_face_create_repo_search(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/quicksearch".to_string();
+    let endpoint = "/api/quicksearch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2892,7 +2892,7 @@ pub async fn hugging_face_create_repos(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/repos/create".to_string();
+    let endpoint = "/api/repos/create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2941,7 +2941,7 @@ pub async fn hugging_face_move_repos(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/repos/move".to_string();
+    let endpoint = "/api/repos/move".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3114,7 +3114,7 @@ pub async fn hugging_face_list_users(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/settings/billing/usage".to_string();
+    let endpoint = "/api/settings/billing/usage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3171,7 +3171,7 @@ pub async fn hugging_face_update_notifications(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/settings/notifications".to_string();
+    let endpoint = "/api/settings/notifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3231,7 +3231,7 @@ pub async fn hugging_face_watch_notifications(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/settings/watch".to_string();
+    let endpoint = "/api/settings/watch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3291,7 +3291,7 @@ pub async fn hugging_face_list_webhooks(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/settings/webhooks".to_string();
+    let endpoint = "/api/settings/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3340,7 +3340,7 @@ pub async fn hugging_face_create_webhooks(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/settings/webhooks".to_string();
+    let endpoint = "/api/settings/webhooks".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3516,7 +3516,7 @@ pub async fn hugging_face_list_spaces(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/spaces/hardware".to_string();
+    let endpoint = "/api/spaces/hardware".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3757,7 +3757,7 @@ pub async fn hugging_face_list_auth(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/whoami-v2".to_string();
+    let endpoint = "/api/whoami-v2".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4228,7 +4228,7 @@ pub async fn hugging_face_create_oauth(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/device".to_string();
+    let endpoint = "/oauth/device".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4288,7 +4288,7 @@ pub async fn hugging_face_list_oauth(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth/userinfo".to_string();
+    let endpoint = "/oauth/userinfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

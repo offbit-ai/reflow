@@ -41,7 +41,7 @@ pub async fn giphy_search_gifs(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gifs/search".to_string();
+    let endpoint = "/gifs/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -156,7 +156,7 @@ pub async fn giphy_list_gifs(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gifs/trending".to_string();
+    let endpoint = "/gifs/trending".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -237,7 +237,7 @@ pub async fn giphy_list_stickers(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stickers/trending".to_string();
+    let endpoint = "/stickers/trending".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -318,7 +318,7 @@ pub async fn giphy_search_stickers(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stickers/search".to_string();
+    let endpoint = "/stickers/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -405,7 +405,7 @@ pub async fn giphy_read_sticker(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stickers/translate".to_string();
+    let endpoint = "/stickers/translate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -477,7 +477,7 @@ pub async fn giphy_read_random_id(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/randomid".to_string();
+    let endpoint = "/randomid".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -534,7 +534,7 @@ pub async fn giphy_upload_gif(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gifs".to_string();
+    let endpoint = "/gifs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -612,7 +612,7 @@ pub async fn giphy_list_gif_categories(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gifs/categories".to_string();
+    let endpoint = "/gifs/categories".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -669,7 +669,7 @@ pub async fn giphy_search_gif_tags(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/gifs/search/tags".to_string();
+    let endpoint = "/gifs/search/tags".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -735,7 +735,7 @@ pub async fn giphy_search_channels(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/channels/search".to_string();
+    let endpoint = "/channels/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -861,7 +861,7 @@ pub async fn giphy_list_trending_searches(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/trending/searches".to_string();
+    let endpoint = "/trending/searches".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -918,7 +918,7 @@ pub async fn giphy_list_emojis(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/emoji".to_string();
+    let endpoint = "/emoji".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn google_maps_search_places(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/place/textsearch/json".to_string();
+    let endpoint = "/place/textsearch/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn google_maps_geocode_address(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geocode/json".to_string();
+    let endpoint = "/geocode/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn google_maps_read_place(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/place/details/json".to_string();
+    let endpoint = "/place/details/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -227,7 +227,7 @@ pub async fn google_maps_search_geocode(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geocode/json".to_string();
+    let endpoint = "/geocode/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -302,7 +302,7 @@ pub async fn google_maps_read_directions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/directions/json".to_string();
+    let endpoint = "/directions/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -386,7 +386,7 @@ pub async fn google_maps_read_distance_matrix(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/distancematrix/json".to_string();
+    let endpoint = "/distancematrix/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -464,7 +464,7 @@ pub async fn google_maps_read_elevation(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/elevation/json".to_string();
+    let endpoint = "/elevation/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -530,7 +530,7 @@ pub async fn google_maps_read_timezone(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/timezone/json".to_string();
+    let endpoint = "/timezone/json".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -596,7 +596,7 @@ pub async fn google_maps_read_place_photo(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/place/photo".to_string();
+    let endpoint = "/place/photo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -662,7 +662,7 @@ pub async fn google_maps_read_roads(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/roads/v1/snapToRoads".to_string();
+    let endpoint = "/roads/v1/snapToRoads".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -725,7 +725,7 @@ pub async fn google_maps_read_speed_limits(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/roads/v1/speedLimits".to_string();
+    let endpoint = "/roads/v1/speedLimits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -791,7 +791,7 @@ pub async fn google_maps_read_geolocation(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/geolocation/v1/geolocate".to_string();
+    let endpoint = "/geolocation/v1/geolocate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -41,7 +41,7 @@ pub async fn slack_send_message(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat.postMessage".to_string();
+    let endpoint = "/chat.postMessage".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -104,7 +104,7 @@ pub async fn slack_list_channels(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations.list".to_string();
+    let endpoint = "/conversations.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -164,7 +164,7 @@ pub async fn slack_upload_file(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files.upload".to_string();
+    let endpoint = "/files.upload".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -213,7 +213,7 @@ pub async fn slack_create_admin_apps(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.apps.approve".to_string();
+    let endpoint = "/admin.apps.approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -265,7 +265,7 @@ pub async fn slack_list_admin_apps_approved(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.apps.approved.list".to_string();
+    let endpoint = "/admin.apps.approved.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -334,7 +334,7 @@ pub async fn slack_list_admin_apps_requests(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.apps.requests.list".to_string();
+    let endpoint = "/admin.apps.requests.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -400,7 +400,7 @@ pub async fn slack_list_admin_apps_restricted(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.apps.restricted.list".to_string();
+    let endpoint = "/admin.apps.restricted.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -469,7 +469,7 @@ pub async fn slack_create_admin_conversations(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.archive".to_string();
+    let endpoint = "/admin.conversations.archive".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -521,7 +521,7 @@ pub async fn slack_list_admin_conversations_ekm(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.ekm.listOriginalConnectedChannelInfo".to_string();
+    let endpoint = "/admin.conversations.ekm.listOriginalConnectedChannelInfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -590,7 +590,7 @@ pub async fn slack_list_admin_conversations(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.getConversationPrefs".to_string();
+    let endpoint = "/admin.conversations.getConversationPrefs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -650,7 +650,7 @@ pub async fn slack_create_admin_conversations_restrict_access_add_group(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.restrictAccess.addGroup".to_string();
+    let endpoint = "/admin.conversations.restrictAccess.addGroup".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -699,7 +699,7 @@ pub async fn slack_list_admin_conversations_restrict_access_list_groups(context:
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.restrictAccess.listGroups".to_string();
+    let endpoint = "/admin.conversations.restrictAccess.listGroups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -762,7 +762,7 @@ pub async fn slack_create_admin_conversations_restrict_access_remove_group(conte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.restrictAccess.removeGroup".to_string();
+    let endpoint = "/admin.conversations.restrictAccess.removeGroup".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -811,7 +811,7 @@ pub async fn slack_search_admin_conversations(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.conversations.search".to_string();
+    let endpoint = "/admin.conversations.search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -889,7 +889,7 @@ pub async fn slack_create_admin_emoji(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.emoji.add".to_string();
+    let endpoint = "/admin.emoji.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -938,7 +938,7 @@ pub async fn slack_list_admin_emoji(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.emoji.list".to_string();
+    let endpoint = "/admin.emoji.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1001,7 +1001,7 @@ pub async fn slack_create_admin_invite_requests(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.inviteRequests.approve".to_string();
+    let endpoint = "/admin.inviteRequests.approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1053,7 +1053,7 @@ pub async fn slack_list_admin_invite_requests_approved_list(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.inviteRequests.approved.list".to_string();
+    let endpoint = "/admin.inviteRequests.approved.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1119,7 +1119,7 @@ pub async fn slack_list_admin_invite_requests_denied(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.inviteRequests.denied.list".to_string();
+    let endpoint = "/admin.inviteRequests.denied.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1185,7 +1185,7 @@ pub async fn slack_list_admin_invite_requests(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.inviteRequests.list".to_string();
+    let endpoint = "/admin.inviteRequests.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1251,7 +1251,7 @@ pub async fn slack_list_admin_teams_admins(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.teams.admins.list".to_string();
+    let endpoint = "/admin.teams.admins.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1317,7 +1317,7 @@ pub async fn slack_create_admin_teams(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.teams.create".to_string();
+    let endpoint = "/admin.teams.create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1369,7 +1369,7 @@ pub async fn slack_list_admin_teams(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.teams.list".to_string();
+    let endpoint = "/admin.teams.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1432,7 +1432,7 @@ pub async fn slack_list_admin_teams_owners(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.teams.owners.list".to_string();
+    let endpoint = "/admin.teams.owners.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1498,7 +1498,7 @@ pub async fn slack_list_admin_teams_settings(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.teams.settings.info".to_string();
+    let endpoint = "/admin.teams.settings.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1558,7 +1558,7 @@ pub async fn slack_create_admin_teams_settings(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.teams.settings.setDefaultChannels".to_string();
+    let endpoint = "/admin.teams.settings.setDefaultChannels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1607,7 +1607,7 @@ pub async fn slack_create_admin_usergroups(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.usergroups.addChannels".to_string();
+    let endpoint = "/admin.usergroups.addChannels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1659,7 +1659,7 @@ pub async fn slack_list_admin_usergroups(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.usergroups.listChannels".to_string();
+    let endpoint = "/admin.usergroups.listChannels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1725,7 +1725,7 @@ pub async fn slack_create_admin_users(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.users.assign".to_string();
+    let endpoint = "/admin.users.assign".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1777,7 +1777,7 @@ pub async fn slack_list_admin_users(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.users.list".to_string();
+    let endpoint = "/admin.users.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1843,7 +1843,7 @@ pub async fn slack_create_admin_users_session(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin.users.session.invalidate".to_string();
+    let endpoint = "/admin.users.session.invalidate".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1895,7 +1895,7 @@ pub async fn slack_list_api(context: ActorContext) -> Result<HashMap<String, Mes
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api.test".to_string();
+    let endpoint = "/api.test".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1955,7 +1955,7 @@ pub async fn slack_list_apps_event_authorizations(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/apps.event.authorizations.list".to_string();
+    let endpoint = "/apps.event.authorizations.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2021,7 +2021,7 @@ pub async fn slack_list_apps_permissions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/apps.permissions.info".to_string();
+    let endpoint = "/apps.permissions.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2078,7 +2078,7 @@ pub async fn slack_list_apps_permissions_resources(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/apps.permissions.resources.list".to_string();
+    let endpoint = "/apps.permissions.resources.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2141,7 +2141,7 @@ pub async fn slack_list_apps_permissions_scopes(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/apps.permissions.scopes.list".to_string();
+    let endpoint = "/apps.permissions.scopes.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2198,7 +2198,7 @@ pub async fn slack_list_apps_permissions_users(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/apps.permissions.users.list".to_string();
+    let endpoint = "/apps.permissions.users.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2261,7 +2261,7 @@ pub async fn slack_list_apps(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/apps.uninstall".to_string();
+    let endpoint = "/apps.uninstall".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2324,7 +2324,7 @@ pub async fn slack_list_auth(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/auth.revoke".to_string();
+    let endpoint = "/auth.revoke".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2384,7 +2384,7 @@ pub async fn slack_list_bots(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/bots.info".to_string();
+    let endpoint = "/bots.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2444,7 +2444,7 @@ pub async fn slack_create_calls(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/calls.add".to_string();
+    let endpoint = "/calls.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2496,7 +2496,7 @@ pub async fn slack_list_calls(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/calls.info".to_string();
+    let endpoint = "/calls.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2556,7 +2556,7 @@ pub async fn slack_create_calls_participants(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/calls.participants.add".to_string();
+    let endpoint = "/calls.participants.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2608,7 +2608,7 @@ pub async fn slack_create_chat(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat.delete".to_string();
+    let endpoint = "/chat.delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2660,7 +2660,7 @@ pub async fn slack_list_chat(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat.getPermalink".to_string();
+    let endpoint = "/chat.getPermalink".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2723,7 +2723,7 @@ pub async fn slack_list_chat_scheduled_messages(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/chat.scheduledMessages.list".to_string();
+    let endpoint = "/chat.scheduledMessages.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2795,7 +2795,7 @@ pub async fn slack_create_conversations(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations.archive".to_string();
+    let endpoint = "/conversations.archive".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2847,7 +2847,7 @@ pub async fn slack_list_conversations(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/conversations.history".to_string();
+    let endpoint = "/conversations.history".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2922,7 +2922,7 @@ pub async fn slack_list_dialog(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dialog.open".to_string();
+    let endpoint = "/dialog.open".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2985,7 +2985,7 @@ pub async fn slack_create_dnd(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dnd.endDnd".to_string();
+    let endpoint = "/dnd.endDnd".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3037,7 +3037,7 @@ pub async fn slack_list_dnd(context: ActorContext) -> Result<HashMap<String, Mes
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/dnd.info".to_string();
+    let endpoint = "/dnd.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3097,7 +3097,7 @@ pub async fn slack_list_emoji(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/emoji.list".to_string();
+    let endpoint = "/emoji.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3154,7 +3154,7 @@ pub async fn slack_create_files_comments(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files.comments.delete".to_string();
+    let endpoint = "/files.comments.delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3206,7 +3206,7 @@ pub async fn slack_create_files(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files.delete".to_string();
+    let endpoint = "/files.delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3258,7 +3258,7 @@ pub async fn slack_list_files(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files.info".to_string();
+    let endpoint = "/files.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3330,7 +3330,7 @@ pub async fn slack_create_files_remote(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files.remote.add".to_string();
+    let endpoint = "/files.remote.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3379,7 +3379,7 @@ pub async fn slack_list_files_remote(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/files.remote.info".to_string();
+    let endpoint = "/files.remote.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3442,7 +3442,7 @@ pub async fn slack_list_migration(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/migration.exchange".to_string();
+    let endpoint = "/migration.exchange".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3508,7 +3508,7 @@ pub async fn slack_list_oauth(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth.access".to_string();
+    let endpoint = "/oauth.access".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3577,7 +3577,7 @@ pub async fn slack_list_oauth_v2(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth.v2.access".to_string();
+    let endpoint = "/oauth.v2.access".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3643,7 +3643,7 @@ pub async fn slack_create_pins(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins.add".to_string();
+    let endpoint = "/pins.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3695,7 +3695,7 @@ pub async fn slack_list_pins(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/pins.list".to_string();
+    let endpoint = "/pins.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3755,7 +3755,7 @@ pub async fn slack_create_reactions(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/reactions.add".to_string();
+    let endpoint = "/reactions.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3807,7 +3807,7 @@ pub async fn slack_list_reactions(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/reactions.get".to_string();
+    let endpoint = "/reactions.get".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3879,7 +3879,7 @@ pub async fn slack_create_reminders(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/reminders.add".to_string();
+    let endpoint = "/reminders.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3931,7 +3931,7 @@ pub async fn slack_list_reminders(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/reminders.info".to_string();
+    let endpoint = "/reminders.info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3991,7 +3991,7 @@ pub async fn slack_list_rtm(context: ActorContext) -> Result<HashMap<String, Mes
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rtm.connect".to_string();
+    let endpoint = "/rtm.connect".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4054,7 +4054,7 @@ pub async fn slack_search_messages(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search.messages".to_string();
+    let endpoint = "/search.messages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4129,7 +4129,7 @@ pub async fn slack_create_stars(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stars.add".to_string();
+    let endpoint = "/stars.add".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4181,7 +4181,7 @@ pub async fn slack_list_stars(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/stars.list".to_string();
+    let endpoint = "/stars.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4250,7 +4250,7 @@ pub async fn slack_list_team(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team.accessLogs".to_string();
+    let endpoint = "/team.accessLogs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4316,7 +4316,7 @@ pub async fn slack_list_team_profile(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/team.profile.get".to_string();
+    let endpoint = "/team.profile.get".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4376,7 +4376,7 @@ pub async fn slack_create_usergroups(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/usergroups.create".to_string();
+    let endpoint = "/usergroups.create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4428,7 +4428,7 @@ pub async fn slack_list_usergroups(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/usergroups.list".to_string();
+    let endpoint = "/usergroups.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4494,7 +4494,7 @@ pub async fn slack_list_usergroups_users(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/usergroups.users.list".to_string();
+    let endpoint = "/usergroups.users.list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4557,7 +4557,7 @@ pub async fn slack_create_usergroups_users(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/usergroups.users.update".to_string();
+    let endpoint = "/usergroups.users.update".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4609,7 +4609,7 @@ pub async fn slack_list_users(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users.conversations".to_string();
+    let endpoint = "/users.conversations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4681,7 +4681,7 @@ pub async fn slack_create_users(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users.deletePhoto".to_string();
+    let endpoint = "/users.deletePhoto".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4730,7 +4730,7 @@ pub async fn slack_list_users_profile(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users.profile.get".to_string();
+    let endpoint = "/users.profile.get".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4793,7 +4793,7 @@ pub async fn slack_create_users_profile(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/users.profile.set".to_string();
+    let endpoint = "/users.profile.set".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4845,7 +4845,7 @@ pub async fn slack_list_views(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/views.open".to_string();
+    let endpoint = "/views.open".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4908,7 +4908,7 @@ pub async fn slack_list_workflows(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/workflows.stepCompleted".to_string();
+    let endpoint = "/workflows.stepCompleted".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

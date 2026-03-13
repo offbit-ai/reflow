@@ -41,7 +41,7 @@ pub async fn jira_create_issue(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/issue".to_string();
+    let endpoint = "/issue".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -98,7 +98,7 @@ pub async fn jira_search_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/search".to_string();
+    let endpoint = "/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -215,7 +215,7 @@ pub async fn jira_read_banner(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/announcementBanner".to_string();
+    let endpoint = "/rest/api/3/announcementBanner".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -264,7 +264,7 @@ pub async fn jira_update_announcement_banner(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/announcementBanner".to_string();
+    let endpoint = "/rest/api/3/announcementBanner".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -330,7 +330,7 @@ pub async fn jira_read_custom_fields_configurations(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/app/field/context/configuration/list".to_string();
+    let endpoint = "/rest/api/3/app/field/context/configuration/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -413,7 +413,7 @@ pub async fn jira_update_multiple_custom_field_values(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/app/field/value".to_string();
+    let endpoint = "/rest/api/3/app/field/value".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -684,7 +684,7 @@ pub async fn jira_read_application_property(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/application-properties".to_string();
+    let endpoint = "/rest/api/3/application-properties".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -747,7 +747,7 @@ pub async fn jira_read_advanced_settings(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/application-properties/advanced-settings".to_string();
+    let endpoint = "/rest/api/3/application-properties/advanced-settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -859,7 +859,7 @@ pub async fn jira_read_all_application_roles(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/applicationrole".to_string();
+    let endpoint = "/rest/api/3/applicationrole".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1020,7 +1020,7 @@ pub async fn jira_read_attachment_meta(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/attachment/meta".to_string();
+    let endpoint = "/rest/api/3/attachment/meta".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1294,7 +1294,7 @@ pub async fn jira_read_audit_records(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/auditing/record".to_string();
+    let endpoint = "/rest/api/3/auditing/record".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1415,7 +1415,7 @@ pub async fn jira_create_issue_bulk_operations(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/bulk/issues/delete".to_string();
+    let endpoint = "/rest/api/3/bulk/issues/delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1475,7 +1475,7 @@ pub async fn jira_read_bulk_editable_fields(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/bulk/issues/fields".to_string();
+    let endpoint = "/rest/api/3/bulk/issues/fields".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1541,7 +1541,7 @@ pub async fn jira_move_issue_bulk_operations(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/bulk/issues/move".to_string();
+    let endpoint = "/rest/api/3/bulk/issues/move".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1601,7 +1601,7 @@ pub async fn jira_read_available_transitions(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/bulk/issues/transition".to_string();
+    let endpoint = "/rest/api/3/bulk/issues/transition".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1664,7 +1664,7 @@ pub async fn jira_unwatch_issue_bulk_operations(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/bulk/issues/unwatch".to_string();
+    let endpoint = "/rest/api/3/bulk/issues/unwatch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1721,7 +1721,7 @@ pub async fn jira_watch_issue_bulk_operations(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/bulk/issues/watch".to_string();
+    let endpoint = "/rest/api/3/bulk/issues/watch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1830,7 +1830,7 @@ pub async fn jira_read_bulk_changelogs(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/changelog/bulkfetch".to_string();
+    let endpoint = "/rest/api/3/changelog/bulkfetch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1896,7 +1896,7 @@ pub async fn jira_read_all_user_data_classification_levels(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/classification-levels".to_string();
+    let endpoint = "/rest/api/3/classification-levels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1956,7 +1956,7 @@ pub async fn jira_read_comments_by_ids(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/comment/list".to_string();
+    let endpoint = "/rest/api/3/comment/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2238,7 +2238,7 @@ pub async fn jira_create_component(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/component".to_string();
+    let endpoint = "/rest/api/3/component".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2340,7 +2340,7 @@ pub async fn jira_search_components_for_projects(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/component".to_string();
+    let endpoint = "/rest/api/3/component".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2678,7 +2678,7 @@ pub async fn jira_read_field_association_schemes(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2744,7 +2744,7 @@ pub async fn jira_create_field_association_scheme(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2804,7 +2804,7 @@ pub async fn jira_update_fields_associated_with_schemes(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes/fields".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes/fields".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2861,7 +2861,7 @@ pub async fn jira_delete_fields_associated_with_schemes(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes/fields".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes/fields".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2910,7 +2910,7 @@ pub async fn jira_delete_field_association_scheme_item_parameters(context: Actor
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes/fields/parameters".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes/fields/parameters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2959,7 +2959,7 @@ pub async fn jira_update_field_association_scheme_item_parameters(context: Actor
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes/fields/parameters".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes/fields/parameters".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3016,7 +3016,7 @@ pub async fn jira_read_projects_with_field_schemes(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes/projects".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3079,7 +3079,7 @@ pub async fn jira_update_field_schemes(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/config/fieldschemes/projects".to_string();
+    let endpoint = "/rest/api/3/config/fieldschemes/projects".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3553,7 +3553,7 @@ pub async fn jira_read_configuration(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/configuration".to_string();
+    let endpoint = "/rest/api/3/configuration".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3602,7 +3602,7 @@ pub async fn jira_update_time_tracking(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/configuration/timetracking".to_string();
+    let endpoint = "/rest/api/3/configuration/timetracking".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3665,7 +3665,7 @@ pub async fn jira_read_selected_time_tracking_implementation(context: ActorConte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/configuration/timetracking".to_string();
+    let endpoint = "/rest/api/3/configuration/timetracking".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3714,7 +3714,7 @@ pub async fn jira_read_available_time_tracking_implementations(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/configuration/timetracking/list".to_string();
+    let endpoint = "/rest/api/3/configuration/timetracking/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3763,7 +3763,7 @@ pub async fn jira_read_shared_time_tracking_configuration(context: ActorContext)
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/configuration/timetracking/options".to_string();
+    let endpoint = "/rest/api/3/configuration/timetracking/options".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3864,7 +3864,7 @@ pub async fn jira_read_all_dashboards(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/dashboard".to_string();
+    let endpoint = "/rest/api/3/dashboard".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3927,7 +3927,7 @@ pub async fn jira_create_dashboard(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/dashboard".to_string();
+    let endpoint = "/rest/api/3/dashboard".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4001,7 +4001,7 @@ pub async fn jira_update_dashboards(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/dashboard/bulk/edit".to_string();
+    let endpoint = "/rest/api/3/dashboard/bulk/edit".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4070,7 +4070,7 @@ pub async fn jira_read_all_available_dashboard_gadgets(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/dashboard/gadgets".to_string();
+    let endpoint = "/rest/api/3/dashboard/gadgets".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4119,7 +4119,7 @@ pub async fn jira_read_dashboards_paginated(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/dashboard/search".to_string();
+    let endpoint = "/rest/api/3/dashboard/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4900,7 +4900,7 @@ pub async fn jira_read_policy(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/data-policy".to_string();
+    let endpoint = "/rest/api/3/data-policy".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4949,7 +4949,7 @@ pub async fn jira_read_policies(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/data-policy/project".to_string();
+    let endpoint = "/rest/api/3/data-policy/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5006,7 +5006,7 @@ pub async fn jira_read_events(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/events".to_string();
+    let endpoint = "/rest/api/3/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5055,7 +5055,7 @@ pub async fn jira_create_jira_expressions(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/expression/analyse".to_string();
+    let endpoint = "/rest/api/3/expression/analyse".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5123,7 +5123,7 @@ pub async fn jira_create_custom_field(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/field".to_string();
+    let endpoint = "/rest/api/3/field".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5189,7 +5189,7 @@ pub async fn jira_read_fields(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/field".to_string();
+    let endpoint = "/rest/api/3/field".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5238,7 +5238,7 @@ pub async fn jira_delete_associations(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/field/association".to_string();
+    let endpoint = "/rest/api/3/field/association".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5287,7 +5287,7 @@ pub async fn jira_create_associations(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/field/association".to_string();
+    let endpoint = "/rest/api/3/field/association".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5347,7 +5347,7 @@ pub async fn jira_read_fields_paginated(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/field/search".to_string();
+    let endpoint = "/rest/api/3/field/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5425,7 +5425,7 @@ pub async fn jira_read_trashed_fields_paginated(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/field/search/trashed".to_string();
+    let endpoint = "/rest/api/3/field/search/trashed".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7351,7 +7351,7 @@ pub async fn jira_create_filter(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/filter".to_string();
+    let endpoint = "/rest/api/3/filter".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7461,7 +7461,7 @@ pub async fn jira_read_default_share_scope(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/filter/defaultShareScope".to_string();
+    let endpoint = "/rest/api/3/filter/defaultShareScope".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7510,7 +7510,7 @@ pub async fn jira_update_filter_sharing(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/filter/defaultShareScope".to_string();
+    let endpoint = "/rest/api/3/filter/defaultShareScope".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7567,7 +7567,7 @@ pub async fn jira_read_favourite_filters(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/filter/favourite".to_string();
+    let endpoint = "/rest/api/3/filter/favourite".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7624,7 +7624,7 @@ pub async fn jira_read_my_filters(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/filter/my".to_string();
+    let endpoint = "/rest/api/3/filter/my".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7684,7 +7684,7 @@ pub async fn jira_read_filters_paginated(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/filter/search".to_string();
+    let endpoint = "/rest/api/3/filter/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8469,7 +8469,7 @@ pub async fn jira_create_issue_panels(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/forge/panel/action/bulk/async".to_string();
+    let endpoint = "/rest/api/3/forge/panel/action/bulk/async".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8529,7 +8529,7 @@ pub async fn jira_delete_group(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/group".to_string();
+    let endpoint = "/rest/api/3/group".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8595,7 +8595,7 @@ pub async fn jira_create_group(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/group".to_string();
+    let endpoint = "/rest/api/3/group".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8652,7 +8652,7 @@ pub async fn jira_list_groups(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/group/bulk".to_string();
+    let endpoint = "/rest/api/3/group/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8724,7 +8724,7 @@ pub async fn jira_read_users_from_group(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/group/member".to_string();
+    let endpoint = "/rest/api/3/group/member".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8793,7 +8793,7 @@ pub async fn jira_delete_user_from_group(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/group/user".to_string();
+    let endpoint = "/rest/api/3/group/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8859,7 +8859,7 @@ pub async fn jira_create_groups(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/group/user".to_string();
+    let endpoint = "/rest/api/3/group/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8930,7 +8930,7 @@ pub async fn jira_search_groups(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/groups/picker".to_string();
+    let endpoint = "/rest/api/3/groups/picker".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9005,7 +9005,7 @@ pub async fn jira_search_users_and_groups(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/groupuserpicker".to_string();
+    let endpoint = "/rest/api/3/groupuserpicker".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9086,7 +9086,7 @@ pub async fn jira_read_license(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/instance/license".to_string();
+    let endpoint = "/rest/api/3/instance/license".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9135,7 +9135,7 @@ pub async fn jira_archive_issues(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/archive".to_string();
+    let endpoint = "/rest/api/3/issue/archive".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9192,7 +9192,7 @@ pub async fn jira_create_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/bulk".to_string();
+    let endpoint = "/rest/api/3/issue/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9378,7 +9378,7 @@ pub async fn jira_read_issue_limit_report(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/limit/report".to_string();
+    let endpoint = "/rest/api/3/issue/limit/report".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9435,7 +9435,7 @@ pub async fn jira_read_issue_picker_resource(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/picker".to_string();
+    let endpoint = "/rest/api/3/issue/picker".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9507,7 +9507,7 @@ pub async fn jira_create_issue_properties(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/properties".to_string();
+    let endpoint = "/rest/api/3/issue/properties".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9685,7 +9685,7 @@ pub async fn jira_update_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/unarchive".to_string();
+    let endpoint = "/rest/api/3/issue/unarchive".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9742,7 +9742,7 @@ pub async fn jira_read_is_watching_issue_bulk(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issue/watching".to_string();
+    let endpoint = "/rest/api/3/issue/watching".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12268,7 +12268,7 @@ pub async fn jira_create_issue_links(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issueLink".to_string();
+    let endpoint = "/rest/api/3/issueLink".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12438,7 +12438,7 @@ pub async fn jira_read_issue_link_types(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issueLinkType".to_string();
+    let endpoint = "/rest/api/3/issueLinkType".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12487,7 +12487,7 @@ pub async fn jira_create_issue_link_type(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issueLinkType".to_string();
+    let endpoint = "/rest/api/3/issueLinkType".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12732,7 +12732,7 @@ pub async fn jira_export_issues(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issues/archive/export".to_string();
+    let endpoint = "/rest/api/3/issues/archive/export".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12801,7 +12801,7 @@ pub async fn jira_read_issue_security_schemes(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12850,7 +12850,7 @@ pub async fn jira_create_issue_security_scheme(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12913,7 +12913,7 @@ pub async fn jira_read_security_levels(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes/level".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes/level".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12982,7 +12982,7 @@ pub async fn jira_update_issue_security_schemes(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes/level/default".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes/level/default".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13039,7 +13039,7 @@ pub async fn jira_read_security_level_members(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes/level/member".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes/level/member".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13111,7 +13111,7 @@ pub async fn jira_search_projects_using_security_schemes(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes/project".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13177,7 +13177,7 @@ pub async fn jira_search_security_schemes(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuesecurityschemes/search".to_string();
+    let endpoint = "/rest/api/3/issuesecurityschemes/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13666,7 +13666,7 @@ pub async fn jira_read_issue_all_types(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetype".to_string();
+    let endpoint = "/rest/api/3/issuetype".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13715,7 +13715,7 @@ pub async fn jira_create_issue_type(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetype".to_string();
+    let endpoint = "/rest/api/3/issuetype".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13781,7 +13781,7 @@ pub async fn jira_read_issue_types_for_project(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetype/project".to_string();
+    let endpoint = "/rest/api/3/issuetype/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14354,7 +14354,7 @@ pub async fn jira_read_all_issue_type_schemes(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescheme".to_string();
+    let endpoint = "/rest/api/3/issuetypescheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14426,7 +14426,7 @@ pub async fn jira_create_issue_type_scheme(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescheme".to_string();
+    let endpoint = "/rest/api/3/issuetypescheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14492,7 +14492,7 @@ pub async fn jira_read_issue_type_schemes_mapping(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescheme/mapping".to_string();
+    let endpoint = "/rest/api/3/issuetypescheme/mapping".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14555,7 +14555,7 @@ pub async fn jira_update_issue_type_schemes(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescheme/project".to_string();
+    let endpoint = "/rest/api/3/issuetypescheme/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14615,7 +14615,7 @@ pub async fn jira_read_issue_type_scheme_for_projects(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescheme/project".to_string();
+    let endpoint = "/rest/api/3/issuetypescheme/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14917,7 +14917,7 @@ pub async fn jira_read_issue_type_screen_schemes(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescreenscheme".to_string();
+    let endpoint = "/rest/api/3/issuetypescreenscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14989,7 +14989,7 @@ pub async fn jira_create_issue_type_screen_scheme(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescreenscheme".to_string();
+    let endpoint = "/rest/api/3/issuetypescreenscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15052,7 +15052,7 @@ pub async fn jira_read_issue_type_screen_scheme_mappings(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescreenscheme/mapping".to_string();
+    let endpoint = "/rest/api/3/issuetypescreenscheme/mapping".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15115,7 +15115,7 @@ pub async fn jira_update_issue_type_screen_schemes(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescreenscheme/project".to_string();
+    let endpoint = "/rest/api/3/issuetypescreenscheme/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15175,7 +15175,7 @@ pub async fn jira_read_issue_type_screen_scheme_project_associations(context: Ac
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/issuetypescreenscheme/project".to_string();
+    let endpoint = "/rest/api/3/issuetypescreenscheme/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15539,7 +15539,7 @@ pub async fn jira_read_auto_complete(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/autocompletedata".to_string();
+    let endpoint = "/rest/api/3/jql/autocompletedata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15588,7 +15588,7 @@ pub async fn jira_read_auto_complete_post(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/autocompletedata".to_string();
+    let endpoint = "/rest/api/3/jql/autocompletedata".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15648,7 +15648,7 @@ pub async fn jira_read_field_auto_complete_for_query_string(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/autocompletedata/suggestions".to_string();
+    let endpoint = "/rest/api/3/jql/autocompletedata/suggestions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15714,7 +15714,7 @@ pub async fn jira_read_precomputations(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/function/computation".to_string();
+    let endpoint = "/rest/api/3/jql/function/computation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15780,7 +15780,7 @@ pub async fn jira_update_precomputations(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/function/computation".to_string();
+    let endpoint = "/rest/api/3/jql/function/computation".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15845,7 +15845,7 @@ pub async fn jira_read_precomputations_by_id(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/function/computation/search".to_string();
+    let endpoint = "/rest/api/3/jql/function/computation/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15910,7 +15910,7 @@ pub async fn jira_create_issue_search(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/match".to_string();
+    let endpoint = "/rest/api/3/jql/match".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -15970,7 +15970,7 @@ pub async fn jira_create_jql(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/jql/parse".to_string();
+    let endpoint = "/rest/api/3/jql/parse".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16035,7 +16035,7 @@ pub async fn jira_read_all_labels(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/label".to_string();
+    let endpoint = "/rest/api/3/label".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16095,7 +16095,7 @@ pub async fn jira_read_approximate_license_count(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/license/approximateLicenseCount".to_string();
+    let endpoint = "/rest/api/3/license/approximateLicenseCount".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16196,7 +16196,7 @@ pub async fn jira_read_my_permissions(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/mypermissions".to_string();
+    let endpoint = "/rest/api/3/mypermissions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16274,7 +16274,7 @@ pub async fn jira_read_preference(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/mypreferences".to_string();
+    let endpoint = "/rest/api/3/mypreferences".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16331,7 +16331,7 @@ pub async fn jira_update_myself(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/mypreferences".to_string();
+    let endpoint = "/rest/api/3/mypreferences".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16396,7 +16396,7 @@ pub async fn jira_delete_preference(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/mypreferences".to_string();
+    let endpoint = "/rest/api/3/mypreferences".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16453,7 +16453,7 @@ pub async fn jira_read_locale(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/mypreferences/locale".to_string();
+    let endpoint = "/rest/api/3/mypreferences/locale".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16502,7 +16502,7 @@ pub async fn jira_read_current_user(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/myself".to_string();
+    let endpoint = "/rest/api/3/myself".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16559,7 +16559,7 @@ pub async fn jira_create_notification_scheme(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/notificationscheme".to_string();
+    let endpoint = "/rest/api/3/notificationscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16622,7 +16622,7 @@ pub async fn jira_read_notification_schemes(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/notificationscheme".to_string();
+    let endpoint = "/rest/api/3/notificationscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -16694,7 +16694,7 @@ pub async fn jira_read_notification_scheme_to_project_mappings(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/notificationscheme/project".to_string();
+    let endpoint = "/rest/api/3/notificationscheme/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17050,7 +17050,7 @@ pub async fn jira_read_all_permissions(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/permissions".to_string();
+    let endpoint = "/rest/api/3/permissions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17099,7 +17099,7 @@ pub async fn jira_read_bulk_permissions(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/permissions/check".to_string();
+    let endpoint = "/rest/api/3/permissions/check".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17162,7 +17162,7 @@ pub async fn jira_read_permitted_projects(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/permissions/project".to_string();
+    let endpoint = "/rest/api/3/permissions/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17219,7 +17219,7 @@ pub async fn jira_create_permission_scheme(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/permissionscheme".to_string();
+    let endpoint = "/rest/api/3/permissionscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17302,7 +17302,7 @@ pub async fn jira_read_all_permission_schemes(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/permissionscheme".to_string();
+    let endpoint = "/rest/api/3/permissionscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17812,7 +17812,7 @@ pub async fn jira_read_plans(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/plans/plan".to_string();
+    let endpoint = "/rest/api/3/plans/plan".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -17878,7 +17878,7 @@ pub async fn jira_create_plan(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/plans/plan".to_string();
+    let endpoint = "/rest/api/3/plans/plan".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18812,7 +18812,7 @@ pub async fn jira_update_issue_priorities(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/priority/default".to_string();
+    let endpoint = "/rest/api/3/priority/default".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -18869,7 +18869,7 @@ pub async fn jira_move_issue_priorities(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/priority/move".to_string();
+    let endpoint = "/rest/api/3/priority/move".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19036,7 +19036,7 @@ pub async fn jira_read_priority_schemes(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/priorityscheme".to_string();
+    let endpoint = "/rest/api/3/priorityscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19114,7 +19114,7 @@ pub async fn jira_create_priority_scheme(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/priorityscheme".to_string();
+    let endpoint = "/rest/api/3/priorityscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19186,7 +19186,7 @@ pub async fn jira_create_priority_schemes(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/priorityscheme/mappings".to_string();
+    let endpoint = "/rest/api/3/priorityscheme/mappings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19255,7 +19255,7 @@ pub async fn jira_read_available_priorities_by_priority_scheme(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/priorityscheme/priorities/available".to_string();
+    let endpoint = "/rest/api/3/priorityscheme/priorities/available".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19583,7 +19583,7 @@ pub async fn jira_create_project(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project".to_string();
+    let endpoint = "/rest/api/3/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19691,7 +19691,7 @@ pub async fn jira_create_project_with_custom_template(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project-template".to_string();
+    let endpoint = "/rest/api/3/project-template".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19751,7 +19751,7 @@ pub async fn jira_update_project_templates(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project-template/edit-template".to_string();
+    let endpoint = "/rest/api/3/project-template/edit-template".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19817,7 +19817,7 @@ pub async fn jira_list_project_templates(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project-template/live-template".to_string();
+    let endpoint = "/rest/api/3/project-template/live-template".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19877,7 +19877,7 @@ pub async fn jira_delete_template(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project-template/remove-template".to_string();
+    let endpoint = "/rest/api/3/project-template/remove-template".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19934,7 +19934,7 @@ pub async fn jira_create_project_templates(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project-template/save-template".to_string();
+    let endpoint = "/rest/api/3/project-template/save-template".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -19997,7 +19997,7 @@ pub async fn jira_read_recent(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project/recent".to_string();
+    let endpoint = "/rest/api/3/project/recent".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20057,7 +20057,7 @@ pub async fn jira_search_projects(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project/search".to_string();
+    let endpoint = "/rest/api/3/project/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20150,7 +20150,7 @@ pub async fn jira_read_all_project_types(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project/type".to_string();
+    let endpoint = "/rest/api/3/project/type".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -20199,7 +20199,7 @@ pub async fn jira_read_all_accessible_project_types(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/project/type/accessible".to_string();
+    let endpoint = "/rest/api/3/project/type/accessible".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22697,7 +22697,7 @@ pub async fn jira_create_project_category(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/projectCategory".to_string();
+    let endpoint = "/rest/api/3/projectCategory".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22763,7 +22763,7 @@ pub async fn jira_read_all_project_categories(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/projectCategory".to_string();
+    let endpoint = "/rest/api/3/projectCategory".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -22985,7 +22985,7 @@ pub async fn jira_read_project_fields(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/projects/fields".to_string();
+    let endpoint = "/rest/api/3/projects/fields".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23054,7 +23054,7 @@ pub async fn jira_list_key(context: ActorContext) -> Result<HashMap<String, Mess
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/projectvalidate/key".to_string();
+    let endpoint = "/rest/api/3/projectvalidate/key".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23111,7 +23111,7 @@ pub async fn jira_read_valid_project_key(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/projectvalidate/validProjectKey".to_string();
+    let endpoint = "/rest/api/3/projectvalidate/validProjectKey".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23168,7 +23168,7 @@ pub async fn jira_read_valid_project_name(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/projectvalidate/validProjectName".to_string();
+    let endpoint = "/rest/api/3/projectvalidate/validProjectName".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23225,7 +23225,7 @@ pub async fn jira_create_issue_redaction(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/redact".to_string();
+    let endpoint = "/rest/api/3/redact".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23334,7 +23334,7 @@ pub async fn jira_create_resolution(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/resolution".to_string();
+    let endpoint = "/rest/api/3/resolution".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23394,7 +23394,7 @@ pub async fn jira_update_issue_resolutions(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/resolution/default".to_string();
+    let endpoint = "/rest/api/3/resolution/default".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23451,7 +23451,7 @@ pub async fn jira_move_issue_resolutions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/resolution/move".to_string();
+    let endpoint = "/rest/api/3/resolution/move".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23514,7 +23514,7 @@ pub async fn jira_search_resolutions(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/resolution/search".to_string();
+    let endpoint = "/rest/api/3/resolution/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23755,7 +23755,7 @@ pub async fn jira_create_project_role(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/role".to_string();
+    let endpoint = "/rest/api/3/role".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -23815,7 +23815,7 @@ pub async fn jira_read_all_project_roles(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/role".to_string();
+    let endpoint = "/rest/api/3/role".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24220,7 +24220,7 @@ pub async fn jira_read_screens(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/screens".to_string();
+    let endpoint = "/rest/api/3/screens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24292,7 +24292,7 @@ pub async fn jira_create_screen(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/screens".to_string();
+    let endpoint = "/rest/api/3/screens".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -24404,7 +24404,7 @@ pub async fn jira_read_bulk_screen_tabs(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/screens/tabs".to_string();
+    let endpoint = "/rest/api/3/screens/tabs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25192,7 +25192,7 @@ pub async fn jira_read_screen_schemes(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/screenscheme".to_string();
+    let endpoint = "/rest/api/3/screenscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25264,7 +25264,7 @@ pub async fn jira_create_screen_scheme(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/screenscheme".to_string();
+    let endpoint = "/rest/api/3/screenscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25445,7 +25445,7 @@ pub async fn jira_search_and_reconsile_issues_using_jql_post(context: ActorConte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/search/jql".to_string();
+    let endpoint = "/rest/api/3/search/jql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25523,7 +25523,7 @@ pub async fn jira_search_and_reconsile_issues_using_jql(context: ActorContext) -
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/search/jql".to_string();
+    let endpoint = "/rest/api/3/search/jql".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25656,7 +25656,7 @@ pub async fn jira_read_server_info(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/serverInfo".to_string();
+    let endpoint = "/rest/api/3/serverInfo".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25705,7 +25705,7 @@ pub async fn jira_update_issue_navigator_settings(context: ActorContext) -> Resu
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/settings/columns".to_string();
+    let endpoint = "/rest/api/3/settings/columns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25762,7 +25762,7 @@ pub async fn jira_read_issue_navigator_default_columns(context: ActorContext) ->
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/settings/columns".to_string();
+    let endpoint = "/rest/api/3/settings/columns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25811,7 +25811,7 @@ pub async fn jira_read_statuses(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/status".to_string();
+    let endpoint = "/rest/api/3/status".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -25912,7 +25912,7 @@ pub async fn jira_read_status_categories(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuscategory".to_string();
+    let endpoint = "/rest/api/3/statuscategory".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26013,7 +26013,7 @@ pub async fn jira_delete_statuses_by_id(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuses".to_string();
+    let endpoint = "/rest/api/3/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26070,7 +26070,7 @@ pub async fn jira_read_statuses_by_id(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuses".to_string();
+    let endpoint = "/rest/api/3/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26127,7 +26127,7 @@ pub async fn jira_create_statuses(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuses".to_string();
+    let endpoint = "/rest/api/3/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26187,7 +26187,7 @@ pub async fn jira_update_statuses(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuses".to_string();
+    let endpoint = "/rest/api/3/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26244,7 +26244,7 @@ pub async fn jira_read_statuses_by_name(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuses/byNames".to_string();
+    let endpoint = "/rest/api/3/statuses/byNames".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26304,7 +26304,7 @@ pub async fn jira_search_status(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/statuses/search".to_string();
+    let endpoint = "/rest/api/3/statuses/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26669,7 +26669,7 @@ pub async fn jira_read_ui_modifications(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/uiModifications".to_string();
+    let endpoint = "/rest/api/3/uiModifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -26732,7 +26732,7 @@ pub async fn jira_create_ui_modification(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/uiModifications".to_string();
+    let endpoint = "/rest/api/3/uiModifications".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27296,7 +27296,7 @@ pub async fn jira_create_user(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user".to_string();
+    let endpoint = "/rest/api/3/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27374,7 +27374,7 @@ pub async fn jira_delete_user(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user".to_string();
+    let endpoint = "/rest/api/3/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27437,7 +27437,7 @@ pub async fn jira_read_user(context: ActorContext) -> Result<HashMap<String, Mes
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user".to_string();
+    let endpoint = "/rest/api/3/user".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27503,7 +27503,7 @@ pub async fn jira_search_bulk_assignable_users(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/assignable/multiProjectSearch".to_string();
+    let endpoint = "/rest/api/3/user/assignable/multiProjectSearch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27575,7 +27575,7 @@ pub async fn jira_search_assignable_users(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/assignable/search".to_string();
+    let endpoint = "/rest/api/3/user/assignable/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27668,7 +27668,7 @@ pub async fn jira_list_users(context: ActorContext) -> Result<HashMap<String, Me
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/bulk".to_string();
+    let endpoint = "/rest/api/3/user/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27737,7 +27737,7 @@ pub async fn jira_update_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/columns".to_string();
+    let endpoint = "/rest/api/3/user/columns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27802,7 +27802,7 @@ pub async fn jira_read_user_default_columns(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/columns".to_string();
+    let endpoint = "/rest/api/3/user/columns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27862,7 +27862,7 @@ pub async fn jira_delete_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/columns".to_string();
+    let endpoint = "/rest/api/3/user/columns".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27922,7 +27922,7 @@ pub async fn jira_read_user_email(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/email".to_string();
+    let endpoint = "/rest/api/3/user/email".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -27979,7 +27979,7 @@ pub async fn jira_read_user_email_bulk(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/email/bulk".to_string();
+    let endpoint = "/rest/api/3/user/email/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28036,7 +28036,7 @@ pub async fn jira_read_user_groups(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/groups".to_string();
+    let endpoint = "/rest/api/3/user/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28099,7 +28099,7 @@ pub async fn jira_search_users_with_all_permissions(context: ActorContext) -> Re
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/permission/search".to_string();
+    let endpoint = "/rest/api/3/user/permission/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28177,7 +28177,7 @@ pub async fn jira_search_users_for_picker(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/picker".to_string();
+    let endpoint = "/rest/api/3/user/picker".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28252,7 +28252,7 @@ pub async fn jira_read_user_property_keys(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/properties".to_string();
+    let endpoint = "/rest/api/3/user/properties".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28513,7 +28513,7 @@ pub async fn jira_search_users(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/search".to_string();
+    let endpoint = "/rest/api/3/user/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28585,7 +28585,7 @@ pub async fn jira_search_users_by_query(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/search/query".to_string();
+    let endpoint = "/rest/api/3/user/search/query".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28648,7 +28648,7 @@ pub async fn jira_search_user_keys_by_query(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/search/query/key".to_string();
+    let endpoint = "/rest/api/3/user/search/query/key".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28711,7 +28711,7 @@ pub async fn jira_search_users_with_browse_permission(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/user/viewissue/search".to_string();
+    let endpoint = "/rest/api/3/user/viewissue/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28786,7 +28786,7 @@ pub async fn jira_read_all_users_default(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/users".to_string();
+    let endpoint = "/rest/api/3/users".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28849,7 +28849,7 @@ pub async fn jira_read_all_users(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/users/search".to_string();
+    let endpoint = "/rest/api/3/users/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -28912,7 +28912,7 @@ pub async fn jira_create_version(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/version".to_string();
+    let endpoint = "/rest/api/3/version".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29736,7 +29736,7 @@ pub async fn jira_read_dynamic_webhooks_for_app(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/webhook".to_string();
+    let endpoint = "/rest/api/3/webhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29796,7 +29796,7 @@ pub async fn jira_delete_webhook_by_id(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/webhook".to_string();
+    let endpoint = "/rest/api/3/webhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29845,7 +29845,7 @@ pub async fn jira_create_webhooks(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/webhook".to_string();
+    let endpoint = "/rest/api/3/webhook".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29905,7 +29905,7 @@ pub async fn jira_read_failed_webhooks(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/webhook/failed".to_string();
+    let endpoint = "/rest/api/3/webhook/failed".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -29965,7 +29965,7 @@ pub async fn jira_refresh_webhooks(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/webhook/refresh".to_string();
+    let endpoint = "/rest/api/3/webhook/refresh".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30022,7 +30022,7 @@ pub async fn jira_create_workflows(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflow/history".to_string();
+    let endpoint = "/rest/api/3/workflow/history".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30082,7 +30082,7 @@ pub async fn jira_list_workflow_history(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflow/history/list".to_string();
+    let endpoint = "/rest/api/3/workflow/history/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30147,7 +30147,7 @@ pub async fn jira_read_workflow_transition_rule_configurations(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflow/rule/config".to_string();
+    let endpoint = "/rest/api/3/workflow/rule/config".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30225,7 +30225,7 @@ pub async fn jira_update_workflow_transition_rule_configurations(context: ActorC
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflow/rule/config".to_string();
+    let endpoint = "/rest/api/3/workflow/rule/config".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30282,7 +30282,7 @@ pub async fn jira_delete_workflow_transition_rule_configurations(context: ActorC
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflow/rule/config/delete".to_string();
+    let endpoint = "/rest/api/3/workflow/rule/config/delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30583,7 +30583,7 @@ pub async fn jira_list_workflows(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflows/capabilities".to_string();
+    let endpoint = "/rest/api/3/workflows/capabilities".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30646,7 +30646,7 @@ pub async fn jira_read_default_editor(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflows/defaultEditor".to_string();
+    let endpoint = "/rest/api/3/workflows/defaultEditor".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30695,7 +30695,7 @@ pub async fn jira_search_workflows(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflows/search".to_string();
+    let endpoint = "/rest/api/3/workflows/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30770,7 +30770,7 @@ pub async fn jira_update_workflows(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflows/update".to_string();
+    let endpoint = "/rest/api/3/workflows/update".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30830,7 +30830,7 @@ pub async fn jira_create_workflow_scheme(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflowscheme".to_string();
+    let endpoint = "/rest/api/3/workflowscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30923,7 +30923,7 @@ pub async fn jira_read_all_workflow_schemes(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflowscheme".to_string();
+    let endpoint = "/rest/api/3/workflowscheme".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -30983,7 +30983,7 @@ pub async fn jira_read_workflow_scheme_project_associations(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflowscheme/project".to_string();
+    let endpoint = "/rest/api/3/workflowscheme/project".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31040,7 +31040,7 @@ pub async fn jira_create_workflow_schemes(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflowscheme/project/switch".to_string();
+    let endpoint = "/rest/api/3/workflowscheme/project/switch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31103,7 +31103,7 @@ pub async fn jira_update_schemes(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflowscheme/update".to_string();
+    let endpoint = "/rest/api/3/workflowscheme/update".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -31181,7 +31181,7 @@ pub async fn jira_read_required_workflow_scheme_mappings(context: ActorContext) 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/workflowscheme/update/mappings".to_string();
+    let endpoint = "/rest/api/3/workflowscheme/update/mappings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -32959,7 +32959,7 @@ pub async fn jira_read_ids_of_worklogs_deleted_since(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/worklog/deleted".to_string();
+    let endpoint = "/rest/api/3/worklog/deleted".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33016,7 +33016,7 @@ pub async fn jira_read_worklogs_for_ids(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/worklog/list".to_string();
+    let endpoint = "/rest/api/3/worklog/list".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33081,7 +33081,7 @@ pub async fn jira_read_ids_of_worklogs_modified_since(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/api/3/worklog/updated".to_string();
+    let endpoint = "/rest/api/3/worklog/updated".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33303,7 +33303,7 @@ pub async fn jira_create_dynamic_modules(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/atlassian-connect/1/app/module/dynamic".to_string();
+    let endpoint = "/rest/atlassian-connect/1/app/module/dynamic".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33360,7 +33360,7 @@ pub async fn jira_delete_dynamic_modules(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/atlassian-connect/1/app/module/dynamic".to_string();
+    let endpoint = "/rest/atlassian-connect/1/app/module/dynamic".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33417,7 +33417,7 @@ pub async fn jira_list_dynamic_modules(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/atlassian-connect/1/app/module/dynamic".to_string();
+    let endpoint = "/rest/atlassian-connect/1/app/module/dynamic".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33466,7 +33466,7 @@ pub async fn jira_update_app_migration(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/atlassian-connect/1/migration/field".to_string();
+    let endpoint = "/rest/atlassian-connect/1/migration/field".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33526,7 +33526,7 @@ pub async fn jira_search_app_migration(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/atlassian-connect/1/migration/workflow/rule/search".to_string();
+    let endpoint = "/rest/atlassian-connect/1/migration/workflow/rule/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33592,7 +33592,7 @@ pub async fn jira_list_service_registry(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/atlassian-connect/1/service-registry".to_string();
+    let endpoint = "/rest/atlassian-connect/1/service-registry".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33649,7 +33649,7 @@ pub async fn jira_read_forge_app_property_keys(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/forge/1/app/properties".to_string();
+    let endpoint = "/rest/forge/1/app/properties".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -33854,7 +33854,7 @@ pub async fn jira_read_worklogs_by_issue_id_and_worklog_id(context: ActorContext
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/rest/internal/api/latest/worklog/bulk".to_string();
+    let endpoint = "/rest/internal/api/latest/worklog/bulk".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

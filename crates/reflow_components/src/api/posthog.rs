@@ -41,7 +41,7 @@ pub async fn posthog_send_event(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/capture/".to_string();
+    let endpoint = "/capture/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -156,7 +156,7 @@ pub async fn posthog_list_code_invites(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/code/invites/check-access/".to_string();
+    let endpoint = "/api/code/invites/check-access/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -205,7 +205,7 @@ pub async fn posthog_create_code_invites(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/code/invites/redeem/".to_string();
+    let endpoint = "/api/code/invites/redeem/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4037,7 +4037,7 @@ pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/organizations/".to_string();
+    let endpoint = "/api/organizations/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4166,7 +4166,7 @@ pub async fn posthog_list_organizations(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/organizations/".to_string();
+    let endpoint = "/api/organizations/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -21012,7 +21012,7 @@ pub async fn posthog_list_hog_function_templates(context: ActorContext) -> Resul
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/public_hog_function_templates/".to_string();
+    let endpoint = "/api/public_hog_function_templates/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -21196,7 +21196,7 @@ pub async fn posthog_list_core(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/users/".to_string();
+    let endpoint = "/api/users/".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

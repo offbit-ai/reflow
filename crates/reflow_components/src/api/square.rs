@@ -41,7 +41,7 @@ pub async fn square_create_payment(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments".to_string();
+    let endpoint = "/payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -101,7 +101,7 @@ pub async fn square_list_payments(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/payments".to_string();
+    let endpoint = "/payments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -161,7 +161,7 @@ pub async fn square_create_oauth(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/oauth2/revoke".to_string();
+    let endpoint = "/oauth2/revoke".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -227,7 +227,7 @@ pub async fn square_create_apple_pay(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/apple-pay/domains".to_string();
+    let endpoint = "/v2/apple-pay/domains".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -284,7 +284,7 @@ pub async fn square_list_bank_accounts(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bank-accounts".to_string();
+    let endpoint = "/v2/bank-accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -451,7 +451,7 @@ pub async fn square_list_bookings(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings".to_string();
+    let endpoint = "/v2/bookings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -526,7 +526,7 @@ pub async fn square_create_booking(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings".to_string();
+    let endpoint = "/v2/bookings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -586,7 +586,7 @@ pub async fn square_search_availability(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/availability/search".to_string();
+    let endpoint = "/v2/bookings/availability/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -643,7 +643,7 @@ pub async fn square_create_bookings(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/bulk-retrieve".to_string();
+    let endpoint = "/v2/bookings/bulk-retrieve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -700,7 +700,7 @@ pub async fn square_create_booking_custom_attribute_definition(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/bookings/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -760,7 +760,7 @@ pub async fn square_list_booking_custom_attribute_definitions(context: ActorCont
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/bookings/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -995,7 +995,7 @@ pub async fn square_create_booking_custom_attributes(context: ActorContext) -> R
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/custom-attributes/bulk-delete".to_string();
+    let endpoint = "/v2/bookings/custom-attributes/bulk-delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1052,7 +1052,7 @@ pub async fn square_list_location_booking_profiles(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/location-booking-profiles".to_string();
+    let endpoint = "/v2/bookings/location-booking-profiles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1164,7 +1164,7 @@ pub async fn square_list_team_member_booking_profiles(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/bookings/team-member-booking-profiles".to_string();
+    let endpoint = "/v2/bookings/team-member-booking-profiles".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1543,7 +1543,7 @@ pub async fn square_create_card(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/cards".to_string();
+    let endpoint = "/v2/cards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1609,7 +1609,7 @@ pub async fn square_list_cards(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/cards".to_string();
+    let endpoint = "/v2/cards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1782,7 +1782,7 @@ pub async fn square_list_cash_drawer_shifts(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/cash-drawers/shifts".to_string();
+    let endpoint = "/v2/cash-drawers/shifts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1980,7 +1980,7 @@ pub async fn square_create_catalog(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/batch-delete".to_string();
+    let endpoint = "/v2/catalog/batch-delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2037,7 +2037,7 @@ pub async fn square_create_catalog_image(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/images".to_string();
+    let endpoint = "/v2/catalog/images".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2160,7 +2160,7 @@ pub async fn square_list_catalog(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/info".to_string();
+    let endpoint = "/v2/catalog/info".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2327,7 +2327,7 @@ pub async fn square_search_catalog_objects(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/search".to_string();
+    let endpoint = "/v2/catalog/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2405,7 +2405,7 @@ pub async fn square_search_catalog_items(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/search-catalog-items".to_string();
+    let endpoint = "/v2/catalog/search-catalog-items".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2489,7 +2489,7 @@ pub async fn square_update_item_modifier_lists(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/update-item-modifier-lists".to_string();
+    let endpoint = "/v2/catalog/update-item-modifier-lists".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2552,7 +2552,7 @@ pub async fn square_update_item_taxes(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/catalog/update-item-taxes".to_string();
+    let endpoint = "/v2/catalog/update-item-taxes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2615,7 +2615,7 @@ pub async fn square_list_channels(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/channels".to_string();
+    let endpoint = "/v2/channels".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2684,7 +2684,7 @@ pub async fn square_create_channels(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/channels/bulk-retrieve".to_string();
+    let endpoint = "/v2/channels/bulk-retrieve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2793,7 +2793,7 @@ pub async fn square_list_customers(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers".to_string();
+    let endpoint = "/v2/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2862,7 +2862,7 @@ pub async fn square_create_customer(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers".to_string();
+    let endpoint = "/v2/customers".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2952,7 +2952,7 @@ pub async fn square_create_customers(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/bulk-create".to_string();
+    let endpoint = "/v2/customers/bulk-create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3009,7 +3009,7 @@ pub async fn square_list_customer_custom_attribute_definitions(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/customers/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3069,7 +3069,7 @@ pub async fn square_create_customer_custom_attribute_definition(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/customers/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3304,7 +3304,7 @@ pub async fn square_create_customer_custom_attributes(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/custom-attributes/bulk-upsert".to_string();
+    let endpoint = "/v2/customers/custom-attributes/bulk-upsert".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3361,7 +3361,7 @@ pub async fn square_create_customer_group(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/groups".to_string();
+    let endpoint = "/v2/customers/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3421,7 +3421,7 @@ pub async fn square_list_customer_groups(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/groups".to_string();
+    let endpoint = "/v2/customers/groups".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3645,7 +3645,7 @@ pub async fn square_search_customers(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/search".to_string();
+    let endpoint = "/v2/customers/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -3711,7 +3711,7 @@ pub async fn square_list_customer_segments(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/customers/segments".to_string();
+    let endpoint = "/v2/customers/segments".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4259,7 +4259,7 @@ pub async fn square_list_devices(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/devices".to_string();
+    let endpoint = "/v2/devices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4325,7 +4325,7 @@ pub async fn square_create_device_code(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/devices/codes".to_string();
+    let endpoint = "/v2/devices/codes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4385,7 +4385,7 @@ pub async fn square_list_device_codes(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/devices/codes".to_string();
+    let endpoint = "/v2/devices/codes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4555,7 +4555,7 @@ pub async fn square_list_disputes(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/disputes".to_string();
+    let endpoint = "/v2/disputes".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4966,7 +4966,7 @@ pub async fn square_search_events(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/events".to_string();
+    let endpoint = "/v2/events".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5029,7 +5029,7 @@ pub async fn square_update_events(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/events/disable".to_string();
+    let endpoint = "/v2/events/disable".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5078,7 +5078,7 @@ pub async fn square_list_event_types(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/events/types".to_string();
+    let endpoint = "/v2/events/types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5135,7 +5135,7 @@ pub async fn square_list_gift_cards(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/gift-cards".to_string();
+    let endpoint = "/v2/gift-cards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5204,7 +5204,7 @@ pub async fn square_create_gift_card(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/gift-cards".to_string();
+    let endpoint = "/v2/gift-cards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5267,7 +5267,7 @@ pub async fn square_list_gift_card_activities(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/gift-cards/activities".to_string();
+    let endpoint = "/v2/gift-cards/activities".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5345,7 +5345,7 @@ pub async fn square_create_gift_card_activity(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/gift-cards/activities".to_string();
+    let endpoint = "/v2/gift-cards/activities".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5405,7 +5405,7 @@ pub async fn square_create_gift_cards(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/gift-cards/from-gan".to_string();
+    let endpoint = "/v2/gift-cards/from-gan".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5566,7 +5566,7 @@ pub async fn square_create_inventory(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/inventory/changes/batch-create".to_string();
+    let endpoint = "/v2/inventory/changes/batch-create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5629,7 +5629,7 @@ pub async fn square_create_invoice(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/invoices".to_string();
+    let endpoint = "/v2/invoices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5689,7 +5689,7 @@ pub async fn square_list_invoices(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/invoices".to_string();
+    let endpoint = "/v2/invoices".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5752,7 +5752,7 @@ pub async fn square_search_invoices(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/invoices/search".to_string();
+    let endpoint = "/v2/invoices/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6234,7 +6234,7 @@ pub async fn square_list_break_types(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/break-types".to_string();
+    let endpoint = "/v2/labor/break-types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6297,7 +6297,7 @@ pub async fn square_create_break_type(context: ActorContext) -> Result<HashMap<S
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/break-types".to_string();
+    let endpoint = "/v2/labor/break-types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6521,7 +6521,7 @@ pub async fn square_create_scheduled_shift(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/scheduled-shifts".to_string();
+    let endpoint = "/v2/labor/scheduled-shifts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6581,7 +6581,7 @@ pub async fn square_create_labor(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/scheduled-shifts/bulk-publish".to_string();
+    let endpoint = "/v2/labor/scheduled-shifts/bulk-publish".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6641,7 +6641,7 @@ pub async fn square_search_scheduled_shifts(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/scheduled-shifts/search".to_string();
+    let endpoint = "/v2/labor/scheduled-shifts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6882,7 +6882,7 @@ pub async fn square_list_team_member_wages(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/team-member-wages".to_string();
+    let endpoint = "/v2/labor/team-member-wages".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6997,7 +6997,7 @@ pub async fn square_create_timecard(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/timecards".to_string();
+    let endpoint = "/v2/labor/timecards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7057,7 +7057,7 @@ pub async fn square_search_timecards(context: ActorContext) -> Result<HashMap<St
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/timecards/search".to_string();
+    let endpoint = "/v2/labor/timecards/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7232,7 +7232,7 @@ pub async fn square_list_workweek_configs(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/labor/workweek-configs".to_string();
+    let endpoint = "/v2/labor/workweek-configs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7352,7 +7352,7 @@ pub async fn square_list_locations(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/locations".to_string();
+    let endpoint = "/v2/locations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7401,7 +7401,7 @@ pub async fn square_create_location(context: ActorContext) -> Result<HashMap<Str
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/locations".to_string();
+    let endpoint = "/v2/locations".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7458,7 +7458,7 @@ pub async fn square_create_location_custom_attribute_definition(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/locations/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/locations/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7518,7 +7518,7 @@ pub async fn square_list_location_custom_attribute_definitions(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/locations/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/locations/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -7756,7 +7756,7 @@ pub async fn square_create_location_custom_attributes(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/locations/custom-attributes/bulk-delete".to_string();
+    let endpoint = "/v2/locations/custom-attributes/bulk-delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8049,7 +8049,7 @@ pub async fn square_create_loyalty_account(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/loyalty/accounts".to_string();
+    let endpoint = "/v2/loyalty/accounts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8109,7 +8109,7 @@ pub async fn square_search_loyalty_accounts(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/loyalty/accounts/search".to_string();
+    let endpoint = "/v2/loyalty/accounts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8290,7 +8290,7 @@ pub async fn square_search_loyalty_events(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/loyalty/events/search".to_string();
+    let endpoint = "/v2/loyalty/events/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8537,7 +8537,7 @@ pub async fn square_create_loyalty_reward(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/loyalty/rewards".to_string();
+    let endpoint = "/v2/loyalty/rewards".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8597,7 +8597,7 @@ pub async fn square_search_loyalty_rewards(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/loyalty/rewards/search".to_string();
+    let endpoint = "/v2/loyalty/rewards/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8712,7 +8712,7 @@ pub async fn square_list_merchants(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/merchants".to_string();
+    let endpoint = "/v2/merchants".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8769,7 +8769,7 @@ pub async fn square_list_merchant_custom_attribute_definitions(context: ActorCon
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/merchants/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/merchants/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -8832,7 +8832,7 @@ pub async fn square_create_merchant_custom_attribute_definition(context: ActorCo
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/merchants/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/merchants/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9067,7 +9067,7 @@ pub async fn square_create_merchant_custom_attributes(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/merchants/custom-attributes/bulk-delete".to_string();
+    let endpoint = "/v2/merchants/custom-attributes/bulk-delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9412,7 +9412,7 @@ pub async fn square_list_checkout(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/online-checkout/merchant-settings".to_string();
+    let endpoint = "/v2/online-checkout/merchant-settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9461,7 +9461,7 @@ pub async fn square_update_merchant_settings(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/online-checkout/merchant-settings".to_string();
+    let endpoint = "/v2/online-checkout/merchant-settings".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9518,7 +9518,7 @@ pub async fn square_list_payment_links(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/online-checkout/payment-links".to_string();
+    let endpoint = "/v2/online-checkout/payment-links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9578,7 +9578,7 @@ pub async fn square_create_payment_link(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/online-checkout/payment-links".to_string();
+    let endpoint = "/v2/online-checkout/payment-links".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9765,7 +9765,7 @@ pub async fn square_create_order(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/orders".to_string();
+    let endpoint = "/v2/orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9825,7 +9825,7 @@ pub async fn square_create_orders(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/orders/batch-retrieve".to_string();
+    let endpoint = "/v2/orders/batch-retrieve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9885,7 +9885,7 @@ pub async fn square_list_order_custom_attribute_definitions(context: ActorContex
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/orders/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/orders/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -9948,7 +9948,7 @@ pub async fn square_create_order_custom_attribute_definition(context: ActorConte
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/orders/custom-attribute-definitions".to_string();
+    let endpoint = "/v2/orders/custom-attribute-definitions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10183,7 +10183,7 @@ pub async fn square_create_order_custom_attributes(context: ActorContext) -> Res
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/orders/custom-attributes/bulk-delete".to_string();
+    let endpoint = "/v2/orders/custom-attributes/bulk-delete".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10240,7 +10240,7 @@ pub async fn square_search_orders(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/orders/search".to_string();
+    let endpoint = "/v2/orders/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10551,7 +10551,7 @@ pub async fn square_cancel_payment_by_idempotency_key(context: ActorContext) -> 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/payments/cancel".to_string();
+    let endpoint = "/v2/payments/cancel".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -10835,7 +10835,7 @@ pub async fn square_list_payouts(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/payouts".to_string();
+    let endpoint = "/v2/payouts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11028,7 +11028,7 @@ pub async fn square_list_payment_refunds(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/refunds".to_string();
+    let endpoint = "/v2/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11115,7 +11115,7 @@ pub async fn square_create_refunds(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/refunds".to_string();
+    let endpoint = "/v2/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11260,7 +11260,7 @@ pub async fn square_list_sites(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/sites".to_string();
+    let endpoint = "/v2/sites".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11473,7 +11473,7 @@ pub async fn square_create_subscription(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/subscriptions".to_string();
+    let endpoint = "/v2/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11566,7 +11566,7 @@ pub async fn square_create_subscriptions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/subscriptions/bulk-swap-plan".to_string();
+    let endpoint = "/v2/subscriptions/bulk-swap-plan".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -11629,7 +11629,7 @@ pub async fn square_search_subscriptions(context: ActorContext) -> Result<HashMa
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/subscriptions/search".to_string();
+    let endpoint = "/v2/subscriptions/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12120,7 +12120,7 @@ pub async fn square_create_team_member(context: ActorContext) -> Result<HashMap<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/team-members".to_string();
+    let endpoint = "/v2/team-members".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12180,7 +12180,7 @@ pub async fn square_create_team(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/team-members/bulk-create".to_string();
+    let endpoint = "/v2/team-members/bulk-create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12237,7 +12237,7 @@ pub async fn square_list_jobs(context: ActorContext) -> Result<HashMap<String, M
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/team-members/jobs".to_string();
+    let endpoint = "/v2/team-members/jobs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12294,7 +12294,7 @@ pub async fn square_create_job(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/team-members/jobs".to_string();
+    let endpoint = "/v2/team-members/jobs".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12466,7 +12466,7 @@ pub async fn square_search_team_members(context: ActorContext) -> Result<HashMap
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/team-members/search".to_string();
+    let endpoint = "/v2/team-members/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12649,7 +12649,7 @@ pub async fn square_create_terminal_action(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/terminals/actions".to_string();
+    let endpoint = "/v2/terminals/actions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12709,7 +12709,7 @@ pub async fn square_search_terminal_actions(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/terminals/actions/search".to_string();
+    let endpoint = "/v2/terminals/actions/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12928,7 +12928,7 @@ pub async fn square_create_terminal_checkout(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/terminals/checkouts".to_string();
+    let endpoint = "/v2/terminals/checkouts".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -12988,7 +12988,7 @@ pub async fn square_search_terminal_checkouts(context: ActorContext) -> Result<H
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/terminals/checkouts/search".to_string();
+    let endpoint = "/v2/terminals/checkouts/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13155,7 +13155,7 @@ pub async fn square_create_terminal_refund(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/terminals/refunds".to_string();
+    let endpoint = "/v2/terminals/refunds".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13215,7 +13215,7 @@ pub async fn square_search_terminal_refunds(context: ActorContext) -> Result<Has
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/terminals/refunds/search".to_string();
+    let endpoint = "/v2/terminals/refunds/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13382,7 +13382,7 @@ pub async fn square_create_transfer_order(context: ActorContext) -> Result<HashM
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/transfer-orders".to_string();
+    let endpoint = "/v2/transfer-orders".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13442,7 +13442,7 @@ pub async fn square_search_transfer_orders(context: ActorContext) -> Result<Hash
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/transfer-orders/search".to_string();
+    let endpoint = "/v2/transfer-orders/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13809,7 +13809,7 @@ pub async fn square_create_vendors(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/vendors/bulk-create".to_string();
+    let endpoint = "/v2/vendors/bulk-create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13866,7 +13866,7 @@ pub async fn square_update_vendors(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/vendors/bulk-update".to_string();
+    let endpoint = "/v2/vendors/bulk-update".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13923,7 +13923,7 @@ pub async fn square_create_vendor(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/vendors/create".to_string();
+    let endpoint = "/v2/vendors/create".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -13983,7 +13983,7 @@ pub async fn square_search_vendors(context: ActorContext) -> Result<HashMap<Stri
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/vendors/search".to_string();
+    let endpoint = "/v2/vendors/search".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14098,7 +14098,7 @@ pub async fn square_update_vendor(context: ActorContext) -> Result<HashMap<Strin
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/vendors/{vendor_id}".to_string();
+    let endpoint = "/v2/vendors/{vendor_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14158,7 +14158,7 @@ pub async fn square_list_webhook_event_types(context: ActorContext) -> Result<Ha
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/webhooks/event-types".to_string();
+    let endpoint = "/v2/webhooks/event-types".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14215,7 +14215,7 @@ pub async fn square_create_webhook_subscription(context: ActorContext) -> Result
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/webhooks/subscriptions".to_string();
+    let endpoint = "/v2/webhooks/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -14275,7 +14275,7 @@ pub async fn square_list_webhook_subscriptions(context: ActorContext) -> Result<
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/v2/webhooks/subscriptions".to_string();
+    let endpoint = "/v2/webhooks/subscriptions".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 

@@ -1,0 +1,4 @@
+# Ignore auto-generated API actor modules
+ignore = [
+    "crates/reflow_components/src/api/",
+]
