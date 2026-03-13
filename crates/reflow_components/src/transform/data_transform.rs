@@ -1,6 +1,4 @@
-//! Zeal Data Operations Category Actors
-//!
-//! Actors for data transformation and manipulation following Zeal template specifications.
+//! Data transform actor for simple field-level transformations.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -25,21 +23,17 @@ pub async fn data_transform_actor(
     let config = context.get_config_hashmap();
     let payload = context.get_payload();
 
-    // Get input data
     let input = payload
         .get("input")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    // Get propertyValues (user-provided values)
     let property_values = config.get("propertyValues").and_then(|v| v.as_object());
 
-    // Get transform type from propertyValues
     let transform_type = property_values
         .and_then(|pv| pv.get("transform_type").or_else(|| pv.get("operation")))
         .and_then(|v| v.as_str())
         .unwrap_or("passthrough");
 
-    // Apply transformation based on type
     let transformed = match transform_type {
         "to_uppercase" => match input {
             Message::String(s) => Message::String(s.to_uppercase().into()),
@@ -67,7 +61,6 @@ pub async fn data_transform_actor(
             _ => input.clone(),
         },
         "extract_field" => {
-            // Extract specific field from object
             let field_name = property_values
                 .and_then(|pv| pv.get("field_name").or_else(|| pv.get("field")))
                 .and_then(|v| v.as_str());
@@ -88,7 +81,6 @@ pub async fn data_transform_actor(
             }
         }
         "set_field" => {
-            // Set or update field in object
             let field_name = property_values
                 .and_then(|pv| pv.get("field_name").or_else(|| pv.get("field")))
                 .and_then(|v| v.as_str());
@@ -113,7 +105,6 @@ pub async fn data_transform_actor(
             }
         }
         "template" => {
-            // Apply string template
             let template = property_values
                 .and_then(|pv| pv.get("template"))
                 .and_then(|v| v.as_str())
@@ -134,8 +125,7 @@ pub async fn data_transform_actor(
     Ok(result)
 }
 
-// Helper function to convert JSON value to Message
-fn json_value_to_message(value: Value) -> Message {
+pub(crate) fn json_value_to_message(value: Value) -> Message {
     match value {
         Value::Null => Message::Optional(None),
         Value::Bool(b) => Message::Boolean(b),

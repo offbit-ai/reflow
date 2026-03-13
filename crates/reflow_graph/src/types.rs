@@ -134,7 +134,6 @@ pub enum ComponentSpec {
     },
 }
 
-
 /// Script source and runtime specification.
 ///
 /// For Node.js:

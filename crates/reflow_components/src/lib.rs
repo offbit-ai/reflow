@@ -1,21 +1,17 @@
 //! Zeal-Compatible Reflow Components
 //!
-//! This crate provides actor implementations that are fully compatible with Zeal workflow templates.
-//! Each actor is designed to work seamlessly with the metadata and configuration provided by Zeal.
+//! Native actor implementations for Zeal workflow templates.
+//! Script execution (JavaScript, Python, SQL, etc.) is handled by dynASB
+//! via ComponentSpec::Script — this crate only contains native actors.
 
-pub mod data_operations;
-pub mod data_ops;
 pub mod flow_control;
 pub mod integration;
+pub mod logic;
 pub mod registry;
-pub mod rules;
-pub mod scripting;
+pub mod transform;
 
 #[cfg(test)]
-pub mod integration_tests;
-
-#[cfg(test)]
-pub mod end_to_end_tests;
+mod tests;
 
 // Re-export common types
 pub use reflow_actor::{

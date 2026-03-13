@@ -1,19 +1,18 @@
-//! Zeal Data Operations Actor
-//!
-//! Processes data operations defined in Zeal node templates with template literal support.
+//! Advanced data operations actor with template literal support and JS expression evaluation.
 
+use super::data_transform::json_value_to_message;
+use super::js_eval::{evaluate_js_expression, evaluate_js_filter};
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor::ActorContext;
 use regex::Regex;
-use rquickjs::{Context as JsContext, Runtime};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
 /// Data Operations Actor - Processes Zeal data operation sets
 ///
-/// Handles the special ${input.get('portName').data.field} syntax used in Zeal data operations.
+/// Handles the special `${input.get('portName').data.field}` syntax used in Zeal data operations.
 #[actor(
     DataOperationsActor,
     inports::<100>(data),
@@ -27,40 +26,32 @@ pub async fn data_operations_actor(
     let config = context.get_config_hashmap();
     let payload = context.get_payload();
 
-    // Get all input data from payload
     let all_inputs = payload.clone();
 
-    // Get data operations from propertyValues (user-provided values)
     let property_values = config.get("propertyValues").and_then(|v| v.as_object());
 
-    // Look for dataOperations in propertyValues
-    // The structure should be DataOperationSet[] with operations inside
     let operation_sets = property_values
         .and_then(|pv| pv.get("dataOperations"))
         .and_then(|v| v.as_array());
 
     if let Some(sets) = operation_sets {
-        // Process each operation set
         for set in sets {
             let operations = set.get("operations").and_then(|v| v.as_array());
 
             if let Some(ops) = operations {
-                // Start with the initial data
                 let mut current_data = if let Some(data) = all_inputs.get("data") {
                     serde_json::to_value(data)?
                 } else {
-                    // If no 'data' port, use all inputs
                     serde_json::to_value(&all_inputs)?
                 };
 
-                // Process each operation in sequence
                 for operation in ops {
                     if !operation
                         .get("enabled")
                         .and_then(|v| v.as_bool())
                         .unwrap_or(true)
                     {
-                        continue; // Skip disabled operations
+                        continue;
                     }
 
                     let op_type = operation
@@ -79,8 +70,6 @@ pub async fn data_operations_actor(
                         "aggregate" => {
                             process_aggregate_operation(current_data, operation, &all_inputs)?
                         }
-                        "merge" => process_merge_operation(current_data, operation, &all_inputs)?,
-                        "split" => process_split_operation(current_data, operation, &all_inputs)?,
                         _ => current_data,
                     };
                 }
@@ -89,7 +78,7 @@ pub async fn data_operations_actor(
             }
         }
     } else {
-        // No operations defined, pass through the data
+        // No operations defined, pass through
         if let Some(data) = all_inputs.get("data") {
             result.insert("output".to_string(), data.clone());
         }
@@ -98,8 +87,7 @@ pub async fn data_operations_actor(
     Ok(result)
 }
 
-/// Process template literals in expressions
-/// Converts ${input.get('portName').data.field} to actual values
+/// Process template literals: `${input.get('portName').data.field}` → actual values
 fn process_template_literals(
     expression: &str,
     inputs: &HashMap<String, Message>,
@@ -111,7 +99,6 @@ fn process_template_literals(
         let full_match = &cap[0];
         let inner_expr = &cap[1];
 
-        // Parse input.get('portName').data.field expressions
         if inner_expr.starts_with("input.get(") {
             if let Some(value) = extract_input_value(inner_expr, inputs) {
                 let json_str = serde_json::to_string(&value)?;
@@ -123,9 +110,8 @@ fn process_template_literals(
     Ok(processed)
 }
 
-/// Extract value from input.get('portName').data.field expression
+/// Extract value from `input.get('portName').data.field` expression
 fn extract_input_value(expr: &str, inputs: &HashMap<String, Message>) -> Option<Value> {
-    // Parse input.get('portName') or input.get("portName")
     let port_re = Regex::new(r#"input\.get\(['"]([^'"]+)['"]\)"#).ok()?;
 
     if let Some(cap) = port_re.captures(expr) {
@@ -134,19 +120,15 @@ fn extract_input_value(expr: &str, inputs: &HashMap<String, Message>) -> Option<
         if let Some(port_data) = inputs.get(port_name) {
             let mut value = serde_json::to_value(port_data).ok()?;
 
-            // Extract nested fields if present (.data.field.subfield)
             let rest = &expr[cap.get(0)?.end()..];
             if !rest.is_empty() {
-                // Remove leading .data if present
                 let field_path = if let Some(stripped) = rest.strip_prefix(".data") {
                     stripped
                 } else {
                     rest
                 };
 
-                // Navigate through nested fields
                 for field in field_path.split('.').filter(|s| !s.is_empty()) {
-                    // Handle array access like [0]
                     if field.starts_with('[') && field.ends_with(']') {
                         if let Ok(index) = field[1..field.len() - 1].parse::<usize>() {
                             value = value.as_array()?.get(index)?.clone();
@@ -189,25 +171,21 @@ fn process_map_operation(
                             let transform = mapping.get("transform").and_then(|v| v.as_str());
 
                             if !source_field.is_empty() && !target_field.is_empty() {
-                                // Process source field template
                                 let processed_source =
                                     process_template_literals(source_field, inputs)?;
 
-                                // Apply transform if present
                                 let value = if let Some(transform_expr) = transform {
                                     if !transform_expr.is_empty() {
                                         let processed_transform =
                                             process_template_literals(transform_expr, inputs)?;
                                         evaluate_js_expression(&processed_transform, &item)?
                                     } else {
-                                        // Extract value from processed source
                                         serde_json::from_str(&processed_source)?
                                     }
                                 } else {
                                     serde_json::from_str(&processed_source)?
                                 };
 
-                                // Set the target field
                                 if let Value::Object(ref mut obj) = item {
                                     obj.insert(target_field.to_string(), value);
                                 }
@@ -277,7 +255,6 @@ fn process_sort_operation(
             match data {
                 Value::Array(mut items) => {
                     items.sort_by(|a, b| {
-                        // Evaluate the field expression for each item
                         let a_val = evaluate_js_expression(&processed_field, a).ok();
                         let b_val = evaluate_js_expression(&processed_field, b).ok();
 
@@ -346,7 +323,6 @@ fn process_group_operation(
                     let mut groups: HashMap<String, Vec<Value>> = HashMap::new();
 
                     for item in items {
-                        // Evaluate the field expression for this item
                         let key_value = evaluate_js_expression(&processed_field, &item)?;
                         let key = match key_value {
                             Value::String(s) => s,
@@ -418,7 +394,6 @@ fn process_aggregate_operation(
 
                     Ok(json!({ agg_function: result }))
                 } else {
-                    // Count operation without field
                     Ok(json!({ "count": items.len() }))
                 }
             } else {
@@ -426,98 +401,5 @@ fn process_aggregate_operation(
             }
         }
         _ => Ok(data),
-    }
-}
-
-fn process_merge_operation(
-    data: Value,
-    _operation: &Value,
-    _inputs: &HashMap<String, Message>,
-) -> Result<Value> {
-    // Merge would combine multiple data sources
-    // For now, just return the data as-is
-    Ok(data)
-}
-
-fn process_split_operation(
-    data: Value,
-    _operation: &Value,
-    _inputs: &HashMap<String, Message>,
-) -> Result<Value> {
-    // Split would divide data into multiple outputs
-    // For now, just return the data as-is
-    Ok(data)
-}
-
-/// Evaluate JavaScript expression with context
-fn evaluate_js_expression(expression: &str, context_data: &Value) -> Result<Value> {
-    let runtime = Runtime::new()?;
-    let ctx = JsContext::full(&runtime)?;
-
-    ctx.with(|ctx| {
-        // Set up the data context
-        let globals = ctx.globals();
-        let js_data: rquickjs::Value = ctx.json_parse(context_data.to_string())?;
-        globals.set("data", js_data)?;
-
-        // Wrap expression to return data context
-        let wrapped_expr = format!("(function(data) {{ return {}; }})(data)", expression);
-
-        // Evaluate the expression
-        let js_result: rquickjs::Value = ctx.eval(wrapped_expr.as_str())?;
-
-        // Convert result back to JSON
-        let json_str = if let Some(s) = ctx.json_stringify(js_result)? {
-            s.to_string()?
-        } else {
-            "null".to_string()
-        };
-
-        let result: Value = serde_json::from_str(&json_str)?;
-        Ok(result)
-    })
-}
-
-/// Evaluate JavaScript filter expression
-fn evaluate_js_filter(expression: &str, item: &Value) -> Result<bool> {
-    let runtime = Runtime::new()?;
-    let ctx = JsContext::full(&runtime)?;
-
-    ctx.with(|ctx| {
-        // Set up the item context
-        let globals = ctx.globals();
-        let js_item: rquickjs::Value = ctx.json_parse(item.to_string())?;
-        globals.set("item", js_item)?;
-
-        // Wrap as a filter function
-        let filter_fn = format!("(function(item) {{ return {}; }})(item)", expression);
-
-        // Evaluate
-        let result: bool = ctx.eval(filter_fn)?;
-
-        Ok(result)
-    })
-}
-
-// Helper function to convert JSON value to Message
-fn json_value_to_message(value: Value) -> Message {
-    match value {
-        Value::Null => Message::Optional(None),
-        Value::Bool(b) => Message::Boolean(b),
-        Value::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                Message::Integer(i)
-            } else if let Some(f) = n.as_f64() {
-                Message::Float(f)
-            } else {
-                Message::Float(0.0)
-            }
-        }
-        Value::String(s) => Message::String(s.into()),
-        Value::Array(arr) => {
-            let items: Vec<EncodableValue> = arr.into_iter().map(|v| v.into()).collect();
-            Message::Array(items.into())
-        }
-        Value::Object(_) => Message::object(EncodableValue::from(value)),
     }
 }

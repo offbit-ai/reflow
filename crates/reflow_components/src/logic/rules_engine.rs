@@ -1,6 +1,4 @@
-//! Zeal Rules Engine Actor
-//!
-//! Processes rule-based logic from Zeal node templates.
+//! Rules engine actor for conditional logic evaluation.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -23,12 +21,10 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
     let config = context.get_config_hashmap();
     let payload = context.get_payload();
 
-    // Get input data
     let data = payload
         .get("data")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    // Get rules from propertyValues (user-provided values)
     let property_values = config.get("propertyValues").and_then(|v| v.as_object());
 
     let rules = property_values
@@ -36,7 +32,6 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
         .and_then(|v| v.as_object());
 
     if let Some(rules_obj) = rules {
-        // Extract rule groups
         let rule_type = rules_obj
             .get("type")
             .and_then(|v| v.as_str())
@@ -50,7 +45,6 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
 
         let mut all_match = true;
 
-        // Process each rule group
         for group in groups {
             let connector = group
                 .get("connector")
@@ -64,33 +58,25 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
                 .unwrap_or(&empty_vec);
 
             let group_match = if connector == "AND" {
-                // All rules in group must match
                 rules.iter().all(|rule| evaluate_rule(rule, data))
             } else {
-                // Any rule in group must match
                 rules.iter().any(|rule| evaluate_rule(rule, data))
             };
 
             if rule_type == "OR" {
-                // OR logic between groups
                 if group_match {
                     all_match = true;
                     break;
                 }
-            } else {
-                // AND logic between groups (IF type)
-                if !group_match {
-                    all_match = false;
-                    break;
-                }
+            } else if !group_match {
+                all_match = false;
+                break;
             }
         }
 
-        // Apply actions if rules match
         if all_match {
             let mut output_data = serde_json::to_value(data)?;
 
-            // Apply setProperty actions
             if let Some(set_props) = rules_obj
                 .get("actions")
                 .and_then(|a| a.get("setProperty"))
@@ -107,7 +93,6 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
                 }
             }
 
-            // Apply setOutput actions
             if let Some(set_outputs) = rules_obj
                 .get("actions")
                 .and_then(|a| a.get("setOutput"))
@@ -135,7 +120,6 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
     Ok(result)
 }
 
-// Helper function to evaluate a single rule
 fn evaluate_rule(rule: &Value, data: &Message) -> bool {
     let field = rule.get("field").and_then(|v| v.as_str());
     let operator = rule
@@ -144,7 +128,6 @@ fn evaluate_rule(rule: &Value, data: &Message) -> bool {
         .unwrap_or("is");
     let rule_value = rule.get("value");
 
-    // Get the field value from data
     let field_value = if let Some(field_name) = field {
         if let Message::Object(obj) = data {
             if let Ok(obj_value) = serde_json::to_value(obj) {
@@ -235,7 +218,6 @@ fn evaluate_rule(rule: &Value, data: &Message) -> bool {
     }
 }
 
-// Helper function to convert JSON value to Message
 fn json_value_to_message(value: Value) -> Message {
     match value {
         Value::Null => Message::Optional(None),

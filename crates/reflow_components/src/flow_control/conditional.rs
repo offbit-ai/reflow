@@ -1,12 +1,10 @@
-//! Zeal Flow Control Category Actors
-//!
-//! Actors for controlling data flow following Zeal template specifications.
+//! Conditional branching actor for if/else routing.
 
 use crate::{Actor, ActorBehavior, MemoryState, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext};
-use serde_json::{json, Value};
+use reflow_actor::ActorContext;
+use serde_json::Value;
 use std::collections::HashMap;
 
 /// Conditional Branch Actor - Compatible with tpl_if_branch
@@ -25,12 +23,10 @@ pub async fn conditional_branch_actor(
     let config = context.get_config_hashmap();
     let payload = context.get_payload();
 
-    // Get input data
     let data = payload
         .get("data")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    // Get propertyValues (user-provided values)
     let property_values = config.get("propertyValues").and_then(|v| v.as_object());
 
     // Check for decisionRules first (for tpl_if_branch)
@@ -38,8 +34,6 @@ pub async fn conditional_branch_actor(
         .and_then(|pv| pv.get("decisionRules"))
         .and_then(|v| v.as_object())
     {
-        // Process decision rules (similar to rules engine)
-        // Decision rules have the same structure as regular rules
         let rule_type = decision_rules
             .get("type")
             .and_then(|v| v.as_str())
@@ -81,8 +75,6 @@ pub async fn conditional_branch_actor(
                 }
             }
 
-            // Route based on decision rules evaluation
-            // Use the actual Zeal port IDs
             if condition_met {
                 result.insert("true-out".to_string(), data.clone());
             } else {
@@ -93,7 +85,7 @@ pub async fn conditional_branch_actor(
         }
     }
 
-    // Fallback to simple condition configuration if no decisionRules
+    // Fallback to simple condition configuration
     let condition_type = property_values
         .and_then(|pv| pv.get("condition_type"))
         .and_then(|v| v.as_str())
@@ -106,11 +98,9 @@ pub async fn conditional_branch_actor(
         .and_then(|pv| pv.get("condition_field").or_else(|| pv.get("field")))
         .and_then(|v| v.as_str());
 
-    // Evaluate the condition
     let condition_met = match condition_type {
         "equals" => {
             if let Some(field) = condition_field {
-                // Check specific field in data
                 if let Message::Object(obj) = data {
                     let obj_value = serde_json::to_value(obj)?;
                     if let Some(field_value) = obj_value.get(field) {
@@ -122,23 +112,19 @@ pub async fn conditional_branch_actor(
                     false
                 }
             } else {
-                // Direct comparison
                 let data_value = serde_json::to_value(data)?;
                 condition_value == Some(&data_value)
             }
         }
-        "greater_than" => {
-            // Numeric comparison
-            match data {
-                Message::Integer(i) => condition_value
-                    .and_then(|v| v.as_i64())
-                    .is_some_and(|cv| *i > cv),
-                Message::Float(f) => condition_value
-                    .and_then(|v| v.as_f64())
-                    .is_some_and(|cv| *f > cv),
-                _ => false,
-            }
-        }
+        "greater_than" => match data {
+            Message::Integer(i) => condition_value
+                .and_then(|v| v.as_i64())
+                .is_some_and(|cv| *i > cv),
+            Message::Float(f) => condition_value
+                .and_then(|v| v.as_f64())
+                .is_some_and(|cv| *f > cv),
+            _ => false,
+        },
         "less_than" => match data {
             Message::Integer(i) => condition_value
                 .and_then(|v| v.as_i64())
@@ -148,19 +134,16 @@ pub async fn conditional_branch_actor(
                 .is_some_and(|cv| *f < cv),
             _ => false,
         },
-        "contains" => {
-            // String or array contains
-            match data {
-                Message::String(s) => condition_value
-                    .and_then(|v| v.as_str())
-                    .is_some_and(|cv| s.contains(cv)),
-                Message::Array(arr) => condition_value.is_some_and(|cv| {
-                    arr.iter()
-                        .any(|item| serde_json::to_value(item).ok().is_some_and(|iv| iv == *cv))
-                }),
-                _ => false,
-            }
-        }
+        "contains" => match data {
+            Message::String(s) => condition_value
+                .and_then(|v| v.as_str())
+                .is_some_and(|cv| s.contains(cv)),
+            Message::Array(arr) => condition_value.is_some_and(|cv| {
+                arr.iter()
+                    .any(|item| serde_json::to_value(item).ok().is_some_and(|iv| iv == *cv))
+            }),
+            _ => false,
+        },
         "is_empty" => match data {
             Message::String(s) => s.is_empty(),
             Message::Array(arr) => arr.is_empty(),
@@ -181,8 +164,6 @@ pub async fn conditional_branch_actor(
         }
     };
 
-    // Route to appropriate output
-    // Use the actual Zeal port IDs
     if condition_met {
         result.insert("true-out".to_string(), data.clone());
     } else {
@@ -192,7 +173,6 @@ pub async fn conditional_branch_actor(
     Ok(result)
 }
 
-// Helper function to evaluate a condition rule
 fn evaluate_condition(rule: &Value, data: &Message) -> bool {
     let field = rule.get("field").and_then(|v| v.as_str());
     let operator = rule
@@ -201,7 +181,6 @@ fn evaluate_condition(rule: &Value, data: &Message) -> bool {
         .unwrap_or("is");
     let rule_value = rule.get("value");
 
-    // Get the field value from data
     let field_value = if let Some(field_name) = field {
         if let Message::Object(obj) = data {
             if let Ok(obj_value) = serde_json::to_value(obj) {
@@ -276,120 +255,4 @@ fn evaluate_condition(rule: &Value, data: &Message) -> bool {
         },
         _ => false,
     }
-}
-
-/// Switch Case Actor - Compatible with tpl_switch
-///
-/// Routes data to different outputs based on case matching.
-#[actor(
-    SwitchCaseActor,
-    inports::<100>(data),
-    outports::<50>(case1, case2, case3, case4, default),
-    state(MemoryState)
-)]
-pub async fn switch_case_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
-    let mut result = HashMap::new();
-    let config = context.get_config_hashmap();
-    let payload = context.get_payload();
-
-    // Get input data
-    let data = payload
-        .get("data")
-        .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
-
-    // Get propertyValues (user-provided values)
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    // Get switch field from propertyValues
-    let switch_field = property_values
-        .and_then(|pv| pv.get("switch_field").or_else(|| pv.get("field")))
-        .and_then(|v| v.as_str());
-
-    // Extract value to switch on
-    let switch_value = if let Some(field) = switch_field {
-        // Extract field from object
-        if let Message::Object(obj) = data {
-            let obj_value = serde_json::to_value(obj)?;
-            obj_value.get(field).cloned()
-        } else {
-            None
-        }
-    } else {
-        // Use the data directly
-        Some(serde_json::to_value(data)?)
-    };
-
-    // Get case mappings from propertyValues
-    let case1_value = property_values.and_then(|pv| pv.get("case1_value"));
-    let case2_value = property_values.and_then(|pv| pv.get("case2_value"));
-    let case3_value = property_values.and_then(|pv| pv.get("case3_value"));
-    let case4_value = property_values.and_then(|pv| pv.get("case4_value"));
-
-    // Match against cases
-    let output_port = match switch_value {
-        Some(val) if case1_value == Some(&val) => "case1",
-        Some(val) if case2_value == Some(&val) => "case2",
-        Some(val) if case3_value == Some(&val) => "case3",
-        Some(val) if case4_value == Some(&val) => "case4",
-        _ => "default",
-    };
-
-    result.insert(output_port.to_string(), data.clone());
-    Ok(result)
-}
-
-/// Loop Actor - Compatible with tpl_loop
-///
-/// Iterates over a collection or repeats based on condition.
-#[actor(
-    LoopActor,
-    inports::<100>(collection, initial_value),
-    outports::<50>(item, completed),
-    state(MemoryState)
-)]
-pub async fn loop_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
-    let mut result = HashMap::new();
-    let _config = context.get_config_hashmap();
-    let payload = context.get_payload();
-    let state = context.get_state();
-
-    // Check if we have a collection to iterate
-    if let Some(Message::Array(collection)) = payload.get("collection") {
-        // Get current index from state
-        let mut state_lock = state.lock();
-        let memory_state = state_lock
-            .as_mut_any()
-            .downcast_mut::<MemoryState>()
-            .ok_or_else(|| anyhow::anyhow!("Invalid state type"))?;
-
-        let current_index = memory_state
-            .get("loop_index")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize;
-
-        if current_index < collection.len() {
-            // Output current item
-            let item = &collection[current_index];
-            result.insert(
-                "item".to_string(),
-                Message::object(EncodableValue::from(json!({
-                    "value": serde_json::to_value(item)?,
-                    "index": current_index
-                }))),
-            );
-
-            // Update index for next iteration
-            memory_state.insert("loop_index", json!(current_index + 1));
-        } else {
-            // Loop completed
-            result.insert("completed".to_string(), Message::Boolean(true));
-            // Reset index
-            memory_state.insert("loop_index", json!(0));
-        }
-    } else {
-        // No collection provided
-        result.insert("completed".to_string(), Message::Boolean(true));
-    }
-
-    Ok(result)
 }
