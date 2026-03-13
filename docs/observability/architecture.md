@@ -1,374 +1,180 @@
 # Observability Architecture
 
-The Reflow observability framework is built on a distributed, event-driven architecture that provides comprehensive visibility into actor networks with minimal performance impact.
+Reflow's observability is built on an event pipeline that translates low-level network events into rich engine events and forwards them to Zeal IDE for visibility, tracing, and replay.
 
 ## System Components
 
-### 1. Tracing Client (`TracingClient`)
+### 1. ExecutionEngine
 
-The tracing client is embedded within each Reflow network instance and is responsible for:
+The engine creates an isolated `Network` per workflow execution and translates `NetworkEvent`s (from `reflow_network`) into enriched `EngineEvent`s with timing, size, and connection metadata.
 
-- **Event Collection**: Capturing trace events from actor operations
-- **Event Batching**: Aggregating events for efficient transmission
-- **Network Communication**: WebSocket-based communication with the tracing server
-- **Retry Logic**: Robust retry mechanisms for network failures
-- **Compression**: Optional compression of trace data
+The engine maintains a `HashMap<String, Instant>` to track per-actor start times, computing `duration_ms` when actors complete.
+
+### 2. EventBridge
+
+The bridge connects the engine's per-execution event channel to two consumers:
 
 ```rust
-pub struct TracingClient {
-    config: TracingConfig,
-    sender: Arc<TracingSender>,
-    connection: Arc<RwLock<Option<WebSocketConnection>>>,
-    retry_manager: RetryManager,
+pub struct EventBridge {
+    trace_collector: Option<Arc<TraceCollector>>,
+    zip_session: Option<Arc<ZipSession>>,
 }
 ```
 
-### 2. Tracing Server (`reflow_tracing`)
+One bridge task is spawned per execution via `bridge.attach(workflow_id, execution_id, event_rx)`. The task:
 
-The centralized tracing server handles:
+1. Begins a trace session via `TraceCollector`
+2. Drains the `flume::Receiver<EngineEvent>` channel
+3. Forwards each event to both `TraceCollector` and `ZipSession`
+4. Tracks terminal state (success/failure based on `Completed` and `Failed` events)
+5. Completes the trace session when the channel closes (sender dropped)
 
-- **Connection Management**: WebSocket connections from multiple clients
-- **Event Processing**: Real-time processing of incoming trace events
-- **Storage Coordination**: Routing events to configured storage backends
-- **Query Interface**: Serving historical and real-time queries
-- **Subscription Management**: Managing real-time event subscriptions
+### 3. TraceCollector
+
+Submits per-node execution data to Zeal's TracesAPI over HTTP. Manages trace session lifecycle:
 
 ```rust
-pub struct TracingServer {
-    config: ServerConfig,
-    storage: Box<dyn TraceStorage>,
-    connection_pool: ConnectionPool,
-    event_processor: EventProcessor,
-    subscription_manager: SubscriptionManager,
+pub struct TraceCollector {
+    traces_api: tokio::sync::Mutex<TracesAPI>,
+    sessions: tokio::sync::Mutex<HashMap<String, ActiveSession>>,
+    batch_size: usize,  // default: 50
 }
 ```
 
-### 3. Storage Layer
+Each `ActiveSession` tracks:
+- `session_id` — returned by Zeal on session creation
+- `start_time` — for duration calculation
+- `nodes_completed` / `nodes_failed` — aggregate counters
+- `total_data_processed` — bytes processed across all nodes
+- `pending_events` — buffered `TraceEvent`s awaiting flush
 
-Pluggable storage backends with different characteristics:
+Events are flushed when the buffer reaches `batch_size` (50) or when the session completes.
 
-#### SQLite Backend
-- **Use Case**: Development, small deployments, single-instance scenarios
-- **Advantages**: Zero configuration, embedded, ACID compliant
-- **Limitations**: Single writer, limited concurrent access
-- **Schema**: Optimized for time-series queries with proper indexing
+### 4. ZipSession
 
-#### PostgreSQL Backend  
-- **Use Case**: Production deployments, high-concurrency scenarios
-- **Advantages**: ACID compliance, concurrent access, advanced querying
-- **Features**: Partitioning, indexing, full-text search capabilities
-- **Scalability**: Supports connection pooling and read replicas
+Manages the outbound connection to Zeal IDE:
 
-#### Memory Backend
-- **Use Case**: Testing, temporary analysis, high-performance scenarios
-- **Advantages**: Fastest performance, no I/O overhead
-- **Limitations**: Data loss on restart, memory-bound capacity
-- **Features**: In-memory indexes and efficient filtering
+- **Template Registration**: Registers all actor templates (native + API) on startup
+- **WebSocket Channel**: Opens a `tokio-tungstenite` connection to `/ws/zip`
+- **Event Translation**: Converts `EngineEvent`s to `ZipExecutionEvent`s using `zeal-sdk` helpers
+- **Event Emission**: Pushes ZIP events as JSON text frames over WebSocket
 
-## Event Flow Architecture
+```rust
+pub struct ZipSession {
+    config: ZipSessionConfig,
+    client: ZealClient,
+    ws: ZipWebSocket,       // Mutex<Option<WsSink>>
+    engine: Arc<ExecutionEngine>,
+    shutdown: Arc<Notify>,
+}
+```
+
+## Event Flow
 
 ```mermaid
 sequenceDiagram
-    participant A as Actor
-    participant C as Connector
-    participant TC as TracingClient
-    participant TS as TracingServer
-    participant S as Storage
-    participant M as Monitor
-    
-    A->>C: Send Message
-    C->>TC: Record DataFlow Event
-    TC->>TC: Batch Events
-    TC->>TS: Send Batch (WebSocket)
-    TS->>S: Store Events
-    TS->>M: Notify Subscribers
-    
-    Note over TC,TS: Automatic retry on failure
-    Note over TS,S: Pluggable storage backends
+    participant N as Network
+    participant E as ExecutionEngine
+    participant EB as EventBridge
+    participant TC as TraceCollector
+    participant ZS as ZipSession
+    participant Z as Zeal IDE
+
+    N->>E: NetworkEvent (ActorStarted, ActorCompleted, MessageSent, NetworkIdle)
+    E->>E: Translate to EngineEvent (enrich with duration_ms, output_size)
+    E->>EB: flume channel
+    par TraceCollector
+        EB->>TC: process_event()
+        TC->>TC: Buffer TraceEvent (batch_size=50)
+        TC->>Z: POST /api/traces/sessions/{id}/events
+    and ZipSession
+        EB->>ZS: emit_engine_event()
+        ZS->>ZS: translate_event() → ZipExecutionEvent
+        ZS->>Z: WebSocket text frame (JSON)
+    end
 ```
 
-## Integration Points
+## NetworkEvent → EngineEvent Translation
 
-### Automatic Integration
+The engine's `run_execution()` loop translates each `NetworkEvent` into an `EngineEvent`:
 
-The framework automatically integrates at key points in the Reflow execution flow:
+| NetworkEvent | EngineEventType | Enrichments |
+|-------------|-----------------|-------------|
+| `ActorStarted { actor_id }` | (records start time) | Stored in timing map |
+| `ActorCompleted { actor_id, output }` | `ActorCompleted` | `duration_ms`, `output_size`, `output_connections` |
+| `ActorFailed { actor_id, error }` | `ActorFailed` | `error`, `output_connections` |
+| `MessageSent { from, to, data }` | `MessageSent` | `size` (serialized bytes) |
+| `NetworkIdle` / `NetworkShutdown` | `Completed` | `duration_ms`, `nodes_executed`, `nodes_failed` |
 
-#### Actor Lifecycle Integration
-```rust
-// Automatic tracing in Network::register_actor
-pub fn register_actor(&mut self, name: &str, actor: impl Actor) -> Result<()> {
-    // Register actor
-    self.actors.insert(name.to_string(), Box::new(actor));
-    
-    // Automatic tracing
-    if let Some(tracing) = &self.tracing {
-        tracing.trace_actor_created(name).await?;
-    }
-    
-    Ok(())
-}
-```
+The engine waits for `NetworkIdle` or `NetworkShutdown` before emitting the `Completed` event — it does not fire prematurely after `network.start()`.
 
-#### Connector-Level Tracing
-```rust
-// Automatic data flow tracing in connectors
-impl Connector {
-    pub async fn send_message(&self, message: Message) -> Result<()> {
-        // Send the message
-        self.channel.send(message.clone()).await?;
-        
-        // Automatic tracing
-        if let Some(tracing) = global_tracing() {
-            tracing.trace_data_flow(
-                &self.from_actor, &self.from_port,
-                &self.to_actor, &self.to_port,
-                message.type_name(), message.size_bytes()
-            ).await?;
-        }
-        
-        Ok(())
-    }
-}
-```
+## EngineEvent → ZIP Event Translation
 
-### Manual Integration
+The `ZipSession::translate_event()` method maps engine events to Zeal SDK types:
 
-For custom events and fine-grained control:
+| EngineEventType | ZipExecutionEvent | Options |
+|-----------------|-------------------|---------|
+| `Started` | `ExecutionStarted` | workflow_id, execution_id |
+| `NodeExecuting` | `NodeExecuting` | input connections |
+| `ActorCompleted` | `NodeCompleted` | `NodeCompletedOptions { duration, output_size }` |
+| `ActorFailed` | `NodeFailed` | `NodeError { message, code, stack }` |
+| `Completed` | `ExecutionCompleted` | `ExecutionSummary { success_count, error_count }` |
+| `Failed` | `ExecutionFailed` | `ExecutionError { message }`, `ExecutionFailedOptions { duration }` |
 
-```rust
-// Manual event recording
-if let Some(tracing) = global_tracing() {
-    // Custom actor events
-    tracing.trace_actor_started("my_actor").await?;
-    tracing.trace_actor_completed("my_actor").await?;
-    tracing.trace_actor_failed("my_actor", "Error message").await?;
-    
-    // Custom message events
-    tracing.trace_message_sent("actor", "port", "MessageType", 1024).await?;
-    tracing.trace_message_received("actor", "port", "MessageType", 1024).await?;
-    
-    // State change events
-    tracing.trace_state_changed("actor", state_diff).await?;
-    
-    // Custom events with metadata
-    let event = TraceEvent {
-        event_type: TraceEventType::Custom("deployment_started".to_string()),
-        actor_id: "deployment_manager".to_string(),
-        data: TraceEventData {
-            custom_attributes: HashMap::from([
-                ("environment".to_string(), json!("production")),
-                ("version".to_string(), json!("v1.2.3")),
-            ]),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
-    tracing.record_event(trace_id, event).await?;
-}
-```
+`MessageSent` and `NetworkIdle` have no ZIP mapping and are silently dropped.
 
-## Performance Architecture
+## EngineEvent → TraceEvent Translation
 
-### Batching Strategy
+The `TraceCollector::process_event()` method maps engine events to `zeal-sdk` trace types:
 
-Events are batched to minimize network overhead:
+| EngineEventType | TraceEventType | TraceData |
+|-----------------|---------------|-----------|
+| `NodeExecuting` | `Input` | `data_type: "lifecycle"`, preview: `{"status": "executing"}` |
+| `ActorCompleted` | `Output` | `data_type: "application/json"`, size, duration, preview |
+| `ActorFailed` | `Error` | `TraceError { message }` |
+| `MessageSent` | `Output` | `data_type: "message"`, size, from/to preview |
 
-```rust
-pub struct BatchingStrategy {
-    batch_size: usize,           // Max events per batch
-    batch_timeout: Duration,     // Max time to wait for batch
-    compression: CompressionType, // Optional compression
-}
-```
-
-### Asynchronous Processing
-
-All tracing operations are asynchronous and non-blocking:
-
-```rust
-// Event collection uses async channels
-pub struct TracingClient {
-    event_sender: mpsc::UnboundedSender<TraceEvent>,
-    batch_processor: JoinHandle<()>,
-}
-
-// Background batch processing
-async fn process_batches(mut receiver: mpsc::UnboundedReceiver<TraceEvent>) {
-    let mut batch = Vec::new();
-    let mut batch_timer = interval(batch_timeout);
-    
-    loop {
-        select! {
-            event = receiver.recv() => {
-                if let Some(event) = event {
-                    batch.push(event);
-                    if batch.len() >= batch_size {
-                        send_batch(&mut batch).await;
-                    }
-                }
-            }
-            _ = batch_timer.tick() => {
-                if !batch.is_empty() {
-                    send_batch(&mut batch).await;
-                }
-            }
-        }
-    }
-}
-```
-
-### Memory Management
-
-Efficient memory usage through:
-
-- **Event Pooling**: Reuse of event objects
-- **Bounded Channels**: Prevent unbounded memory growth
-- **Compression**: Reduce memory footprint for large traces
-- **Background Processing**: Offload processing from critical paths
-
-## Scalability Considerations
-
-### Horizontal Scaling
-
-The tracing server can be scaled horizontally:
+## Trace Session Lifecycle
 
 ```mermaid
-graph TB
-    subgraph "Load Balancer"
-        LB[WebSocket Load Balancer]
-    end
-    
-    subgraph "Tracing Servers"
-        TS1[Tracing Server 1]
-        TS2[Tracing Server 2]
-        TS3[Tracing Server N]
-    end
-    
-    subgraph "Storage"
-        DB[(PostgreSQL Cluster)]
-    end
-    
-    LB --> TS1
-    LB --> TS2
-    LB --> TS3
-    
-    TS1 --> DB
-    TS2 --> DB
-    TS3 --> DB
+stateDiagram-v2
+    [*] --> Created: POST /api/traces/sessions
+    Created --> Active: Events flowing
+    Active --> Active: Buffer events (batch_size=50)
+    Active --> Flushing: Buffer full
+    Flushing --> Active: POST events batch
+    Active --> Completing: Channel closed
+    Completing --> Done: POST complete with SessionSummary
+    Done --> [*]
 ```
 
-### Storage Partitioning
+The `SessionSummary` submitted on completion includes:
+- `total_nodes` — nodes completed + failed
+- `successful_nodes` / `failed_nodes`
+- `total_duration` — wall clock ms
+- `total_data_processed` — bytes across all nodes
 
-For large-scale deployments:
+## Configuration
 
-```sql
--- Time-based partitioning
-CREATE TABLE trace_events_2025_01 PARTITION OF trace_events
-FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
-
--- Actor-based partitioning  
-CREATE TABLE trace_events_ml PARTITION OF trace_events
-FOR VALUES IN ('ml_trainer', 'ml_evaluator', 'ml_predictor');
-```
-
-### Performance Optimizations
-
-#### Client-Side Optimizations
-- **Local Buffering**: Buffer events locally during network issues
-- **Adaptive Batching**: Adjust batch sizes based on network conditions
-- **Priority Queues**: Prioritize critical events over routine events
-- **Sampling**: Sample high-frequency events to reduce overhead
-
-#### Server-Side Optimizations
-- **Connection Pooling**: Reuse database connections
-- **Bulk Inserts**: Batch database operations
-- **Indexing Strategy**: Optimize indexes for common query patterns
-- **Caching**: Cache frequently accessed data
-
-## Security Architecture
-
-### Authentication & Authorization
+The observability pipeline is activated when `zeal_url` is set in `ServerConfig`:
 
 ```rust
-pub struct TracingConfig {
-    pub server_url: String,
-    pub api_key: Option<String>,        // API key authentication
-    pub client_cert: Option<PathBuf>,   // Client certificate
-    pub ca_cert: Option<PathBuf>,       // CA certificate for verification
-}
+let config = ServerConfig {
+    zeal_url: Some("http://localhost:3000".to_string()),
+    // ...
+};
 ```
 
-### Data Privacy
+When `zeal_url` is `None`, no `EventBridge` is created and executions run without observability forwarding. The REST API still works for headless execution.
 
-- **Field Filtering**: Exclude sensitive data from traces
-- **Data Anonymization**: Hash or tokenize sensitive identifiers
-- **Retention Policies**: Automatic cleanup of old trace data
-- **Access Controls**: Role-based access to trace data
+## Graceful Degradation
 
-### Network Security
+- If the WebSocket connection fails during `ZipSession::start()`, a warning is logged but the session continues (traces still work via HTTP)
+- If `TraceCollector` fails to begin a session, an error is logged but execution continues
+- Individual event forwarding failures are logged at `debug` level and do not interrupt execution
 
-- **TLS Encryption**: All WebSocket connections use TLS
-- **Certificate Validation**: Mutual TLS authentication
-- **Rate Limiting**: Prevent abuse and DoS attacks
-- **Origin Validation**: Validate client origins
+## Next Steps
 
-## Monitoring the Monitor
-
-### Health Metrics
-
-The tracing system exposes its own health metrics:
-
-```rust
-pub struct TracingMetrics {
-    pub events_processed: u64,
-    pub events_dropped: u64,
-    pub connection_count: u32,
-    pub storage_latency: Duration,
-    pub memory_usage: usize,
-    pub error_rate: f64,
-}
-```
-
-### Self-Monitoring
-
-```rust
-// The tracing system can trace itself
-if let Some(tracing) = global_tracing() {
-    tracing.trace_system_metric(
-        "tracing_server",
-        "events_processed_per_second",
-        events_per_second as f64
-    ).await?;
-}
-```
-
-## Error Handling & Resilience
-
-### Network Resilience
-
-```rust
-pub struct RetryConfig {
-    pub max_retries: usize,
-    pub initial_delay: Duration,
-    pub max_delay: Duration,
-    pub backoff_multiplier: f64,
-}
-```
-
-### Graceful Degradation
-
-When the tracing server is unavailable:
-
-1. **Local Buffering**: Store events locally with size limits
-2. **Sampling**: Reduce event volume to essential events only
-3. **Alerting**: Notify operators of tracing system issues
-4. **Recovery**: Automatic reconnection and buffer flush
-
-### Data Consistency
-
-- **Idempotent Operations**: Safe to retry operations
-- **Transaction Management**: Atomic batch processing
-- **Conflict Resolution**: Handle duplicate events gracefully
-- **Validation**: Validate event integrity before storage
-
-This architecture provides a robust, scalable foundation for comprehensive observability while maintaining the performance characteristics required for production actor networks.
+- [Event Types Reference](./event-types.md) - Detailed EngineEventType and ZIP event documentation
+- [Zeal IDE Integration](../integration/zeal-ide.md) - ZIP session, template registration
+- [Architecture Overview](../architecture/overview.md) - System-level architecture

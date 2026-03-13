@@ -8,45 +8,51 @@ Reflow follows a modular, actor-based architecture designed for scalability, rel
 
 ```mermaid
 graph TB
-    subgraph "Application Layer"
-        WF[Workflows]
-        SC[Scripts]
-        CP[Components]
+    subgraph "reflow_server"
+        REST[REST API + WebSocket]
+        ENG[Execution Engine]
+        EB[EventBridge]
+        TC[TraceCollector]
+        ZIP[ZipSession]
+        ZC[Zeal Converter]
     end
-    
-    subgraph "Actor System"
-        AC[Actor Core]
+
+    subgraph "reflow_components"
+        FC[Flow Control]
+        TR[Transforms]
+        INT[Integration]
+        LG[Logic]
+        MD[Media]
+        API[API Actors x6,697]
+    end
+
+    subgraph "reflow_network"
+        NET[Network]
+        GR[Graph]
         MSG[Message System]
-        NET[Network Layer]
+        CON[Connectors]
     end
-    
-    subgraph "Runtime Layer"
-        DR[Deno Runtime]
-        PR[Python Runtime]
-        WR[WASM Runtime]
-        NR[Native Runtime]
+
+    subgraph "External"
+        ZEAL[Zeal IDE]
+        CLIENT[HTTP / WS Clients]
     end
-    
-    subgraph "Infrastructure"
-        THR[Thread Pool]
-        SER[Serialization]
-        NET_IO[Network I/O]
-        FS[File System]
-    end
-    
-    WF --> AC
-    SC --> DR
-    SC --> PR
-    SC --> WR
-    CP --> NR
-    
-    AC --> MSG
-    MSG --> NET
-    
-    NET --> THR
-    NET --> SER
-    NET --> NET_IO
-    NET --> FS
+
+    CLIENT --> REST
+    REST --> ENG
+    ENG --> NET
+    NET --> CON
+    CON --> MSG
+
+    ENG --> EB
+    EB --> TC
+    EB --> ZIP
+
+    TC -->|HTTP traces| ZEAL
+    ZIP -->|WebSocket events| ZEAL
+    ZIP -->|Register templates| ZEAL
+
+    ZC --> ENG
 ```
 
 ## Core Components
@@ -71,21 +77,36 @@ Multi-language execution environment supporting:
 
 ### 3. Component Library (`reflow_components`)
 
-Pre-built, reusable workflow components:
+Pre-built, reusable workflow components organized by category:
 
-- **Flow Control**: Conditional logic, loops, branching
-- **Data Operations**: Transformations, aggregations, validation
-- **Integration**: External API connectivity
-- **Synchronization**: Coordination primitives
+- **Flow Control**: `ConditionalBranchActor`, `SwitchCaseActor`, `LoopActor`
+- **Transform**: `DataTransformActor`, `DataOperationsActor`, inline JS evaluation via `rquickjs`
+- **Integration**: `HttpRequestActor`
+- **Logic**: `RulesEngineActor`
+- **Media**: `ImageInputActor`, `AudioInputActor`, `VideoInputActor`
+- **API Actors** (feature-gated): 6,697 pre-generated actors across 88 API services (Slack, GitHub, Stripe, etc.)
 
-### 4. Network Layer (`reflow_network`)
+Script execution (JavaScript, Python, SQL) is handled externally by dynASB — this crate only contains native actors.
 
-Handles distributed execution and communication:
+### 4. Execution Server (`reflow_server`)
 
-- **Message Routing**: Efficient message delivery
+The server wraps the engine and components into a deployable node:
+
+- **ExecutionEngine**: Creates isolated `Network` per execution, translates `NetworkEvent`s into `EngineEvent`s
+- **EventBridge**: Per-execution consumer task forwarding events to `TraceCollector` + `ZipSession`
+- **ZipSession**: Outbound WebSocket connection to Zeal IDE for real-time event streaming and template registration
+- **TraceCollector**: HTTP-based trace session submission to Zeal's TracesAPI with batched events
+- **REST API**: Axum-based HTTP + WebSocket API for headless workflow execution
+- **Zeal Converter**: Translates Zeal workflow format into Reflow graph format
+
+### 5. Network Layer (`reflow_network`)
+
+Handles execution and communication:
+
+- **Message Routing**: Efficient message delivery via flume channels
 - **Graph Management**: Workflow topology and execution
-- **Connection Management**: Inter-actor connectivity
-- **Load Balancing**: Work distribution
+- **Connection Management**: Inter-actor connectivity via `Connector` + `ConnectionPoint`
+- **NetworkEvent Stream**: `ActorStarted`, `ActorCompleted`, `ActorFailed`, `MessageSent`, `NetworkIdle`, `NetworkShutdown`
 
 ## Design Principles
 
@@ -379,27 +400,50 @@ use_docker = false
 shared_environment = true
 ```
 
-## Monitoring and Observability
+## Observability Pipeline
 
-### Metrics
+Reflow's observability is built on an event pipeline that connects the execution engine to Zeal IDE:
 
-- **Actor Performance**: Processing time, message rates
-- **Network Statistics**: Bandwidth, latency, errors
-- **Resource Usage**: Memory, CPU, disk I/O
-- **Error Rates**: Failure frequencies and patterns
+```mermaid
+sequenceDiagram
+    participant N as Network
+    participant E as ExecutionEngine
+    participant EB as EventBridge
+    participant TC as TraceCollector
+    participant ZS as ZipSession
+    participant Z as Zeal IDE
 
-### Tracing
-
-Distributed tracing support:
-
-```rust
-use tracing::{info, span, Level};
-
-let span = span!(Level::INFO, "actor_processing", actor_id = %actor.id());
-let _enter = span.enter();
-
-info!("Processing message: {:?}", message);
+    N->>E: NetworkEvent (ActorCompleted, MessageSent, etc.)
+    E->>E: Translate to EngineEvent (add duration, output_size)
+    E->>EB: Send via flume channel
+    EB->>TC: Forward event
+    EB->>ZS: Forward event
+    TC->>Z: Submit trace events (HTTP batch)
+    ZS->>Z: Emit ZIP event (WebSocket)
 ```
+
+### EventBridge
+
+One bridge task is spawned per execution. It drains the engine's event channel and forwards to both consumers:
+
+- **TraceCollector**: Buffers events (batch size 50), submits them as `TraceEvent`s via Zeal's TracesAPI over HTTP
+- **ZipSession**: Translates `EngineEvent`s to `ZipExecutionEvent`s and pushes them over WebSocket in real-time
+
+### EngineEvent Types
+
+The engine translates low-level `NetworkEvent`s into rich events with timing and size metadata:
+
+| Event | Description |
+|-------|-------------|
+| `Started` | Execution begun |
+| `NodeExecuting` | Actor began processing (with component name) |
+| `ActorCompleted` | Actor finished (with `duration_ms`, `output_size`, `output_connections`) |
+| `ActorFailed` | Actor errored (with error message and connections) |
+| `MessageSent` | Data transferred between actors (with `size` in bytes) |
+| `Completed` | Execution finished (with `duration_ms`, `nodes_executed`, `nodes_failed`) |
+| `Failed` | Execution failed (with error and optional duration) |
+
+See [Observability Architecture](../observability/architecture.md) and [Event Types](../observability/event-types.md) for details.
 
 ## Extension Points
 
@@ -436,5 +480,7 @@ For detailed information on specific components:
 - [Actor Model](./actor-model.md) - Deep dive into actor implementation
 - [Message Passing](./message-passing.md) - Message system details
 - [Graph System](./graph-system.md) - Workflow graph management
-- [Multi-Language Support](./multi-language-support.md) - Runtime integration
-- [Performance Considerations](./performance-considerations.md) - Optimization strategies
+- [Zeal IDE Integration](../integration/zeal-ide.md) - ZIP session, template registration, WebSocket events
+- [REST API](../integration/rest-api.md) - HTTP and WebSocket API reference
+- [Component Library](../components/standard-library.md) - Native actors and API service actors
+- [Observability Architecture](../observability/architecture.md) - EventBridge, TraceCollector, ZipSession

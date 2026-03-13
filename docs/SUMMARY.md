@@ -61,9 +61,18 @@
 
 ---
 
+# Zeal Integration
+
+- [Zeal IDE Integration](integration/zeal-ide.md)
+- [REST API](integration/rest-api.md)
+
+---
+
 # Components & Scripting
 
 - [Standard Component Library](components/standard-library.md)
+- [API Service Actors](components/api-actors.md)
+- [Media Actors](components/media-actors.md)
 - [JavaScript & Deno Runtime](scripting/javascript/deno-runtime.md)
 - [WASM Actor Plugin Runtime](scripting/wasm/wasm-runtime.md)
 ---

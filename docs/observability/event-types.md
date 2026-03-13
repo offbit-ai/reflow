@@ -1,518 +1,231 @@
 # Event Types Reference
 
-The Reflow observability framework captures comprehensive trace events that provide deep insights into actor network behavior. This reference covers all available event types, their structure, and usage patterns.
+This reference covers the event types in Reflow's observability pipeline: low-level `NetworkEvent`s from the actor runtime, enriched `EngineEvent`s from the execution engine, and the ZIP events sent to Zeal IDE.
 
-## Core Event Structure
+## EngineEvent Structure
 
-All trace events share a common structure defined in `TraceEvent`:
+All engine events share a common structure:
 
 ```rust
-pub struct TraceEvent {
-    pub event_id: EventId,           // Unique event identifier
-    pub timestamp: DateTime<Utc>,    // UTC timestamp
-    pub event_type: TraceEventType,  // Event type (see below)
-    pub actor_id: String,            // Source actor identifier
-    pub data: TraceEventData,        // Event-specific data
-    pub causality: CausalityInfo,    // Causality tracking
+pub struct EngineEvent {
+    pub workflow_id: String,
+    pub execution_id: String,
+    pub event_type: EngineEventType,
+    pub timestamp: u64,
+    pub data: serde_json::Value,
 }
 ```
 
-## Actor Lifecycle Events
+## EngineEventType
 
-### ActorCreated
+### Started
 
-Triggered when an actor instance is created.
+Emitted when an execution begins.
 
 ```rust
-TraceEventType::ActorCreated
+EngineEventType::Started
 ```
 
-**When Generated**: 
-- Actor registration in network
-- Dynamic actor instantiation
-- Actor factory creation
+**ZIP mapping:** `ZipExecutionEvent::ExecutionStarted`
 
-**Event Data**:
+### NodeExecuting
+
+Emitted when an actor begins processing. Generated from `NetworkEvent::ActorStarted`.
+
 ```rust
-TraceEventData {
-    port: None,
-    message: None,
-    state_diff: None,
-    error: None,
-    performance_metrics: PerformanceMetrics::default(),
-    custom_attributes: HashMap::from([
-        ("actor_type", json!("DataProcessor")),
-        ("config", json!({"timeout": 5000})),
-        ("instance_id", json!("proc_001")),
-    ]),
+EngineEventType::NodeExecuting {
+    node_id: String,     // Actor/node identifier
+    component: String,   // Component type name
 }
 ```
 
-**Example**:
-```rust
-if let Some(tracing) = global_tracing() {
-    tracing.trace_actor_created("data_processor").await?;
-}
-```
-
-### ActorStarted
-
-Triggered when an actor begins execution.
-
-```rust
-TraceEventType::ActorStarted
-```
-
-**When Generated**:
-- Actor process startup
-- Actor behavior initialization
-- Resource allocation completion
-
-**Event Data**: Includes initialization metrics and startup configuration.
+**ZIP mapping:** `ZipExecutionEvent::NodeExecuting`
 
 ### ActorCompleted
 
-Triggered when an actor successfully completes execution.
+Emitted when an actor finishes successfully. Generated from `NetworkEvent::ActorCompleted`. The engine computes `duration_ms` by comparing the `ActorStarted` timestamp stored in a `HashMap<String, Instant>`.
 
 ```rust
-TraceEventType::ActorCompleted
-```
-
-**When Generated**:
-- Successful actor termination
-- Graceful shutdown completion
-- Task completion
-
-**Event Data**:
-```rust
-TraceEventData {
-    performance_metrics: PerformanceMetrics {
-        execution_time_ns: 150_000_000,  // 150ms
-        memory_usage_bytes: 1024,
-        cpu_usage_percent: 15.5,
-        queue_depth: 0,
-        throughput_msgs_per_sec: 100.0,
-    },
-    custom_attributes: HashMap::from([
-        ("exit_code", json!(0)),
-        ("processed_messages", json!(42)),
-    ]),
-    ..Default::default()
+EngineEventType::ActorCompleted {
+    actor_id: String,
+    component: String,
+    duration_ms: Option<u64>,          // Time from ActorStarted → ActorCompleted
+    output_size: Option<u64>,          // Serialized output size in bytes
+    output_connections: Vec<String>,   // IDs of outbound connections
 }
 ```
+
+**ZIP mapping:** `ZipExecutionEvent::NodeCompleted` with `NodeCompletedOptions { duration, output_size }`
+
+**Trace mapping:** `TraceEventType::Output` with `TraceData { size, data_type: "application/json", preview, duration }`
 
 ### ActorFailed
 
-Triggered when an actor encounters an error.
+Emitted when an actor errors. Generated from `NetworkEvent::ActorFailed`.
 
 ```rust
-TraceEventType::ActorFailed
-```
-
-**When Generated**:
-- Unhandled exceptions
-- Resource exhaustion
-- Configuration errors
-- Network failures
-
-**Event Data**:
-```rust
-TraceEventData {
-    error: Some("Connection timeout: Failed to connect to database".to_string()),
-    performance_metrics: PerformanceMetrics {
-        execution_time_ns: 5_000_000_000, // 5 seconds before timeout
-        memory_usage_bytes: 2048,
-        cpu_usage_percent: 95.0,
-        queue_depth: 10,
-        throughput_msgs_per_sec: 0.0,
-    },
-    custom_attributes: HashMap::from([
-        ("error_code", json!("TIMEOUT")),
-        ("retry_count", json!(3)),
-        ("last_successful_operation", json!("database_query")),
-    ]),
-    ..Default::default()
+EngineEventType::ActorFailed {
+    actor_id: String,
+    component: String,
+    error: String,                     // Error message
+    output_connections: Vec<String>,   // Outbound connections (for error routing)
 }
 ```
 
-## Communication Events
+**ZIP mapping:** `ZipExecutionEvent::NodeFailed` with `NodeError { message, code, stack }`
+
+**Trace mapping:** `TraceEventType::Error` with `TraceError { message }`
 
 ### MessageSent
 
-Triggered when an actor sends a message.
+Emitted when data flows between actors. Generated from `NetworkEvent::MessageSent`.
 
 ```rust
-TraceEventType::MessageSent
-```
-
-**When Generated**:
-- Message transmission to ports
-- Inter-actor communication
-- Network message dispatch
-
-**Event Data**:
-```rust
-TraceEventData {
-    port: Some("output".to_string()),
-    message: Some(MessageSnapshot {
-        message_type: "ProcessedData".to_string(),
-        size_bytes: 1024,
-        checksum: "sha256:abc123...".to_string(),
-        serialized_data: vec![], // Optional: actual message data
-    }),
-    performance_metrics: PerformanceMetrics {
-        execution_time_ns: 1_000_000, // 1ms serialization time
-        ..Default::default()
-    },
-    ..Default::default()
-}
-```
-
-### MessageReceived
-
-Triggered when an actor receives a message.
-
-```rust
-TraceEventType::MessageReceived
-```
-
-**When Generated**:
-- Message reception on ports
-- Queue processing
-- Message deserialization
-
-**Event Data**: Similar to `MessageSent` but from receiver perspective.
-
-### DataFlow (NEW)
-
-Automatically triggered when data flows between connected actors.
-
-```rust
-TraceEventType::DataFlow {
-    to_actor: String,
+EngineEventType::MessageSent {
+    from_node: String,
+    from_port: String,
+    to_node: String,
     to_port: String,
+    size: usize,    // Serialized message size in bytes
 }
 ```
 
-**When Generated**:
-- Connector-level message transmission
-- Data pipeline operations
-- Cross-actor data transfer
+**ZIP mapping:** None (silently dropped)
 
-**Event Data**:
+**Trace mapping:** `TraceEventType::Output` with `TraceData { data_type: "message", size, preview: { to_node, to_port } }`
+
+### NetworkIdle
+
+Emitted when the network has no more messages to process. Used internally to trigger the `Completed` event.
+
 ```rust
-TraceEventData {
-    port: Some("output".to_string()), // Source port
-    message: Some(MessageSnapshot {
-        message_type: "SensorReading".to_string(),
-        size_bytes: 256,
-        checksum: "sha256:def456...".to_string(),
-        serialized_data: vec![],
+EngineEventType::NetworkIdle
+```
+
+**ZIP mapping:** None
+
+### Completed
+
+Emitted when the execution finishes. Generated after `NetworkIdle` or `NetworkShutdown`. Includes aggregate statistics.
+
+```rust
+EngineEventType::Completed {
+    duration_ms: u64,       // Total execution wall-clock time
+    nodes_executed: u32,    // Total actors that ran
+    nodes_failed: u32,      // Actors that failed
+}
+```
+
+**ZIP mapping:** `ZipExecutionEvent::ExecutionCompleted` with:
+```rust
+ExecutionCompletedOptions {
+    summary: Some(ExecutionSummary {
+        success_count: nodes_executed - nodes_failed,
+        error_count: nodes_failed,
+        warning_count: 0,
     }),
-    performance_metrics: PerformanceMetrics {
-        execution_time_ns: 500_000, // 0.5ms transfer time
-        queue_depth: 5, // Current queue depth at destination
-        throughput_msgs_per_sec: 1000.0,
-        ..Default::default()
-    },
-    custom_attributes: HashMap::from([
-        ("source_actor", json!("sensor_reader")),
-        ("source_port", json!("output")),
-        ("destination_actor", json!("data_validator")),
-        ("destination_port", json!("input")),
-        ("transfer_protocol", json!("memory")),
-    ]),
-    ..Default::default()
 }
 ```
 
-**Usage**:
-```rust
-// Automatic - no manual code needed
-// Generated when messages flow through connectors
+### Failed
 
-// Manual usage for custom connectors:
-tracing.trace_data_flow(
-    "source_actor", "output_port",
-    "dest_actor", "input_port", 
-    "CustomMessage", 512
-).await?;
-```
-
-## State Management Events
-
-### StateChanged
-
-Triggered when an actor's state is modified.
+Emitted when the execution fails at the engine level (not an individual actor failure).
 
 ```rust
-TraceEventType::StateChanged
-```
-
-**When Generated**:
-- State updates
-- Configuration changes
-- Memory state modifications
-
-**Event Data**:
-```rust
-TraceEventData {
-    state_diff: Some(StateDiff {
-        before: Some(previous_state_bytes),
-        after: current_state_bytes,
-        diff_type: StateDiffType::Incremental,
-    }),
-    performance_metrics: PerformanceMetrics {
-        execution_time_ns: 2_000_000, // 2ms state update time
-        memory_usage_bytes: 4096, // Memory used by state
-        ..Default::default()
-    },
-    custom_attributes: HashMap::from([
-        ("state_version", json!(42)),
-        ("state_size_bytes", json!(4096)),
-        ("changed_fields", json!(["counter", "last_update"])),
-    ]),
-    ..Default::default()
+EngineEventType::Failed {
+    error: String,
+    duration_ms: Option<u64>,
 }
 ```
 
-## Network Events
-
-### PortConnected
-
-Triggered when actor ports are connected.
-
+**ZIP mapping:** `ZipExecutionEvent::ExecutionFailed` with:
 ```rust
-TraceEventType::PortConnected
+ExecutionError { message, code: None, node_id: None }
+ExecutionFailedOptions { duration }
 ```
 
-**Event Data**:
+## NetworkEvent (Source Events)
+
+These are the raw events from `reflow_network` that the engine translates:
+
+| NetworkEvent | Description |
+|-------------|-------------|
+| `ActorStarted { actor_id }` | Actor process began (records start time in HashMap) |
+| `ActorCompleted { actor_id, output }` | Actor finished (triggers `EngineEventType::ActorCompleted`) |
+| `ActorFailed { actor_id, error }` | Actor errored (triggers `EngineEventType::ActorFailed`) |
+| `MessageSent { from_actor, from_port, to_actor, to_port, data }` | Data transferred between actors |
+| `NetworkIdle` | No pending messages (triggers completion check) |
+| `NetworkShutdown` | Network stopped |
+
+## TraceEvent (Zeal TracesAPI)
+
+Events submitted to Zeal's TracesAPI via HTTP:
+
 ```rust
-TraceEventData {
-    port: Some("output".to_string()),
-    custom_attributes: HashMap::from([
-        ("connected_to_actor", json!("downstream_processor")),
-        ("connected_to_port", json!("input")),
-        ("connection_type", json!("memory_channel")),
-        ("buffer_size", json!(1000)),
-    ]),
-    ..Default::default()
+pub struct TraceEvent {
+    pub timestamp: i64,
+    pub node_id: String,
+    pub port_id: Option<String>,
+    pub event_type: TraceEventType,   // Input, Output, Error
+    pub data: TraceData,
+    pub duration: Option<Duration>,
+    pub metadata: Option<Value>,
+    pub error: Option<TraceError>,
+}
+
+pub struct TraceData {
+    pub size: usize,
+    pub data_type: String,
+    pub preview: Option<Value>,
+    pub full_data: Option<Value>,
 }
 ```
 
-### PortDisconnected
+### TraceEventType
 
-Triggered when actor ports are disconnected.
+| Type | Used For |
+|------|----------|
+| `Input` | `NodeExecuting` — actor began processing |
+| `Output` | `ActorCompleted`, `MessageSent` — data produced |
+| `Error` | `ActorFailed` — error occurred |
 
-```rust
-TraceEventType::PortDisconnected
+## ZipExecutionEvent (Zeal WebSocket)
+
+Events sent over the ZIP WebSocket to Zeal in real-time:
+
+| Event | Description | Key Fields |
+|-------|-------------|------------|
+| `ExecutionStarted` | Workflow began | workflow_id, execution_id |
+| `NodeExecuting` | Actor began processing | workflow_id, node_id, input_connections |
+| `NodeCompleted` | Actor finished | workflow_id, node_id, output_connections, duration, output_size |
+| `NodeFailed` | Actor errored | workflow_id, node_id, error message |
+| `ExecutionCompleted` | Workflow finished | duration, nodes_executed, summary |
+| `ExecutionFailed` | Workflow failed | error, duration |
+
+All ZIP events are created using `zeal-sdk` helper functions (`create_execution_started_event`, `create_node_completed_event`, etc.) and serialized as JSON text frames.
+
+## Event Lifecycle Example
+
+For a workflow with two actors (A → B):
+
+```
+1. EngineEventType::Started
+2. EngineEventType::NodeExecuting { node_id: "A", component: "tpl_http_request" }
+3. EngineEventType::ActorCompleted { actor_id: "A", duration_ms: Some(150), output_size: Some(2048) }
+4. EngineEventType::MessageSent { from: "A", to: "B", size: 2048 }
+5. EngineEventType::NodeExecuting { node_id: "B", component: "tpl_data_transformer" }
+6. EngineEventType::ActorCompleted { actor_id: "B", duration_ms: Some(10), output_size: Some(512) }
+7. EngineEventType::NetworkIdle
+8. EngineEventType::Completed { duration_ms: 165, nodes_executed: 2, nodes_failed: 0 }
 ```
 
-**Event Data**: Similar to `PortConnected` but for disconnection events.
+This generates:
+- 6 ZIP WebSocket events (Started, NodeExecuting x2, NodeCompleted x2, ExecutionCompleted)
+- 6 TraceEvents (Input x2, Output x3 including MessageSent, Output for completion)
+- 1 trace session begin + 1 trace session complete with summary
 
-### NetworkEvent
+## Next Steps
 
-Triggered for network-level operations.
-
-```rust
-TraceEventType::NetworkEvent
-```
-
-**When Generated**:
-- Network startup/shutdown
-- Actor registration/deregistration
-- Distributed network operations
-- Load balancing events
-
-**Event Data**:
-```rust
-TraceEventData {
-    custom_attributes: HashMap::from([
-        ("event_subtype", json!("actor_registered")),
-        ("network_id", json!("production_cluster")),
-        ("node_count", json!(5)),
-        ("total_actors", json!(150)),
-    ]),
-    ..Default::default()
-}
-```
-
-## Performance Metrics
-
-All events include performance metrics:
-
-```rust
-pub struct PerformanceMetrics {
-    pub execution_time_ns: u64,      // Nanoseconds
-    pub memory_usage_bytes: usize,   // Bytes
-    pub cpu_usage_percent: f32,      // 0.0 - 100.0
-    pub queue_depth: usize,          // Messages in queue
-    pub throughput_msgs_per_sec: f64, // Messages per second
-}
-```
-
-### Interpreting Metrics
-
-- **execution_time_ns**: Time spent on the operation
-- **memory_usage_bytes**: Memory footprint at time of event
-- **cpu_usage_percent**: CPU utilization during operation
-- **queue_depth**: Number of pending messages
-- **throughput_msgs_per_sec**: Recent message processing rate
-
-## Causality Information
-
-Events maintain causality chains for dependency tracking:
-
-```rust
-pub struct CausalityInfo {
-    pub parent_event_id: Option<EventId>,    // Direct parent event
-    pub root_cause_event_id: EventId,        // Root cause in chain
-    pub dependency_chain: Vec<EventId>,      // Full dependency chain
-    pub span_id: String,                     // Distributed tracing span
-}
-```
-
-### Building Causality Chains
-
-```rust
-// Events can reference parent events
-let parent_event_id = previous_event.event_id;
-
-let child_event = TraceEvent {
-    causality: CausalityInfo {
-        parent_event_id: Some(parent_event_id),
-        root_cause_event_id: original_trigger_event_id,
-        dependency_chain: vec![original_trigger_event_id, parent_event_id],
-        span_id: distributed_span_id,
-    },
-    ..Default::default()
-};
-```
-
-## Custom Events
-
-Create custom event types for domain-specific tracing:
-
-```rust
-// Custom event type
-TraceEventType::Custom("deployment_started".to_string())
-
-// Create custom event
-let custom_event = TraceEvent {
-    event_type: TraceEventType::Custom("model_training_completed".to_string()),
-    actor_id: "ml_trainer".to_string(),
-    data: TraceEventData {
-        custom_attributes: HashMap::from([
-            ("model_type", json!("neural_network")),
-            ("training_epochs", json!(100)),
-            ("accuracy", json!(0.95)),
-            ("model_size_mb", json!(25.4)),
-            ("training_time_hours", json!(3.5)),
-        ]),
-        performance_metrics: PerformanceMetrics {
-            execution_time_ns: 12_600_000_000_000, // 3.5 hours in ns
-            memory_usage_bytes: 1_073_741_824, // 1GB
-            cpu_usage_percent: 85.0,
-            ..Default::default()
-        },
-        ..Default::default()
-    },
-    ..Default::default()
-};
-```
-
-## Event Filtering
-
-Filter events by type for focused analysis:
-
-```rust
-// Subscribe to specific event types
-let filters = SubscriptionFilters {
-    flow_ids: Some(vec![FlowId::new("production_pipeline")]),
-    actor_ids: Some(vec!["data_processor".to_string()]),
-    event_types: Some(vec![
-        TraceEventType::ActorCreated,
-        TraceEventType::ActorFailed,
-        TraceEventType::DataFlow { 
-            to_actor: "analytics_engine".to_string(),
-            to_port: "input".to_string(),
-        },
-    ]),
-    status_filter: Some(vec![ExecutionStatus::Failed]),
-};
-```
-
-## Best Practices
-
-### Event Granularity
-
-- **High-Frequency Operations**: Use sampling for message passing in high-throughput scenarios
-- **Critical Operations**: Always trace actor lifecycle events and failures
-- **Debug Information**: Use custom attributes for debugging context
-
-### Performance Considerations
-
-```rust
-// Efficient event creation
-let event = TraceEvent::data_flow(
-    source_actor, source_port,
-    dest_actor, dest_port,
-    message_type, message_size
-);
-
-// Batch similar events
-if batch.len() >= batch_size {
-    tracing.record_batch(batch).await?;
-    batch.clear();
-}
-```
-
-### Security & Privacy
-
-```rust
-// Filter sensitive data
-let safe_attributes = attributes.into_iter()
-    .filter(|(key, _)| !SENSITIVE_FIELDS.contains(key))
-    .collect();
-
-// Hash sensitive identifiers
-let user_hash = format!("user_{}", hash(&user_id));
-attributes.insert("user_hash", json!(user_hash));
-```
-
-## Query Patterns
-
-### Common Queries
-
-```rust
-// Find all failed actors in last hour
-let query = TraceQuery {
-    time_range: Some((Utc::now() - Duration::hours(1), Utc::now())),
-    status: Some(ExecutionStatus::Failed),
-    ..Default::default()
-};
-
-// Trace data flow for specific message type
-let query = TraceQuery {
-    actor_filter: Some(".*processor.*".to_string()), // Regex
-    event_types: Some(vec![TraceEventType::DataFlow { 
-        to_actor: "*".to_string(), 
-        to_port: "*".to_string() 
-    }]),
-    ..Default::default()
-};
-```
-
-### Performance Analysis
-
-```rust
-// Find slowest operations
-SELECT actor_id, AVG(execution_time_ns) as avg_time_ns
-FROM trace_events 
-WHERE event_type = 'ActorCompleted'
-  AND timestamp > NOW() - INTERVAL '1 hour'
-GROUP BY actor_id
-ORDER BY avg_time_ns DESC;
-```
-
-This comprehensive event reference provides the foundation for effective observability in Reflow actor networks. Each event type serves specific monitoring and debugging use cases, enabling deep insights into system behavior and performance.
+- [Observability Architecture](./architecture.md) - Pipeline architecture and configuration
+- [Data Flow Tracing](./data-flow-tracing.md) - Message-level data flow tracking
+- [Zeal IDE Integration](../integration/zeal-ide.md) - ZIP session and template registration
