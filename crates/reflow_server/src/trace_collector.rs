@@ -22,14 +22,16 @@ use crate::engine::{EngineEvent, EngineEventType};
 // ============================================================================
 
 /// Tracks an active trace session for a single workflow execution.
-#[allow(dead_code)]
 struct ActiveSession {
     session_id: String,
+    #[allow(dead_code)]
     workflow_id: String,
+    #[allow(dead_code)]
     execution_id: String,
     start_time: Instant,
     nodes_completed: u32,
     nodes_failed: u32,
+    total_data_processed: u64,
     pending_events: Vec<TraceEvent>,
 }
 
@@ -75,6 +77,7 @@ impl TraceCollector {
             start_time: Instant::now(),
             nodes_completed: 0,
             nodes_failed: 0,
+            total_data_processed: 0,
             pending_events: Vec::new(),
         };
 
@@ -100,17 +103,19 @@ impl TraceCollector {
         };
 
         match &event.event_type {
-            EngineEventType::ActorCompleted { actor_id } => {
-                session.nodes_completed += 1;
+            EngineEventType::NodeExecuting {
+                node_id,
+                component: _,
+            } => {
                 session.pending_events.push(TraceEvent {
                     timestamp: event.timestamp as i64,
-                    node_id: actor_id.clone(),
+                    node_id: node_id.clone(),
                     port_id: None,
-                    event_type: TraceEventType::Output,
+                    event_type: TraceEventType::Input,
                     data: TraceData {
                         size: 0,
-                        data_type: "application/json".to_string(),
-                        preview: Some(event.data.clone()),
+                        data_type: "lifecycle".to_string(),
+                        preview: Some(serde_json::json!({"status": "executing"})),
                         full_data: None,
                     },
                     duration: None,
@@ -118,7 +123,44 @@ impl TraceCollector {
                     error: None,
                 });
             }
-            EngineEventType::ActorFailed { actor_id, error } => {
+
+            EngineEventType::ActorCompleted {
+                actor_id,
+                duration_ms,
+                output_size,
+                ..
+            } => {
+                session.nodes_completed += 1;
+                if let Some(size) = output_size {
+                    session.total_data_processed += size;
+                }
+
+                let preview = if event.data != serde_json::Value::Null {
+                    Some(event.data.clone())
+                } else {
+                    None
+                };
+
+                session.pending_events.push(TraceEvent {
+                    timestamp: event.timestamp as i64,
+                    node_id: actor_id.clone(),
+                    port_id: None,
+                    event_type: TraceEventType::Output,
+                    data: TraceData {
+                        size: output_size.unwrap_or(0) as usize,
+                        data_type: "application/json".to_string(),
+                        preview,
+                        full_data: None,
+                    },
+                    duration: duration_ms.map(std::time::Duration::from_millis),
+                    metadata: None,
+                    error: None,
+                });
+            }
+
+            EngineEventType::ActorFailed {
+                actor_id, error, ..
+            } => {
                 session.nodes_failed += 1;
                 session.pending_events.push(TraceEvent {
                     timestamp: event.timestamp as i64,
@@ -140,7 +182,37 @@ impl TraceCollector {
                     }),
                 });
             }
-            _ => {} // Started, Completed, Failed, NetworkIdle handled at session level
+
+            EngineEventType::MessageSent {
+                from_node,
+                from_port,
+                to_node,
+                to_port,
+                size,
+            } => {
+                session.total_data_processed += *size as u64;
+                session.pending_events.push(TraceEvent {
+                    timestamp: event.timestamp as i64,
+                    node_id: from_node.clone(),
+                    port_id: Some(from_port.clone()),
+                    event_type: TraceEventType::Output,
+                    data: TraceData {
+                        size: *size,
+                        data_type: "message".to_string(),
+                        preview: Some(serde_json::json!({
+                            "to_node": to_node,
+                            "to_port": to_port,
+                        })),
+                        full_data: None,
+                    },
+                    duration: None,
+                    metadata: None,
+                    error: None,
+                });
+            }
+
+            // Started, Completed, Failed, NetworkIdle handled at session level
+            _ => {}
         }
 
         // Flush if batch is full
@@ -184,7 +256,7 @@ impl TraceCollector {
                 successful_nodes: session.nodes_completed,
                 failed_nodes: session.nodes_failed,
                 total_duration: duration,
-                total_data_processed: 0,
+                total_data_processed: session.total_data_processed,
             }),
             error: None,
         };
@@ -196,8 +268,12 @@ impl TraceCollector {
             .await?;
 
         info!(
-            "Trace session {} completed ({}ms, {} ok, {} failed)",
-            session.session_id, duration, session.nodes_completed, session.nodes_failed
+            "Trace session {} completed ({}ms, {} ok, {} failed, {} bytes processed)",
+            session.session_id,
+            duration,
+            session.nodes_completed,
+            session.nodes_failed,
+            session.total_data_processed
         );
 
         Ok(())

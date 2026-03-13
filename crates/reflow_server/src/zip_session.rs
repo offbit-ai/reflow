@@ -3,24 +3,27 @@
 //! Uses `zeal-sdk` for all protocol types and API calls. This module:
 //! - Connects to Zeal and authenticates with node identity
 //! - Registers reflow_components templates on connect
-//! - Listens for inbound commands (execution.start, execution.stop, etc.)
-//! - Translates [`EngineEvent`]s into ZIP events and emits them to Zeal
+//! - Opens a WebSocket to `/ws/zip` for real-time event emission
+//! - Translates [`EngineEvent`]s into ZIP events and pushes them to Zeal
 //! - Handles distributed orchestration commands (subgraph.assign, peer.connect)
 
 use std::sync::Arc;
 
 use anyhow::Result;
-use log::{error, info, warn};
-use tokio::sync::Notify;
+use futures_util::SinkExt;
+use log::{debug, error, info, warn};
+use tokio::sync::{Mutex, Notify};
 use zeal_sdk::events::{
-    ExecutionError, NodeError, create_execution_completed_event, create_execution_failed_event,
-    create_execution_started_event, create_node_completed_event, create_node_failed_event,
+    ExecutionCompletedOptions, ExecutionError, ExecutionFailedOptions, ExecutionSummary,
+    NodeCompletedOptions, NodeError, ZipExecutionEvent, create_execution_completed_event,
+    create_execution_failed_event, create_execution_started_event, create_node_completed_event,
+    create_node_executing_event, create_node_failed_event,
 };
 use zeal_sdk::types::{
     NodeTemplate, Port as ZealPort, PortPosition, PortType, RegisterTemplatesRequest,
     RuntimeRequirements,
 };
-use zeal_sdk::{ClientConfig, ZealClient};
+use zeal_sdk::{ClientConfig, WS_PATH, ZealClient};
 
 use crate::engine::{EngineEvent, EngineEventType, ExecutionEngine};
 
@@ -44,6 +47,62 @@ pub struct ZipSessionConfig {
 }
 
 // ============================================================================
+// WebSocket Sender
+// ============================================================================
+
+type WsSink = futures_util::stream::SplitSink<
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
+    tokio_tungstenite::tungstenite::Message,
+>;
+
+/// Thread-safe WebSocket sender for pushing ZIP events to Zeal.
+struct ZipWebSocket {
+    sink: Mutex<Option<WsSink>>,
+}
+
+impl ZipWebSocket {
+    fn new() -> Self {
+        Self {
+            sink: Mutex::new(None),
+        }
+    }
+
+    /// Connect to Zeal's WebSocket endpoint.
+    async fn connect(&self, zeal_url: &str) -> Result<()> {
+        let ws_url = Self::http_to_ws(zeal_url);
+        info!("[ZipWS] connecting to {}", ws_url);
+
+        let (ws_stream, _response) = tokio_tungstenite::connect_async(&ws_url).await?;
+        let (sink, _read) = futures_util::StreamExt::split(ws_stream);
+
+        *self.sink.lock().await = Some(sink);
+        info!("[ZipWS] connected to {}", ws_url);
+        Ok(())
+    }
+
+    /// Send a serializable event as a JSON text frame.
+    async fn send<T: serde::Serialize>(&self, event: &T) -> Result<()> {
+        let json = serde_json::to_string(event)?;
+        let mut guard = self.sink.lock().await;
+        if let Some(sink) = guard.as_mut() {
+            sink.send(tokio_tungstenite::tungstenite::Message::Text(json))
+                .await?;
+            Ok(())
+        } else {
+            anyhow::bail!("WebSocket not connected");
+        }
+    }
+
+    /// Convert http(s) URL to ws(s) URL with the ZIP path.
+    fn http_to_ws(url: &str) -> String {
+        let base = url
+            .replace("https://", "wss://")
+            .replace("http://", "ws://");
+        format!("{}{}", base.trim_end_matches('/'), WS_PATH)
+    }
+}
+
+// ============================================================================
 // ZIP Session
 // ============================================================================
 
@@ -55,6 +114,7 @@ pub struct ZipSessionConfig {
 pub struct ZipSession {
     config: ZipSessionConfig,
     client: ZealClient,
+    ws: ZipWebSocket,
     #[allow(dead_code)]
     engine: Arc<ExecutionEngine>,
     shutdown: Arc<Notify>,
@@ -73,12 +133,13 @@ impl ZipSession {
         Ok(Self {
             config,
             client,
+            ws: ZipWebSocket::new(),
             engine,
             shutdown: Arc::new(Notify::new()),
         })
     }
 
-    /// Connect to Zeal, register templates, and start the event loop.
+    /// Connect to Zeal, register templates, open WebSocket, and start the event loop.
     ///
     /// This runs until the session is shut down or the connection drops.
     pub async fn start(&self) -> Result<()> {
@@ -90,15 +151,23 @@ impl ZipSession {
         // Step 1: Register all reflow_components templates with Zeal
         self.register_templates().await?;
 
+        // Step 2: Open the real-time WebSocket channel
+        match self.ws.connect(&self.config.zeal_url).await {
+            Ok(()) => info!("ZIP WebSocket connected to {}", self.config.zeal_url),
+            Err(e) => {
+                warn!(
+                    "ZIP WebSocket connection failed (traces will use HTTP only): {}",
+                    e
+                );
+            }
+        }
+
         info!(
             "ZIP session active — listening for commands from {}",
             self.config.zeal_url
         );
 
-        // Step 2: Event loop — listen for commands from Zeal
-        // The zeal-sdk WebSocket connection handles the real-time channel.
-        // For now we wait for shutdown signal; the WebSocket listener
-        // will be wired in when the SDK's event subscription is integrated.
+        // Step 3: Event loop — listen for commands from Zeal
         self.shutdown.notified().await;
 
         info!("ZIP session disconnected from {}", self.config.zeal_url);
@@ -149,58 +218,59 @@ impl ZipSession {
         }
 
         // 2. Register pre-generated API actor templates with full metadata
-        let api_infos = reflow_components::get_api_template_infos();
-        for info in api_infos {
-            let mut ports = Vec::new();
+        #[cfg(feature = "api")]
+        {
+            let api_infos = reflow_components::get_api_template_infos();
+            for info in api_infos {
+                let mut ports = Vec::new();
 
-            // Declare inports
-            for port_name in info.inports {
-                ports.push(ZealPort {
-                    id: port_name.to_string(),
-                    label: port_name.replace('_', " "),
-                    port_type: PortType::Input,
-                    position: PortPosition::Left,
-                    data_type: Some("any".to_string()),
-                    required: None,
-                    multiple: None,
+                for port_name in info.inports {
+                    ports.push(ZealPort {
+                        id: port_name.to_string(),
+                        label: port_name.replace('_', " "),
+                        port_type: PortType::Input,
+                        position: PortPosition::Left,
+                        data_type: Some("any".to_string()),
+                        required: None,
+                        multiple: None,
+                    });
+                }
+
+                for port_name in info.outports {
+                    ports.push(ZealPort {
+                        id: port_name.to_string(),
+                        label: port_name.replace('_', " "),
+                        port_type: PortType::Output,
+                        position: PortPosition::Right,
+                        data_type: Some("any".to_string()),
+                        required: None,
+                        multiple: None,
+                    });
+                }
+
+                templates.push(NodeTemplate {
+                    id: info.template_id.to_string(),
+                    type_name: info.template_id.to_string(),
+                    title: info.title.to_string(),
+                    subtitle: Some(info.subcategory.to_string()),
+                    category: info.category.to_string(),
+                    subcategory: Some(info.subcategory.to_string()),
+                    description: info.description.to_string(),
+                    icon: info.icon.to_string(),
+                    variant: None,
+                    shape: None,
+                    size: None,
+                    ports,
+                    properties: None,
+                    property_rules: None,
+                    runtime: Some(RuntimeRequirements {
+                        executor: "reflow".to_string(),
+                        version: version.clone(),
+                        required_env_vars: Some(vec![info.env_var.to_string()]),
+                        capabilities: capabilities.clone(),
+                    }),
                 });
             }
-
-            // Declare outports
-            for port_name in info.outports {
-                ports.push(ZealPort {
-                    id: port_name.to_string(),
-                    label: port_name.replace('_', " "),
-                    port_type: PortType::Output,
-                    position: PortPosition::Right,
-                    data_type: Some("any".to_string()),
-                    required: None,
-                    multiple: None,
-                });
-            }
-
-            templates.push(NodeTemplate {
-                id: info.template_id.to_string(),
-                type_name: info.template_id.to_string(),
-                title: info.title.to_string(),
-                subtitle: Some(info.subcategory.to_string()),
-                category: info.category.to_string(),
-                subcategory: Some(info.subcategory.to_string()),
-                description: info.description.to_string(),
-                icon: info.icon.to_string(),
-                variant: None,
-                shape: None,
-                size: None,
-                ports,
-                properties: None,
-                property_rules: None,
-                runtime: Some(RuntimeRequirements {
-                    executor: "reflow".to_string(),
-                    version: version.clone(),
-                    required_env_vars: Some(vec![info.env_var.to_string()]),
-                    capabilities: capabilities.clone(),
-                }),
-            });
         }
 
         if templates.is_empty() {
@@ -209,7 +279,7 @@ impl ZipSession {
         }
 
         let count = templates.len();
-        let api_count = api_infos.len();
+        let api_count = count - template_mappings.len();
         let request = RegisterTemplatesRequest {
             namespace: self.config.namespace.clone(),
             templates,
@@ -235,42 +305,103 @@ impl ZipSession {
         Ok(())
     }
 
-    /// Forward an engine event to Zeal as a ZIP event.
+    /// Forward an engine event to Zeal as a ZIP event over WebSocket.
     ///
-    /// Called by the trace collector or event bridge when the engine
-    /// emits lifecycle events during execution.
+    /// Called by the event bridge for each execution event.
+    /// Falls back to logging if the WebSocket is not connected.
     pub async fn emit_engine_event(&self, event: &EngineEvent) -> Result<()> {
+        let zip_event = self.translate_event(event);
+
+        if let Some(zip_event) = zip_event {
+            match self.ws.send(&zip_event).await {
+                Ok(()) => {
+                    debug!(
+                        "[ZIP] sent {} for execution={}",
+                        zip_event.event_type(),
+                        event.execution_id
+                    );
+                }
+                Err(e) => {
+                    debug!(
+                        "[ZIP] WebSocket send failed (event={}): {}",
+                        zip_event.event_type(),
+                        e
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Translate an EngineEvent into a ZipExecutionEvent.
+    fn translate_event(&self, event: &EngineEvent) -> Option<ZipExecutionEvent> {
         match &event.event_type {
             EngineEventType::Started => {
-                let _zip_event = create_execution_started_event(
+                let zip_event = create_execution_started_event(
                     &event.workflow_id,
                     &event.execution_id,
-                    &event.workflow_id, // workflow name — use ID as fallback
+                    &event.workflow_id,
                     None,
                 );
-                // TODO: send via WebSocket when SDK event emitter is wired
                 info!(
                     "[ZIP] execution.started workflow={} execution={}",
                     event.workflow_id, event.execution_id
                 );
+                Some(ZipExecutionEvent::ExecutionStarted(zip_event))
             }
-            EngineEventType::ActorCompleted { actor_id } => {
-                let _zip_event = create_node_completed_event(
+
+            EngineEventType::NodeExecuting {
+                node_id,
+                component: _,
+            } => {
+                let zip_event = create_node_executing_event(
                     &event.workflow_id,
-                    actor_id,
-                    vec![], // output connections — will be populated from graph metadata
+                    node_id,
+                    vec![], // input connections
                     None,
                 );
-                info!(
-                    "[ZIP] node.completed workflow={} node={}",
-                    event.workflow_id, actor_id
+                debug!(
+                    "[ZIP] node.executing workflow={} node={}",
+                    event.workflow_id, node_id
                 );
+                Some(ZipExecutionEvent::NodeExecuting(zip_event))
             }
-            EngineEventType::ActorFailed { actor_id, error } => {
-                let _zip_event = create_node_failed_event(
+
+            EngineEventType::ActorCompleted {
+                actor_id,
+                duration_ms,
+                output_size,
+                output_connections,
+                ..
+            } => {
+                let zip_event = create_node_completed_event(
                     &event.workflow_id,
                     actor_id,
-                    vec![],
+                    output_connections.clone(),
+                    Some(NodeCompletedOptions {
+                        duration: *duration_ms,
+                        output_size: *output_size,
+                        ..Default::default()
+                    }),
+                );
+                debug!(
+                    "[ZIP] node.completed workflow={} node={} duration={:?}ms",
+                    event.workflow_id, actor_id, duration_ms
+                );
+                Some(ZipExecutionEvent::NodeCompleted(zip_event))
+            }
+
+            EngineEventType::ActorFailed {
+                actor_id,
+                error,
+                output_connections,
+                ..
+            } => {
+                let zip_event = create_node_failed_event(
+                    &event.workflow_id,
+                    actor_id,
+                    output_connections.clone(),
                     Some(NodeError {
                         message: error.clone(),
                         code: None,
@@ -282,22 +413,41 @@ impl ZipSession {
                     "[ZIP] node.failed workflow={} node={} error={}",
                     event.workflow_id, actor_id, error
                 );
+                Some(ZipExecutionEvent::NodeFailed(zip_event))
             }
-            EngineEventType::Completed => {
-                let _zip_event = create_execution_completed_event(
+
+            EngineEventType::Completed {
+                duration_ms,
+                nodes_executed,
+                nodes_failed,
+            } => {
+                let zip_event = create_execution_completed_event(
                     &event.workflow_id,
                     &event.execution_id,
-                    0, // duration — will be computed from engine timing
-                    0, // nodes executed — will be tracked by engine
-                    None,
+                    *duration_ms,
+                    *nodes_executed,
+                    Some(ExecutionCompletedOptions {
+                        summary: Some(ExecutionSummary {
+                            success_count: nodes_executed - nodes_failed,
+                            error_count: *nodes_failed,
+                            warning_count: 0,
+                        }),
+                        ..Default::default()
+                    }),
                 );
                 info!(
-                    "[ZIP] execution.completed workflow={} execution={}",
-                    event.workflow_id, event.execution_id
+                    "[ZIP] execution.completed workflow={} execution={} duration={}ms nodes={} failed={}",
+                    event.workflow_id,
+                    event.execution_id,
+                    duration_ms,
+                    nodes_executed,
+                    nodes_failed
                 );
+                Some(ZipExecutionEvent::ExecutionCompleted(zip_event))
             }
-            EngineEventType::Failed { error } => {
-                let _zip_event = create_execution_failed_event(
+
+            EngineEventType::Failed { error, duration_ms } => {
+                let zip_event = create_execution_failed_event(
                     &event.workflow_id,
                     &event.execution_id,
                     Some(ExecutionError {
@@ -305,18 +455,20 @@ impl ZipSession {
                         code: None,
                         node_id: None,
                     }),
-                    None,
+                    Some(ExecutionFailedOptions {
+                        duration: *duration_ms,
+                        ..Default::default()
+                    }),
                 );
                 error!(
                     "[ZIP] execution.failed workflow={} execution={} error={}",
                     event.workflow_id, event.execution_id, error
                 );
+                Some(ZipExecutionEvent::ExecutionFailed(zip_event))
             }
-            EngineEventType::NetworkIdle => {
-                // No direct ZIP mapping — informational only
-            }
-        }
 
-        Ok(())
+            // MessageSent, NetworkIdle — no direct ZIP mapping
+            _ => None,
+        }
     }
 }

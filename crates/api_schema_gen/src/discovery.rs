@@ -3,8 +3,7 @@
 //! Crawls public API directories to discover new services and their specs.
 
 use anyhow::Result;
-use serde::Deserialize;
-use tracing::{info, warn};
+use tracing::info;
 
 /// A discovered API service with its spec URL.
 #[derive(Debug, Clone)]
@@ -53,7 +52,7 @@ pub async fn discover_from_apis_guru() -> Result<Vec<DiscoveredApi>> {
             .get("preferred")
             .and_then(|v| v.as_str())
             .and_then(|pref| versions.get(pref))
-            .or_else(|| versions.values().last());
+            .or_else(|| versions.values().next_back());
 
         let Some(version_data) = preferred else {
             continue;

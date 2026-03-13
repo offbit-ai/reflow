@@ -128,8 +128,8 @@ fn parse_operation_id(op_id: &str) -> Option<(String, String)> {
             }
             // camelCase: "listUsers" -> resource = "users"
             // snake_case: "list_users" -> resource = "users"
-            let resource = if rest.starts_with('_') {
-                to_snake_case(&rest[1..])
+            let resource = if let Some(stripped) = rest.strip_prefix('_') {
+                to_snake_case(stripped)
             } else {
                 to_snake_case(rest)
             };
@@ -379,7 +379,7 @@ fn extract_response_schema(op: &OperationInfo) -> Option<serde_json::Value> {
         .or_else(|| op.responses.get("201"))
         .or_else(|| op.responses.get("202"));
 
-    success_resp.and_then(|resp| resp.schema.as_ref().map(|s| schema_to_json_schema(s)))
+    success_resp.and_then(|resp| resp.schema.as_ref().map(schema_to_json_schema))
 }
 
 /// Convert our SchemaInfo to a simplified JSON Schema representation.

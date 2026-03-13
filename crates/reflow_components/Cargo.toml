@@ -29,5 +29,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # JavaScript runtime
 rquickjs = { version = "0.6", features = ["array-buffer", "bindgen", "classes", "futures", "loader", "macro", "parallel", "properties"] }
 
+[features]
+default = ["api"]
+api = []
+
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }

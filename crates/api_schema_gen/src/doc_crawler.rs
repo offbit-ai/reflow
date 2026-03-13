@@ -14,7 +14,7 @@ use crate::registry::{Operation, Parameter, Service};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 /// Extracted doc content ready for LLM processing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -374,6 +374,7 @@ pub async fn crawl_service(service_id: &str, service: &Service) -> CrawlResult {
 
 /// Crawl all services that failed spec-based enrichment.
 /// Returns doc contents ready for parallel LLM processing.
+#[allow(dead_code)]
 pub async fn crawl_unenriched_services(
     services: &HashMap<String, (String, Service)>,
     max_concurrent: usize,

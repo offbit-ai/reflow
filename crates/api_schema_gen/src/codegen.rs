@@ -8,7 +8,6 @@ use crate::registry::{
     AuthMethod, Operation, Parameter, Service, ServiceCategory, ServiceRegistry,
 };
 use anyhow::Result;
-use std::collections::HashMap;
 use std::fmt::Write;
 use std::fs;
 use std::path::Path;
@@ -559,7 +558,7 @@ fn generate_operation_actor(
         .map(|ps| ps.iter().filter(|p| p.location == "header").collect())
         .unwrap_or_default();
     for param in &header_params {
-        let port_name = param.name.replace('-', "_").replace('.', "_");
+        let port_name = param.name.replace(['-', '.'], "_");
         writeln!(
             out,
             "    if let Some(val) = inputs.get(\"{}\") {{",
@@ -797,8 +796,7 @@ fn generate_registry_entries(registry: &ServiceRegistry) -> Result<String> {
                 .description
                 .as_deref()
                 .unwrap_or("")
-                .replace('\n', " ")
-                .replace('\r', " ");
+                .replace(['\n', '\r'], " ");
             let raw_desc = if raw_desc.len() > 200 {
                 format!("{}...", &raw_desc[..197])
             } else {

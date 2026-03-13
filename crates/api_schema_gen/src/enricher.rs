@@ -10,9 +10,8 @@ use crate::registry::{
     ApiKeyConfig, AuthMethod, Authentication, OAuth2Config, Operation, Scope, Service,
     ServiceRegistry,
 };
-use anyhow::Result;
 use std::collections::HashSet;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 /// Well-known OpenAPI spec URLs for services that publish them.
 /// Used as fallback when the registry's schema_url points to docs instead of raw spec.
@@ -58,6 +57,7 @@ pub struct EnrichmentResult {
     pub service_id: String,
     pub original_op_count: usize,
     pub new_op_count: usize,
+    #[allow(dead_code)]
     pub spec_title: Option<String>,
     pub error: Option<String>,
 }
@@ -311,7 +311,7 @@ fn merge_auth(
     auth: &mut Authentication,
     schemes: &std::collections::HashMap<String, SecurityScheme>,
 ) {
-    for (_name, scheme) in schemes {
+    for scheme in schemes.values() {
         match scheme {
             SecurityScheme::ApiKey { name, location } => {
                 if auth.api_key_config.is_none() {

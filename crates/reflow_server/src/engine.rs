@@ -3,19 +3,20 @@
 //! This is the core of a Reflow node. It:
 //! - Creates an isolated `Network` per workflow execution
 //! - Registers actors from `reflow_components`
-//! - Drives execution and emits [`EngineEvent`]s
+//! - Translates low-level [`NetworkEvent`]s into rich [`EngineEvent`]s
 //! - Manages execution state (queued → running → completed/failed/cancelled)
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
 use anyhow::{Result, anyhow};
 use dashmap::DashMap;
-use log::{error, info};
+use log::{debug, error, info};
 use reflow_network::connector::{ConnectionPoint, Connector, InitialPacket};
 use reflow_network::graph::Graph;
 use reflow_network::graph::types::GraphExport;
-use reflow_network::network::{Network, NetworkConfig};
+use reflow_network::network::{Network, NetworkConfig, NetworkEvent};
 use serde::{Deserialize, Serialize};
 
 use crate::zeal_converter::{ZealWorkflow, convert_zeal_to_graph_export};
@@ -39,11 +40,49 @@ pub struct EngineEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EngineEventType {
     Started,
-    ActorCompleted { actor_id: String },
-    ActorFailed { actor_id: String, error: String },
+    /// A node/actor began executing.
+    NodeExecuting {
+        node_id: String,
+        component: String,
+    },
+    /// A node/actor completed successfully.
+    ActorCompleted {
+        actor_id: String,
+        component: String,
+        /// Execution duration in milliseconds (from ActorStarted → ActorCompleted).
+        duration_ms: Option<u64>,
+        /// Serialized output size in bytes.
+        output_size: Option<u64>,
+        /// IDs of outbound connections carrying results.
+        output_connections: Vec<String>,
+    },
+    /// A node/actor failed.
+    ActorFailed {
+        actor_id: String,
+        component: String,
+        error: String,
+        output_connections: Vec<String>,
+    },
+    /// A message was sent between actors.
+    MessageSent {
+        from_node: String,
+        from_port: String,
+        to_node: String,
+        to_port: String,
+        /// Serialized message size in bytes.
+        size: usize,
+    },
     NetworkIdle,
-    Completed,
-    Failed { error: String },
+    /// Execution completed. Includes aggregate stats.
+    Completed {
+        duration_ms: u64,
+        nodes_executed: u32,
+        nodes_failed: u32,
+    },
+    Failed {
+        error: String,
+        duration_ms: Option<u64>,
+    },
 }
 
 // ============================================================================
@@ -206,7 +245,7 @@ impl ExecutionEngine {
     pub async fn get_network_receiver(
         &self,
         execution_id: &str,
-    ) -> Option<flume::Receiver<reflow_network::network::NetworkEvent>> {
+    ) -> Option<flume::Receiver<NetworkEvent>> {
         if let Some(state) = self.executions.get(execution_id)
             && let Some(handle) = &state.network_handle
         {
@@ -219,6 +258,11 @@ impl ExecutionEngine {
     // ── Private ──────────────────────────────────────────────────
 
     /// Background execution worker.
+    ///
+    /// Starts the network, then drains its `NetworkEvent` stream and
+    /// translates each event into an `EngineEvent` with timing, output
+    /// size, and connection metadata. Waits for `NetworkIdle` or
+    /// `NetworkShutdown` before marking the execution as complete.
     async fn run_execution(
         execution_id: String,
         workflow_id: String,
@@ -227,6 +271,8 @@ impl ExecutionEngine {
         executions: Arc<DashMap<String, ExecutionState>>,
         event_tx: flume::Sender<EngineEvent>,
     ) {
+        let exec_start = Instant::now();
+
         // Mark running
         if let Some(mut state) = executions.get_mut(&execution_id) {
             state.status = ExecutionStatus::Running;
@@ -241,85 +287,242 @@ impl ExecutionEngine {
             data: serde_json::json!({}),
         });
 
-        let mut success = false;
-        let mut final_result = serde_json::Value::Null;
-        let mut errors: Vec<String> = Vec::new();
-
-        match Self::create_and_start_network(&graph_json).await {
-            Ok(network_handle) => {
-                // Store the network handle
-                if let Some(mut state) = executions.get_mut(&execution_id) {
-                    let network = Arc::try_unwrap(network_handle.clone())
-                        .map(|mutex| mutex.into_inner().unwrap())
-                        .unwrap_or_else(|arc| (*arc).lock().unwrap().clone());
-                    state.network_handle = Some(Arc::new(tokio::sync::Mutex::new(network)));
-                }
-
-                success = true;
-                final_result = serde_json::json!({
-                    "status": "running",
-                    "execution_id": execution_id,
-                    "workflow_id": workflow_id,
-                });
-                info!("Network started for execution: {}", execution_id);
-            }
+        // Build the network and obtain the event receiver BEFORE wrapping in Arc
+        let (network, net_event_rx, graph) = match Self::build_network(&graph_json) {
+            Ok(result) => result,
             Err(e) => {
                 let error_msg = format!("Network startup failed: {}", e);
-                errors.push(error_msg.clone());
                 error!("{}", error_msg);
-
                 let _ = event_tx.send(EngineEvent {
                     workflow_id: workflow_id.clone(),
                     execution_id: execution_id.clone(),
-                    event_type: EngineEventType::Failed { error: error_msg },
+                    event_type: EngineEventType::Failed {
+                        error: error_msg,
+                        duration_ms: Some(exec_start.elapsed().as_millis() as u64),
+                    },
                     timestamp: chrono::Utc::now().timestamp_millis() as u64,
                     data: serde_json::Value::Null,
                 });
+                Self::finalize_execution(
+                    &executions,
+                    &execution_id,
+                    false,
+                    serde_json::Value::Null,
+                    vec![e.to_string()],
+                );
+                return;
+            }
+        };
+
+        // Store the network handle for cancel/status queries
+        if let Some(mut state) = executions.get_mut(&execution_id) {
+            state.network_handle = Some(Arc::new(tokio::sync::Mutex::new(network)));
+        }
+
+        info!("Network started for execution: {}", execution_id);
+
+        // Build a lookup of outbound connections per node for enriching events.
+        // Map: node_id → vec of "connection_id" (from_port→to_node:to_port).
+        let mut outbound_connections: HashMap<String, Vec<String>> = HashMap::new();
+        for edge in &graph.connections {
+            outbound_connections
+                .entry(edge.from.node_id.clone())
+                .or_default()
+                .push(format!(
+                    "{}:{}→{}:{}",
+                    edge.from.node_id, edge.from.port_id, edge.to.node_id, edge.to.port_id
+                ));
+        }
+
+        // ── Drain NetworkEvents → EngineEvents ──────────────────
+        let mut actor_start_times: HashMap<String, Instant> = HashMap::new();
+        let mut nodes_completed: u32 = 0;
+        let mut nodes_failed: u32 = 0;
+
+        while let Ok(net_event) = net_event_rx.recv_async().await {
+            let now_ms = chrono::Utc::now().timestamp_millis() as u64;
+
+            match net_event {
+                NetworkEvent::ActorStarted {
+                    actor_id,
+                    component,
+                    ..
+                } => {
+                    actor_start_times.insert(actor_id.clone(), Instant::now());
+                    let _ = event_tx.send(EngineEvent {
+                        workflow_id: workflow_id.clone(),
+                        execution_id: execution_id.clone(),
+                        event_type: EngineEventType::NodeExecuting {
+                            node_id: actor_id,
+                            component,
+                        },
+                        timestamp: now_ms,
+                        data: serde_json::json!({}),
+                    });
+                }
+
+                NetworkEvent::ActorCompleted {
+                    actor_id,
+                    component,
+                    outputs,
+                    ..
+                } => {
+                    nodes_completed += 1;
+                    let duration_ms = actor_start_times
+                        .remove(&actor_id)
+                        .map(|t| t.elapsed().as_millis() as u64);
+                    let output_size = outputs
+                        .as_ref()
+                        .and_then(|v| serde_json::to_vec(v).ok())
+                        .map(|b| b.len() as u64);
+                    let conns = outbound_connections
+                        .get(&actor_id)
+                        .cloned()
+                        .unwrap_or_default();
+
+                    let _ = event_tx.send(EngineEvent {
+                        workflow_id: workflow_id.clone(),
+                        execution_id: execution_id.clone(),
+                        event_type: EngineEventType::ActorCompleted {
+                            actor_id: actor_id.clone(),
+                            component,
+                            duration_ms,
+                            output_size,
+                            output_connections: conns,
+                        },
+                        timestamp: now_ms,
+                        data: outputs.unwrap_or(serde_json::Value::Null),
+                    });
+                }
+
+                NetworkEvent::ActorFailed {
+                    actor_id,
+                    component,
+                    error,
+                    ..
+                } => {
+                    nodes_failed += 1;
+                    actor_start_times.remove(&actor_id);
+                    let conns = outbound_connections
+                        .get(&actor_id)
+                        .cloned()
+                        .unwrap_or_default();
+
+                    let _ = event_tx.send(EngineEvent {
+                        workflow_id: workflow_id.clone(),
+                        execution_id: execution_id.clone(),
+                        event_type: EngineEventType::ActorFailed {
+                            actor_id: actor_id.clone(),
+                            component,
+                            error,
+                            output_connections: conns,
+                        },
+                        timestamp: now_ms,
+                        data: serde_json::Value::Null,
+                    });
+                }
+
+                NetworkEvent::MessageSent {
+                    from_actor,
+                    from_port,
+                    to_actor,
+                    to_port,
+                    message,
+                    ..
+                } => {
+                    let size = serde_json::to_vec(&message).map(|b| b.len()).unwrap_or(0);
+                    let _ = event_tx.send(EngineEvent {
+                        workflow_id: workflow_id.clone(),
+                        execution_id: execution_id.clone(),
+                        event_type: EngineEventType::MessageSent {
+                            from_node: from_actor,
+                            from_port,
+                            to_node: to_actor,
+                            to_port,
+                            size,
+                        },
+                        timestamp: now_ms,
+                        data: serde_json::Value::Null,
+                    });
+                }
+
+                NetworkEvent::NetworkIdle { .. } => {
+                    debug!("Network idle for execution: {}", execution_id);
+                    let _ = event_tx.send(EngineEvent {
+                        workflow_id: workflow_id.clone(),
+                        execution_id: execution_id.clone(),
+                        event_type: EngineEventType::NetworkIdle,
+                        timestamp: now_ms,
+                        data: serde_json::json!({}),
+                    });
+                    // NetworkIdle means all actors finished — treat as completion.
+                    break;
+                }
+
+                NetworkEvent::NetworkShutdown { .. } => {
+                    info!("Network shutdown for execution: {}", execution_id);
+                    break;
+                }
+
+                // ActorEmit, MessageReceived — informational, skip for now
+                _ => {}
             }
         }
 
-        // Emit completion/failure
+        // ── Emit completion ─────────────────────────────────────
+        let duration_ms = exec_start.elapsed().as_millis() as u64;
+        let success = nodes_failed == 0;
+
         if success {
             let _ = event_tx.send(EngineEvent {
                 workflow_id: workflow_id.clone(),
                 execution_id: execution_id.clone(),
-                event_type: EngineEventType::Completed,
+                event_type: EngineEventType::Completed {
+                    duration_ms,
+                    nodes_executed: nodes_completed,
+                    nodes_failed: 0,
+                },
                 timestamp: chrono::Utc::now().timestamp_millis() as u64,
-                data: final_result.clone(),
+                data: serde_json::json!({
+                    "duration_ms": duration_ms,
+                    "nodes_executed": nodes_completed,
+                }),
+            });
+        } else {
+            let _ = event_tx.send(EngineEvent {
+                workflow_id: workflow_id.clone(),
+                execution_id: execution_id.clone(),
+                event_type: EngineEventType::Completed {
+                    duration_ms,
+                    nodes_executed: nodes_completed + nodes_failed,
+                    nodes_failed,
+                },
+                timestamp: chrono::Utc::now().timestamp_millis() as u64,
+                data: serde_json::json!({
+                    "duration_ms": duration_ms,
+                    "nodes_executed": nodes_completed + nodes_failed,
+                    "nodes_failed": nodes_failed,
+                }),
             });
         }
 
-        // Update final state
-        let now = chrono::Utc::now().to_rfc3339();
-        let result = ExecutionResult {
-            success,
-            execution_id: execution_id.clone(),
-            start_time: now.clone(),
-            end_time: Some(now),
-            results: final_result,
-            errors: if errors.is_empty() {
-                None
-            } else {
-                Some(errors)
-            },
-            trace_session_id: Some(format!("trace_{}", execution_id)),
-        };
+        let final_result = serde_json::json!({
+            "status": if success { "completed" } else { "completed_with_errors" },
+            "execution_id": execution_id,
+            "workflow_id": workflow_id,
+            "duration_ms": duration_ms,
+            "nodes_executed": nodes_completed + nodes_failed,
+            "nodes_failed": nodes_failed,
+        });
 
-        if let Some(mut state) = executions.get_mut(&execution_id) {
-            state.status = if success {
-                ExecutionStatus::Completed
-            } else {
-                ExecutionStatus::Failed
-            };
-            state.end_time = Some(Instant::now());
-            state.result = Some(result);
-        }
+        Self::finalize_execution(&executions, &execution_id, success, final_result, vec![]);
     }
 
-    /// Create a Network from graph JSON, register all actors, and start it.
-    async fn create_and_start_network(
+    /// Build a Network from graph JSON, register actors, start it,
+    /// and return the network + its event receiver + parsed graph.
+    fn build_network(
         graph_json: &serde_json::Value,
-    ) -> Result<Arc<std::sync::Mutex<Network>>> {
+    ) -> Result<(Network, flume::Receiver<NetworkEvent>, Graph)> {
         let graph_export: GraphExport = serde_json::from_value(graph_json.clone())
             .map_err(|e| anyhow!("Failed to parse graph JSON: {}", e))?;
         let graph = Graph::load(graph_export, None);
@@ -359,7 +562,6 @@ impl ExecutionEngine {
         }
 
         // Register all actors from reflow_components (native + API)
-        // First register native actors by both template_id and actor_name
         let template_mappings = reflow_components::get_template_mapping();
         for (template_id, actor_name) in &template_mappings {
             if let Some(actor) = reflow_components::get_actor_for_template(template_id) {
@@ -373,15 +575,52 @@ impl ExecutionEngine {
         // Register any graph node components not covered by native templates
         // (e.g. api_github_create_issue, api_slack_send_message, etc.)
         for node in graph.nodes.values() {
-            if !template_mappings.contains_key(&node.component) {
-                if let Some(actor) = reflow_components::get_actor_for_template(&node.component) {
-                    let _ = network.register_actor_arc(&node.component, actor);
-                }
+            if !template_mappings.contains_key(&node.component)
+                && let Some(actor) = reflow_components::get_actor_for_template(&node.component)
+            {
+                let _ = network.register_actor_arc(&node.component, actor);
             }
         }
 
+        // Grab the event receiver BEFORE start() to avoid missing early events
+        let net_event_rx = network.get_event_receiver();
+
         network.start()?;
 
-        Ok(Arc::new(std::sync::Mutex::new(network)))
+        Ok((network, net_event_rx, graph))
+    }
+
+    /// Update final execution state in the DashMap.
+    fn finalize_execution(
+        executions: &DashMap<String, ExecutionState>,
+        execution_id: &str,
+        success: bool,
+        results: serde_json::Value,
+        errors: Vec<String>,
+    ) {
+        let now = chrono::Utc::now().to_rfc3339();
+        let result = ExecutionResult {
+            success,
+            execution_id: execution_id.to_string(),
+            start_time: now.clone(),
+            end_time: Some(now),
+            results,
+            errors: if errors.is_empty() {
+                None
+            } else {
+                Some(errors)
+            },
+            trace_session_id: Some(format!("trace_{}", execution_id)),
+        };
+
+        if let Some(mut state) = executions.get_mut(execution_id) {
+            state.status = if success {
+                ExecutionStatus::Completed
+            } else {
+                ExecutionStatus::Failed
+            };
+            state.end_time = Some(Instant::now());
+            state.result = Some(result);
+        }
     }
 }

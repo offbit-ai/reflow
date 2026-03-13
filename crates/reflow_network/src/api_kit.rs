@@ -1009,14 +1009,14 @@ impl ApiOperationActor {
     ) -> Result<()> {
         if let Some(parameters) = &self.operation.parameters {
             for param in parameters {
-                if param.location == "header" {
-                    if let Some(value) = context.payload.get(&param.name) {
-                        let string_value = self.message_to_string(value)?;
-                        headers.insert(
-                            reqwest::header::HeaderName::from_bytes(param.name.as_bytes())?,
-                            reqwest::header::HeaderValue::from_str(&string_value)?,
-                        );
-                    }
+                if param.location == "header"
+                    && let Some(value) = context.payload.get(&param.name)
+                {
+                    let string_value = self.message_to_string(value)?;
+                    headers.insert(
+                        reqwest::header::HeaderName::from_bytes(param.name.as_bytes())?,
+                        reqwest::header::HeaderValue::from_str(&string_value)?,
+                    );
                 }
             }
         }

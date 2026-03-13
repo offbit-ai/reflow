@@ -18,12 +18,14 @@ pub struct OpenApiSpec {
     pub servers: Vec<ServerInfo>,
     pub paths: Vec<PathItem>,
     pub security_schemes: HashMap<String, SecurityScheme>,
+    #[allow(dead_code)]
     pub components_schemas: HashMap<String, Value>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ServerInfo {
     pub url: String,
+    #[allow(dead_code)]
     pub description: Option<String>,
 }
 
@@ -68,8 +70,11 @@ pub struct SchemaInfo {
     pub items: Option<Box<SchemaInfo>>,
     pub properties: HashMap<String, SchemaInfo>,
     pub required: Vec<String>,
+    #[allow(dead_code)]
     pub pattern: Option<String>,
+    #[allow(dead_code)]
     pub minimum: Option<f64>,
+    #[allow(dead_code)]
     pub maximum: Option<f64>,
     pub ref_path: Option<String>,
 }
@@ -78,12 +83,14 @@ pub struct SchemaInfo {
 pub struct RequestBodyInfo {
     pub description: Option<String>,
     pub required: bool,
+    #[allow(dead_code)]
     pub content_types: Vec<String>,
     pub schema: Option<SchemaInfo>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ResponseInfo {
+    #[allow(dead_code)]
     pub description: Option<String>,
     pub schema: Option<SchemaInfo>,
 }
@@ -96,6 +103,7 @@ pub enum SecurityScheme {
     },
     Http {
         scheme: String,
+        #[allow(dead_code)]
         bearer_format: Option<String>,
     },
     OAuth2 {
@@ -386,7 +394,7 @@ fn parse_operation(
         .map(|resp_map| {
             resp_map
                 .iter()
-                .filter_map(|(code, resp)| {
+                .map(|(code, resp)| {
                     let desc = resp
                         .get("description")
                         .and_then(|v| v.as_str())
@@ -400,13 +408,13 @@ fn parse_operation(
                             // Swagger 2.x
                             resp.get("schema").and_then(|s| parse_schema(s, schemas))
                         });
-                    Some((
+                    (
                         code.clone(),
                         ResponseInfo {
                             description: desc,
                             schema,
                         },
-                    ))
+                    )
                 })
                 .collect()
         })

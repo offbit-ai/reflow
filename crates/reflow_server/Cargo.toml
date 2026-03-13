@@ -8,10 +8,14 @@ authors = ["Damilare Akinlaja"]
 name = "reflow_server"
 path = "src/main.rs"
 
+[features]
+default = ["api"]
+api = ["reflow_components/api"]
+
 [dependencies]
 reflow_network = { path = "../reflow_network" }
 reflow_graph = { path = "../reflow_graph" }
-reflow_components = { path = "../reflow_components" }
+reflow_components = { path = "../reflow_components", default-features = false }
 actor_macro = { path = "../actor_macro" }
 zeal-sdk = { path = "../../../zeal/packages/zeal-rust-sdk" }
 serde = { workspace = true }
@@ -24,6 +28,7 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["cors"] }
 futures-util = "0.3"
 futures = "0.3"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 uuid = { version = "1.4", features = ["v4", "serde"] }
 chrono = "0.4"
 reqwest = { version = "0.12", features = ["json"] }

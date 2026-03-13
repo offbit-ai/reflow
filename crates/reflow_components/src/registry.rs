@@ -38,7 +38,10 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_video_input" => Some(Arc::new(VideoInputActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
+        #[cfg(feature = "api")]
         other => crate::api::api_registry::get_api_actor_for_template(other),
+        #[cfg(not(feature = "api"))]
+        _ => None,
     }
 }
 

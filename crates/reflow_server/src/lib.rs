@@ -9,6 +9,7 @@
 //! │  zip_session ──► Outbound connection to Zeal IDE       │
 //! │  rest_api    ──► Inbound HTTP API for direct callers   │
 //! │  engine      ──► Core execution lifecycle              │
+//! │  event_bridge ► EngineEvent → TraceCollector + ZIP WS  │
 //! │  trace_collector ► EngineEvent → ZIP trace sessions    │
 //! │  peer_mesh   ──► Distributed peer-to-peer mesh         │
 //! │  zeal_converter ► Zeal workflow → Reflow graph         │
@@ -18,6 +19,7 @@
 //! All ZIP protocol types come from the `zeal-sdk` crate.
 
 pub mod engine;
+pub mod event_bridge;
 pub mod peer_mesh;
 pub mod rest_api;
 pub mod trace_collector;
@@ -32,6 +34,7 @@ use serde::{Deserialize, Serialize};
 
 // Re-export key types for external consumers and main.rs
 pub use engine::{EngineEvent, ExecutionEngine, ExecutionState, ExecutionStatus};
+pub use event_bridge::EventBridge;
 pub use rest_api::{ApiResponse, AppState, ExecutionMetadata, WorkflowExecutionRequest};
 
 // ============================================================================
@@ -91,11 +94,12 @@ pub async fn start_server(config: Option<ServerConfig>) -> Result<()> {
     // 1. Create the shared execution engine
     let engine = Arc::new(ExecutionEngine::new());
 
-    // 2. Build the REST API router
-    let app = rest_api::build_router(engine.clone());
+    // 2. Optionally create the observability pipeline (TraceCollector + ZipSession + EventBridge)
+    let event_bridge = if let Some(zeal_url) = &config.zeal_url {
+        // Trace collector submits per-node data via HTTP
+        let trace_collector = Arc::new(trace_collector::TraceCollector::new(zeal_url));
 
-    // 3. Optionally start a ZIP session to Zeal
-    if let Some(zeal_url) = &config.zeal_url {
+        // ZIP session handles template registration + WebSocket event stream
         let zip_config = zip_session::ZipSessionConfig {
             zeal_url: zeal_url.clone(),
             namespace: config.namespace.clone(),
@@ -104,17 +108,28 @@ pub async fn start_server(config: Option<ServerConfig>) -> Result<()> {
             capabilities: vec!["distributed".into(), "streaming".into()],
         };
 
-        let session = zip_session::ZipSession::new(zip_config, engine.clone())?;
+        let zip_session = Arc::new(zip_session::ZipSession::new(zip_config, engine.clone())?);
 
-        // Run the ZIP session in the background
+        // Start the ZIP session (template registration + WebSocket + command loop)
+        let session_clone = zip_session.clone();
         tokio::spawn(async move {
-            if let Err(e) = session.start().await {
+            if let Err(e) = session_clone.start().await {
                 log::error!("ZIP session error: {}", e);
             }
         });
 
         info!("ZIP session started → {}", zeal_url);
-    }
+
+        // Create the event bridge that wires execution events to both consumers
+        let bridge = Arc::new(EventBridge::new(Some(trace_collector), Some(zip_session)));
+
+        Some(bridge)
+    } else {
+        None
+    };
+
+    // 3. Build the REST API router with the event bridge
+    let app = rest_api::build_router(engine.clone(), event_bridge);
 
     // 4. Start the HTTP server
     let addr = format!("{}:{}", config.bind_address, config.port);
@@ -186,6 +201,6 @@ mod tests {
     #[tokio::test]
     async fn test_rest_api_router_builds() {
         let engine = Arc::new(ExecutionEngine::new());
-        let _router = rest_api::build_router(engine);
+        let _router = rest_api::build_router(engine, None);
     }
 }

@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
 
 use crate::engine::{ExecutionEngine, ExecutionState};
+use crate::event_bridge::EventBridge;
 use crate::zeal_converter::{ZealWorkflow, convert_zeal_to_graph_export};
 
 // ============================================================================
@@ -83,6 +84,8 @@ impl<T> ApiResponse<T> {
 #[derive(Clone)]
 pub struct AppState {
     pub engine: Arc<ExecutionEngine>,
+    /// When set, execution events are forwarded to TraceCollector + ZipSession.
+    pub event_bridge: Option<Arc<EventBridge>>,
 }
 
 // ============================================================================
@@ -97,21 +100,31 @@ async fn start_workflow(
     State(state): State<AppState>,
     Json(request): Json<WorkflowExecutionRequest>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
+    let workflow_id = request.metadata.workflow_id.clone();
+    let execution_id = request.metadata.execution_id.clone();
+
     match state
         .engine
         .start_execution(
             request.graph_json,
             request.input,
-            request.metadata.execution_id.clone(),
-            request.metadata.workflow_id.clone(),
+            execution_id.clone(),
+            workflow_id.clone(),
         )
         .await
     {
-        Ok((execution_id, _event_rx)) => Ok(Json(ApiResponse::success(serde_json::json!({
-            "execution_id": execution_id,
-            "status": "started",
-            "message": "Workflow started in background"
-        })))),
+        Ok((execution_id, event_rx)) => {
+            // Attach the event bridge to forward events to Zeal
+            if let Some(bridge) = &state.event_bridge {
+                bridge.attach(workflow_id, execution_id.clone(), event_rx);
+            }
+
+            Ok(Json(ApiResponse::success(serde_json::json!({
+                "execution_id": execution_id,
+                "status": "started",
+                "message": "Workflow started in background"
+            }))))
+        }
         Err(e) => {
             error!("Workflow start error: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -159,16 +172,25 @@ async fn execute_zeal_workflow(
         .unwrap_or(&serde_json::Value::Null)
         .clone();
 
+    let workflow_id = zeal_workflow.id.clone();
+
     match state
         .engine
         .start_zeal_execution(zeal_workflow, input)
         .await
     {
-        Ok((execution_id, _event_rx)) => Ok(Json(ApiResponse::success(serde_json::json!({
-            "execution_id": execution_id,
-            "status": "started",
-            "message": "Zeal workflow converted and started"
-        })))),
+        Ok((execution_id, event_rx)) => {
+            // Attach the event bridge to forward events to Zeal
+            if let Some(bridge) = &state.event_bridge {
+                bridge.attach(workflow_id, execution_id.clone(), event_rx);
+            }
+
+            Ok(Json(ApiResponse::success(serde_json::json!({
+                "execution_id": execution_id,
+                "status": "started",
+                "message": "Zeal workflow converted and started"
+            }))))
+        }
         Err(e) => {
             error!("Zeal workflow execution error: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -276,17 +298,23 @@ async fn handle_ws_message(
             if let Some(data) = json.get("data") {
                 match serde_json::from_value::<WorkflowExecutionRequest>(data.clone()) {
                     Ok(request) => {
+                        let workflow_id = request.metadata.workflow_id.clone();
                         match state
                             .engine
                             .start_execution(
                                 request.graph_json,
                                 request.input,
                                 request.metadata.execution_id.clone(),
-                                request.metadata.workflow_id.clone(),
+                                workflow_id.clone(),
                             )
                             .await
                         {
-                            Ok((execution_id, _)) => {
+                            Ok((execution_id, event_rx)) => {
+                                // Attach event bridge
+                                if let Some(bridge) = &state.event_bridge {
+                                    bridge.attach(workflow_id, execution_id.clone(), event_rx);
+                                }
+
                                 let _ = send_json(
                                     tx,
                                     serde_json::json!({
@@ -417,8 +445,14 @@ async fn send_json(
 // ============================================================================
 
 /// Build the REST API router with all handlers.
-pub fn build_router(engine: Arc<ExecutionEngine>) -> Router {
-    let state = AppState { engine };
+pub fn build_router(
+    engine: Arc<ExecutionEngine>,
+    event_bridge: Option<Arc<EventBridge>>,
+) -> Router {
+    let state = AppState {
+        engine,
+        event_bridge,
+    };
 
     Router::new()
         .route("/health", get(health_check))
