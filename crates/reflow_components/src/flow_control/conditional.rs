@@ -1,6 +1,6 @@
 //! Conditional branching actor for if/else routing.
 
-use crate::{Actor, ActorBehavior, MemoryState, Message, Port};
+use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;

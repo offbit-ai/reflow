@@ -55,12 +55,10 @@ pub async fn http_request_actor(context: ActorContext) -> Result<HashMap<String,
 
     // Apply custom headers from headers_in port
     if let Some(Message::Object(headers_obj)) = inputs.get("headers_in") {
-        if let Ok(headers_val) = serde_json::to_value(headers_obj) {
-            if let Value::Object(map) = headers_val {
-                for (key, value) in map {
-                    if let Some(v) = value.as_str() {
-                        request_builder = request_builder.header(&key, v);
-                    }
+        if let Ok(Value::Object(map)) = serde_json::to_value(headers_obj) {
+            for (key, value) in map {
+                if let Some(v) = value.as_str() {
+                    request_builder = request_builder.header(&key, v);
                 }
             }
         }

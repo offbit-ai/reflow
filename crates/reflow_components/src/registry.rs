@@ -11,6 +11,7 @@ use std::sync::Arc;
 use crate::flow_control::{ConditionalBranchActor, LoopActor, SwitchCaseActor};
 use crate::integration::HttpRequestActor;
 use crate::logic::RulesEngineActor;
+use crate::media::{AudioInputActor, ImageInputActor, VideoInputActor};
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
 /// Get an actor instance for a given Zeal template ID
@@ -30,6 +31,11 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
 
         // Logic
         "tpl_rules_engine" => Some(Arc::new(RulesEngineActor::new())),
+
+        // Media
+        "tpl_image_input" => Some(Arc::new(ImageInputActor::new())),
+        "tpl_audio_input" => Some(Arc::new(AudioInputActor::new())),
+        "tpl_video_input" => Some(Arc::new(VideoInputActor::new())),
 
         _ => None,
     }
@@ -61,6 +67,9 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_rules_engine".to_string(),
         "RulesEngineActor".to_string(),
     );
+    mapping.insert("tpl_image_input".to_string(), "ImageInputActor".to_string());
+    mapping.insert("tpl_audio_input".to_string(), "AudioInputActor".to_string());
+    mapping.insert("tpl_video_input".to_string(), "VideoInputActor".to_string());
 
     mapping
 }

@@ -7,6 +7,7 @@
 pub mod flow_control;
 pub mod integration;
 pub mod logic;
+pub mod media;
 pub mod registry;
 pub mod transform;
 

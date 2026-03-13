@@ -75,6 +75,7 @@ pub enum DeploymentStatus {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct FunctionStatusResponse {
+    #[allow(dead_code)]
     id: String,
     #[allow(dead_code)]
     name: String,

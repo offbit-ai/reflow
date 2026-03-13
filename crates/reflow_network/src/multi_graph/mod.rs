@@ -986,7 +986,6 @@ impl GraphComposer {
                 id,
                 component: shared_resource.component.clone(),
                 metadata: shared_resource.metadata.clone(),
-                ..Default::default()
             };
             composed
                 .processes

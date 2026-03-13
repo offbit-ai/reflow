@@ -721,7 +721,6 @@ impl Network {
             id: id.to_string(),
             component: process.to_string(),
             metadata,
-            ..Default::default()
         };
         self.nodes.insert(id.to_string(), node);
 
@@ -852,27 +851,6 @@ impl Network {
         network
     }
 
-    /// Resolve component specifications from graph node metadata.
-    ///
-    /// Scans all nodes for `componentSpec` metadata entries and auto-registers
-    /// actors that haven't been manually registered yet. This bridges the gap
-    /// between graph definition and runtime — the graph declares *what* a
-    /// component is (`ComponentSpec`), and this method provisions the actual
-    /// actor implementation.
-    ///
-    /// Call between `with_graph()` and `start()`:
-    /// ```ignore
-    /// let network = Network::with_graph(config, &graph);
-    /// network.lock().unwrap().resolve_components(&registry).await?;
-    /// network.lock().unwrap().start()?;
-    /// ```
-    ///
-    /// Resolution rules:
-    ///   - `ComponentSpec::Native` → expects actor already registered by name
-    ///   - `ComponentSpec::Script { .. }` → creates actor via `ComponentRegistry`
-    ///   - `ComponentSpec::Wasm { .. }` → reserved (not yet implemented)
-    ///   - `ComponentSpec::Subgraph { .. }` → reserved (handled by SubgraphActor)
-    ///   - No `componentSpec` → expects actor already registered by name (legacy)
     /// Collect unresolved component specs from graph nodes.
     ///
     /// Returns `(node_id, component_name, spec)` for every node whose

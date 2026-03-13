@@ -142,6 +142,9 @@ mod tests {
             "tpl_data_transformer",
             "tpl_data_operations",
             "tpl_rules_engine",
+            "tpl_image_input",
+            "tpl_audio_input",
+            "tpl_video_input",
         ];
 
         for template in &expected_templates {

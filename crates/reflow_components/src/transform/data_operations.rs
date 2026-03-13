@@ -1,12 +1,13 @@
 //! Advanced data operations actor with template literal support and JS expression evaluation.
 
 use super::data_transform::json_value_to_message;
-use super::js_eval::{evaluate_js_expression, evaluate_js_filter};
+use super::js_eval::{
+    evaluate_js_expression_with_inputs, evaluate_js_filter_with_inputs, resolve_template_string,
+};
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
-use regex::Regex;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -87,63 +88,14 @@ pub async fn data_operations_actor(
     Ok(result)
 }
 
-/// Process template literals: `${input.get('portName').data.field}` → actual values
-fn process_template_literals(
+/// Resolve template strings via JS evaluation.
+/// Handles `${input.get('portName').data.field}` and any valid JS template expression.
+fn resolve_templates(
     expression: &str,
+    data: &Value,
     inputs: &HashMap<String, Message>,
 ) -> Result<String> {
-    let re = Regex::new(r"\$\{([^}]+)\}")?;
-    let mut processed = expression.to_string();
-
-    for cap in re.captures_iter(expression) {
-        let full_match = &cap[0];
-        let inner_expr = &cap[1];
-
-        if inner_expr.starts_with("input.get(") {
-            if let Some(value) = extract_input_value(inner_expr, inputs) {
-                let json_str = serde_json::to_string(&value)?;
-                processed = processed.replace(full_match, &json_str);
-            }
-        }
-    }
-
-    Ok(processed)
-}
-
-/// Extract value from `input.get('portName').data.field` expression
-fn extract_input_value(expr: &str, inputs: &HashMap<String, Message>) -> Option<Value> {
-    let port_re = Regex::new(r#"input\.get\(['"]([^'"]+)['"]\)"#).ok()?;
-
-    if let Some(cap) = port_re.captures(expr) {
-        let port_name = &cap[1];
-
-        if let Some(port_data) = inputs.get(port_name) {
-            let mut value = serde_json::to_value(port_data).ok()?;
-
-            let rest = &expr[cap.get(0)?.end()..];
-            if !rest.is_empty() {
-                let field_path = if let Some(stripped) = rest.strip_prefix(".data") {
-                    stripped
-                } else {
-                    rest
-                };
-
-                for field in field_path.split('.').filter(|s| !s.is_empty()) {
-                    if field.starts_with('[') && field.ends_with(']') {
-                        if let Ok(index) = field[1..field.len() - 1].parse::<usize>() {
-                            value = value.as_array()?.get(index)?.clone();
-                        }
-                    } else {
-                        value = value.get(field)?.clone();
-                    }
-                }
-            }
-
-            return Some(value);
-        }
-    }
-
-    None
+    resolve_template_string(expression, data, inputs)
 }
 
 fn process_map_operation(
@@ -171,19 +123,23 @@ fn process_map_operation(
                             let transform = mapping.get("transform").and_then(|v| v.as_str());
 
                             if !source_field.is_empty() && !target_field.is_empty() {
-                                let processed_source =
-                                    process_template_literals(source_field, inputs)?;
-
                                 let value = if let Some(transform_expr) = transform {
                                     if !transform_expr.is_empty() {
-                                        let processed_transform =
-                                            process_template_literals(transform_expr, inputs)?;
-                                        evaluate_js_expression(&processed_transform, &item)?
+                                        let resolved =
+                                            resolve_templates(transform_expr, &item, inputs)?;
+                                        evaluate_js_expression_with_inputs(
+                                            &resolved,
+                                            &item,
+                                            Some(inputs),
+                                        )?
                                     } else {
-                                        serde_json::from_str(&processed_source)?
+                                        let resolved =
+                                            resolve_templates(source_field, &item, inputs)?;
+                                        serde_json::from_str(&resolved)?
                                     }
                                 } else {
-                                    serde_json::from_str(&processed_source)?
+                                    let resolved = resolve_templates(source_field, &item, inputs)?;
+                                    serde_json::from_str(&resolved)?
                                 };
 
                                 if let Value::Object(ref mut obj) = item {
@@ -213,16 +169,22 @@ fn process_filter_operation(
 
     if let Some(expr) = filter_expr {
         if !expr.is_empty() {
-            let processed_expr = process_template_literals(expr, inputs)?;
+            let resolved_expr = resolve_templates(expr, &data, inputs)?;
 
             match data {
                 Value::Array(items) => {
                     let filtered: Result<Vec<Value>> = items
                         .into_iter()
-                        .filter_map(|item| match evaluate_js_filter(&processed_expr, &item) {
-                            Ok(true) => Some(Ok(item)),
-                            Ok(false) => None,
-                            Err(e) => Some(Err(e)),
+                        .filter_map(|item| {
+                            match evaluate_js_filter_with_inputs(
+                                &resolved_expr,
+                                &item,
+                                Some(inputs),
+                            ) {
+                                Ok(true) => Some(Ok(item)),
+                                Ok(false) => None,
+                                Err(e) => Some(Err(e)),
+                            }
                         })
                         .collect();
                     Ok(Value::Array(filtered?))
@@ -250,13 +212,17 @@ fn process_sort_operation(
 
     if let Some(field_expr) = sort_field {
         if !field_expr.is_empty() {
-            let processed_field = process_template_literals(field_expr, inputs)?;
+            let resolved_field = resolve_templates(field_expr, &data, inputs)?;
 
             match data {
                 Value::Array(mut items) => {
                     items.sort_by(|a, b| {
-                        let a_val = evaluate_js_expression(&processed_field, a).ok();
-                        let b_val = evaluate_js_expression(&processed_field, b).ok();
+                        let a_val =
+                            evaluate_js_expression_with_inputs(&resolved_field, a, Some(inputs))
+                                .ok();
+                        let b_val =
+                            evaluate_js_expression_with_inputs(&resolved_field, b, Some(inputs))
+                                .ok();
 
                         let ordering = match (a_val, b_val) {
                             (Some(Value::Number(a)), Some(Value::Number(b))) => {
@@ -297,8 +263,8 @@ fn process_transform_operation(
 
     if let Some(expr) = transform_expr {
         if !expr.is_empty() {
-            let processed_expr = process_template_literals(expr, inputs)?;
-            evaluate_js_expression(&processed_expr, &data)
+            let resolved_expr = resolve_templates(expr, &data, inputs)?;
+            evaluate_js_expression_with_inputs(&resolved_expr, &data, Some(inputs))
         } else {
             Ok(data)
         }
@@ -316,14 +282,18 @@ fn process_group_operation(
 
     if let Some(field_expr) = group_field {
         if !field_expr.is_empty() {
-            let processed_field = process_template_literals(field_expr, inputs)?;
+            let resolved_field = resolve_templates(field_expr, &data, inputs)?;
 
             match data {
                 Value::Array(items) => {
                     let mut groups: HashMap<String, Vec<Value>> = HashMap::new();
 
                     for item in items {
-                        let key_value = evaluate_js_expression(&processed_field, &item)?;
+                        let key_value = evaluate_js_expression_with_inputs(
+                            &resolved_field,
+                            &item,
+                            Some(inputs),
+                        )?;
                         let key = match key_value {
                             Value::String(s) => s,
                             Value::Number(n) => n.to_string(),
@@ -361,12 +331,17 @@ fn process_aggregate_operation(
         Value::Array(items) => {
             if let Some(field_expr) = agg_field {
                 if !field_expr.is_empty() {
-                    let processed_field = process_template_literals(field_expr, inputs)?;
+                    let resolved_field =
+                        resolve_templates(field_expr, &Value::Array(items.clone()), inputs)?;
 
                     let values: Result<Vec<f64>> = items
                         .iter()
                         .map(|item| {
-                            let val = evaluate_js_expression(&processed_field, item)?;
+                            let val = evaluate_js_expression_with_inputs(
+                                &resolved_field,
+                                item,
+                                Some(inputs),
+                            )?;
                             match val {
                                 Value::Number(n) => Ok(n.as_f64().unwrap_or(0.0)),
                                 _ => Ok(0.0),

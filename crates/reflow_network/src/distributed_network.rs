@@ -89,6 +89,7 @@ impl DistributedNetwork {
 
     /// Resolve component specifications on the local network.
     /// See [`Network::resolve_components`] for details.
+    #[allow(clippy::await_holding_lock)]
     pub async fn resolve_components(
         &self,
         registry: &crate::script_discovery::registry::ComponentRegistry,
