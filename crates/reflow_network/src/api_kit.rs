@@ -701,6 +701,7 @@ impl ApiToolGenerator {
             component: "ApiOperation".to_string(),
             metadata: Some(std::collections::HashMap::new()),
             script_runtime: None,
+            component_spec: None,
         };
 
         let actor_config = ActorConfig {

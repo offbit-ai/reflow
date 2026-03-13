@@ -21,6 +21,12 @@ pub struct GraphNode {
     // Script runtime indicator (if this is a script actor)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub script_runtime: Option<ScriptRuntime>,
+
+    /// Component specification — defines the component type, source, and
+    /// runtime requirements. When present, the network uses this to detect
+    /// and deploy the component automatically.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub component_spec: Option<ComponentSpec>,
 }
 
 /// Runtime environment for script actors
@@ -28,6 +34,148 @@ pub struct GraphNode {
 pub enum ScriptRuntime {
     Python,
     JavaScript,
+}
+
+/// Component specification — the contract that tells the runtime what kind
+/// of component this is and how to deploy it.
+///
+/// A graph node's `component` field names the actor. `component_spec` tells
+/// the runtime *what* the actor is and where its code lives.
+///
+/// ```json
+/// {
+///   "id": "transform",
+///   "component": "DataTransformer",
+///   "componentSpec": {
+///     "type": "script",
+///     "script": {
+///       "runtime": "nodejs",
+///       "source": "inline",
+///       "code": "module.exports.handler = (event) => ({ out: event.data * 2 })",
+///       "handler": "handler",
+///       "dependencies": { "lodash": "^4.17.0" }
+///     }
+///   }
+/// }
+/// ```
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum ComponentSpec {
+    /// A pre-registered native Rust actor — resolved by component name
+    Native,
+
+    /// A script actor — deployed to a runtime (dynASB, embedded, etc.)
+    Script {
+        script: ScriptSpec,
+    },
+
+    /// A WASM actor — loaded from a .wasm binary
+    Wasm {
+        /// Path or URL to the .wasm module
+        source: String,
+        /// Entry point function name
+        handler: String,
+    },
+
+    /// A subgraph reference — another graph used as a component
+    Subgraph {
+        /// Graph name or path
+        graph: String,
+    },
+}
+
+impl Default for ComponentSpec {
+    fn default() -> Self {
+        ComponentSpec::Native
+    }
+}
+
+/// Script source and runtime specification.
+///
+/// For Node.js:
+/// ```json
+/// {
+///   "runtime": "nodejs",
+///   "source": "inline",
+///   "code": "module.exports.handler = (event) => ({ out: event.data })",
+///   "handler": "handler",
+///   "dependencies": { "lodash": "^4.17.0", "axios": "^1.6.0" }
+/// }
+/// ```
+///
+/// For Python:
+/// ```json
+/// {
+///   "runtime": "python",
+///   "source": "file",
+///   "path": "./actors/transform.py",
+///   "handler": "handler",
+///   "dependencies": { "numpy": "*", "pandas": ">=2.0" }
+/// }
+/// ```
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub struct ScriptSpec {
+    /// Runtime: "nodejs", "python", "ruby", "lua"
+    pub runtime: String,
+
+    /// Source type: "inline" (code in `code` field) or "file" (path in `path` field)
+    #[serde(default = "default_source_type")]
+    pub source: ScriptSourceType,
+
+    /// Inline source code (when source = "inline")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+
+    /// File path relative to graph file (when source = "file")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+
+    /// Entry point / handler function name
+    #[serde(default = "default_handler")]
+    pub handler: String,
+
+    /// Package dependencies: { "package_name": "version_spec" }
+    /// Node.js: npm packages, Python: pip packages, Ruby: gems, Lua: rocks
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    #[cfg_attr(target_arch = "wasm32", tsify(type = "Map<string, string> | undefined"))]
+    pub dependencies: HashMap<String, String>,
+
+    /// Timeout in seconds for script execution
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<u32>,
+
+    /// Memory limit in MB
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory_mb: Option<u32>,
+}
+
+/// How the script source is provided
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+#[serde(rename_all = "camelCase")]
+pub enum ScriptSourceType {
+    /// Code is inline in the `code` field
+    #[default]
+    Inline,
+    /// Code is in a file at `path`
+    File,
+}
+
+fn default_source_type() -> ScriptSourceType {
+    ScriptSourceType::Inline
+}
+
+fn default_handler() -> String {
+    "handler".to_string()
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]

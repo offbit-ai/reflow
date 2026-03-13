@@ -6,9 +6,6 @@ pub mod script_actor_trait;
 pub mod types;
 // pub mod actor_bridge;  // TODO: Re-enable when needed for simple script actors
 
-// MicroSandbox integration - core component for secure script execution
-pub mod microsandbox_runtime;
-
 #[cfg(test)]
 mod test_helpers;
 #[cfg(test)]

@@ -67,11 +67,6 @@ memmap2 = "0.9"
 shared_memory = "0.12"
 base64 = "0.21"
 
-# MicroSandbox for secure Python/JavaScript execution
-microsandbox = {version = "0.1.2", git = "https://github.com/microsandbox/microsandbox.git" }
-
-
-
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2.86"}
 lz4_flex = "0.11.3"

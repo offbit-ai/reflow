@@ -214,7 +214,7 @@ impl WebSocketRpcClient {
             }
             Ok(WebSocketMessage::Notification(notification)) => {
                 // Handle async notification from script
-                // Support both "output" (from MicroSandbox) and "script_output" (from tests/bridge)
+                // Support both "output" (from dynASB) and "script_output" (from tests/bridge)
                 if notification.method == "output" || notification.method == "script_output" {
                     if let Some(sender) = &*output_sender.read() {
                         // Parse the output data - handle both direct ScriptOutput and nested params

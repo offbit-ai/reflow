@@ -883,6 +883,7 @@ impl Graph {
             component: component.to_owned(),
             metadata,
             script_runtime: None,
+            component_spec: None,
         };
 
         if self.nodes.contains_key(id) {

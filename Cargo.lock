@@ -736,7 +736,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be92d32e80243a54711e5d7ce823c35c41c9d929dc4ab58e1276f625841aadf9"
 dependencies = [
  "clap_builder",
- "clap_derive",
 ]
 
 [[package]]
@@ -745,22 +744,8 @@ version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "707eab41e9622f9139419d573eca0900137718000c517d47da73045f54331c3d"
 dependencies = [
- "anstream",
  "anstyle",
  "clap_lex",
- "strsim",
-]
-
-[[package]]
-name = "clap_derive"
-version = "4.5.41"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef4f52386a59ca4c860f7393bcf8abd8dfd91ecccc0f774635ff68e92eeef491"
-dependencies = [
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.104",
 ]
 
 [[package]]
@@ -1524,12 +1509,6 @@ dependencies = [
  "quote",
  "syn 2.0.104",
 ]
-
-[[package]]
-name = "dotenv"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "dotenvy"
@@ -3272,39 +3251,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "microsandbox"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6fa4838a3db017bdd232a3d7a6f9d51675714f511ec25a89ae539a25594547a"
-dependencies = [
- "async-trait",
- "dotenv",
- "futures 0.3.31",
- "reqwest 0.12.22",
- "serde",
- "serde_json",
- "tokio",
- "tokio-util",
- "uuid",
-]
-
-[[package]]
-name = "microsandbox"
-version = "0.1.2"
-source = "git+https://github.com/microsandbox/microsandbox.git#47364b683538d2f72c71a48e2e9b507457289e08"
-dependencies = [
- "async-trait",
- "dotenv",
- "futures 0.3.31",
- "reqwest 0.12.22",
- "serde",
- "serde_json",
- "tokio",
- "tokio-util",
- "uuid",
-]
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4594,29 +4540,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reflow_microsandbox_runtime"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "flume",
- "futures-util",
- "microsandbox 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.12.4",
- "reflow_graph",
- "reflow_network",
- "regex",
- "serde",
- "serde_json",
- "tokio",
- "tokio-tungstenite 0.20.1",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
 name = "reflow_network"
 version = "0.1.1"
 dependencies = [
@@ -4642,7 +4565,6 @@ dependencies = [
  "lazy_static",
  "lz4_flex",
  "memmap2",
- "microsandbox 0.1.2 (git+https://github.com/microsandbox/microsandbox.git)",
  "num_cpus",
  "once_cell",
  "ordered-float",
@@ -6015,12 +5937,6 @@ dependencies = [
  "unicode-normalization",
  "unicode-properties",
 ]
-
-[[package]]
-name = "strsim"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "subtle"

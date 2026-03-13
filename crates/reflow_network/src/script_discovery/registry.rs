@@ -1,8 +1,10 @@
 use super::factory::{
-    ActorFactory, JavaScriptActorFactory, PythonActorFactory, ScriptActorFactory,
+    ActorFactory, DynASBActorFactory, JavaScriptActorFactory, PythonActorFactory,
+    ScriptActorFactory,
 };
 use super::types::*;
 use crate::actor::Actor;
+use crate::websocket_rpc::{DynASBClient, DynASBConfig, DeploymentStatus, DynASBFunction};
 use anyhow::Result;
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -16,6 +18,8 @@ pub enum ComponentType {
     Native,
     Wasm,
     Script(ScriptRuntime),
+    /// Remote script actor deployed and executed on dynASB microVMs
+    DynASB,
 }
 
 /// Unified component registry for all actor types
@@ -26,11 +30,14 @@ pub struct ComponentRegistry {
     /// WASM actors
     // wasm_actors: HashMap<String, WasmActorFactory>,
 
-    /// Script actors
+    /// Script actors (includes both embedded and dynASB-backed)
     script_actors: HashMap<String, Arc<dyn ActorFactory>>,
 
     /// Component type index
     component_index: HashMap<String, ComponentType>,
+
+    /// Shared dynASB client for remote script deployment
+    dynasb_client: Option<Arc<tokio::sync::Mutex<DynASBClient>>>,
 }
 
 impl Default for ComponentRegistry {
@@ -45,10 +52,42 @@ impl ComponentRegistry {
             native_actors: HashMap::new(),
             script_actors: HashMap::new(),
             component_index: HashMap::new(),
+            dynasb_client: None,
         }
     }
 
-    /// Register a script actor
+    /// Configure the dynASB backend for remote script execution
+    pub fn set_dynasb_config(&mut self, config: DynASBConfig) {
+        self.dynasb_client = Some(Arc::new(tokio::sync::Mutex::new(
+            DynASBClient::new(config),
+        )));
+    }
+
+    /// Register a script actor for remote execution on dynASB.
+    /// The script source is read and deployed when the actor is instantiated.
+    pub fn register_dynasb_actor(
+        &mut self,
+        name: &str,
+        metadata: DiscoveredScriptActor,
+    ) -> Result<()> {
+        let client = self.dynasb_client.clone()
+            .ok_or_else(|| anyhow::anyhow!(
+                "dynASB not configured. Call set_dynasb_config() first."
+            ))?;
+
+        let factory: Arc<dyn ActorFactory> = Arc::new(
+            DynASBActorFactory::new(metadata, client),
+        );
+
+        self.script_actors.insert(name.to_string(), factory);
+        self.component_index
+            .insert(name.to_string(), ComponentType::DynASB);
+
+        info!("Registered dynASB script actor: {}", name);
+        Ok(())
+    }
+
+    /// Register a script actor for embedded execution (Python/JavaScript)
     pub fn register_script_actor(
         &mut self,
         name: &str,
@@ -56,7 +95,6 @@ impl ComponentRegistry {
     ) -> Result<()> {
         let runtime = metadata.runtime;
 
-        // Create appropriate factory based on runtime
         let factory: Arc<dyn ActorFactory> = match runtime {
             ScriptRuntime::Python => Arc::new(PythonActorFactory::new(metadata)?),
             ScriptRuntime::JavaScript => Arc::new(JavaScriptActorFactory::new(metadata)?),
@@ -80,25 +118,23 @@ impl ComponentRegistry {
         Ok(())
     }
 
-    /// Get an actor instance (returns Arc for native actors)
+    /// Get an actor instance — creates via factory for script/dynASB actors
     pub async fn get_actor(&self, name: &str) -> Result<Arc<dyn Actor>> {
         match self.component_index.get(name) {
             Some(ComponentType::Native) => {
-                // Return the Arc directly (no cloning needed)
                 self.native_actors
                     .get(name)
                     .cloned()
                     .ok_or_else(|| anyhow::anyhow!("Native actor not found: {}", name))
             }
-            Some(ComponentType::Script(_)) => {
-                // Script actors need to be created through factories
-                // For now, return error as script actors don't implement Actor trait yet
-                Err(anyhow::anyhow!(
-                    "Script actor instantiation not yet implemented"
-                ))
+            Some(ComponentType::Script(_)) | Some(ComponentType::DynASB) => {
+                // Create actor instance via factory (deploys to dynASB if DynASB type)
+                let factory = self.script_actors.get(name)
+                    .ok_or_else(|| anyhow::anyhow!("Script actor factory not found: {}", name))?;
+                let actor = factory.create_instance().await?;
+                Ok(Arc::from(actor))
             }
             Some(ComponentType::Wasm) => {
-                // TODO: Create WASM actor instance
                 Err(anyhow::anyhow!("WASM actor support not yet implemented"))
             }
             None => Err(anyhow::anyhow!("Component not found: {}", name)),
@@ -138,6 +174,60 @@ impl ComponentRegistry {
         self.component_index.len()
     }
 
+    /// Query deployment status for a dynASB-backed component.
+    ///
+    /// Delegates to `DynASBClient.deployed_functions()` — the single source
+    /// of truth for deployment metadata. Returns `None` for non-dynASB components
+    /// or if dynASB is not configured.
+    pub async fn get_deployment_status(&self, name: &str) -> Option<DynASBFunction> {
+        if !matches!(self.component_index.get(name), Some(ComponentType::DynASB)) {
+            return None;
+        }
+
+        let client = self.dynasb_client.as_ref()?;
+        let guard = client.lock().await;
+        guard.deployed_functions()
+            .values()
+            .find(|f| f.name == name)
+            .cloned()
+    }
+
+    /// Run a health check for a dynASB-backed component and return updated status.
+    pub async fn check_deployment_health(&self, name: &str) -> Option<DeploymentStatus> {
+        if !matches!(self.component_index.get(name), Some(ComponentType::DynASB)) {
+            return None;
+        }
+
+        let client = self.dynasb_client.as_ref()?;
+        let mut guard = client.lock().await;
+
+        // Find the function_id for this component name
+        let function_id = guard.deployed_functions()
+            .values()
+            .find(|f| f.name == name)
+            .map(|f| f.function_id.clone())?;
+
+        guard.health_check(&function_id).await.ok()
+    }
+
+    /// Get deployment metadata for a dynASB component as a flat map,
+    /// suitable for merging into `GraphNode.metadata`.
+    pub async fn get_deployment_metadata(&self, name: &str) -> Option<HashMap<String, serde_json::Value>> {
+        if !matches!(self.component_index.get(name), Some(ComponentType::DynASB)) {
+            return None;
+        }
+
+        let client = self.dynasb_client.as_ref()?;
+        let guard = client.lock().await;
+
+        let function_id = guard.deployed_functions()
+            .values()
+            .find(|f| f.name == name)
+            .map(|f| f.function_id.clone())?;
+
+        Some(guard.deployment_metadata(&function_id))
+    }
+
     /// Get count by type
     pub fn count_by_type(&self) -> HashMap<String, usize> {
         let mut counts = HashMap::new();
@@ -148,6 +238,7 @@ impl ComponentRegistry {
                 ComponentType::Wasm => "wasm",
                 ComponentType::Script(ScriptRuntime::Python) => "python",
                 ComponentType::Script(ScriptRuntime::JavaScript) => "javascript",
+                ComponentType::DynASB => "dynasb",
             };
 
             *counts.entry(key.to_string()).or_insert(0) += 1;
@@ -247,21 +338,17 @@ impl ActorRegistry {
             .unwrap_or_default()
     }
 
-    /// Create an actor instance
-    /// Note: Script actors don't implement Actor trait yet, so this returns an error
+    /// Create an actor instance via its factory
     pub async fn create_instance(&self, name: &str) -> Result<Arc<dyn Actor>> {
         let registered = self
             .get(name)
             .ok_or_else(|| anyhow::anyhow!("Actor not registered: {}", name))?;
 
-        // Increment instantiation count
         registered
             .instantiation_count
             .fetch_add(1, Ordering::Relaxed);
 
-        // Script actors need proper Actor trait implementation
-        Err(anyhow::anyhow!(
-            "Script actor instantiation not yet implemented - WebSocketScriptActor doesn't implement Actor trait"
-        ))
+        let actor = registered.factory.create_instance().await?;
+        Ok(Arc::from(actor))
     }
 }
