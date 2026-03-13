@@ -652,9 +652,102 @@ let config = WorkspaceConfig {
 };
 ```
 
+## Distributed Composition
+
+When a multi-graph workspace spans multiple Reflow nodes, the **DistributedGraphComposition** system extends local composition with cross-network awareness.
+
+### DistributedGraphComposition
+
+```rust
+pub struct DistributedGraphComposition {
+    pub local_sources: Vec<GraphSource>,
+    pub remote_sources: Vec<RemoteGraphConfig>,
+    pub local_connections: Vec<CompositionConnection>,
+    pub distributed_connections: Vec<DistributedConnection>,
+    pub properties: HashMap<String, Value>,
+    pub execution_targets: HashMap<String, String>,  // graph → network_id
+}
+```
+
+Remote sources describe graphs fetched from other networks:
+
+```rust
+pub struct RemoteGraphConfig {
+    pub network_id: String,
+    pub graph_name: String,
+    pub execution_target: Option<String>,  // where the graph executes
+}
+```
+
+### Distributed Connections
+
+Cross-network connections use `DistributedEndpoint`s with an optional `network_id` (`None` = local):
+
+```rust
+pub struct DistributedConnection {
+    pub from: DistributedEndpoint,
+    pub to: DistributedEndpoint,
+    pub metadata: Option<HashMap<String, Value>>,
+}
+
+pub struct DistributedEndpoint {
+    pub network_id: Option<String>,  // None = local
+    pub process: String,             // "namespace/process"
+    pub port: String,
+    pub index: Option<usize>,
+}
+```
+
+### Namespace Resolution
+
+The `DistributedNamespaceResolver` maps every process to its home network using qualified names `{network_id}/{namespace}/{process}`:
+
+```rust
+let mut resolver = DistributedNamespaceResolver::new("local");
+resolver.register_local_graph("data_pipeline", &graph)?;
+resolver.register_remote_graph("gpu_cluster", "ml", &remote_graph)?;
+
+// Detect connections that cross network boundaries
+let cross_edges = resolver.find_cross_network_connections(&connections)?;
+```
+
+Each `CrossNetworkEdge` records `from_network`, `to_network`, and the port details, plus a `proxy_actor_name()` method that generates a name like `"ml/trainer@gpu_cluster"`.
+
+### Composition Planning
+
+`plan_distributed_composition()` produces a `DistributedCompositionPlan`:
+
+```rust
+pub struct DistributedCompositionPlan {
+    pub local_composition: GraphComposition,
+    pub proxy_actors: Vec<ProxyActorSpec>,
+    pub cross_network_edges: Vec<CrossNetworkEdge>,
+    pub remote_executions: HashMap<String, String>,
+}
+```
+
+The planner:
+1. Identifies cross-network edges from distributed connections
+2. Creates `ProxyActorSpec` entries for each unique remote target
+3. Rewrites local connections to route through proxy actors
+4. Builds the local composition with proxy-aware wiring
+5. Tracks which graphs are delegated to remote nodes
+
+Each proxy spec describes a local stand-in for a remote actor:
+
+```rust
+pub struct ProxyActorSpec {
+    pub proxy_name: String,         // e.g., "ml/trainer@gpu_cluster"
+    pub remote_network_id: String,
+    pub remote_actor_id: String,
+}
+```
+
+At execution time, `execute_distributed_plan()` materializes proxy specs into `RemoteActorProxy` instances (30s forward timeout) that bridge messages through the `NetworkBridge` WebSocket layer.
+
 ## Next Steps
 
 - [Workspace Discovery API](../api/graph/workspace-discovery.md) - Detailed API documentation
-- [Graph Stitching API](../api/graph/graph-stitching.md) - Advanced composition features  
+- [Distributed Networks](./distributed-networks.md) - PeerMesh, NetworkBridge, and RemoteActorProxy
+- [Graph System](./graph-system.md) - SubgraphActor and core graph operations
 - [Multi-Graph Workspace Tutorial](../tutorials/multi-graph-workspace.md) - Step-by-step guide
-- [ActorConfig System](../api/actors/actor-config.md) - Actor configuration system

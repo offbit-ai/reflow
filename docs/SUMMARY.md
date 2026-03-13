@@ -22,6 +22,7 @@
 - [Graph System](architecture/graph-system.md)
 - [Distributed Networks](architecture/distributed-networks.md)
 - [Multi-Graph Composition](architecture/multi-graph-composition.md)
+- [dynASB — Actor FaaS](architecture/dynasb.md)
 
 ---
 

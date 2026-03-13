@@ -401,9 +401,81 @@ curl http://your-network:8080/health
 curl http://your-network:8080/status
 ```
 
+## PeerMesh — Server-Side Distributed Orchestration
+
+When running as a Reflow server node connected to Zeal, the **PeerMesh** manages peer-to-peer connections for distributed execution. It creates one `DistributedNetwork` per execution and responds to orchestration commands from Zeal.
+
+### Architecture
+
+```rust
+pub struct PeerMesh {
+    networks: RwLock<HashMap<String, DistributedNetwork>>,
+    node_id: String,
+    bind_address: String,
+    base_port: u16,
+}
+```
+
+The PeerMesh:
+- Creates a `DistributedNetwork` per execution, each binding on an incrementing port
+- Responds to `subgraph.assign` commands from Zeal (via ZipSession) to take ownership of subgraph execution
+- Responds to `peer.connect` commands to establish peer-to-peer links between nodes
+- Tears down per-execution networks on completion
+
+### Integration with Zeal
+
+When Zeal orchestrates a distributed workflow:
+
+1. Zeal sends `subgraph.assign` to each Reflow node via the ZIP WebSocket
+2. The PeerMesh creates a `DistributedNetwork` for the assigned execution
+3. Zeal sends `peer.connect` to establish connections between nodes
+4. The PeerMesh calls `connect_peer()` to link networks via WebSocket bridges
+5. Remote actors are registered as `RemoteActorProxy` instances in the local network
+6. On execution completion, `teardown_execution()` cleans up the distributed network
+
+```rust
+// PeerMesh responds to Zeal commands
+peer_mesh.connect_peer(execution_id, peer_address).await?;
+peer_mesh.register_remote_actor(execution_id, actor_id, network_id).await?;
+peer_mesh.teardown_execution(execution_id).await;
+```
+
+### Distributed Composition Planning
+
+For workflows spanning multiple Reflow nodes, the **DistributedComposition** system plans execution across network boundaries:
+
+```rust
+pub struct DistributedGraphComposition {
+    pub local_sources: Vec<GraphSource>,
+    pub remote_sources: Vec<RemoteGraphConfig>,
+    pub local_connections: Vec<CompositionConnection>,
+    pub distributed_connections: Vec<DistributedConnection>,
+    pub execution_targets: HashMap<String, String>,  // graph → network_id
+}
+```
+
+The `DistributedNamespaceResolver` maps processes to their home networks using qualified names like `{network_id}/{namespace}/{process}`:
+
+```rust
+let mut resolver = DistributedNamespaceResolver::new();
+resolver.register_local_graph("data_pipeline", &graph)?;
+resolver.register_remote_graph("ml_pipeline", "ml_node_1", &remote_graph)?;
+
+// Find edges that cross network boundaries
+let cross_edges = resolver.find_cross_network_connections(&connections)?;
+```
+
+The planner produces a `DistributedCompositionPlan` with:
+- `local_composition` — the graph to execute on this node
+- `proxy_actors` — `ProxyActorSpec` entries for actors that proxy to remote networks
+- `cross_network_edges` — connections requiring proxy bridges
+- `remote_executions` — graphs delegated to other nodes
+
 ## Next Steps
 
+- [Multi-Graph Composition](./multi-graph-composition.md) - Workspace discovery and graph composition
+- [Graph System](./graph-system.md) - Core graph operations and SubgraphActor
 - [Remote Actors](../api/distributed/remote-actors.md) - Detailed remote actor API
 - [Discovery & Registration](../api/distributed/discovery-registration.md) - Network discovery details
-- [Conflict Resolution](../api/distributed/conflict-resolution.md) - Advanced conflict handling
+- [Zeal IDE Integration](../integration/zeal-ide.md) - ZIP session and orchestration commands
 - [Distributed Workflow Tutorial](../tutorials/distributed-workflow-example.md) - Step-by-step example
