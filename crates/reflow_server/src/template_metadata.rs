@@ -143,6 +143,63 @@ fn tpl(
     }
 }
 
+/// Build a NodeTemplate with a display component.
+fn tpl_display(
+    id: &str,
+    title: &str,
+    subtitle: &str,
+    category: &str,
+    subcategory: &str,
+    desc: &str,
+    icon: &str,
+    variant: &str,
+    ports: Vec<ZealPort>,
+    properties: Option<HashMap<String, PropertyDefinition>>,
+    display: DisplayComponent,
+    version: &Option<String>,
+    capabilities: &Option<Vec<String>>,
+) -> NodeTemplate {
+    let mut t = tpl(id, title, subtitle, category, subcategory, desc, icon, variant, ports, properties, version, capabilities);
+    t.display = Some(display);
+    t
+}
+
+/// Creates a DisplayComponent with inline JS source.
+fn display_inline(element: &str, source: &str, observed: &[&str], width: Option<&str>) -> DisplayComponent {
+    DisplayComponent {
+        element: element.to_string(),
+        bundle_id: None,
+        source: Some(source.to_string()),
+        shadow: Some(true),
+        observed_props: Some(observed.iter().map(|s| s.to_string()).collect()),
+        width: width.map(|w| w.to_string()),
+    }
+}
+
+// Display component sources (compiled into binary via include_str!)
+const SPECTRUM_JS: &str = include_str!("../../../display_components/spectrum.js");
+const DYNAMICS_JS: &str = include_str!("../../../display_components/dynamics.js");
+const EQ_JS: &str = include_str!("../../../display_components/eq.js");
+const STATS_JS: &str = include_str!("../../../display_components/stats.js");
+// Note: image_preview.js and waveform.js exist but are not used for processing
+// actors — Zeal has built-in display components for audio/image stream display nodes.
+const CROSSOVER_JS: &str = include_str!("../../../display_components/crossover.js");
+
+/// Returns display component sources to be uploaded via upload_bundle.
+/// Map of element name → JS source file content.
+/// Returns display component sources for upload via upload_bundle.
+/// These are only for actors that need unique visualization.
+/// Audio/image stream display is handled by Zeal's built-in renderers.
+pub fn get_display_component_sources() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("reflow-spectrum",      SPECTRUM_JS),
+        ("reflow-dynamics",      DYNAMICS_JS),
+        ("reflow-eq",            EQ_JS),
+        ("reflow-stats",         STATS_JS),
+        ("reflow-crossover",     CROSSOVER_JS),
+    ]
+}
+
 /// Returns rich template metadata for all native stream actors.
 pub fn build_stream_actor_templates(
     version: &Option<String>,
@@ -151,7 +208,7 @@ pub fn build_stream_actor_templates(
     let v = version;
     let c = capabilities;
 
-    vec![
+    let mut templates = vec![
         // ── Plumbing ──────────────────────────────────────────────────
 
         tpl(
@@ -709,5 +766,52 @@ pub fn build_stream_actor_templates(
             ]),
             v, c,
         ),
-    ]
+    ];
+
+    // Attach display components to the templates that have visual UI
+    let display_map: HashMap<&str, DisplayComponent> = HashMap::from([
+        // Spectrum analyzer — frequency bar chart with peak hold
+        ("tpl_audio_spectrum", display_inline(
+            "reflow-spectrum", SPECTRUM_JS, &["fftSize"], Some("360px"),
+        )),
+        // Compressor, Limiter, Noise Gate, De-Esser — gain reduction + transfer curve
+        ("tpl_compressor", display_inline(
+            "reflow-dynamics", DYNAMICS_JS, &["thresholdDb", "ratio", "kneeDb"], None,
+        )),
+        ("tpl_limiter", display_inline(
+            "reflow-dynamics", DYNAMICS_JS, &["ceilingDb"], None,
+        )),
+        ("tpl_noise_gate", display_inline(
+            "reflow-dynamics", DYNAMICS_JS, &["thresholdDb", "ratio"], None,
+        )),
+        ("tpl_de_esser", display_inline(
+            "reflow-dynamics", DYNAMICS_JS, &["thresholdDb", "ratio"], None,
+        )),
+        // Equalizer — interactive frequency response curve
+        ("tpl_equalizer", display_inline(
+            "reflow-eq", EQ_JS, &["bands", "sampleRate"], Some("360px"),
+        )),
+        // Stream Stats — live throughput counters
+        ("tpl_stream_stats", display_inline(
+            "reflow-stats", STATS_JS, &[], None,
+        )),
+        // Note: Image processing actors (grayscale, brightness, chroma key, resize)
+        // and waveform actors (envelope, silence, peak detect) don't need custom
+        // display components — Zeal has built-in renderers for audio/image streams.
+        // Users connect them to tpl_image_stream_display or tpl_audio_stream_display
+        // nodes for visualization.
+        // Crossover — 3-band frequency response with draggable points
+        ("tpl_crossover", display_inline(
+            "reflow-crossover", CROSSOVER_JS, &["lowFrequency", "highFrequency"], Some("320px"),
+        )),
+    ]);
+
+    // Apply display components to matching templates
+    for template in &mut templates {
+        if let Some(dc) = display_map.get(template.id.as_str()) {
+            template.display = Some(dc.clone());
+        }
+    }
+
+    templates
 }
