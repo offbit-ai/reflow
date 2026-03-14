@@ -474,7 +474,8 @@ The planner produces a `DistributedCompositionPlan` with:
 ## Next Steps
 
 - [Multi-Graph Composition](./multi-graph-composition.md) - Workspace discovery and graph composition
-- [Graph System](./graph-system.md) - Core graph operations and SubgraphActor
+- [SubgraphActor](./subgraph-actor.md) - Hierarchical graph composition
+- [Graph System](./graph-system.md) - Core graph operations
 - [Remote Actors](../api/distributed/remote-actors.md) - Detailed remote actor API
 - [Discovery & Registration](../api/distributed/discovery-registration.md) - Network discovery details
 - [Zeal IDE Integration](../integration/zeal-ide.md) - ZIP session and orchestration commands

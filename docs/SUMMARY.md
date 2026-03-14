@@ -21,6 +21,7 @@
 - [Message Passing](architecture/message-passing.md)
 - [Graph System](architecture/graph-system.md)
 - [Distributed Networks](architecture/distributed-networks.md)
+- [SubgraphActor](architecture/subgraph-actor.md)
 - [Multi-Graph Composition](architecture/multi-graph-composition.md)
 - [dynASB — Actor FaaS](architecture/dynasb.md)
 
