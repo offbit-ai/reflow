@@ -17,9 +17,11 @@ pub mod gpu;
 pub mod integration;
 pub mod io;
 pub mod logic;
+pub mod math;
 pub mod media;
 pub mod registry;
 pub mod stream_ops;
+pub mod text;
 pub mod transform;
 
 #[cfg(test)]

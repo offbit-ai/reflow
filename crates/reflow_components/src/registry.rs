@@ -9,8 +9,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::flow_control::{ConditionalBranchActor, LoopActor, SwitchCaseActor};
+use crate::math::{
+    MathAbsoluteActor, MathAddActor, MathAverageActor, MathClampActor, MathDivideActor,
+    MathExpressionActor, MathMinMaxActor, MathModuloActor, MathMultiplyActor, MathPowerActor,
+    MathRandomActor, MathRoundActor, MathSqrtActor, MathStatisticsActor, MathSubtractActor,
+    MathSumActor,
+};
 use crate::integration::HttpRequestActor;
 use crate::io::{FileLoadActor, FileSaveActor};
+use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
 use crate::logic::RulesEngineActor;
 use crate::media::{
     AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
@@ -60,6 +67,29 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_image_input" => Some(Arc::new(ImageInputActor::new())),
         "tpl_audio_input" => Some(Arc::new(AudioInputActor::new())),
         "tpl_video_input" => Some(Arc::new(VideoInputActor::new())),
+
+        // Math
+        "tpl_math_add" => Some(Arc::new(MathAddActor::new())),
+        "tpl_math_subtract" => Some(Arc::new(MathSubtractActor::new())),
+        "tpl_math_multiply" => Some(Arc::new(MathMultiplyActor::new())),
+        "tpl_math_divide" => Some(Arc::new(MathDivideActor::new())),
+        "tpl_math_modulo" => Some(Arc::new(MathModuloActor::new())),
+        "tpl_math_power" => Some(Arc::new(MathPowerActor::new())),
+        "tpl_math_sqrt" => Some(Arc::new(MathSqrtActor::new())),
+        "tpl_math_absolute" => Some(Arc::new(MathAbsoluteActor::new())),
+        "tpl_math_clamp" => Some(Arc::new(MathClampActor::new())),
+        "tpl_math_min_max" => Some(Arc::new(MathMinMaxActor::new())),
+        "tpl_math_round" => Some(Arc::new(MathRoundActor::new())),
+        "tpl_math_random" => Some(Arc::new(MathRandomActor::new())),
+        "tpl_math_average" => Some(Arc::new(MathAverageActor::new())),
+        "tpl_math_sum" => Some(Arc::new(MathSumActor::new())),
+        "tpl_math_statistics" => Some(Arc::new(MathStatisticsActor::new())),
+        "tpl_math_expression" => Some(Arc::new(MathExpressionActor::new())),
+
+        // Text / Utilities
+        "tpl_json_parser" => Some(Arc::new(JsonParserActor::new())),
+        "tpl_regex_matcher" => Some(Arc::new(RegexMatcherActor::new())),
+        "tpl_date_time" => Some(Arc::new(DateTimeActor::new())),
 
         // Image Codecs
         "tpl_image_decode" => Some(Arc::new(ImageDecodeActor::new())),
@@ -238,6 +268,26 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Image DSP (continued)
     mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
+
+    // Math
+    for (id, name) in [
+        ("tpl_math_add", "MathAddActor"), ("tpl_math_subtract", "MathSubtractActor"),
+        ("tpl_math_multiply", "MathMultiplyActor"), ("tpl_math_divide", "MathDivideActor"),
+        ("tpl_math_modulo", "MathModuloActor"), ("tpl_math_power", "MathPowerActor"),
+        ("tpl_math_sqrt", "MathSqrtActor"), ("tpl_math_absolute", "MathAbsoluteActor"),
+        ("tpl_math_clamp", "MathClampActor"), ("tpl_math_min_max", "MathMinMaxActor"),
+        ("tpl_math_round", "MathRoundActor"), ("tpl_math_random", "MathRandomActor"),
+        ("tpl_math_average", "MathAverageActor"), ("tpl_math_sum", "MathSumActor"),
+        ("tpl_math_statistics", "MathStatisticsActor"),
+        ("tpl_math_expression", "MathExpressionActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
+    // Text / Utilities
+    mapping.insert("tpl_json_parser".to_string(), "JsonParserActor".to_string());
+    mapping.insert("tpl_regex_matcher".to_string(), "RegexMatcherActor".to_string());
+    mapping.insert("tpl_date_time".to_string(), "DateTimeActor".to_string());
+
     mapping.insert("tpl_image_decode".to_string(), "ImageDecodeActor".to_string());
     mapping.insert("tpl_image_encode".to_string(), "ImageEncodeActor".to_string());
     mapping.insert("tpl_file_load".to_string(), "FileLoadActor".to_string());
