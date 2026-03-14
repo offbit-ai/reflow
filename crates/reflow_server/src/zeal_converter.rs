@@ -116,8 +116,35 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
     // Create a new Graph using the fluent API
     let mut graph = Graph::new(&main_graph.name, false, Some(properties));
 
-    // Add nodes using the Graph API
+    // Identify input nodes that should become IIPs instead of graph nodes.
+    // These are Zeal's user-input widgets — they produce static values, not
+    // actor computations. Their output connections become initial packets.
+    let input_node_templates: std::collections::HashSet<&str> = [
+        "tpl_text_input",
+        "tpl_number_input",
+        "tpl_range_input",
+    ]
+    .into_iter()
+    .collect();
+
+    let mut input_node_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    // First pass: collect input node IDs
     for zeal_node in &main_graph.nodes {
+        let tpl = zeal_node
+            .template_id
+            .as_deref()
+            .unwrap_or(&zeal_node.node_type);
+        if input_node_templates.contains(tpl) {
+            input_node_ids.insert(zeal_node.id.clone());
+        }
+    }
+
+    // Add nodes using the Graph API (skip input nodes — they become IIPs)
+    for zeal_node in &main_graph.nodes {
+        if input_node_ids.contains(&zeal_node.id) {
+            continue;
+        }
         let mut node_metadata = HashMap::new();
 
         // Add position
@@ -136,12 +163,18 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
             node_metadata.insert("size".to_string(), json!(size));
         }
 
-        // Add properties (template configuration)
-        node_metadata.insert("properties".to_string(), json!(zeal_node.properties));
-
-        // Add property values (user-provided values)
+        // Merge property defaults + user overrides into flat config.
+        // properties: Record<string, { defaultValue, type, ... }> → extract defaults
+        // property_values: Record<string, any> → user overrides (take precedence)
+        for (key, prop_def) in &zeal_node.properties {
+            if let Some(default) = prop_def.get("defaultValue") {
+                node_metadata.insert(key.clone(), default.clone());
+            }
+        }
         if let Some(property_values) = &zeal_node.property_values {
-            node_metadata.insert("propertyValues".to_string(), json!(property_values));
+            for (key, value) in property_values {
+                node_metadata.insert(key.clone(), value.clone());
+            }
         }
 
         // Add port definitions
@@ -163,8 +196,28 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
         graph.add_node(&zeal_node.id, &component, Some(node_metadata));
     }
 
-    // Add connections using the Graph API
+    // Add connections using the Graph API.
+    // Connections FROM input nodes become IIPs on the target port.
     for zeal_conn in &main_graph.connections {
+        if input_node_ids.contains(&zeal_conn.from.node_id) {
+            // Find the input node to extract its value
+            if let Some(input_node) = main_graph.nodes.iter().find(|n| n.id == zeal_conn.from.node_id) {
+                let value = extract_input_node_value(input_node);
+                graph.add_initial(
+                    value,
+                    &zeal_conn.to.node_id,
+                    &zeal_conn.to.port_id,
+                    None,
+                );
+            }
+            continue;
+        }
+
+        // Skip connections TO input nodes (shouldn't exist, but be safe)
+        if input_node_ids.contains(&zeal_conn.to.node_id) {
+            continue;
+        }
+
         graph.add_connection(
             &zeal_conn.from.node_id,
             &zeal_conn.from.port_id,
@@ -174,20 +227,22 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
         );
     }
 
-    // Add initial packets for nodes without incoming connections that have property values
+    // Add initial packets for nodes without incoming connections that have property values.
+    // Skip input nodes (already converted to IIPs above).
     for zeal_node in &main_graph.nodes {
-        // Check if this node has any incoming connections
+        if input_node_ids.contains(&zeal_node.id) {
+            continue;
+        }
+
         let has_incoming = main_graph
             .connections
             .iter()
-            .any(|conn| conn.to.node_id == zeal_node.id);
+            .any(|conn| conn.to.node_id == zeal_node.id && !input_node_ids.contains(&conn.from.node_id));
 
         if !has_incoming {
-            // Create initial packet if the node has property values
             if let Some(property_values) = &zeal_node.property_values
                 && !property_values.is_empty()
             {
-                // Find an input port
                 if let Some(input_port) = zeal_node.ports.iter().find(|p| p.port_type == "input") {
                     graph.add_initial(json!(property_values), &zeal_node.id, &input_port.id, None);
                 }
@@ -211,6 +266,51 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
 pub fn convert_zeal_to_graph_export(zeal_workflow: &ZealWorkflow) -> Result<GraphExport> {
     let graph = convert_zeal_to_graph(zeal_workflow)?;
     Ok(graph.export())
+}
+
+/// Extract the user-provided value from a Zeal input node.
+///
+/// Input nodes store their value in `property_values.defaultValue` (or
+/// `property_values.value` for range inputs). The template type determines
+/// the Message type:
+/// - `tpl_text_input` → string
+/// - `tpl_number_input` → number
+/// - `tpl_range_input` → number (clamped to min/max)
+fn extract_input_node_value(node: &ZealNode) -> Value {
+    let tpl = node
+        .template_id
+        .as_deref()
+        .unwrap_or(&node.node_type);
+
+    let pv = node.property_values.as_ref();
+
+    match tpl {
+        "tpl_text_input" => {
+            pv.and_then(|pv| pv.get("defaultValue"))
+                .cloned()
+                .unwrap_or(json!(""))
+        }
+        "tpl_number_input" => {
+            let val = pv
+                .and_then(|pv| pv.get("defaultValue"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            json!(val)
+        }
+        "tpl_range_input" => {
+            let val = pv
+                .and_then(|pv| pv.get("value").or(pv.get("defaultValue")))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let min = node.properties.get("min").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let max = node.properties.get("max").and_then(|v| v.as_f64()).unwrap_or(1.0);
+            json!(val.clamp(min, max))
+        }
+        _ => {
+            // Generic fallback: use property_values as-is
+            pv.map(|pv| json!(pv)).unwrap_or(json!(null))
+        }
+    }
 }
 
 #[cfg(test)]
