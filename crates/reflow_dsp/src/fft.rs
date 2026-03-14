@@ -197,6 +197,33 @@ impl StftProcessor {
     }
 
     /// Reset all internal state.
+    /// Forward-only spectrum analysis: feed samples, get magnitude frames.
+    ///
+    /// Unlike [`process`], this does not do inverse FFT or overlap-add.
+    /// Returns a `Vec<Vec<f32>>` of magnitude spectra (one per hop).
+    /// Used by AudioSpectrumActor for visualization.
+    pub fn analyze(&mut self, input: &[f32]) -> Vec<Vec<f32>> {
+        let mut results = Vec::new();
+        for &sample in input {
+            self.input_buf.push(sample);
+            self.samples_since_fft += 1;
+
+            if !self.primed {
+                if self.input_buf.len() >= self.window_size {
+                    self.primed = true;
+                    self.samples_since_fft = self.hop_size;
+                }
+            }
+
+            if self.primed && self.samples_since_fft >= self.hop_size {
+                self.samples_since_fft = 0;
+                let frame = self.forward_fft();
+                results.push(frame.magnitudes());
+            }
+        }
+        results
+    }
+
     pub fn reset(&mut self) {
         self.input_buf.clear();
         self.output_buf.fill(0.0);

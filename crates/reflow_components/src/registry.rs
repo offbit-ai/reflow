@@ -16,10 +16,11 @@ use crate::media::{
     VideoInputActor,
 };
 use crate::stream_ops::{
-    AudioGainActor, AudioNormalizeActor, BiquadFilterActor, BrightnessContrastActor,
-    BytesToStreamActor, ChromaKeyActor, CompressorActor, GrayscaleFilterActor,
-    StreamBufferActor, StreamStatsActor, StreamTeeActor, StreamThrottleActor,
-    StreamToBytesActor,
+    AudioGainActor, AudioNormalizeActor, AudioSpectrumActor, BiquadFilterActor,
+    BrightnessContrastActor, BytesToStreamActor, ChromaKeyActor, CompressorActor,
+    DeEsserActor, GrayscaleFilterActor, ImageResizeActor, NoiseGateActor,
+    SilenceDetectActor, StreamBufferActor, StreamStatsActor, StreamTeeActor,
+    StreamThrottleActor, StreamToBytesActor,
 };
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
@@ -68,6 +69,13 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_biquad_filter" => Some(Arc::new(BiquadFilterActor::new())),
         "tpl_compressor" => Some(Arc::new(CompressorActor::new())),
         "tpl_audio_normalize" => Some(Arc::new(AudioNormalizeActor::new())),
+        "tpl_noise_gate" => Some(Arc::new(NoiseGateActor::new())),
+        "tpl_de_esser" => Some(Arc::new(DeEsserActor::new())),
+        "tpl_audio_spectrum" => Some(Arc::new(AudioSpectrumActor::new())),
+        "tpl_silence_detect" => Some(Arc::new(SilenceDetectActor::new())),
+
+        // Image DSP (continued)
+        "tpl_image_resize" => Some(Arc::new(ImageResizeActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -133,6 +141,13 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_biquad_filter".to_string(), "BiquadFilterActor".to_string());
     mapping.insert("tpl_compressor".to_string(), "CompressorActor".to_string());
     mapping.insert("tpl_audio_normalize".to_string(), "AudioNormalizeActor".to_string());
+    mapping.insert("tpl_noise_gate".to_string(), "NoiseGateActor".to_string());
+    mapping.insert("tpl_de_esser".to_string(), "DeEsserActor".to_string());
+    mapping.insert("tpl_audio_spectrum".to_string(), "AudioSpectrumActor".to_string());
+    mapping.insert("tpl_silence_detect".to_string(), "SilenceDetectActor".to_string());
+
+    // Image DSP (continued)
+    mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
 
     mapping
 }
