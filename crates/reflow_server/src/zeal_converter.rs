@@ -3,7 +3,7 @@
 //! Converts Zeal workflow format to Reflow's Graph format using the Graph API.
 
 use anyhow::{Result, anyhow};
-use reflow_graph::{Graph, types::GraphExport};
+use reflow_graph::{Graph, types::{GraphExport, PortType}};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -184,6 +184,31 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
 
         // Add node to graph
         graph.add_node(&zeal_node.id, &component, Some(node_metadata));
+
+        // Register ports on the node
+        for port in &zeal_node.ports {
+            let port_type = match port.data_type.as_deref() {
+                Some("string") => PortType::String,
+                Some("number" | "float") => PortType::Float,
+                Some("integer") => PortType::Integer,
+                Some("boolean") => PortType::Boolean,
+                Some("object") => PortType::Object(String::new()),
+                Some("bytes") => PortType::Bytes,
+                Some("stream") => PortType::Stream,
+                Some("array") => PortType::Array(Box::new(PortType::Any)),
+                _ => PortType::Any,
+            };
+
+            match port.port_type.as_str() {
+                "input" => {
+                    graph.add_inport(&port.id, &zeal_node.id, &port.id, port_type, None);
+                }
+                "output" => {
+                    graph.add_outport(&port.id, &zeal_node.id, &port.id, port_type, None);
+                }
+                _ => {}
+            }
+        }
     }
 
     // Add connections using the Graph API.
