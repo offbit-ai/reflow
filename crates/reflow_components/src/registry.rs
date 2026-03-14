@@ -14,6 +14,15 @@ use crate::math::{
     MathExpressionActor, MathMinMaxActor, MathModuloActor, MathMultiplyActor, MathPowerActor,
     MathRandomActor, MathRoundActor, MathSqrtActor, MathStatisticsActor, MathSubtractActor,
     MathSumActor,
+    // Vector
+    Vec3Actor, Vec3AddActor, Vec3SubtractActor, Vec3ScaleActor, Vec3DotActor, Vec3CrossActor,
+    Vec3NormalizeActor, Vec3LengthActor, Vec3DistanceActor, Vec3LerpActor, Vec3ReflectActor,
+    // Matrix
+    Mat4MultiplyActor, Mat4TransformActor, Mat4IdentityActor, Mat4TranslateActor,
+    Mat4ScaleActor, Mat4RotateXActor, Mat4RotateYActor, Mat4RotateZActor,
+    Mat4LookAtActor, Mat4PerspectiveActor,
+    // Quaternion
+    QuatFromEulerActor, QuatMultiplyActor, QuatSlerpActor, QuatRotateVec3Actor,
 };
 use crate::integration::HttpRequestActor;
 use crate::io::{FileLoadActor, FileSaveActor};
@@ -85,6 +94,37 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_math_sum" => Some(Arc::new(MathSumActor::new())),
         "tpl_math_statistics" => Some(Arc::new(MathStatisticsActor::new())),
         "tpl_math_expression" => Some(Arc::new(MathExpressionActor::new())),
+
+        // Vector3
+        "tpl_vec3" => Some(Arc::new(Vec3Actor::new())),
+        "tpl_vec3_add" => Some(Arc::new(Vec3AddActor::new())),
+        "tpl_vec3_subtract" => Some(Arc::new(Vec3SubtractActor::new())),
+        "tpl_vec3_scale" => Some(Arc::new(Vec3ScaleActor::new())),
+        "tpl_vec3_dot" => Some(Arc::new(Vec3DotActor::new())),
+        "tpl_vec3_cross" => Some(Arc::new(Vec3CrossActor::new())),
+        "tpl_vec3_normalize" => Some(Arc::new(Vec3NormalizeActor::new())),
+        "tpl_vec3_length" => Some(Arc::new(Vec3LengthActor::new())),
+        "tpl_vec3_distance" => Some(Arc::new(Vec3DistanceActor::new())),
+        "tpl_vec3_lerp" => Some(Arc::new(Vec3LerpActor::new())),
+        "tpl_vec3_reflect" => Some(Arc::new(Vec3ReflectActor::new())),
+
+        // Matrix4
+        "tpl_mat4_identity" => Some(Arc::new(Mat4IdentityActor::new())),
+        "tpl_mat4_multiply" => Some(Arc::new(Mat4MultiplyActor::new())),
+        "tpl_mat4_transform" => Some(Arc::new(Mat4TransformActor::new())),
+        "tpl_mat4_translate" => Some(Arc::new(Mat4TranslateActor::new())),
+        "tpl_mat4_scale" => Some(Arc::new(Mat4ScaleActor::new())),
+        "tpl_mat4_rotate_x" => Some(Arc::new(Mat4RotateXActor::new())),
+        "tpl_mat4_rotate_y" => Some(Arc::new(Mat4RotateYActor::new())),
+        "tpl_mat4_rotate_z" => Some(Arc::new(Mat4RotateZActor::new())),
+        "tpl_mat4_look_at" => Some(Arc::new(Mat4LookAtActor::new())),
+        "tpl_mat4_perspective" => Some(Arc::new(Mat4PerspectiveActor::new())),
+
+        // Quaternion
+        "tpl_quat_from_euler" => Some(Arc::new(QuatFromEulerActor::new())),
+        "tpl_quat_multiply" => Some(Arc::new(QuatMultiplyActor::new())),
+        "tpl_quat_slerp" => Some(Arc::new(QuatSlerpActor::new())),
+        "tpl_quat_rotate_vec3" => Some(Arc::new(QuatRotateVec3Actor::new())),
 
         // Text / Utilities
         "tpl_json_parser" => Some(Arc::new(JsonParserActor::new())),
@@ -283,6 +323,25 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }
+    // Vector / Matrix / Quaternion
+    for (id, name) in [
+        ("tpl_vec3", "Vec3Actor"),
+        ("tpl_vec3_add", "Vec3AddActor"), ("tpl_vec3_subtract", "Vec3SubtractActor"),
+        ("tpl_vec3_scale", "Vec3ScaleActor"), ("tpl_vec3_dot", "Vec3DotActor"),
+        ("tpl_vec3_cross", "Vec3CrossActor"), ("tpl_vec3_normalize", "Vec3NormalizeActor"),
+        ("tpl_vec3_length", "Vec3LengthActor"), ("tpl_vec3_distance", "Vec3DistanceActor"),
+        ("tpl_vec3_lerp", "Vec3LerpActor"), ("tpl_vec3_reflect", "Vec3ReflectActor"),
+        ("tpl_mat4_identity", "Mat4IdentityActor"), ("tpl_mat4_multiply", "Mat4MultiplyActor"),
+        ("tpl_mat4_transform", "Mat4TransformActor"), ("tpl_mat4_translate", "Mat4TranslateActor"),
+        ("tpl_mat4_scale", "Mat4ScaleActor"), ("tpl_mat4_rotate_x", "Mat4RotateXActor"),
+        ("tpl_mat4_rotate_y", "Mat4RotateYActor"), ("tpl_mat4_rotate_z", "Mat4RotateZActor"),
+        ("tpl_mat4_look_at", "Mat4LookAtActor"), ("tpl_mat4_perspective", "Mat4PerspectiveActor"),
+        ("tpl_quat_from_euler", "QuatFromEulerActor"), ("tpl_quat_multiply", "QuatMultiplyActor"),
+        ("tpl_quat_slerp", "QuatSlerpActor"), ("tpl_quat_rotate_vec3", "QuatRotateVec3Actor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
+
     // Text / Utilities
     mapping.insert("tpl_json_parser".to_string(), "JsonParserActor".to_string());
     mapping.insert("tpl_regex_matcher".to_string(), "RegexMatcherActor".to_string());

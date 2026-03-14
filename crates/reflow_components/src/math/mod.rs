@@ -4,5 +4,7 @@
 //! operation, and outputs the result. All support configurable precision.
 
 mod ops;
+mod vector;
 
 pub use ops::*;
+pub use vector::*;
