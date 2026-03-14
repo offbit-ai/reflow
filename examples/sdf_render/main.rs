@@ -22,9 +22,11 @@ use serde_json::{json, Value};
 
 /// Helper to build config metadata for an actor node.
 fn config(cfg: Value) -> Option<HashMap<String, Value>> {
-    let mut meta = HashMap::new();
-    meta.insert("config".to_string(), cfg);
-    Some(meta)
+    if let Value::Object(map) = cfg {
+        Some(map.into_iter().collect())
+    } else {
+        None
+    }
 }
 
 /// Helper to wire two nodes together.
@@ -58,9 +60,7 @@ async fn main() -> anyhow::Result<()> {
         "tpl_sdf_rotate",
         "tpl_sdf_smooth_union",
         "tpl_sdf_twist",
-        "tpl_sdf_scene",
         "tpl_sdf_render",
-        "tpl_image_encode",
         "tpl_file_save",
     ];
 
@@ -86,24 +86,18 @@ async fn main() -> anyhow::Result<()> {
     network.add_node("blend", "tpl_sdf_smooth_union", config(json!({ "smoothness": 0.25 })))?;
     network.add_node("twist", "tpl_sdf_twist", config(json!({ "strength": 0.3 })))?;
 
-    // Scene + Render
-    network.add_node("scene", "tpl_sdf_scene", config(json!({
-        "width": 512, "height": 512,
-        "maxSteps": 128, "fov": 45.0,
-        "cameraPosX": 3.5, "cameraPosY": 2.5, "cameraPosZ": 4.0,
-        "ao": true, "softShadows": false
-    })))?;
+    // Render (takes SDF IR, compiles WGSL, dispatches GPU, outputs raw RGBA bytes)
     network.add_node("render", "tpl_sdf_render", config(json!({
-        "width": 512, "height": 512,
-        "cameraPosX": 3.5, "cameraPosY": 2.5, "cameraPosZ": 4.0,
-        "fov": 45.0, "ao": true
+        "width": 256, "height": 256,
+        "maxSteps": 64, "fov": 45.0,
+        "cameraPosX": 3.0, "cameraPosY": 2.0, "cameraPosZ": 4.0,
+        "ao": true
     })))?;
 
-    // Encode + Save
-    network.add_node("encode", "tpl_image_encode", config(json!({ "format": "png" })))?;
-    network.add_node("save", "tpl_file_save", config(json!({ "path": "sdf_output.png", "createDirs": true })))?;
+    // Save raw RGBA to file
+    network.add_node("save", "tpl_file_save", config(json!({ "path": "sdf_output.rgba", "createDirs": true })))?;
 
-    println!("Built graph: {} nodes", 10);
+    println!("Built graph: 8 nodes");
 
     // ── Wire connections ─────────────────────────────────────────
 
@@ -115,12 +109,10 @@ async fn main() -> anyhow::Result<()> {
     network.add_connection(wire("box", "sdf", "rotate_box", "sdf"));
     network.add_connection(wire("rotate_box", "sdf", "blend", "sdf_b"));
 
-    // blend → twist → scene → render → encode → save
+    // blend → twist → render → save
     network.add_connection(wire("blend", "sdf", "twist", "sdf"));
-    network.add_connection(wire("twist", "sdf", "scene", "sdf"));
-    network.add_connection(wire("scene", "sdf", "render", "sdf"));
-    network.add_connection(wire("render", "stream", "encode", "stream"));
-    network.add_connection(wire("encode", "output", "save", "input"));
+    network.add_connection(wire("twist", "sdf", "render", "sdf"));
+    network.add_connection(wire("render", "output", "save", "input"));
 
     // Trigger source actors (primitives need IIPs to start execution)
     network.add_initial(InitialPacket {
@@ -130,7 +122,7 @@ async fn main() -> anyhow::Result<()> {
         to: ConnectionPoint::new("box", "trigger", Some(Message::Boolean(true))),
     });
 
-    println!("Wired 9 connections + 2 triggers\n");
+    println!("Wired 7 connections + 2 triggers\n");
 
     // ── Execute ──────────────────────────────────────────────────
 
@@ -142,7 +134,7 @@ async fn main() -> anyhow::Result<()> {
     // Wait for the pipeline to complete.
     // The network is async — actors run in tokio tasks.
     // Poll for the output file or wait a reasonable timeout.
-    let output_path = std::path::Path::new("sdf_output.png");
+    let output_path = std::path::Path::new("sdf_output.rgba");
     let timeout = std::time::Duration::from_secs(30);
 
     loop {
@@ -165,7 +157,7 @@ async fn main() -> anyhow::Result<()> {
 
     if output_path.exists() {
         let size = std::fs::metadata(output_path)?.len();
-        println!("Saved: sdf_output.png ({} bytes)", size);
+        println!("Saved: sdf_output.rgba ({} bytes, {}x{} RGBA)", size, 256, 256);
     } else {
         // Check for errors
         let save_outputs = network.read_actor_output("save");

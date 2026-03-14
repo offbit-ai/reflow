@@ -14,7 +14,7 @@ use std::collections::HashMap;
 fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
     match msg {
         Some(Message::Object(v)) => {
-            let json: serde_json::Value = serde_json::to_value(v.as_ref()).ok()?;
+            let json: serde_json::Value = v.as_ref().clone().into();
             serde_json::from_value(json).ok()
         }
         _ => None,

@@ -10,7 +10,7 @@ use std::collections::HashMap;
 fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
     match msg {
         Some(Message::Object(v)) => {
-            let json: serde_json::Value = serde_json::to_value(v.as_ref()).ok()?;
+            let json: serde_json::Value = v.as_ref().clone().into();
             serde_json::from_value(json).ok()
         }
         _ => None,
@@ -32,7 +32,7 @@ fn error_output(msg: &str) -> HashMap<String, Message> {
 
 // ── Union ───────────────────────────────────────────────────────
 
-#[actor(SdfUnionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState))]
+#[actor(SdfUnionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
 pub async fn sdf_union_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
@@ -42,7 +42,7 @@ pub async fn sdf_union_actor(context: ActorContext) -> Result<HashMap<String, Me
 
 // ── Intersection ────────────────────────────────────────────────
 
-#[actor(SdfIntersectionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState))]
+#[actor(SdfIntersectionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
 pub async fn sdf_intersection_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
@@ -52,7 +52,7 @@ pub async fn sdf_intersection_actor(context: ActorContext) -> Result<HashMap<Str
 
 // ── Difference ──────────────────────────────────────────────────
 
-#[actor(SdfDifferenceActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState))]
+#[actor(SdfDifferenceActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
 pub async fn sdf_difference_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
@@ -62,7 +62,7 @@ pub async fn sdf_difference_actor(context: ActorContext) -> Result<HashMap<Strin
 
 // ── Smooth Union ────────────────────────────────────────────────
 
-#[actor(SdfSmoothUnionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState))]
+#[actor(SdfSmoothUnionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
 pub async fn sdf_smooth_union_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
@@ -74,7 +74,7 @@ pub async fn sdf_smooth_union_actor(context: ActorContext) -> Result<HashMap<Str
 
 // ── Smooth Intersection ─────────────────────────────────────────
 
-#[actor(SdfSmoothIntersectionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState))]
+#[actor(SdfSmoothIntersectionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
 pub async fn sdf_smooth_intersection_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
@@ -86,7 +86,7 @@ pub async fn sdf_smooth_intersection_actor(context: ActorContext) -> Result<Hash
 
 // ── Smooth Difference ───────────────────────────────────────────
 
-#[actor(SdfSmoothDifferenceActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState))]
+#[actor(SdfSmoothDifferenceActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
 pub async fn sdf_smooth_difference_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();

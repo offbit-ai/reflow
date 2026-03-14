@@ -281,9 +281,13 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     shader.push_str(&format!("const MAX_DIST: f32 = {:.1};\n", settings.max_dist));
     shader.push_str(&format!("const EPSILON: f32 = {:.6};\n", settings.epsilon));
     shader.push_str(&format!("const AMBIENT: f32 = {:.4};\n", settings.ambient));
+    // Pre-normalize the light direction (normalize() not available in const)
+    let ld = settings.light_dir;
+    let ld_len = (ld[0] * ld[0] + ld[1] * ld[1] + ld[2] * ld[2]).sqrt();
+    let ld_n = if ld_len > 0.0 { [ld[0] / ld_len, ld[1] / ld_len, ld[2] / ld_len] } else { ld };
     shader.push_str(&format!(
-        "const LIGHT_DIR: vec3f = normalize(vec3f({:.6}, {:.6}, {:.6}));\n",
-        settings.light_dir[0], settings.light_dir[1], settings.light_dir[2]
+        "const LIGHT_DIR: vec3f = vec3f({:.6}, {:.6}, {:.6});\n",
+        ld_n[0], ld_n[1], ld_n[2]
     ));
     shader.push_str(&format!(
         "const LIGHT_COLOR: vec3f = vec3f({:.4}, {:.4}, {:.4});\n",
@@ -508,8 +512,8 @@ const SHADE_NO_AO: &str = r#"fn shade(ro: vec3f, rd: vec3f, t: f32) -> vec3f {
 
 "#;
 
-const CAMERA_FUNCTION: &str = r#"fn camera_ray(uv: vec2f, ro: vec3f, target: vec3f, fov_deg: f32) -> vec3f {
-  let fwd = normalize(target - ro);
+const CAMERA_FUNCTION: &str = r#"fn camera_ray(uv: vec2f, ro: vec3f, look_at: vec3f, fov_deg: f32) -> vec3f {
+  let fwd = normalize(look_at - ro);
   let right = normalize(cross(vec3f(0.0, 1.0, 0.0), fwd));
   let up = cross(fwd, right);
   let focal = 1.0 / tan(radians(fov_deg) * 0.5);
