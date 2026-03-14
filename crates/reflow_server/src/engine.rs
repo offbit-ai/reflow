@@ -21,6 +21,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::zeal_converter::{ZealWorkflow, convert_zeal_to_graph_export};
 
+/// Extracted StreamHandle metadata from actor outputs.
+struct StreamHandleInfo {
+    stream_id: u64,
+    port: String,
+    content_type: Option<String>,
+    size_hint: Option<u64>,
+}
+
 // ============================================================================
 // Engine Events — internal event stream consumed by zip_session / trace / REST
 // ============================================================================
@@ -71,6 +79,28 @@ pub enum EngineEventType {
         to_port: String,
         /// Serialized message size in bytes.
         size: usize,
+    },
+    /// An actor produced a StreamHandle — a live binary stream is active.
+    /// Emitted when a StreamHandle is detected in actor outputs so that
+    /// the event bridge can attach an observer tap for display forwarding.
+    StreamOpened {
+        stream_id: u64,
+        node_id: String,
+        port: String,
+        content_type: Option<String>,
+        size_hint: Option<u64>,
+    },
+    /// A stream completed successfully (terminal End frame received).
+    StreamClosed {
+        stream_id: u64,
+        node_id: String,
+        total_bytes: u64,
+    },
+    /// A stream terminated with an error.
+    StreamError {
+        stream_id: u64,
+        node_id: String,
+        error: String,
     },
     NetworkIdle,
     /// Execution completed. Includes aggregate stats.
@@ -380,6 +410,25 @@ impl ExecutionEngine {
                         .cloned()
                         .unwrap_or_default();
 
+                    // Detect StreamHandles in outputs and emit StreamOpened events
+                    if let Some(ref out_val) = outputs {
+                        for info in Self::extract_stream_handles(out_val) {
+                            let _ = event_tx.send(EngineEvent {
+                                workflow_id: workflow_id.clone(),
+                                execution_id: execution_id.clone(),
+                                event_type: EngineEventType::StreamOpened {
+                                    stream_id: info.stream_id,
+                                    node_id: actor_id.clone(),
+                                    port: info.port,
+                                    content_type: info.content_type,
+                                    size_hint: info.size_hint,
+                                },
+                                timestamp: now_ms,
+                                data: serde_json::Value::Null,
+                            });
+                        }
+                    }
+
                     let _ = event_tx.send(EngineEvent {
                         workflow_id: workflow_id.clone(),
                         execution_id: execution_id.clone(),
@@ -516,6 +565,33 @@ impl ExecutionEngine {
         });
 
         Self::finalize_execution(&executions, &execution_id, success, final_result, vec![]);
+    }
+
+    /// Scan a JSON value for StreamHandle objects.
+    ///
+    /// StreamHandles are serialized as `{ "stream_id": N, "origin_actor": "...",
+    /// "origin_port": "...", ... }`. This walks the top-level object (actor
+    /// outputs keyed by port name) looking for these signatures.
+    fn extract_stream_handles(value: &serde_json::Value) -> Vec<StreamHandleInfo> {
+        let mut handles = Vec::new();
+        if let Some(obj) = value.as_object() {
+            for (port, val) in obj {
+                if let Some(inner) = val.as_object() {
+                    if let Some(sid) = inner.get("stream_id").and_then(|v| v.as_u64()) {
+                        handles.push(StreamHandleInfo {
+                            stream_id: sid,
+                            port: port.clone(),
+                            content_type: inner
+                                .get("content_type")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            size_hint: inner.get("size_hint").and_then(|v| v.as_u64()),
+                        });
+                    }
+                }
+            }
+        }
+        handles
     }
 
     /// Build a Network from graph JSON, register actors, start it,

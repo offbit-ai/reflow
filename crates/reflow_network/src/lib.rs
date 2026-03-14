@@ -35,6 +35,9 @@ pub mod tracing;
 pub mod types;
 pub mod websocket_rpc;
 
+// Re-export stream infrastructure from reflow_actor for use by reflow_server
+pub use reflow_actor::stream;
+
 // Export WASM bindings
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]

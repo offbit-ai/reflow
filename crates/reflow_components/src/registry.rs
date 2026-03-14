@@ -11,7 +11,10 @@ use std::sync::Arc;
 use crate::flow_control::{ConditionalBranchActor, LoopActor, SwitchCaseActor};
 use crate::integration::HttpRequestActor;
 use crate::logic::RulesEngineActor;
-use crate::media::{AudioInputActor, ImageInputActor, VideoInputActor};
+use crate::media::{
+    AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
+    VideoInputActor,
+};
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
 /// Get an actor instance for a given Zeal template ID
@@ -36,6 +39,10 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_image_input" => Some(Arc::new(ImageInputActor::new())),
         "tpl_audio_input" => Some(Arc::new(AudioInputActor::new())),
         "tpl_video_input" => Some(Arc::new(VideoInputActor::new())),
+
+        // Stream Display
+        "tpl_image_stream_display" => Some(Arc::new(ImageStreamDisplayActor::new())),
+        "tpl_audio_stream_display" => Some(Arc::new(AudioStreamDisplayActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -74,6 +81,14 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_image_input".to_string(), "ImageInputActor".to_string());
     mapping.insert("tpl_audio_input".to_string(), "AudioInputActor".to_string());
     mapping.insert("tpl_video_input".to_string(), "VideoInputActor".to_string());
+    mapping.insert(
+        "tpl_image_stream_display".to_string(),
+        "ImageStreamDisplayActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_audio_stream_display".to_string(),
+        "AudioStreamDisplayActor".to_string(),
+    );
 
     mapping
 }

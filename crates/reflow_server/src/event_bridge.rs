@@ -9,11 +9,16 @@
 
 use std::sync::Arc;
 
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
+use reflow_network::stream::STREAM_REGISTRY;
 
 use crate::engine::{EngineEvent, EngineEventType};
 use crate::trace_collector::TraceCollector;
 use crate::zip_session::ZipSession;
+
+/// Buffer size for observer taps attached to display-forwarded streams.
+/// Uses `try_send` so dropping frames is acceptable for display.
+const OBSERVER_BUFFER_SIZE: usize = 32;
 
 // ============================================================================
 // Event Bridge
@@ -89,6 +94,40 @@ impl EventBridge {
                     );
                 }
 
+                // When a stream opens, attach an observer and spawn a
+                // forwarding task that pipes frames to Zeal via ZipSession.
+                if let EngineEventType::StreamOpened {
+                    stream_id,
+                    node_id,
+                    ..
+                } = &event.event_type
+                {
+                    if let Some(zs) = &zip_session {
+                        let sid = *stream_id;
+                        let nid = node_id.clone();
+                        let wid = workflow_id.clone();
+                        let eid = execution_id.clone();
+                        let zs = Arc::clone(zs);
+
+                        if let Some(obs_rx) =
+                            STREAM_REGISTRY.add_observer(sid, OBSERVER_BUFFER_SIZE)
+                        {
+                            tokio::spawn(async move {
+                                Self::forward_stream_to_zeal(
+                                    obs_rx, sid, nid, wid, eid, zs,
+                                )
+                                .await;
+                            });
+                        } else {
+                            warn!(
+                                "[EventBridge] could not attach observer for stream {} \
+                                 (receiver already taken or stream gone)",
+                                stream_id
+                            );
+                        }
+                    }
+                }
+
                 // Track terminal state
                 match &event.event_type {
                     EngineEventType::Failed { .. } => {
@@ -118,5 +157,79 @@ impl EventBridge {
                 execution_id, final_success
             );
         });
+    }
+
+    /// Drain an observer receiver and forward each frame to Zeal as binary
+    /// WebSocket messages. Emits `StreamClosed` / `StreamError` engine events
+    /// when the stream terminates.
+    async fn forward_stream_to_zeal(
+        obs_rx: flume::Receiver<reflow_network::stream::StreamFrame>,
+        stream_id: u64,
+        node_id: String,
+        workflow_id: String,
+        execution_id: String,
+        zip_session: Arc<ZipSession>,
+    ) {
+        use reflow_network::stream::StreamFrame;
+
+        let mut total_bytes: u64 = 0;
+
+        loop {
+            match obs_rx.recv_async().await {
+                Ok(frame) => {
+                    let is_terminal = frame.is_terminal();
+
+                    if let StreamFrame::Data(ref data) = frame {
+                        total_bytes += data.len() as u64;
+                    }
+
+                    if let Err(e) = zip_session.send_stream_frame(stream_id, &frame).await {
+                        debug!(
+                            "[EventBridge] stream {} binary send failed: {}",
+                            stream_id, e
+                        );
+                    }
+
+                    if is_terminal {
+                        // Emit the appropriate engine event via raw JSON
+                        match frame {
+                            StreamFrame::End => {
+                                let raw = serde_json::json!({
+                                    "type": "stream.closed",
+                                    "workflowId": workflow_id,
+                                    "executionId": execution_id,
+                                    "nodeId": node_id,
+                                    "streamId": stream_id,
+                                    "totalBytes": total_bytes,
+                                });
+                                let _ = zip_session.ws_send_raw(&raw).await;
+                            }
+                            StreamFrame::Error(ref msg) => {
+                                let raw = serde_json::json!({
+                                    "type": "stream.error",
+                                    "workflowId": workflow_id,
+                                    "executionId": execution_id,
+                                    "nodeId": node_id,
+                                    "streamId": stream_id,
+                                    "error": msg,
+                                });
+                                let _ = zip_session.ws_send_raw(&raw).await;
+                            }
+                            _ => {}
+                        }
+                        break;
+                    }
+                }
+                Err(_) => {
+                    // Channel closed — producer gone
+                    break;
+                }
+            }
+        }
+
+        debug!(
+            "[EventBridge] stream {} forwarding done ({} bytes)",
+            stream_id, total_bytes
+        );
     }
 }

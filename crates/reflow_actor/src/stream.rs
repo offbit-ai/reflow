@@ -73,6 +73,10 @@ pub struct StreamRegistry {
     next_id: AtomicU64,
     senders: RwLock<HashMap<StreamId, flume::Sender<StreamFrame>>>,
     receivers: RwLock<HashMap<StreamId, flume::Receiver<StreamFrame>>>,
+    /// Non-blocking observer taps registered before the consumer takes the receiver.
+    /// When `take_receiver` is called and observers exist, a `StreamBroadcaster` is
+    /// automatically set up to fan out frames to both the consumer and all observers.
+    observers: RwLock<HashMap<StreamId, Vec<flume::Sender<StreamFrame>>>>,
 }
 
 impl StreamRegistry {
@@ -81,6 +85,7 @@ impl StreamRegistry {
             next_id: AtomicU64::new(1),
             senders: RwLock::new(HashMap::new()),
             receivers: RwLock::new(HashMap::new()),
+            observers: RwLock::new(HashMap::new()),
         }
     }
 
@@ -101,9 +106,29 @@ impl StreamRegistry {
 
     /// Take ownership of a stream's receiver (single-consumer).
     ///
+    /// If observers have been registered via [`add_observer`], a
+    /// [`StreamBroadcaster`] is automatically spawned to fan out frames
+    /// from the original receiver to both the consumer and all observers.
+    /// The consumer receives a new channel; observers use `try_send` so
+    /// a slow display node never stalls the processing pipeline.
+    ///
     /// Returns `None` if the stream doesn't exist or has already been taken.
     pub fn take_receiver(&self, stream_id: StreamId) -> Option<flume::Receiver<StreamFrame>> {
-        self.receivers.write().remove(&stream_id)
+        let original_rx = self.receivers.write().remove(&stream_id)?;
+
+        // If observers are registered, interpose a broadcaster
+        let observer_senders = self.observers.write().remove(&stream_id);
+        if let Some(mut obs) = observer_senders {
+            if !obs.is_empty() {
+                // Create a new channel for the primary consumer
+                let (consumer_tx, consumer_rx) = flume::bounded(DEFAULT_STREAM_BUFFER);
+                obs.push(consumer_tx);
+                StreamBroadcaster::spawn(original_rx, obs);
+                return Some(consumer_rx);
+            }
+        }
+
+        Some(original_rx)
     }
 
     /// Clone the sender for a given stream (used for fan-out).
@@ -111,10 +136,41 @@ impl StreamRegistry {
         self.senders.read().get(&stream_id).cloned()
     }
 
+    /// Register a non-blocking observer for a stream.
+    ///
+    /// Must be called **before** `take_receiver`. When the consumer later
+    /// calls `take_receiver`, a broadcaster is spawned that replicates
+    /// frames to both the consumer and all registered observers.
+    ///
+    /// Observer channels use `try_send` — if the observer is slow, frames
+    /// are silently dropped. This makes observers safe for display/preview
+    /// purposes without risking backpressure on the processing pipeline.
+    ///
+    /// Returns the observer's receiver, or `None` if the stream doesn't
+    /// exist (or its receiver has already been taken).
+    pub fn add_observer(
+        &self,
+        stream_id: StreamId,
+        buffer_size: usize,
+    ) -> Option<flume::Receiver<StreamFrame>> {
+        // Only allow observers before the consumer has taken the receiver
+        if !self.receivers.read().contains_key(&stream_id) {
+            return None;
+        }
+        let (tx, rx) = flume::bounded(buffer_size);
+        self.observers
+            .write()
+            .entry(stream_id)
+            .or_default()
+            .push(tx);
+        Some(rx)
+    }
+
     /// Remove all entries for a stream (cleanup after End/Error).
     pub fn remove(&self, stream_id: StreamId) {
         self.senders.write().remove(&stream_id);
         self.receivers.write().remove(&stream_id);
+        self.observers.write().remove(&stream_id);
     }
 
     /// Drop all senders, causing all consumer receivers to yield `None`.
@@ -122,6 +178,7 @@ impl StreamRegistry {
     pub fn close_all(&self) {
         self.senders.write().clear();
         self.receivers.write().clear();
+        self.observers.write().clear();
     }
 
     /// Number of active streams (diagnostic).
@@ -316,6 +373,69 @@ mod tests {
             }
             assert!(rx.recv_async().await.unwrap().is_terminal());
         }
+    }
+
+    #[tokio::test]
+    async fn test_stream_observer_tap() {
+        let registry = StreamRegistry::new();
+        let (id, tx) = registry.create_stream(Some(8));
+
+        // Register an observer BEFORE the consumer takes the receiver
+        let obs_rx = registry.add_observer(id, 8).expect("observer should attach");
+
+        // Consumer takes the receiver — broadcaster should be spawned
+        let consumer_rx = registry.take_receiver(id).expect("take should succeed");
+
+        // Send frames
+        tx.send(StreamFrame::Begin {
+            content_type: Some("image/raw-rgba".into()),
+            size_hint: Some(1024),
+            metadata: None,
+        })
+        .unwrap();
+        tx.send(StreamFrame::Data(Arc::new(vec![1, 2, 3]))).unwrap();
+        tx.send(StreamFrame::End).unwrap();
+
+        // Give the broadcaster task a moment to fan out
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+        // Consumer should receive all frames
+        match consumer_rx.recv_async().await.unwrap() {
+            StreamFrame::Begin { content_type, .. } => {
+                assert_eq!(content_type.as_deref(), Some("image/raw-rgba"));
+            }
+            _ => panic!("Expected Begin"),
+        }
+        match consumer_rx.recv_async().await.unwrap() {
+            StreamFrame::Data(d) => assert_eq!(*d, vec![1, 2, 3]),
+            _ => panic!("Expected Data"),
+        }
+        assert!(consumer_rx.recv_async().await.unwrap().is_terminal());
+
+        // Observer should also receive the same frames
+        match obs_rx.recv_async().await.unwrap() {
+            StreamFrame::Begin { content_type, .. } => {
+                assert_eq!(content_type.as_deref(), Some("image/raw-rgba"));
+            }
+            _ => panic!("Expected Begin on observer"),
+        }
+        match obs_rx.recv_async().await.unwrap() {
+            StreamFrame::Data(d) => assert_eq!(*d, vec![1, 2, 3]),
+            _ => panic!("Expected Data on observer"),
+        }
+        assert!(obs_rx.recv_async().await.unwrap().is_terminal());
+    }
+
+    #[test]
+    fn test_observer_rejected_after_take() {
+        let registry = StreamRegistry::new();
+        let (id, _tx) = registry.create_stream(Some(4));
+
+        // Take receiver first
+        let _rx = registry.take_receiver(id).unwrap();
+
+        // Observer registration should fail (receiver already taken)
+        assert!(registry.add_observer(id, 4).is_none());
     }
 
     #[tokio::test]

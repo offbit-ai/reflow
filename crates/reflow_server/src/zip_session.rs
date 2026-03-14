@@ -93,6 +93,29 @@ impl ZipWebSocket {
         }
     }
 
+    /// Send a binary frame over the WebSocket.
+    ///
+    /// Used for streaming binary data (image/audio chunks) to Zeal display
+    /// nodes. The frame format is:
+    ///
+    /// ```text
+    /// [1 byte: frame_type] [8 bytes: stream_id (LE)] [payload...]
+    ///   0x01 = Begin (payload = JSON metadata)
+    ///   0x02 = Data  (payload = raw bytes)
+    ///   0x03 = End   (no payload)
+    ///   0x04 = Error (payload = UTF-8 error message)
+    /// ```
+    async fn send_binary(&self, data: Vec<u8>) -> Result<()> {
+        let mut guard = self.sink.lock().await;
+        if let Some(sink) = guard.as_mut() {
+            sink.send(tokio_tungstenite::tungstenite::Message::Binary(data))
+                .await?;
+            Ok(())
+        } else {
+            anyhow::bail!("WebSocket not connected");
+        }
+    }
+
     /// Convert http(s) URL to ws(s) URL with the ZIP path.
     fn http_to_ws(url: &str) -> String {
         let base = url
@@ -305,11 +328,134 @@ impl ZipSession {
         Ok(())
     }
 
+    /// Encode and send a stream frame as a binary WebSocket message.
+    ///
+    /// Frame wire format: `[type:1][stream_id:8 LE][payload...]`
+    pub async fn send_stream_frame(
+        &self,
+        stream_id: u64,
+        frame: &reflow_network::stream::StreamFrame,
+    ) -> Result<()> {
+        use reflow_network::stream::StreamFrame;
+
+        let mut buf = Vec::with_capacity(9 + 1024);
+        let id_bytes = stream_id.to_le_bytes();
+
+        match frame {
+            StreamFrame::Begin {
+                content_type,
+                size_hint,
+                metadata,
+            } => {
+                buf.push(0x01);
+                buf.extend_from_slice(&id_bytes);
+                let meta_json = serde_json::json!({
+                    "content_type": content_type,
+                    "size_hint": size_hint,
+                    "metadata": metadata,
+                });
+                buf.extend_from_slice(serde_json::to_vec(&meta_json)?.as_slice());
+            }
+            StreamFrame::Data(data) => {
+                buf.push(0x02);
+                buf.extend_from_slice(&id_bytes);
+                buf.extend_from_slice(data);
+            }
+            StreamFrame::End => {
+                buf.push(0x03);
+                buf.extend_from_slice(&id_bytes);
+            }
+            StreamFrame::Error(msg) => {
+                buf.push(0x04);
+                buf.extend_from_slice(&id_bytes);
+                buf.extend_from_slice(msg.as_bytes());
+            }
+        }
+
+        self.ws.send_binary(buf).await
+    }
+
+    /// Send a raw JSON value as a text frame (used by EventBridge for
+    /// stream lifecycle events that bypass ZipExecutionEvent).
+    pub async fn ws_send_raw(&self, value: &serde_json::Value) -> Result<()> {
+        self.ws.send(value).await
+    }
+
     /// Forward an engine event to Zeal as a ZIP event over WebSocket.
     ///
     /// Called by the event bridge for each execution event.
     /// Falls back to logging if the WebSocket is not connected.
     pub async fn emit_engine_event(&self, event: &EngineEvent) -> Result<()> {
+        // Stream lifecycle events bypass ZipExecutionEvent — send as raw JSON
+        match &event.event_type {
+            EngineEventType::StreamOpened {
+                stream_id,
+                node_id,
+                port,
+                content_type,
+                size_hint,
+            } => {
+                debug!(
+                    "[ZIP] stream.opened workflow={} node={} stream_id={} port={}",
+                    event.workflow_id, node_id, stream_id, port
+                );
+                let raw = serde_json::json!({
+                    "type": "stream.opened",
+                    "workflowId": event.workflow_id,
+                    "executionId": event.execution_id,
+                    "nodeId": node_id,
+                    "port": port,
+                    "streamId": stream_id,
+                    "contentType": content_type,
+                    "sizeHint": size_hint,
+                });
+                let _ = self.ws.send(&raw).await;
+                return Ok(());
+            }
+            EngineEventType::StreamClosed {
+                stream_id,
+                node_id,
+                total_bytes,
+            } => {
+                debug!(
+                    "[ZIP] stream.closed workflow={} node={} stream_id={}",
+                    event.workflow_id, node_id, stream_id
+                );
+                let raw = serde_json::json!({
+                    "type": "stream.closed",
+                    "workflowId": event.workflow_id,
+                    "executionId": event.execution_id,
+                    "nodeId": node_id,
+                    "streamId": stream_id,
+                    "totalBytes": total_bytes,
+                });
+                let _ = self.ws.send(&raw).await;
+                return Ok(());
+            }
+            EngineEventType::StreamError {
+                stream_id,
+                node_id,
+                error,
+            } => {
+                warn!(
+                    "[ZIP] stream.error workflow={} node={} stream_id={}",
+                    event.workflow_id, node_id, stream_id
+                );
+                let raw = serde_json::json!({
+                    "type": "stream.error",
+                    "workflowId": event.workflow_id,
+                    "executionId": event.execution_id,
+                    "nodeId": node_id,
+                    "streamId": stream_id,
+                    "error": error,
+                });
+                let _ = self.ws.send(&raw).await;
+                return Ok(());
+            }
+            _ => {}
+        }
+
+        // Standard ZIP protocol events
         let zip_event = self.translate_event(event);
 
         if let Some(zip_event) = zip_event {
@@ -467,7 +613,7 @@ impl ZipSession {
                 Some(ZipExecutionEvent::ExecutionFailed(zip_event))
             }
 
-            // MessageSent, NetworkIdle — no direct ZIP mapping
+            // Stream lifecycle + MessageSent + NetworkIdle — handled in emit_engine_event
             _ => None,
         }
     }
