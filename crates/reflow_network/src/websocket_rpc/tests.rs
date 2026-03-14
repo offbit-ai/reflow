@@ -8,6 +8,7 @@ mod tests {
     use std::sync::Arc;
 
     #[tokio::test]
+    #[ignore = "Requires Redis to be running locally at redis://localhost:6379"]
     async fn test_script_actor_with_redis_state() {
         // Test requires Redis to be running
         let redis_url = "redis://localhost:6379";
