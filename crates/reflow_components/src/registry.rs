@@ -15,6 +15,10 @@ use crate::media::{
     AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
     VideoInputActor,
 };
+use crate::stream_ops::{
+    BytesToStreamActor, StreamBufferActor, StreamStatsActor, StreamTeeActor,
+    StreamThrottleActor, StreamToBytesActor,
+};
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
 /// Get an actor instance for a given Zeal template ID
@@ -43,6 +47,14 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         // Stream Display
         "tpl_image_stream_display" => Some(Arc::new(ImageStreamDisplayActor::new())),
         "tpl_audio_stream_display" => Some(Arc::new(AudioStreamDisplayActor::new())),
+
+        // Stream Operations
+        "tpl_bytes_to_stream" => Some(Arc::new(BytesToStreamActor::new())),
+        "tpl_stream_to_bytes" => Some(Arc::new(StreamToBytesActor::new())),
+        "tpl_stream_tee" => Some(Arc::new(StreamTeeActor::new())),
+        "tpl_stream_buffer" => Some(Arc::new(StreamBufferActor::new())),
+        "tpl_stream_throttle" => Some(Arc::new(StreamThrottleActor::new())),
+        "tpl_stream_stats" => Some(Arc::new(StreamStatsActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -89,6 +101,14 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_audio_stream_display".to_string(),
         "AudioStreamDisplayActor".to_string(),
     );
+
+    // Stream Operations
+    mapping.insert("tpl_bytes_to_stream".to_string(), "BytesToStreamActor".to_string());
+    mapping.insert("tpl_stream_to_bytes".to_string(), "StreamToBytesActor".to_string());
+    mapping.insert("tpl_stream_tee".to_string(), "StreamTeeActor".to_string());
+    mapping.insert("tpl_stream_buffer".to_string(), "StreamBufferActor".to_string());
+    mapping.insert("tpl_stream_throttle".to_string(), "StreamThrottleActor".to_string());
+    mapping.insert("tpl_stream_stats".to_string(), "StreamStatsActor".to_string());
 
     mapping
 }

@@ -16,6 +16,7 @@ pub mod integration;
 pub mod logic;
 pub mod media;
 pub mod registry;
+pub mod stream_ops;
 pub mod transform;
 
 #[cfg(test)]
