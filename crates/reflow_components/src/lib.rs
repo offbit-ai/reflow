@@ -15,6 +15,7 @@ pub mod flow_control;
 #[cfg(feature = "gpu")]
 pub mod gpu;
 pub mod integration;
+pub mod io;
 pub mod logic;
 pub mod media;
 pub mod registry;

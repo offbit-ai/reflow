@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use crate::flow_control::{ConditionalBranchActor, LoopActor, SwitchCaseActor};
 use crate::integration::HttpRequestActor;
+use crate::io::{FileLoadActor, FileSaveActor};
 use crate::logic::RulesEngineActor;
 use crate::media::{
     AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
@@ -18,6 +19,7 @@ use crate::media::{
 use crate::stream_ops::{
     AudioGainActor, AudioNormalizeActor, AudioSpectrumActor, BiquadFilterActor,
     BrightnessContrastActor, BytesToStreamActor, ChromaKeyActor, CompressorActor,
+    ImageDecodeActor, ImageEncodeActor,
     ConvolveActor, CorrelatorActor, CrossoverActor, DCOffsetActor, DeEsserActor,
     EnvelopeFollowerActor, EqualizerActor, GrayscaleFilterActor, IFFTActor,
     ImageResizeActor, LimiterActor, NoiseGateActor, NoiseReductionActor,
@@ -58,6 +60,14 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_image_input" => Some(Arc::new(ImageInputActor::new())),
         "tpl_audio_input" => Some(Arc::new(AudioInputActor::new())),
         "tpl_video_input" => Some(Arc::new(VideoInputActor::new())),
+
+        // Image Codecs
+        "tpl_image_decode" => Some(Arc::new(ImageDecodeActor::new())),
+        "tpl_image_encode" => Some(Arc::new(ImageEncodeActor::new())),
+
+        // File I/O
+        "tpl_file_load" => Some(Arc::new(FileLoadActor::new())),
+        "tpl_file_save" => Some(Arc::new(FileSaveActor::new())),
 
         // Stream Display
         "tpl_image_stream_display" => Some(Arc::new(ImageStreamDisplayActor::new())),
@@ -226,6 +236,10 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Image DSP (continued)
     mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
+    mapping.insert("tpl_image_decode".to_string(), "ImageDecodeActor".to_string());
+    mapping.insert("tpl_image_encode".to_string(), "ImageEncodeActor".to_string());
+    mapping.insert("tpl_file_load".to_string(), "FileLoadActor".to_string());
+    mapping.insert("tpl_file_save".to_string(), "FileSaveActor".to_string());
 
     // GPU / SDF (feature-gated)
     #[cfg(feature = "gpu")]

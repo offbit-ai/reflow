@@ -6,6 +6,10 @@ mod stream_tee;
 mod stream_throttle;
 mod stream_to_bytes;
 
+// Image codecs
+mod image_decode;
+mod image_encode;
+
 // Image DSP
 mod brightness_contrast;
 mod chroma_key;
@@ -45,6 +49,10 @@ pub use stream_stats::StreamStatsActor;
 pub use stream_tee::StreamTeeActor;
 pub use stream_throttle::StreamThrottleActor;
 pub use stream_to_bytes::StreamToBytesActor;
+
+// Image codec re-exports
+pub use image_decode::ImageDecodeActor;
+pub use image_encode::ImageEncodeActor;
 
 // Image DSP re-exports
 pub use brightness_contrast::BrightnessContrastActor;
