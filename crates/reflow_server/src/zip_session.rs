@@ -20,8 +20,9 @@ use zeal_sdk::events::{
     create_node_executing_event, create_node_failed_event,
 };
 use zeal_sdk::types::{
-    NodeTemplate, Port as ZealPort, PortPosition, PortType, RegisterTemplatesRequest,
-    RuntimeRequirements,
+    CategoryRegistration, NodeTemplate, Port as ZealPort, PortPosition, PortType,
+    RegisterCategoriesRequest, RegisterTemplatesRequest, RuntimeRequirements,
+    SubcategoryRegistration,
 };
 use zeal_sdk::{ClientConfig, WS_PATH, ZealClient};
 
@@ -171,7 +172,10 @@ impl ZipSession {
             self.config.zeal_url, self.config.node_id
         );
 
-        // Step 1: Register all reflow_components templates with Zeal
+        // Step 1a: Register categories so Zeal's palette shows proper grouping
+        self.register_categories().await?;
+
+        // Step 1b: Register all reflow_components templates with Zeal
         self.register_templates().await?;
 
         // Step 2: Open the real-time WebSocket channel
@@ -203,6 +207,65 @@ impl ZipSession {
     }
 
     /// Register all reflow_components templates with the connected Zeal instance.
+    /// Register categories and subcategories with Zeal.
+    ///
+    /// Extends existing Zeal categories (like "media") with new subcategories
+    /// for stream processing actors, and adds new top-level categories
+    /// where needed.
+    async fn register_categories(&self) -> Result<()> {
+        let sub = |name: &str, display: &str| SubcategoryRegistration {
+            name: name.to_string(),
+            display_name: display.to_string(),
+            description: None,
+        };
+
+        let categories = vec![
+            // New top-level category for stream infrastructure
+            CategoryRegistration {
+                name: "stream".to_string(),
+                display_name: "Stream".to_string(),
+                description: Some("Stream plumbing and conversion actors".to_string()),
+                icon: Some("activity".to_string()),
+                subcategories: Some(vec![
+                    sub("plumbing", "Plumbing"),
+                ]),
+            },
+            // "media" already exists with display/images/audio/video subcategories.
+            // We add our new subcategories — the API merges them.
+            CategoryRegistration {
+                name: "media".to_string(),
+                display_name: "Media".to_string(),
+                description: Some("Audio, video, and image processing".to_string()),
+                icon: Some("film".to_string()),
+                subcategories: Some(vec![
+                    sub("filters", "Filters"),
+                    sub("dynamics", "Dynamics"),
+                    sub("analysis", "Analysis"),
+                    sub("spectral", "Spectral"),
+                ]),
+            },
+        ];
+
+        let request = RegisterCategoriesRequest { categories };
+
+        match self.client.templates().register_categories(request).await {
+            Ok(response) => {
+                info!(
+                    "Registered {} categories with Zeal ({} updated)",
+                    response.registered, response.updated
+                );
+            }
+            Err(e) => {
+                warn!("Failed to register categories with Zeal: {}", e);
+                // Non-fatal — templates will still register, just may not
+                // appear in the right palette groups
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Register all native actor templates and pre-generated API actors with Zeal.
     ///
     /// Registers both native actors (HTTP, flow control, media, etc.) and
     /// all pre-generated API service actors with their required env vars,

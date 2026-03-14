@@ -255,7 +255,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_grayscale_filter", "Grayscale", "RGBA → Gray",
-            "image", "processing",
+            "media", "images",
             "Converts RGBA image stream to grayscale (Gray8) using luminance formula. SIMD-accelerated.",
             "image", "purple-500",
             vec![
@@ -269,7 +269,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_brightness_contrast", "Brightness / Contrast", "Adjust image appearance",
-            "image", "processing",
+            "media", "images",
             "Adjusts brightness, contrast, and saturation of an RGBA image stream per frame.",
             "sun", "purple-500",
             vec![
@@ -287,7 +287,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_chroma_key", "Chroma Key", "Green/blue screen removal",
-            "image", "processing",
+            "media", "images",
             "Removes green or blue screen background from RGBA image stream. Configurable tolerance and spill suppression.",
             "scissors", "purple-500",
             vec![
@@ -305,7 +305,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_image_resize", "Image Resize", "Bilinear scaling",
-            "image", "processing",
+            "media", "images",
             "Resizes an image stream using bilinear interpolation. Collects full image, resizes, re-emits row-by-row.",
             "maximize-2", "purple-500",
             vec![
@@ -325,7 +325,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_audio_gain", "Audio Gain", "Volume adjustment",
-            "audio", "basic",
+            "media", "audio",
             "Applies gain (volume) to PCM f32 audio stream. Supports both dB and linear gain.",
             "volume-2", "green-500",
             vec![
@@ -342,7 +342,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_biquad_filter", "Biquad Filter", "Configurable IIR filter",
-            "audio", "filters",
+            "media", "filters",
             "Second-order IIR filter supporting LowPass, HighPass, BandPass, Notch, PeakingEQ, and shelf types.",
             "activity", "green-500",
             vec![
@@ -364,7 +364,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_equalizer", "Equalizer", "Multi-band parametric EQ",
-            "audio", "filters",
+            "media", "filters",
             "Chains N biquad filters in series. Configure bands as JSON array with type, frequency, gain, and Q per band.",
             "sliders", "green-500",
             vec![
@@ -392,7 +392,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_compressor", "Compressor", "Dynamic range compression",
-            "audio", "dynamics",
+            "media", "dynamics",
             "Reduces volume of loud signals above threshold. Configurable ratio, attack, release, knee, and makeup gain.",
             "minimize-2", "green-500",
             vec![
@@ -414,7 +414,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_limiter", "Limiter", "Brickwall ceiling",
-            "audio", "dynamics",
+            "media", "dynamics",
             "Prevents audio from exceeding a ceiling. Uses infinite ratio compression for hard limiting.",
             "shield", "green-500",
             vec![
@@ -433,7 +433,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_noise_gate", "Noise Gate", "Suppress noise floor",
-            "audio", "dynamics",
+            "media", "dynamics",
             "Attenuates audio below a threshold to eliminate background noise. Companion to Compressor.",
             "volume-x", "green-500",
             vec![
@@ -453,7 +453,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_de_esser", "De-Esser", "Reduce sibilance",
-            "audio", "dynamics",
+            "media", "dynamics",
             "Frequency-selective compressor targeting sibilance (4–8 kHz). Tames harsh 's' and 't' sounds in speech.",
             "mic-off", "green-500",
             vec![
@@ -472,7 +472,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_dc_offset", "DC Offset Removal", "Remove DC bias",
-            "audio", "basic",
+            "media", "audio",
             "Removes DC offset from audio via single-pole high-pass filter at very low frequency (default 5 Hz).",
             "minus-circle", "green-500",
             vec![
@@ -489,7 +489,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_audio_normalize", "Normalize", "Peak normalization",
-            "audio", "basic",
+            "media", "audio",
             "Two-pass peak normalization. Scans for peak level, then applies gain to reach target.",
             "maximize", "green-500",
             vec![
@@ -507,7 +507,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_audio_spectrum", "Spectrum Analyzer", "FFT visualization",
-            "audio", "analysis",
+            "media", "analysis",
             "Windowed FFT producing magnitude bins as audio/frequency-bins stream. Designed for Zeal spectrum display.",
             "bar-chart", "amber-500",
             vec![
@@ -526,7 +526,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_envelope_follower", "Envelope Follower", "Amplitude tracking",
-            "audio", "analysis",
+            "media", "analysis",
             "Extracts amplitude envelope as control-signal stream. For sidechain, ducking, modulation, visualization.",
             "trending-up", "amber-500",
             vec![
@@ -545,7 +545,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_silence_detect", "Silence Detect", "Voice activity detection",
-            "audio", "analysis",
+            "media", "analysis",
             "Monitors audio level and emits events when silence begins/ends. For automatic recording, skipping dead air.",
             "mic-off", "amber-500",
             vec![
@@ -564,7 +564,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_peak_detect", "Peak Detect", "Onset/transient detection",
-            "audio", "analysis",
+            "media", "analysis",
             "Detects transients (sudden energy increases) for beat tracking, segmentation, and triggering.",
             "zap", "amber-500",
             vec![
@@ -586,7 +586,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_ifft", "Inverse FFT", "Frequency → time domain",
-            "audio", "spectral",
+            "media", "spectral",
             "Converts frequency-domain magnitude bins back to PCM audio via overlap-add ISTFT.",
             "refresh-ccw", "orange-500",
             vec![
@@ -603,7 +603,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_convolve", "Convolution", "FIR / impulse response",
-            "audio", "spectral",
+            "media", "spectral",
             "Convolves audio stream with an impulse response for reverb or FIR filtering. Impulse arrives as Bytes.",
             "radio", "orange-500",
             vec![
@@ -618,7 +618,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_noise_reduction", "Noise Reduction", "Spectral subtraction",
-            "audio", "spectral",
+            "media", "spectral",
             "Learns noise profile from initial silence, then subtracts it from all subsequent frames.",
             "wind", "orange-500",
             vec![
@@ -638,7 +638,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_pitch_shift", "Pitch Shift", "Change pitch without speed",
-            "audio", "spectral",
+            "media", "spectral",
             "Phase vocoder pitch shifting. Shifts pitch by semitones while preserving duration.",
             "music", "orange-500",
             vec![
@@ -656,7 +656,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_time_stretch", "Time Stretch", "Change speed without pitch",
-            "audio", "spectral",
+            "media", "spectral",
             "WSOLA time stretching. Changes duration without affecting pitch.",
             "fast-forward", "orange-500",
             vec![
@@ -673,7 +673,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_crossover", "Crossover", "Multi-band frequency split",
-            "audio", "spectral",
+            "media", "spectral",
             "3-way Linkwitz-Riley crossover splitting audio into low, mid, and high frequency bands.",
             "git-merge", "orange-500",
             vec![
@@ -693,7 +693,7 @@ pub fn build_stream_actor_templates(
 
         tpl(
             "tpl_correlator", "Correlator", "Cross-correlation analysis",
-            "audio", "analysis",
+            "media", "analysis",
             "Computes normalized cross-correlation between two audio streams for delay estimation and similarity.",
             "link-2", "amber-500",
             vec![
