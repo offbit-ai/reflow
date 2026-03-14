@@ -38,12 +38,14 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 
 # GPU / SDF
 reflow_sdf = { path = "../reflow_sdf", optional = true }
+wgpu = { version = "24", optional = true }
+bytemuck = { version = "1.14", features = ["derive"], optional = true }
 
 [features]
 default = ["api", "av-core", "gpu"]
 api = []
 av-core = ["dep:reflow_dsp", "dep:reflow_pixel"]
-gpu = ["dep:reflow_sdf"]
+gpu = ["dep:reflow_sdf", "dep:wgpu", "dep:bytemuck"]
 
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }

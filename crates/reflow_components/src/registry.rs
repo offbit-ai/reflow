@@ -34,7 +34,7 @@ use crate::gpu::sdf::{
     SdfMirrorActor, SdfPlaneActor, SdfRepeatActor, SdfRotateActor, SdfRoundActor,
     SdfScaleActor, SdfSceneActor, SdfShellActor, SdfSmoothDifferenceActor,
     SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor, SdfTorusActor,
-    SdfTranslateActor, SdfTwistActor, SdfUnionActor,
+    SdfRenderActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
@@ -164,6 +164,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_material" => Some(Arc::new(SdfMaterialActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_sdf_scene" => Some(Arc::new(SdfSceneActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_render" => Some(Arc::new(SdfRenderActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -259,6 +261,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
             ("tpl_sdf_shell", "SdfShellActor"), ("tpl_sdf_mirror", "SdfMirrorActor"),
             ("tpl_sdf_repeat", "SdfRepeatActor"), ("tpl_sdf_displace", "SdfDisplaceActor"),
             ("tpl_sdf_material", "SdfMaterialActor"), ("tpl_sdf_scene", "SdfSceneActor"),
+            ("tpl_sdf_render", "SdfRenderActor"),
         ] {
             mapping.insert(id.to_string(), name.to_string());
         }
