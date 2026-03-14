@@ -676,6 +676,30 @@ impl Network {
         Err(anyhow::Error::msg("Actor not found"))
     }
 
+    /// Read all available output messages from an actor's outport without blocking.
+    ///
+    /// Returns a `Vec` of `(port_name, message)` tuples for every packet
+    /// currently sitting in the actor's outport channel. Useful for
+    /// inspecting results after a pipeline has finished.
+    pub fn read_actor_output(&self, id: &str) -> Vec<(String, Message)> {
+        let component = match self.nodes.get(id) {
+            Some(node) => &node.component,
+            None => return Vec::new(),
+        };
+        let actor = match self.actors.get(component) {
+            Some(a) => a,
+            None => return Vec::new(),
+        };
+        let outport_rx = actor.get_outports().1;
+        let mut results = Vec::new();
+        while let Ok(pkt) = outport_rx.try_recv() {
+            for (port, msg) in pkt {
+                results.push((port, msg));
+            }
+        }
+        results
+    }
+
     pub fn register_actor(&mut self, name: &str, actor: impl Actor) -> Result<(), anyhow::Error> {
         if self.actors.contains_key(name) {
             return Err(anyhow::Error::msg(format!(
