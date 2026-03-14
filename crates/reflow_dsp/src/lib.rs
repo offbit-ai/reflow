@@ -19,6 +19,10 @@
 //! - [`ring_buffer`] — Fixed-capacity ring buffer for delay lines and windowed processing
 //! - [`fft`] — STFT processor with overlap-add (wraps `rustfft`/`realfft`)
 
+// Re-export FFT dependencies for downstream crates
+pub use realfft;
+pub use rustfft;
+
 pub mod biquad;
 pub mod db;
 pub mod envelope;

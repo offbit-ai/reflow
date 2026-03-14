@@ -12,15 +12,31 @@ mod chroma_key;
 mod grayscale_filter;
 mod image_resize;
 
-// Audio DSP
+// Audio DSP — basic
 mod audio_gain;
 mod audio_normalize;
-mod audio_spectrum;
 mod biquad_filter;
 mod compressor;
+mod dc_offset;
 mod de_esser;
+mod equalizer;
+mod limiter;
 mod noise_gate;
+
+// Audio DSP — analysis & events
+mod audio_spectrum;
+mod envelope_follower;
+mod peak_detect;
 mod silence_detect;
+
+// Audio DSP — spectral / advanced
+mod convolve;
+mod correlator;
+mod crossover;
+mod ifft;
+mod noise_reduction;
+mod pitch_shift;
+mod time_stretch;
 
 // Plumbing re-exports
 pub use bytes_to_stream::BytesToStreamActor;
@@ -42,6 +58,18 @@ pub use audio_normalize::AudioNormalizeActor;
 pub use audio_spectrum::AudioSpectrumActor;
 pub use biquad_filter::BiquadFilterActor;
 pub use compressor::CompressorActor;
+pub use convolve::ConvolveActor;
+pub use correlator::CorrelatorActor;
+pub use crossover::CrossoverActor;
+pub use dc_offset::DCOffsetActor;
 pub use de_esser::DeEsserActor;
+pub use envelope_follower::EnvelopeFollowerActor;
+pub use equalizer::EqualizerActor;
+pub use ifft::IFFTActor;
+pub use limiter::LimiterActor;
 pub use noise_gate::NoiseGateActor;
+pub use noise_reduction::NoiseReductionActor;
+pub use peak_detect::PeakDetectActor;
+pub use pitch_shift::PitchShiftActor;
 pub use silence_detect::SilenceDetectActor;
+pub use time_stretch::TimeStretchActor;

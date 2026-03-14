@@ -18,9 +18,12 @@ use crate::media::{
 use crate::stream_ops::{
     AudioGainActor, AudioNormalizeActor, AudioSpectrumActor, BiquadFilterActor,
     BrightnessContrastActor, BytesToStreamActor, ChromaKeyActor, CompressorActor,
-    DeEsserActor, GrayscaleFilterActor, ImageResizeActor, NoiseGateActor,
-    SilenceDetectActor, StreamBufferActor, StreamStatsActor, StreamTeeActor,
-    StreamThrottleActor, StreamToBytesActor,
+    ConvolveActor, CorrelatorActor, CrossoverActor, DCOffsetActor, DeEsserActor,
+    EnvelopeFollowerActor, EqualizerActor, GrayscaleFilterActor, IFFTActor,
+    ImageResizeActor, LimiterActor, NoiseGateActor, NoiseReductionActor,
+    PeakDetectActor, PitchShiftActor, SilenceDetectActor, StreamBufferActor,
+    StreamStatsActor, StreamTeeActor, StreamThrottleActor, StreamToBytesActor,
+    TimeStretchActor,
 };
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
@@ -73,6 +76,20 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_de_esser" => Some(Arc::new(DeEsserActor::new())),
         "tpl_audio_spectrum" => Some(Arc::new(AudioSpectrumActor::new())),
         "tpl_silence_detect" => Some(Arc::new(SilenceDetectActor::new())),
+
+        // Audio DSP (continued)
+        "tpl_equalizer" => Some(Arc::new(EqualizerActor::new())),
+        "tpl_limiter" => Some(Arc::new(LimiterActor::new())),
+        "tpl_dc_offset" => Some(Arc::new(DCOffsetActor::new())),
+        "tpl_envelope_follower" => Some(Arc::new(EnvelopeFollowerActor::new())),
+        "tpl_crossover" => Some(Arc::new(CrossoverActor::new())),
+        "tpl_peak_detect" => Some(Arc::new(PeakDetectActor::new())),
+        "tpl_ifft" => Some(Arc::new(IFFTActor::new())),
+        "tpl_convolve" => Some(Arc::new(ConvolveActor::new())),
+        "tpl_noise_reduction" => Some(Arc::new(NoiseReductionActor::new())),
+        "tpl_pitch_shift" => Some(Arc::new(PitchShiftActor::new())),
+        "tpl_time_stretch" => Some(Arc::new(TimeStretchActor::new())),
+        "tpl_correlator" => Some(Arc::new(CorrelatorActor::new())),
 
         // Image DSP (continued)
         "tpl_image_resize" => Some(Arc::new(ImageResizeActor::new())),
@@ -148,6 +165,20 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Image DSP (continued)
     mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
+
+    // Audio DSP (continued)
+    mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());
+    mapping.insert("tpl_limiter".to_string(), "LimiterActor".to_string());
+    mapping.insert("tpl_dc_offset".to_string(), "DCOffsetActor".to_string());
+    mapping.insert("tpl_envelope_follower".to_string(), "EnvelopeFollowerActor".to_string());
+    mapping.insert("tpl_crossover".to_string(), "CrossoverActor".to_string());
+    mapping.insert("tpl_peak_detect".to_string(), "PeakDetectActor".to_string());
+    mapping.insert("tpl_ifft".to_string(), "IFFTActor".to_string());
+    mapping.insert("tpl_convolve".to_string(), "ConvolveActor".to_string());
+    mapping.insert("tpl_noise_reduction".to_string(), "NoiseReductionActor".to_string());
+    mapping.insert("tpl_pitch_shift".to_string(), "PitchShiftActor".to_string());
+    mapping.insert("tpl_time_stretch".to_string(), "TimeStretchActor".to_string());
+    mapping.insert("tpl_correlator".to_string(), "CorrelatorActor".to_string());
 
     mapping
 }
