@@ -29,9 +29,14 @@ chrono = { version = "0.4", features = ["serde"] }
 # JavaScript runtime
 rquickjs = { version = "0.6", features = ["array-buffer", "bindgen", "classes", "futures", "loader", "macro", "parallel", "properties"] }
 
+# AV processing (pure-Rust, Wasm-safe)
+reflow_dsp = { path = "../reflow_dsp", optional = true }
+reflow_pixel = { path = "../reflow_pixel", optional = true }
+
 [features]
-default = ["api"]
+default = ["api", "av-core"]
 api = []
+av-core = ["dep:reflow_dsp", "dep:reflow_pixel"]
 
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }

@@ -1,0 +1,10 @@
+[package]
+name = "reflow_pixel"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust pixel operations for Reflow image/video processing actors. Wasm-safe."
+
+[dependencies]
+
+[dev-dependencies]
+approx = "0.5"

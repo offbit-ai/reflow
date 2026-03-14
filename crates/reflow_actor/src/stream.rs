@@ -237,6 +237,196 @@ impl StreamBroadcaster {
     }
 }
 
+// ============================================================================
+// Stream helpers — shared patterns used by AV actors
+// ============================================================================
+
+/// Spawn a background task (tokio on native, spawn_local on wasm).
+///
+/// Used by producer actors to push frames without blocking the actor return.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn spawn_stream_task<F>(future: F)
+where
+    F: std::future::Future<Output = ()> + Send + 'static,
+{
+    tokio::spawn(future);
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn spawn_stream_task<F>(future: F)
+where
+    F: std::future::Future<Output = ()> + 'static,
+{
+    wasm_bindgen_futures::spawn_local(future);
+}
+
+/// Consume a stream, apply a transform to each Data chunk, and send the
+/// results to an output stream. Passes Begin/End/Error through unchanged.
+///
+/// This is the core pattern for all "Both" (consumer + producer) actors:
+/// GrayscaleFilter, Resize, all audio DSP filters, etc.
+///
+/// `transform` receives the raw bytes and returns transformed bytes.
+/// It is called synchronously for each chunk — keep it fast.
+pub async fn stream_transform<F>(
+    rx: flume::Receiver<StreamFrame>,
+    tx: flume::Sender<StreamFrame>,
+    mut transform: F,
+) where
+    F: FnMut(&[u8]) -> Vec<u8>,
+{
+    use futures::StreamExt;
+    let mut stream = rx.into_stream();
+    while let Some(frame) = stream.next().await {
+        let is_terminal = frame.is_terminal();
+        let out_frame = match frame {
+            StreamFrame::Data(data) => {
+                let transformed = transform(&data);
+                StreamFrame::Data(Arc::new(transformed))
+            }
+            other => other,
+        };
+        if tx.send_async(out_frame).await.is_err() {
+            break; // downstream closed
+        }
+        if is_terminal {
+            break;
+        }
+    }
+}
+
+/// Consume a stream, apply a stateful transform that can change the Begin
+/// metadata (e.g. resize changes dimensions, format conversion changes content_type).
+///
+/// `on_begin` is called with the Begin metadata and returns modified metadata.
+/// `on_data` transforms each data chunk.
+pub async fn stream_transform_with_begin<B, F>(
+    rx: flume::Receiver<StreamFrame>,
+    tx: flume::Sender<StreamFrame>,
+    on_begin: B,
+    mut on_data: F,
+) where
+    B: FnOnce(
+        Option<String>,
+        Option<u64>,
+        Option<serde_json::Value>,
+    ) -> (Option<String>, Option<u64>, Option<serde_json::Value>),
+    F: FnMut(&[u8]) -> Vec<u8>,
+{
+    use futures::StreamExt;
+    let mut stream = rx.into_stream();
+    let mut begin_handled = false;
+    let mut on_begin = Some(on_begin);
+
+    while let Some(frame) = stream.next().await {
+        let is_terminal = frame.is_terminal();
+        let out_frame = match frame {
+            StreamFrame::Begin {
+                content_type,
+                size_hint,
+                metadata,
+            } => {
+                begin_handled = true;
+                let (ct, sh, md) = if let Some(cb) = on_begin.take() {
+                    cb(content_type, size_hint, metadata)
+                } else {
+                    (content_type, size_hint, metadata)
+                };
+                StreamFrame::Begin {
+                    content_type: ct,
+                    size_hint: sh,
+                    metadata: md,
+                }
+            }
+            StreamFrame::Data(data) => {
+                let transformed = on_data(&data);
+                StreamFrame::Data(Arc::new(transformed))
+            }
+            other => other,
+        };
+
+        if tx.send_async(out_frame).await.is_err() {
+            break;
+        }
+        if is_terminal {
+            break;
+        }
+    }
+
+    // If we never saw Begin (malformed stream), ensure we still send End
+    if !begin_handled {
+        let _ = tx.send_async(StreamFrame::End).await;
+    }
+}
+
+/// Collect an entire stream into a single `Vec<u8>`.
+///
+/// Used by consumer-only actors (ImageEncode, AudioEncode, StreamToBytes)
+/// that need the full data before producing output.
+///
+/// Returns `(content_type, metadata, collected_bytes)` or an error string.
+pub async fn stream_collect(
+    rx: flume::Receiver<StreamFrame>,
+) -> Result<(Option<String>, Option<serde_json::Value>, Vec<u8>), String> {
+    use futures::StreamExt;
+    let mut stream = rx.into_stream();
+    let mut content_type = None;
+    let mut metadata = None;
+    let mut buf = Vec::new();
+
+    while let Some(frame) = stream.next().await {
+        match frame {
+            StreamFrame::Begin {
+                content_type: ct,
+                size_hint,
+                metadata: md,
+            } => {
+                content_type = ct;
+                metadata = md;
+                if let Some(hint) = size_hint {
+                    buf.reserve(hint as usize);
+                }
+            }
+            StreamFrame::Data(data) => {
+                buf.extend_from_slice(&data);
+            }
+            StreamFrame::End => break,
+            StreamFrame::Error(e) => return Err(e),
+        }
+    }
+
+    Ok((content_type, metadata, buf))
+}
+
+/// Chunk a byte slice into stream frames and send them.
+///
+/// Sends Begin (with content_type and size_hint), then Data chunks of
+/// `chunk_size` bytes, then End.
+///
+/// Used by BytesToStream and any actor that converts a complete buffer
+/// into a stream.
+pub async fn stream_from_bytes(
+    tx: flume::Sender<StreamFrame>,
+    bytes: &[u8],
+    chunk_size: usize,
+    content_type: Option<String>,
+    metadata: Option<serde_json::Value>,
+) -> Result<(), flume::SendError<StreamFrame>> {
+    tx.send_async(StreamFrame::Begin {
+        content_type,
+        size_hint: Some(bytes.len() as u64),
+        metadata,
+    })
+    .await?;
+
+    for chunk in bytes.chunks(chunk_size) {
+        tx.send_async(StreamFrame::Data(Arc::new(chunk.to_vec())))
+            .await?;
+    }
+
+    tx.send_async(StreamFrame::End).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -544,5 +734,117 @@ mod tests {
 
         // Receiver is drained; second take returns None
         assert!(consumer_ctx.take_stream_receiver("data_in").is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_transform() {
+        let (in_tx, in_rx) = flume::bounded(8);
+        let (out_tx, out_rx) = flume::bounded(8);
+
+        // Spawn the transform (doubles each byte)
+        tokio::spawn(async move {
+            stream_transform(in_rx, out_tx, |data| {
+                data.iter().map(|b| b.wrapping_mul(2)).collect()
+            })
+            .await;
+        });
+
+        // Send frames
+        in_tx.send_async(StreamFrame::Begin {
+            content_type: Some("test".into()),
+            size_hint: None,
+            metadata: None,
+        }).await.unwrap();
+        in_tx.send_async(StreamFrame::Data(Arc::new(vec![1, 2, 3]))).await.unwrap();
+        in_tx.send_async(StreamFrame::End).await.unwrap();
+
+        // Verify: Begin passes through unchanged
+        match out_rx.recv_async().await.unwrap() {
+            StreamFrame::Begin { content_type, .. } => {
+                assert_eq!(content_type.as_deref(), Some("test"));
+            }
+            _ => panic!("Expected Begin"),
+        }
+
+        // Data should be doubled
+        match out_rx.recv_async().await.unwrap() {
+            StreamFrame::Data(d) => assert_eq!(*d, vec![2, 4, 6]),
+            _ => panic!("Expected Data"),
+        }
+
+        assert!(out_rx.recv_async().await.unwrap().is_terminal());
+    }
+
+    #[tokio::test]
+    async fn test_stream_collect() {
+        let (tx, rx) = flume::bounded(8);
+
+        tx.send_async(StreamFrame::Begin {
+            content_type: Some("application/octet-stream".into()),
+            size_hint: Some(6),
+            metadata: None,
+        }).await.unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![1, 2, 3]))).await.unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![4, 5, 6]))).await.unwrap();
+        tx.send_async(StreamFrame::End).await.unwrap();
+
+        let (ct, _md, bytes) = stream_collect(rx).await.unwrap();
+        assert_eq!(ct.as_deref(), Some("application/octet-stream"));
+        assert_eq!(bytes, vec![1, 2, 3, 4, 5, 6]);
+    }
+
+    #[tokio::test]
+    async fn test_stream_collect_error() {
+        let (tx, rx) = flume::bounded(8);
+
+        tx.send_async(StreamFrame::Begin {
+            content_type: None,
+            size_hint: None,
+            metadata: None,
+        }).await.unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![1]))).await.unwrap();
+        tx.send_async(StreamFrame::Error("broken".into())).await.unwrap();
+
+        let result = stream_collect(rx).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "broken");
+    }
+
+    #[tokio::test]
+    async fn test_stream_from_bytes() {
+        let (tx, rx) = flume::bounded(16);
+
+        stream_from_bytes(
+            tx,
+            &[10, 20, 30, 40, 50],
+            2, // chunk size
+            Some("test/bytes".into()),
+            None,
+        ).await.unwrap();
+
+        // Begin
+        match rx.recv_async().await.unwrap() {
+            StreamFrame::Begin { content_type, size_hint, .. } => {
+                assert_eq!(content_type.as_deref(), Some("test/bytes"));
+                assert_eq!(size_hint, Some(5));
+            }
+            _ => panic!("Expected Begin"),
+        }
+
+        // 3 chunks: [10,20], [30,40], [50]
+        match rx.recv_async().await.unwrap() {
+            StreamFrame::Data(d) => assert_eq!(*d, vec![10, 20]),
+            _ => panic!("Expected Data"),
+        }
+        match rx.recv_async().await.unwrap() {
+            StreamFrame::Data(d) => assert_eq!(*d, vec![30, 40]),
+            _ => panic!("Expected Data"),
+        }
+        match rx.recv_async().await.unwrap() {
+            StreamFrame::Data(d) => assert_eq!(*d, vec![50]),
+            _ => panic!("Expected Data"),
+        }
+
+        assert!(rx.recv_async().await.unwrap().is_terminal());
     }
 }

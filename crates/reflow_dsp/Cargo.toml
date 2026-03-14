@@ -1,0 +1,13 @@
+[package]
+name = "reflow_dsp"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust DSP primitives for Reflow audio/signal processing actors. Wasm-safe."
+
+[dependencies]
+# FFT support (pure Rust, no SIMD required, Wasm-compatible)
+rustfft = "6.2"
+realfft = "3.4"
+
+[dev-dependencies]
+approx = "0.5"
