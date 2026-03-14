@@ -147,21 +147,19 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
         }
         let mut node_metadata = HashMap::new();
 
-        // Add position
-        node_metadata.insert("x".to_string(), json!(zeal_node.position.x));
-        node_metadata.insert("y".to_string(), json!(zeal_node.position.y));
-
-        // Add visual properties
-        node_metadata.insert("title".to_string(), json!(zeal_node.title));
-        if let Some(subtitle) = &zeal_node.subtitle {
-            node_metadata.insert("subtitle".to_string(), json!(subtitle));
-        }
-        node_metadata.insert("icon".to_string(), json!(zeal_node.icon));
-        node_metadata.insert("variant".to_string(), json!(zeal_node.variant));
-        node_metadata.insert("shape".to_string(), json!(zeal_node.shape));
-        if let Some(size) = &zeal_node.size {
-            node_metadata.insert("size".to_string(), json!(size));
-        }
+        // Nest Zeal visual/layout properties to avoid collisions with actor config
+        node_metadata.insert("zeal".to_string(), json!({
+            "x": zeal_node.position.x,
+            "y": zeal_node.position.y,
+            "title": zeal_node.title,
+            "subtitle": zeal_node.subtitle,
+            "icon": zeal_node.icon,
+            "variant": zeal_node.variant,
+            "shape": zeal_node.shape,
+            "size": zeal_node.size,
+            "ports": zeal_node.ports,
+            "required_env_vars": zeal_node.required_env_vars,
+        }));
 
         // Merge property defaults + user overrides into flat config.
         // properties: Record<string, { defaultValue, type, ... }> → extract defaults
@@ -175,14 +173,6 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
             for (key, value) in property_values {
                 node_metadata.insert(key.clone(), value.clone());
             }
-        }
-
-        // Add port definitions
-        node_metadata.insert("ports".to_string(), json!(zeal_node.ports));
-
-        // Add environment variables if any
-        if let Some(env_vars) = &zeal_node.required_env_vars {
-            node_metadata.insert("required_env_vars".to_string(), json!(env_vars));
         }
 
         // The component is either the template_id or the node_type
