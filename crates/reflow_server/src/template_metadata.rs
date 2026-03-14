@@ -181,9 +181,13 @@ const SPECTRUM_JS: &str = include_str!("../../../display_components/spectrum.js"
 const DYNAMICS_JS: &str = include_str!("../../../display_components/dynamics.js");
 const EQ_JS: &str = include_str!("../../../display_components/eq.js");
 const STATS_JS: &str = include_str!("../../../display_components/stats.js");
-// Note: image_preview.js and waveform.js exist but are not used for processing
-// actors — Zeal has built-in display components for audio/image stream display nodes.
 const CROSSOVER_JS: &str = include_str!("../../../display_components/crossover.js");
+const GAIN_JS: &str = include_str!("../../../display_components/gain.js");
+const FILTER_RESPONSE_JS: &str = include_str!("../../../display_components/filter_response.js");
+const BUFFER_JS: &str = include_str!("../../../display_components/buffer.js");
+const IMAGE_PREVIEW_JS: &str = include_str!("../../../display_components/image_preview.js");
+const WAVEFORM_JS: &str = include_str!("../../../display_components/waveform.js");
+const IR_JS: &str = include_str!("../../../display_components/ir.js");
 
 /// Returns display component sources to be uploaded via upload_bundle.
 /// Map of element name → JS source file content.
@@ -192,11 +196,17 @@ const CROSSOVER_JS: &str = include_str!("../../../display_components/crossover.j
 /// Audio/image stream display is handled by Zeal's built-in renderers.
 pub fn get_display_component_sources() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("reflow-spectrum",      SPECTRUM_JS),
-        ("reflow-dynamics",      DYNAMICS_JS),
-        ("reflow-eq",            EQ_JS),
-        ("reflow-stats",         STATS_JS),
-        ("reflow-crossover",     CROSSOVER_JS),
+        ("reflow-spectrum",        SPECTRUM_JS),
+        ("reflow-dynamics",        DYNAMICS_JS),
+        ("reflow-eq",              EQ_JS),
+        ("reflow-stats",           STATS_JS),
+        ("reflow-crossover",       CROSSOVER_JS),
+        ("reflow-gain",            GAIN_JS),
+        ("reflow-filter-response", FILTER_RESPONSE_JS),
+        ("reflow-buffer",          BUFFER_JS),
+        ("reflow-image-preview",   IMAGE_PREVIEW_JS),
+        ("reflow-waveform",        WAVEFORM_JS),
+        ("reflow-ir",              IR_JS),
     ]
 }
 
@@ -795,11 +805,46 @@ pub fn build_stream_actor_templates(
         ("tpl_stream_stats", display_inline(
             "reflow-stats", STATS_JS, &[], None,
         )),
-        // Note: Image processing actors (grayscale, brightness, chroma key, resize)
-        // and waveform actors (envelope, silence, peak detect) don't need custom
-        // display components — Zeal has built-in renderers for audio/image streams.
-        // Users connect them to tpl_image_stream_display or tpl_audio_stream_display
-        // nodes for visualization.
+        // Audio gain — VU meter with editable gain
+        ("tpl_audio_gain", display_inline(
+            "reflow-gain", GAIN_JS, &["gainDb", "gainLinear"], None,
+        )),
+        // Biquad filter — frequency response curve with editable cutoff
+        ("tpl_biquad_filter", display_inline(
+            "reflow-filter-response", FILTER_RESPONSE_JS,
+            &["filterType", "frequency", "q", "gainDb", "sampleRate"], Some("300px"),
+        )),
+        // Stream buffer — fill gauge with editable buffer size
+        ("tpl_stream_buffer", display_inline(
+            "reflow-buffer", BUFFER_JS, &["bufferBytes"], None,
+        )),
+        // Image processing actors — live preview
+        ("tpl_grayscale_filter", display_inline(
+            "reflow-image-preview", IMAGE_PREVIEW_JS, &[], None,
+        )),
+        ("tpl_brightness_contrast", display_inline(
+            "reflow-image-preview", IMAGE_PREVIEW_JS, &["brightness", "contrast", "saturation"], None,
+        )),
+        ("tpl_chroma_key", display_inline(
+            "reflow-image-preview", IMAGE_PREVIEW_JS, &["keyColor", "tolerance"], None,
+        )),
+        ("tpl_image_resize", display_inline(
+            "reflow-image-preview", IMAGE_PREVIEW_JS, &["width", "height"], None,
+        )),
+        // Waveform-based actors — scrolling waveform
+        ("tpl_envelope_follower", display_inline(
+            "reflow-waveform", WAVEFORM_JS, &["attackMs", "releaseMs"], None,
+        )),
+        ("tpl_silence_detect", display_inline(
+            "reflow-waveform", WAVEFORM_JS, &["thresholdDb"], None,
+        )),
+        ("tpl_peak_detect", display_inline(
+            "reflow-waveform", WAVEFORM_JS, &["sensitivity"], None,
+        )),
+        // Convolution — IR waveform display
+        ("tpl_convolve", display_inline(
+            "reflow-ir", IR_JS, &[], None,
+        )),
         // Crossover — 3-band frequency response with draggable points
         ("tpl_crossover", display_inline(
             "reflow-crossover", CROSSOVER_JS, &["lowFrequency", "highFrequency"], Some("320px"),
