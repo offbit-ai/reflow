@@ -437,3 +437,268 @@ async fn test_fanout_broadcast() -> Result<(), anyhow::Error> {
     network.shutdown();
     Ok(())
 }
+
+// ============================================================
+// Actor-to-actor streaming via the network
+// ============================================================
+
+/// Produces a StreamHandle containing 3 binary chunks and sends it
+/// through the normal outport.  A real actor would push the frames
+/// concurrently; here we do it inside the behavior closure because the
+/// test sleeps long enough for everything to drain.
+#[actor(
+    StreamProducerActor,
+    inports::<10>(Trigger),
+    outports::<10>(Out)
+)]
+async fn stream_producer_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, anyhow::Error> {
+    use reflow_actor::stream::StreamFrame;
+
+    let (tx, handle) = context.create_stream(
+        "Out",
+        Some("application/octet-stream".into()),
+        Some(300),
+        Some(8),
+    );
+
+    // Push frames (Begin → Data × 3 → End)
+    tx.send_async(StreamFrame::Begin {
+        content_type: Some("application/octet-stream".into()),
+        size_hint: Some(300),
+        metadata: None,
+    })
+    .await
+    .unwrap();
+
+    for chunk in [b"chunk-1".to_vec(), b"chunk-2".to_vec(), b"chunk-3".to_vec()] {
+        tx.send_async(StreamFrame::Data(Arc::new(chunk)))
+            .await
+            .unwrap();
+    }
+
+    tx.send_async(StreamFrame::End).await.unwrap();
+
+    // The handle travels through the normal connector
+    Ok([("Out".to_owned(), Message::stream_handle(handle))].into())
+}
+
+/// Receives a StreamHandle on its inport, reads all frames from the
+/// side-channel, reassembles the data, and outputs the total byte count
+/// so the test harness can verify.
+#[actor(
+    StreamConsumerActor,
+    inports::<10>(In),
+    outports::<10>(ByteCount)
+)]
+async fn stream_consumer_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, anyhow::Error> {
+    use reflow_actor::stream::StreamFrame;
+
+    let rx = context
+        .take_stream_receiver("In")
+        .expect("expected stream receiver on In port");
+
+    let mut total_bytes: usize = 0;
+    let mut got_begin = false;
+    let mut got_end = false;
+
+    loop {
+        match rx.recv_async().await {
+            Ok(StreamFrame::Begin { .. }) => got_begin = true,
+            Ok(StreamFrame::Data(data)) => total_bytes += data.len(),
+            Ok(StreamFrame::End) => {
+                got_end = true;
+                break;
+            }
+            Ok(StreamFrame::Error(e)) => return Err(anyhow::anyhow!("Stream error: {}", e)),
+            Err(_) => break,
+        }
+    }
+
+    assert!(got_begin, "consumer should have received Begin frame");
+    assert!(got_end, "consumer should have received End frame");
+
+    Ok([(
+        "ByteCount".to_owned(),
+        Message::Integer(total_bytes as i64),
+    )]
+    .into())
+}
+
+/// Full network integration: producer → connector → consumer, with
+/// streaming data flowing through the side-channel while the
+/// StreamHandle travels through the normal connector path.
+#[tokio::test]
+async fn test_network_actor_streaming() -> Result<(), anyhow::Error> {
+    let mut network = Network::new(NetworkConfig::default());
+
+    network.register_actor("stream_producer", StreamProducerActor::new())?;
+    network.register_actor("stream_consumer", StreamConsumerActor::new())?;
+
+    network.add_node("producer", "stream_producer", None)?;
+    network.add_node("consumer", "stream_consumer", None)?;
+
+    // Wire producer:Out → consumer:In
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "producer".to_owned(),
+            port: "Out".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "consumer".to_owned(),
+            port: "In".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    // Trigger the producer
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "producer".to_owned(),
+            port: "Trigger".to_owned(),
+            initial_data: Some(Message::Flow),
+        },
+    });
+
+    network.start()?;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // Read the consumer's outport to verify
+    let consumer_outport = network
+        .actors
+        .get("stream_consumer")
+        .unwrap()
+        .get_outports()
+        .1;
+
+    let mut byte_counts = Vec::new();
+    while let Ok(pkt) = consumer_outport.try_recv() {
+        if let Some(Message::Integer(n)) = pkt.get("ByteCount") {
+            byte_counts.push(*n);
+        }
+    }
+
+    // "chunk-1" (7) + "chunk-2" (7) + "chunk-3" (7) = 21 bytes
+    assert_eq!(
+        byte_counts,
+        vec![21],
+        "consumer should have received 21 total bytes from the stream"
+    );
+
+    network.shutdown();
+    Ok(())
+}
+
+/// Fan-out streaming: one producer's StreamHandle is broadcast to two
+/// consumers.  Since StreamHandle is single-consumer (one receiver per
+/// stream ID), only the first consumer that calls take_stream_receiver
+/// gets the data.  The second consumer should gracefully handle the
+/// missing receiver.
+#[actor(
+    StreamConsumerGracefulActor,
+    inports::<10>(In),
+    outports::<10>(ByteCount)
+)]
+async fn stream_consumer_graceful_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, anyhow::Error> {
+    use reflow_actor::stream::StreamFrame;
+
+    match context.take_stream_receiver("In") {
+        Some(rx) => {
+            let mut total_bytes: usize = 0;
+            loop {
+                match rx.recv_async().await {
+                    Ok(StreamFrame::Data(data)) => total_bytes += data.len(),
+                    Ok(StreamFrame::End) | Err(_) => break,
+                    _ => {}
+                }
+            }
+            Ok([(
+                "ByteCount".to_owned(),
+                Message::Integer(total_bytes as i64),
+            )]
+            .into())
+        }
+        None => {
+            // No receiver available — another consumer took it
+            Ok([("ByteCount".to_owned(), Message::Integer(-1))].into())
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_network_stream_fanout_single_consumer() -> Result<(), anyhow::Error> {
+    let mut network = Network::new(NetworkConfig::default());
+
+    network.register_actor("stream_producer", StreamProducerActor::new())?;
+    network.register_actor("consumer_a", StreamConsumerGracefulActor::new())?;
+    network.register_actor("consumer_b", StreamConsumerGracefulActor::new())?;
+
+    network.add_node("producer", "stream_producer", None)?;
+    network.add_node("sink_a", "consumer_a", None)?;
+    network.add_node("sink_b", "consumer_b", None)?;
+
+    // Fan-out: producer:Out → sink_a:In AND producer:Out → sink_b:In
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "producer".to_owned(),
+            port: "Out".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "sink_a".to_owned(),
+            port: "In".to_owned(),
+            ..Default::default()
+        },
+    });
+    network.add_connection(Connector {
+        from: ConnectionPoint {
+            actor: "producer".to_owned(),
+            port: "Out".to_owned(),
+            ..Default::default()
+        },
+        to: ConnectionPoint {
+            actor: "sink_b".to_owned(),
+            port: "In".to_owned(),
+            ..Default::default()
+        },
+    });
+
+    network.add_initial(InitialPacket {
+        to: ConnectionPoint {
+            actor: "producer".to_owned(),
+            port: "Trigger".to_owned(),
+            initial_data: Some(Message::Flow),
+        },
+    });
+
+    network.start()?;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // Collect results from both consumers
+    let mut results: Vec<i64> = Vec::new();
+    for name in ["consumer_a", "consumer_b"] {
+        let outport = network.actors.get(name).unwrap().get_outports().1;
+        while let Ok(pkt) = outport.try_recv() {
+            if let Some(Message::Integer(n)) = pkt.get("ByteCount") {
+                results.push(*n);
+            }
+        }
+    }
+
+    results.sort();
+    // One consumer gets the stream (21 bytes), the other gets -1 (no receiver)
+    assert_eq!(
+        results,
+        vec![-1, 21],
+        "One consumer should get 21 bytes, the other -1 (single-consumer stream)"
+    );
+
+    network.shutdown();
+    Ok(())
+}
