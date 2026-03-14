@@ -16,8 +16,10 @@ use crate::media::{
     VideoInputActor,
 };
 use crate::stream_ops::{
-    BytesToStreamActor, StreamBufferActor, StreamStatsActor, StreamTeeActor,
-    StreamThrottleActor, StreamToBytesActor,
+    AudioGainActor, AudioNormalizeActor, BiquadFilterActor, BrightnessContrastActor,
+    BytesToStreamActor, ChromaKeyActor, CompressorActor, GrayscaleFilterActor,
+    StreamBufferActor, StreamStatsActor, StreamTeeActor, StreamThrottleActor,
+    StreamToBytesActor,
 };
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
@@ -55,6 +57,17 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_stream_buffer" => Some(Arc::new(StreamBufferActor::new())),
         "tpl_stream_throttle" => Some(Arc::new(StreamThrottleActor::new())),
         "tpl_stream_stats" => Some(Arc::new(StreamStatsActor::new())),
+
+        // Image DSP
+        "tpl_grayscale_filter" => Some(Arc::new(GrayscaleFilterActor::new())),
+        "tpl_brightness_contrast" => Some(Arc::new(BrightnessContrastActor::new())),
+        "tpl_chroma_key" => Some(Arc::new(ChromaKeyActor::new())),
+
+        // Audio DSP
+        "tpl_audio_gain" => Some(Arc::new(AudioGainActor::new())),
+        "tpl_biquad_filter" => Some(Arc::new(BiquadFilterActor::new())),
+        "tpl_compressor" => Some(Arc::new(CompressorActor::new())),
+        "tpl_audio_normalize" => Some(Arc::new(AudioNormalizeActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -109,6 +122,17 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_stream_buffer".to_string(), "StreamBufferActor".to_string());
     mapping.insert("tpl_stream_throttle".to_string(), "StreamThrottleActor".to_string());
     mapping.insert("tpl_stream_stats".to_string(), "StreamStatsActor".to_string());
+
+    // Image DSP
+    mapping.insert("tpl_grayscale_filter".to_string(), "GrayscaleFilterActor".to_string());
+    mapping.insert("tpl_brightness_contrast".to_string(), "BrightnessContrastActor".to_string());
+    mapping.insert("tpl_chroma_key".to_string(), "ChromaKeyActor".to_string());
+
+    // Audio DSP
+    mapping.insert("tpl_audio_gain".to_string(), "AudioGainActor".to_string());
+    mapping.insert("tpl_biquad_filter".to_string(), "BiquadFilterActor".to_string());
+    mapping.insert("tpl_compressor".to_string(), "CompressorActor".to_string());
+    mapping.insert("tpl_audio_normalize".to_string(), "AudioNormalizeActor".to_string());
 
     mapping
 }
