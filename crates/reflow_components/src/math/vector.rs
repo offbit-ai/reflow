@@ -186,13 +186,26 @@ pub async fn vec3_reflect_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
 
 // ─── Vec3 Constructor ───────────────────────────────────────────
 
-#[actor(Vec3Actor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+/// Constructs a vec3 from x/y/z inputs or config.
+/// Inports override config when connected.
+#[actor(Vec3Actor, inports::<10>(x, y, z), outports::<1>(result), state(MemoryState))]
 pub async fn vec3_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let c = ctx.get_config_hashmap();
-    let x = c.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let y = c.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let z = c.get("z").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let x = get_float_or_config(p.get("x"), c.get("x"), 0.0);
+    let y = get_float_or_config(p.get("y"), c.get("y"), 0.0);
+    let z = get_float_or_config(p.get("z"), c.get("z"), 0.0);
     Ok([("result".to_string(), vec3_msg([x, y, z]))].into())
+}
+
+/// Read a float from inport message first, fall back to config value.
+fn get_float_or_config(msg: Option<&Message>, cfg: Option<&serde_json::Value>, default: f64) -> f64 {
+    match msg {
+        Some(Message::Float(v)) => return *v,
+        Some(Message::Integer(v)) => return *v as f64,
+        _ => {}
+    }
+    cfg.and_then(|v| v.as_f64()).unwrap_or(default)
 }
 
 // ─── Matrix4 Operations ─────────────────────────────────────────
@@ -242,12 +255,13 @@ pub async fn mat4_identity_actor(_ctx: ActorContext) -> Result<HashMap<String, M
     Ok([("result".to_string(), mat4_msg(&MAT4_IDENTITY))].into())
 }
 
-#[actor(Mat4TranslateActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4TranslateActor, inports::<10>(x, y, z), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_translate_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let c = ctx.get_config_hashmap();
-    let x = c.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let y = c.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let z = c.get("z").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let x = get_float_or_config(p.get("x"), c.get("x"), 0.0);
+    let y = get_float_or_config(p.get("y"), c.get("y"), 0.0);
+    let z = get_float_or_config(p.get("z"), c.get("z"), 0.0);
     let m = [
         1.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
@@ -257,12 +271,13 @@ pub async fn mat4_translate_actor(ctx: ActorContext) -> Result<HashMap<String, M
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
 
-#[actor(Mat4ScaleActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4ScaleActor, inports::<10>(x, y, z), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_scale_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let c = ctx.get_config_hashmap();
-    let x = c.get("x").and_then(|v| v.as_f64()).unwrap_or(1.0);
-    let y = c.get("y").and_then(|v| v.as_f64()).unwrap_or(1.0);
-    let z = c.get("z").and_then(|v| v.as_f64()).unwrap_or(1.0);
+    let x = get_float_or_config(p.get("x"), c.get("x"), 1.0);
+    let y = get_float_or_config(p.get("y"), c.get("y"), 1.0);
+    let z = get_float_or_config(p.get("z"), c.get("z"), 1.0);
     let m = [
         x,   0.0, 0.0, 0.0,
         0.0, y,   0.0, 0.0,
@@ -272,10 +287,11 @@ pub async fn mat4_scale_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
 
-#[actor(Mat4RotateXActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4RotateXActor, inports::<10>(angle), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_rotate_x_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let c = ctx.get_config_hashmap();
-    let deg = c.get("angle").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let deg = get_float_or_config(p.get("angle"), c.get("angle"), 0.0);
     let r = deg.to_radians();
     let (s, c) = (r.sin(), r.cos());
     let m = [
@@ -287,10 +303,11 @@ pub async fn mat4_rotate_x_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
 
-#[actor(Mat4RotateYActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4RotateYActor, inports::<10>(angle), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_rotate_y_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let cfg = ctx.get_config_hashmap();
-    let deg = cfg.get("angle").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let deg = get_float_or_config(p.get("angle"), cfg.get("angle"), 0.0);
     let r = deg.to_radians();
     let (s, c) = (r.sin(), r.cos());
     let m = [
@@ -302,10 +319,11 @@ pub async fn mat4_rotate_y_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
 
-#[actor(Mat4RotateZActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4RotateZActor, inports::<10>(angle), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_rotate_z_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let cfg = ctx.get_config_hashmap();
-    let deg = cfg.get("angle").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let deg = get_float_or_config(p.get("angle"), cfg.get("angle"), 0.0);
     let r = deg.to_radians();
     let (s, c) = (r.sin(), r.cos());
     let m = [
@@ -352,13 +370,14 @@ pub async fn mat4_look_at_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
 
-#[actor(Mat4PerspectiveActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4PerspectiveActor, inports::<10>(fov, aspect, near, far), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_perspective_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let c = ctx.get_config_hashmap();
-    let fov = c.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0).to_radians();
-    let aspect = c.get("aspect").and_then(|v| v.as_f64()).unwrap_or(1.0);
-    let near = c.get("near").and_then(|v| v.as_f64()).unwrap_or(0.1);
-    let far = c.get("far").and_then(|v| v.as_f64()).unwrap_or(100.0);
+    let fov = get_float_or_config(p.get("fov"), c.get("fov"), 45.0).to_radians();
+    let aspect = get_float_or_config(p.get("aspect"), c.get("aspect"), 1.0);
+    let near = get_float_or_config(p.get("near"), c.get("near"), 0.1);
+    let far = get_float_or_config(p.get("far"), c.get("far"), 100.0);
 
     let f = 1.0 / (fov / 2.0).tan();
     let nf = 1.0 / (near - far);
@@ -374,12 +393,13 @@ pub async fn mat4_perspective_actor(ctx: ActorContext) -> Result<HashMap<String,
 
 // ─── Quaternion Operations ──────────────────────────────────────
 
-#[actor(QuatFromEulerActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(QuatFromEulerActor, inports::<10>(x, y, z), outports::<1>(result), state(MemoryState))]
 pub async fn quat_from_euler_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let p = ctx.get_payload();
     let c = ctx.get_config_hashmap();
-    let x = c.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0).to_radians() * 0.5;
-    let y = c.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0).to_radians() * 0.5;
-    let z = c.get("z").and_then(|v| v.as_f64()).unwrap_or(0.0).to_radians() * 0.5;
+    let x = get_float_or_config(p.get("x"), c.get("x"), 0.0).to_radians() * 0.5;
+    let y = get_float_or_config(p.get("y"), c.get("y"), 0.0).to_radians() * 0.5;
+    let z = get_float_or_config(p.get("z"), c.get("z"), 0.0).to_radians() * 0.5;
 
     let (sx, cx) = (x.sin(), x.cos());
     let (sy, cy) = (y.sin(), y.cos());
