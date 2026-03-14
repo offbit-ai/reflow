@@ -1,0 +1,713 @@
+//! Rich template metadata for Zeal node registration.
+//!
+//! Provides proper titles, descriptions, ports, properties, and display
+//! components for all native actor templates. This replaces the empty
+//! defaults that were previously registered via `get_template_mapping()`.
+
+use serde_json::json;
+use std::collections::HashMap;
+use zeal_sdk::types::{
+    DisplayComponent, NodeShape, NodeSize, NodeTemplate, Port as ZealPort, PortPosition, PortType,
+    PropertyDefinition, PropertyType, PropertyValidation, RuntimeRequirements,
+};
+
+/// Helper to build an input port.
+fn inport(id: &str, label: &str, data_type: &str) -> ZealPort {
+    ZealPort {
+        id: id.to_string(),
+        label: label.to_string(),
+        port_type: PortType::Input,
+        position: PortPosition::Left,
+        data_type: Some(data_type.to_string()),
+        required: None,
+        multiple: None,
+    }
+}
+
+/// Helper to build an output port.
+fn outport(id: &str, label: &str, data_type: &str) -> ZealPort {
+    ZealPort {
+        id: id.to_string(),
+        label: label.to_string(),
+        port_type: PortType::Output,
+        position: PortPosition::Right,
+        data_type: Some(data_type.to_string()),
+        required: None,
+        multiple: None,
+    }
+}
+
+/// Helper to build a number property.
+fn num_prop(label: &str, default: f64, min: f64, max: f64, desc: &str) -> PropertyDefinition {
+    PropertyDefinition {
+        property_type: PropertyType::Number,
+        label: Some(label.to_string()),
+        description: Some(desc.to_string()),
+        default_value: Some(json!(default)),
+        options: None,
+        validation: Some(PropertyValidation {
+            required: None,
+            min: Some(min),
+            max: Some(max),
+            pattern: None,
+        }),
+    }
+}
+
+/// Helper to build a select property.
+fn select_prop(label: &str, options: &[&str], default: &str, desc: &str) -> PropertyDefinition {
+    PropertyDefinition {
+        property_type: PropertyType::Select,
+        label: Some(label.to_string()),
+        description: Some(desc.to_string()),
+        default_value: Some(json!(default)),
+        options: Some(options.iter().map(|o| json!(o)).collect()),
+        validation: None,
+    }
+}
+
+/// Helper to build a string property.
+fn str_prop(label: &str, default: &str, desc: &str) -> PropertyDefinition {
+    PropertyDefinition {
+        property_type: PropertyType::String,
+        label: Some(label.to_string()),
+        description: Some(desc.to_string()),
+        default_value: Some(json!(default)),
+        options: None,
+        validation: None,
+    }
+}
+
+/// Helper to build a boolean property.
+fn bool_prop(label: &str, default: bool, desc: &str) -> PropertyDefinition {
+    PropertyDefinition {
+        property_type: PropertyType::Boolean,
+        label: Some(label.to_string()),
+        description: Some(desc.to_string()),
+        default_value: Some(json!(default)),
+        options: None,
+        validation: None,
+    }
+}
+
+fn props(entries: Vec<(&str, PropertyDefinition)>) -> Option<HashMap<String, PropertyDefinition>> {
+    let mut map = HashMap::new();
+    for (k, v) in entries {
+        map.insert(k.to_string(), v);
+    }
+    Some(map)
+}
+
+/// Common sample rate property.
+fn sample_rate_prop() -> (&'static str, PropertyDefinition) {
+    ("sampleRate", num_prop("Sample Rate", 44100.0, 8000.0, 192000.0, "Audio sample rate in Hz"))
+}
+
+/// Build a complete NodeTemplate for a native stream actor.
+fn tpl(
+    id: &str,
+    title: &str,
+    subtitle: &str,
+    category: &str,
+    subcategory: &str,
+    desc: &str,
+    icon: &str,
+    variant: &str,
+    ports: Vec<ZealPort>,
+    properties: Option<HashMap<String, PropertyDefinition>>,
+    version: &Option<String>,
+    capabilities: &Option<Vec<String>>,
+) -> NodeTemplate {
+    NodeTemplate {
+        id: id.to_string(),
+        type_name: id.to_string(),
+        title: title.to_string(),
+        subtitle: Some(subtitle.to_string()),
+        category: category.to_string(),
+        subcategory: Some(subcategory.to_string()),
+        description: desc.to_string(),
+        icon: icon.to_string(),
+        variant: Some(variant.to_string()),
+        shape: Some(NodeShape::Rectangle),
+        size: Some(NodeSize::Medium),
+        ports,
+        properties,
+        property_rules: None,
+        runtime: Some(RuntimeRequirements {
+            executor: "reflow".to_string(),
+            version: version.clone(),
+            required_env_vars: None,
+            capabilities: capabilities.clone(),
+        }),
+        display: None,
+    }
+}
+
+/// Returns rich template metadata for all native stream actors.
+pub fn build_stream_actor_templates(
+    version: &Option<String>,
+    capabilities: &Option<Vec<String>>,
+) -> Vec<NodeTemplate> {
+    let v = version;
+    let c = capabilities;
+
+    vec![
+        // ── Plumbing ──────────────────────────────────────────────────
+
+        tpl(
+            "tpl_bytes_to_stream", "Bytes to Stream", "Convert blob to stream",
+            "stream", "plumbing",
+            "Converts a static binary blob (Message::Bytes) into a chunked StreamHandle for incremental processing downstream.",
+            "upload", "blue-500",
+            vec![
+                inport("input", "Input", "bytes"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("chunkSize", num_prop("Chunk Size", 65536.0, 1024.0, 1048576.0, "Bytes per stream chunk")),
+                ("contentType", str_prop("Content Type", "", "MIME type for the stream (e.g. image/png)")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_stream_to_bytes", "Stream to Bytes", "Collect stream to blob",
+            "stream", "plumbing",
+            "Collects an entire stream into a single Message::Bytes blob. Inverse of Bytes to Stream.",
+            "download", "blue-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("output", "Output", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            None,
+            v, c,
+        ),
+
+        tpl(
+            "tpl_stream_tee", "Stream Tee", "Split stream 1→2",
+            "stream", "plumbing",
+            "Lossless fan-out: one input stream becomes two output streams with full backpressure on both consumers.",
+            "git-branch", "blue-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream_a", "Stream A", "stream"),
+                outport("stream_b", "Stream B", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("bufferSize", num_prop("Buffer Size", 64.0, 1.0, 4096.0, "Bounded channel buffer per output")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_stream_buffer", "Stream Buffer", "Batch stream frames",
+            "stream", "plumbing",
+            "Accumulates Data frames into larger batches before forwarding. Useful for FFT windows or network efficiency.",
+            "layers", "blue-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("bufferBytes", num_prop("Buffer Bytes", 65536.0, 512.0, 1048576.0, "Bytes to accumulate before flush")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_stream_throttle", "Stream Throttle", "Rate-limit throughput",
+            "stream", "plumbing",
+            "Inserts delays between Data frames to limit throughput. Useful for real-time playback simulation.",
+            "clock", "blue-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("delayMs", num_prop("Delay (ms)", 10.0, 0.0, 5000.0, "Milliseconds between frames")),
+                ("bytesPerSecond", num_prop("Bytes/sec", 0.0, 0.0, 100000000.0, "Target byte rate (0 = use delayMs)")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_stream_stats", "Stream Stats", "Measure throughput",
+            "stream", "plumbing",
+            "Passthrough that measures total bytes, frame count, duration, and throughput without modifying the stream.",
+            "bar-chart-2", "blue-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("stats", "Stats", "object"),
+                outport("error", "Error", "string"),
+            ],
+            None,
+            v, c,
+        ),
+
+        // ── Image DSP ─────────────────────────────────────────────────
+
+        tpl(
+            "tpl_grayscale_filter", "Grayscale", "RGBA → Gray",
+            "image", "processing",
+            "Converts RGBA image stream to grayscale (Gray8) using luminance formula. SIMD-accelerated.",
+            "image", "purple-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            None,
+            v, c,
+        ),
+
+        tpl(
+            "tpl_brightness_contrast", "Brightness / Contrast", "Adjust image appearance",
+            "image", "processing",
+            "Adjusts brightness, contrast, and saturation of an RGBA image stream per frame.",
+            "sun", "purple-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("brightness", num_prop("Brightness", 1.0, 0.0, 5.0, "1.0 = no change, >1 = brighter")),
+                ("contrast", num_prop("Contrast", 1.0, 0.0, 5.0, "1.0 = no change, >1 = more contrast")),
+                ("saturation", num_prop("Saturation", 1.0, 0.0, 5.0, "1.0 = no change, 0 = grayscale")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_chroma_key", "Chroma Key", "Green/blue screen removal",
+            "image", "processing",
+            "Removes green or blue screen background from RGBA image stream. Configurable tolerance and spill suppression.",
+            "scissors", "purple-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("keyColor", select_prop("Key Color", &["green", "blue"], "green", "Background color to remove")),
+                ("tolerance", num_prop("Tolerance", 0.3, 0.0, 1.0, "Hue tolerance (higher = more aggressive)")),
+                ("spillSuppression", num_prop("Spill Suppression", 0.5, 0.0, 1.0, "Reduce color spill on edges")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_image_resize", "Image Resize", "Bilinear scaling",
+            "image", "processing",
+            "Resizes an image stream using bilinear interpolation. Collects full image, resizes, re-emits row-by-row.",
+            "maximize-2", "purple-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("width", num_prop("Width", 0.0, 0.0, 16384.0, "Target width in pixels (0 = keep original)")),
+                ("height", num_prop("Height", 0.0, 0.0, 16384.0, "Target height in pixels (0 = keep original)")),
+                ("channels", num_prop("Channels", 4.0, 1.0, 4.0, "Bytes per pixel (4=RGBA, 3=RGB, 1=Gray)")),
+            ]),
+            v, c,
+        ),
+
+        // ── Audio DSP — Basic ─────────────────────────────────────────
+
+        tpl(
+            "tpl_audio_gain", "Audio Gain", "Volume adjustment",
+            "audio", "basic",
+            "Applies gain (volume) to PCM f32 audio stream. Supports both dB and linear gain.",
+            "volume-2", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("gainDb", num_prop("Gain (dB)", 0.0, -60.0, 60.0, "0=unity, 6≈double, -6≈half")),
+                ("gainLinear", num_prop("Gain (Linear)", 0.0, 0.0, 100.0, "Overrides dB if non-zero. 1.0=unity")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_biquad_filter", "Biquad Filter", "Configurable IIR filter",
+            "audio", "filters",
+            "Second-order IIR filter supporting LowPass, HighPass, BandPass, Notch, PeakingEQ, and shelf types.",
+            "activity", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("filterType", select_prop("Filter Type",
+                    &["lowpass", "highpass", "bandpass", "notch", "peaking", "lowshelf", "highshelf"],
+                    "lowpass", "Filter algorithm")),
+                ("frequency", num_prop("Frequency (Hz)", 1000.0, 20.0, 20000.0, "Cutoff or center frequency")),
+                ("q", num_prop("Q Factor", 0.707, 0.1, 30.0, "Resonance (0.707 = Butterworth)")),
+                ("gainDb", num_prop("Gain (dB)", 0.0, -24.0, 24.0, "Boost/cut for peaking and shelf types")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_equalizer", "Equalizer", "Multi-band parametric EQ",
+            "audio", "filters",
+            "Chains N biquad filters in series. Configure bands as JSON array with type, frequency, gain, and Q per band.",
+            "sliders", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("bands", PropertyDefinition {
+                    property_type: PropertyType::CodeEditor,
+                    label: Some("EQ Bands (JSON)".to_string()),
+                    description: Some("Array of {type, frequency, gain, q} objects".to_string()),
+                    default_value: Some(json!([
+                        {"type": "lowshelf", "frequency": 100, "gain": 0, "q": 0.707},
+                        {"type": "peaking", "frequency": 1000, "gain": 0, "q": 1.0},
+                        {"type": "highshelf", "frequency": 8000, "gain": 0, "q": 0.707}
+                    ])),
+                    options: None,
+                    validation: None,
+                }),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_compressor", "Compressor", "Dynamic range compression",
+            "audio", "dynamics",
+            "Reduces volume of loud signals above threshold. Configurable ratio, attack, release, knee, and makeup gain.",
+            "minimize-2", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("thresholdDb", num_prop("Threshold (dB)", -20.0, -60.0, 0.0, "Level above which compression begins")),
+                ("ratio", num_prop("Ratio", 4.0, 1.0, 100.0, "Compression ratio (4 = 4:1)")),
+                ("attackMs", num_prop("Attack (ms)", 10.0, 0.01, 500.0, "How fast compression engages")),
+                ("releaseMs", num_prop("Release (ms)", 100.0, 1.0, 5000.0, "How fast compression releases")),
+                ("kneeDb", num_prop("Knee (dB)", 6.0, 0.0, 24.0, "Soft knee width (0 = hard knee)")),
+                ("makeupDb", num_prop("Makeup (dB)", 0.0, 0.0, 30.0, "Post-compression gain boost")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_limiter", "Limiter", "Brickwall ceiling",
+            "audio", "dynamics",
+            "Prevents audio from exceeding a ceiling. Uses infinite ratio compression for hard limiting.",
+            "shield", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("ceilingDb", num_prop("Ceiling (dB)", -1.0, -30.0, 0.0, "Maximum output level")),
+                ("attackMs", num_prop("Attack (ms)", 0.1, 0.01, 10.0, "Limiter attack (very fast)")),
+                ("releaseMs", num_prop("Release (ms)", 50.0, 1.0, 1000.0, "How fast limiter releases")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_noise_gate", "Noise Gate", "Suppress noise floor",
+            "audio", "dynamics",
+            "Attenuates audio below a threshold to eliminate background noise. Companion to Compressor.",
+            "volume-x", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("thresholdDb", num_prop("Threshold (dB)", -40.0, -80.0, 0.0, "Level below which gating occurs")),
+                ("ratio", num_prop("Ratio", 10.0, 1.0, 100.0, "Expansion ratio (∞ = hard gate)")),
+                ("attackMs", num_prop("Attack (ms)", 1.0, 0.01, 100.0, "How fast gate opens")),
+                ("releaseMs", num_prop("Release (ms)", 50.0, 1.0, 2000.0, "How fast gate closes")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_de_esser", "De-Esser", "Reduce sibilance",
+            "audio", "dynamics",
+            "Frequency-selective compressor targeting sibilance (4–8 kHz). Tames harsh 's' and 't' sounds in speech.",
+            "mic-off", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("frequency", num_prop("Center Frequency (Hz)", 6000.0, 2000.0, 12000.0, "Sibilance detection band center")),
+                ("thresholdDb", num_prop("Threshold (dB)", -20.0, -60.0, 0.0, "Level above which de-essing activates")),
+                ("ratio", num_prop("Ratio", 4.0, 1.0, 20.0, "Compression ratio on sibilant band")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_dc_offset", "DC Offset Removal", "Remove DC bias",
+            "audio", "basic",
+            "Removes DC offset from audio via single-pole high-pass filter at very low frequency (default 5 Hz).",
+            "minus-circle", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("cutoffHz", num_prop("Cutoff (Hz)", 5.0, 1.0, 50.0, "HPF cutoff — only removes DC/sub-infra")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_audio_normalize", "Normalize", "Peak normalization",
+            "audio", "basic",
+            "Two-pass peak normalization. Scans for peak level, then applies gain to reach target.",
+            "maximize", "green-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("targetDb", num_prop("Target (dB)", -1.0, -30.0, 0.0, "Target peak level (0 = full scale)")),
+            ]),
+            v, c,
+        ),
+
+        // ── Audio DSP — Analysis ──────────────────────────────────────
+
+        tpl(
+            "tpl_audio_spectrum", "Spectrum Analyzer", "FFT visualization",
+            "audio", "analysis",
+            "Windowed FFT producing magnitude bins as audio/frequency-bins stream. Designed for Zeal spectrum display.",
+            "bar-chart", "amber-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Spectrum", "stream"),
+                outport("stats", "Stats", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("fftSize", num_prop("FFT Size", 2048.0, 256.0, 16384.0, "Window size (power of 2)")),
+                ("hopSize", num_prop("Hop Size", 512.0, 64.0, 8192.0, "Samples between FFT frames")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_envelope_follower", "Envelope Follower", "Amplitude tracking",
+            "audio", "analysis",
+            "Extracts amplitude envelope as control-signal stream. For sidechain, ducking, modulation, visualization.",
+            "trending-up", "amber-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Envelope", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("attackMs", num_prop("Attack (ms)", 5.0, 0.1, 500.0, "Envelope attack time")),
+                ("releaseMs", num_prop("Release (ms)", 50.0, 1.0, 5000.0, "Envelope release time")),
+                ("mode", select_prop("Detection Mode", &["peak", "rms"], "peak", "Peak or RMS level detection")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_silence_detect", "Silence Detect", "Voice activity detection",
+            "audio", "analysis",
+            "Monitors audio level and emits events when silence begins/ends. For automatic recording, skipping dead air.",
+            "mic-off", "amber-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("events", "Events", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("thresholdDb", num_prop("Threshold (dB)", -40.0, -80.0, 0.0, "Level below which is silence")),
+                ("minDurationMs", num_prop("Min Duration (ms)", 500.0, 50.0, 10000.0, "Minimum silence duration to trigger")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_peak_detect", "Peak Detect", "Onset/transient detection",
+            "audio", "analysis",
+            "Detects transients (sudden energy increases) for beat tracking, segmentation, and triggering.",
+            "zap", "amber-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("events", "Events", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("sensitivity", num_prop("Sensitivity", 3.0, 1.0, 20.0, "Transient must exceed N× running average")),
+                ("windowMs", num_prop("Window (ms)", 50.0, 5.0, 500.0, "Running average window")),
+                ("minIntervalMs", num_prop("Min Interval (ms)", 100.0, 10.0, 5000.0, "Minimum time between peaks")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        // ── Audio DSP — Spectral / Advanced ───────────────────────────
+
+        tpl(
+            "tpl_ifft", "Inverse FFT", "Frequency → time domain",
+            "audio", "spectral",
+            "Converts frequency-domain magnitude bins back to PCM audio via overlap-add ISTFT.",
+            "refresh-ccw", "orange-500",
+            vec![
+                inport("stream", "Spectrum", "stream"),
+                outport("stream", "Audio", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("fftSize", num_prop("FFT Size", 2048.0, 256.0, 16384.0, "Must match upstream FFT size")),
+                ("hopSize", num_prop("Hop Size", 512.0, 64.0, 8192.0, "Must match upstream hop size")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_convolve", "Convolution", "FIR / impulse response",
+            "audio", "spectral",
+            "Convolves audio stream with an impulse response for reverb or FIR filtering. Impulse arrives as Bytes.",
+            "radio", "orange-500",
+            vec![
+                inport("stream", "Audio", "stream"),
+                inport("impulse", "Impulse Response", "bytes"),
+                outport("stream", "Output", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            None,
+            v, c,
+        ),
+
+        tpl(
+            "tpl_noise_reduction", "Noise Reduction", "Spectral subtraction",
+            "audio", "spectral",
+            "Learns noise profile from initial silence, then subtracts it from all subsequent frames.",
+            "wind", "orange-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("fftSize", num_prop("FFT Size", 2048.0, 256.0, 16384.0, "Analysis window size")),
+                ("hopSize", num_prop("Hop Size", 512.0, 64.0, 8192.0, "Hop between frames")),
+                ("profileMs", num_prop("Profile Duration (ms)", 500.0, 100.0, 5000.0, "Initial silence to learn noise from")),
+                ("strength", num_prop("Strength", 1.0, 0.0, 3.0, "Subtraction strength (1.0 = full)")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_pitch_shift", "Pitch Shift", "Change pitch without speed",
+            "audio", "spectral",
+            "Phase vocoder pitch shifting. Shifts pitch by semitones while preserving duration.",
+            "music", "orange-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("semitones", num_prop("Semitones", 0.0, -24.0, 24.0, "Pitch shift amount (+12 = up one octave)")),
+                ("fftSize", num_prop("FFT Size", 4096.0, 1024.0, 16384.0, "Analysis window (larger = better quality)")),
+                ("hopSize", num_prop("Hop Size", 256.0, 64.0, 4096.0, "Samples between frames")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_time_stretch", "Time Stretch", "Change speed without pitch",
+            "audio", "spectral",
+            "WSOLA time stretching. Changes duration without affecting pitch.",
+            "fast-forward", "orange-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("stream", "Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("ratio", num_prop("Ratio", 1.0, 0.25, 4.0, "2.0 = double duration, 0.5 = half")),
+                ("windowSize", num_prop("Window Size", 1024.0, 256.0, 8192.0, "WSOLA analysis window")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_crossover", "Crossover", "Multi-band frequency split",
+            "audio", "spectral",
+            "3-way Linkwitz-Riley crossover splitting audio into low, mid, and high frequency bands.",
+            "git-merge", "orange-500",
+            vec![
+                inport("stream", "Stream", "stream"),
+                outport("low", "Low", "stream"),
+                outport("mid", "Mid", "stream"),
+                outport("high", "High", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("lowFrequency", num_prop("Low Crossover (Hz)", 200.0, 20.0, 2000.0, "Low/mid split frequency")),
+                ("highFrequency", num_prop("High Crossover (Hz)", 4000.0, 500.0, 16000.0, "Mid/high split frequency")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_correlator", "Correlator", "Cross-correlation analysis",
+            "audio", "analysis",
+            "Computes normalized cross-correlation between two audio streams for delay estimation and similarity.",
+            "link-2", "amber-500",
+            vec![
+                inport("stream_a", "Stream A", "stream"),
+                inport("stream_b", "Stream B", "stream"),
+                outport("stream", "Correlation", "stream"),
+                outport("stats", "Stats", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("maxLagMs", num_prop("Max Lag (ms)", 100.0, 1.0, 5000.0, "Maximum search lag for correlation")),
+                sample_rate_prop(),
+            ]),
+            v, c,
+        ),
+    ]
+}

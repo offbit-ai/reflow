@@ -22,6 +22,7 @@ pub mod engine;
 pub mod event_bridge;
 pub mod peer_mesh;
 pub mod rest_api;
+pub mod template_metadata;
 pub mod trace_collector;
 pub mod zeal_converter;
 pub mod zip_session;

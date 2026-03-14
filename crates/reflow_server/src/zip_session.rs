@@ -214,8 +214,20 @@ impl ZipSession {
         let version = Some(env!("CARGO_PKG_VERSION").to_string());
         let capabilities = Some(self.config.capabilities.clone());
 
-        // 1. Register native actor templates
+        // 1. Register native actor templates with rich metadata
+        let stream_templates =
+            crate::template_metadata::build_stream_actor_templates(&version, &capabilities);
+
+        // Track which templates have rich metadata
+        let rich_ids: std::collections::HashSet<String> =
+            stream_templates.iter().map(|t| t.id.clone()).collect();
+        templates.extend(stream_templates);
+
+        // For any template_mappings not covered by rich metadata, add basic entries
         for template_id in template_mappings.keys() {
+            if rich_ids.contains(template_id) {
+                continue;
+            }
             templates.push(NodeTemplate {
                 id: template_id.clone(),
                 type_name: template_id.clone(),
@@ -237,6 +249,7 @@ impl ZipSession {
                     required_env_vars: None,
                     capabilities: capabilities.clone(),
                 }),
+                display: None,
             });
         }
 
@@ -292,6 +305,7 @@ impl ZipSession {
                         required_env_vars: Some(vec![info.env_var.to_string()]),
                         capabilities: capabilities.clone(),
                     }),
+                    display: None,
                 });
             }
         }
