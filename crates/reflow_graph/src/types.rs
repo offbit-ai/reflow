@@ -268,6 +268,8 @@ pub enum PortType {
     Array(Box<PortType>),
     #[serde(rename = "encoded")]
     Encoded,
+    #[serde(rename = "bytes")]
+    Bytes,
     #[serde(rename = "stream")]
     Stream,
     #[serde(rename = "option")]
@@ -305,6 +307,7 @@ export type PortType =
   | { type: "string" }
   | { type: "object", value: string }
   | { type: "array", value: PortType }
+  | { type: "bytes" }
   | { type: "stream" }
   | { type: "encoded" }
   | { type: "any" }

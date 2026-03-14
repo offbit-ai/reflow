@@ -2,6 +2,7 @@ pub mod message;
 #[cfg(test)]
 mod message_test;
 pub mod process;
+pub mod stream;
 
 pub use reflow_graph::*;
 use reflow_tracing_protocol::client::TracingIntegration;
@@ -21,7 +22,11 @@ use wasm_bindgen::convert::FromWasmAbi;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{message::Message, types::GraphNode};
+use crate::{
+    message::Message,
+    stream::{StreamFrame, StreamHandle, STREAM_REGISTRY},
+    types::GraphNode,
+};
 
 // #[cfg(not(target_arch = "wasm32"))]
 pub type ActorBehavior = Box<
@@ -457,6 +462,52 @@ impl ActorContext {
     }
     pub fn done(&self) {
         self.load.reset();
+    }
+
+    // ── Streaming helpers ────────────────────────────────────────────
+
+    /// Create a new outbound data stream.
+    ///
+    /// Returns a `(sender, StreamHandle)` pair. The actor pushes
+    /// [`StreamFrame`]s into the sender and includes the `StreamHandle`
+    /// in its output `HashMap` (via [`Message::stream_handle`]).
+    /// The downstream actor will use [`take_stream_receiver`] to consume.
+    ///
+    /// `buffer_size` controls backpressure — when the bounded channel is
+    /// full, `sender.send_async().await` will suspend the producer.
+    pub fn create_stream(
+        &self,
+        port_name: &str,
+        content_type: Option<String>,
+        size_hint: Option<u64>,
+        buffer_size: Option<usize>,
+    ) -> (flume::Sender<StreamFrame>, StreamHandle) {
+        let (stream_id, tx) = STREAM_REGISTRY.create_stream(buffer_size);
+        let handle = StreamHandle {
+            stream_id,
+            origin_actor: self.config.get_node_id().to_string(),
+            origin_port: port_name.to_string(),
+            content_type,
+            size_hint,
+        };
+        (tx, handle)
+    }
+
+    /// Take the receiver for a stream that arrived on an inport.
+    ///
+    /// Looks up the `StreamHandle` in the payload for `port_name` and
+    /// extracts the bounded channel receiver from the global registry.
+    /// Returns `None` if the port doesn't contain a `StreamHandle` or
+    /// the receiver has already been taken.
+    pub fn take_stream_receiver(
+        &self,
+        port_name: &str,
+    ) -> Option<flume::Receiver<StreamFrame>> {
+        if let Some(Message::StreamHandle(handle)) = self.payload.get(port_name) {
+            STREAM_REGISTRY.take_receiver(handle.stream_id)
+        } else {
+            None
+        }
     }
 }
 

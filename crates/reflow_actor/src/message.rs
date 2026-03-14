@@ -21,6 +21,7 @@ use zstd;
 #[cfg(target_arch = "wasm32")]
 use lz4_flex::block::{compress_prepend_size, decompress_size_prepended};
 
+use crate::stream::StreamHandle;
 use crate::types::PortType;
 
 pub const COMPRESSION_THRESHOLD: usize = 1024; // 1KB
@@ -45,35 +46,73 @@ impl EncodedMessage {
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 #[serde(tag = "type", content = "data")]
 pub enum Message {
+    /// Control-flow signal carrying no data. Used to trigger execution
+    /// or propagate completion through the graph.
     #[default]
     Flow,
+
+    /// Arbitrary event payload. Carries a dynamically-typed value
+    /// typically originating from external triggers or user interactions.
     Event(EncodableValue),
+
+    /// Boolean value.
     Boolean(bool),
+
+    /// Signed 64-bit integer value.
     Integer(i64),
+
+    /// 64-bit floating-point value.
     Float(f64),
 
+    /// UTF-8 text data (ref-counted for cheap cloning through connectors).
     String(Arc<String>),
 
+    /// Structured key-value object (JSON-like). Schema is dynamic;
+    /// use `PortType::Object(name)` at the port level for type hints.
     Object(Arc<EncodableValue>),
 
+    /// Ordered list of dynamically-typed elements.
     Array(Arc<Vec<EncodableValue>>),
 
-    Stream(Arc<Vec<u8>>),
+    /// Raw binary data blob. For static binary payloads (images, encoded
+    /// buffers, etc.) that fit in memory. Not a live stream — see
+    /// `StreamHandle` for async streaming between actors.
+    Bytes(Arc<Vec<u8>>),
 
+    /// Handle to a live data stream managed by the [`StreamRegistry`].
+    ///
+    /// The actual data flows through a bounded side-channel; this variant
+    /// carries only the serializable metadata needed to locate the channel.
+    /// Consumers call `ActorContext::take_stream_receiver()` to obtain the
+    /// `flume::Receiver<StreamFrame>` for async iteration.
+    StreamHandle(Arc<StreamHandle>),
+
+    /// Pre-encoded binary payload (bitcode/zstd compressed). Used for
+    /// efficient serialization across network boundaries or persistence.
     Encoded(Arc<Vec<u8>>),
 
+    /// Nullable wrapper around any value. `None` represents an absent
+    /// or skipped input on an optional port.
     Optional(Option<Arc<EncodableValue>>),
-    // Tuple(Vec<Message>),
-    // Generic(EncodableValue),
+
+    /// Escape hatch for values that don't fit other variants. Accepts
+    /// any `EncodableValue` and matches `PortType::Any`.
     Any(Arc<EncodableValue>),
+
+    /// Error message propagated through the graph. Actors can pattern-match
+    /// on this to implement error-handling branches.
     Error(Arc<String>),
 
-    // Remote messaging
+    /// Proxy reference to an actor port on a remote network. Used by
+    /// distributed graph composition to route messages across boundaries.
     RemoteReference {
         network_id: String,
         actor_id: String,
         port: String,
     },
+
+    /// Internal network lifecycle event (actor registered, heartbeat
+    /// missed, etc.). Consumed by system-level actors, not user graphs.
     NetworkEvent {
         event_type: NetworkEventType,
         data: EncodableValue,
@@ -264,7 +303,7 @@ impl Default for CompressionConfig {
     fn default() -> Self {
         let mut type_strategies = HashMap::new();
         // Default strategies for different message types
-        type_strategies.insert("Stream".to_string(), CompressionStrategy::Always);
+        type_strategies.insert("Bytes".to_string(), CompressionStrategy::Always);
         type_strategies.insert("Array".to_string(), CompressionStrategy::Adaptive);
         type_strategies.insert("String".to_string(), CompressionStrategy::SizeThreshold);
 
@@ -465,7 +504,8 @@ impl Message {
                 PortType::Object("Dynamic".to_string())
             }
             Message::Array(_arr) => PortType::Array(Box::new(PortType::Any)),
-            Message::Stream(_) => PortType::Stream,
+            Message::Bytes(_) => PortType::Bytes,
+            Message::StreamHandle(_) => PortType::Stream,
             Message::Optional(_opt) => PortType::Option(Box::new(PortType::Any)),
             Message::Any(_) => PortType::Any,
             Message::Error(_) => PortType::String,
@@ -660,7 +700,8 @@ impl Message {
             Message::String(_) => "String",
             Message::Object(_) => "Object",
             Message::Array(_) => "Array",
-            Message::Stream(_) => "Stream",
+            Message::Bytes(_) => "Bytes",
+            Message::StreamHandle(_) => "StreamHandle",
             Message::Optional(_) => "Optional",
             Message::Any(_) => "Any",
             Message::Error(_) => "Error",
@@ -716,7 +757,7 @@ impl Message {
 
         // Apply type-specific adjustments
         let threshold_multiplier = match self {
-            Message::Stream(_) => 0.7, // More aggressive compression for streams
+            Message::Bytes(_) => 0.7, // More aggressive compression for binary data
             Message::String(_) => 1.5, // Much less aggressive for strings
             Message::Array(_) => 0.8,  // Moderate for arrays
             _ => 0.8,                  // Default threshold
@@ -854,12 +895,19 @@ impl From<Message> for Value {
                     .map(|m| m.clone().into())
                     .collect(),
             ),
-            Message::Stream(bytes) => Value::Array(
+            Message::Bytes(bytes) => Value::Array(
                 <Vec<u8> as Clone>::clone(&bytes)
                     .into_iter()
                     .map(|b| Value::Number(b.into()))
                     .collect(),
             ),
+            Message::StreamHandle(handle) => json!({
+                "stream_id": handle.stream_id,
+                "origin_actor": handle.origin_actor,
+                "origin_port": handle.origin_port,
+                "content_type": handle.content_type,
+                "size_hint": handle.size_hint,
+            }),
             Message::Optional(opt) => match opt {
                 Some(m) => Value::from(m.as_ref().clone()),
                 None => Value::Null,
@@ -935,11 +983,19 @@ impl Into<JsValue> for Message {
                 }
                 js_arr.into()
             }
-            Message::Stream(bytes) => {
+            Message::Bytes(bytes) => {
                 let array = js_sys::Uint8Array::new_with_length(bytes.len() as u32);
                 array.copy_from(&bytes);
                 array.into()
             }
+            Message::StreamHandle(handle) => JsValue::from_serde(&json!({
+                "stream_id": handle.stream_id,
+                "origin_actor": handle.origin_actor,
+                "origin_port": handle.origin_port,
+                "content_type": handle.content_type,
+                "size_hint": handle.size_hint,
+            }))
+            .unwrap_or(JsValue::null()),
             Message::Optional(opt) => match opt {
                 Some(msg) => msg
                     .decode()
@@ -1033,8 +1089,11 @@ impl Message {
     pub fn array(messages: Vec<EncodableValue>) -> Self {
         Message::Array(Arc::new(messages))
     }
-    pub fn stream(bytes: Vec<u8>) -> Self {
-        Message::Stream(bytes.into())
+    pub fn bytes(bytes: Vec<u8>) -> Self {
+        Message::Bytes(bytes.into())
+    }
+    pub fn stream_handle(handle: StreamHandle) -> Self {
+        Message::StreamHandle(Arc::new(handle))
     }
     pub fn encoded(encoded: Vec<u8>) -> Self {
         Message::Encoded(Arc::new(encoded))

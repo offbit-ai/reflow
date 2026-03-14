@@ -108,7 +108,7 @@ fn test_message_compression_threshold() {
 
     // Test with binary data
     let binary_data = vec![0u8; 1500];
-    let stream_msg = Message::Stream(std::sync::Arc::new(binary_data));
+    let stream_msg = Message::Bytes(std::sync::Arc::new(binary_data));
     let stream_value: Value = stream_msg.into();
     let stream_json = serde_json::to_string(&stream_value).unwrap();
     println!("Stream message size: {} bytes", stream_json.len());
@@ -158,7 +158,7 @@ fn test_websocket_rpc_payload() {
     );
     inputs.insert(
         "binary".to_string(),
-        Message::Stream(std::sync::Arc::new(vec![1, 2, 3, 4, 5])),
+        Message::Bytes(std::sync::Arc::new(vec![1, 2, 3, 4, 5])),
     );
 
     // Convert to JSON payload

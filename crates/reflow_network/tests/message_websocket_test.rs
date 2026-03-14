@@ -131,7 +131,7 @@ async fn test_large_message_websocket() {
 
     // Test with binary data
     let binary_data = vec![0u8; 1500]; // 1.5KB
-    let stream_msg = Message::Stream(Arc::new(binary_data.clone()));
+    let stream_msg = Message::Bytes(Arc::new(binary_data.clone()));
     let stream_value: Value = stream_msg.into();
 
     let response = client

@@ -421,16 +421,16 @@ module.exports = processData;
         // Create components
         let rpc_client = Arc::new(WebSocketRpcClient::new(ws_url));
 
-        // Create a channel to collect async outputs BEFORE connecting
-        let (output_tx, output_rx) = flume::unbounded::<ScriptOutput>();
-        rpc_client.set_output_channel(output_tx);
-
         let _actor = WebSocketScriptActor::new(
             metadata,
             rpc_client.clone(),
             "redis://localhost:6379".to_string(),
         )
         .await;
+
+        // Set output channel AFTER new() which creates its own internal channel
+        let (output_tx, output_rx) = flume::unbounded::<ScriptOutput>();
+        rpc_client.set_output_channel(output_tx);
 
         // Connect with timeout
         let connect_result =

@@ -103,16 +103,13 @@ pub mod test_server {
             match request.method.as_str() {
                 "process" => {
                     println!("Processing 'process' request");
-                    // Send response
+                    // Send response with plain JSON values matching Message::from(Value)
                     let response = RpcResponse {
                         jsonrpc: "2.0".to_string(),
                         id: request.id.clone(),
                         result: Some(json!({
                             "outputs": {
-                                "output": {
-                                    "type": "string",
-                                    "value": "processed"
-                                }
+                                "output": "processed"
                             }
                         })),
                         error: None,
@@ -132,10 +129,7 @@ pub mod test_server {
                         params: json!({
                             "actor_id": "test_actor",
                             "port": "async_output",
-                            "data": {
-                                "type": "string",
-                                "value": "async data"
-                            },
+                            "data": "async data",
                             "timestamp": 123456789
                         }),
                     };
@@ -159,7 +153,7 @@ pub mod test_server {
                     let send_result = ws_sender.send(Message::text(response_text)).await;
                     println!("Response send result: {:?}", send_result);
 
-                    // Send multiple streaming outputs
+                    // Send multiple streaming output notifications
                     for i in 0..3 {
                         sleep(Duration::from_millis(10)).await;
 
@@ -169,10 +163,7 @@ pub mod test_server {
                             params: json!({
                                 "actor_id": "streaming_actor",
                                 "port": "stream",
-                                "data": {
-                                    "type": "integer",
-                                    "value": i
-                                },
+                                "data": { "value": i },
                                 "timestamp": chrono::Utc::now().timestamp_millis() as u64
                             }),
                         };

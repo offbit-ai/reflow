@@ -381,6 +381,7 @@ try {
                 "float" => Ok(PortType::Float),
                 "string" => Ok(PortType::String),
                 "boolean" => Ok(PortType::Boolean),
+                "bytes" => Ok(PortType::Bytes),
                 "stream" => Ok(PortType::Stream),
                 _ => Ok(PortType::Any),
             }
@@ -394,6 +395,7 @@ try {
                     "float" => Ok(PortType::Float),
                     "string" => Ok(PortType::String),
                     "boolean" => Ok(PortType::Boolean),
+                    "bytes" => Ok(PortType::Bytes),
                     "stream" => Ok(PortType::Stream),
                     "array" => {
                         // TODO: Parse nested array type

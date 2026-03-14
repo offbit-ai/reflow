@@ -261,13 +261,13 @@ use reflow_wasm::*;
 fn process_binary(context: ActorContext) -> Result<ActorResult, Box<dyn std::error::Error>> {
     let mut outputs = HashMap::new();
     
-    if let Some(Message::Stream(data)) = context.payload.get("binary_input") {
+    if let Some(Message::Bytes(data)) = context.payload.get("binary_input") {
         // Process without copying when possible
         let processed = process_in_place(data.as_ref());
         
         // Only allocate for output
         outputs.insert("output".to_string(), 
-            Message::Stream(Arc::new(processed)));
+            Message::Bytes(Arc::new(processed)));
     }
     
     Ok(ActorResult { outputs, state: None })

@@ -221,7 +221,17 @@ impl ScriptEngine for ExtismEngine {
                             .collect();
                         json!({"type": "Array", "data": json_array})
                     },
-                    Message::Stream(s) => json!({"type": "Stream", "data": s.as_ref().clone()}),
+                    Message::Bytes(s) => json!({"type": "Bytes", "data": s.as_ref().clone()}),
+                    Message::StreamHandle(h) => json!({
+                        "type": "StreamHandle",
+                        "data": {
+                            "stream_id": h.stream_id,
+                            "origin_actor": h.origin_actor,
+                            "origin_port": h.origin_port,
+                            "content_type": h.content_type,
+                            "size_hint": h.size_hint,
+                        }
+                    }),
                     Message::Optional(o) => json!({"type": "Optional", "data": o}),
                     Message::Any(a) => json!({"type": "Any", "data": a}),
                     Message::Error(e) => json!({"type": "Error", "data": e}),
@@ -326,12 +336,12 @@ impl ScriptEngine for ExtismEngine {
                             .map(Into::into)
                             .collect(),
                     )),
-                    "Stream" => {
-                        // Handle stream data as Vec<u8>
+                    "Bytes" => {
+                        // Handle bytes data as Vec<u8>
                         if let Ok(bytes) = serde_json::from_value::<Vec<u8>>(data.clone()) {
-                            Message::Stream(Arc::new(bytes))
+                            Message::Bytes(Arc::new(bytes))
                         } else {
-                            Message::Stream(Arc::new(vec![]))
+                            Message::Bytes(Arc::new(vec![]))
                         }
                     }
                     "Optional" => {

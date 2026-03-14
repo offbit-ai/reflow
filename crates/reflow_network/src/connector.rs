@@ -243,6 +243,11 @@ impl Connector {
                             timestamp,
                         });
 
+                        // StreamHandle messages pass through the normal inport
+                        // channel. The actual data flows out-of-band via the
+                        // StreamRegistry; the downstream actor takes the receiver
+                        // via ActorContext::take_stream_receiver().
+
                         // Move msg into the inport send — no clone needed
                         in_ports
                             .clone()

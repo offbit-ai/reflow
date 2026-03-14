@@ -2590,8 +2590,8 @@ impl Graph {
                                 // Multiple flow outputs indicate branching
                                 is_branching = true;
                             }
-                            PortType::Event | PortType::Stream => {
-                                // Events and streams can trigger parallel execution
+                            PortType::Event | PortType::Stream | PortType::Bytes => {
+                                // Events, streams, and bytes can trigger parallel execution
                                 is_parallel = true;
                             }
                             _ => {} // Other types don't affect execution flow
@@ -3408,8 +3408,9 @@ impl Graph {
             // Number type compatibility
             (PortType::Integer, PortType::Float) => true,
 
-            // Stream compatibility
+            // Stream and bytes compatibility
             (PortType::Stream, _) | (_, PortType::Stream) => true,
+            (PortType::Bytes, _) | (_, PortType::Bytes) => true,
 
             // Everything else is incompatible
             _ => false,
@@ -3638,6 +3639,7 @@ impl Graph {
             PortType::String => "string".to_string(),
             PortType::Object(name) => format!("object<{}>", name),
             PortType::Array(inner) => format!("array<{}>", self.get_port_type_string(inner)),
+            PortType::Bytes => "bytes".to_string(),
             PortType::Stream => "stream".to_string(),
             PortType::Any => "any".to_string(),
             // PortType::Generic(name) => format!("generic<{}>", name),

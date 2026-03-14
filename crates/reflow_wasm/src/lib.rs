@@ -68,7 +68,7 @@ pub enum Message {
     String(String),
     Object(serde_json::Value),
     Array(Vec<serde_json::Value>),
-    Stream(Vec<u8>),
+    Bytes(Vec<u8>),
     Optional(Option<Box<serde_json::Value>>),
     Any(serde_json::Value),
     Error(String),
@@ -106,7 +106,7 @@ impl From<Message> for serde_json::Value {
             Message::String(s) => serde_json::Value::String(s),
             Message::Object(v) => v,
             Message::Array(arr) => serde_json::Value::Array(arr),
-            Message::Stream(bytes) => serde_json::Value::Array(
+            Message::Bytes(bytes) => serde_json::Value::Array(
                 bytes
                     .into_iter()
                     .map(|b| serde_json::Value::Number(b.into()))
@@ -427,7 +427,7 @@ pub mod host {
                         Message::String(s) => serde_json::Value::String(s),
                         Message::Object(o) => o,
                         Message::Array(a) => serde_json::Value::Array(a),
-                        Message::Stream(s) => serde_json::Value::Array(
+                        Message::Bytes(s) => serde_json::Value::Array(
                             s.into_iter()
                                 .map(|b| serde_json::Value::Number(b.into()))
                                 .collect(),

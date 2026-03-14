@@ -509,7 +509,7 @@ fn test_compression_config_default() {
 
     // Verify Stream type strategy
     assert!(matches!(
-        type_strategies.get("Stream").unwrap(),
+        type_strategies.get("Bytes").unwrap(),
         &CompressionStrategy::Always
     ));
 
@@ -536,7 +536,7 @@ fn test_compression_config_strategy_access() {
     // Test read access
 
     let strategies = &mut config.type_strategies;
-    assert!(strategies.contains_key("Stream"));
+    assert!(strategies.contains_key("Bytes"));
     assert!(strategies.contains_key("Array"));
     assert!(strategies.contains_key("String"));
 
@@ -558,7 +558,7 @@ fn test_compression_config_thread_safety() {
     // Spawn thread to verify concurrent access
     let handle = std::thread::spawn(move || {
         assert!(matches!(
-            config_clone.type_strategies.get("Stream").unwrap(),
+            config_clone.type_strategies.get("Bytes").unwrap(),
             &CompressionStrategy::Always
         ));
     });
@@ -909,7 +909,7 @@ fn test_decode_with_config_no_compression() {
         ..Default::default()
     };
 
-    let test_msg = Message::Stream(b"Hello, World!".to_vec().into());
+    let test_msg = Message::Bytes(b"Hello, World!".to_vec().into());
     let test_data = test_msg.encode().unwrap();
     let result = Message::decode_with_config(&test_data, config);
     assert!(result.is_ok());
@@ -924,7 +924,7 @@ fn test_decode_with_config_zstd() {
         ..Default::default()
     };
 
-    let test_msg = Message::Stream(b"Hello, World!".to_vec().into());
+    let test_msg = Message::Bytes(b"Hello, World!".to_vec().into());
     let test_data = test_msg.encode().unwrap();
     let mut compressed = Vec::new();
     let mut encoder = zstd::Encoder::new(&mut compressed, 3).unwrap();
@@ -1420,7 +1420,7 @@ fn test_compress_streaming_config_levels() {
 
 #[test]
 fn test_compression_decision_stream() {
-    let msg = Message::Stream(vec![0u8; 1000].into());
+    let msg = Message::Bytes(vec![0u8; 1000].into());
     let data = vec![0u8; 1000];
 
     // First call should compress due to size
