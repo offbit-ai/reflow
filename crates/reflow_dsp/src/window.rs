@@ -38,9 +38,23 @@ pub fn generate(window_type: WindowType, n: usize) -> Vec<f32> {
 /// Apply a window to samples in-place.
 ///
 /// `window` and `samples` must have the same length.
+///
+/// When `simd` feature is enabled, dispatches to NEON/SSE2 `f32x4` multiply.
 #[inline]
 pub fn apply(samples: &mut [f32], window: &[f32]) {
     debug_assert_eq!(samples.len(), window.len());
+
+    #[cfg(all(feature = "simd", target_arch = "aarch64"))]
+    {
+        unsafe { return crate::simd_sample_neon::apply_window_neon(samples, window); }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    {
+        unsafe { return crate::simd_sample_x86::apply_window_sse2(samples, window); }
+    }
+
+    #[allow(unreachable_code)]
     for (s, w) in samples.iter_mut().zip(window.iter()) {
         *s *= w;
     }

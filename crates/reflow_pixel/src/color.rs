@@ -16,8 +16,46 @@ pub fn rgba_to_gray(r: u8, g: u8, b: u8) -> u8 {
 /// Convert an RGBA row to a Gray8 row in-place into `output`.
 ///
 /// `input` must have length `width * 4`, `output` must have length `width`.
+///
+/// When the `simd` feature is enabled, uses platform-specific SIMD:
+/// - aarch64: NEON `vmull_u8` — 8 pixels per iteration
+/// - wasm32: `i16x8` — 4 pixels per iteration
 pub fn row_rgba_to_gray(input: &[u8], output: &mut [u8]) {
     debug_assert_eq!(input.len(), output.len() * 4);
+
+    #[cfg(all(feature = "simd", target_arch = "aarch64"))]
+    {
+        // SAFETY: NEON is always available on aarch64
+        unsafe {
+            return crate::simd_color_neon::row_rgba_to_gray_neon(input, output);
+        }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    {
+        // SAFETY: SSE2 is always available on x86_64
+        unsafe {
+            return crate::simd_color_x86::row_rgba_to_gray_sse2(input, output);
+        }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "wasm32", target_feature = "simd128"))]
+    {
+        // SAFETY: simd128 feature is enabled at compile time
+        unsafe {
+            return crate::simd_color_wasm::row_rgba_to_gray_wasm(input, output);
+        }
+    }
+
+    // Scalar fallback
+    #[allow(unreachable_code)]
+    {
+        row_rgba_to_gray_scalar(input, output);
+    }
+}
+
+/// Scalar implementation of RGBA→Gray, always available for testing.
+pub(crate) fn row_rgba_to_gray_scalar(input: &[u8], output: &mut [u8]) {
     for (pixel, out) in input.chunks_exact(4).zip(output.iter_mut()) {
         *out = rgba_to_gray(pixel[0], pixel[1], pixel[2]);
     }
@@ -97,12 +135,30 @@ pub fn hsv_to_rgb(hsv: Hsv) -> (u8, u8, u8) {
 /// Apply brightness adjustment to an RGBA row in-place.
 ///
 /// `factor`: 1.0 = no change, >1.0 = brighter, <1.0 = darker.
+///
+/// When the `simd` feature is enabled on wasm32 with simd128, uses
+/// `f32x4` vectorized multiply+clamp.
 pub fn row_brightness(row: &mut [u8], factor: f32) {
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    {
+        unsafe {
+            return crate::simd_color_x86::row_brightness_sse2(row, factor);
+        }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "wasm32", target_feature = "simd128"))]
+    {
+        unsafe {
+            return crate::simd_color_wasm::row_brightness_wasm(row, factor);
+        }
+    }
+
+    // Scalar (also used by NEON — LLVM auto-vectorizes this well at opt-level 2)
+    #[allow(unreachable_code)]
     for pixel in row.chunks_exact_mut(4) {
         pixel[0] = ((pixel[0] as f32 * factor).round().clamp(0.0, 255.0)) as u8;
         pixel[1] = ((pixel[1] as f32 * factor).round().clamp(0.0, 255.0)) as u8;
         pixel[2] = ((pixel[2] as f32 * factor).round().clamp(0.0, 255.0)) as u8;
-        // Alpha unchanged
     }
 }
 

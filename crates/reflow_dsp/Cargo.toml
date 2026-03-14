@@ -9,5 +9,9 @@ description = "Pure-Rust DSP primitives for Reflow audio/signal processing actor
 rustfft = "6.2"
 realfft = "3.4"
 
+[features]
+default = []
+simd = []
+
 [dev-dependencies]
 approx = "0.5"

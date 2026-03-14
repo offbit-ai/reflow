@@ -4,18 +4,56 @@
 //! interleaved ↔ planar channel layout conversion.
 
 /// Convert i16 samples to f32 (range -1.0 to ~1.0).
+///
+/// When `simd` feature is enabled, dispatches to NEON (aarch64), SSE2 (x86_64).
 #[inline]
 pub fn i16_to_f32(samples: &[i16], output: &mut [f32]) {
     debug_assert_eq!(samples.len(), output.len());
+
+    #[cfg(all(feature = "simd", target_arch = "aarch64"))]
+    {
+        unsafe { return crate::simd_sample_neon::i16_to_f32_neon(samples, output); }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    {
+        unsafe { return crate::simd_sample_x86::i16_to_f32_sse2(samples, output); }
+    }
+
+    #[allow(unreachable_code)]
+    i16_to_f32_scalar(samples, output);
+}
+
+/// Scalar i16→f32 fallback.
+pub(crate) fn i16_to_f32_scalar(samples: &[i16], output: &mut [f32]) {
     for (s, o) in samples.iter().zip(output.iter_mut()) {
         *o = *s as f32 / 32768.0;
     }
 }
 
 /// Convert f32 samples to i16 with clamping.
+///
+/// When `simd` feature is enabled, dispatches to NEON (aarch64), SSE2 (x86_64).
 #[inline]
 pub fn f32_to_i16(samples: &[f32], output: &mut [i16]) {
     debug_assert_eq!(samples.len(), output.len());
+
+    #[cfg(all(feature = "simd", target_arch = "aarch64"))]
+    {
+        unsafe { return crate::simd_sample_neon::f32_to_i16_neon(samples, output); }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    {
+        unsafe { return crate::simd_sample_x86::f32_to_i16_sse2(samples, output); }
+    }
+
+    #[allow(unreachable_code)]
+    f32_to_i16_scalar(samples, output);
+}
+
+/// Scalar f32→i16 fallback.
+pub(crate) fn f32_to_i16_scalar(samples: &[f32], output: &mut [i16]) {
     for (s, o) in samples.iter().zip(output.iter_mut()) {
         let clamped = s.clamp(-1.0, 1.0);
         *o = (clamped * 32767.0) as i16;

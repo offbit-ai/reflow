@@ -3,6 +3,12 @@
 //! This crate is Wasm-safe — no system dependencies, no threads, no filesystem.
 //! All math is `f32` for samples, `f64` for coefficient precision.
 //!
+//! # Features
+//!
+//! - `simd` — Enables hand-tuned SIMD paths:
+//!   - **aarch64**: NEON for sample conversion, window apply, stereo interleave
+//!   - **x86_64**: SSE2 for sample conversion, window apply
+//!
 //! # Modules
 //!
 //! - [`biquad`] — Second-order IIR filters (LPF, HPF, BPF, notch, EQ, shelves)
@@ -20,3 +26,10 @@ pub mod fft;
 pub mod ring_buffer;
 pub mod sample;
 pub mod window;
+
+// SIMD acceleration modules (conditionally compiled)
+#[cfg(all(feature = "simd", target_arch = "aarch64"))]
+pub(crate) mod simd_sample_neon;
+
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+pub(crate) mod simd_sample_x86;
