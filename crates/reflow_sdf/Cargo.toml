@@ -1,0 +1,9 @@
+[package]
+name = "reflow_sdf"
+version = "0.1.0"
+edition = "2021"
+description = "SDF IR, primitives, operations, and WGSL code generation for procedural rendering."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
