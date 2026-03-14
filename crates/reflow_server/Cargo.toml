@@ -9,8 +9,9 @@ name = "reflow_server"
 path = "src/main.rs"
 
 [features]
-default = ["api"]
+default = ["api", "gpu"]
 api = ["reflow_components/api"]
+gpu = ["reflow_components/gpu"]
 
 [dependencies]
 reflow_network = { path = "../reflow_network" }

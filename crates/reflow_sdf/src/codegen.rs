@@ -3,6 +3,10 @@
 //! Walks the [`SdfNode`] tree and emits a complete WGSL compute shader
 //! that ray marches the SDF scene. The output is a standalone shader
 //! suitable for `wgpu` or WebGPU.
+//!
+//! Each node receives a position variable name (initially `"p"`) and
+//! transforms create new named positions (e.g. `p1`, `p2`) — no
+//! variable shadowing needed.
 
 use crate::ir::*;
 
@@ -10,7 +14,7 @@ use crate::ir::*;
 pub struct CompiledShader {
     /// Complete WGSL source code.
     pub wgsl: String,
-    /// Number of SDF function calls (for complexity estimation).
+    /// Number of SDF nodes compiled.
     pub node_count: u32,
     /// Whether the shader uses noise/displacement.
     pub uses_noise: bool,
@@ -22,21 +26,19 @@ pub struct CompiledShader {
 pub fn compile(node: &SdfNode) -> CompiledShader {
     let mut ctx = CodegenContext::new();
 
-    // Extract scene settings or use defaults
     let (root, settings) = match node {
         SdfNode::Scene { root, settings } => (root.as_ref(), settings.clone()),
         other => (other, SceneSettings::default()),
     };
 
-    // Generate the SDF function body
-    let sdf_expr = ctx.emit_node(root);
+    // "p" is the initial position variable from the function parameter
+    let sdf_expr = ctx.emit_node(root, "p");
 
-    // Build the complete shader
     let wgsl = build_shader(&ctx, &sdf_expr, &settings);
 
     CompiledShader {
         wgsl,
-        node_count: ctx.counter,
+        node_count: ctx.node_count,
         uses_noise: ctx.uses_noise,
         uses_smooth_ops: ctx.uses_smooth_ops,
     }
@@ -44,116 +46,94 @@ pub fn compile(node: &SdfNode) -> CompiledShader {
 
 struct CodegenContext {
     /// Monotonic counter for unique variable names.
-    counter: u32,
+    var_counter: u32,
+    /// Counter for position variables.
+    pos_counter: u32,
+    /// Total nodes emitted.
+    node_count: u32,
     /// Lines of code in the sdf_scene function body.
     lines: Vec<String>,
-    /// Material assignments: var_name → material index.
-    materials: Vec<SdfMaterial>,
-    /// Whether noise functions are needed.
     uses_noise: bool,
-    /// Whether smooth min/max are needed.
     uses_smooth_ops: bool,
 }
 
 impl CodegenContext {
     fn new() -> Self {
         Self {
-            counter: 0,
+            var_counter: 0,
+            pos_counter: 0,
+            node_count: 0,
             lines: Vec::new(),
-            materials: Vec::new(),
             uses_noise: false,
             uses_smooth_ops: false,
         }
     }
 
-    fn next_var(&mut self) -> String {
-        let name = format!("d{}", self.counter);
-        self.counter += 1;
+    fn next_dist(&mut self) -> String {
+        let name = format!("d{}", self.var_counter);
+        self.var_counter += 1;
         name
     }
 
-    fn add_material(&mut self, mat: &SdfMaterial) -> usize {
-        // Reuse existing if identical (by serialization)
-        let json = serde_json::to_string(mat).unwrap_or_default();
-        for (i, existing) in self.materials.iter().enumerate() {
-            if serde_json::to_string(existing).unwrap_or_default() == json {
-                return i;
-            }
-        }
-        self.materials.push(mat.clone());
-        self.materials.len() - 1
+    fn next_pos(&mut self) -> String {
+        let name = format!("p{}", self.pos_counter);
+        self.pos_counter += 1;
+        name
     }
 
-    /// Emit code for a node, return the variable name holding the distance.
-    fn emit_node(&mut self, node: &SdfNode) -> String {
+    /// Emit code for a node. `pos` is the name of the position variable
+    /// available at this point in the tree. Returns the dist variable name.
+    fn emit_node(&mut self, node: &SdfNode, pos: &str) -> String {
+        self.node_count += 1;
         match node {
-            SdfNode::Primitive { shape, .. } => self.emit_primitive(shape),
+            SdfNode::Primitive { shape, .. } => self.emit_primitive(shape, pos),
             SdfNode::Operation { op, left, right } => {
-                let l = self.emit_node(left);
-                let r = self.emit_node(right);
+                let l = self.emit_node(left, pos);
+                let r = self.emit_node(right, pos);
                 self.emit_op(op, &l, &r)
             }
-            SdfNode::Transform { transform, child } => self.emit_transform(transform, child),
-            SdfNode::Material { child, .. } => {
-                // Material doesn't change the distance — pass through
-                self.emit_node(child)
+            SdfNode::Transform { transform, child } => {
+                self.emit_transform(transform, child, pos)
             }
+            SdfNode::Material { child, .. } => self.emit_node(child, pos),
             SdfNode::Ref { name } => {
-                // Named reference — assume the function exists
-                let var = self.next_var();
-                self.lines.push(format!("  let {} = sdf_{}(p);", var, name));
+                let var = self.next_dist();
+                self.lines.push(format!("  let {} = sdf_{}({});", var, name, pos));
                 var
             }
-            SdfNode::Scene { root, .. } => self.emit_node(root),
+            SdfNode::Scene { root, .. } => self.emit_node(root, pos),
         }
     }
 
-    fn emit_primitive(&mut self, shape: &SdfPrimitive) -> String {
-        let var = self.next_var();
+    fn emit_primitive(&mut self, shape: &SdfPrimitive, pos: &str) -> String {
+        let var = self.next_dist();
         let expr = match shape {
-            SdfPrimitive::Sphere { radius } => {
-                format!("length(p) - {:.6}", radius)
-            }
-            SdfPrimitive::Box { size } => {
-                format!("sdf_box(p, vec3f({:.6}, {:.6}, {:.6}))", size[0], size[1], size[2])
-            }
-            SdfPrimitive::RoundBox { size, radius } => {
-                format!(
-                    "sdf_box(p, vec3f({:.6}, {:.6}, {:.6})) - {:.6}",
-                    size[0], size[1], size[2], radius
-                )
-            }
-            SdfPrimitive::Cylinder { radius, height } => {
-                format!("sdf_cylinder(p, {:.6}, {:.6})", *radius, *height)
-            }
-            SdfPrimitive::Capsule { radius, height } => {
-                format!("sdf_capsule(p, {:.6}, {:.6})", *height, *radius)
-            }
-            SdfPrimitive::Torus { major_radius, minor_radius } => {
-                format!("sdf_torus(p, {:.6}, {:.6})", *major_radius, *minor_radius)
-            }
-            SdfPrimitive::Cone { angle, height } => {
-                format!("sdf_cone(p, {:.6}, {:.6})", *angle, *height)
-            }
-            SdfPrimitive::Plane { normal, offset } => {
-                format!(
-                    "dot(p, vec3f({:.6}, {:.6}, {:.6})) + {:.6}",
-                    normal[0], normal[1], normal[2], offset
-                )
-            }
-            SdfPrimitive::InfRepeat { spacing } => {
-                format!(
-                    "length(p - round(p / vec3f({:.6}, {:.6}, {:.6})) * vec3f({0:.6}, {1:.6}, {2:.6}))",
-                    spacing[0], spacing[1], spacing[2]
-                )
-            }
+            SdfPrimitive::Sphere { radius } =>
+                format!("length({}) - {:.6}", pos, radius),
+            SdfPrimitive::Box { size } =>
+                format!("sdf_box({}, vec3f({:.6}, {:.6}, {:.6}))", pos, size[0], size[1], size[2]),
+            SdfPrimitive::RoundBox { size, radius } =>
+                format!("sdf_box({}, vec3f({:.6}, {:.6}, {:.6})) - {:.6}", pos, size[0], size[1], size[2], radius),
+            SdfPrimitive::Cylinder { radius, height } =>
+                format!("sdf_cylinder({}, {:.6}, {:.6})", pos, radius, height),
+            SdfPrimitive::Capsule { radius, height } =>
+                format!("sdf_capsule({}, {:.6}, {:.6})", pos, height, radius),
+            SdfPrimitive::Torus { major_radius, minor_radius } =>
+                format!("sdf_torus({}, {:.6}, {:.6})", pos, major_radius, minor_radius),
+            SdfPrimitive::Cone { angle, height } =>
+                format!("sdf_cone({}, {:.6}, {:.6})", pos, angle, height),
+            SdfPrimitive::Plane { normal, offset } =>
+                format!("dot({}, vec3f({:.6}, {:.6}, {:.6})) + {:.6}", pos, normal[0], normal[1], normal[2], offset),
+            SdfPrimitive::InfRepeat { spacing } =>
+                format!("length({p} - round({p} / vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}))",
+                    spacing[0], spacing[1], spacing[2], spacing[0], spacing[1], spacing[2], p = pos),
         };
         self.lines.push(format!("  let {} = {};", var, expr));
         var
     }
 
     fn emit_op(&mut self, op: &SdfOp, left: &str, right: &str) -> String {
-        let var = self.next_var();
+        let var = self.next_dist();
         let expr = match op {
             SdfOp::Union => format!("min({}, {})", left, right),
             SdfOp::Intersection => format!("max({}, {})", left, right),
@@ -175,126 +155,102 @@ impl CodegenContext {
         var
     }
 
-    fn emit_transform(&mut self, transform: &SdfTransform, child: &SdfNode) -> String {
+    fn emit_transform(&mut self, transform: &SdfTransform, child: &SdfNode, pos: &str) -> String {
         match transform {
             SdfTransform::Translate { offset } => {
-                let pvar = self.next_var();
+                let new_pos = self.next_pos();
                 self.lines.push(format!(
-                    "  let {pv} = p - vec3f({:.6}, {:.6}, {:.6});",
-                    offset[0], offset[1], offset[2], pv = pvar
+                    "  let {} = {} - vec3f({:.6}, {:.6}, {:.6});",
+                    new_pos, pos, offset[0], offset[1], offset[2]
                 ));
-                self.lines.push("  { let p = ".to_string() + &pvar + ";");
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                // The variable is still accessible after the block
-                result
+                self.emit_node(child, &new_pos)
             }
             SdfTransform::Rotate { angles } => {
-                let pvar = self.next_var();
-                let [ax, ay, az] = *angles;
+                let new_pos = self.next_pos();
                 self.lines.push(format!(
-                    "  let {pv} = rot_xyz(p, vec3f({:.6}, {:.6}, {:.6}));",
-                    ax.to_radians(), ay.to_radians(), az.to_radians(), pv = pvar
+                    "  let {} = rot_xyz({}, vec3f({:.6}, {:.6}, {:.6}));",
+                    new_pos, pos, angles[0].to_radians(), angles[1].to_radians(), angles[2].to_radians()
                 ));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                result
+                self.emit_node(child, &new_pos)
             }
             SdfTransform::Scale { factor } => {
-                // For uniform scale, we can divide p and multiply the result
-                let s = factor[0]; // TODO: non-uniform scale needs more care
-                let pvar = self.next_var();
-                self.lines.push(format!("  let {} = p / {:.6};", pvar, s));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let inner = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                let var = self.next_var();
+                let s = factor[0]; // uniform scale
+                let new_pos = self.next_pos();
+                self.lines.push(format!("  let {} = {} / {:.6};", new_pos, pos, s));
+                let inner = self.emit_node(child, &new_pos);
+                let var = self.next_dist();
                 self.lines.push(format!("  let {} = {} * {:.6};", var, inner, s));
                 var
             }
             SdfTransform::Twist { strength } => {
-                let pvar = self.next_var();
-                self.lines.push(format!(
-                    "  let {pv} = twist(p, {:.6});",
-                    strength, pv = pvar
-                ));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                result
+                let new_pos = self.next_pos();
+                self.lines.push(format!("  let {} = twist({}, {:.6});", new_pos, pos, strength));
+                self.emit_node(child, &new_pos)
             }
             SdfTransform::Bend { strength } => {
-                let pvar = self.next_var();
+                let new_pos = self.next_pos();
+                self.lines.push(format!("  let {} = bend({}, {:.6});", new_pos, pos, strength));
+                self.emit_node(child, &new_pos)
+            }
+            SdfTransform::Elongate { amount } => {
+                let new_pos = self.next_pos();
                 self.lines.push(format!(
-                    "  let {pv} = bend(p, {:.6});",
-                    strength, pv = pvar
+                    "  let {} = {} - clamp({}, vec3f(-{:.6}, -{:.6}, -{:.6}), vec3f({:.6}, {:.6}, {:.6}));",
+                    new_pos, pos, pos,
+                    amount[0], amount[1], amount[2],
+                    amount[0], amount[1], amount[2]
                 ));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                result
+                self.emit_node(child, &new_pos)
             }
             SdfTransform::Round { radius } => {
-                let inner = self.emit_node(child);
-                let var = self.next_var();
+                let inner = self.emit_node(child, pos);
+                let var = self.next_dist();
                 self.lines.push(format!("  let {} = {} - {:.6};", var, inner, radius));
                 var
             }
             SdfTransform::Shell { thickness } => {
-                let inner = self.emit_node(child);
-                let var = self.next_var();
+                let inner = self.emit_node(child, pos);
+                let var = self.next_dist();
                 self.lines.push(format!("  let {} = abs({}) - {:.6};", var, inner, thickness));
                 var
             }
-            SdfTransform::Elongate { amount } => {
-                let pvar = self.next_var();
-                self.lines.push(format!(
-                    "  let {pv} = p - clamp(p, vec3f(-{:.6}, -{:.6}, -{:.6}), vec3f({:.6}, {:.6}, {:.6}));",
-                    amount[0], amount[1], amount[2],
-                    amount[0], amount[1], amount[2],
-                    pv = pvar
-                ));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                result
-            }
             SdfTransform::Repeat { spacing, count } => {
-                let pvar = self.next_var();
+                let new_pos = self.next_pos();
                 self.lines.push(format!(
-                    "  let {pv} = p - clamp(round(p / vec3f({:.6}, {:.6}, {:.6})), vec3f(-{}, -{}, -{}), vec3f({}, {}, {})) * vec3f({:.6}, {:.6}, {:.6});",
+                    "  let {} = {} - clamp(round({} / vec3f({:.6}, {:.6}, {:.6})), vec3f(-{}.0, -{}.0, -{}.0), vec3f({}.0, {}.0, {}.0)) * vec3f({:.6}, {:.6}, {:.6});",
+                    new_pos, pos, pos,
                     spacing[0], spacing[1], spacing[2],
                     count[0], count[1], count[2],
                     count[0], count[1], count[2],
-                    spacing[0], spacing[1], spacing[2],
-                    pv = pvar
+                    spacing[0], spacing[1], spacing[2]
                 ));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                result
+                self.emit_node(child, &new_pos)
             }
             SdfTransform::Mirror { axis } => {
-                let pvar = self.next_var();
+                let new_pos = self.next_pos();
+                // For each axis with value > 0, take abs of that component
+                let mut components = Vec::new();
+                for (i, &a) in axis.iter().enumerate() {
+                    let comp = ["x", "y", "z"][i];
+                    if a.abs() > 0.5 {
+                        components.push(format!("abs({}.{})", pos, comp));
+                    } else {
+                        components.push(format!("{}.{}", pos, comp));
+                    }
+                }
                 self.lines.push(format!(
-                    "  let {pv} = abs(p) * vec3f({:.6}, {:.6}, {:.6}) + p * (vec3f(1.0) - vec3f({:.6}, {:.6}, {:.6}));",
-                    axis[0].abs(), axis[1].abs(), axis[2].abs(),
-                    axis[0].abs(), axis[1].abs(), axis[2].abs(),
-                    pv = pvar
+                    "  let {} = vec3f({}, {}, {});",
+                    new_pos, components[0], components[1], components[2]
                 ));
-                self.lines.push(format!("  {{ let p = {};", pvar));
-                let result = self.emit_node(child);
-                self.lines.push("  }".to_string());
-                result
+                self.emit_node(child, &new_pos)
             }
             SdfTransform::Displace { frequency, amplitude, octaves } => {
                 self.uses_noise = true;
-                let inner = self.emit_node(child);
-                let var = self.next_var();
+                let inner = self.emit_node(child, pos);
+                let var = self.next_dist();
                 self.lines.push(format!(
-                    "  let {} = {} + fbm(p * {:.6}, {}u) * {:.6};",
-                    var, inner, frequency, octaves, amplitude
+                    "  let {} = {} + fbm({} * {:.6}, {}u) * {:.6};",
+                    var, inner, pos, frequency, octaves, amplitude
                 ));
                 var
             }
@@ -311,7 +267,9 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     shader.push_str("struct Uniforms {\n");
     shader.push_str("  resolution: vec2f,\n");
     shader.push_str("  time: f32,\n");
+    shader.push_str("  _pad0: f32,\n");
     shader.push_str("  camera_pos: vec3f,\n");
+    shader.push_str("  _pad1: f32,\n");
     shader.push_str("  camera_target: vec3f,\n");
     shader.push_str("  fov: f32,\n");
     shader.push_str("};\n\n");
@@ -324,7 +282,7 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     shader.push_str(&format!("const EPSILON: f32 = {:.6};\n", settings.epsilon));
     shader.push_str(&format!("const AMBIENT: f32 = {:.4};\n", settings.ambient));
     shader.push_str(&format!(
-        "const LIGHT_DIR: vec3f = vec3f({:.6}, {:.6}, {:.6});\n",
+        "const LIGHT_DIR: vec3f = normalize(vec3f({:.6}, {:.6}, {:.6}));\n",
         settings.light_dir[0], settings.light_dir[1], settings.light_dir[2]
     ));
     shader.push_str(&format!(
@@ -338,7 +296,6 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
 
     // Helper functions
     shader.push_str(HELPER_FUNCTIONS);
-
     if ctx.uses_smooth_ops {
         shader.push_str(SMOOTH_OPS);
     }
@@ -355,25 +312,17 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     shader.push_str(&format!("  return {};\n", result_var));
     shader.push_str("}\n\n");
 
-    // Normal calculation
+    // Rendering functions
     shader.push_str(NORMAL_FUNCTION);
-
-    // Ray marcher
     shader.push_str(RAY_MARCH_FUNCTION);
-
-    // Shading
     if settings.soft_shadows {
         shader.push_str(SOFT_SHADOW_FUNCTION);
     }
     if settings.ao {
         shader.push_str(AO_FUNCTION);
     }
-    shader.push_str(SHADE_FUNCTION);
-
-    // Camera
+    shader.push_str(if settings.ao { SHADE_WITH_AO } else { SHADE_NO_AO });
     shader.push_str(CAMERA_FUNCTION);
-
-    // Compute shader entry point
     shader.push_str(COMPUTE_ENTRY);
 
     shader
@@ -381,8 +330,7 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
 
 // ─── WGSL Fragments ──────────────────────────────────────────────────
 
-const HELPER_FUNCTIONS: &str = r#"
-fn sdf_box(p: vec3f, b: vec3f) -> f32 {
+const HELPER_FUNCTIONS: &str = r#"fn sdf_box(p: vec3f, b: vec3f) -> f32 {
   let q = abs(p) - b;
   return length(max(q, vec3f(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
@@ -398,8 +346,9 @@ fn sdf_torus(p: vec3f, R: f32, r: f32) -> f32 {
 }
 
 fn sdf_capsule(p: vec3f, h: f32, r: f32) -> f32 {
-  let py = p.y - clamp(p.y, 0.0, h);
-  return length(vec3f(p.x, py, p.z)) - r;
+  var q = p;
+  q.y = q.y - clamp(q.y, 0.0, h);
+  return length(q) - r;
 }
 
 fn sdf_cone(p: vec3f, angle: f32, h: f32) -> f32 {
@@ -434,8 +383,7 @@ fn bend(p: vec3f, k: f32) -> vec3f {
 
 "#;
 
-const SMOOTH_OPS: &str = r#"
-fn smin(a: f32, b: f32, k: f32) -> f32 {
+const SMOOTH_OPS: &str = r#"fn smin(a: f32, b: f32, k: f32) -> f32 {
   let h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
   return mix(b, a, h) - k * h * (1.0 - h);
 }
@@ -446,22 +394,21 @@ fn smax(a: f32, b: f32, k: f32) -> f32 {
 
 "#;
 
-const NOISE_FUNCTIONS: &str = r#"
-fn hash(p: vec3f) -> f32 {
+const NOISE_FUNCTIONS: &str = r#"fn hash3(p: vec3f) -> f32 {
   var q = fract(p * 0.1031);
   q = q + dot(q, q.yzx + 19.19);
   return fract((q.x + q.y) * q.z);
 }
 
-fn noise(p: vec3f) -> f32 {
+fn noise3d(p: vec3f) -> f32 {
   let i = floor(p);
   let f = fract(p);
   let u = f * f * (3.0 - 2.0 * f);
   return mix(
-    mix(mix(hash(i), hash(i + vec3f(1, 0, 0)), u.x),
-        mix(hash(i + vec3f(0, 1, 0)), hash(i + vec3f(1, 1, 0)), u.x), u.y),
-    mix(mix(hash(i + vec3f(0, 0, 1)), hash(i + vec3f(1, 0, 1)), u.x),
-        mix(hash(i + vec3f(0, 1, 1)), hash(i + vec3f(1, 1, 1)), u.x), u.y), u.z);
+    mix(mix(hash3(i), hash3(i + vec3f(1.0, 0.0, 0.0)), u.x),
+        mix(hash3(i + vec3f(0.0, 1.0, 0.0)), hash3(i + vec3f(1.0, 1.0, 0.0)), u.x), u.y),
+    mix(mix(hash3(i + vec3f(0.0, 0.0, 1.0)), hash3(i + vec3f(1.0, 0.0, 1.0)), u.x),
+        mix(hash3(i + vec3f(0.0, 1.0, 1.0)), hash3(i + vec3f(1.0, 1.0, 1.0)), u.x), u.y), u.z);
 }
 
 fn fbm(p: vec3f, octaves: u32) -> f32 {
@@ -469,7 +416,7 @@ fn fbm(p: vec3f, octaves: u32) -> f32 {
   var amplitude = 0.5;
   var q = p;
   for (var i = 0u; i < octaves; i = i + 1u) {
-    value = value + amplitude * noise(q);
+    value = value + amplitude * noise3d(q);
     q = q * 2.0;
     amplitude = amplitude * 0.5;
   }
@@ -478,8 +425,7 @@ fn fbm(p: vec3f, octaves: u32) -> f32 {
 
 "#;
 
-const NORMAL_FUNCTION: &str = r#"
-fn calc_normal(p: vec3f) -> vec3f {
+const NORMAL_FUNCTION: &str = r#"fn calc_normal(p: vec3f) -> vec3f {
   let e = vec2f(EPSILON, 0.0);
   return normalize(vec3f(
     sdf_scene(p + e.xyy) - sdf_scene(p - e.xyy),
@@ -490,8 +436,7 @@ fn calc_normal(p: vec3f) -> vec3f {
 
 "#;
 
-const RAY_MARCH_FUNCTION: &str = r#"
-fn ray_march(ro: vec3f, rd: vec3f) -> f32 {
+const RAY_MARCH_FUNCTION: &str = r#"fn ray_march(ro: vec3f, rd: vec3f) -> f32 {
   var t = 0.0;
   for (var i = 0u; i < MAX_STEPS; i = i + 1u) {
     let p = ro + rd * t;
@@ -505,8 +450,7 @@ fn ray_march(ro: vec3f, rd: vec3f) -> f32 {
 
 "#;
 
-const SOFT_SHADOW_FUNCTION: &str = r#"
-fn soft_shadow(ro: vec3f, rd: vec3f, mint: f32, maxt: f32, k: f32) -> f32 {
+const SOFT_SHADOW_FUNCTION: &str = r#"fn soft_shadow(ro: vec3f, rd: vec3f, mint: f32, maxt: f32, k: f32) -> f32 {
   var res = 1.0;
   var t = mint;
   for (var i = 0u; i < 64u; i = i + 1u) {
@@ -521,8 +465,7 @@ fn soft_shadow(ro: vec3f, rd: vec3f, mint: f32, maxt: f32, k: f32) -> f32 {
 
 "#;
 
-const AO_FUNCTION: &str = r#"
-fn calc_ao(pos: vec3f, nor: vec3f) -> f32 {
+const AO_FUNCTION: &str = r#"fn calc_ao(pos: vec3f, nor: vec3f) -> f32 {
   var occ = 0.0;
   var sca = 1.0;
   for (var i = 0u; i < 5u; i = i + 1u) {
@@ -536,46 +479,46 @@ fn calc_ao(pos: vec3f, nor: vec3f) -> f32 {
 
 "#;
 
-const SHADE_FUNCTION: &str = r#"
-fn shade(ro: vec3f, rd: vec3f, t: f32) -> vec3f {
+const SHADE_WITH_AO: &str = r#"fn shade(ro: vec3f, rd: vec3f, t: f32) -> vec3f {
   let p = ro + rd * t;
   let n = calc_normal(p);
-
-  // Diffuse
   let diff = max(dot(n, LIGHT_DIR), 0.0);
-
-  // Specular (Blinn-Phong)
   let h = normalize(LIGHT_DIR - rd);
   let spec = pow(max(dot(n, h), 0.0), 32.0);
-
-  // Fresnel
   let fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0) * 0.3;
-
-  var col = vec3f(0.8, 0.8, 0.8); // default albedo
-
-  var light = AMBIENT + diff * LIGHT_COLOR + spec * 0.5;
-
-  // AO (if function exists, it's always included when enabled)
-  light = light * calc_ao(p, n);
-
+  let ao = calc_ao(p, n);
+  let col = vec3f(0.8, 0.8, 0.8);
+  let light = (AMBIENT + diff * LIGHT_COLOR + spec * 0.5) * ao;
   return col * light + fresnel * LIGHT_COLOR;
 }
 
 "#;
 
-const CAMERA_FUNCTION: &str = r#"
-fn camera_ray(uv: vec2f, ro: vec3f, target: vec3f, fov: f32) -> vec3f {
+const SHADE_NO_AO: &str = r#"fn shade(ro: vec3f, rd: vec3f, t: f32) -> vec3f {
+  let p = ro + rd * t;
+  let n = calc_normal(p);
+  let diff = max(dot(n, LIGHT_DIR), 0.0);
+  let h = normalize(LIGHT_DIR - rd);
+  let spec = pow(max(dot(n, h), 0.0), 32.0);
+  let fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0) * 0.3;
+  let col = vec3f(0.8, 0.8, 0.8);
+  let light = AMBIENT + diff * LIGHT_COLOR + spec * 0.5;
+  return col * light + fresnel * LIGHT_COLOR;
+}
+
+"#;
+
+const CAMERA_FUNCTION: &str = r#"fn camera_ray(uv: vec2f, ro: vec3f, target: vec3f, fov_deg: f32) -> vec3f {
   let fwd = normalize(target - ro);
   let right = normalize(cross(vec3f(0.0, 1.0, 0.0), fwd));
   let up = cross(fwd, right);
-  let focal = 1.0 / tan(radians(fov) * 0.5);
+  let focal = 1.0 / tan(radians(fov_deg) * 0.5);
   return normalize(uv.x * right + uv.y * up + focal * fwd);
 }
 
 "#;
 
-const COMPUTE_ENTRY: &str = r#"
-@compute @workgroup_size(8, 8, 1)
+const COMPUTE_ENTRY: &str = r#"@compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
   let dims = textureDimensions(output_texture);
   if gid.x >= dims.x || gid.y >= dims.y { return; }
@@ -608,45 +551,101 @@ mod tests {
 
     #[test]
     fn test_compile_sphere() {
-        let node = SdfNode::sphere(1.0);
-        let result = compile(&node);
-        assert!(result.wgsl.contains("length(p) - 1.0"));
-        assert!(result.wgsl.contains("fn sdf_scene"));
-        assert!(result.wgsl.contains("@compute"));
+        let result = compile(&SdfNode::sphere(1.0));
+        assert!(result.wgsl.contains("let d0 = length(p) - 1.0"));
+        assert!(result.wgsl.contains("return d0;"));
         assert_eq!(result.node_count, 1);
     }
 
     #[test]
-    fn test_compile_smooth_union() {
-        let node = SdfNode::smooth_union(
-            SdfNode::sphere(1.0).translate([1.0, 0.0, 0.0]),
-            SdfNode::cube(0.8),
-            0.3,
-        );
-        let result = compile(&node);
-        assert!(result.wgsl.contains("smin("));
-        assert!(result.uses_smooth_ops);
-        assert!(result.wgsl.contains("fn smin"));
+    fn test_compile_translated_sphere() {
+        let result = compile(&SdfNode::sphere(1.0).translate([2.0, 0.0, 0.0]));
+        // Should create p0 = p - translate, then use p0 for sphere
+        assert!(result.wgsl.contains("let p0 = p - vec3f(2.0"));
+        assert!(result.wgsl.contains("length(p0) - 1.0"));
     }
 
     #[test]
-    fn test_compile_with_noise() {
-        let node = SdfNode::sphere(1.0).displace(2.0, 0.1, 4);
-        let result = compile(&node);
+    fn test_compile_nested_transforms() {
+        let result = compile(
+            &SdfNode::sphere(1.0)
+                .translate([1.0, 0.0, 0.0])
+                .rotate([0.0, 45.0, 0.0])
+        );
+        // Should create p0 for rotate, p1 for translate, each with unique names
+        assert!(result.wgsl.contains("let p0 = rot_xyz(p,"));
+        assert!(result.wgsl.contains("let p1 = p0 - vec3f(1.0"));
+        assert!(result.wgsl.contains("length(p1)"));
+    }
+
+    #[test]
+    fn test_compile_smooth_union() {
+        let result = compile(&SdfNode::smooth_union(
+            SdfNode::sphere(1.0).translate([1.0, 0.0, 0.0]),
+            SdfNode::cube(0.8),
+            0.3,
+        ));
+        assert!(result.uses_smooth_ops);
+        assert!(result.wgsl.contains("fn smin"));
+        assert!(result.wgsl.contains("smin("));
+    }
+
+    #[test]
+    fn test_compile_displacement() {
+        let result = compile(&SdfNode::sphere(1.0).displace(2.0, 0.1, 4));
         assert!(result.uses_noise);
         assert!(result.wgsl.contains("fn fbm"));
-        assert!(result.wgsl.contains("fn noise"));
+        assert!(result.wgsl.contains("fbm(p * 2.0"));
     }
 
     #[test]
     fn test_compile_scene_settings() {
-        let node = SdfNode::sphere(1.0).into_scene_with(SceneSettings {
+        let result = compile(&SdfNode::sphere(1.0).into_scene_with(SceneSettings {
             max_steps: 256,
             soft_shadows: true,
+            ao: true,
             ..Default::default()
-        });
-        let result = compile(&node);
+        }));
         assert!(result.wgsl.contains("MAX_STEPS: u32 = 256u"));
         assert!(result.wgsl.contains("fn soft_shadow"));
+        assert!(result.wgsl.contains("fn calc_ao"));
+    }
+
+    #[test]
+    fn test_no_variable_shadowing() {
+        // Ensure no `let p = ...` appears (only p0, p1, etc.)
+        let result = compile(
+            &SdfNode::smooth_union(
+                SdfNode::sphere(0.5).translate([1.0, 0.0, 0.0]).twist(0.3),
+                SdfNode::torus(1.0, 0.3).rotate([90.0, 0.0, 0.0]),
+                0.2,
+            )
+        );
+        // The function parameter is `p`, all derived positions are p0, p1, ...
+        // We should NOT see `let p =` (which would shadow the parameter)
+        let sdf_fn_body = result.wgsl.split("fn sdf_scene(p: vec3f) -> f32 {").nth(1).unwrap();
+        let sdf_fn_body = sdf_fn_body.split('}').next().unwrap();
+        assert!(!sdf_fn_body.contains("let p ="), "Should not shadow p: {}", sdf_fn_body);
+    }
+
+    #[test]
+    fn test_uniform_alignment() {
+        // Verify uniform struct has proper padding for WebGPU alignment
+        let result = compile(&SdfNode::sphere(1.0));
+        assert!(result.wgsl.contains("_pad0: f32"));
+        assert!(result.wgsl.contains("_pad1: f32"));
+    }
+
+    #[test]
+    fn test_mirror() {
+        let result = compile(&SdfNode::sphere(1.0).mirror([1.0, 0.0, 0.0]));
+        assert!(result.wgsl.contains("abs(p.x)"));
+        assert!(result.wgsl.contains("p.y"));
+    }
+
+    #[test]
+    fn test_shell() {
+        let result = compile(&SdfNode::sphere(1.0).shell(0.05));
+        assert!(result.wgsl.contains("abs(d0) - 0.05"));
     }
 }

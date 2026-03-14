@@ -25,6 +25,15 @@ use crate::stream_ops::{
     StreamStatsActor, StreamTeeActor, StreamThrottleActor, StreamToBytesActor,
     TimeStretchActor,
 };
+#[cfg(feature = "gpu")]
+use crate::gpu::sdf::{
+    SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor,
+    SdfDifferenceActor, SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor,
+    SdfMirrorActor, SdfPlaneActor, SdfRepeatActor, SdfRotateActor, SdfRoundActor,
+    SdfScaleActor, SdfSceneActor, SdfShellActor, SdfSmoothDifferenceActor,
+    SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor, SdfTorusActor,
+    SdfTranslateActor, SdfTwistActor, SdfUnionActor,
+};
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
 /// Get an actor instance for a given Zeal template ID
@@ -93,6 +102,58 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
 
         // Image DSP (continued)
         "tpl_image_resize" => Some(Arc::new(ImageResizeActor::new())),
+
+        // GPU / SDF (feature-gated)
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_sphere" => Some(Arc::new(SdfSphereActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_box" => Some(Arc::new(SdfBoxActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_cylinder" => Some(Arc::new(SdfCylinderActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_torus" => Some(Arc::new(SdfTorusActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_capsule" => Some(Arc::new(SdfCapsuleActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_cone" => Some(Arc::new(SdfConeActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_plane" => Some(Arc::new(SdfPlaneActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_union" => Some(Arc::new(SdfUnionActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_intersection" => Some(Arc::new(SdfIntersectionActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_difference" => Some(Arc::new(SdfDifferenceActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_smooth_union" => Some(Arc::new(SdfSmoothUnionActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_smooth_intersection" => Some(Arc::new(SdfSmoothIntersectionActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_smooth_difference" => Some(Arc::new(SdfSmoothDifferenceActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_translate" => Some(Arc::new(SdfTranslateActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_rotate" => Some(Arc::new(SdfRotateActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_scale" => Some(Arc::new(SdfScaleActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_twist" => Some(Arc::new(SdfTwistActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_bend" => Some(Arc::new(SdfBendActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_round" => Some(Arc::new(SdfRoundActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_shell" => Some(Arc::new(SdfShellActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_mirror" => Some(Arc::new(SdfMirrorActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_repeat" => Some(Arc::new(SdfRepeatActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_displace" => Some(Arc::new(SdfDisplaceActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_material" => Some(Arc::new(SdfMaterialActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_scene" => Some(Arc::new(SdfSceneActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -165,6 +226,29 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Image DSP (continued)
     mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
+
+    // GPU / SDF (feature-gated)
+    #[cfg(feature = "gpu")]
+    {
+        for (id, name) in [
+            ("tpl_sdf_sphere", "SdfSphereActor"), ("tpl_sdf_box", "SdfBoxActor"),
+            ("tpl_sdf_cylinder", "SdfCylinderActor"), ("tpl_sdf_torus", "SdfTorusActor"),
+            ("tpl_sdf_capsule", "SdfCapsuleActor"), ("tpl_sdf_cone", "SdfConeActor"),
+            ("tpl_sdf_plane", "SdfPlaneActor"), ("tpl_sdf_union", "SdfUnionActor"),
+            ("tpl_sdf_intersection", "SdfIntersectionActor"), ("tpl_sdf_difference", "SdfDifferenceActor"),
+            ("tpl_sdf_smooth_union", "SdfSmoothUnionActor"),
+            ("tpl_sdf_smooth_intersection", "SdfSmoothIntersectionActor"),
+            ("tpl_sdf_smooth_difference", "SdfSmoothDifferenceActor"),
+            ("tpl_sdf_translate", "SdfTranslateActor"), ("tpl_sdf_rotate", "SdfRotateActor"),
+            ("tpl_sdf_scale", "SdfScaleActor"), ("tpl_sdf_twist", "SdfTwistActor"),
+            ("tpl_sdf_bend", "SdfBendActor"), ("tpl_sdf_round", "SdfRoundActor"),
+            ("tpl_sdf_shell", "SdfShellActor"), ("tpl_sdf_mirror", "SdfMirrorActor"),
+            ("tpl_sdf_repeat", "SdfRepeatActor"), ("tpl_sdf_displace", "SdfDisplaceActor"),
+            ("tpl_sdf_material", "SdfMaterialActor"), ("tpl_sdf_scene", "SdfSceneActor"),
+        ] {
+            mapping.insert(id.to_string(), name.to_string());
+        }
+    }
 
     // Audio DSP (continued)
     mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());

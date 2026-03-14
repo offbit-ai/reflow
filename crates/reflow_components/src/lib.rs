@@ -12,6 +12,8 @@
 #[allow(clippy::all, unused_variables)]
 pub mod api;
 pub mod flow_control;
+#[cfg(feature = "gpu")]
+pub mod gpu;
 pub mod integration;
 pub mod logic;
 pub mod media;

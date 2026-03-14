@@ -33,10 +33,14 @@ rquickjs = { version = "0.6", features = ["array-buffer", "bindgen", "classes", 
 reflow_dsp = { path = "../reflow_dsp", optional = true }
 reflow_pixel = { path = "../reflow_pixel", optional = true }
 
+# GPU / SDF
+reflow_sdf = { path = "../reflow_sdf", optional = true }
+
 [features]
-default = ["api", "av-core"]
+default = ["api", "av-core", "gpu"]
 api = []
 av-core = ["dep:reflow_dsp", "dep:reflow_pixel"]
+gpu = ["dep:reflow_sdf"]
 
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }
