@@ -3,6 +3,8 @@
 //! Each actor reads its config properties and produces an SdfNode
 //! representing a primitive shape. Downstream operation/transform actors
 //! combine them into a tree.
+//!
+//! Primitives are source actors — they need a `trigger` IIP to execute.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -17,18 +19,14 @@ fn sdf_output(node: &reflow_sdf::ir::SdfNode) -> HashMap<String, Message> {
     out
 }
 
-// ── Sphere ──────────────────────────────────────────────────────
-
-#[actor(SdfSphereActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfSphereActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_sphere_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let radius = config.get("radius").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
     Ok(sdf_output(&reflow_sdf::ir::SdfNode::sphere(radius)))
 }
 
-// ── Box ─────────────────────────────────────────────────────────
-
-#[actor(SdfBoxActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfBoxActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_box_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let sx = config.get("sizeX").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
@@ -37,9 +35,7 @@ pub async fn sdf_box_actor(context: ActorContext) -> Result<HashMap<String, Mess
     Ok(sdf_output(&reflow_sdf::ir::SdfNode::box3([sx, sy, sz])))
 }
 
-// ── Cylinder ────────────────────────────────────────────────────
-
-#[actor(SdfCylinderActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfCylinderActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_cylinder_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let radius = config.get("radius").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
@@ -47,9 +43,7 @@ pub async fn sdf_cylinder_actor(context: ActorContext) -> Result<HashMap<String,
     Ok(sdf_output(&reflow_sdf::ir::SdfNode::cylinder(radius, height)))
 }
 
-// ── Torus ───────────────────────────────────────────────────────
-
-#[actor(SdfTorusActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfTorusActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_torus_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let major = config.get("majorRadius").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
@@ -57,9 +51,7 @@ pub async fn sdf_torus_actor(context: ActorContext) -> Result<HashMap<String, Me
     Ok(sdf_output(&reflow_sdf::ir::SdfNode::torus(major, minor)))
 }
 
-// ── Capsule ─────────────────────────────────────────────────────
-
-#[actor(SdfCapsuleActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfCapsuleActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_capsule_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let radius = config.get("radius").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
@@ -67,9 +59,7 @@ pub async fn sdf_capsule_actor(context: ActorContext) -> Result<HashMap<String, 
     Ok(sdf_output(&reflow_sdf::ir::SdfNode::capsule(radius, height)))
 }
 
-// ── Cone ────────────────────────────────────────────────────────
-
-#[actor(SdfConeActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfConeActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_cone_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let angle = config.get("angle").and_then(|v| v.as_f64()).unwrap_or(30.0) as f32;
@@ -77,9 +67,7 @@ pub async fn sdf_cone_actor(context: ActorContext) -> Result<HashMap<String, Mes
     Ok(sdf_output(&reflow_sdf::ir::SdfNode::cone(angle.to_radians(), height)))
 }
 
-// ── Plane ───────────────────────────────────────────────────────
-
-#[actor(SdfPlaneActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+#[actor(SdfPlaneActor, inports::<1>(trigger), outports::<1>(sdf), state(MemoryState))]
 pub async fn sdf_plane_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let nx = config.get("normalX").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
