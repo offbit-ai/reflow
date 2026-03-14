@@ -1,129 +1,109 @@
-// reflow-dynamics: Gain reduction meter + editable transfer curve
-// Used by Compressor, Limiter, Noise Gate, De-Esser.
-// Editable: thresholdDb (drag horizontal line), ratio (drag curve slope)
+// reflow-dynamics: Transfer curve + GR meter with draggable threshold
+// Config: thresholdDb, ratio, kneeDb, attackMs, releaseMs, makeupDb, ceilingDb
+// Used by: Compressor, Limiter, NoiseGate, DeEsser
 
-class ReflowDynamics extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; width: 100%; }
-        .container { display: flex; gap: 4px; }
-        canvas { border-radius: 4px; background: #0a0a0a; }
-        .curve { width: 100px; height: 100px; }
-        .meter { width: 24px; height: 100px; }
-        .labels { font: 9px monospace; color: #999; padding: 2px 0; }
-        .labels span { display: block; }
-        .gr { color: #f59e0b; }
-      </style>
-      <div class="container">
-        <canvas class="curve"></canvas>
-        <canvas class="meter"></canvas>
-      </div>
-      <div class="labels">
-        <span class="gr">GR: 0.0 dB</span>
-      </div>
+class ReflowDynamics extends ReflowUI.ReflowComponent {
+  get styles() {
+    const T = ReflowUI.theme;
+    return `
+      .container { display: flex; gap: 4px; padding: ${T.pad}; }
+      .curve { width: 100px; height: 100px; cursor: ns-resize; }
+      .meter { width: 20px; height: 100px; }
+      .gr-label { font: ${T.fontSmall}; color: ${T.amber}; padding: ${T.padSmall} ${T.pad}; }
     `;
-    this._curve = this.shadowRoot.querySelector('.curve');
-    this._meter = this.shadowRoot.querySelector('.meter');
-    this._grLabel = this.shadowRoot.querySelector('.gr');
-    this._threshold = -20;
-    this._ratio = 4;
-    this._knee = 6;
-    this._gr = 0;
-    this._dragging = false;
   }
 
-  connectedCallback() {
-    const dpr = window.devicePixelRatio || 1;
-    this._curve.width = 100 * dpr;
-    this._curve.height = 100 * dpr;
-    this._meter.width = 24 * dpr;
-    this._meter.height = 100 * dpr;
+  get template() {
+    return `
+      <div class="container">
+        <canvas class="curve" id="curve"></canvas>
+        <canvas class="meter" id="meter"></canvas>
+      </div>
+      <div class="gr-label" id="gr">GR: 0.0 dB</div>
+    `;
+  }
 
-    this._curveCtx = this._curve.getContext('2d');
-    this._meterCtx = this._meter.getContext('2d');
-    this._curveCtx.scale(dpr, dpr);
-    this._meterCtx.scale(dpr, dpr);
+  onConnect() {
+    const T = ReflowUI.theme;
+    const props = this.getProps();
+    this._threshold = props.thresholdDb ?? props.ceilingDb ?? -20;
+    this._ratio = props.ratio ?? Infinity;
+    this._knee = props.kneeDb ?? 0;
+    this._gr = 0;
+    this._dragging = false;
 
+    const { ctx: curveCtx } = ReflowUI.canvas.setupHiDPI(this.$('curve'), 100);
+    const { ctx: meterCtx } = ReflowUI.canvas.setupHiDPI(this.$('meter'), 100);
+    this._curveCtx = curveCtx;
+    this._meterCtx = meterCtx;
     this._drawCurve();
 
-    // Make threshold draggable
-    this._curve.addEventListener('pointerdown', (e) => {
+    // Drag threshold
+    const curve = this.$('curve');
+    curve.addEventListener('pointerdown', (e) => {
       this._dragging = true;
-      this._curve.setPointerCapture(e.pointerId);
+      curve.setPointerCapture(e.pointerId);
     });
-    this._curve.addEventListener('pointermove', (e) => {
+    curve.addEventListener('pointermove', (e) => {
       if (!this._dragging) return;
-      const rect = this._curve.getBoundingClientRect();
+      const rect = curve.getBoundingClientRect();
       const y = (e.clientY - rect.top) / rect.height;
-      // Map y (0=top=-0dB, 1=bottom=-60dB) to threshold
-      const newThreshold = -(y * 60);
-      this._threshold = Math.round(newThreshold);
+      this._threshold = Math.round(-(y * 60));
+      this._threshold = Math.max(-60, Math.min(0, this._threshold));
       this.zeal?.setProperty('thresholdDb', this._threshold);
       this._drawCurve();
     });
-    this._curve.addEventListener('pointerup', () => { this._dragging = false; });
+    curve.addEventListener('pointerup', () => { this._dragging = false; });
 
-    // Stream frames carry gain reduction info
-    this._unsub = this.zeal?.onStreamFrame((payload) => {
-      // Compute RMS of output to estimate GR
+    this.sub(() => this.zeal?.onStreamFrame((payload) => {
       const samples = new Float32Array(payload.buffer, payload.byteOffset, payload.byteLength / 4);
       let peak = 0;
       for (let i = 0; i < samples.length; i++) {
-        const abs = Math.abs(samples[i]);
-        if (abs > peak) peak = abs;
+        const a = Math.abs(samples[i]);
+        if (a > peak) peak = a;
       }
       const peakDb = peak > 0 ? 20 * Math.log10(peak) : -60;
       this._gr = Math.min(0, peakDb - this._threshold);
       this._drawMeter();
-    });
+    }));
 
-    this._unsubProps = this.zeal?.onPropertyChange((values) => {
-      if (values.thresholdDb !== undefined) this._threshold = values.thresholdDb;
+    this.sub(() => this.zeal?.onPropertyChange((values) => {
+      if (values.thresholdDb !== undefined && !this._dragging) this._threshold = values.thresholdDb;
+      if (values.ceilingDb !== undefined && !this._dragging) this._threshold = values.ceilingDb;
       if (values.ratio !== undefined) this._ratio = values.ratio;
       if (values.kneeDb !== undefined) this._knee = values.kneeDb;
       this._drawCurve();
-    });
-  }
-
-  disconnectedCallback() {
-    this._unsub?.();
-    this._unsubProps?.();
+    }));
   }
 
   _drawCurve() {
-    const ctx = this._curveCtx;
-    const s = 100;
+    const ctx = this._curveCtx, s = 100, T = ReflowUI.theme;
     ctx.clearRect(0, 0, s, s);
 
     // Grid
-    ctx.strokeStyle = '#222';
+    ctx.strokeStyle = T.bgElevated;
     ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 4; i++) {
+    for (let i = 1; i <= 3; i++) {
       const p = (i / 4) * s;
       ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, s); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(s, p); ctx.stroke();
     }
 
-    // Unity line
-    ctx.strokeStyle = '#333';
+    // Unity
+    ctx.strokeStyle = T.borderLight;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, s); ctx.lineTo(s, 0); ctx.stroke();
 
     // Transfer curve
-    ctx.strokeStyle = '#22c55e';
+    ctx.strokeStyle = T.green;
     ctx.lineWidth = 2;
     ctx.beginPath();
+    const ratio = isFinite(this._ratio) ? this._ratio : 1000;
     for (let x = 0; x < s; x++) {
       const inputDb = -60 + (x / s) * 60;
-      let outputDb;
-      if (inputDb < this._threshold) {
-        outputDb = inputDb;
-      } else {
-        outputDb = this._threshold + (inputDb - this._threshold) / this._ratio;
-      }
+      const outputDb = inputDb < this._threshold
+        ? inputDb
+        : this._threshold + (inputDb - this._threshold) / ratio;
       const y = s - ((outputDb + 60) / 60) * s;
       if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
@@ -131,32 +111,29 @@ class ReflowDynamics extends HTMLElement {
 
     // Threshold line
     const threshY = s - ((this._threshold + 60) / 60) * s;
-    ctx.strokeStyle = '#f59e0b';
+    ctx.strokeStyle = T.amber;
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 3]);
     ctx.beginPath(); ctx.moveTo(0, threshY); ctx.lineTo(s, threshY); ctx.stroke();
     ctx.setLineDash([]);
+
+    // Threshold handle
+    ctx.beginPath();
+    ctx.arc(s / 2, threshY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = T.amber;
+    ctx.fill();
   }
 
   _drawMeter() {
-    const ctx = this._meterCtx;
-    const w = 24, h = 100;
+    const ctx = this._meterCtx, w = 20, h = 100, T = ReflowUI.theme;
     ctx.clearRect(0, 0, w, h);
-
-    // Background
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, w, h);
-
-    // GR bar (grows downward from top)
     const grNorm = Math.min(1, Math.abs(this._gr) / 30);
-    const barH = grNorm * h;
-    ctx.fillStyle = this._gr < -6 ? '#ef4444' : '#f59e0b';
-    ctx.fillRect(2, 0, w - 4, barH);
-
-    this._grLabel.textContent = `GR: ${this._gr.toFixed(1)} dB`;
+    ReflowUI.drawMeter(ctx, 2, 0, w - 4, h, grNorm, this._gr < -6 ? T.red : T.amber);
+    this.$('gr').textContent = `GR: ${this._gr.toFixed(1)} dB`;
   }
 
   set thresholdDb(v) { this._threshold = v; this._drawCurve?.(); }
+  set ceilingDb(v) { this._threshold = v; this._drawCurve?.(); }
   set ratio(v) { this._ratio = v; this._drawCurve?.(); }
   set kneeDb(v) { this._knee = v; this._drawCurve?.(); }
 }

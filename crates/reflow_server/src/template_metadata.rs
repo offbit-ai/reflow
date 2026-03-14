@@ -165,11 +165,17 @@ fn tpl_display(
 }
 
 /// Creates a DisplayComponent with inline JS source.
+/// Prepends the shared ReflowUI library so components can extend ReflowComponent.
 fn display_inline(element: &str, source: &str, observed: &[&str], width: Option<&str>) -> DisplayComponent {
+    // Only prepend UI lib if not already present (avoid double-loading via customElements guard)
+    let full_source = format!(
+        "if(!globalThis.ReflowUI){{{}}}\n{}",
+        UI_LIB_JS, source
+    );
     DisplayComponent {
         element: element.to_string(),
         bundle_id: None,
-        source: Some(source.to_string()),
+        source: Some(full_source),
         shadow: Some(true),
         observed_props: Some(observed.iter().map(|s| s.to_string()).collect()),
         width: width.map(|w| w.to_string()),
@@ -177,6 +183,9 @@ fn display_inline(element: &str, source: &str, observed: &[&str], width: Option<
 }
 
 // Display component sources (compiled into binary via include_str!)
+// Shared UI library — prepended to each component's inline source
+const UI_LIB_JS: &str = include_str!("../../../display_components/reflow-ui.js");
+
 const SPECTRUM_JS: &str = include_str!("../../../display_components/spectrum.js");
 const DYNAMICS_JS: &str = include_str!("../../../display_components/dynamics.js");
 const EQ_JS: &str = include_str!("../../../display_components/eq.js");

@@ -1,131 +1,68 @@
-// reflow-eq: Interactive multi-band parametric EQ display
-// Renders frequency response curve with draggable band handles.
-// Each handle controls frequency (x), gain (y), Q (scroll wheel).
-// Edits flow back via zeal.setProperty('bands', [...]).
+// reflow-eq: Interactive multi-band parametric EQ
+// Config: bands (JSON array), sampleRate
+// Drag handles to edit freq/gain, scroll to adjust Q, double-click to add band.
 
-class ReflowEq extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; width: 100%; }
-        canvas { width: 100%; height: 140px; border-radius: 4px; background: #0a0a0a; cursor: crosshair; }
-        .info { font: 9px monospace; color: #888; padding: 2px 4px; }
-      </style>
-      <canvas></canvas>
-      <div class="info">Drag bands to adjust. Scroll to change Q.</div>
-    `;
-    this._canvas = this.shadowRoot.querySelector('canvas');
-    this._info = this.shadowRoot.querySelector('.info');
-    this._bands = [];
-    this._dragIdx = -1;
-    this._sampleRate = 44100;
+class ReflowEq extends ReflowUI.ReflowComponent {
+  get styles() { return `canvas { height: 140px; cursor: crosshair; }` }
+
+  get template() {
+    return `<canvas id="cv"></canvas><div class="rf-info">Drag bands to adjust. Scroll to change Q.</div>`;
   }
 
-  connectedCallback() {
-    const dpr = window.devicePixelRatio || 1;
-    const canvas = this._canvas;
-    canvas.width = canvas.offsetWidth * dpr;
-    canvas.height = 140 * dpr;
-    this._ctx = canvas.getContext('2d');
-    this._ctx.scale(dpr, dpr);
-    this._w = canvas.offsetWidth;
-    this._h = 140;
+  onConnect() {
+    const { ctx, width, height } = ReflowUI.canvas.setupHiDPI(this.$('cv'), 140);
+    this._ctx = ctx; this._w = width; this._h = height;
+    this._bands = [];
+    this._dragIdx = -1;
 
-    canvas.addEventListener('pointerdown', (e) => this._onDown(e));
-    canvas.addEventListener('pointermove', (e) => this._onMove(e));
-    canvas.addEventListener('pointerup', () => this._onUp());
-    canvas.addEventListener('wheel', (e) => this._onWheel(e), { passive: false });
+    const props = this.getProps();
+    if (props.bands) this._bands = Array.isArray(props.bands) ? props.bands : JSON.parse(props.bands);
 
-    // Double-click to add a band
-    canvas.addEventListener('dblclick', (e) => this._addBand(e));
+    const cv = this.$('cv');
+    cv.addEventListener('pointerdown', (e) => this._onDown(e));
+    cv.addEventListener('pointermove', (e) => this._onMove(e));
+    cv.addEventListener('pointerup', () => this._onUp());
+    cv.addEventListener('wheel', (e) => this._onWheel(e), { passive: false });
+    cv.addEventListener('dblclick', (e) => this._addBand(e));
 
-    this._unsubProps = this.zeal?.onPropertyChange((values) => {
+    this.sub(() => this.zeal?.onPropertyChange((values) => {
       if (values.bands) {
         this._bands = Array.isArray(values.bands) ? values.bands : JSON.parse(values.bands);
         this._draw();
       }
-      if (values.sampleRate) this._sampleRate = values.sampleRate;
-    });
+    }));
 
-    // Initialize from current properties
-    const props = this.zeal?.getProperties?.();
-    if (props?.bands) {
-      this._bands = Array.isArray(props.bands) ? props.bands : JSON.parse(props.bands);
-    }
     this._draw();
   }
 
-  disconnectedCallback() {
-    this._unsubProps?.();
-  }
-
-  _freqToX(freq) {
-    // Log scale: 20Hz → 20kHz
-    return (Math.log10(freq / 20) / Math.log10(1000)) * this._w;
-  }
-
-  _xToFreq(x) {
-    return 20 * Math.pow(1000, x / this._w);
-  }
-
-  _gainToY(gain) {
-    // -24dB at bottom, +24dB at top
-    return this._h / 2 - (gain / 24) * (this._h / 2);
-  }
-
-  _yToGain(y) {
-    return -((y - this._h / 2) / (this._h / 2)) * 24;
-  }
-
   _draw() {
-    const ctx = this._ctx;
-    const w = this._w;
-    const h = this._h;
+    const ctx = this._ctx, w = this._w, h = this._h, T = ReflowUI.theme, C = ReflowUI.canvas;
     ctx.clearRect(0, 0, w, h);
+    C.drawFreqGrid(ctx, w, h);
+    C.drawDbGrid(ctx, w, h, 12);
 
-    // Grid lines
-    ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth = 0.5;
-    // Frequency grid: 100, 1k, 10k
-    for (const f of [100, 1000, 10000]) {
-      const x = this._freqToX(f);
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    // Gain grid: 0dB center
-    const zeroY = h / 2;
-    ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(w, zeroY); ctx.stroke();
-    for (const db of [-12, 12]) {
-      const y = this._gainToY(db);
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-
-    // Frequency response curve (approximate — sum of band contributions)
-    ctx.strokeStyle = '#22c55e';
+    // Frequency response curve
+    ctx.strokeStyle = T.green;
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let px = 0; px < w; px++) {
-      const freq = this._xToFreq(px);
+      const freq = C.xToFreq(px, w);
       let totalGain = 0;
       for (const band of this._bands) {
         const f0 = band.frequency || 1000;
         const gain = band.gain || 0;
         const q = band.q || 1;
-        // Approximate bell response
-        const ratio = freq / f0;
-        const logRatio = Math.log2(ratio);
-        const response = gain * Math.exp(-0.5 * Math.pow(logRatio * q * 2, 2));
-        totalGain += response;
+        const logRatio = Math.log2(freq / f0);
+        totalGain += gain * Math.exp(-0.5 * Math.pow(logRatio * q * 2, 2));
       }
-      const y = this._gainToY(totalGain);
+      const y = C.dbToY(totalGain, h);
       if (px === 0) ctx.moveTo(px, y); else ctx.lineTo(px, y);
     }
     ctx.stroke();
 
     // Fill under curve
-    ctx.lineTo(w, zeroY);
-    ctx.lineTo(0, zeroY);
+    ctx.lineTo(w, h / 2);
+    ctx.lineTo(0, h / 2);
     ctx.closePath();
     ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
     ctx.fill();
@@ -133,27 +70,27 @@ class ReflowEq extends HTMLElement {
     // Band handles
     for (let i = 0; i < this._bands.length; i++) {
       const band = this._bands[i];
-      const x = this._freqToX(band.frequency || 1000);
-      const y = this._gainToY(band.gain || 0);
+      const x = C.freqToX(band.frequency || 1000, w);
+      const y = C.dbToY(band.gain || 0, h);
       const r = this._dragIdx === i ? 7 : 5;
 
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = this._dragIdx === i ? '#fff' : '#22c55e';
+      ctx.fillStyle = this._dragIdx === i ? T.textPrimary : T.green;
       ctx.fill();
-      ctx.strokeStyle = '#000';
+      ctx.strokeStyle = T.bg;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
   }
 
   _hitTest(e) {
-    const rect = this._canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const rect = this.$('cv').getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const C = ReflowUI.canvas;
     for (let i = 0; i < this._bands.length; i++) {
-      const x = this._freqToX(this._bands[i].frequency || 1000);
-      const y = this._gainToY(this._bands[i].gain || 0);
+      const x = C.freqToX(this._bands[i].frequency || 1000, this._w);
+      const y = C.dbToY(this._bands[i].gain || 0, this._h);
       if (Math.hypot(mx - x, my - y) < 10) return i;
     }
     return -1;
@@ -161,22 +98,18 @@ class ReflowEq extends HTMLElement {
 
   _onDown(e) {
     this._dragIdx = this._hitTest(e);
-    if (this._dragIdx >= 0) {
-      this._canvas.setPointerCapture(e.pointerId);
-    }
+    if (this._dragIdx >= 0) this.$('cv').setPointerCapture(e.pointerId);
   }
 
   _onMove(e) {
     if (this._dragIdx < 0) return;
-    const rect = this._canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-
+    const rect = this.$('cv').getBoundingClientRect();
+    const C = ReflowUI.canvas;
     const band = this._bands[this._dragIdx];
-    band.frequency = Math.round(this._xToFreq(mx));
-    band.gain = Math.round(this._yToGain(my) * 10) / 10;
+    band.frequency = Math.round(C.xToFreq(e.clientX - rect.left, this._w));
+    band.gain = Math.round(C.yToDb(e.clientY - rect.top, this._h) * 10) / 10;
     this._draw();
-    this._info.textContent = `Band ${this._dragIdx + 1}: ${band.frequency} Hz, ${band.gain > 0 ? '+' : ''}${band.gain} dB, Q ${band.q}`;
+    this.$q('.rf-info').textContent = `Band ${this._dragIdx + 1}: ${ReflowUI.formatFreq(band.frequency)}, ${ReflowUI.formatDb(band.gain)}, Q ${band.q}`;
   }
 
   _onUp() {
@@ -192,28 +125,22 @@ class ReflowEq extends HTMLElement {
     if (idx < 0) return;
     e.preventDefault();
     const band = this._bands[idx];
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    band.q = Math.max(0.1, Math.min(30, (band.q || 1) + delta));
+    band.q = Math.max(0.1, Math.min(30, (band.q || 1) + (e.deltaY > 0 ? -0.1 : 0.1)));
     band.q = Math.round(band.q * 10) / 10;
     this._draw();
-    this._info.textContent = `Band ${idx + 1}: Q = ${band.q}`;
+    this.$q('.rf-info').textContent = `Band ${idx + 1}: Q = ${band.q}`;
     this.zeal?.setProperty('bands', JSON.stringify(this._bands));
   }
 
   _addBand(e) {
-    const rect = this._canvas.getBoundingClientRect();
-    const freq = Math.round(this._xToFreq(e.clientX - rect.left));
+    const rect = this.$('cv').getBoundingClientRect();
+    const freq = Math.round(ReflowUI.canvas.xToFreq(e.clientX - rect.left, this._w));
     this._bands.push({ type: 'peaking', frequency: freq, gain: 0, q: 1.0 });
     this.zeal?.setProperty('bands', JSON.stringify(this._bands));
     this._draw();
   }
 
-  set bands(v) {
-    this._bands = Array.isArray(v) ? v : JSON.parse(v || '[]');
-    this._draw?.();
-  }
-
-  set sampleRate(v) { this._sampleRate = v; }
+  set bands(v) { this._bands = Array.isArray(v) ? v : JSON.parse(v || '[]'); this._draw?.(); }
 }
 
 customElements.define('reflow-eq', ReflowEq);
