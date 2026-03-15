@@ -1,7 +1,8 @@
 //! Server request/response actors for webhook-triggered workflows.
 //!
-//! These actors represent the entry/exit points of HTTP-triggered workflows.
-//! ServerRequest receives incoming webhook data, ServerResponse sends the reply.
+//! ServerRequest is an entry point — it receives the incoming webhook
+//! data from the ZIP session via IIP and outputs structured fields.
+//! ServerResponse constructs the reply to send back.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -12,12 +13,17 @@ use std::collections::HashMap;
 
 // ── Server Request (webhook entry point) ────────────────────────
 
-/// Represents an incoming HTTP request that triggers the workflow.
-/// The request data (body, headers, params) arrives as the payload.
-/// Outputs the request data for downstream processing.
+/// Entry point for webhook-triggered workflows.
+///
+/// The ZIP session sends the incoming HTTP request as an IIP on
+/// the `trigger` port when a webhook hits the configured path.
+/// This actor extracts body, headers, params, method, and URL
+/// from the request data and outputs them on separate ports.
+///
+/// Config: path (webhook route), method (HTTP method filter).
 #[actor(
     ServerRequestActor,
-    inports::<10>(request),
+    inports::<10>(trigger),
     outports::<50>(body, headers, params, method, url),
     state(MemoryState)
 )]
@@ -27,12 +33,12 @@ pub async fn server_request_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    // The request data comes from the network trigger (via ZIP webhook)
-    let request = payload.get("request").cloned().unwrap_or(Message::Flow);
+    // The request arrives as the IIP data on the trigger port
+    let request = payload.get("trigger").cloned().unwrap_or(Message::Flow);
 
     let mut out = HashMap::new();
 
-    // Try to extract structured request fields
+    // Extract structured fields from the request object
     if let Message::Object(obj) = &request {
         let val: serde_json::Value = obj.as_ref().clone().into();
 
@@ -52,20 +58,18 @@ pub async fn server_request_actor(
             out.insert("url".to_string(), Message::String(url.to_string().into()));
         }
     } else {
-        // Pass through as body
+        // Non-object trigger — output as body
         out.insert("body".to_string(), request);
     }
 
-    // Add configured defaults
+    // Fill defaults from config if not present in request
     let path = config.get("path").and_then(|v| v.as_str()).unwrap_or("/webhook");
     let method = config.get("method").and_then(|v| v.as_str()).unwrap_or("POST");
 
-    if !out.contains_key("url") {
-        out.insert("url".to_string(), Message::String(path.to_string().into()));
-    }
-    if !out.contains_key("method") {
-        out.insert("method".to_string(), Message::String(method.to_string().into()));
-    }
+    out.entry("url".to_string())
+        .or_insert_with(|| Message::String(path.to_string().into()));
+    out.entry("method".to_string())
+        .or_insert_with(|| Message::String(method.to_string().into()));
 
     Ok(out)
 }
@@ -100,10 +104,7 @@ pub async fn server_response_actor(
 
     let body_json = match &body {
         Message::String(s) => json!(s.as_ref()),
-        Message::Object(o) => {
-            let val: serde_json::Value = o.as_ref().clone().into();
-            val
-        }
+        Message::Object(o) => { let v: serde_json::Value = o.as_ref().clone().into(); v }
         Message::Integer(i) => json!(i),
         Message::Float(f) => json!(f),
         Message::Boolean(b) => json!(b),
