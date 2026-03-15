@@ -110,7 +110,7 @@ fn run_marching_cubes_gpu(
     // only produce surface triangles on a thin shell. Cap at 32MB to avoid GPU OOM.
     let max_cells = (resolution - 1) as u64 * (resolution - 1) as u64 * (resolution - 1) as u64;
     let worst_case = max_cells * 15 * 6 * 4; // bytes
-    let max_buf: u64 = 32 * 1024 * 1024; // 32 MB cap
+    let max_buf: u64 = 64 * 1024 * 1024; // 64 MB cap
     let vertex_buf_size = worst_case.min(max_buf);
 
     // Uniforms

@@ -83,7 +83,7 @@ fn mc_interp(p1: vec3f, p2: vec3f, v1: f32, v2: f32, iso: f32) -> vec3f {
 }
 
 fn mc_normal(p: vec3f) -> vec3f {
-  let e = 0.003;
+  let e = 0.0005;
   return normalize(vec3f(
     sdf_scene(p + vec3f(e, 0.0, 0.0)) - sdf_scene(p - vec3f(e, 0.0, 0.0)),
     sdf_scene(p + vec3f(0.0, e, 0.0)) - sdf_scene(p - vec3f(0.0, e, 0.0)),

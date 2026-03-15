@@ -2305,6 +2305,8 @@ dependencies = [
  "flume",
  "futures",
  "image",
+ "js-sys",
+ "once_cell",
  "parking_lot",
  "pollster",
  "reflow_actor",
@@ -2316,6 +2318,8 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "wasm-bindgen-futures",
+ "web-sys",
  "wgpu",
 ]
 

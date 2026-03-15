@@ -42,16 +42,14 @@ async fn main() -> anyhow::Result<()> {
     // The path describes the snake's spine as an S-curve in the XZ plane.
     // Profile defines the cross-section radius from head to tail.
     // ══════════════════════════════════════════════════════════════
-    net.add_node("snake", "tpl_sdf_path", config(json!({
-        "path": "M -2.5,0 C -1.5,-1.0 -0.5,1.0 0.5,0 C 1.5,-0.8 2.5,0.6 3.5,0.2",
-        "profile": [0.25, 0.23, 0.21, 0.20, 0.20, 0.18, 0.15, 0.11, 0.07, 0.03],
-        "segments": 48,
-        "smoothness": 0.0,
-        "plane": "xz",
+    // Simple capsule — perfectly smooth, no segments
+    net.register_actor_arc("tpl_sdf_capsule", reflow_components::get_actor_for_template("tpl_sdf_capsule").unwrap())?;
+    net.add_node("snake", "tpl_sdf_capsule", config(json!({
+        "radius": 0.25, "height": 6.0,
     })))?;
 
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 384, "bound": 4.5, "isoLevel": 0.0,
+        "resolution": 256, "bound": 4.0, "isoLevel": 0.0,
     })))?;
 
     net.add_connection(wire("snake", "sdf", "mc", "sdf"));
@@ -63,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "s", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": 1024, "height": 1024,
-        "cameraPosX": -2.0, "cameraPosY": 6.0, "cameraPosZ": 5.0,
+        "cameraPosX": 3.0, "cameraPosY": 2.0, "cameraPosZ": 6.0,
         "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
         "fov": 40.0,
         "bgR": 0.92, "bgG": 0.92, "bgB": 0.90,
