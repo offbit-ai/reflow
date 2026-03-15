@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 #[actor(
     ParticleEmitterActor,
-    inports::<10>(trigger, count),
+    inports::<10>(count),
     outports::<1>(particles, metadata),
     state(MemoryState)
 )]

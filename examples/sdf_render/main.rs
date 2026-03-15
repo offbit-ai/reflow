@@ -146,12 +146,12 @@ async fn main() -> anyhow::Result<()> {
     network.add_connection(wire("marching_cubes", "mesh", "obj_export", "mesh"));
     network.add_connection(wire("obj_export", "output", "save_obj", "input"));
 
-    // Trigger source actors
+    // Trigger source actors (Flow message triggers execution)
     network.add_initial(InitialPacket {
-        to: ConnectionPoint::new("sphere", "trigger", Some(Message::Boolean(true))),
+        to: ConnectionPoint::new("sphere", "_trigger", Some(Message::Flow)),
     });
     network.add_initial(InitialPacket {
-        to: ConnectionPoint::new("box", "trigger", Some(Message::Boolean(true))),
+        to: ConnectionPoint::new("box", "_trigger", Some(Message::Flow)),
     });
 
     println!("Wired 12 connections + 2 triggers\n");

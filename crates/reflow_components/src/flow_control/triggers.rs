@@ -17,7 +17,7 @@ use std::sync::Arc;
 /// Config: interval (ms), intervalUnit, startImmediately, maxExecutions.
 #[actor(
     IntervalTriggerActor,
-    inports::<1>(start),
+    inports::<1>(),
     outports::<50>(trigger),
     state(MemoryState)
 )]
@@ -87,7 +87,7 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
 /// Config: cronExpression, commonSchedules, maxExecutions.
 #[actor(
     CronTriggerActor,
-    inports::<1>(start),
+    inports::<1>(),
     outports::<50>(trigger),
     state(MemoryState)
 )]

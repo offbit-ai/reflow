@@ -206,7 +206,7 @@ pub async fn math_round_actor(context: ActorContext) -> Result<HashMap<String, M
 
 // ── Random ──────────────────────────────────────────────────────
 
-#[actor(MathRandomActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(MathRandomActor, inports::<1>(), outports::<1>(result), state(MemoryState))]
 pub async fn math_random_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let min = config.get("min").and_then(|v| v.as_f64()).unwrap_or(0.0);

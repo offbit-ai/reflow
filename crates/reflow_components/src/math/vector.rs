@@ -294,7 +294,7 @@ pub async fn mat4_transform_actor(ctx: ActorContext) -> Result<HashMap<String, M
     Ok([("result".to_string(), vec3_msg(mat4_transform_vec3(&m, v)))].into())
 }
 
-#[actor(Mat4IdentityActor, inports::<1>(trigger), outports::<1>(result), state(MemoryState))]
+#[actor(Mat4IdentityActor, inports::<1>(), outports::<1>(result), state(MemoryState))]
 pub async fn mat4_identity_actor(_ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     Ok([("result".to_string(), mat4_msg(&MAT4_IDENTITY))].into())
 }

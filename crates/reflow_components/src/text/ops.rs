@@ -139,7 +139,7 @@ pub async fn regex_matcher_actor(context: ActorContext) -> Result<HashMap<String
 // ── Date/Time ───────────────────────────────────────────────────
 
 /// Date/time operations: current time, parse, format, arithmetic.
-#[actor(DateTimeActor, inports::<1>(trigger), outports::<1>(output, timestamp, formatted, error), state(MemoryState))]
+#[actor(DateTimeActor, inports::<1>(), outports::<1>(output, timestamp, formatted, error), state(MemoryState))]
 pub async fn date_time_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let operation = config
