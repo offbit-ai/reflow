@@ -87,8 +87,8 @@ pub async fn render_frame_collector_actor(
                 + 1;
             ctx.pool_upsert("_collector", "frame_count", json!(count));
 
-            // Check if done
-            if is_done || (total_frames > 0 && count as usize >= total_frames) {
+            // Check if done — allow 1 frame tolerance for pipeline warmup
+            if is_done || (total_frames > 0 && count as usize + 1 >= total_frames) {
                 let _ = tx.send(StreamFrame::End);
             }
 

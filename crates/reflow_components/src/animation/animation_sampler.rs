@@ -44,12 +44,6 @@ pub async fn animation_sampler_actor(
         ctx.pool_upsert("_cache", "ibm_b64", json!(encoded));
     }
 
-    // Cache and log what we receive
-    let ports: Vec<&str> = payload.keys().map(|s| s.as_str()).collect();
-    if !ports.is_empty() {
-        eprintln!("[AnimSampler] received ports: {:?}", ports);
-    }
-
     // Get time — this is the trigger for each frame
     let time = match payload.get("time") {
         Some(Message::Float(f)) => *f as f32,
@@ -63,14 +57,12 @@ pub async fn animation_sampler_actor(
     let clip = match cache.get("clip") {
         Some(v) => v.clone(),
         None => {
-            eprintln!("[AnimSampler] cache miss: clip (have keys: {:?})", cache.keys().collect::<Vec<_>>());
             return Ok(HashMap::new());
         }
     };
     let skeleton = match cache.get("skeleton") {
         Some(v) => v.clone(),
         None => {
-            eprintln!("[AnimSampler] cache miss: skeleton");
             return Ok(HashMap::new());
         }
     };
@@ -201,8 +193,6 @@ pub async fn animation_sampler_actor(
             out_bytes.extend_from_slice(&f.to_le_bytes());
         }
     }
-
-    eprintln!("[AnimSampler] OUTPUT bone_transforms {} bytes at t={:.3}", out_bytes.len(), t);
 
     let mut out = HashMap::new();
     out.insert("bone_transforms".to_string(), Message::bytes(out_bytes));

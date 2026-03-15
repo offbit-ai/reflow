@@ -53,10 +53,6 @@ pub async fn animation_time_actor(ctx: ActorContext) -> Result<HashMap<String, M
     ctx.pool_upsert("_anim_time", "elapsed", json!(new_elapsed));
     ctx.pool_upsert("_anim_time", "frame", json!(new_frame));
 
-    if new_frame <= 3 || new_frame % 30 == 0 {
-        eprintln!("[AnimTime] frame={} time={:.3}", new_frame, new_elapsed);
-    }
-
     let mut out = HashMap::new();
     out.insert("time".to_string(), Message::Float(new_elapsed));
     out.insert("frame_number".to_string(), Message::Integer(new_frame as i64));

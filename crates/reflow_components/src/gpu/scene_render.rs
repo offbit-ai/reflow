@@ -74,11 +74,6 @@ pub async fn scene_render_actor(
             serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)));
     }
 
-    let ports: Vec<&str> = payload.keys().map(|s| s.as_str()).collect();
-    if !ports.is_empty() {
-        eprintln!("[SceneRender] received: {:?}", ports);
-    }
-
     // Scene is the per-frame trigger — if missing, just cache and return
     let scene_data = match payload.get("scene") {
         Some(Message::Object(obj)) => {
@@ -118,7 +113,6 @@ pub async fn scene_render_actor(
     .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
     .map_err(|e| anyhow::anyhow!("{}", e))?;
 
-    eprintln!("[SceneRender] OUTPUT {} bytes ({}x{})", pixels.len(), width, height);
     let mut results = HashMap::new();
     results.insert("output".to_string(), Message::bytes(pixels));
     results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({

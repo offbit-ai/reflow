@@ -108,9 +108,7 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
             let payload = build_trigger_payload(&payload_template, execution_count);
             let mut out = HashMap::new();
             out.insert("trigger".to_string(), payload);
-            eprintln!("[IntervalTrigger] tick #{}", execution_count);
             if outport_tx.send(out).is_err() {
-                eprintln!("[IntervalTrigger] outport closed on tick #{}", execution_count);
                 return;
             }
         }
@@ -128,11 +126,7 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
             let payload = build_trigger_payload(&payload_template, execution_count);
             let mut out = HashMap::new();
             out.insert("trigger".to_string(), payload);
-            if execution_count <= 3 || execution_count % 30 == 0 {
-                eprintln!("[IntervalTrigger] tick #{}", execution_count);
-            }
             if outport_tx.send(out).is_err() {
-                eprintln!("[IntervalTrigger] outport closed on tick #{}", execution_count);
                 break;
             }
         }

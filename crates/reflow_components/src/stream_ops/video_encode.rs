@@ -31,10 +31,11 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         .and_then(|v| v.as_u64())
         .unwrap_or(30) as u32;
 
-    // Take stream receiver
-    let rx = ctx
-        .take_stream_receiver("stream")
-        .ok_or_else(|| anyhow::anyhow!("No stream on stream port"))?;
+    // Take stream receiver — only proceed if we actually got a StreamHandle
+    let rx = match ctx.take_stream_receiver("stream") {
+        Some(rx) => rx,
+        None => return Ok(HashMap::new()), // Not a StreamHandle, skip silently
+    };
 
     // Collect all frames
     let (frames, width, height, fps) =
