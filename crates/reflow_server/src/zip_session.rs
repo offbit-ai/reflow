@@ -243,6 +243,8 @@ impl ZipSession {
                     sub("analysis", "Analysis"),
                     sub("procedural", "Procedural"),
                     sub("spectral", "Spectral"),
+                    sub("sdf", "SDF / Geometry"),
+                    sub("export", "Export"),
                 ]),
             },
         ];
