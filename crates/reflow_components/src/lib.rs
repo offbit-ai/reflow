@@ -12,13 +12,13 @@
 #[allow(clippy::all, unused_variables)]
 pub mod api;
 pub mod flow_control;
-#[cfg(feature = "gpu")]
 pub mod gpu;
 pub mod integration;
 pub mod io;
 pub mod logic;
 pub mod math;
 pub mod media;
+pub mod procedural;
 pub mod registry;
 pub mod stream_ops;
 pub mod text;

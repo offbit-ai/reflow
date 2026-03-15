@@ -26,7 +26,21 @@ use crate::math::{
 };
 use crate::integration::HttpRequestActor;
 use crate::io::{FileLoadActor, FileSaveActor};
+use crate::procedural::{
+    HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor,
+    NoiseGeneratorActor,
+};
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
+use crate::gpu::sdf::{
+    SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor,
+    SdfDifferenceActor, SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor,
+    SdfMirrorActor, SdfPlaneActor, SdfRepeatActor, SdfRotateActor, SdfRoundActor,
+    SdfScaleActor, SdfSceneActor, SdfShellActor, SdfSmoothDifferenceActor,
+    SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor, SdfTorusActor,
+    SdfTranslateActor, SdfTwistActor, SdfUnionActor,
+};
+#[cfg(feature = "gpu")]
+use crate::gpu::sdf::SdfRenderActor;
 use crate::logic::RulesEngineActor;
 use crate::media::{
     AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
@@ -126,6 +140,14 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_quat_slerp" => Some(Arc::new(QuatSlerpActor::new())),
         "tpl_quat_rotate_vec3" => Some(Arc::new(QuatRotateVec3Actor::new())),
 
+        // Procedural
+        "tpl_noise_generator" => Some(Arc::new(NoiseGeneratorActor::new())),
+
+        // Procedural / Heightmap
+        "tpl_image_to_heightmap" => Some(Arc::new(ImageToHeightmapActor::new())),
+        "tpl_heightmap_to_image" => Some(Arc::new(HeightmapToImageActor::new())),
+        "tpl_heightmap_to_mesh" => Some(Arc::new(HeightmapToMeshActor::new())),
+
         // Text / Utilities
         "tpl_json_parser" => Some(Arc::new(JsonParserActor::new())),
         "tpl_regex_matcher" => Some(Arc::new(RegexMatcherActor::new())),
@@ -183,57 +205,34 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         // Image DSP (continued)
         "tpl_image_resize" => Some(Arc::new(ImageResizeActor::new())),
 
-        // GPU / SDF (feature-gated)
-        #[cfg(feature = "gpu")]
+        // SDF (always available — pure IR composition)
         "tpl_sdf_sphere" => Some(Arc::new(SdfSphereActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_box" => Some(Arc::new(SdfBoxActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_cylinder" => Some(Arc::new(SdfCylinderActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_torus" => Some(Arc::new(SdfTorusActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_capsule" => Some(Arc::new(SdfCapsuleActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_cone" => Some(Arc::new(SdfConeActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_plane" => Some(Arc::new(SdfPlaneActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_union" => Some(Arc::new(SdfUnionActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_intersection" => Some(Arc::new(SdfIntersectionActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_difference" => Some(Arc::new(SdfDifferenceActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_smooth_union" => Some(Arc::new(SdfSmoothUnionActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_smooth_intersection" => Some(Arc::new(SdfSmoothIntersectionActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_smooth_difference" => Some(Arc::new(SdfSmoothDifferenceActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_translate" => Some(Arc::new(SdfTranslateActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_rotate" => Some(Arc::new(SdfRotateActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_scale" => Some(Arc::new(SdfScaleActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_twist" => Some(Arc::new(SdfTwistActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_bend" => Some(Arc::new(SdfBendActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_round" => Some(Arc::new(SdfRoundActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_shell" => Some(Arc::new(SdfShellActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_mirror" => Some(Arc::new(SdfMirrorActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_repeat" => Some(Arc::new(SdfRepeatActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_displace" => Some(Arc::new(SdfDisplaceActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_material" => Some(Arc::new(SdfMaterialActor::new())),
-        #[cfg(feature = "gpu")]
         "tpl_sdf_scene" => Some(Arc::new(SdfSceneActor::new())),
+
+        // GPU render (requires wgpu)
         #[cfg(feature = "gpu")]
         "tpl_sdf_render" => Some(Arc::new(SdfRenderActor::new())),
 
@@ -342,6 +341,12 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         mapping.insert(id.to_string(), name.to_string());
     }
 
+    // Procedural
+    mapping.insert("tpl_noise_generator".to_string(), "NoiseGeneratorActor".to_string());
+    mapping.insert("tpl_image_to_heightmap".to_string(), "ImageToHeightmapActor".to_string());
+    mapping.insert("tpl_heightmap_to_image".to_string(), "HeightmapToImageActor".to_string());
+    mapping.insert("tpl_heightmap_to_mesh".to_string(), "HeightmapToMeshActor".to_string());
+
     // Text / Utilities
     mapping.insert("tpl_json_parser".to_string(), "JsonParserActor".to_string());
     mapping.insert("tpl_regex_matcher".to_string(), "RegexMatcherActor".to_string());
@@ -352,29 +357,27 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_file_load".to_string(), "FileLoadActor".to_string());
     mapping.insert("tpl_file_save".to_string(), "FileSaveActor".to_string());
 
-    // GPU / SDF (feature-gated)
-    #[cfg(feature = "gpu")]
-    {
-        for (id, name) in [
-            ("tpl_sdf_sphere", "SdfSphereActor"), ("tpl_sdf_box", "SdfBoxActor"),
-            ("tpl_sdf_cylinder", "SdfCylinderActor"), ("tpl_sdf_torus", "SdfTorusActor"),
-            ("tpl_sdf_capsule", "SdfCapsuleActor"), ("tpl_sdf_cone", "SdfConeActor"),
-            ("tpl_sdf_plane", "SdfPlaneActor"), ("tpl_sdf_union", "SdfUnionActor"),
-            ("tpl_sdf_intersection", "SdfIntersectionActor"), ("tpl_sdf_difference", "SdfDifferenceActor"),
-            ("tpl_sdf_smooth_union", "SdfSmoothUnionActor"),
-            ("tpl_sdf_smooth_intersection", "SdfSmoothIntersectionActor"),
-            ("tpl_sdf_smooth_difference", "SdfSmoothDifferenceActor"),
-            ("tpl_sdf_translate", "SdfTranslateActor"), ("tpl_sdf_rotate", "SdfRotateActor"),
-            ("tpl_sdf_scale", "SdfScaleActor"), ("tpl_sdf_twist", "SdfTwistActor"),
-            ("tpl_sdf_bend", "SdfBendActor"), ("tpl_sdf_round", "SdfRoundActor"),
-            ("tpl_sdf_shell", "SdfShellActor"), ("tpl_sdf_mirror", "SdfMirrorActor"),
-            ("tpl_sdf_repeat", "SdfRepeatActor"), ("tpl_sdf_displace", "SdfDisplaceActor"),
-            ("tpl_sdf_material", "SdfMaterialActor"), ("tpl_sdf_scene", "SdfSceneActor"),
-            ("tpl_sdf_render", "SdfRenderActor"),
-        ] {
-            mapping.insert(id.to_string(), name.to_string());
-        }
+    // SDF (always available)
+    for (id, name) in [
+        ("tpl_sdf_sphere", "SdfSphereActor"), ("tpl_sdf_box", "SdfBoxActor"),
+        ("tpl_sdf_cylinder", "SdfCylinderActor"), ("tpl_sdf_torus", "SdfTorusActor"),
+        ("tpl_sdf_capsule", "SdfCapsuleActor"), ("tpl_sdf_cone", "SdfConeActor"),
+        ("tpl_sdf_plane", "SdfPlaneActor"), ("tpl_sdf_union", "SdfUnionActor"),
+        ("tpl_sdf_intersection", "SdfIntersectionActor"), ("tpl_sdf_difference", "SdfDifferenceActor"),
+        ("tpl_sdf_smooth_union", "SdfSmoothUnionActor"),
+        ("tpl_sdf_smooth_intersection", "SdfSmoothIntersectionActor"),
+        ("tpl_sdf_smooth_difference", "SdfSmoothDifferenceActor"),
+        ("tpl_sdf_translate", "SdfTranslateActor"), ("tpl_sdf_rotate", "SdfRotateActor"),
+        ("tpl_sdf_scale", "SdfScaleActor"), ("tpl_sdf_twist", "SdfTwistActor"),
+        ("tpl_sdf_bend", "SdfBendActor"), ("tpl_sdf_round", "SdfRoundActor"),
+        ("tpl_sdf_shell", "SdfShellActor"), ("tpl_sdf_mirror", "SdfMirrorActor"),
+        ("tpl_sdf_repeat", "SdfRepeatActor"), ("tpl_sdf_displace", "SdfDisplaceActor"),
+        ("tpl_sdf_material", "SdfMaterialActor"), ("tpl_sdf_scene", "SdfSceneActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
     }
+    #[cfg(feature = "gpu")]
+    mapping.insert("tpl_sdf_render".to_string(), "SdfRenderActor".to_string());
 
     // Audio DSP (continued)
     mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());

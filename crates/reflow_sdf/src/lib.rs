@@ -24,4 +24,5 @@
 
 pub mod codegen;
 pub mod ir;
+pub mod noise;
 pub mod primitives;
