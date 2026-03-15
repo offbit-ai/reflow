@@ -13,7 +13,7 @@ use axum::{
     response::{IntoResponse, Json},
     routing::{get, post},
 };
-use log::error;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
 
@@ -227,6 +227,46 @@ async fn convert_zeal_workflow(
             Err(StatusCode::BAD_REQUEST)
         }
     }
+}
+
+/// Publish a workflow graph to Reflow.
+///
+/// Zeal pushes a workflow graph here. Reflow stores it and returns
+/// a webhook URL that can trigger execution of this workflow.
+///
+/// POST /workflows/{workflow_id}/publish
+/// Body: { "workflow": ZealWorkflow } or { "graph": GraphExport }
+async fn publish_workflow(
+    State(state): State<AppState>,
+    Path(workflow_id): Path<String>,
+    Json(request): Json<serde_json::Value>,
+) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
+    // Accept either a Zeal workflow or a raw graph
+    let graph_json = if let Some(workflow) = request.get("workflow") {
+        let zeal_workflow: ZealWorkflow =
+            serde_json::from_value(workflow.clone()).map_err(|_| StatusCode::BAD_REQUEST)?;
+        let graph_export = convert_zeal_to_graph_export(&zeal_workflow)
+            .map_err(|_| StatusCode::BAD_REQUEST)?;
+        serde_json::to_value(graph_export).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    } else if let Some(graph) = request.get("graph") {
+        graph.clone()
+    } else {
+        return Err(StatusCode::BAD_REQUEST);
+    };
+
+    // Store the graph for webhook triggering
+    state.engine.store_workflow(&workflow_id, graph_json);
+
+    // The webhook URL for this workflow
+    let webhook_path = format!("/webhook/{}", workflow_id);
+
+    info!("Workflow '{}' published — webhook: {}", workflow_id, webhook_path);
+
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "workflow_id": workflow_id,
+        "status": "published",
+        "webhook": webhook_path,
+    }))))
 }
 
 /// Webhook trigger endpoint.
@@ -522,6 +562,7 @@ pub fn build_router(
         .route("/workflows/{execution_id}/cancel", post(cancel_workflow))
         .route("/zeal/workflows", post(execute_zeal_workflow))
         .route("/zeal/convert", post(convert_zeal_workflow))
+        .route("/workflows/{workflow_id}/publish", post(publish_workflow))
         .route("/webhook/{workflow_id}", post(handle_webhook))
         .route("/webhook/{workflow_id}/{path:.*}", post(handle_webhook))
         .route("/ws", get(websocket_handler))
