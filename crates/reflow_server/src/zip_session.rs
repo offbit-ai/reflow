@@ -669,6 +669,27 @@ impl ZipSession {
         self.ws.send(value).await
     }
 
+    /// Push actor output metadata to Zeal as a node property update.
+    ///
+    /// Called by the EventBridge when an actor completes with output metadata
+    /// (e.g. thumbnail, dimensions). Zeal's display component reads this
+    /// via `zeal.getProperties()`.
+    pub async fn update_node_properties(
+        &self,
+        workflow_id: &str,
+        node_id: &str,
+        metadata: serde_json::Value,
+    ) -> Result<()> {
+        // Send as a node.updated CRDT event via WebSocket
+        let update = serde_json::json!({
+            "type": "node.output",
+            "workflowId": workflow_id,
+            "nodeId": node_id,
+            "data": metadata,
+        });
+        self.ws.send(&update).await
+    }
+
     /// Forward an engine event to Zeal as a ZIP event over WebSocket.
     ///
     /// Called by the event bridge for each execution event.

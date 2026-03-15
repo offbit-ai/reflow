@@ -128,6 +128,31 @@ impl EventBridge {
                     }
                 }
 
+                // Forward output metadata to Zeal for display components.
+                // When an actor completes with metadata (e.g. thumbnail),
+                // push it to Zeal so the display component can render it.
+                if let EngineEventType::ActorCompleted {
+                    actor_id,
+                    output_metadata: Some(metadata),
+                    ..
+                } = &event.event_type
+                {
+                    if let Some(zs) = &zip_session {
+                        let wid = workflow_id.clone();
+                        let nid = actor_id.clone();
+                        let meta = metadata.clone();
+                        let zs = Arc::clone(zs);
+                        tokio::spawn(async move {
+                            if let Err(e) = zs.update_node_properties(&wid, &nid, meta).await {
+                                debug!(
+                                    "[EventBridge] failed to update node display for {}: {}",
+                                    nid, e
+                                );
+                            }
+                        });
+                    }
+                }
+
                 // Track terminal state
                 match &event.event_type {
                     EngineEventType::Failed { .. } => {

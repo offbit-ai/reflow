@@ -63,6 +63,10 @@ pub enum EngineEventType {
         output_size: Option<u64>,
         /// IDs of outbound connections carrying results.
         output_connections: Vec<String>,
+        /// Actor output metadata (e.g. thumbnail, dimensions) for display forwarding.
+        /// Forwarded to Zeal via orchestrator.update_node() so display components
+        /// can render it.
+        output_metadata: Option<serde_json::Value>,
     },
     /// A node/actor failed.
     ActorFailed {
@@ -519,6 +523,10 @@ impl ExecutionEngine {
                         }
                     }
 
+                    // Extract metadata port from outputs for display forwarding
+                    let output_data = outputs.unwrap_or(serde_json::Value::Null);
+                    let output_metadata = output_data.get("metadata").cloned();
+
                     let _ = event_tx.send(EngineEvent {
                         workflow_id: workflow_id.clone(),
                         execution_id: execution_id.clone(),
@@ -528,9 +536,10 @@ impl ExecutionEngine {
                             duration_ms,
                             output_size,
                             output_connections: conns,
+                            output_metadata,
                         },
                         timestamp: now_ms,
-                        data: outputs.unwrap_or(serde_json::Value::Null),
+                        data: output_data,
                     });
                 }
 
