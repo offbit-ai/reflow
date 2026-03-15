@@ -127,9 +127,21 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
     .into_iter()
     .collect();
 
+    // Graph I/O and proxy nodes are resolved at conversion time.
+    // - graph_input/graph_output: skip as graph nodes (SubgraphActor handles
+    //   boundary mapping via GraphExport.inports/outports)
+    // - proxy_input/proxy_output: connections remapped to internal node ports
+    let graph_io_templates: std::collections::HashSet<&str> =
+        ["graph_input", "graph_output"].into_iter().collect();
+    let proxy_templates: std::collections::HashSet<&str> =
+        ["proxy_input", "proxy_output"].into_iter().collect();
+
+    // Map proxy node ID → (target_node, target_port) for connection rewriting
+    let mut proxy_rewrites: HashMap<String, (String, String)> = HashMap::new();
+
     let mut input_node_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
 
-    // First pass: collect input node IDs
+    // First pass: collect input node IDs and proxy rewrites
     for zeal_node in &main_graph.nodes {
         let tpl = zeal_node
             .template_id
@@ -137,6 +149,46 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
             .unwrap_or(&zeal_node.node_type);
         if input_node_templates.contains(tpl) {
             input_node_ids.insert(zeal_node.id.clone());
+        }
+
+        // Graph I/O nodes: skip as graph nodes — they define subgraph boundaries
+        // which SubgraphActor handles via GraphExport.inports/outports
+        if graph_io_templates.contains(tpl) {
+            input_node_ids.insert(zeal_node.id.clone());
+        }
+
+        // Proxy nodes: resolve to target node/port for connection rewriting
+        if proxy_templates.contains(tpl) {
+            input_node_ids.insert(zeal_node.id.clone()); // skip as graph node
+
+            let pv = zeal_node.property_values.as_ref();
+            if tpl == "proxy_input" {
+                // proxy_input → target node's input port
+                let target_node = pv
+                    .and_then(|p| p.get("targetNodeId"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let target_port = pv
+                    .and_then(|p| p.get("targetPortId"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("data")
+                    .to_string();
+                proxy_rewrites.insert(zeal_node.id.clone(), (target_node, target_port));
+            } else {
+                // proxy_output → source node's output port
+                let source_node = pv
+                    .and_then(|p| p.get("sourceNodeId"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let source_port = pv
+                    .and_then(|p| p.get("sourcePortId"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("data")
+                    .to_string();
+                proxy_rewrites.insert(zeal_node.id.clone(), (source_node, source_port));
+            }
         }
     }
 
@@ -228,14 +280,44 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
             continue;
         }
 
-        // Skip connections TO input nodes (shouldn't exist, but be safe)
+        // Skip connections TO input/proxy nodes
         if input_node_ids.contains(&zeal_conn.to.node_id) {
+            // If target is a proxy_input, rewrite to the proxy's target
+            if let Some((target_node, target_port)) =
+                proxy_rewrites.get(&zeal_conn.to.node_id)
+            {
+                if !target_node.is_empty() {
+                    graph.add_connection(
+                        &zeal_conn.from.node_id,
+                        &zeal_conn.from.port_id,
+                        target_node,
+                        target_port,
+                        zeal_conn.metadata.clone(),
+                    );
+                }
+            }
             continue;
         }
 
+        // Rewrite source if it's a proxy_output
+        let (from_node, from_port) =
+            if let Some((source_node, source_port)) =
+                proxy_rewrites.get(&zeal_conn.from.node_id)
+            {
+                if source_node.is_empty() {
+                    continue;
+                }
+                (source_node.as_str(), source_port.as_str())
+            } else {
+                (
+                    zeal_conn.from.node_id.as_str(),
+                    zeal_conn.from.port_id.as_str(),
+                )
+            };
+
         graph.add_connection(
-            &zeal_conn.from.node_id,
-            &zeal_conn.from.port_id,
+            from_node,
+            from_port,
             &zeal_conn.to.node_id,
             &zeal_conn.to.port_id,
             zeal_conn.metadata.clone(),
