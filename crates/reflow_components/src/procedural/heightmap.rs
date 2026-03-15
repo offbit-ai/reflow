@@ -17,7 +17,9 @@ use std::sync::Arc;
 /// Converts RGBA image bytes to a height grid (f64 per pixel, 0.0–1.0).
 /// Uses luminance: 0.299R + 0.587G + 0.114B.
 #[actor(ImageToHeightmapActor, inports::<10>(input), outports::<1>(output, metadata, error), state(MemoryState))]
-pub async fn image_to_heightmap_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn image_to_heightmap_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -33,7 +35,9 @@ pub async fn image_to_heightmap_actor(ctx: ActorContext) -> Result<HashMap<Strin
             // Assume raw RGBA — infer dimensions
             let channels = config.get("channels").and_then(|v| v.as_u64()).unwrap_or(4) as usize;
             let total_pixels = bytes.len() / channels;
-            let width = config.get("width").and_then(|v| v.as_u64())
+            let width = config
+                .get("width")
+                .and_then(|v| v.as_u64())
                 .unwrap_or((total_pixels as f64).sqrt() as u64) as usize;
             let height = total_pixels / width;
 
@@ -53,9 +57,12 @@ pub async fn image_to_heightmap_actor(ctx: ActorContext) -> Result<HashMap<Strin
             let grid_bytes: Vec<u8> = grid.iter().flat_map(|v| v.to_le_bytes()).collect();
             let mut out = HashMap::new();
             out.insert("output".to_string(), Message::bytes(grid_bytes));
-            out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-                "width": width, "height": height, "dataType": "f64",
-            }))));
+            out.insert(
+                "metadata".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "width": width, "height": height, "dataType": "f64",
+                }))),
+            );
             return Ok(out);
         }
     };
@@ -75,11 +82,14 @@ pub async fn image_to_heightmap_actor(ctx: ActorContext) -> Result<HashMap<Strin
     let grid_bytes: Vec<u8> = grid.iter().flat_map(|v| v.to_le_bytes()).collect();
     let mut out = HashMap::new();
     out.insert("output".to_string(), Message::bytes(grid_bytes));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "width": width, "height": height, "dataType": "f64",
-        "min": grid.iter().cloned().fold(f64::MAX, f64::min),
-        "max": grid.iter().cloned().fold(f64::MIN, f64::max),
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "width": width, "height": height, "dataType": "f64",
+            "min": grid.iter().cloned().fold(f64::MAX, f64::min),
+            "max": grid.iter().cloned().fold(f64::MIN, f64::max),
+        }))),
+    );
     Ok(out)
 }
 
@@ -88,7 +98,9 @@ pub async fn image_to_heightmap_actor(ctx: ActorContext) -> Result<HashMap<Strin
 /// Converts f64 height grid to grayscale RGBA image bytes.
 /// Normalizes values to 0–255 range.
 #[actor(HeightmapToImageActor, inports::<10>(input), outports::<1>(output, metadata, error), state(MemoryState))]
-pub async fn heightmap_to_image_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn heightmap_to_image_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -98,21 +110,31 @@ pub async fn heightmap_to_image_actor(ctx: ActorContext) -> Result<HashMap<Strin
     };
 
     // Parse f64 grid
-    let grid: Vec<f64> = bytes.chunks_exact(8)
+    let grid: Vec<f64> = bytes
+        .chunks_exact(8)
         .map(|b| f64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
         .collect();
 
     let total = grid.len();
-    let width = config.get("width").and_then(|v| v.as_u64())
+    let width = config
+        .get("width")
+        .and_then(|v| v.as_u64())
         .unwrap_or((total as f64).sqrt() as u64) as usize;
     let height = total / width;
 
     // Normalize to 0–1
     let min = grid.iter().cloned().fold(f64::MAX, f64::min);
     let max = grid.iter().cloned().fold(f64::MIN, f64::max);
-    let range = if (max - min).abs() > 1e-10 { max - min } else { 1.0 };
+    let range = if (max - min).abs() > 1e-10 {
+        max - min
+    } else {
+        1.0
+    };
 
-    let color_mode = config.get("colorMode").and_then(|v| v.as_str()).unwrap_or("grayscale");
+    let color_mode = config
+        .get("colorMode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("grayscale");
 
     // Generate RGBA pixels
     let mut rgba = Vec::with_capacity(width * height * 4);
@@ -125,10 +147,18 @@ pub async fn heightmap_to_image_actor(ctx: ActorContext) -> Result<HashMap<Strin
                     (30, 80, (180.0 + norm * 200.0) as u8)
                 } else if norm < 0.6 {
                     let t = (norm - 0.3) / 0.3;
-                    ((30.0 + t * 100.0) as u8, (120.0 + t * 60.0) as u8, (40.0 + t * 30.0) as u8)
+                    (
+                        (30.0 + t * 100.0) as u8,
+                        (120.0 + t * 60.0) as u8,
+                        (40.0 + t * 30.0) as u8,
+                    )
                 } else if norm < 0.85 {
                     let t = (norm - 0.6) / 0.25;
-                    ((130.0 + t * 60.0) as u8, (100.0 - t * 40.0) as u8, (50.0 + t * 20.0) as u8)
+                    (
+                        (130.0 + t * 60.0) as u8,
+                        (100.0 - t * 40.0) as u8,
+                        (50.0 + t * 20.0) as u8,
+                    )
                 } else {
                     let t = (norm - 0.85) / 0.15;
                     let g = (200.0 + t * 55.0) as u8;
@@ -146,11 +176,14 @@ pub async fn heightmap_to_image_actor(ctx: ActorContext) -> Result<HashMap<Strin
 
     let mut out = HashMap::new();
     out.insert("output".to_string(), Message::bytes(rgba));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "width": width, "height": height,
-        "format": "RGBA8", "channels": 4,
-        "colorMode": color_mode,
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "width": width, "height": height,
+            "format": "RGBA8", "channels": 4,
+            "colorMode": color_mode,
+        }))),
+    );
     Ok(out)
 }
 

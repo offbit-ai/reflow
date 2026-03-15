@@ -46,12 +46,16 @@ pub fn apply(samples: &mut [f32], window: &[f32]) {
 
     #[cfg(all(feature = "simd", target_arch = "aarch64"))]
     {
-        unsafe { return crate::simd_sample_neon::apply_window_neon(samples, window); }
+        unsafe {
+            return crate::simd_sample_neon::apply_window_neon(samples, window);
+        }
     }
 
     #[cfg(all(feature = "simd", target_arch = "x86_64"))]
     {
-        unsafe { return crate::simd_sample_x86::apply_window_sse2(samples, window); }
+        unsafe {
+            return crate::simd_sample_x86::apply_window_sse2(samples, window);
+        }
     }
 
     #[allow(unreachable_code)]
@@ -99,8 +103,8 @@ fn blackman_harris(n: usize) -> Vec<f32> {
     (0..n)
         .map(|i| {
             let x = 2.0 * PI * i as f64 / (n - 1).max(1) as f64;
-            (0.35875 - 0.48829 * x.cos() + 0.14128 * (2.0 * x).cos()
-                - 0.01168 * (3.0 * x).cos()) as f32
+            (0.35875 - 0.48829 * x.cos() + 0.14128 * (2.0 * x).cos() - 0.01168 * (3.0 * x).cos())
+                as f32
         })
         .collect()
 }
@@ -124,25 +128,29 @@ mod tests {
     fn test_hann_endpoints_zero() {
         let w = generate(WindowType::Hann, 256);
         assert!(w[0].abs() < 1e-6, "Hann start should be ~0, got {}", w[0]);
-        assert!(
-            w[255].abs() < 1e-6,
-            "Hann end should be ~0, got {}",
-            w[255]
-        );
+        assert!(w[255].abs() < 1e-6, "Hann end should be ~0, got {}", w[255]);
     }
 
     #[test]
     fn test_hann_peak_at_center() {
         let w = generate(WindowType::Hann, 256);
         let mid = w[127];
-        assert!((mid - 1.0).abs() < 0.01, "Hann center should be ~1.0, got {}", mid);
+        assert!(
+            (mid - 1.0).abs() < 0.01,
+            "Hann center should be ~1.0, got {}",
+            mid
+        );
     }
 
     #[test]
     fn test_hamming_nonzero_endpoints() {
         let w = generate(WindowType::Hamming, 256);
         // Hamming has nonzero endpoints (~0.08)
-        assert!(w[0] > 0.07 && w[0] < 0.09, "Hamming start should be ~0.08, got {}", w[0]);
+        assert!(
+            w[0] > 0.07 && w[0] < 0.09,
+            "Hamming start should be ~0.08, got {}",
+            w[0]
+        );
     }
 
     #[test]
@@ -195,6 +203,10 @@ mod tests {
         let w = generate(WindowType::Hann, 256);
         let gain = coherent_gain(&w);
         // Hann coherent gain ≈ 0.5
-        assert!((gain - 0.5).abs() < 0.01, "Hann coherent gain should be ~0.5, got {}", gain);
+        assert!(
+            (gain - 0.5).abs() < 0.01,
+            "Hann coherent gain should be ~0.5, got {}",
+            gain
+        );
     }
 }

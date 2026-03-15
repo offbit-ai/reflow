@@ -16,9 +16,7 @@ use std::sync::Arc;
     outports::<50>(path, metadata, error),
     state(MemoryState)
 )]
-pub async fn file_save_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn file_save_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
 
@@ -47,7 +45,10 @@ pub async fn file_save_actor(
     if create_dirs {
         if let Some(parent) = std::path::Path::new(&path).parent() {
             if let Err(e) = tokio::fs::create_dir_all(parent).await {
-                return Ok(error_output(&format!("Failed to create directories: {}", e)));
+                return Ok(error_output(&format!(
+                    "Failed to create directories: {}",
+                    e
+                )));
             }
         }
     }

@@ -27,7 +27,11 @@ pub async fn voronoi_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
         Some(Message::Float(v)) => *v,
         _ => c.get("seed").and_then(|v| v.as_f64()).unwrap_or(0.0),
     };
-    let mode = c.get("mode").and_then(|v| v.as_str()).unwrap_or("distance").to_string();
+    let mode = c
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("distance")
+        .to_string();
 
     // Generate random cell points using hash
     let mut points = Vec::with_capacity(cell_count);
@@ -68,15 +72,22 @@ pub async fn voronoi_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
     let id_bytes: Vec<u8> = id_grid.iter().flat_map(|v| v.to_le_bytes()).collect();
 
     let mut out = HashMap::new();
-    out.insert(match mode.as_str() {
-        "cell_id" => "cell_id",
-        _ => "distance",
-    }.to_string(), Message::bytes(dist_bytes));
+    out.insert(
+        match mode.as_str() {
+            "cell_id" => "cell_id",
+            _ => "distance",
+        }
+        .to_string(),
+        Message::bytes(dist_bytes),
+    );
     out.insert("cell_id".to_string(), Message::bytes(id_bytes));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "width": width, "height": height,
-        "cellCount": cell_count,
-        "dataType": "f64",
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "width": width, "height": height,
+            "cellCount": cell_count,
+            "dataType": "f64",
+        }))),
+    );
     Ok(out)
 }

@@ -63,10 +63,7 @@ pub async fn http_request_actor(context: ActorContext) -> Result<HashMap<String,
     }
 
     // Apply headers from config
-    if let Some(headers) = config
-        .get("headers")
-        .and_then(|v| v.as_object())
-    {
+    if let Some(headers) = config.get("headers").and_then(|v| v.as_object()) {
         for (key, value) in headers {
             if let Some(v) = value.as_str() {
                 request_builder = request_builder.header(key.as_str(), v);

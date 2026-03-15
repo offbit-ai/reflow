@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn limiter_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn limiter_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let ceiling_db = config
@@ -72,8 +70,8 @@ pub async fn limiter_actor(
                 f64::INFINITY, // brickwall
                 attack_ms,
                 release_ms,
-                0.0,  // hard knee
-                0.0,  // no makeup
+                0.0, // hard knee
+                0.0, // no makeup
                 sample_rate,
             );
 
@@ -87,8 +85,7 @@ pub async fn limiter_actor(
                             .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
                             .collect();
                         proc.process(&mut samples);
-                        let bytes: Vec<u8> =
-                            samples.iter().flat_map(|s| s.to_le_bytes()).collect();
+                        let bytes: Vec<u8> = samples.iter().flat_map(|s| s.to_le_bytes()).collect();
                         StreamFrame::Data(Arc::new(bytes))
                     }
                     other => other,

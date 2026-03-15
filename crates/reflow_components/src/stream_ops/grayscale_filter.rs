@@ -38,12 +38,8 @@ pub async fn grayscale_filter_actor(
     // Output size is 1/4 of RGBA input
     let out_hint = input_handle.size_hint.map(|s| s / 4);
 
-    let (tx, handle) = context.create_stream(
-        "stream",
-        Some("image/raw-gray".to_string()),
-        out_hint,
-        None,
-    );
+    let (tx, handle) =
+        context.create_stream("stream", Some("image/raw-gray".to_string()), out_hint, None);
 
     spawn_stream_task(async move {
         stream_transform_with_begin(
@@ -55,11 +51,7 @@ pub async fn grayscale_filter_actor(
                 if let Some(obj) = meta.as_object_mut() {
                     obj.insert("format".to_string(), serde_json::json!("Gray8"));
                 }
-                (
-                    Some("image/raw-gray".to_string()),
-                    out_hint,
-                    Some(meta),
-                )
+                (Some("image/raw-gray".to_string()), out_hint, Some(meta))
             },
             #[cfg(feature = "av-core")]
             |data: &[u8]| {

@@ -4,7 +4,7 @@
 //! with overlap-add, used by FFT, IFFT, PitchShift, TimeStretch,
 //! NoiseReduction, and AudioSpectrum actors.
 
-use realfft::{RealFftPlanner, RealToComplex, ComplexToReal};
+use realfft::{ComplexToReal, RealFftPlanner, RealToComplex};
 use rustfft::num_complex::Complex;
 use std::sync::Arc;
 
@@ -278,9 +278,12 @@ mod tests {
         );
 
         // Check that the output is not all zeros (signal passes through)
-        let rms: f32 =
-            (output.iter().map(|s| s * s).sum::<f32>() / output.len() as f32).sqrt();
-        assert!(rms > 0.1, "STFT passthrough should preserve signal, rms={}", rms);
+        let rms: f32 = (output.iter().map(|s| s * s).sum::<f32>() / output.len() as f32).sqrt();
+        assert!(
+            rms > 0.1,
+            "STFT passthrough should preserve signal, rms={}",
+            rms
+        );
     }
 
     #[test]
@@ -303,9 +306,12 @@ mod tests {
         });
 
         if !output.is_empty() {
-            let rms: f32 =
-                (output.iter().map(|s| s * s).sum::<f32>() / output.len() as f32).sqrt();
-            assert!(rms < 0.01, "Zeroed spectrum should produce silence, rms={}", rms);
+            let rms: f32 = (output.iter().map(|s| s * s).sum::<f32>() / output.len() as f32).sqrt();
+            assert!(
+                rms < 0.01,
+                "Zeroed spectrum should produce silence, rms={}",
+                rms
+            );
         }
     }
 }

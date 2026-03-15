@@ -19,9 +19,7 @@ use std::collections::HashMap;
     outports::<50>(stream_a, stream_b, error),
     state(MemoryState)
 )]
-pub async fn stream_tee_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn stream_tee_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let buffer_size = config

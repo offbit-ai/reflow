@@ -21,9 +21,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn image_decode_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn image_decode_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
 
     let bytes = match payload.get("input") {

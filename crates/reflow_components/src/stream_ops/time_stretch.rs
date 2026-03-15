@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,16 +20,11 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn time_stretch_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn time_stretch_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     // Stretch ratio: 2.0 = double duration (half speed), 0.5 = half duration
-    let ratio = config
-        .get("ratio")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(1.0) as f32;
+    let ratio = config.get("ratio").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
 
     let window_size = config
         .get("windowSize")
@@ -47,12 +42,8 @@ pub async fn time_stretch_actor(
         _ => return Ok(error_output("Expected StreamHandle message")),
     };
 
-    let (tx, handle) = context.create_stream(
-        "stream",
-        input_handle.content_type.clone(),
-        None,
-        None,
-    );
+    let (tx, handle) =
+        context.create_stream("stream", input_handle.content_type.clone(), None, None);
 
     spawn_stream_task(async move {
         // Collect all audio first (WSOLA needs lookahead)
@@ -82,11 +73,8 @@ pub async fn time_stretch_actor(
 
         if all_samples.is_empty() || (ratio - 1.0).abs() < 0.001 {
             // No stretch needed
-            let bytes: Vec<u8> =
-                all_samples.iter().flat_map(|s| s.to_le_bytes()).collect();
-            let _ = tx
-                .send_async(StreamFrame::Data(Arc::new(bytes)))
-                .await;
+            let bytes: Vec<u8> = all_samples.iter().flat_map(|s| s.to_le_bytes()).collect();
+            let _ = tx.send_async(StreamFrame::Data(Arc::new(bytes))).await;
             let _ = tx.send_async(StreamFrame::End).await;
             return;
         }
@@ -108,31 +96,32 @@ pub async fn time_stretch_actor(
 
         while in_pos + window_size <= all_samples.len() {
             // Find best match in search range (maximize cross-correlation)
-            let best_offset = if out_pos > 0 && in_pos + window_size + search_range <= all_samples.len() {
-                let mut best = 0i32;
-                let mut best_corr = f32::NEG_INFINITY;
-                let range = search_range.min(all_samples.len() - in_pos - window_size);
-                for offset in -(range as i32)..=(range as i32) {
-                    let pos = (in_pos as i32 + offset) as usize;
-                    if pos + window_size > all_samples.len() {
-                        continue;
-                    }
-                    let mut corr: f32 = 0.0;
-                    for i in 0..window_size.min(64) {
-                        // Quick correlation on first 64 samples
-                        if out_pos + i < output.len() {
-                            corr += output[out_pos + i] * all_samples[pos + i];
+            let best_offset =
+                if out_pos > 0 && in_pos + window_size + search_range <= all_samples.len() {
+                    let mut best = 0i32;
+                    let mut best_corr = f32::NEG_INFINITY;
+                    let range = search_range.min(all_samples.len() - in_pos - window_size);
+                    for offset in -(range as i32)..=(range as i32) {
+                        let pos = (in_pos as i32 + offset) as usize;
+                        if pos + window_size > all_samples.len() {
+                            continue;
+                        }
+                        let mut corr: f32 = 0.0;
+                        for i in 0..window_size.min(64) {
+                            // Quick correlation on first 64 samples
+                            if out_pos + i < output.len() {
+                                corr += output[out_pos + i] * all_samples[pos + i];
+                            }
+                        }
+                        if corr > best_corr {
+                            best_corr = corr;
+                            best = offset;
                         }
                     }
-                    if corr > best_corr {
-                        best_corr = corr;
-                        best = offset;
-                    }
-                }
-                best
-            } else {
-                0
-            };
+                    best
+                } else {
+                    0
+                };
 
             let read_pos = ((in_pos as i32 + best_offset).max(0) as usize)
                 .min(all_samples.len().saturating_sub(window_size));

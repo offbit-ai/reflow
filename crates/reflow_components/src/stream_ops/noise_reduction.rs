@@ -7,11 +7,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 

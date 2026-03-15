@@ -17,9 +17,7 @@ use std::collections::HashMap;
     outports::<1>(mesh, metadata, error),
     state(MemoryState)
 )]
-pub async fn heightmap_to_mesh_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn heightmap_to_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -146,30 +144,36 @@ pub async fn heightmap_to_mesh_actor(
     let index_bytes: Vec<u8> = indices.iter().flat_map(|i| i.to_le_bytes()).collect();
 
     let mut out = HashMap::new();
-    out.insert("mesh".to_string(), Message::object(EncodableValue::from(json!({
-        "vertices": interleaved.len(),
-        "indices": index_bytes.len(),
-    }))));
+    out.insert(
+        "mesh".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "vertices": interleaved.len(),
+            "indices": index_bytes.len(),
+        }))),
+    );
 
     // Pack both buffers into a single Bytes output: [vertices | indices]
     let mut mesh_data = interleaved;
     mesh_data.extend_from_slice(&index_bytes);
     out.insert("mesh".to_string(), Message::bytes(mesh_data));
 
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "vertexCount": vertex_count,
-        "triangleCount": triangle_count,
-        "indexCount": indices.len(),
-        "gridWidth": grid_width,
-        "gridHeight": grid_height,
-        "heightScale": height_scale,
-        "meshWidth": mesh_width,
-        "meshDepth": mesh_depth,
-        "stride": stride,
-        "format": "pos3_normal3_uv2_f32",
-        "vertexBytes": vertex_count * stride * 4,
-        "indexBytes": indices.len() * 4,
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "vertexCount": vertex_count,
+            "triangleCount": triangle_count,
+            "indexCount": indices.len(),
+            "gridWidth": grid_width,
+            "gridHeight": grid_height,
+            "heightScale": height_scale,
+            "meshWidth": mesh_width,
+            "meshDepth": mesh_depth,
+            "stride": stride,
+            "format": "pos3_normal3_uv2_f32",
+            "vertexBytes": vertex_count * stride * 4,
+            "indexBytes": indices.len() * 4,
+        }))),
+    );
 
     Ok(out)
 }

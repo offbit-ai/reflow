@@ -152,7 +152,12 @@ impl DynamicsProcessor {
         sample_rate: f64,
     ) -> Self {
         Self {
-            detector: EnvelopeDetector::new(attack_ms, release_ms, sample_rate, DetectionMode::Peak),
+            detector: EnvelopeDetector::new(
+                attack_ms,
+                release_ms,
+                sample_rate,
+                DetectionMode::Peak,
+            ),
             threshold_linear: crate::db::db_to_linear(threshold_db),
             ratio,
             knee_db,
@@ -175,7 +180,12 @@ impl DynamicsProcessor {
         sample_rate: f64,
     ) -> Self {
         Self {
-            detector: EnvelopeDetector::new(attack_ms, release_ms, sample_rate, DetectionMode::Peak),
+            detector: EnvelopeDetector::new(
+                attack_ms,
+                release_ms,
+                sample_rate,
+                DetectionMode::Peak,
+            ),
             threshold_linear: crate::db::db_to_linear(threshold_db),
             ratio,
             knee_db: 0.0,
@@ -257,7 +267,11 @@ mod tests {
         for _ in 0..1000 {
             env.process_sample(1.0);
         }
-        assert!(env.level() > 0.9, "Envelope should rise to ~1.0, got {}", env.level());
+        assert!(
+            env.level() > 0.9,
+            "Envelope should rise to ~1.0, got {}",
+            env.level()
+        );
     }
 
     #[test]
@@ -274,7 +288,11 @@ mod tests {
         for _ in 0..10000 {
             env.process_sample(0.0);
         }
-        assert!(env.level() < 0.02, "Envelope should decay, got {}", env.level());
+        assert!(
+            env.level() < 0.02,
+            "Envelope should decay, got {}",
+            env.level()
+        );
     }
 
     #[test]
@@ -313,16 +331,20 @@ mod tests {
 
         // Output should be significantly attenuated
         let last = samples[3999].abs();
-        assert!(last < 0.5, "Compressed output should be < 0.5, got {}", last);
+        assert!(
+            last < 0.5,
+            "Compressed output should be < 0.5, got {}",
+            last
+        );
     }
 
     #[test]
     fn test_gate_silences_quiet() {
         let mut gate = DynamicsProcessor::gate(
-            -30.0,     // threshold
-            100.0,     // aggressive ratio
-            0.1,       // instant attack
-            10.0,      // short release
+            -30.0, // threshold
+            100.0, // aggressive ratio
+            0.1,   // instant attack
+            10.0,  // short release
             44100.0,
         );
 
@@ -332,6 +354,10 @@ mod tests {
 
         // Should be heavily attenuated
         let last = samples[3999].abs();
-        assert!(last < 0.0005, "Gated signal should be near zero, got {}", last);
+        assert!(
+            last < 0.0005,
+            "Gated signal should be near zero, got {}",
+            last
+        );
     }
 }

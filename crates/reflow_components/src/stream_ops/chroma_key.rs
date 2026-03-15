@@ -18,9 +18,7 @@ use std::collections::HashMap;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn chroma_key_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn chroma_key_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let key_color = config

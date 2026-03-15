@@ -7,12 +7,12 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     message::EncodableValue,
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -22,9 +22,7 @@ use std::collections::HashMap;
     outports::<50>(stream, events, error),
     state(MemoryState)
 )]
-pub async fn peak_detect_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn peak_detect_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     // Sensitivity: how many times the running average a transient must exceed
@@ -75,7 +73,11 @@ pub async fn peak_detect_actor(
     spawn_stream_task(async move {
         let mut stream = input_rx.into_stream();
         let mut running_energy: f32 = 0.0;
-        let energy_coeff = if avg_window > 0 { 1.0 / avg_window as f32 } else { 1.0 };
+        let energy_coeff = if avg_window > 0 {
+            1.0 / avg_window as f32
+        } else {
+            1.0
+        };
         let mut total_samples: u64 = 0;
         let mut last_peak_sample: u64 = 0;
         let mut peaks: Vec<serde_json::Value> = Vec::new();

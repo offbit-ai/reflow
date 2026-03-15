@@ -85,7 +85,10 @@ pub async fn regex_matcher_actor(context: ActorContext) -> Result<HashMap<String
         .and_then(|v| v.as_str())
         .unwrap_or(".*");
 
-    let global = config.get("global").and_then(|v| v.as_bool()).unwrap_or(false);
+    let global = config
+        .get("global")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     // Simple regex via std (no external dep)
     // For full regex support, we'd use the `regex` crate.
@@ -93,9 +96,12 @@ pub async fn regex_matcher_actor(context: ActorContext) -> Result<HashMap<String
     let mut out = HashMap::new();
 
     // Check if it's a simple literal pattern (no regex metacharacters)
-    let is_literal = !pattern
-        .chars()
-        .any(|c| matches!(c, '.' | '*' | '+' | '?' | '[' | ']' | '(' | ')' | '{' | '}' | '|' | '^' | '$' | '\\'));
+    let is_literal = !pattern.chars().any(|c| {
+        matches!(
+            c,
+            '.' | '*' | '+' | '?' | '[' | ']' | '(' | ')' | '{' | '}' | '|' | '^' | '$' | '\\'
+        )
+    });
 
     if is_literal {
         let found = text.contains(pattern);
@@ -119,7 +125,11 @@ pub async fn regex_matcher_actor(context: ActorContext) -> Result<HashMap<String
         out.insert("matched".to_string(), Message::Boolean(false));
         out.insert(
             "error".to_string(),
-            Message::Error("Complex regex requires the regex crate — use literal patterns or script actors".to_string().into()),
+            Message::Error(
+                "Complex regex requires the regex crate — use literal patterns or script actors"
+                    .to_string()
+                    .into(),
+            ),
         );
     }
 
@@ -172,10 +182,7 @@ pub async fn date_time_actor(context: ActorContext) -> Result<HashMap<String, Me
             );
         }
         "epoch" => {
-            out.insert(
-                "timestamp".to_string(),
-                Message::Integer(now.timestamp()),
-            );
+            out.insert("timestamp".to_string(), Message::Integer(now.timestamp()));
         }
         _ => {
             out.insert(

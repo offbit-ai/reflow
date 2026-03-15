@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn biquad_filter_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn biquad_filter_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let filter_type_str = config
@@ -38,10 +36,7 @@ pub async fn biquad_filter_actor(
 
     let q = config.get("q").and_then(|v| v.as_f64()).unwrap_or(0.707);
 
-    let gain_db = config
-        .get("gainDb")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0);
+    let gain_db = config.get("gainDb").and_then(|v| v.as_f64()).unwrap_or(0.0);
 
     let sample_rate = config
         .get("sampleRate")
@@ -79,8 +74,13 @@ pub async fn biquad_filter_actor(
                 _ => reflow_dsp::biquad::FilterType::LowPass,
             };
 
-            let coeffs =
-                reflow_dsp::biquad::BiquadCoeffs::design(filter_type, frequency, q, gain_db, sample_rate);
+            let coeffs = reflow_dsp::biquad::BiquadCoeffs::design(
+                filter_type,
+                frequency,
+                q,
+                gain_db,
+                sample_rate,
+            );
             let mut filter = reflow_dsp::biquad::Biquad::new(coeffs);
 
             let mut stream = input_rx.into_stream();
@@ -93,8 +93,7 @@ pub async fn biquad_filter_actor(
                             .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
                             .collect();
                         filter.process(&mut samples);
-                        let bytes: Vec<u8> =
-                            samples.iter().flat_map(|s| s.to_le_bytes()).collect();
+                        let bytes: Vec<u8> = samples.iter().flat_map(|s| s.to_le_bytes()).collect();
                         StreamFrame::Data(Arc::new(bytes))
                     }
                     other => other,

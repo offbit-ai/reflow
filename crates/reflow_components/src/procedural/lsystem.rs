@@ -23,7 +23,11 @@ pub async fn lsystem_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
 
     let axiom = match p.get("axiom") {
         Some(Message::String(s)) => s.to_string(),
-        _ => c.get("axiom").and_then(|v| v.as_str()).unwrap_or("F").to_string(),
+        _ => c
+            .get("axiom")
+            .and_then(|v| v.as_str())
+            .unwrap_or("F")
+            .to_string(),
     };
 
     let iterations = c.get("iterations").and_then(|v| v.as_u64()).unwrap_or(4) as usize;
@@ -31,7 +35,10 @@ pub async fn lsystem_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
     let step_length = c.get("stepLength").and_then(|v| v.as_f64()).unwrap_or(1.0);
 
     // Parse rules from config: "F=FF+[+F-F-F]-[-F+F+F]" format
-    let rules_str = c.get("rules").and_then(|v| v.as_str()).unwrap_or("F=F+F-F-FF+F+F-F");
+    let rules_str = c
+        .get("rules")
+        .and_then(|v| v.as_str())
+        .unwrap_or("F=F+F-F-FF+F+F-F");
     let mut rules: HashMap<char, String> = HashMap::new();
     for rule in rules_str.split(';') {
         let parts: Vec<&str> = rule.trim().splitn(2, '=').collect();
@@ -80,7 +87,9 @@ pub async fn lsystem_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
             '[' => stack.push((x, y, dir)),
             ']' => {
                 if let Some((sx, sy, sd)) = stack.pop() {
-                    x = sx; y = sy; dir = sd;
+                    x = sx;
+                    y = sy;
+                    dir = sd;
                     points.push([x, y]);
                 }
             }
@@ -89,7 +98,8 @@ pub async fn lsystem_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
     }
 
     // Encode points as f64 LE bytes
-    let point_bytes: Vec<u8> = points.iter()
+    let point_bytes: Vec<u8> = points
+        .iter()
         .flat_map(|p| [p[0].to_le_bytes(), p[1].to_le_bytes()].concat())
         .collect();
 
@@ -97,11 +107,14 @@ pub async fn lsystem_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
     let mut out = HashMap::new();
     out.insert("output".to_string(), Message::String(current.into()));
     out.insert("points".to_string(), Message::bytes(point_bytes));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "stringLength": string_length,
-        "pointCount": points.len(),
-        "iterations": iterations,
-        "angle": angle,
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "stringLength": string_length,
+            "pointCount": points.len(),
+            "iterations": iterations,
+            "angle": angle,
+        }))),
+    );
     Ok(out)
 }

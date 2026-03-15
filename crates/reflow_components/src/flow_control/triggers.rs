@@ -21,9 +21,7 @@ use std::sync::Arc;
     outports::<50>(trigger),
     state(MemoryState)
 )]
-pub async fn interval_trigger_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
 
     let interval_ms = config
@@ -93,9 +91,7 @@ pub async fn interval_trigger_actor(
     outports::<50>(trigger),
     state(MemoryState)
 )]
-pub async fn cron_trigger_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn cron_trigger_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
 
     let common = config
@@ -178,12 +174,12 @@ fn parse_cron_to_interval(expr: &str) -> u64 {
 
     // Very basic parsing — handles common patterns
     match parts[0] {
-        "*" => 60_000,           // every minute
-        "*/5" => 300_000,        // every 5 minutes
-        "*/15" => 900_000,       // every 15 minutes
-        "*/30" => 1_800_000,     // every 30 minutes
-        "0" if parts[1] == "*" => 3_600_000,    // every hour
-        "0" if parts[1] == "0" => 86_400_000,   // every day
+        "*" => 60_000,                        // every minute
+        "*/5" => 300_000,                     // every 5 minutes
+        "*/15" => 900_000,                    // every 15 minutes
+        "*/30" => 1_800_000,                  // every 30 minutes
+        "0" if parts[1] == "*" => 3_600_000,  // every hour
+        "0" if parts[1] == "0" => 86_400_000, // every day
         _ => 60_000,
     }
 }

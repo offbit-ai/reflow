@@ -20,9 +20,7 @@ use std::collections::HashMap;
     outports::<50>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn image_encode_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn image_encode_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let format_str = config
@@ -31,10 +29,7 @@ pub async fn image_encode_actor(
         .unwrap_or("png")
         .to_string();
 
-    let quality = config
-        .get("quality")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(90) as u8;
+    let quality = config.get("quality").and_then(|v| v.as_u64()).unwrap_or(90) as u8;
 
     // Take the stream receiver
     let rx = match context.take_stream_receiver("stream") {
@@ -147,7 +142,13 @@ fn encode_png(pixels: &[u8], width: u32, height: u32, channels: u32) -> Result<V
     Ok(buf)
 }
 
-fn encode_jpeg(pixels: &[u8], width: u32, height: u32, channels: u32, quality: u8) -> Result<Vec<u8>, String> {
+fn encode_jpeg(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    channels: u32,
+    quality: u8,
+) -> Result<Vec<u8>, String> {
     use image::{ImageBuffer, ImageEncoder};
 
     // JPEG needs RGB, not RGBA
@@ -171,7 +172,13 @@ fn encode_jpeg(pixels: &[u8], width: u32, height: u32, channels: u32, quality: u
     Ok(buf)
 }
 
-fn encode_webp(pixels: &[u8], width: u32, height: u32, channels: u32, _quality: u8) -> Result<Vec<u8>, String> {
+fn encode_webp(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    channels: u32,
+    _quality: u8,
+) -> Result<Vec<u8>, String> {
     // image crate's WebP encoder is lossless only
     use image::ImageEncoder;
 

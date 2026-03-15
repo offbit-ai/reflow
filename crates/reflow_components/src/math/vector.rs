@@ -28,7 +28,9 @@ fn get_vec3(payload: &HashMap<String, Message>, port: &str) -> [f64; 3] {
 }
 
 fn vec3_msg(v: [f64; 3]) -> Message {
-    Message::object(EncodableValue::from(json!({ "x": v[0], "y": v[1], "z": v[2] })))
+    Message::object(EncodableValue::from(
+        json!({ "x": v[0], "y": v[1], "z": v[2] }),
+    ))
 }
 
 fn get_vec4(payload: &HashMap<String, Message>, port: &str) -> [f64; 4] {
@@ -47,7 +49,9 @@ fn get_vec4(payload: &HashMap<String, Message>, port: &str) -> [f64; 4] {
 }
 
 fn vec4_msg(v: [f64; 4]) -> Message {
-    Message::object(EncodableValue::from(json!({ "x": v[0], "y": v[1], "z": v[2], "w": v[3] })))
+    Message::object(EncodableValue::from(
+        json!({ "x": v[0], "y": v[1], "z": v[2], "w": v[3] }),
+    ))
 }
 
 fn mat4_msg(m: &[f64; 16]) -> Message {
@@ -72,10 +76,7 @@ fn get_mat4(payload: &HashMap<String, Message>, port: &str) -> [f64; 16] {
 }
 
 const MAT4_IDENTITY: [f64; 16] = [
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
 ];
 
 // ─── Vector3 Operations ─────────────────────────────────────────
@@ -85,7 +86,11 @@ pub async fn vec3_add_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let p = ctx.get_payload();
     let a = get_vec3(p, "a");
     let b = get_vec3(p, "b");
-    Ok([("result".to_string(), vec3_msg([a[0]+b[0], a[1]+b[1], a[2]+b[2]]))].into())
+    Ok([(
+        "result".to_string(),
+        vec3_msg([a[0] + b[0], a[1] + b[1], a[2] + b[2]]),
+    )]
+    .into())
 }
 
 #[actor(Vec3SubtractActor, inports::<10>(a, b), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -93,7 +98,11 @@ pub async fn vec3_subtract_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let p = ctx.get_payload();
     let a = get_vec3(p, "a");
     let b = get_vec3(p, "b");
-    Ok([("result".to_string(), vec3_msg([a[0]-b[0], a[1]-b[1], a[2]-b[2]]))].into())
+    Ok([(
+        "result".to_string(),
+        vec3_msg([a[0] - b[0], a[1] - b[1], a[2] - b[2]]),
+    )]
+    .into())
 }
 
 #[actor(Vec3ScaleActor, inports::<10>(vector, scalar), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -105,7 +114,11 @@ pub async fn vec3_scale_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
         Some(Message::Integer(i)) => *i as f64,
         _ => 1.0,
     };
-    Ok([("result".to_string(), vec3_msg([v[0]*s, v[1]*s, v[2]*s]))].into())
+    Ok([(
+        "result".to_string(),
+        vec3_msg([v[0] * s, v[1] * s, v[2] * s]),
+    )]
+    .into())
 }
 
 #[actor(Vec3DotActor, inports::<10>(a, b), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -113,7 +126,11 @@ pub async fn vec3_dot_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let p = ctx.get_payload();
     let a = get_vec3(p, "a");
     let b = get_vec3(p, "b");
-    Ok([("result".to_string(), Message::Float(a[0]*b[0] + a[1]*b[1] + a[2]*b[2]))].into())
+    Ok([(
+        "result".to_string(),
+        Message::Float(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]),
+    )]
+    .into())
 }
 
 #[actor(Vec3CrossActor, inports::<10>(a, b), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -121,21 +138,28 @@ pub async fn vec3_cross_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     let p = ctx.get_payload();
     let a = get_vec3(p, "a");
     let b = get_vec3(p, "b");
-    Ok([("result".to_string(), vec3_msg([
-        a[1]*b[2] - a[2]*b[1],
-        a[2]*b[0] - a[0]*b[2],
-        a[0]*b[1] - a[1]*b[0],
-    ]))].into())
+    Ok([(
+        "result".to_string(),
+        vec3_msg([
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+        ]),
+    )]
+    .into())
 }
 
 #[actor(Vec3NormalizeActor, inports::<10>(input), outports::<1>(result, length), state(MemoryState))]
 pub async fn vec3_normalize_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let p = ctx.get_payload();
     let v = get_vec3(p, "input");
-    let len = (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]).sqrt();
+    let len = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
     let mut out = HashMap::new();
     if len > 1e-10 {
-        out.insert("result".to_string(), vec3_msg([v[0]/len, v[1]/len, v[2]/len]));
+        out.insert(
+            "result".to_string(),
+            vec3_msg([v[0] / len, v[1] / len, v[2] / len]),
+        );
     } else {
         out.insert("result".to_string(), vec3_msg([0.0, 0.0, 0.0]));
     }
@@ -147,7 +171,11 @@ pub async fn vec3_normalize_actor(ctx: ActorContext) -> Result<HashMap<String, M
 pub async fn vec3_length_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let p = ctx.get_payload();
     let v = get_vec3(p, "input");
-    Ok([("result".to_string(), Message::Float((v[0]*v[0] + v[1]*v[1] + v[2]*v[2]).sqrt()))].into())
+    Ok([(
+        "result".to_string(),
+        Message::Float((v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt()),
+    )]
+    .into())
 }
 
 #[actor(Vec3DistanceActor, inports::<10>(a, b), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -155,8 +183,12 @@ pub async fn vec3_distance_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let p = ctx.get_payload();
     let a = get_vec3(p, "a");
     let b = get_vec3(p, "b");
-    let d = [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
-    Ok([("result".to_string(), Message::Float((d[0]*d[0] + d[1]*d[1] + d[2]*d[2]).sqrt()))].into())
+    let d = [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    Ok([(
+        "result".to_string(),
+        Message::Float((d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt()),
+    )]
+    .into())
 }
 
 #[actor(Vec3LerpActor, inports::<10>(a, b, t), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -168,11 +200,15 @@ pub async fn vec3_lerp_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         Some(Message::Float(f)) => *f,
         _ => 0.5,
     };
-    Ok([("result".to_string(), vec3_msg([
-        a[0] + (b[0]-a[0]) * t,
-        a[1] + (b[1]-a[1]) * t,
-        a[2] + (b[2]-a[2]) * t,
-    ]))].into())
+    Ok([(
+        "result".to_string(),
+        vec3_msg([
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+        ]),
+    )]
+    .into())
 }
 
 #[actor(Vec3ReflectActor, inports::<10>(incident, normal), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -180,8 +216,12 @@ pub async fn vec3_reflect_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     let p = ctx.get_payload();
     let i = get_vec3(p, "incident");
     let n = get_vec3(p, "normal");
-    let d = 2.0 * (i[0]*n[0] + i[1]*n[1] + i[2]*n[2]);
-    Ok([("result".to_string(), vec3_msg([i[0] - d*n[0], i[1] - d*n[1], i[2] - d*n[2]]))].into())
+    let d = 2.0 * (i[0] * n[0] + i[1] * n[1] + i[2] * n[2]);
+    Ok([(
+        "result".to_string(),
+        vec3_msg([i[0] - d * n[0], i[1] - d * n[1], i[2] - d * n[2]]),
+    )]
+    .into())
 }
 
 // ─── Vec3 Constructor ───────────────────────────────────────────
@@ -199,7 +239,11 @@ pub async fn vec3_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, E
 }
 
 /// Read a float from inport message first, fall back to config value.
-fn get_float_or_config(msg: Option<&Message>, cfg: Option<&serde_json::Value>, default: f64) -> f64 {
+fn get_float_or_config(
+    msg: Option<&Message>,
+    cfg: Option<&serde_json::Value>,
+    default: f64,
+) -> f64 {
     match msg {
         Some(Message::Float(v)) => return *v,
         Some(Message::Integer(v)) => return *v as f64,
@@ -225,12 +269,12 @@ fn mat4_mul(a: &[f64; 16], b: &[f64; 16]) -> [f64; 16] {
 }
 
 fn mat4_transform_vec3(m: &[f64; 16], v: [f64; 3]) -> [f64; 3] {
-    let w = m[3]*v[0] + m[7]*v[1] + m[11]*v[2] + m[15];
+    let w = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
     let w = if w.abs() > 1e-10 { w } else { 1.0 };
     [
-        (m[0]*v[0] + m[4]*v[1] + m[8]*v[2] + m[12]) / w,
-        (m[1]*v[0] + m[5]*v[1] + m[9]*v[2] + m[13]) / w,
-        (m[2]*v[0] + m[6]*v[1] + m[10]*v[2] + m[14]) / w,
+        (m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12]) / w,
+        (m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13]) / w,
+        (m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14]) / w,
     ]
 }
 
@@ -263,10 +307,7 @@ pub async fn mat4_translate_actor(ctx: ActorContext) -> Result<HashMap<String, M
     let y = get_float_or_config(p.get("y"), c.get("y"), 0.0);
     let z = get_float_or_config(p.get("z"), c.get("z"), 0.0);
     let m = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        x,   y,   z,   1.0,
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, x, y, z, 1.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
@@ -279,10 +320,7 @@ pub async fn mat4_scale_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     let y = get_float_or_config(p.get("y"), c.get("y"), 1.0);
     let z = get_float_or_config(p.get("z"), c.get("z"), 1.0);
     let m = [
-        x,   0.0, 0.0, 0.0,
-        0.0, y,   0.0, 0.0,
-        0.0, 0.0, z,   0.0,
-        0.0, 0.0, 0.0, 1.0,
+        x, 0.0, 0.0, 0.0, 0.0, y, 0.0, 0.0, 0.0, 0.0, z, 0.0, 0.0, 0.0, 0.0, 1.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
@@ -295,10 +333,7 @@ pub async fn mat4_rotate_x_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let r = deg.to_radians();
     let (s, c) = (r.sin(), r.cos());
     let m = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, c,   s,   0.0,
-        0.0, -s,  c,   0.0,
-        0.0, 0.0, 0.0, 1.0,
+        1.0, 0.0, 0.0, 0.0, 0.0, c, s, 0.0, 0.0, -s, c, 0.0, 0.0, 0.0, 0.0, 1.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
@@ -311,10 +346,7 @@ pub async fn mat4_rotate_y_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let r = deg.to_radians();
     let (s, c) = (r.sin(), r.cos());
     let m = [
-        c,   0.0, -s,  0.0,
-        0.0, 1.0, 0.0, 0.0,
-        s,   0.0, c,   0.0,
-        0.0, 0.0, 0.0, 1.0,
+        c, 0.0, -s, 0.0, 0.0, 1.0, 0.0, 0.0, s, 0.0, c, 0.0, 0.0, 0.0, 0.0, 1.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
@@ -327,10 +359,7 @@ pub async fn mat4_rotate_z_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let r = deg.to_radians();
     let (s, c) = (r.sin(), r.cos());
     let m = [
-        c,   s,   0.0, 0.0,
-        -s,  c,   0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
+        c, s, 0.0, 0.0, -s, c, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
@@ -343,28 +372,49 @@ pub async fn mat4_look_at_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     let up = get_vec3(p, "up");
 
     let fwd = {
-        let d = [target[0]-eye[0], target[1]-eye[1], target[2]-eye[2]];
-        let l = (d[0]*d[0] + d[1]*d[1] + d[2]*d[2]).sqrt();
-        if l > 1e-10 { [d[0]/l, d[1]/l, d[2]/l] } else { [0.0, 0.0, -1.0] }
+        let d = [target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]];
+        let l = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt();
+        if l > 1e-10 {
+            [d[0] / l, d[1] / l, d[2] / l]
+        } else {
+            [0.0, 0.0, -1.0]
+        }
     };
     let right = {
-        let c = [fwd[1]*up[2]-fwd[2]*up[1], fwd[2]*up[0]-fwd[0]*up[2], fwd[0]*up[1]-fwd[1]*up[0]];
-        let l = (c[0]*c[0] + c[1]*c[1] + c[2]*c[2]).sqrt();
-        if l > 1e-10 { [c[0]/l, c[1]/l, c[2]/l] } else { [1.0, 0.0, 0.0] }
+        let c = [
+            fwd[1] * up[2] - fwd[2] * up[1],
+            fwd[2] * up[0] - fwd[0] * up[2],
+            fwd[0] * up[1] - fwd[1] * up[0],
+        ];
+        let l = (c[0] * c[0] + c[1] * c[1] + c[2] * c[2]).sqrt();
+        if l > 1e-10 {
+            [c[0] / l, c[1] / l, c[2] / l]
+        } else {
+            [1.0, 0.0, 0.0]
+        }
     };
     let new_up = [
-        right[1]*fwd[2]-right[2]*fwd[1],
-        right[2]*fwd[0]-right[0]*fwd[2],
-        right[0]*fwd[1]-right[1]*fwd[0],
+        right[1] * fwd[2] - right[2] * fwd[1],
+        right[2] * fwd[0] - right[0] * fwd[2],
+        right[0] * fwd[1] - right[1] * fwd[0],
     ];
 
     let m = [
-        right[0], new_up[0], -fwd[0], 0.0,
-        right[1], new_up[1], -fwd[1], 0.0,
-        right[2], new_up[2], -fwd[2], 0.0,
-        -(right[0]*eye[0] + right[1]*eye[1] + right[2]*eye[2]),
-        -(new_up[0]*eye[0] + new_up[1]*eye[1] + new_up[2]*eye[2]),
-        fwd[0]*eye[0] + fwd[1]*eye[1] + fwd[2]*eye[2],
+        right[0],
+        new_up[0],
+        -fwd[0],
+        0.0,
+        right[1],
+        new_up[1],
+        -fwd[1],
+        0.0,
+        right[2],
+        new_up[2],
+        -fwd[2],
+        0.0,
+        -(right[0] * eye[0] + right[1] * eye[1] + right[2] * eye[2]),
+        -(new_up[0] * eye[0] + new_up[1] * eye[1] + new_up[2] * eye[2]),
+        fwd[0] * eye[0] + fwd[1] * eye[1] + fwd[2] * eye[2],
         1.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
@@ -383,10 +433,22 @@ pub async fn mat4_perspective_actor(ctx: ActorContext) -> Result<HashMap<String,
     let nf = 1.0 / (near - far);
 
     let m = [
-        f / aspect, 0.0, 0.0,                   0.0,
-        0.0,        f,   0.0,                   0.0,
-        0.0,        0.0, (far + near) * nf,     -1.0,
-        0.0,        0.0, 2.0 * far * near * nf,  0.0,
+        f / aspect,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        f,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        (far + near) * nf,
+        -1.0,
+        0.0,
+        0.0,
+        2.0 * far * near * nf,
+        0.0,
     ];
     Ok([("result".to_string(), mat4_msg(&m))].into())
 }
@@ -405,12 +467,16 @@ pub async fn quat_from_euler_actor(ctx: ActorContext) -> Result<HashMap<String, 
     let (sy, cy) = (y.sin(), y.cos());
     let (sz, cz) = (z.sin(), z.cos());
 
-    Ok([("result".to_string(), vec4_msg([
-        sx*cy*cz - cx*sy*sz,
-        cx*sy*cz + sx*cy*sz,
-        cx*cy*sz - sx*sy*cz,
-        cx*cy*cz + sx*sy*sz,
-    ]))].into())
+    Ok([(
+        "result".to_string(),
+        vec4_msg([
+            sx * cy * cz - cx * sy * sz,
+            cx * sy * cz + sx * cy * sz,
+            cx * cy * sz - sx * sy * cz,
+            cx * cy * cz + sx * sy * sz,
+        ]),
+    )]
+    .into())
 }
 
 #[actor(QuatMultiplyActor, inports::<10>(a, b), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -418,12 +484,16 @@ pub async fn quat_multiply_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let p = ctx.get_payload();
     let a = get_vec4(p, "a");
     let b = get_vec4(p, "b");
-    Ok([("result".to_string(), vec4_msg([
-        a[3]*b[0] + a[0]*b[3] + a[1]*b[2] - a[2]*b[1],
-        a[3]*b[1] - a[0]*b[2] + a[1]*b[3] + a[2]*b[0],
-        a[3]*b[2] + a[0]*b[1] - a[1]*b[0] + a[2]*b[3],
-        a[3]*b[3] - a[0]*b[0] - a[1]*b[1] - a[2]*b[2],
-    ]))].into())
+    Ok([(
+        "result".to_string(),
+        vec4_msg([
+            a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+            a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+            a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+            a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
+        ]),
+    )]
+    .into())
 }
 
 #[actor(QuatSlerpActor, inports::<10>(a, b, t), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -431,17 +501,32 @@ pub async fn quat_slerp_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     let p = ctx.get_payload();
     let a = get_vec4(p, "a");
     let b = get_vec4(p, "b");
-    let t = match p.get("t") { Some(Message::Float(f)) => *f, _ => 0.5 };
+    let t = match p.get("t") {
+        Some(Message::Float(f)) => *f,
+        _ => 0.5,
+    };
 
-    let mut dot = a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3];
+    let mut dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
     let mut b = b;
-    if dot < 0.0 { b = [-b[0], -b[1], -b[2], -b[3]]; dot = -dot; }
+    if dot < 0.0 {
+        b = [-b[0], -b[1], -b[2], -b[3]];
+        dot = -dot;
+    }
 
     if dot > 0.9995 {
         // Linear interpolation for very close quaternions
-        let r = [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t, a[3]+(b[3]-a[3])*t];
-        let l = (r[0]*r[0]+r[1]*r[1]+r[2]*r[2]+r[3]*r[3]).sqrt();
-        return Ok([("result".to_string(), vec4_msg([r[0]/l, r[1]/l, r[2]/l, r[3]/l]))].into());
+        let r = [
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+            a[3] + (b[3] - a[3]) * t,
+        ];
+        let l = (r[0] * r[0] + r[1] * r[1] + r[2] * r[2] + r[3] * r[3]).sqrt();
+        return Ok([(
+            "result".to_string(),
+            vec4_msg([r[0] / l, r[1] / l, r[2] / l, r[3] / l]),
+        )]
+        .into());
     }
 
     let theta = dot.clamp(-1.0, 1.0).acos();
@@ -449,9 +534,16 @@ pub async fn quat_slerp_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     let sa = ((1.0 - t) * theta).sin() / sin_theta;
     let sb = (t * theta).sin() / sin_theta;
 
-    Ok([("result".to_string(), vec4_msg([
-        sa*a[0] + sb*b[0], sa*a[1] + sb*b[1], sa*a[2] + sb*b[2], sa*a[3] + sb*b[3],
-    ]))].into())
+    Ok([(
+        "result".to_string(),
+        vec4_msg([
+            sa * a[0] + sb * b[0],
+            sa * a[1] + sb * b[1],
+            sa * a[2] + sb * b[2],
+            sa * a[3] + sb * b[3],
+        ]),
+    )]
+    .into())
 }
 
 #[actor(QuatRotateVec3Actor, inports::<10>(quaternion, vector), outports::<1>(result), state(MemoryState), await_all_inports)]
@@ -462,14 +554,18 @@ pub async fn quat_rotate_vec3_actor(ctx: ActorContext) -> Result<HashMap<String,
 
     // q * v * q^-1 (quaternion rotation)
     let t = [
-        2.0 * (q[1]*v[2] - q[2]*v[1]),
-        2.0 * (q[2]*v[0] - q[0]*v[2]),
-        2.0 * (q[0]*v[1] - q[1]*v[0]),
+        2.0 * (q[1] * v[2] - q[2] * v[1]),
+        2.0 * (q[2] * v[0] - q[0] * v[2]),
+        2.0 * (q[0] * v[1] - q[1] * v[0]),
     ];
 
-    Ok([("result".to_string(), vec3_msg([
-        v[0] + q[3]*t[0] + q[1]*t[2] - q[2]*t[1],
-        v[1] + q[3]*t[1] + q[2]*t[0] - q[0]*t[2],
-        v[2] + q[3]*t[2] + q[0]*t[1] - q[1]*t[0],
-    ]))].into())
+    Ok([(
+        "result".to_string(),
+        vec3_msg([
+            v[0] + q[3] * t[0] + q[1] * t[2] - q[2] * t[1],
+            v[1] + q[3] * t[1] + q[2] * t[0] - q[0] * t[2],
+            v[2] + q[3] * t[2] + q[0] * t[1] - q[1] * t[0],
+        ]),
+    )]
+    .into())
 }

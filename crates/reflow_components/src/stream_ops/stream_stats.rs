@@ -6,12 +6,12 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     message::EncodableValue,
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -21,9 +21,7 @@ use std::collections::HashMap;
     outports::<50>(stream, stats, error),
     state(MemoryState)
 )]
-pub async fn stream_stats_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn stream_stats_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let input_rx = match context.take_stream_receiver("stream") {
         Some(rx) => rx,
         None => {

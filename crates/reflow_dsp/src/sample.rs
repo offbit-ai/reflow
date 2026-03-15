@@ -12,12 +12,16 @@ pub fn i16_to_f32(samples: &[i16], output: &mut [f32]) {
 
     #[cfg(all(feature = "simd", target_arch = "aarch64"))]
     {
-        unsafe { return crate::simd_sample_neon::i16_to_f32_neon(samples, output); }
+        unsafe {
+            return crate::simd_sample_neon::i16_to_f32_neon(samples, output);
+        }
     }
 
     #[cfg(all(feature = "simd", target_arch = "x86_64"))]
     {
-        unsafe { return crate::simd_sample_x86::i16_to_f32_sse2(samples, output); }
+        unsafe {
+            return crate::simd_sample_x86::i16_to_f32_sse2(samples, output);
+        }
     }
 
     #[allow(unreachable_code)]
@@ -40,12 +44,16 @@ pub fn f32_to_i16(samples: &[f32], output: &mut [i16]) {
 
     #[cfg(all(feature = "simd", target_arch = "aarch64"))]
     {
-        unsafe { return crate::simd_sample_neon::f32_to_i16_neon(samples, output); }
+        unsafe {
+            return crate::simd_sample_neon::f32_to_i16_neon(samples, output);
+        }
     }
 
     #[cfg(all(feature = "simd", target_arch = "x86_64"))]
     {
-        unsafe { return crate::simd_sample_x86::f32_to_i16_sse2(samples, output); }
+        unsafe {
+            return crate::simd_sample_x86::f32_to_i16_sse2(samples, output);
+        }
     }
 
     #[allow(unreachable_code)]

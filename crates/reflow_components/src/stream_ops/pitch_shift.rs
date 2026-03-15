@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn pitch_shift_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn pitch_shift_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     // Semitones to shift (positive = up, negative = down)
@@ -104,8 +102,7 @@ pub async fn pitch_shift_actor(
                             reflow_dsp::fft::FftFrame::from_polar(&new_mags, &new_phases)
                         });
 
-                        let bytes: Vec<u8> =
-                            output.iter().flat_map(|s| s.to_le_bytes()).collect();
+                        let bytes: Vec<u8> = output.iter().flat_map(|s| s.to_le_bytes()).collect();
                         StreamFrame::Data(Arc::new(bytes))
                     }
                     other => other,

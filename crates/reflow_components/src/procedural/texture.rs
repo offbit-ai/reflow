@@ -89,9 +89,7 @@ impl TextureData {
     state(MemoryState),
     await_all_inports
 )]
-pub async fn triplanar_texture_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn triplanar_texture_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -109,7 +107,10 @@ pub async fn triplanar_texture_actor(
         .ok_or_else(|| anyhow::anyhow!("Failed to decode texture image"))?;
 
     let scale = config.get("scale").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-    let sharpness = config.get("sharpness").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32;
+    let sharpness = config
+        .get("sharpness")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(2.0) as f32;
     let in_stride = config.get("stride").and_then(|v| v.as_u64()).unwrap_or(24) as usize;
     let in_floats = in_stride / 4; // 6 for pos3+normal3
 
@@ -128,9 +129,21 @@ pub async fn triplanar_texture_actor(
         let px = float_data[base];
         let py = float_data[base + 1];
         let pz = float_data[base + 2];
-        let nx = if in_floats >= 6 { float_data[base + 3] } else { 0.0 };
-        let ny = if in_floats >= 6 { float_data[base + 4] } else { 1.0 };
-        let nz = if in_floats >= 6 { float_data[base + 5] } else { 0.0 };
+        let nx = if in_floats >= 6 {
+            float_data[base + 3]
+        } else {
+            0.0
+        };
+        let ny = if in_floats >= 6 {
+            float_data[base + 4]
+        } else {
+            1.0
+        };
+        let nz = if in_floats >= 6 {
+            float_data[base + 5]
+        } else {
+            0.0
+        };
 
         // Triplanar blend weights from normal
         let mut wx = nx.abs().powf(sharpness);
@@ -168,15 +181,18 @@ pub async fn triplanar_texture_actor(
     let mut results = HashMap::new();
     results.insert("mesh".to_string(), Message::bytes(out_bytes));
     let thumb = texture.thumbnail_base64();
-    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "vertexCount": vertex_count,
-        "stride": out_stride,
-        "format": "pos3_normal3_color3_f32",
-        "textureWidth": texture.width,
-        "textureHeight": texture.height,
-        "mapping": "triplanar",
-        "thumbnail": format!("data:image/png;base64,{}", thumb),
-    }))));
+    results.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "vertexCount": vertex_count,
+            "stride": out_stride,
+            "format": "pos3_normal3_color3_f32",
+            "textureWidth": texture.width,
+            "textureHeight": texture.height,
+            "mapping": "triplanar",
+            "thumbnail": format!("data:image/png;base64,{}", thumb),
+        }))),
+    );
     Ok(results)
 }
 
@@ -193,9 +209,7 @@ pub async fn triplanar_texture_actor(
     state(MemoryState),
     await_all_inports
 )]
-pub async fn uv_texture_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn uv_texture_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -219,7 +233,9 @@ pub async fn uv_texture_actor(
     if in_floats < uv_offset + 2 {
         return Ok(error_output(&format!(
             "Stride {} too small for UV at offset {} (need at least {} floats)",
-            in_stride, uv_offset, uv_offset + 2
+            in_stride,
+            uv_offset,
+            uv_offset + 2
         )));
     }
 
@@ -256,15 +272,18 @@ pub async fn uv_texture_actor(
     let mut results = HashMap::new();
     results.insert("mesh".to_string(), Message::bytes(out_bytes));
     let thumb = texture.thumbnail_base64();
-    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "vertexCount": vertex_count,
-        "stride": out_stride,
-        "format": "pos3_normal3_uv2_color3_f32",
-        "textureWidth": texture.width,
-        "textureHeight": texture.height,
-        "mapping": "uv",
-        "thumbnail": format!("data:image/png;base64,{}", thumb),
-    }))));
+    results.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "vertexCount": vertex_count,
+            "stride": out_stride,
+            "format": "pos3_normal3_uv2_color3_f32",
+            "textureWidth": texture.width,
+            "textureHeight": texture.height,
+            "mapping": "uv",
+            "thumbnail": format!("data:image/png;base64,{}", thumb),
+        }))),
+    );
     Ok(results)
 }
 

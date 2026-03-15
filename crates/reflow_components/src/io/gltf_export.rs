@@ -18,9 +18,7 @@ use std::collections::HashMap;
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn gltf_export_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn gltf_export_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -29,7 +27,10 @@ pub async fn gltf_export_actor(
         _ => return Ok(error_output("Expected Bytes on mesh port")),
     };
 
-    let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("mesh");
+    let name = config
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("mesh");
     let stride = config.get("stride").and_then(|v| v.as_u64()).unwrap_or(24) as usize;
     let floats_per_vertex = stride / 4;
     let has_normals = floats_per_vertex >= 6;
@@ -78,25 +79,21 @@ pub async fn gltf_export_actor(
     }
 
     // Build glTF JSON
-    let mut accessors = vec![
-        json!({
-            "bufferView": 0,
-            "componentType": 5126, // FLOAT
-            "count": vertex_count,
-            "type": "VEC3",
-            "min": min_pos,
-            "max": max_pos,
-        })
-    ];
+    let mut accessors = vec![json!({
+        "bufferView": 0,
+        "componentType": 5126, // FLOAT
+        "count": vertex_count,
+        "type": "VEC3",
+        "min": min_pos,
+        "max": max_pos,
+    })];
 
-    let mut buffer_views = vec![
-        json!({
-            "buffer": 0,
-            "byteOffset": 0,
-            "byteLength": pos_byte_length,
-            "target": 34962, // ARRAY_BUFFER
-        })
-    ];
+    let mut buffer_views = vec![json!({
+        "buffer": 0,
+        "byteOffset": 0,
+        "byteLength": pos_byte_length,
+        "target": 34962, // ARRAY_BUFFER
+    })];
 
     let mut attributes = json!({ "POSITION": 0 });
 
@@ -145,29 +142,32 @@ pub async fn gltf_export_actor(
     let mut glb = Vec::with_capacity(total_size);
 
     // GLB header
-    glb.extend_from_slice(b"glTF");                          // magic
-    glb.extend_from_slice(&2u32.to_le_bytes());               // version
+    glb.extend_from_slice(b"glTF"); // magic
+    glb.extend_from_slice(&2u32.to_le_bytes()); // version
     glb.extend_from_slice(&(total_size as u32).to_le_bytes()); // length
 
     // JSON chunk
     glb.extend_from_slice(&(json_bytes.len() as u32).to_le_bytes()); // chunk length
-    glb.extend_from_slice(&0x4E4F534Au32.to_le_bytes());              // chunk type: JSON
+    glb.extend_from_slice(&0x4E4F534Au32.to_le_bytes()); // chunk type: JSON
     glb.extend_from_slice(&json_bytes);
 
     // BIN chunk
     glb.extend_from_slice(&(bin_data.len() as u32).to_le_bytes()); // chunk length
-    glb.extend_from_slice(&0x004E4942u32.to_le_bytes());            // chunk type: BIN
+    glb.extend_from_slice(&0x004E4942u32.to_le_bytes()); // chunk type: BIN
     glb.extend_from_slice(&bin_data);
 
     let mut results = HashMap::new();
     results.insert("output".to_string(), Message::bytes(glb));
-    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "format": "glb",
-        "vertexCount": vertex_count,
-        "triangleCount": vertex_count / 3,
-        "size": total_size,
-        "hasNormals": has_normals,
-    }))));
+    results.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "format": "glb",
+            "vertexCount": vertex_count,
+            "triangleCount": vertex_count / 3,
+            "size": total_size,
+            "hasNormals": has_normals,
+        }))),
+    );
     Ok(results)
 }
 

@@ -32,9 +32,7 @@ struct MeshToSdfUniforms {
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn mesh_to_sdf_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn mesh_to_sdf_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -43,7 +41,10 @@ pub async fn mesh_to_sdf_actor(
         _ => return Ok(error_output("Expected Bytes on mesh port")),
     };
 
-    let resolution = config.get("resolution").and_then(|v| v.as_u64()).unwrap_or(32) as u32;
+    let resolution = config
+        .get("resolution")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(32) as u32;
     let bound = config.get("bound").and_then(|v| v.as_f64()).unwrap_or(3.0) as f32;
     let stride = config.get("stride").and_then(|v| v.as_u64()).unwrap_or(24) as usize;
 
@@ -124,12 +125,15 @@ fn run_mesh_to_sdf_gpu(
             .await
             .ok_or("No GPU adapter")?;
         adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: Some("MeshToSDF"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: wgpu::MemoryHints::default(),
-            }, None)
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("MeshToSDF"),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::default(),
+                    memory_hints: wgpu::MemoryHints::default(),
+                },
+                None,
+            )
             .await
             .map_err(|e| format!("Device: {}", e))
     })?;
@@ -173,20 +177,48 @@ fn run_mesh_to_sdf_gpu(
     let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: None,
         entries: &[
-            wgpu::BindGroupLayoutEntry { binding: 0, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None },
-            wgpu::BindGroupLayoutEntry { binding: 1, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None },
-            wgpu::BindGroupLayoutEntry { binding: 2, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: false }, has_dynamic_offset: false, min_binding_size: None }, count: None },
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 2,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
         ],
     });
 
     let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("M2S Pipeline"),
-        layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None, bind_group_layouts: &[&bgl], push_constant_ranges: &[],
-        })),
+        layout: Some(
+            &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&bgl],
+                push_constant_ranges: &[],
+            }),
+        ),
         module: &shader,
         entry_point: Some("main"),
         compilation_options: Default::default(),
@@ -197,16 +229,29 @@ fn run_mesh_to_sdf_gpu(
         label: None,
         layout: &bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: uniform_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: tri_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: sdf_buf.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: tri_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: sdf_buf.as_entire_binding(),
+            },
         ],
     });
 
     let wg = (resolution + 3) / 4;
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {
-        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
         pass.set_pipeline(&pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
         pass.dispatch_workgroups(wg, wg, wg);
@@ -223,9 +268,12 @@ fn run_mesh_to_sdf_gpu(
 
     let slice = readback.slice(..);
     let (tx, rx) = flume::bounded(1);
-    slice.map_async(wgpu::MapMode::Read, move |r| { let _ = tx.send(r); });
+    slice.map_async(wgpu::MapMode::Read, move |r| {
+        let _ = tx.send(r);
+    });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|_| "Map failed".to_string())?
+    rx.recv()
+        .map_err(|_| "Map failed".to_string())?
         .map_err(|e| format!("Map: {:?}", e))?;
 
     let data = slice.get_mapped_range();
@@ -302,7 +350,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let idx = gid.z * res * res + gid.y * res + gid.x;
   sdf_volume[idx] = min_dist;
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn error_output(msg: &str) -> HashMap<String, Message> {

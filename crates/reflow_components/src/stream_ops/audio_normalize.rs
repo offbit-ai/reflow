@@ -9,11 +9,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -107,8 +107,7 @@ pub async fn audio_normalize_actor(
                     for s in &mut samples {
                         *s *= gain;
                     }
-                    let bytes: Vec<u8> =
-                        samples.iter().flat_map(|s| s.to_le_bytes()).collect();
+                    let bytes: Vec<u8> = samples.iter().flat_map(|s| s.to_le_bytes()).collect();
                     StreamFrame::Data(Arc::new(bytes))
                 }
                 other => other,

@@ -65,7 +65,9 @@ pub async fn image_stream_display_actor(
         _ => return Ok(error_output("Expected Begin frame, got data".into())),
     };
 
-    let ct = content_type.as_deref().unwrap_or("application/octet-stream");
+    let ct = content_type
+        .as_deref()
+        .unwrap_or("application/octet-stream");
 
     // Validate image content type
     let accepted: Vec<String> = config

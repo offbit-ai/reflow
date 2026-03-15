@@ -169,13 +169,18 @@ mod tests {
         let mut output_neon = vec![0.0f32; input.len()];
         let mut output_scalar = vec![0.0f32; input.len()];
 
-        unsafe { i16_to_f32_neon(&input, &mut output_neon); }
+        unsafe {
+            i16_to_f32_neon(&input, &mut output_neon);
+        }
         crate::sample::i16_to_f32(&input, &mut output_scalar);
 
         for (i, (n, s)) in output_neon.iter().zip(output_scalar.iter()).enumerate() {
             assert!(
                 (n - s).abs() < 1e-6,
-                "Sample {}: NEON={} Scalar={}", i, n, s
+                "Sample {}: NEON={} Scalar={}",
+                i,
+                n,
+                s
             );
         }
     }
@@ -186,13 +191,18 @@ mod tests {
         let mut output_neon = vec![0i16; input.len()];
         let mut output_scalar = vec![0i16; input.len()];
 
-        unsafe { f32_to_i16_neon(&input, &mut output_neon); }
+        unsafe {
+            f32_to_i16_neon(&input, &mut output_neon);
+        }
         crate::sample::f32_to_i16(&input, &mut output_scalar);
 
         for (i, (n, s)) in output_neon.iter().zip(output_scalar.iter()).enumerate() {
             assert!(
                 (*n as i32 - *s as i32).abs() <= 1,
-                "Sample {}: NEON={} Scalar={}", i, n, s
+                "Sample {}: NEON={} Scalar={}",
+                i,
+                n,
+                s
             );
         }
     }
@@ -203,7 +213,9 @@ mod tests {
         let mut samples_scalar = samples_neon.clone();
         let window = vec![0.5f32, 0.8, 1.0, 0.8, 0.5];
 
-        unsafe { apply_window_neon(&mut samples_neon, &window); }
+        unsafe {
+            apply_window_neon(&mut samples_neon, &window);
+        }
         crate::window::apply(&mut samples_scalar, &window);
 
         for (n, s) in samples_neon.iter().zip(samples_scalar.iter()) {
@@ -218,7 +230,9 @@ mod tests {
         let mut left = vec![0.0f32; frames];
         let mut right = vec![0.0f32; frames];
 
-        unsafe { deinterleave_stereo_neon(&interleaved, &mut left, &mut right); }
+        unsafe {
+            deinterleave_stereo_neon(&interleaved, &mut left, &mut right);
+        }
 
         assert_eq!(left, vec![1.0, 3.0, 5.0, 7.0, 9.0]);
         assert_eq!(right, vec![2.0, 4.0, 6.0, 8.0, 10.0]);
@@ -230,14 +244,21 @@ mod tests {
         let right = vec![2.0f32, 4.0, 6.0, 8.0, 10.0];
         let mut output = vec![0.0f32; 10];
 
-        unsafe { interleave_stereo_neon(&left, &right, &mut output); }
+        unsafe {
+            interleave_stereo_neon(&left, &right, &mut output);
+        }
 
-        assert_eq!(output, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]);
+        assert_eq!(
+            output,
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        );
     }
 
     #[test]
     fn test_neon_roundtrip_interleave() {
-        let original = vec![1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0];
+        let original = vec![
+            1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+        ];
         let frames = original.len() / 2;
         let mut left = vec![0.0f32; frames];
         let mut right = vec![0.0f32; frames];

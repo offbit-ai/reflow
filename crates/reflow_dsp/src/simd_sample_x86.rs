@@ -109,13 +109,18 @@ mod tests {
         let mut output_simd = vec![0.0f32; input.len()];
         let mut output_scalar = vec![0.0f32; input.len()];
 
-        unsafe { i16_to_f32_sse2(&input, &mut output_simd); }
+        unsafe {
+            i16_to_f32_sse2(&input, &mut output_simd);
+        }
         crate::sample::i16_to_f32(&input, &mut output_scalar);
 
         for (i, (s, sc)) in output_simd.iter().zip(output_scalar.iter()).enumerate() {
             assert!(
                 (s - sc).abs() < 1e-5,
-                "Sample {}: SSE2={} Scalar={}", i, s, sc
+                "Sample {}: SSE2={} Scalar={}",
+                i,
+                s,
+                sc
             );
         }
     }
@@ -126,13 +131,18 @@ mod tests {
         let mut output_simd = vec![0i16; input.len()];
         let mut output_scalar = vec![0i16; input.len()];
 
-        unsafe { f32_to_i16_sse2(&input, &mut output_simd); }
+        unsafe {
+            f32_to_i16_sse2(&input, &mut output_simd);
+        }
         crate::sample::f32_to_i16(&input, &mut output_scalar);
 
         for (i, (s, sc)) in output_simd.iter().zip(output_scalar.iter()).enumerate() {
             assert!(
                 (*s as i32 - *sc as i32).abs() <= 1,
-                "Sample {}: SSE2={} Scalar={}", i, s, sc
+                "Sample {}: SSE2={} Scalar={}",
+                i,
+                s,
+                sc
             );
         }
     }
@@ -143,7 +153,9 @@ mod tests {
         let mut samples_scalar = samples_simd.clone();
         let window = vec![0.5f32, 0.8, 1.0, 0.8, 0.5];
 
-        unsafe { apply_window_sse2(&mut samples_simd, &window); }
+        unsafe {
+            apply_window_sse2(&mut samples_simd, &window);
+        }
         crate::window::apply(&mut samples_scalar, &window);
 
         for (s, sc) in samples_simd.iter().zip(samples_scalar.iter()) {

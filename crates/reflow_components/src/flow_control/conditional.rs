@@ -28,10 +28,7 @@ pub async fn conditional_branch_actor(
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
     // Check for decisionRules first (for tpl_if_branch)
-    if let Some(decision_rules) = config
-        .get("decisionRules")
-        .and_then(|v| v.as_object())
-    {
+    if let Some(decision_rules) = config.get("decisionRules").and_then(|v| v.as_object()) {
         let rule_type = decision_rules
             .get("type")
             .and_then(|v| v.as_str())

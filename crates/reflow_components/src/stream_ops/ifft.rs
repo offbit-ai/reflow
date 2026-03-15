@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn ifft_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn ifft_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let fft_size = config
@@ -40,12 +38,8 @@ pub async fn ifft_actor(
         None => return Ok(error_output("No StreamHandle on stream port")),
     };
 
-    let (tx, handle) = context.create_stream(
-        "stream",
-        Some("audio/raw-pcm-f32".to_string()),
-        None,
-        None,
-    );
+    let (tx, handle) =
+        context.create_stream("stream", Some("audio/raw-pcm-f32".to_string()), None, None);
 
     spawn_stream_task(async move {
         let _ = tx
@@ -65,10 +59,8 @@ pub async fn ifft_actor(
             use reflow_dsp::rustfft::num_complex::Complex;
 
             let bin_count = fft_size / 2 + 1;
-            let window = reflow_dsp::window::generate(
-                reflow_dsp::window::WindowType::Hann,
-                fft_size,
-            );
+            let window =
+                reflow_dsp::window::generate(reflow_dsp::window::WindowType::Hann, fft_size);
 
             let mut planner = RealFftPlanner::<f32>::new();
             let ifft = planner.plan_fft_inverse(fft_size);
@@ -116,8 +108,7 @@ pub async fn ifft_actor(
                         }
                         ola_pos += hop_size;
 
-                        let bytes: Vec<u8> =
-                            out.iter().flat_map(|s| s.to_le_bytes()).collect();
+                        let bytes: Vec<u8> = out.iter().flat_map(|s| s.to_le_bytes()).collect();
                         if tx
                             .send_async(StreamFrame::Data(Arc::new(bytes)))
                             .await

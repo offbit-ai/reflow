@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 
 #[actor(
@@ -24,10 +24,7 @@ pub async fn stream_throttle_actor(
 ) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
-    let delay_ms = config
-        .get("delayMs")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(10);
+    let delay_ms = config.get("delayMs").and_then(|v| v.as_u64()).unwrap_or(10);
 
     let bytes_per_second = config.get("bytesPerSecond").and_then(|v| v.as_u64());
 

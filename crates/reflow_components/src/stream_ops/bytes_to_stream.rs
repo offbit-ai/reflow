@@ -50,8 +50,12 @@ pub async fn bytes_to_stream_actor(
         }
     };
 
-    let (tx, handle) =
-        context.create_stream("stream", content_type.clone(), Some(bytes.len() as u64), None);
+    let (tx, handle) = context.create_stream(
+        "stream",
+        content_type.clone(),
+        Some(bytes.len() as u64),
+        None,
+    );
 
     let ct = content_type;
     spawn_stream_task(async move {

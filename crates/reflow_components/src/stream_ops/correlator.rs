@@ -22,9 +22,7 @@ use std::sync::Arc;
     outports::<50>(stream, stats, error),
     state(MemoryState)
 )]
-pub async fn correlator_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn correlator_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let sample_rate = config
@@ -46,12 +44,8 @@ pub async fn correlator_actor(
         None => return Ok(error_output("No StreamHandle on stream_b port")),
     };
 
-    let (tx, handle) = context.create_stream(
-        "stream",
-        Some("audio/correlation".to_string()),
-        None,
-        None,
-    );
+    let (tx, handle) =
+        context.create_stream("stream", Some("audio/correlation".to_string()), None, None);
 
     let (stats_tx, stats_rx) = flume::bounded::<serde_json::Value>(1);
 
@@ -134,10 +128,7 @@ pub async fn correlator_actor(
             })
             .await;
 
-        let bytes: Vec<u8> = correlations
-            .iter()
-            .flat_map(|c| c.to_le_bytes())
-            .collect();
+        let bytes: Vec<u8> = correlations.iter().flat_map(|c| c.to_le_bytes()).collect();
         let _ = tx.send_async(StreamFrame::Data(Arc::new(bytes))).await;
         let _ = tx.send_async(StreamFrame::End).await;
 

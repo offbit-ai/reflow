@@ -26,7 +26,11 @@ pub async fn particle_emitter_actor(ctx: ActorContext) -> Result<HashMap<String,
         _ => c.get("count").and_then(|v| v.as_u64()).unwrap_or(1000) as usize,
     };
 
-    let shape = c.get("shape").and_then(|v| v.as_str()).unwrap_or("sphere").to_string();
+    let shape = c
+        .get("shape")
+        .and_then(|v| v.as_str())
+        .unwrap_or("sphere")
+        .to_string();
     let radius = c.get("radius").and_then(|v| v.as_f64()).unwrap_or(1.0);
     let speed = c.get("speed").and_then(|v| v.as_f64()).unwrap_or(1.0);
     let lifetime = c.get("lifetime").and_then(|v| v.as_f64()).unwrap_or(5.0);
@@ -77,23 +81,33 @@ pub async fn particle_emitter_actor(ctx: ActorContext) -> Result<HashMap<String,
         let life = lifetime * (0.5 + r1 * 0.5);
         let age = 0.0;
 
-        data.extend_from_slice(&[px as f32, py as f32, pz as f32,
-                                  vx as f32, vy as f32, vz as f32,
-                                  life as f32, age as f32]);
+        data.extend_from_slice(&[
+            px as f32,
+            py as f32,
+            pz as f32,
+            vx as f32,
+            vy as f32,
+            vz as f32,
+            life as f32,
+            age as f32,
+        ]);
     }
 
     let bytes: Vec<u8> = data.iter().flat_map(|v| v.to_le_bytes()).collect();
 
     let mut out = HashMap::new();
     out.insert("particles".to_string(), Message::bytes(bytes));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "count": count,
-        "shape": shape,
-        "radius": radius,
-        "speed": speed,
-        "lifetime": lifetime,
-        "format": "pos3_vel3_life_age_f32",
-        "stride": floats_per_particle * 4,
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "count": count,
+            "shape": shape,
+            "radius": radius,
+            "speed": speed,
+            "lifetime": lifetime,
+            "format": "pos3_vel3_life_age_f32",
+            "stride": floats_per_particle * 4,
+        }))),
+    );
     Ok(out)
 }

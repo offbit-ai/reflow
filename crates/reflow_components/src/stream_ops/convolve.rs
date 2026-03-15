@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn convolve_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn convolve_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
 
     // Get impulse response from the impulse port
@@ -50,12 +48,8 @@ pub async fn convolve_actor(
         _ => return Ok(error_output("Expected StreamHandle message")),
     };
 
-    let (tx, handle) = context.create_stream(
-        "stream",
-        input_handle.content_type.clone(),
-        None,
-        None,
-    );
+    let (tx, handle) =
+        context.create_stream("stream", input_handle.content_type.clone(), None, None);
 
     spawn_stream_task(async move {
         // Simple time-domain convolution for short IRs,

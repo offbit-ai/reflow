@@ -86,9 +86,7 @@ pub async fn data_transform_actor(
                 .or_else(|| config.get("field"))
                 .and_then(|v| v.as_str());
 
-            let field_value = config
-                .get("field_value")
-                .or_else(|| config.get("value"));
+            let field_value = config.get("field_value").or_else(|| config.get("value"));
 
             if let (Some(field), Some(value)) = (field_name, field_value) {
                 let mut obj_value = if let Message::Object(obj) = input {

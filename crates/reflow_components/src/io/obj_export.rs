@@ -16,9 +16,7 @@ use std::collections::HashMap;
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn obj_export_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn obj_export_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -33,10 +31,7 @@ pub async fn obj_export_actor(
         .unwrap_or("reflow_mesh");
 
     // Determine format from config or metadata
-    let stride = config
-        .get("stride")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(24) as usize; // default: pos3+normal3 = 6 floats × 4 bytes
+    let stride = config.get("stride").and_then(|v| v.as_u64()).unwrap_or(24) as usize; // default: pos3+normal3 = 6 floats × 4 bytes
 
     let floats_per_vertex = stride / 4;
     let has_normals = floats_per_vertex >= 6;
@@ -61,7 +56,9 @@ pub async fn obj_export_actor(
         let base = i * floats_per_vertex;
         obj.push_str(&format!(
             "v {:.6} {:.6} {:.6}\n",
-            float_data[base], float_data[base + 1], float_data[base + 2]
+            float_data[base],
+            float_data[base + 1],
+            float_data[base + 2]
         ));
     }
 
@@ -72,7 +69,9 @@ pub async fn obj_export_actor(
             let base = i * floats_per_vertex + 3;
             obj.push_str(&format!(
                 "vn {:.6} {:.6} {:.6}\n",
-                float_data[base], float_data[base + 1], float_data[base + 2]
+                float_data[base],
+                float_data[base + 1],
+                float_data[base + 2]
             ));
         }
     }

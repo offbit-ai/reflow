@@ -43,9 +43,7 @@ fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn sdf_render_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_render_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
 
@@ -59,21 +57,48 @@ pub async fn sdf_render_actor(
     let settings = SceneSettings {
         width,
         height,
-        max_steps: config.get("maxSteps").and_then(|v| v.as_u64()).unwrap_or(128) as u32,
+        max_steps: config
+            .get("maxSteps")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(128) as u32,
         fov: config.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0) as f32,
         camera_pos: [
-            config.get("cameraPosX").and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
-            config.get("cameraPosY").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
-            config.get("cameraPosZ").and_then(|v| v.as_f64()).unwrap_or(4.0) as f32,
+            config
+                .get("cameraPosX")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(3.0) as f32,
+            config
+                .get("cameraPosY")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(2.0) as f32,
+            config
+                .get("cameraPosZ")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(4.0) as f32,
         ],
         camera_target: [
-            config.get("cameraTargetX").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            config.get("cameraTargetY").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            config.get("cameraTargetZ").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+            config
+                .get("cameraTargetX")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0) as f32,
+            config
+                .get("cameraTargetY")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0) as f32,
+            config
+                .get("cameraTargetZ")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0) as f32,
         ],
-        soft_shadows: config.get("softShadows").and_then(|v| v.as_bool()).unwrap_or(false),
+        soft_shadows: config
+            .get("softShadows")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
         ao: config.get("ao").and_then(|v| v.as_bool()).unwrap_or(true),
-        ambient: config.get("ambient").and_then(|v| v.as_f64()).unwrap_or(0.15) as f32,
+        ambient: config
+            .get("ambient")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.15) as f32,
         time,
         ..Default::default()
     };
@@ -85,16 +110,43 @@ pub async fn sdf_render_actor(
 
     // Run GPU render on a blocking thread to avoid stalling the tokio runtime
     let pixels = tokio::task::spawn_blocking(move || {
-        render_to_pixels(&compiled.wgsl, width, height, time,
-            [config.get("cameraPosX").and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
-             config.get("cameraPosY").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
-             config.get("cameraPosZ").and_then(|v| v.as_f64()).unwrap_or(4.0) as f32],
-            [config.get("cameraTargetX").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-             config.get("cameraTargetY").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-             config.get("cameraTargetZ").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32],
+        render_to_pixels(
+            &compiled.wgsl,
+            width,
+            height,
+            time,
+            [
+                config
+                    .get("cameraPosX")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(3.0) as f32,
+                config
+                    .get("cameraPosY")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(2.0) as f32,
+                config
+                    .get("cameraPosZ")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(4.0) as f32,
+            ],
+            [
+                config
+                    .get("cameraTargetX")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0) as f32,
+                config
+                    .get("cameraTargetY")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0) as f32,
+                config
+                    .get("cameraTargetZ")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0) as f32,
+            ],
             config.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0) as f32,
         )
-    }).await
+    })
+    .await
     .map_err(|e| anyhow::anyhow!("Spawn blocking failed: {}", e))?
     .map_err(|e| anyhow::anyhow!("{}", e))?;
 
@@ -141,19 +193,26 @@ fn render_to_pixels(
             .await
             .ok_or("No GPU adapter found")?;
         adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: Some("SDF Render"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: wgpu::MemoryHints::default(),
-            }, None)
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("SDF Render"),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::default(),
+                    memory_hints: wgpu::MemoryHints::default(),
+                },
+                None,
+            )
             .await
             .map_err(|e| format!("Device request failed: {}", e))
     })?;
 
     let output_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("SDF Output"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -210,11 +269,13 @@ fn render_to_pixels(
 
     let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("SDF Pipeline"),
-        layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[&bgl],
-            push_constant_ranges: &[],
-        })),
+        layout: Some(
+            &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&bgl],
+                push_constant_ranges: &[],
+            }),
+        ),
         module: &shader_module,
         entry_point: Some("main"),
         compilation_options: Default::default(),
@@ -225,13 +286,20 @@ fn render_to_pixels(
         label: None,
         layout: &bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&output_view) },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(&output_view),
+            },
         ],
     });
 
     // Dispatch
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: None,
@@ -266,16 +334,23 @@ fn render_to_pixels(
                 rows_per_image: Some(height),
             },
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
 
     queue.submit(std::iter::once(encoder.finish()));
 
     let slice = readback.slice(..);
     let (tx, rx) = flume::bounded(1);
-    slice.map_async(wgpu::MapMode::Read, move |r| { let _ = tx.send(r); });
+    slice.map_async(wgpu::MapMode::Read, move |r| {
+        let _ = tx.send(r);
+    });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|_| "Map channel closed".to_string())?
+    rx.recv()
+        .map_err(|_| "Map channel closed".to_string())?
         .map_err(|e| format!("Buffer map failed: {:?}", e))?;
 
     let data = slice.get_mapped_range();

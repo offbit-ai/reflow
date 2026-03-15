@@ -37,36 +37,55 @@ use std::collections::HashMap;
     outports::<50>(body, headers, params, method, url),
     state(MemoryState)
 )]
-pub async fn server_request_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn server_request_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
 
     let mut out = HashMap::new();
 
     // Body — the main payload
     if let Some(body) = config.get("body") {
-        out.insert("body".to_string(), Message::object(EncodableValue::from(body.clone())));
+        out.insert(
+            "body".to_string(),
+            Message::object(EncodableValue::from(body.clone())),
+        );
     } else {
-        out.insert("body".to_string(), Message::object(EncodableValue::from(json!({}))));
+        out.insert(
+            "body".to_string(),
+            Message::object(EncodableValue::from(json!({}))),
+        );
     }
 
     // Headers
     if let Some(headers) = config.get("headers") {
-        out.insert("headers".to_string(), Message::object(EncodableValue::from(headers.clone())));
+        out.insert(
+            "headers".to_string(),
+            Message::object(EncodableValue::from(headers.clone())),
+        );
     }
 
     // Query params
     if let Some(params) = config.get("query").or(config.get("params")) {
-        out.insert("params".to_string(), Message::object(EncodableValue::from(params.clone())));
+        out.insert(
+            "params".to_string(),
+            Message::object(EncodableValue::from(params.clone())),
+        );
     }
 
     // Method
-    let method = config.get("method").and_then(|v| v.as_str()).unwrap_or("POST");
-    out.insert("method".to_string(), Message::String(method.to_string().into()));
+    let method = config
+        .get("method")
+        .and_then(|v| v.as_str())
+        .unwrap_or("POST");
+    out.insert(
+        "method".to_string(),
+        Message::String(method.to_string().into()),
+    );
 
     // URL/path
-    let path = config.get("path").and_then(|v| v.as_str()).unwrap_or("/webhook");
+    let path = config
+        .get("path")
+        .and_then(|v| v.as_str())
+        .unwrap_or("/webhook");
     out.insert("url".to_string(), Message::String(path.to_string().into()));
 
     Ok(out)
@@ -81,15 +100,16 @@ pub async fn server_request_actor(
     outports::<1>(response),
     state(MemoryState)
 )]
-pub async fn server_response_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn server_response_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
     let status = match payload.get("status") {
         Some(Message::Integer(v)) => *v as u16,
-        _ => config.get("statusCode").and_then(|v| v.as_u64()).unwrap_or(200) as u16,
+        _ => config
+            .get("statusCode")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(200) as u16,
     };
 
     let content_type = config
@@ -97,11 +117,17 @@ pub async fn server_response_actor(
         .and_then(|v| v.as_str())
         .unwrap_or("application/json");
 
-    let body = payload.get("body").cloned().unwrap_or(Message::object(EncodableValue::from(json!({}))));
+    let body = payload
+        .get("body")
+        .cloned()
+        .unwrap_or(Message::object(EncodableValue::from(json!({}))));
 
     let body_json = match &body {
         Message::String(s) => json!(s.as_ref()),
-        Message::Object(o) => { let v: serde_json::Value = o.as_ref().clone().into(); v }
+        Message::Object(o) => {
+            let v: serde_json::Value = o.as_ref().clone().into();
+            v
+        }
         Message::Integer(i) => json!(i),
         Message::Float(f) => json!(f),
         Message::Boolean(b) => json!(b),
@@ -114,5 +140,9 @@ pub async fn server_response_actor(
         "body": body_json,
     });
 
-    Ok([("response".to_string(), Message::object(EncodableValue::from(response)))].into())
+    Ok([(
+        "response".to_string(),
+        Message::object(EncodableValue::from(response)),
+    )]
+    .into())
 }

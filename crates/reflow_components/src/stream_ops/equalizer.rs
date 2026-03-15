@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn equalizer_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn equalizer_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let sample_rate = config
@@ -63,7 +61,11 @@ pub async fn equalizer_actor(
 
             if let Some(arr) = bands_json.as_array() {
                 for band in arr {
-                    let ft = match band.get("type").and_then(|v| v.as_str()).unwrap_or("peaking") {
+                    let ft = match band
+                        .get("type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("peaking")
+                    {
                         "lowpass" | "lpf" => FilterType::LowPass,
                         "highpass" | "hpf" => FilterType::HighPass,
                         "bandpass" | "bpf" => FilterType::BandPass,
@@ -72,7 +74,10 @@ pub async fn equalizer_actor(
                         "highshelf" => FilterType::HighShelf,
                         _ => FilterType::PeakingEQ,
                     };
-                    let freq = band.get("frequency").and_then(|v| v.as_f64()).unwrap_or(1000.0);
+                    let freq = band
+                        .get("frequency")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(1000.0);
                     let gain = band.get("gain").and_then(|v| v.as_f64()).unwrap_or(0.0);
                     let q = band.get("q").and_then(|v| v.as_f64()).unwrap_or(1.0);
 
@@ -93,8 +98,7 @@ pub async fn equalizer_actor(
                         for filter in &mut filters {
                             filter.process(&mut samples);
                         }
-                        let bytes: Vec<u8> =
-                            samples.iter().flat_map(|s| s.to_le_bytes()).collect();
+                        let bytes: Vec<u8> = samples.iter().flat_map(|s| s.to_le_bytes()).collect();
                         StreamFrame::Data(Arc::new(bytes))
                     }
                     other => other,

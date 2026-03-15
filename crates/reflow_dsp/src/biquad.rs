@@ -226,7 +226,10 @@ mod tests {
         filter.process(&mut samples);
 
         // Last sample should be very close to 1.0
-        assert!((samples[999] - 1.0).abs() < 0.001, "DC should pass through LPF");
+        assert!(
+            (samples[999] - 1.0).abs() < 0.001,
+            "DC should pass through LPF"
+        );
     }
 
     #[test]
@@ -247,7 +250,11 @@ mod tests {
         let rms: f32 = (samples[2000..].iter().map(|s| s * s).sum::<f32>()
             / (samples.len() - 2000) as f32)
             .sqrt();
-        assert!(rms < 0.05, "10kHz should be heavily attenuated by 100Hz LPF, got rms={}", rms);
+        assert!(
+            rms < 0.05,
+            "10kHz should be heavily attenuated by 100Hz LPF, got rms={}",
+            rms
+        );
     }
 
     #[test]
@@ -282,7 +289,11 @@ mod tests {
         let rms: f32 = (samples[2000..].iter().map(|s| s * s).sum::<f32>()
             / (samples.len() - 2000) as f32)
             .sqrt();
-        assert!(rms < 0.05, "Center frequency should be rejected by notch, got rms={}", rms);
+        assert!(
+            rms < 0.05,
+            "Center frequency should be rejected by notch, got rms={}",
+            rms
+        );
     }
 
     #[test]
@@ -304,7 +315,11 @@ mod tests {
             / (samples.len() - 2000) as f32)
             .sqrt();
         // 12dB boost ≈ 4x linear gain → rms should be around 2.8
-        assert!(rms > 2.0, "12dB peaking EQ should significantly boost, got rms={}", rms);
+        assert!(
+            rms > 2.0,
+            "12dB peaking EQ should significantly boost, got rms={}",
+            rms
+        );
     }
 
     #[test]
@@ -342,7 +357,11 @@ mod tests {
 
         // Left (DC) should be ~1.0 at end
         let last_left = samples[(n - 1) * 2];
-        assert!((last_left - 1.0).abs() < 0.01, "Left DC should pass, got {}", last_left);
+        assert!(
+            (last_left - 1.0).abs() < 0.01,
+            "Left DC should pass, got {}",
+            last_left
+        );
 
         // Right (10kHz through 100Hz LPF) should be near zero
         let right_rms: f32 = (samples[2000..]
@@ -353,6 +372,10 @@ mod tests {
             .sum::<f32>()
             / (n - 1000) as f32)
             .sqrt();
-        assert!(right_rms < 0.05, "Right 10kHz should be attenuated, got rms={}", right_rms);
+        assert!(
+            right_rms < 0.05,
+            "Right 10kHz should be attenuated, got rms={}",
+            right_rms
+        );
     }
 }

@@ -29,9 +29,7 @@ pub async fn data_operations_actor(
 
     let all_inputs = payload.clone();
 
-    let operation_sets = config
-        .get("dataOperations")
-        .and_then(|v| v.as_array());
+    let operation_sets = config.get("dataOperations").and_then(|v| v.as_array());
 
     if let Some(sets) = operation_sets {
         for set in sets {

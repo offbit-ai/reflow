@@ -7,11 +7,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -21,9 +21,7 @@ use std::sync::Arc;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn de_esser_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn de_esser_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let frequency = config
@@ -36,10 +34,7 @@ pub async fn de_esser_actor(
         .and_then(|v| v.as_f64())
         .unwrap_or(-20.0);
 
-    let ratio = config
-        .get("ratio")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(4.0);
+    let ratio = config.get("ratio").and_then(|v| v.as_f64()).unwrap_or(4.0);
 
     let sample_rate = config
         .get("sampleRate")
@@ -114,8 +109,7 @@ pub async fn de_esser_actor(
                             }
                         }
 
-                        let bytes: Vec<u8> =
-                            samples.iter().flat_map(|s| s.to_le_bytes()).collect();
+                        let bytes: Vec<u8> = samples.iter().flat_map(|s| s.to_le_bytes()).collect();
                         StreamFrame::Data(Arc::new(bytes))
                     }
                     other => other,

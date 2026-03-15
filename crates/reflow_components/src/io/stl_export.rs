@@ -16,9 +16,7 @@ use std::collections::HashMap;
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn stl_export_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn stl_export_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -77,35 +75,62 @@ pub async fn stl_export_actor(
             let n0 = n(i0);
             let n1 = n(i1);
             let n2 = n(i2);
-            let avg = [(n0[0]+n1[0]+n2[0])/3.0, (n0[1]+n1[1]+n2[1])/3.0, (n0[2]+n1[2]+n2[2])/3.0];
-            let len = (avg[0]*avg[0] + avg[1]*avg[1] + avg[2]*avg[2]).sqrt();
-            if len > 1e-6 { [avg[0]/len, avg[1]/len, avg[2]/len] } else { [0.0, 1.0, 0.0] }
+            let avg = [
+                (n0[0] + n1[0] + n2[0]) / 3.0,
+                (n0[1] + n1[1] + n2[1]) / 3.0,
+                (n0[2] + n1[2] + n2[2]) / 3.0,
+            ];
+            let len = (avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]).sqrt();
+            if len > 1e-6 {
+                [avg[0] / len, avg[1] / len, avg[2] / len]
+            } else {
+                [0.0, 1.0, 0.0]
+            }
         } else {
             // Face normal from cross product
-            let e1 = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
-            let e2 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
-            let n = [e1[1]*e2[2]-e1[2]*e2[1], e1[2]*e2[0]-e1[0]*e2[2], e1[0]*e2[1]-e1[1]*e2[0]];
-            let len = (n[0]*n[0] + n[1]*n[1] + n[2]*n[2]).sqrt();
-            if len > 1e-6 { [n[0]/len, n[1]/len, n[2]/len] } else { [0.0, 1.0, 0.0] }
+            let e1 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]];
+            let e2 = [p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]];
+            let n = [
+                e1[1] * e2[2] - e1[2] * e2[1],
+                e1[2] * e2[0] - e1[0] * e2[2],
+                e1[0] * e2[1] - e1[1] * e2[0],
+            ];
+            let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+            if len > 1e-6 {
+                [n[0] / len, n[1] / len, n[2] / len]
+            } else {
+                [0.0, 1.0, 0.0]
+            }
         };
 
         // Normal (12 bytes)
-        for v in &normal { stl.extend_from_slice(&v.to_le_bytes()); }
+        for v in &normal {
+            stl.extend_from_slice(&v.to_le_bytes());
+        }
         // Vertex 1, 2, 3 (36 bytes)
-        for v in &p0 { stl.extend_from_slice(&v.to_le_bytes()); }
-        for v in &p1 { stl.extend_from_slice(&v.to_le_bytes()); }
-        for v in &p2 { stl.extend_from_slice(&v.to_le_bytes()); }
+        for v in &p0 {
+            stl.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in &p1 {
+            stl.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in &p2 {
+            stl.extend_from_slice(&v.to_le_bytes());
+        }
         // Attribute byte count (2 bytes)
         stl.extend_from_slice(&0u16.to_le_bytes());
     }
 
     let mut results = HashMap::new();
     results.insert("output".to_string(), Message::bytes(stl));
-    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "format": "stl",
-        "triangleCount": triangle_count,
-        "size": stl_size,
-    }))));
+    results.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "format": "stl",
+            "triangleCount": triangle_count,
+            "size": stl_size,
+        }))),
+    );
     Ok(results)
 }
 

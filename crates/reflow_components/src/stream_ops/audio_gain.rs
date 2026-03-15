@@ -18,16 +18,11 @@ use std::collections::HashMap;
     outports::<50>(stream, error),
     state(MemoryState)
 )]
-pub async fn audio_gain_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn audio_gain_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     // Gain in dB (0.0 = unity, 6.0 ≈ double, -6.0 ≈ half)
-    let gain_db = config
-        .get("gainDb")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0);
+    let gain_db = config.get("gainDb").and_then(|v| v.as_f64()).unwrap_or(0.0);
 
     // Or linear gain directly (overrides dB if set)
     let gain_linear = config
@@ -75,10 +70,7 @@ pub async fn audio_gain_actor(
                 *s *= gain_linear;
             }
 
-            samples
-                .iter()
-                .flat_map(|s| s.to_le_bytes())
-                .collect()
+            samples.iter().flat_map(|s| s.to_le_bytes()).collect()
         })
         .await;
     });

@@ -9,12 +9,12 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     message::EncodableValue,
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -100,10 +100,8 @@ pub async fn audio_spectrum_actor(
                         let mag_frames = stft.analyze(&samples);
                         for mags in mag_frames {
                             total_frames += 1;
-                            let bytes: Vec<u8> = mags
-                                .iter()
-                                .flat_map(|m: &f32| m.to_le_bytes())
-                                .collect();
+                            let bytes: Vec<u8> =
+                                mags.iter().flat_map(|m: &f32| m.to_le_bytes()).collect();
 
                             if tx
                                 .send_async(StreamFrame::Data(Arc::new(bytes)))

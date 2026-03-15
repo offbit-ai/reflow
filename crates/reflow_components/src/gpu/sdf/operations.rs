@@ -20,7 +20,10 @@ fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
 fn sdf_output(node: &SdfNode) -> HashMap<String, Message> {
     let json = serde_json::to_value(node).unwrap_or_default();
     let mut out = HashMap::new();
-    out.insert("sdf".to_string(), Message::object(EncodableValue::from(json)));
+    out.insert(
+        "sdf".to_string(),
+        Message::object(EncodableValue::from(json)),
+    );
     out
 }
 
@@ -43,7 +46,9 @@ pub async fn sdf_union_actor(context: ActorContext) -> Result<HashMap<String, Me
 // ── Intersection ────────────────────────────────────────────────
 
 #[actor(SdfIntersectionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
-pub async fn sdf_intersection_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_intersection_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
     let b = parse_sdf(payload.get("sdf_b")).ok_or_else(|| anyhow::anyhow!("Missing sdf_b"))?;
@@ -53,7 +58,9 @@ pub async fn sdf_intersection_actor(context: ActorContext) -> Result<HashMap<Str
 // ── Difference ──────────────────────────────────────────────────
 
 #[actor(SdfDifferenceActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
-pub async fn sdf_difference_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_difference_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
     let b = parse_sdf(payload.get("sdf_b")).ok_or_else(|| anyhow::anyhow!("Missing sdf_b"))?;
@@ -63,10 +70,15 @@ pub async fn sdf_difference_actor(context: ActorContext) -> Result<HashMap<Strin
 // ── Smooth Union ────────────────────────────────────────────────
 
 #[actor(SdfSmoothUnionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
-pub async fn sdf_smooth_union_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_smooth_union_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
-    let k = config.get("smoothness").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
+    let k = config
+        .get("smoothness")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.3) as f32;
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
     let b = parse_sdf(payload.get("sdf_b")).ok_or_else(|| anyhow::anyhow!("Missing sdf_b"))?;
     Ok(sdf_output(&SdfNode::smooth_union(a, b, k)))
@@ -75,10 +87,15 @@ pub async fn sdf_smooth_union_actor(context: ActorContext) -> Result<HashMap<Str
 // ── Smooth Intersection ─────────────────────────────────────────
 
 #[actor(SdfSmoothIntersectionActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
-pub async fn sdf_smooth_intersection_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_smooth_intersection_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
-    let k = config.get("smoothness").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
+    let k = config
+        .get("smoothness")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.3) as f32;
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
     let b = parse_sdf(payload.get("sdf_b")).ok_or_else(|| anyhow::anyhow!("Missing sdf_b"))?;
     Ok(sdf_output(&SdfNode::smooth_intersection(a, b, k)))
@@ -87,10 +104,15 @@ pub async fn sdf_smooth_intersection_actor(context: ActorContext) -> Result<Hash
 // ── Smooth Difference ───────────────────────────────────────────
 
 #[actor(SdfSmoothDifferenceActor, inports::<10>(sdf_a, sdf_b), outports::<1>(sdf, error), state(MemoryState), await_all_inports)]
-pub async fn sdf_smooth_difference_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_smooth_difference_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
-    let k = config.get("smoothness").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
+    let k = config
+        .get("smoothness")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.3) as f32;
     let a = parse_sdf(payload.get("sdf_a")).ok_or_else(|| anyhow::anyhow!("Missing sdf_a"))?;
     let b = parse_sdf(payload.get("sdf_b")).ok_or_else(|| anyhow::anyhow!("Missing sdf_b"))?;
     Ok(sdf_output(&SdfNode::smooth_difference(a, b, k)))

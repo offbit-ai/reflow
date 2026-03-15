@@ -89,7 +89,10 @@ pub async fn math_divide_actor(context: ActorContext) -> Result<HashMap<String, 
     let b = get_float(payload.get("b"));
     if b == 0.0 {
         let mut out = HashMap::new();
-        out.insert("error".to_string(), Message::Error("Division by zero".to_string().into()));
+        out.insert(
+            "error".to_string(),
+            Message::Error("Division by zero".to_string().into()),
+        );
         return Ok(out);
     }
     Ok(result_output(a / b, precision(&config)))
@@ -105,7 +108,10 @@ pub async fn math_modulo_actor(context: ActorContext) -> Result<HashMap<String, 
     let b = get_float(payload.get("b"));
     if b == 0.0 {
         let mut out = HashMap::new();
-        out.insert("error".to_string(), Message::Error("Modulo by zero".to_string().into()));
+        out.insert(
+            "error".to_string(),
+            Message::Error("Modulo by zero".to_string().into()),
+        );
         return Ok(out);
     }
     Ok(result_output(a % b, precision(&config)))
@@ -131,7 +137,10 @@ pub async fn math_sqrt_actor(context: ActorContext) -> Result<HashMap<String, Me
     let v = get_float(payload.get("input"));
     if v < 0.0 {
         let mut out = HashMap::new();
-        out.insert("error".to_string(), Message::Error("Square root of negative number".to_string().into()));
+        out.insert(
+            "error".to_string(),
+            Message::Error("Square root of negative number".to_string().into()),
+        );
         return Ok(out);
     }
     Ok(result_output(v.sqrt(), precision(&config)))
@@ -181,7 +190,10 @@ pub async fn math_round_actor(context: ActorContext) -> Result<HashMap<String, M
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
     let v = get_float(payload.get("input"));
-    let mode = config.get("mode").and_then(|v| v.as_str()).unwrap_or("round");
+    let mode = config
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("round");
     let prec = precision(&config);
     let result = match mode {
         "floor" => v.floor(),
@@ -236,7 +248,9 @@ pub async fn math_sum_actor(context: ActorContext) -> Result<HashMap<String, Mes
 // ── Statistics ──────────────────────────────────────────────────
 
 #[actor(MathStatisticsActor, inports::<10>(values), outports::<1>(mean, median, stddev, min, max, count), state(MemoryState))]
-pub async fn math_statistics_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn math_statistics_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
     let mut values = get_float_vec(payload.get("values"));
@@ -266,7 +280,10 @@ pub async fn math_statistics_actor(context: ActorContext) -> Result<HashMap<Stri
     out.insert("median".to_string(), Message::Float(round_to(median, prec)));
     out.insert("stddev".to_string(), Message::Float(round_to(stddev, prec)));
     out.insert("min".to_string(), Message::Float(round_to(values[0], prec)));
-    out.insert("max".to_string(), Message::Float(round_to(values[count - 1], prec)));
+    out.insert(
+        "max".to_string(),
+        Message::Float(round_to(values[count - 1], prec)),
+    );
     out.insert("count".to_string(), Message::Integer(count as i64));
     Ok(out)
 }
@@ -276,7 +293,9 @@ pub async fn math_statistics_actor(context: ActorContext) -> Result<HashMap<Stri
 /// Evaluates a simple math expression string.
 /// Supports: +, -, *, /, ^, (, ), and variable substitution from payload.
 #[actor(MathExpressionActor, inports::<10>(input), outports::<1>(result, error), state(MemoryState))]
-pub async fn math_expression_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn math_expression_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
     let payload = context.get_payload();
 
@@ -287,7 +306,8 @@ pub async fn math_expression_actor(context: ActorContext) -> Result<HashMap<Stri
 
     // Simple substitution: replace $input with the input value
     let input_val = get_float(payload.get("input"));
-    let resolved = expr.replace("$input", &input_val.to_string())
+    let resolved = expr
+        .replace("$input", &input_val.to_string())
         .replace("$x", &input_val.to_string());
 
     // Evaluate using a minimal recursive descent parser
@@ -317,8 +337,14 @@ fn parse_add_sub(tokens: &[char], pos: &mut usize) -> Result<f64, String> {
     let mut left = parse_mul_div(tokens, pos)?;
     while *pos < tokens.len() {
         match tokens[*pos] {
-            '+' => { *pos += 1; left += parse_mul_div(tokens, pos)?; }
-            '-' => { *pos += 1; left -= parse_mul_div(tokens, pos)?; }
+            '+' => {
+                *pos += 1;
+                left += parse_mul_div(tokens, pos)?;
+            }
+            '-' => {
+                *pos += 1;
+                left -= parse_mul_div(tokens, pos)?;
+            }
             _ => break,
         }
     }
@@ -329,17 +355,24 @@ fn parse_mul_div(tokens: &[char], pos: &mut usize) -> Result<f64, String> {
     let mut left = parse_power(tokens, pos)?;
     while *pos < tokens.len() {
         match tokens[*pos] {
-            '*' => { *pos += 1; left *= parse_power(tokens, pos)?; }
+            '*' => {
+                *pos += 1;
+                left *= parse_power(tokens, pos)?;
+            }
             '/' => {
                 *pos += 1;
                 let right = parse_power(tokens, pos)?;
-                if right == 0.0 { return Err("Division by zero".to_string()); }
+                if right == 0.0 {
+                    return Err("Division by zero".to_string());
+                }
                 left /= right;
             }
             '%' => {
                 *pos += 1;
                 let right = parse_power(tokens, pos)?;
-                if right == 0.0 { return Err("Modulo by zero".to_string()); }
+                if right == 0.0 {
+                    return Err("Modulo by zero".to_string());
+                }
                 left %= right;
             }
             _ => break,
@@ -389,5 +422,7 @@ fn parse_atom(tokens: &[char], pos: &mut usize) -> Result<f64, String> {
         return Err(format!("Expected number at position {}", *pos));
     }
     let num_str: String = tokens[start..*pos].iter().collect();
-    num_str.parse::<f64>().map_err(|_| format!("Invalid number: {}", num_str))
+    num_str
+        .parse::<f64>()
+        .map_err(|_| format!("Invalid number: {}", num_str))
 }

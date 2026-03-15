@@ -11,6 +11,6 @@ pub use server::{ServerRequestActor, ServerResponseActor};
 pub use switch::SwitchCaseActor;
 pub use triggers::{CronTriggerActor, IntervalTriggerActor};
 pub use utilities::{
-    CollectActor, DelayActor, FilterActor, GateActor, MapActor,
-    MergeActor, PassthroughActor, ReduceActor, SplitActor,
+    CollectActor, DelayActor, FilterActor, GateActor, MapActor, MergeActor, PassthroughActor,
+    ReduceActor, SplitActor,
 };

@@ -19,7 +19,10 @@ use std::sync::Arc;
 pub async fn map_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
-    let operation = config.get("operation").and_then(|v| v.as_str()).unwrap_or("identity");
+    let operation = config
+        .get("operation")
+        .and_then(|v| v.as_str())
+        .unwrap_or("identity");
     let field = config.get("field").and_then(|v| v.as_str()).unwrap_or("");
 
     let items = match payload.get("input") {
@@ -54,7 +57,10 @@ pub async fn map_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
 pub async fn filter_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
-    let condition = config.get("condition").and_then(|v| v.as_str()).unwrap_or("truthy");
+    let condition = config
+        .get("condition")
+        .and_then(|v| v.as_str())
+        .unwrap_or("truthy");
     let field = config.get("field").and_then(|v| v.as_str()).unwrap_or("");
     let compare_value = config.get("value").cloned();
 
@@ -68,7 +74,11 @@ pub async fn filter_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
 
     for item in &items {
         let val: serde_json::Value = item.clone().into();
-        let test_val = if field.is_empty() { &val } else { val.get(field).unwrap_or(&val) };
+        let test_val = if field.is_empty() {
+            &val
+        } else {
+            val.get(field).unwrap_or(&val)
+        };
 
         let keep = match condition {
             "not_null" => !test_val.is_null(),
@@ -118,7 +128,10 @@ pub async fn filter_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
 pub async fn reduce_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
-    let operation = config.get("operation").and_then(|v| v.as_str()).unwrap_or("sum");
+    let operation = config
+        .get("operation")
+        .and_then(|v| v.as_str())
+        .unwrap_or("sum");
 
     let items = match payload.get("input") {
         Some(Message::Array(arr)) => arr.as_ref().clone(),
@@ -141,16 +154,26 @@ pub async fn reduce_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
             Message::Float(p)
         }
         "min" => {
-            let m = values.iter().filter_map(|v| v.as_f64()).fold(f64::MAX, f64::min);
+            let m = values
+                .iter()
+                .filter_map(|v| v.as_f64())
+                .fold(f64::MAX, f64::min);
             Message::Float(m)
         }
         "max" => {
-            let m = values.iter().filter_map(|v| v.as_f64()).fold(f64::MIN, f64::max);
+            let m = values
+                .iter()
+                .filter_map(|v| v.as_f64())
+                .fold(f64::MIN, f64::max);
             Message::Float(m)
         }
         "count" => Message::Integer(values.len() as i64),
         "concat" => {
-            let s: String = values.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join("");
+            let s: String = values
+                .iter()
+                .filter_map(|v| v.as_str())
+                .collect::<Vec<_>>()
+                .join("");
             Message::String(s.into())
         }
         "first" => {
@@ -174,7 +197,10 @@ pub async fn reduce_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
 pub async fn merge_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
-    let mode = config.get("mode").and_then(|v| v.as_str()).unwrap_or("object");
+    let mode = config
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("object");
 
     match mode {
         "array" => {
@@ -195,7 +221,11 @@ pub async fn merge_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, 
                     obj.insert(port.to_string(), val);
                 }
             }
-            Ok([("output".to_string(), Message::object(EncodableValue::from(serde_json::Value::Object(obj))))].into())
+            Ok([(
+                "output".to_string(),
+                Message::object(EncodableValue::from(serde_json::Value::Object(obj))),
+            )]
+            .into())
         }
     }
 }
@@ -217,7 +247,10 @@ pub async fn split_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, 
 
     if let Some(first) = items.first() {
         let val: serde_json::Value = first.clone().into();
-        out.insert("head".to_string(), Message::object(EncodableValue::from(val)));
+        out.insert(
+            "head".to_string(),
+            Message::object(EncodableValue::from(val)),
+        );
     }
 
     let tail: Vec<EncodableValue> = items.into_iter().skip(1).collect();
@@ -234,7 +267,10 @@ pub async fn split_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, 
 pub async fn delay_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
-    let delay_ms = config.get("delayMs").and_then(|v| v.as_u64()).unwrap_or(1000);
+    let delay_ms = config
+        .get("delayMs")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(1000);
 
     let input = payload.get("input").cloned().unwrap_or(Message::Flow);
 
@@ -251,7 +287,10 @@ pub async fn delay_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, 
 pub async fn gate_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
-    let invert = config.get("invert").and_then(|v| v.as_bool()).unwrap_or(false);
+    let invert = config
+        .get("invert")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let open = match payload.get("control") {
         Some(Message::Boolean(b)) => *b,
@@ -299,9 +338,7 @@ pub async fn collect_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
             arr.push(val);
 
             if arr.len() >= target {
-                let items: Vec<EncodableValue> = arr.drain(..)
-                    .map(EncodableValue::from)
-                    .collect();
+                let items: Vec<EncodableValue> = arr.drain(..).map(EncodableValue::from).collect();
                 let count = items.len();
                 let mut out = HashMap::new();
                 out.insert("output".to_string(), Message::Array(Arc::new(items)));

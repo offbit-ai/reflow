@@ -48,19 +48,23 @@ pub async fn sdf_marching_cubes_actor(
     let root = parse_sdf(payload.get("sdf"))
         .ok_or_else(|| anyhow::anyhow!("Missing SDF IR on sdf port"))?;
 
-    let resolution = config.get("resolution").and_then(|v| v.as_u64()).unwrap_or(64) as u32;
+    let resolution = config
+        .get("resolution")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(64) as u32;
     let bound = config.get("bound").and_then(|v| v.as_f64()).unwrap_or(3.0) as f32;
-    let iso_level = config.get("isoLevel").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+    let iso_level = config
+        .get("isoLevel")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0) as f32;
 
     // Compile SDF to WGSL
     let scene = root.into_scene_with(SceneSettings::default());
     let compiled = reflow_sdf::codegen::compile(&scene);
 
     // Generate marching cubes WGSL
-    let mc_wgsl = reflow_sdf::marching_cubes::generate_marching_cubes_wgsl(
-        &compiled.wgsl,
-        resolution,
-    );
+    let mc_wgsl =
+        reflow_sdf::marching_cubes::generate_marching_cubes_wgsl(&compiled.wgsl, resolution);
 
     // Run on blocking thread (wgpu uses pollster)
     let mesh_data = tokio::task::spawn_blocking(move || {
@@ -112,12 +116,15 @@ fn run_marching_cubes_gpu(
             .await
             .ok_or("No GPU adapter")?;
         adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: Some("MC"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: wgpu::MemoryHints::default(),
-            }, None)
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("MC"),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::default(),
+                    memory_hints: wgpu::MemoryHints::default(),
+                },
+                None,
+            )
             .await
             .map_err(|e| format!("Device: {}", e))
     })?;
@@ -181,26 +188,68 @@ fn run_marching_cubes_gpu(
     let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: None,
         entries: &[
-            wgpu::BindGroupLayoutEntry { binding: 0, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None },
-            wgpu::BindGroupLayoutEntry { binding: 1, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None },
-            wgpu::BindGroupLayoutEntry { binding: 2, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None }, count: None },
-            wgpu::BindGroupLayoutEntry { binding: 3, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: false }, has_dynamic_offset: false, min_binding_size: None }, count: None },
-            wgpu::BindGroupLayoutEntry { binding: 4, visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: false }, has_dynamic_offset: false, min_binding_size: None }, count: None },
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 2,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 3,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 4,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
         ],
     });
 
     let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("MC Pipeline"),
-        layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[&bgl],
-            push_constant_ranges: &[],
-        })),
+        layout: Some(
+            &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&bgl],
+                push_constant_ranges: &[],
+            }),
+        ),
         module: &shader,
         entry_point: Some("main"),
         compilation_options: Default::default(),
@@ -211,19 +260,38 @@ fn run_marching_cubes_gpu(
         label: None,
         layout: &bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: uniform_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: edge_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: tri_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 3, resource: vertex_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 4, resource: counter_buf.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: edge_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: tri_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: vertex_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: counter_buf.as_entire_binding(),
+            },
         ],
     });
 
     // Dispatch
     let wg = (resolution + 3) / 4; // workgroup size is 4×4×4
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {
-        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
         pass.set_pipeline(&pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
         pass.dispatch_workgroups(wg, wg, wg);
@@ -243,13 +311,21 @@ fn run_marching_cubes_gpu(
     // Map counter
     let slice = counter_readback.slice(..);
     let (tx, rx) = flume::bounded(1);
-    slice.map_async(wgpu::MapMode::Read, move |r| { let _ = tx.send(r); });
+    slice.map_async(wgpu::MapMode::Read, move |r| {
+        let _ = tx.send(r);
+    });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|_| "Counter map failed".to_string())?
+    rx.recv()
+        .map_err(|_| "Counter map failed".to_string())?
         .map_err(|e| format!("Counter map: {:?}", e))?;
 
     let counter_data = slice.get_mapped_range();
-    let float_count = u32::from_le_bytes([counter_data[0], counter_data[1], counter_data[2], counter_data[3]]) as u64;
+    let float_count = u32::from_le_bytes([
+        counter_data[0],
+        counter_data[1],
+        counter_data[2],
+        counter_data[3],
+    ]) as u64;
     drop(counter_data);
     counter_readback.unmap();
 
@@ -267,15 +343,19 @@ fn run_marching_cubes_gpu(
         mapped_at_creation: false,
     });
 
-    let mut encoder2 = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder2 =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     encoder2.copy_buffer_to_buffer(&vertex_buf, 0, &vertex_readback, 0, byte_count);
     queue.submit(std::iter::once(encoder2.finish()));
 
     let slice2 = vertex_readback.slice(..);
     let (tx2, rx2) = flume::bounded(1);
-    slice2.map_async(wgpu::MapMode::Read, move |r| { let _ = tx2.send(r); });
+    slice2.map_async(wgpu::MapMode::Read, move |r| {
+        let _ = tx2.send(r);
+    });
     device.poll(wgpu::Maintain::Wait);
-    rx2.recv().map_err(|_| "Vertex map failed".to_string())?
+    rx2.recv()
+        .map_err(|_| "Vertex map failed".to_string())?
         .map_err(|e| format!("Vertex map: {:?}", e))?;
 
     let vertex_data = slice2.get_mapped_range();

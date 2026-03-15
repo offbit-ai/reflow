@@ -6,11 +6,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use futures::StreamExt;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
-use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,9 +20,7 @@ use std::sync::Arc;
     outports::<50>(low, mid, high, error),
     state(MemoryState)
 )]
-pub async fn crossover_actor(
-    context: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn crossover_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
 
     let low_freq = config
@@ -51,24 +49,12 @@ pub async fn crossover_actor(
         _ => return Ok(error_output("Expected StreamHandle message")),
     };
 
-    let (tx_low, handle_low) = context.create_stream(
-        "low",
-        input_handle.content_type.clone(),
-        None,
-        None,
-    );
-    let (tx_mid, handle_mid) = context.create_stream(
-        "mid",
-        input_handle.content_type.clone(),
-        None,
-        None,
-    );
-    let (tx_high, handle_high) = context.create_stream(
-        "high",
-        input_handle.content_type.clone(),
-        None,
-        None,
-    );
+    let (tx_low, handle_low) =
+        context.create_stream("low", input_handle.content_type.clone(), None, None);
+    let (tx_mid, handle_mid) =
+        context.create_stream("mid", input_handle.content_type.clone(), None, None);
+    let (tx_high, handle_high) =
+        context.create_stream("high", input_handle.content_type.clone(), None, None);
 
     spawn_stream_task(async move {
         #[cfg(feature = "av-core")]
@@ -76,13 +62,17 @@ pub async fn crossover_actor(
             use reflow_dsp::biquad::{Biquad, BiquadCoeffs, FilterType};
 
             // Linkwitz-Riley: two cascaded biquads per crossover point
-            let lp1_coeffs = BiquadCoeffs::design(FilterType::LowPass, low_freq, 0.707, 0.0, sample_rate);
+            let lp1_coeffs =
+                BiquadCoeffs::design(FilterType::LowPass, low_freq, 0.707, 0.0, sample_rate);
             let lp2_coeffs = lp1_coeffs.clone();
-            let hp1_coeffs = BiquadCoeffs::design(FilterType::HighPass, low_freq, 0.707, 0.0, sample_rate);
+            let hp1_coeffs =
+                BiquadCoeffs::design(FilterType::HighPass, low_freq, 0.707, 0.0, sample_rate);
             let hp2_coeffs = hp1_coeffs.clone();
-            let lp3_coeffs = BiquadCoeffs::design(FilterType::LowPass, high_freq, 0.707, 0.0, sample_rate);
+            let lp3_coeffs =
+                BiquadCoeffs::design(FilterType::LowPass, high_freq, 0.707, 0.0, sample_rate);
             let lp4_coeffs = lp3_coeffs.clone();
-            let hp3_coeffs = BiquadCoeffs::design(FilterType::HighPass, high_freq, 0.707, 0.0, sample_rate);
+            let hp3_coeffs =
+                BiquadCoeffs::design(FilterType::HighPass, high_freq, 0.707, 0.0, sample_rate);
             let hp4_coeffs = hp3_coeffs.clone();
 
             // Low: LPF @ low_freq (LR4)
