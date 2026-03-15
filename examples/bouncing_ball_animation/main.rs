@@ -1,18 +1,18 @@
-//! # Skeleton Animation — Snake
+//! # Bouncing Ball Animation → Video
 //!
-//! Demonstrates real skeleton-driven mesh deformation: a segmented
-//! cylinder ("snake") with 6 bones. A wave animation propagates
-//! rotation down the spine, visibly bending each segment.
+//! Clip-driven animation: a sphere mesh bounces via position keyframes.
+//! No skeleton or skinning needed — the AnimSampler drives bone 0's
+//! position which the InstanceActor picks up as its transform.
 //!
 //! ```text
-//! SdfCapsule → MarchingCubes → SkinBind ← Skeleton(6 bones)
-//!   → Skinning ← AnimSampler ← AnimTime ← IntervalTrigger
-//!     → Prefab → Instance → SceneGraph → SceneRender
-//!       → FrameCollector → VideoEncoder → FileSave
+//! SdfSphere → MarchingCubes → Prefab → Instance → SceneGraph → SceneRender
+//!                                                    ↑
+//! IntervalTrigger → AnimTime → AnimSampler (bounce clip)
+//!   → FrameCollector → VideoEncoder → FileSave
 //! ```
 //!
 //! Usage:
-//!   cd examples/skeleton_animation && cargo run
+//!   cd examples/bouncing_ball_animation && cargo run
 
 use std::collections::HashMap;
 
@@ -38,67 +38,42 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
     InitialPacket { to: ConnectionPoint::new(node, port, Some(msg)) }
 }
 
-/// Build a serpentine wave animation for 6 bones.
-/// Each bone rotates around Z with a phase offset, creating a traveling wave.
-fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
+/// Bounce animation: root bone Y position oscillates via abs(sin).
+fn bounce_clip(duration: f64, fps: u32) -> Value {
     let n = (fps as f64 * duration) as usize;
-    let mut channels = Vec::new();
-
-    for bone_idx in 0..bone_count {
-        let mut times = Vec::new();
-        let mut rotations = Vec::new();
-
-        // Phase offset per bone — wave propagates from head to tail
-        let phase = bone_idx as f64 * std::f64::consts::PI * 0.4;
-        // Amplitude increases toward the tail
-        let amplitude = 0.25 + bone_idx as f64 * 0.08;
-
-        for i in 0..=n {
-            let t = i as f64 / fps as f64;
-            times.push(t);
-
-            // Rotation around Z axis (side-to-side serpentine)
-            let angle = (t * std::f64::consts::PI * 3.0 - phase).sin() * amplitude;
-            let half = angle / 2.0;
-            // Quaternion for rotation around Z: [0, 0, sin(a/2), cos(a/2)]
-            rotations.push(json!([0.0, 0.0, half.sin(), half.cos()]));
-        }
-
-        channels.push(json!({
-            "boneIndex": bone_idx,
-            "property": "rotation",
-            "interpolation": "linear",
-            "times": times,
-            "values": rotations,
-        }));
+    let mut times = Vec::new();
+    let mut positions = Vec::new();
+    for i in 0..=n {
+        let t = i as f64 / fps as f64;
+        times.push(t);
+        let y = (t * std::f64::consts::PI * 2.0).sin().abs() * 1.5;
+        positions.push(json!([0.0, y, 0.0]));
     }
-
     json!({
-        "name": "serpentine",
-        "duration": duration,
-        "channelCount": channels.len(),
-        "channels": channels,
+        "name": "bounce", "duration": duration, "channelCount": 1,
+        "channels": [{
+            "boneIndex": 0, "property": "position", "interpolation": "linear",
+            "times": &times, "values": &positions,
+        }]
     })
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("=== Skeleton Animation — Snake ===\n");
+    println!("=== Bouncing Ball → Video ===\n");
 
-    let bone_count = 6;
-    let duration = 4.0f64;
+    let duration = 3.0f64;
     let fps = 30u32;
     let total_frames = (duration * fps as f64) as usize;
     let img_size = 256u32;
     let interval_ms = 1000 / fps as u64;
 
-    println!("Target: {:.0}s @ {}fps = {} frames, {} bones\n",
-        duration, fps, total_frames, bone_count);
+    println!("Target: {:.0}s @ {}fps = {} frames\n", duration, fps, total_frames);
 
     let mut net = Network::new(NetworkConfig::default());
 
     let templates = [
-        "tpl_sdf_capsule", "tpl_sdf_marching_cubes",
+        "tpl_sdf_sphere", "tpl_sdf_marching_cubes",
         "tpl_skeleton", "tpl_animation_clip", "tpl_skin_bind",
         "tpl_interval_trigger", "tpl_animation_time", "tpl_animation_sampler", "tpl_skinning",
         "tpl_prefab", "tpl_instance", "tpl_scene_graph", "tpl_scene_render",
@@ -110,39 +85,23 @@ async fn main() -> anyhow::Result<()> {
 
     // ── Nodes ────────────────────────────────────────────────────
 
-    // Capsule mesh — elongated along Y axis (tall and thin)
-    net.add_node("capsule", "tpl_sdf_capsule", config(json!({
-        "radius": 0.15, "height": 2.0,
-    })))?;
+    // Mesh (one-shot)
+    net.add_node("sphere", "tpl_sdf_sphere", config(json!({ "radius": 0.4 })))?;
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 48, "bound": 1.5, "isoLevel": 0.0,
+        "resolution": 24, "bound": 0.6, "isoLevel": 0.0
     })))?;
 
-    // 6-bone skeleton along Y axis: bones spaced 0.4 apart
-    let bone_spacing = 2.0 / (bone_count - 1) as f64;
-    let mut bones = Vec::new();
-    for i in 0..bone_count {
-        let y = -1.0 + i as f64 * bone_spacing; // -1.0 to +1.0
-        bones.push(json!({
-            "name": format!("bone_{}", i),
-            "parent": if i == 0 { -1 } else { i as i64 - 1 },
-            "bindPosition": [0.0, if i == 0 { y } else { bone_spacing }, 0.0],
-            "bindRotation": [0, 0, 0, 1],
-            "bindScale": [1, 1, 1],
-        }));
-    }
-
+    // Skeleton (single root bone — just to satisfy sampler/skinning pipeline)
     net.add_node("skeleton", "tpl_skeleton", config(json!({
-        "name": "snake_spine",
-        "bones": bones,
+        "name": "ball_rig",
+        "bones": [
+            { "name": "root", "parent": -1, "bindPosition": [0,0,0], "bindRotation": [0,0,0,1], "bindScale": [1,1,1] },
+        ]
     })))?;
-
-    let clip_data = snake_clip(duration, fps, bone_count);
     net.add_node("clip", "tpl_animation_clip", config(json!({
-        "name": "serpentine", "duration": duration,
-        "channels": clip_data.get("channels").unwrap().clone(),
+        "name": "bounce", "duration": duration,
+        "channels": bounce_clip(duration, fps).get("channels").unwrap().clone(),
     })))?;
-
     net.add_node("bind", "tpl_skin_bind", config(json!({ "maxInfluences": 4, "stride": 24 })))?;
 
     // Animation loop
@@ -154,78 +113,60 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("skin", "tpl_skinning", config(json!({ "stride": 24 })))?;
 
     // Scene
-    net.add_node("prefab", "tpl_prefab", config(json!({ "name": "snake" })))?;
-    net.add_node("inst", "tpl_instance", config(json!({ "id": "snake_0" })))?;
-    net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "snake_scene", "expectedObjects": 1 })))?;
+    net.add_node("prefab", "tpl_prefab", config(json!({ "name": "ball" })))?;
+    net.add_node("inst", "tpl_instance", config(json!({ "id": "ball_0" })))?;
+    net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "bounce_scene", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": img_size, "height": img_size,
-        "cameraPosX": 0.0, "cameraPosY": 0.5, "cameraPosZ": 4.0,
-        "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
-        "bgR": 0.08, "bgG": 0.08, "bgB": 0.12,
+        "cameraPosX": 3.0, "cameraPosY": 2.0, "cameraPosZ": 3.0,
+        "bgR": 0.1, "bgG": 0.1, "bgB": 0.15,
     })))?;
 
     // Video
     net.add_node("collector", "tpl_render_frame_collector", config(json!({
         "totalFrames": total_frames, "width": img_size, "height": img_size, "fps": fps,
     })))?;
-    net.add_node("encoder", "tpl_video_encoder", config(json!({ "fps": fps, "bitrate": 2000 })))?;
-    net.add_node("save", "tpl_file_save", config(json!({ "path": "snake_animation.mp4" })))?;
+    net.add_node("encoder", "tpl_video_encoder", config(json!({ "fps": fps, "bitrate": 1500 })))?;
+    net.add_node("save", "tpl_file_save", config(json!({ "path": "bouncing_ball.mp4" })))?;
 
     // ── Connections ──────────────────────────────────────────────
 
-    // Mesh generation
-    net.add_connection(wire("capsule", "sdf", "mc", "sdf"));
-
-    // Skin bind
+    net.add_connection(wire("sphere", "sdf", "mc", "sdf"));
     net.add_connection(wire("mc", "mesh", "bind", "mesh"));
     net.add_connection(wire("skeleton", "skeleton", "bind", "skeleton"));
-
-    // Animation sampler
     net.add_connection(wire("clip", "clip", "sampler", "clip"));
     net.add_connection(wire("skeleton", "skeleton", "sampler", "skeleton"));
     net.add_connection(wire("skeleton", "inverse_bind_matrices", "sampler", "inverse_bind_matrices"));
     net.add_connection(wire("tick", "trigger", "anim_time", "trigger"));
     net.add_connection(wire("anim_time", "time", "sampler", "time"));
-
-    // Skinning
     net.add_connection(wire("mc", "mesh", "skin", "mesh"));
     net.add_connection(wire("bind", "skinned_mesh", "skin", "skinned_mesh"));
     net.add_connection(wire("bind", "skin", "skin", "skin"));
     net.add_connection(wire("sampler", "bone_transforms", "skin", "bone_transforms"));
-
-    // Scene render
     net.add_connection(wire("skin", "deformed_mesh", "prefab", "mesh"));
     net.add_connection(wire("prefab", "prefab", "inst", "prefab"));
     net.add_connection(wire("inst", "object", "scene", "object"));
     net.add_connection(wire("scene", "scene", "render", "scene"));
     net.add_connection(wire("skin", "deformed_mesh", "render", "meshes"));
-
-    // Video output
     net.add_connection(wire("render", "output", "collector", "frame"));
     net.add_connection(wire("anim_time", "frame_number", "collector", "frame_number"));
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
-
-    // Sequence: skin bind completion starts the interval
     net.add_connection(wire("bind", "metadata", "tick", "start"));
 
     // IIPs
-    net.add_initial(iip("capsule", "_trigger", Message::Flow));
+    net.add_initial(iip("sphere", "_trigger", Message::Flow));
     net.add_initial(iip("skeleton", "_trigger", Message::Flow));
     net.add_initial(iip("clip", "_trigger", Message::Flow));
 
     println!("Built graph: {} actors, 22 connections\n", templates.len());
-    println!("Pipeline:");
-    println!("  SdfCapsule → MarchingCubes → SkinBind ← Skeleton({} bones)", bone_count);
-    println!("    → Skinning ← AnimSampler(serpentine wave)");
-    println!("      → SceneGraph → SceneRender → VideoEncoder\n");
     println!("Running...");
 
     let start = std::time::Instant::now();
     net.start()?;
 
-    let mp4_path = std::path::Path::new("snake_animation.mp4");
-    let timeout = std::time::Duration::from_secs(300);
+    let mp4_path = std::path::Path::new("bouncing_ball.mp4");
+    let timeout = std::time::Duration::from_secs(120);
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
         if mp4_path.exists() && mp4_path.metadata().map(|m| m.len() > 100).unwrap_or(false) {
@@ -238,13 +179,9 @@ async fn main() -> anyhow::Result<()> {
     }
 
     net.shutdown();
-    let total_time = start.elapsed();
-
     if mp4_path.exists() {
         let size = std::fs::metadata(mp4_path)?.len();
-        println!("\nSaved: snake_animation.mp4 ({} bytes)", size);
-        println!("Total: {:.1}s ({:.1} effective fps)",
-            total_time.as_secs_f64(), total_frames as f64 / total_time.as_secs_f64());
+        println!("\nSaved: bouncing_ball.mp4 ({} bytes, {:.1}s)", size, start.elapsed().as_secs_f64());
     }
     println!("Done!");
     Ok(())

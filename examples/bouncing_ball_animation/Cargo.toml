@@ -1,12 +1,12 @@
 [workspace]
 
 [package]
-name = "skeleton_animation"
+name = "bouncing_ball_animation"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "skeleton_animation"
+name = "bouncing_ball_animation"
 path = "main.rs"
 
 [dependencies]

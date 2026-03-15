@@ -225,6 +225,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bouncing_ball_animation"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reflow_components",
+ "reflow_network",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "brotli"
 version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2963,17 +2974,6 @@ name = "simd-adler32"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e320a6c5ad31d271ad523dcf3ad13e2767ad8b1cb8f047f75a8aeaf8da139da2"
-
-[[package]]
-name = "skeleton_animation"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "reflow_components",
- "reflow_network",
- "serde_json",
- "tokio",
-]
 
 [[package]]
 name = "slab"
