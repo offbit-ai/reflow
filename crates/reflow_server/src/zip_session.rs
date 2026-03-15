@@ -59,6 +59,10 @@ type WsSink = futures_util::stream::SplitSink<
     tokio_tungstenite::tungstenite::Message,
 >;
 
+type WsStream = futures_util::stream::SplitStream<
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
+>;
+
 /// Thread-safe WebSocket sender for pushing ZIP events to Zeal.
 struct ZipWebSocket {
     sink: Mutex<Option<WsSink>>,
@@ -71,17 +75,17 @@ impl ZipWebSocket {
         }
     }
 
-    /// Connect to Zeal's WebSocket endpoint.
-    async fn connect(&self, zeal_url: &str) -> Result<()> {
+    /// Connect to Zeal's WebSocket endpoint. Returns the read half for incoming messages.
+    async fn connect(&self, zeal_url: &str) -> Result<WsStream> {
         let ws_url = Self::http_to_ws(zeal_url);
         info!("[ZipWS] connecting to {}", ws_url);
 
         let (ws_stream, _response) = tokio_tungstenite::connect_async(&ws_url).await?;
-        let (sink, _read) = futures_util::StreamExt::split(ws_stream);
+        let (sink, read) = futures_util::StreamExt::split(ws_stream);
 
         *self.sink.lock().await = Some(sink);
         info!("[ZipWS] connected to {}", ws_url);
-        Ok(())
+        Ok(read)
     }
 
     /// Send a serializable event as a JSON text frame.
@@ -185,26 +189,156 @@ impl ZipSession {
         self.register_webhook().await?;
 
         // Step 2: Open the real-time WebSocket channel
-        match self.ws.connect(&self.config.zeal_url).await {
-            Ok(()) => info!("ZIP WebSocket connected to {}", self.config.zeal_url),
+        let ws_reader = match self.ws.connect(&self.config.zeal_url).await {
+            Ok(read) => {
+                info!("ZIP WebSocket connected to {}", self.config.zeal_url);
+                Some(read)
+            }
             Err(e) => {
                 warn!(
                     "ZIP WebSocket connection failed (traces will use HTTP only): {}",
                     e
                 );
+                None
             }
-        }
+        };
 
         info!(
             "ZIP session active — listening for commands from {}",
             self.config.zeal_url
         );
 
-        // Step 3: Event loop — listen for commands from Zeal
-        self.shutdown.notified().await;
+        // Step 3: Listen for inbound commands from Zeal
+        if let Some(mut reader) = ws_reader {
+            let engine = self.engine.clone();
+            let shutdown = self.shutdown.clone();
+
+            tokio::select! {
+                _ = shutdown.notified() => {
+                    info!("ZIP session shutdown requested");
+                }
+                _ = Self::handle_inbound_messages(&mut reader, &engine) => {
+                    warn!("ZIP WebSocket read stream ended");
+                }
+            }
+        } else {
+            // No WebSocket — just wait for shutdown
+            self.shutdown.notified().await;
+        }
 
         info!("ZIP session disconnected from {}", self.config.zeal_url);
         Ok(())
+    }
+
+    /// Handle inbound WebSocket messages from Zeal.
+    ///
+    /// Zeal sends JSON commands for workflow execution, publish, and control.
+    /// Binary frames are currently not expected inbound.
+    async fn handle_inbound_messages(
+        reader: &mut WsStream,
+        engine: &Arc<ExecutionEngine>,
+    ) {
+        use futures_util::StreamExt;
+
+        while let Some(msg) = reader.next().await {
+            match msg {
+                Ok(tokio_tungstenite::tungstenite::Message::Text(text)) => {
+                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
+                        Self::dispatch_command(json, engine).await;
+                    } else {
+                        warn!("[ZipWS] Received non-JSON text: {}...", &text[..text.len().min(100)]);
+                    }
+                }
+                Ok(tokio_tungstenite::tungstenite::Message::Binary(data)) => {
+                    debug!("[ZipWS] Received binary frame ({} bytes)", data.len());
+                }
+                Ok(tokio_tungstenite::tungstenite::Message::Ping(_)) => {
+                    // tungstenite handles pong automatically
+                }
+                Ok(tokio_tungstenite::tungstenite::Message::Close(_)) => {
+                    info!("[ZipWS] Zeal closed the connection");
+                    break;
+                }
+                Err(e) => {
+                    error!("[ZipWS] Read error: {}", e);
+                    break;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Dispatch a JSON command from Zeal to the appropriate handler.
+    async fn dispatch_command(
+        cmd: serde_json::Value,
+        engine: &Arc<ExecutionEngine>,
+    ) {
+        let cmd_type = cmd.get("type").and_then(|t| t.as_str()).unwrap_or("");
+
+        match cmd_type {
+            // Zeal requests workflow execution
+            "execution.start" | "workflow.execute" => {
+                let workflow_id = cmd.get("workflowId")
+                    .or(cmd.get("workflow_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+                let input = cmd.get("input")
+                    .or(cmd.get("data"))
+                    .cloned()
+                    .unwrap_or(serde_json::json!({}));
+
+                info!("[ZipWS] Execution command for workflow '{}'", workflow_id);
+
+                match engine.start_webhook_execution(workflow_id, input).await {
+                    Ok((execution_id, _rx)) => {
+                        info!("[ZipWS] Started execution: {}", execution_id);
+                    }
+                    Err(e) => {
+                        error!("[ZipWS] Execution failed for '{}': {}", workflow_id, e);
+                    }
+                }
+            }
+
+            // Zeal publishes a workflow graph
+            "workflow.publish" | "workflow.deploy" => {
+                let workflow_id = cmd.get("workflowId")
+                    .or(cmd.get("workflow_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+
+                if let Some(graph) = cmd.get("graph").or(cmd.get("workflow")) {
+                    // Try to convert from Zeal format if it has graphs[]
+                    let graph_json = if graph.get("graphs").is_some() {
+                        match serde_json::from_value::<crate::zeal_converter::ZealWorkflow>(graph.clone()) {
+                            Ok(zeal_wf) => {
+                                match crate::zeal_converter::convert_zeal_to_graph_export(&zeal_wf) {
+                                    Ok(export) => serde_json::to_value(export).unwrap_or_default(),
+                                    Err(e) => {
+                                        error!("[ZipWS] Graph conversion failed: {}", e);
+                                        return;
+                                    }
+                                }
+                            }
+                            Err(_) => graph.clone(),
+                        }
+                    } else {
+                        graph.clone()
+                    };
+
+                    engine.store_workflow(workflow_id, graph_json);
+                    info!("[ZipWS] Published workflow '{}' — webhook: /webhook/{}", workflow_id, workflow_id);
+                }
+            }
+
+            // Ping/pong for keepalive
+            "ping" => {
+                debug!("[ZipWS] Received ping");
+            }
+
+            _ => {
+                debug!("[ZipWS] Unknown command type: '{}'", cmd_type);
+            }
+        }
     }
 
     /// Shut down the session gracefully.
