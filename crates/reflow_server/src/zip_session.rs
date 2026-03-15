@@ -243,7 +243,18 @@ impl ZipSession {
                     sub("analysis", "Analysis"),
                     sub("procedural", "Procedural"),
                     sub("spectral", "Spectral"),
-                    sub("sdf", "SDF / Geometry"),
+                ]),
+            },
+            // New top-level: 3D geometry
+            CategoryRegistration {
+                name: "3d".to_string(),
+                display_name: "3D".to_string(),
+                description: Some("3D geometry, SDF, mesh operations".to_string()),
+                icon: Some("box".to_string()),
+                subcategories: Some(vec![
+                    sub("sdf", "SDF Primitives"),
+                    sub("operations", "Operations"),
+                    sub("transforms", "Transforms"),
                     sub("export", "Export"),
                 ]),
             },

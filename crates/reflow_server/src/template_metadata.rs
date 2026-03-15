@@ -872,13 +872,13 @@ pub fn build_stream_actor_templates(
         // ── SDF Primitives ───────────────────────────────────────────
 
         tpl("tpl_sdf_sphere", "SDF Sphere", "Sphere primitive",
-            "media", "sdf", "Signed distance sphere with configurable radius.",
+            "3d", "sdf", "Signed distance sphere with configurable radius.",
             "circle", "violet-500",
             vec![inport("trigger", "Trigger", "any"), outport("sdf", "SDF", "object")],
             props(vec![("radius", num_prop("Radius", 1.0, 0.01, 100.0, "Sphere radius"))]),
             v, c),
         tpl("tpl_sdf_box", "SDF Box", "Box primitive",
-            "media", "sdf", "Signed distance box with configurable dimensions.",
+            "3d", "sdf", "Signed distance box with configurable dimensions.",
             "square", "violet-500",
             vec![inport("trigger", "Trigger", "any"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -887,7 +887,7 @@ pub fn build_stream_actor_templates(
                 ("sizeZ", num_prop("Depth", 1.0, 0.01, 100.0, "Z dimension")),
             ]), v, c),
         tpl("tpl_sdf_torus", "SDF Torus", "Torus primitive",
-            "media", "sdf", "Signed distance torus on XZ plane.",
+            "3d", "sdf", "Signed distance torus on XZ plane.",
             "circle", "violet-500",
             vec![inport("trigger", "Trigger", "any"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -895,7 +895,7 @@ pub fn build_stream_actor_templates(
                 ("minorRadius", num_prop("Minor Radius", 0.3, 0.01, 10.0, "Tube radius")),
             ]), v, c),
         tpl("tpl_sdf_cylinder", "SDF Cylinder", "Cylinder primitive",
-            "media", "sdf", "Signed distance cylinder along Y axis.",
+            "3d", "sdf", "Signed distance cylinder along Y axis.",
             "circle", "violet-500",
             vec![inport("trigger", "Trigger", "any"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -906,23 +906,23 @@ pub fn build_stream_actor_templates(
         // ── SDF Operations ───────────────────────────────────────────
 
         tpl("tpl_sdf_smooth_union", "Smooth Union", "Blend two SDFs",
-            "media", "sdf", "Smooth boolean union with configurable blend radius.",
+            "3d", "sdf", "Smooth boolean union with configurable blend radius.",
             "git-merge", "violet-500",
             vec![inport("sdf_a", "A", "object"), inport("sdf_b", "B", "object"), outport("sdf", "SDF", "object")],
             props(vec![("smoothness", num_prop("Smoothness", 0.3, 0.0, 5.0, "Blend radius (k)"))]),
             v, c),
         tpl("tpl_sdf_union", "Union", "Boolean union (min)",
-            "media", "sdf", "Hard boolean union of two SDFs.",
+            "3d", "sdf", "Hard boolean union of two SDFs.",
             "git-merge", "violet-500",
             vec![inport("sdf_a", "A", "object"), inport("sdf_b", "B", "object"), outport("sdf", "SDF", "object")],
             None, v, c),
         tpl("tpl_sdf_difference", "Difference", "Boolean subtract",
-            "media", "sdf", "Subtract SDF B from SDF A.",
+            "3d", "sdf", "Subtract SDF B from SDF A.",
             "minus-circle", "violet-500",
             vec![inport("sdf_a", "A", "object"), inport("sdf_b", "B", "object"), outport("sdf", "SDF", "object")],
             None, v, c),
         tpl("tpl_sdf_intersection", "Intersection", "Boolean intersect",
-            "media", "sdf", "Intersection of two SDFs.",
+            "3d", "sdf", "Intersection of two SDFs.",
             "crosshair", "violet-500",
             vec![inport("sdf_a", "A", "object"), inport("sdf_b", "B", "object"), outport("sdf", "SDF", "object")],
             None, v, c),
@@ -930,7 +930,7 @@ pub fn build_stream_actor_templates(
         // ── SDF Transforms ───────────────────────────────────────────
 
         tpl("tpl_sdf_translate", "Translate", "Move SDF",
-            "media", "sdf", "Translate SDF in world space.",
+            "3d", "sdf", "Translate SDF in world space.",
             "move", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -939,7 +939,7 @@ pub fn build_stream_actor_templates(
                 ("z", num_prop("Z", 0.0, -100.0, 100.0, "Z offset")),
             ]), v, c),
         tpl("tpl_sdf_rotate", "Rotate", "Rotate SDF",
-            "media", "sdf", "Rotate SDF by Euler angles (degrees).",
+            "3d", "sdf", "Rotate SDF by Euler angles (degrees).",
             "rotate-cw", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -948,13 +948,13 @@ pub fn build_stream_actor_templates(
                 ("z", num_prop("Z°", 0.0, -360.0, 360.0, "Z rotation")),
             ]), v, c),
         tpl("tpl_sdf_twist", "Twist", "Twist deformation",
-            "media", "sdf", "Twist SDF around Y axis.",
+            "3d", "sdf", "Twist SDF around Y axis.",
             "rotate-ccw", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("sdf", "SDF", "object")],
             props(vec![("strength", num_prop("Strength", 0.5, -10.0, 10.0, "Radians per unit"))]),
             v, c),
         tpl("tpl_sdf_mirror", "Mirror", "Mirror across axis",
-            "media", "sdf", "Mirror SDF across one or more axes.",
+            "3d", "sdf", "Mirror SDF across one or more axes.",
             "flip-horizontal", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -963,7 +963,7 @@ pub fn build_stream_actor_templates(
                 ("axisZ", num_prop("Z", 0.0, 0.0, 1.0, "Mirror Z")),
             ]), v, c),
         tpl("tpl_sdf_repeat", "Repeat", "Finite repetition",
-            "media", "sdf", "Repeat SDF in a grid pattern.",
+            "3d", "sdf", "Repeat SDF in a grid pattern.",
             "grid", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -975,7 +975,7 @@ pub fn build_stream_actor_templates(
                 ("countZ", num_prop("Count Z", 3.0, 1.0, 20.0, "Z repetitions")),
             ]), v, c),
         tpl("tpl_sdf_displace", "Displace", "Noise displacement",
-            "media", "sdf", "Add FBM noise displacement to SDF surface.",
+            "3d", "sdf", "Add FBM noise displacement to SDF surface.",
             "waves", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("sdf", "SDF", "object")],
             props(vec![
@@ -987,7 +987,7 @@ pub fn build_stream_actor_templates(
         // ── GPU Compute ──────────────────────────────────────────────
 
         tpl("tpl_sdf_render", "SDF Render", "GPU ray march to image",
-            "media", "sdf", "Compiles SDF to WGSL, renders via GPU compute shader, outputs RGBA bytes.",
+            "3d", "sdf", "Compiles SDF to WGSL, renders via GPU compute shader, outputs RGBA bytes.",
             "monitor", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("output", "Image", "bytes"), outport("metadata", "Metadata", "object")],
             props(vec![
@@ -998,7 +998,7 @@ pub fn build_stream_actor_templates(
                 ("ao", bool_prop("Ambient Occlusion", true, "Enable AO")),
             ]), v, c),
         tpl("tpl_sdf_marching_cubes", "Marching Cubes", "SDF → triangle mesh (GPU)",
-            "media", "sdf", "Extracts triangle mesh from SDF via GPU marching cubes.",
+            "3d", "sdf", "Extracts triangle mesh from SDF via GPU marching cubes.",
             "box", "violet-500",
             vec![inport("sdf", "SDF", "object"), outport("mesh", "Mesh", "bytes"), outport("metadata", "Metadata", "object")],
             props(vec![
@@ -1007,7 +1007,7 @@ pub fn build_stream_actor_templates(
                 ("isoLevel", num_prop("Iso Level", 0.0, -1.0, 1.0, "Surface threshold")),
             ]), v, c),
         tpl("tpl_mesh_to_sdf", "Mesh to SDF", "Triangle mesh → distance field (GPU)",
-            "media", "sdf", "Computes unsigned distance field from triangle mesh via GPU.",
+            "3d", "sdf", "Computes unsigned distance field from triangle mesh via GPU.",
             "box", "violet-500",
             vec![inport("mesh", "Mesh", "bytes"), outport("output", "Volume", "bytes"), outport("metadata", "Metadata", "object")],
             props(vec![
@@ -1018,18 +1018,18 @@ pub fn build_stream_actor_templates(
         // ── Mesh Export ──────────────────────────────────────────────
 
         tpl("tpl_obj_export", "OBJ Export", "Wavefront OBJ",
-            "media", "export", "Converts mesh bytes to Wavefront OBJ text format.",
+            "3d", "export", "Converts mesh bytes to Wavefront OBJ text format.",
             "file-text", "slate-500",
             vec![inport("mesh", "Mesh", "bytes"), outport("output", "OBJ", "bytes"), outport("metadata", "Metadata", "object")],
             props(vec![("name", str_prop("Object Name", "mesh", "Name in OBJ file"))]),
             v, c),
         tpl("tpl_stl_export", "STL Export", "Binary STL",
-            "media", "export", "Converts mesh bytes to binary STL format.",
+            "3d", "export", "Converts mesh bytes to binary STL format.",
             "file", "slate-500",
             vec![inport("mesh", "Mesh", "bytes"), outport("output", "STL", "bytes"), outport("metadata", "Metadata", "object")],
             None, v, c),
         tpl("tpl_gltf_export", "glTF Export", "GLB binary",
-            "media", "export", "Converts mesh bytes to self-contained glTF 2.0 binary (.glb).",
+            "3d", "export", "Converts mesh bytes to self-contained glTF 2.0 binary (.glb).",
             "file", "slate-500",
             vec![inport("mesh", "Mesh", "bytes"), outport("output", "GLB", "bytes"), outport("metadata", "Metadata", "object")],
             props(vec![("name", str_prop("Mesh Name", "mesh", "Name in glTF scene"))]),
