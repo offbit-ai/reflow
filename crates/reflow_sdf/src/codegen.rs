@@ -122,6 +122,9 @@ impl CodegenContext {
                 format!("sdf_torus({}, {:.6}, {:.6})", pos, major_radius, minor_radius),
             SdfPrimitive::Cone { angle, height } =>
                 format!("sdf_cone({}, {:.6}, {:.6})", pos, angle, height),
+            SdfPrimitive::TaperedCapsule { a, b, radius_a, radius_b } =>
+                format!("sdf_tapered_capsule({}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
+                    pos, a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b),
             SdfPrimitive::Plane { normal, offset } =>
                 format!("dot({}, vec3f({:.6}, {:.6}, {:.6})) + {:.6}", pos, normal[0], normal[1], normal[2], offset),
             SdfPrimitive::InfRepeat { spacing } =>
@@ -360,6 +363,13 @@ fn sdf_cone(p: vec3f, angle: f32, h: f32) -> f32 {
   let q = vec2f(length(p.xz), p.y);
   let d = length(q - c * max(dot(q, c), 0.0));
   return d * select(1.0, -1.0, q.x * c.y - q.y * c.x < 0.0);
+}
+
+fn sdf_tapered_capsule(p: vec3f, a: vec3f, b: vec3f, ra: f32, rb: f32) -> f32 {
+  let ba = b - a;
+  let pa = p - a;
+  let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+  return length(pa - ba * h) - mix(ra, rb, h);
 }
 
 fn rot_xyz(p: vec3f, a: vec3f) -> vec3f {

@@ -80,44 +80,44 @@ pub async fn sdf_path_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     // Interpolate radius profile to match point count
     let radii = interpolate_profile(&profile, points.len());
 
-    // Build SDF: sphere at each point, combined via balanced binary tree
-    // of smooth unions. This keeps tree depth O(log N) instead of O(N),
-    // preventing WGSL precision issues with deeply nested evaluations.
+    // Build SDF: TaperedCapsule between each consecutive pair of points.
+    // Each capsule stretches from point[i] to point[i+1] with linearly
+    // interpolated radii — no gaps, smooth tapering.
     let mut nodes: Vec<SdfNode> = Vec::new();
 
-    for (i, (px, py)) in points.iter().enumerate() {
-        let r = radii[i];
-        if r < 0.001 {
+    for i in 0..points.len() - 1 {
+        let ra = radii[i];
+        let rb = radii[i + 1];
+        if ra < 0.001 && rb < 0.001 {
             continue;
         }
 
-        let offset = match plane {
-            "xy" => [*px, *py, 0.0],
-            "yz" => [0.0, *px, *py],
-            _ => [*px, 0.0, *py], // "xz" default — horizontal snake
+        let (ax, ay) = points[i];
+        let (bx, by) = points[i + 1];
+
+        let a = match plane {
+            "xy" => [ax, ay, 0.0],
+            "yz" => [0.0, ax, ay],
+            _ => [ax, 0.0, ay],
+        };
+        let b = match plane {
+            "xy" => [bx, by, 0.0],
+            "yz" => [0.0, bx, by],
+            _ => [bx, 0.0, by],
         };
 
-        nodes.push(SdfNode::sphere(r).translate(offset));
+        nodes.push(SdfNode::tapered_capsule(a, b, ra, rb));
     }
 
-    // Balanced reduce: pair up adjacent nodes, smooth-union them, repeat
-    while nodes.len() > 1 {
-        let mut next = Vec::with_capacity((nodes.len() + 1) / 2);
-        let mut i = 0;
-        while i < nodes.len() {
-            if i + 1 < nodes.len() {
-                next.push(SdfNode::smooth_union(
-                    nodes[i].clone(),
-                    nodes[i + 1].clone(),
-                    smoothness,
-                ));
-                i += 2;
-            } else {
-                next.push(nodes[i].clone());
-                i += 1;
-            }
+    // Linear chain: each segment smooth-unions with the accumulated result.
+    // This ensures adjacent segments blend naturally along the path.
+    // For N < 30 segments the WGSL tree depth is acceptable.
+    if nodes.len() > 1 {
+        let mut acc = nodes[0].clone();
+        for i in 1..nodes.len() {
+            acc = SdfNode::smooth_union(acc, nodes[i].clone(), smoothness);
         }
-        nodes = next;
+        nodes = vec![acc];
     }
 
     let node = nodes.into_iter().next()

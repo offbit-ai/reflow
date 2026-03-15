@@ -21,6 +21,9 @@ pub enum SdfPrimitive {
     Torus { major_radius: f32, minor_radius: f32 },
     Cone { angle: f32, height: f32 },
     Plane { normal: [f32; 3], offset: f32 },
+    /// Line segment with linearly varying radius (conical frustum with rounded ends).
+    /// `a` and `b` are endpoints, `radius_a` and `radius_b` are the radii at each end.
+    TaperedCapsule { a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32 },
     /// Infinite repetition — creates `child` at every grid cell.
     InfRepeat { spacing: [f32; 3] },
 }
@@ -289,6 +292,13 @@ impl SdfNode {
 
     pub fn cone(angle: f32, height: f32) -> Self {
         SdfNode::Primitive { shape: SdfPrimitive::Cone { angle, height }, material: None }
+    }
+
+    pub fn tapered_capsule(a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::TaperedCapsule { a, b, radius_a, radius_b },
+            material: None,
+        }
     }
 
     // ── Operation constructors ───────────────────────────────────
