@@ -38,7 +38,19 @@ pub async fn file_save_actor(context: ActorContext) -> Result<HashMap<String, Me
     let bytes = match payload.get("input") {
         Some(Message::Bytes(data)) => Arc::clone(data),
         Some(Message::String(s)) => Arc::new(s.as_bytes().to_vec()),
-        _ => return Ok(error_output("Expected Bytes or String on input port")),
+        Some(Message::Object(obj)) => {
+            // Serialize Object as pretty JSON
+            let val: serde_json::Value = obj.as_ref().clone().into();
+            let json = serde_json::to_string_pretty(&val).unwrap_or_default();
+            Arc::new(json.into_bytes())
+        }
+        Some(other) => {
+            // Try serializing any other message type as JSON
+            let val: serde_json::Value = other.clone().into();
+            let json = serde_json::to_string_pretty(&val).unwrap_or_default();
+            Arc::new(json.into_bytes())
+        }
+        None => return Ok(error_output("No data on input port")),
     };
 
     // Create parent directories if needed

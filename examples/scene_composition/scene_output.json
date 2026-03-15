@@ -1,0 +1,79 @@
+{
+  "name": "my_scene",
+  "objectCount": 3,
+  "objects": [
+    {
+      "id": "blob_1",
+      "prefab": "blob",
+      "transform": {
+        "position": [
+          2.0,
+          0.5,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "type": "instance"
+    },
+    {
+      "id": "blob_2",
+      "prefab": "blob",
+      "transform": {
+        "position": [
+          -2.0,
+          0.5,
+          1.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.5,
+          1.5,
+          1.5
+        ]
+      },
+      "type": "instance"
+    },
+    {
+      "id": "ground",
+      "terrain": {
+        "depth": 20.0,
+        "hasHeightmap": false,
+        "hasTexture": false,
+        "heightScale": 2.0,
+        "meshSize": 226328,
+        "width": 20.0
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "type": "terrain"
+    }
+  ]
+}
