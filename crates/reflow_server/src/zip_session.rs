@@ -22,7 +22,7 @@ use zeal_sdk::events::{
 use zeal_sdk::types::{
     CategoryRegistration, NodeTemplate, Port as ZealPort, PortPosition, PortType,
     RegisterCategoriesRequest, RegisterTemplatesRequest, RuntimeRequirements,
-    SubcategoryRegistration,
+    SubcategoryRegistration, WebhookConfig,
 };
 use zeal_sdk::{ClientConfig, WS_PATH, ZealClient};
 
@@ -178,6 +178,9 @@ impl ZipSession {
         // Step 1b: Register all reflow_components templates with Zeal
         self.register_templates().await?;
 
+        // Step 1c: Register webhook so Zeal routes execution commands to us
+        self.register_webhook().await?;
+
         // Step 2: Open the real-time WebSocket channel
         match self.ws.connect(&self.config.zeal_url).await {
             Ok(()) => info!("ZIP WebSocket connected to {}", self.config.zeal_url),
@@ -206,7 +209,54 @@ impl ZipSession {
         self.shutdown.notify_one();
     }
 
-    /// Register all reflow_components templates with the connected Zeal instance.
+    /// Register webhook so Zeal routes execution commands to us.
+    ///
+    /// Zeal calls POST /api/workflows/{id}/execute and sends the
+    /// execution command over the ZIP WebSocket. The webhook tells
+    /// Zeal that this Reflow instance handles executions for the
+    /// registered namespace.
+    async fn register_webhook(&self) -> Result<()> {
+        // Build our webhook URL — Zeal will POST execution events here
+        // In Zeal-mode, commands come via WebSocket, not HTTP.
+        // The webhook registration tells Zeal we're an active executor.
+        let webhook_url = format!(
+            "http://{}:{}/webhook",
+            self.config.node_id,
+            8080 // default port — should come from server config
+        );
+
+        let config = WebhookConfig {
+            namespace: self.config.namespace.clone(),
+            url: webhook_url,
+            events: Some(vec![
+                "execution.started".to_string(),
+                "execution.completed".to_string(),
+                "execution.failed".to_string(),
+            ]),
+            headers: None,
+            metadata: Some({
+                let mut m = std::collections::HashMap::new();
+                m.insert("node_id".to_string(), serde_json::json!(self.config.node_id));
+                m.insert("executor".to_string(), serde_json::json!("reflow"));
+                m
+            }),
+        };
+
+        match self.client.webhooks().register(config).await {
+            Ok(response) => {
+                info!(
+                    "Registered webhook with Zeal: {} ({})",
+                    response.webhook_id, response.url
+                );
+            }
+            Err(e) => {
+                warn!("Failed to register webhook with Zeal: {} (non-fatal)", e);
+            }
+        }
+
+        Ok(())
+    }
+
     /// Register categories and subcategories with Zeal.
     ///
     /// Extends existing Zeal categories (like "media") with new subcategories
