@@ -197,6 +197,7 @@ const BUFFER_JS: &str = include_str!("../../../display_components/buffer.js");
 const IMAGE_PREVIEW_JS: &str = include_str!("../../../display_components/image_preview.js");
 const WAVEFORM_JS: &str = include_str!("../../../display_components/waveform.js");
 const IR_JS: &str = include_str!("../../../display_components/ir.js");
+const TEXTURE_PREVIEW_JS: &str = include_str!("../../../display_components/texture_preview.js");
 
 /// Returns display component sources to be uploaded via upload_bundle.
 /// Map of element name → JS source file content.
@@ -216,6 +217,7 @@ pub fn get_display_component_sources() -> Vec<(&'static str, &'static str)> {
         ("reflow-image-preview",   IMAGE_PREVIEW_JS),
         ("reflow-waveform",        WAVEFORM_JS),
         ("reflow-ir",              IR_JS),
+        ("reflow-texture-preview", TEXTURE_PREVIEW_JS),
     ]
 }
 
@@ -1051,6 +1053,308 @@ pub fn build_stream_actor_templates(
                 ("path", str_prop("Path", "", "File path to write")),
                 ("createDirs", bool_prop("Create Dirs", true, "Auto-create parent directories")),
             ]), v, c),
+
+        // ── Texture Mapping ──────────────────────────────────────────
+
+        tpl("tpl_triplanar_texture", "Triplanar Texture", "Project texture via normals",
+            "3d", "transforms",
+            "Projects a texture onto mesh vertices using triplanar mapping. Blends XY/XZ/YZ projections weighted by surface normal. No UVs needed.",
+            "image", "violet-500",
+            vec![
+                inport("mesh", "Mesh", "bytes"),
+                inport("texture", "Texture", "bytes"),
+                outport("mesh", "Textured Mesh", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("scale", num_prop("Scale", 1.0, 0.01, 100.0, "Texture tiling scale")),
+                ("sharpness", num_prop("Sharpness", 2.0, 0.1, 10.0, "Blend falloff between projections")),
+                ("stride", num_prop("Input Stride", 24.0, 12.0, 128.0, "Bytes per vertex in input mesh")),
+            ]), v, c),
+
+        tpl("tpl_uv_texture", "UV Texture", "Sample texture at UVs",
+            "3d", "transforms",
+            "Samples a texture at mesh UV coordinates and appends vertex colors. Requires mesh with UV data.",
+            "image", "violet-500",
+            vec![
+                inport("mesh", "Mesh", "bytes"),
+                inport("texture", "Texture", "bytes"),
+                outport("mesh", "Textured Mesh", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("stride", num_prop("Input Stride", 32.0, 12.0, 128.0, "Bytes per vertex in input mesh")),
+                ("uvOffset", num_prop("UV Offset", 6.0, 0.0, 32.0, "Float index where UVs start in vertex")),
+            ]), v, c),
+
+        // ── Flow Control ─────────────────────────────────────────────
+
+        tpl("tpl_map", "Map", "Transform each array item",
+            "logic-control", "conditions",
+            "Applies an operation to each item in an array.",
+            "list", "indigo-500",
+            vec![
+                inport("input", "Array", "array"),
+                outport("output", "Array", "array"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("operation", select_prop("Operation", &["identity", "to_string", "to_number", "extract_field"], "identity", "Transform to apply")),
+                ("field", str_prop("Field", "", "Field name for extract_field operation")),
+            ]), v, c),
+
+        tpl("tpl_filter", "Filter", "Keep items by condition",
+            "logic-control", "conditions",
+            "Filters an array, keeping items that match a condition. Rejected items output on the rejected port.",
+            "filter", "indigo-500",
+            vec![
+                inport("input", "Array", "array"),
+                outport("output", "Passed", "array"),
+                outport("rejected", "Rejected", "array"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("condition", select_prop("Condition", &["truthy", "not_null", "equals", "greater_than", "less_than", "contains"], "truthy", "Filter condition")),
+                ("field", str_prop("Field", "", "Nested field to test (empty = test item directly)")),
+                ("value", str_prop("Compare Value", "", "Value to compare against")),
+            ]), v, c),
+
+        tpl("tpl_reduce", "Reduce", "Accumulate to single value",
+            "logic-control", "conditions",
+            "Reduces an array to a single value using an aggregation operation.",
+            "minimize-2", "indigo-500",
+            vec![
+                inport("input", "Array", "array"),
+                outport("output", "Result", "any"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("operation", select_prop("Operation", &["sum", "product", "min", "max", "count", "concat", "first", "last"], "sum", "Reduce operation")),
+            ]), v, c),
+
+        tpl("tpl_merge", "Merge", "Combine inputs",
+            "logic-control", "conditions",
+            "Merges multiple inputs into a single object or array.",
+            "git-merge", "indigo-500",
+            vec![
+                inport("a", "A", "any"), inport("b", "B", "any"),
+                inport("c", "C", "any"), inport("d", "D", "any"),
+                outport("output", "Merged", "any"),
+            ],
+            props(vec![
+                ("mode", select_prop("Mode", &["object", "array"], "object", "Output as object or array")),
+            ]), v, c),
+
+        tpl("tpl_split", "Split", "Head + tail decomposition",
+            "logic-control", "conditions",
+            "Splits an array into first element (head) and remaining (tail).",
+            "scissors", "indigo-500",
+            vec![
+                inport("input", "Array", "array"),
+                outport("head", "Head", "any"),
+                outport("tail", "Tail", "array"),
+                outport("count", "Count", "integer"),
+            ],
+            None, v, c),
+
+        tpl("tpl_gate", "Gate", "Conditional pass/block",
+            "logic-control", "conditions",
+            "Passes or blocks data based on a boolean control signal.",
+            "toggle-left", "indigo-500",
+            vec![
+                inport("input", "Data", "any"),
+                inport("control", "Control", "boolean"),
+                outport("output", "Passed", "any"),
+                outport("blocked", "Blocked", "any"),
+            ],
+            props(vec![
+                ("invert", bool_prop("Invert", false, "Invert the gate (block when true)")),
+            ]), v, c),
+
+        tpl("tpl_delay", "Delay", "Timed passthrough",
+            "logic-control", "conditions",
+            "Delays data forwarding by a configurable duration.",
+            "clock", "indigo-500",
+            vec![
+                inport("input", "Data", "any"),
+                outport("output", "Data", "any"),
+            ],
+            props(vec![
+                ("delayMs", num_prop("Delay (ms)", 1000.0, 0.0, 60000.0, "Delay in milliseconds")),
+            ]), v, c),
+
+        tpl("tpl_collect", "Collect", "Accumulate N items",
+            "logic-control", "conditions",
+            "Collects N incoming messages into an array, then emits.",
+            "inbox", "indigo-500",
+            vec![
+                inport("input", "Item", "any"),
+                outport("output", "Array", "array"),
+                outport("count", "Count", "integer"),
+            ],
+            props(vec![
+                ("count", num_prop("Count", 10.0, 1.0, 10000.0, "Number of items to collect")),
+            ]), v, c),
+
+        tpl("tpl_passthrough", "Passthrough", "Identity / debug tap",
+            "logic-control", "conditions",
+            "Passes data through unchanged. Useful for debugging and observation points.",
+            "arrow-right", "indigo-500",
+            vec![
+                inport("input", "Data", "any"),
+                outport("output", "Data", "any"),
+            ],
+            None, v, c),
+
+        // ── Triggers ─────────────────────────────────────────────────
+
+        tpl("tpl_interval_trigger", "Interval Trigger", "Periodic timer",
+            "tools-utilities", "triggers",
+            "Emits a trigger signal at regular intervals.",
+            "clock", "purple-600",
+            vec![
+                inport("start", "Start", "any"),
+                outport("trigger", "Trigger", "object"),
+            ],
+            props(vec![
+                ("interval", num_prop("Interval", 60000.0, 1000.0, 86400000.0, "Interval value")),
+                ("intervalUnit", select_prop("Unit", &["milliseconds", "seconds", "minutes", "hours", "days"], "milliseconds", "Interval unit")),
+                ("startImmediately", bool_prop("Start Immediately", true, "Trigger on workflow start")),
+                ("maxExecutions", num_prop("Max Executions", 0.0, 0.0, 1000000.0, "0 = unlimited")),
+            ]), v, c),
+
+        tpl("tpl_cron_trigger", "Cron Trigger", "Schedule-based timer",
+            "tools-utilities", "triggers",
+            "Emits a trigger signal based on a cron expression.",
+            "calendar", "blue-600",
+            vec![
+                inport("start", "Start", "any"),
+                outport("trigger", "Trigger", "object"),
+            ],
+            props(vec![
+                ("commonSchedules", select_prop("Schedule", &["Custom", "Every minute", "Every 5 minutes", "Every 15 minutes", "Every 30 minutes", "Every hour", "Every day at midnight", "Every Monday at 9 AM", "First day of month"], "Custom", "Common schedule presets")),
+                ("cronExpression", str_prop("Cron Expression", "0 * * * *", "Custom cron (when Schedule is Custom)")),
+                ("maxExecutions", num_prop("Max Executions", 0.0, 0.0, 1000000.0, "0 = unlimited")),
+            ]), v, c),
+
+        // ── Server ───────────────────────────────────────────────────
+
+        tpl("tpl_server_request", "Server Request", "Webhook entry point",
+            "tools-utilities", "triggers",
+            "Entry point for webhook-triggered workflows. The server injects the HTTP request data into this actor's config at execution time.",
+            "globe", "purple-600",
+            vec![
+                outport("body", "Body", "object"),
+                outport("headers", "Headers", "object"),
+                outport("params", "Params", "object"),
+                outport("method", "Method", "string"),
+                outport("url", "URL", "string"),
+            ],
+            props(vec![
+                ("path", str_prop("Path", "/webhook", "Webhook route to listen on")),
+                ("method", select_prop("Method", &["GET", "POST", "PUT", "PATCH", "DELETE"], "POST", "HTTP method filter")),
+            ]), v, c),
+
+        tpl("tpl_server_response", "Server Response", "Webhook response",
+            "tools-utilities", "triggers",
+            "Constructs an HTTP response to send back to the webhook caller.",
+            "send", "purple-600",
+            vec![
+                inport("body", "Body", "any"),
+                inport("status", "Status", "integer"),
+                inport("headers", "Headers", "object"),
+                outport("response", "Response", "object"),
+            ],
+            props(vec![
+                ("statusCode", num_prop("Status Code", 200.0, 100.0, 599.0, "HTTP status code")),
+                ("contentType", select_prop("Content Type", &["application/json", "text/plain", "text/html"], "application/json", "Response content type")),
+            ]), v, c),
+
+        // ── Procedural (continued) ───────────────────────────────────
+
+        tpl("tpl_voronoi", "Voronoi", "Voronoi diagram",
+            "media", "procedural",
+            "Generates a 2D Voronoi diagram with distance and cell ID grids.",
+            "hexagon", "cyan-500",
+            vec![
+                inport("seed", "Seed", "float"),
+                outport("distance", "Distance", "bytes"),
+                outport("cell_id", "Cell ID", "bytes"),
+                outport("metadata", "Metadata", "object"),
+            ],
+            props(vec![
+                ("width", num_prop("Width", 256.0, 16.0, 4096.0, "Grid width")),
+                ("height", num_prop("Height", 256.0, 16.0, 4096.0, "Grid height")),
+                ("cellCount", num_prop("Cells", 32.0, 2.0, 1000.0, "Number of Voronoi cells")),
+                ("seed", num_prop("Seed", 0.0, -1000.0, 1000.0, "Random seed")),
+            ]), v, c),
+
+        tpl("tpl_lsystem", "L-System", "Lindenmayer string rewriting",
+            "media", "procedural",
+            "Generates fractal patterns via string rewriting rules with turtle graphics interpretation.",
+            "git-branch", "cyan-500",
+            vec![
+                inport("axiom", "Axiom", "string"),
+                outport("output", "String", "string"),
+                outport("points", "Points", "bytes"),
+                outport("metadata", "Metadata", "object"),
+            ],
+            props(vec![
+                ("axiom", str_prop("Axiom", "F", "Starting string")),
+                ("rules", str_prop("Rules", "F=F+F-F-FF+F+F-F", "Production rules (semicolon-separated, e.g. F=F+F;G=GG)")),
+                ("iterations", num_prop("Iterations", 4.0, 1.0, 8.0, "Number of rewriting passes")),
+                ("angle", num_prop("Angle", 25.0, 0.0, 360.0, "Turn angle in degrees")),
+                ("stepLength", num_prop("Step Length", 1.0, 0.01, 10.0, "Forward step distance")),
+            ]), v, c),
+
+        tpl("tpl_particle_emitter", "Particle Emitter", "Generate particle set",
+            "media", "procedural",
+            "Generates a set of particles with position, velocity, and lifetime. Configurable emission shape.",
+            "sparkles", "cyan-500",
+            vec![
+                inport("trigger", "Trigger", "any"),
+                inport("count", "Count", "integer"),
+                outport("particles", "Particles", "bytes"),
+                outport("metadata", "Metadata", "object"),
+            ],
+            props(vec![
+                ("count", num_prop("Count", 1000.0, 1.0, 100000.0, "Number of particles")),
+                ("shape", select_prop("Shape", &["sphere", "cube", "disc"], "sphere", "Emission shape")),
+                ("radius", num_prop("Radius", 1.0, 0.01, 100.0, "Emission radius")),
+                ("speed", num_prop("Speed", 1.0, 0.0, 100.0, "Initial velocity magnitude")),
+                ("lifetime", num_prop("Lifetime", 5.0, 0.1, 60.0, "Particle lifetime in seconds")),
+                ("seed", num_prop("Seed", 0.0, -1000.0, 1000.0, "Random seed")),
+            ]), v, c),
+
+        // ── Image Codecs ─────────────────────────────────────────────
+
+        tpl("tpl_image_decode", "Image Decode", "Decode PNG/JPEG/WebP",
+            "media", "images",
+            "Decodes an encoded image (PNG, JPEG, WebP, GIF) into a raw RGBA pixel stream.",
+            "image", "purple-500",
+            vec![
+                inport("input", "Image", "bytes"),
+                outport("stream", "RGBA Stream", "stream"),
+                outport("error", "Error", "string"),
+            ],
+            None, v, c),
+
+        tpl("tpl_image_encode", "Image Encode", "Encode to PNG/JPEG/WebP",
+            "media", "images",
+            "Encodes a raw RGBA stream into PNG, JPEG, or WebP format.",
+            "file-image", "purple-500",
+            vec![
+                inport("stream", "RGBA Stream", "stream"),
+                outport("output", "Encoded", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("format", select_prop("Format", &["png", "jpeg", "webp"], "png", "Output image format")),
+                ("quality", num_prop("Quality", 90.0, 1.0, 100.0, "JPEG/WebP quality (1-100)")),
+            ]), v, c),
     ];
 
     // Attach display components to the templates that have visual UI
@@ -1120,6 +1424,14 @@ pub fn build_stream_actor_templates(
         ("tpl_convolve", display_inline(
             "reflow-ir", IR_JS, &[], None,
         )),
+        // Texture actors — preview thumbnail
+        ("tpl_triplanar_texture", display_inline(
+            "reflow-texture-preview", TEXTURE_PREVIEW_JS, &["scale", "sharpness"], None,
+        )),
+        ("tpl_uv_texture", display_inline(
+            "reflow-texture-preview", TEXTURE_PREVIEW_JS, &["stride", "uvOffset"], None,
+        )),
+
         // Crossover — 3-band frequency response with draggable points
         ("tpl_crossover", display_inline(
             "reflow-crossover", CROSSOVER_JS, &["lowFrequency", "highFrequency"], Some("320px"),
