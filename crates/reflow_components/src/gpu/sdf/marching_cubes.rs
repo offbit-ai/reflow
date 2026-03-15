@@ -102,32 +102,9 @@ fn run_marching_cubes_gpu(
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
-    let (device, queue) = pollster::block_on(async {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
-            ..Default::default()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                compatible_surface: None,
-                force_fallback_adapter: false,
-            })
-            .await
-            .ok_or("No GPU adapter")?;
-        adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("MC"),
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    memory_hints: wgpu::MemoryHints::default(),
-                },
-                None,
-            )
-            .await
-            .map_err(|e| format!("Device: {}", e))
-    })?;
+    let ctx = &*crate::gpu::context::GPU_CONTEXT;
+    let device = ctx.device();
+    let queue = ctx.queue();
 
     // Allocate vertex buffer: worst-case is (res-1)^3 × 15 vertices, but real SDFs
     // only produce surface triangles on a thin shell. Cap at 32MB to avoid GPU OOM.

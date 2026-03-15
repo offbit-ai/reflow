@@ -41,6 +41,7 @@ base64 = "0.22"
 reflow_sdf = { path = "../reflow_sdf" }
 
 # GPU compute (wgpu — optional, native-only)
+once_cell = { version = "1", optional = true }
 wgpu = { version = "24", optional = true }
 bytemuck = { version = "1.14", features = ["derive"], optional = true }
 pollster = { version = "0.4", optional = true }
@@ -57,7 +58,7 @@ web-sys = { version = "0.3", features = ["Window"] }
 default = ["api", "av-core", "gpu", "window-events"]
 api = []
 av-core = ["dep:reflow_dsp", "dep:reflow_pixel"]
-gpu = ["dep:wgpu", "dep:bytemuck", "dep:pollster"]
+gpu = ["dep:wgpu", "dep:bytemuck", "dep:pollster", "dep:once_cell"]
 video-encode = ["dep:openh264"]
 window-events = []
 browser-events = ["window-events"]

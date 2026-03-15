@@ -5020,6 +5020,7 @@ dependencies = [
  "futures 0.3.31",
  "image",
  "js-sys",
+ "once_cell",
  "openh264",
  "parking_lot 0.12.4",
  "pollster",

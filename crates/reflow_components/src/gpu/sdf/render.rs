@@ -178,33 +178,9 @@ fn render_to_pixels(
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
-    // Block on async wgpu init
-    let (device, queue) = pollster::block_on(async {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
-            ..Default::default()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                compatible_surface: None,
-                force_fallback_adapter: false,
-            })
-            .await
-            .ok_or("No GPU adapter found")?;
-        adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("SDF Render"),
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    memory_hints: wgpu::MemoryHints::default(),
-                },
-                None,
-            )
-            .await
-            .map_err(|e| format!("Device request failed: {}", e))
-    })?;
+    let ctx = &*crate::gpu::context::GPU_CONTEXT;
+    let device = ctx.device();
+    let queue = ctx.queue();
 
     let output_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("SDF Output"),

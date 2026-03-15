@@ -2336,6 +2336,7 @@ dependencies = [
  "futures",
  "image",
  "js-sys",
+ "once_cell",
  "openh264",
  "parking_lot",
  "pollster",

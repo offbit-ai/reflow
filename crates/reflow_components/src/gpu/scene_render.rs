@@ -118,6 +118,7 @@ pub async fn scene_render_actor(
     .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
     .map_err(|e| anyhow::anyhow!("{}", e))?;
 
+    eprintln!("[SceneRender] OUTPUT {} bytes ({}x{})", pixels.len(), width, height);
     let mut results = HashMap::new();
     results.insert("output".to_string(), Message::bytes(pixels));
     results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
@@ -359,6 +360,88 @@ fn build_vertex_buffer(
     all_vertices
 }
 
+/// Cached render pipeline + bind group layout. Created once, reused every frame.
+struct CachedScenePipeline {
+    pipeline: wgpu::RenderPipeline,
+    bgl: wgpu::BindGroupLayout,
+    sample_count: u32,
+}
+
+use std::sync::OnceLock;
+static SCENE_PIPELINE_4X: OnceLock<CachedScenePipeline> = OnceLock::new();
+static SCENE_PIPELINE_1X: OnceLock<CachedScenePipeline> = OnceLock::new();
+
+fn get_or_create_pipeline(device: &wgpu::Device, sample_count: u32) -> &'static CachedScenePipeline {
+    let lock = if sample_count > 1 { &SCENE_PIPELINE_4X } else { &SCENE_PIPELINE_1X };
+    lock.get_or_init(|| {
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Scene Shader"),
+            source: wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed(SCENE_SHADER)),
+        });
+        let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: None,
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Scene Pipeline"),
+            layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&bgl],
+                push_constant_ranges: &[],
+            })),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[wgpu::VertexBufferLayout {
+                    array_stride: 36,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &[
+                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
+                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
+                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 24, shader_location: 2 },
+                    ],
+                }],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState { count: sample_count, mask: !0, alpha_to_coverage_enabled: false },
+            multiview: None,
+            cache: None,
+        });
+        CachedScenePipeline { pipeline, bgl, sample_count }
+    })
+}
+
 fn render_scene(
     width: u32,
     height: u32,
@@ -373,38 +456,20 @@ fn render_scene(
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
-    let (device, queue) = pollster::block_on(async {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
-            ..Default::default()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                compatible_surface: None,
-                force_fallback_adapter: false,
-            })
-            .await
-            .ok_or("No GPU adapter")?;
-        adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: Some("Scene Render"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: wgpu::MemoryHints::default(),
-            }, None)
-            .await
-            .map_err(|e| format!("Device: {}", e))
-    })?;
+    let ctx = &*crate::gpu::context::GPU_CONTEXT;
+    let device = ctx.device();
+    let queue = ctx.queue();
 
-    // Build vertex data from actual meshes
     let all_vertices = build_vertex_buffer(objects, prefab_mesh, terrain_mesh);
-
     if all_vertices.is_empty() {
         return Ok(vec![30; (width * height * 4) as usize]);
     }
 
-    let vertex_count = all_vertices.len() / 9; // 9 floats per vertex (pos3+normal3+color3)
+    let vertex_count = all_vertices.len() / 9;
+    let sample_count = match msaa_samples { 1 => 1, 2 => 2, _ => 4 };
+
+    // Cached pipeline + BGL (created once, reused every frame)
+    let cached = get_or_create_pipeline(device, sample_count);
 
     let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Vertices"),
@@ -416,136 +481,42 @@ fn render_scene(
     let uniforms = SceneUniforms {
         view_proj,
         light_dir: [0.577, 0.577, -0.577],
-        _pad0: 0.0,
-        ambient: 0.2,
-        _pad1: 0.0,
-        _pad2: 0.0,
-        _pad3: 0.0,
-        _pad4: [0.0; 4],
+        _pad0: 0.0, ambient: 0.2, _pad1: 0.0, _pad2: 0.0, _pad3: 0.0, _pad4: [0.0; 4],
     };
-
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Uniforms"),
         contents: bytemuck::bytes_of(&uniforms),
         usage: wgpu::BufferUsages::UNIFORM,
     });
 
-    let sample_count = match msaa_samples {
-        1 => 1,
-        2 => 2,
-        _ => 4,
-    };
-
+    // Textures (per-frame — size may differ between calls)
     let resolve_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Resolve"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
+        label: Some("Resolve"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC, view_formats: &[],
     });
     let resolve_view = resolve_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     let color_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("MSAA Color"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-        mip_level_count: 1,
-        sample_count,
-        dimension: wgpu::TextureDimension::D2,
+        label: Some("MSAA Color"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        mip_level_count: 1, sample_count, dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT, view_formats: &[],
     });
     let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Depth"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-        mip_level_count: 1,
-        sample_count,
-        dimension: wgpu::TextureDimension::D2,
+        label: Some("Depth"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        mip_level_count: 1, sample_count, dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT, view_formats: &[],
     });
     let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("Scene Shader"),
-        source: wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed(SCENE_SHADER)),
-    });
-
-    let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: None,
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
-    });
-
-    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Scene Pipeline"),
-        layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[&bgl],
-            push_constant_ranges: &[],
-        })),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: Some("vs_main"),
-            compilation_options: Default::default(),
-            buffers: &[wgpu::VertexBufferLayout {
-                array_stride: 36, // 9 floats × 4 bytes
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
-                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
-                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 24, shader_location: 2 },
-                ],
-            }],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: Some("fs_main"),
-            compilation_options: Default::default(),
-            targets: &[Some(wgpu::ColorTargetState {
-                format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            cull_mode: None, // Disable culling — meshes may have inconsistent winding
-            ..Default::default()
-        },
-        depth_stencil: Some(wgpu::DepthStencilState {
-            format: wgpu::TextureFormat::Depth32Float,
-            depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less,
-            stencil: wgpu::StencilState::default(),
-            bias: wgpu::DepthBiasState::default(),
-        }),
-        multisample: wgpu::MultisampleState {
-            count: sample_count,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-        cache: None,
-    });
-
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
-        layout: &bgl,
+        layout: &cached.bgl,
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: uniform_buffer.as_entire_binding(),
@@ -577,7 +548,7 @@ fn render_scene(
             timestamp_writes: None,
             occlusion_query_set: None,
         });
-        pass.set_pipeline(&pipeline);
+        pass.set_pipeline(&cached.pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
         pass.set_vertex_buffer(0, vertex_buffer.slice(..));
         pass.draw(0..vertex_count as u32, 0..1);
