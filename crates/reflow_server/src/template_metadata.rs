@@ -785,6 +785,89 @@ pub fn build_stream_actor_templates(
             ]),
             v, c,
         ),
+
+        // ── Procedural ───────────────────────────────────────────────
+
+        tpl(
+            "tpl_noise_generator", "Noise Generator", "Procedural noise field",
+            "media", "procedural",
+            "Generates a 2D noise grid. Supports Perlin, Simplex, Worley, Value, Ridged, and White noise with FBM layering.",
+            "waves", "cyan-500",
+            vec![
+                inport("scale", "Scale", "float"),
+                inport("seed", "Seed", "float"),
+                inport("offsetX", "Offset X", "float"),
+                inport("offsetY", "Offset Y", "float"),
+                outport("output", "Grid", "bytes"),
+                outport("metadata", "Metadata", "object"),
+            ],
+            props(vec![
+                ("noiseType", select_prop("Noise Type",
+                    &["perlin", "simplex", "worley", "value", "ridged", "white"],
+                    "perlin", "Noise algorithm")),
+                ("width", num_prop("Width", 256.0, 16.0, 4096.0, "Grid width in samples")),
+                ("height", num_prop("Height", 256.0, 16.0, 4096.0, "Grid height in samples")),
+                ("scale", num_prop("Scale", 4.0, 0.1, 100.0, "Frequency scale (higher = more detail)")),
+                ("octaves", num_prop("Octaves", 6.0, 1.0, 12.0, "FBM layers (more = finer detail)")),
+                ("lacunarity", num_prop("Lacunarity", 2.0, 1.0, 4.0, "Frequency multiplier per octave")),
+                ("persistence", num_prop("Persistence", 0.5, 0.0, 1.0, "Amplitude decay per octave")),
+                ("seed", num_prop("Seed", 0.0, -1000.0, 1000.0, "Random seed offset")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_image_to_heightmap", "Image to Heightmap", "Extract height data from image",
+            "media", "procedural",
+            "Converts an image to a float height grid using luminance (0.299R + 0.587G + 0.114B). Accepts encoded images or raw RGBA bytes.",
+            "mountain", "cyan-500",
+            vec![
+                inport("input", "Image", "bytes"),
+                outport("output", "Grid", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            None,
+            v, c,
+        ),
+
+        tpl(
+            "tpl_heightmap_to_image", "Heightmap to Image", "Render height grid as image",
+            "media", "procedural",
+            "Converts a float height grid to RGBA pixels. Supports grayscale and terrain color modes (water→grass→mountain→snow).",
+            "image", "cyan-500",
+            vec![
+                inport("input", "Grid", "bytes"),
+                outport("output", "Image", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("colorMode", select_prop("Color Mode", &["grayscale", "terrain"], "grayscale", "Rendering style")),
+                ("width", num_prop("Width", 256.0, 16.0, 4096.0, "Grid width (if not auto-detected)")),
+            ]),
+            v, c,
+        ),
+
+        tpl(
+            "tpl_heightmap_to_mesh", "Heightmap to Mesh", "Generate terrain mesh",
+            "media", "procedural",
+            "Generates a triangle mesh from a height grid with positions, normals, and UVs. Output is interleaved vertex data (pos3+normal3+uv2) + index buffer.",
+            "box", "cyan-500",
+            vec![
+                inport("input", "Grid", "bytes"),
+                outport("mesh", "Mesh", "bytes"),
+                outport("metadata", "Metadata", "object"),
+                outport("error", "Error", "string"),
+            ],
+            props(vec![
+                ("heightScale", num_prop("Height Scale", 10.0, 0.1, 100.0, "Vertical exaggeration")),
+                ("meshWidth", num_prop("Mesh Width", 10.0, 1.0, 1000.0, "World units width")),
+                ("meshDepth", num_prop("Mesh Depth", 10.0, 1.0, 1000.0, "World units depth")),
+                ("width", num_prop("Grid Width", 256.0, 16.0, 4096.0, "Height grid width (if not auto-detected)")),
+            ]),
+            v, c,
+        ),
     ];
 
     // Attach display components to the templates that have visual UI

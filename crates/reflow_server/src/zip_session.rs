@@ -241,6 +241,7 @@ impl ZipSession {
                     sub("filters", "Filters"),
                     sub("dynamics", "Dynamics"),
                     sub("analysis", "Analysis"),
+                    sub("procedural", "Procedural"),
                     sub("spectral", "Spectral"),
                 ]),
             },
