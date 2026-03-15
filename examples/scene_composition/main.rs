@@ -80,16 +80,16 @@ async fn main() -> anyhow::Result<()> {
     // ── SDF blob ─────────────────────────────────────────────────
 
     network.add_node("sphere", "tpl_sdf_sphere",
-        config(json!({ "radius": 0.6 })))?;
+        config(json!({ "radius": 0.8 })))?;
     network.add_node("box", "tpl_sdf_box",
         config(json!({ "sizeX": 0.5, "sizeY": 0.5, "sizeZ": 0.5 })))?;
     network.add_node("blend", "tpl_sdf_smooth_union",
-        config(json!({ "smoothness": 0.2 })))?;
+        config(json!({ "smoothness": 0.4 })))?;
 
     // ── Mesh extraction ──────────────────────────────────────────
 
     network.add_node("mesh", "tpl_sdf_marching_cubes",
-        config(json!({ "resolution": 32, "bound": 1.5, "isoLevel": 0.0 })))?;
+        config(json!({ "resolution": 128, "bound": 1.2, "isoLevel": 0.0 })))?;
 
     // ── Prefab ───────────────────────────────────────────────────
 
@@ -99,9 +99,9 @@ async fn main() -> anyhow::Result<()> {
     // ── Instances ────────────────────────────────────────────────
 
     network.add_node("blob_1", "tpl_instance",
-        config(json!({ "id": "blob_1", "posX": 2.0, "posY": 0.5, "posZ": 0.0 })))?;
+        config(json!({ "id": "blob_1", "posX": 3.0, "posY": 3.5, "posZ": 0.0 })))?;
     network.add_node("blob_2", "tpl_instance_2",
-        config(json!({ "id": "blob_2", "posX": -2.0, "posY": 0.5, "posZ": 1.0, "scale": 1.5 })))?;
+        config(json!({ "id": "blob_2", "posX": -3.0, "posY": 3.0, "posZ": 1.5, "scale": 1.5 })))?;
 
     // ── Terrain ──────────────────────────────────────────────────
 
@@ -118,14 +118,14 @@ async fn main() -> anyhow::Result<()> {
     // ── Scene Graph ──────────────────────────────────────────────
 
     network.add_node("scene", "tpl_scene_graph",
-        config(json!({ "name": "my_scene" })))?;
+        config(json!({ "name": "my_scene", "expectedObjects": 3 })))?;
 
     // ── Scene Render ──────────────────────────────────────────────
 
     network.add_node("render", "tpl_scene_render",
         config(json!({
             "width": 512, "height": 512, "fov": 45.0,
-            "cameraPosX": 8.0, "cameraPosY": 6.0, "cameraPosZ": 10.0,
+            "cameraPosX": 12.0, "cameraPosY": 8.0, "cameraPosZ": 14.0,
             "msaa": 4,
             "bgR": 0.15, "bgG": 0.15, "bgB": 0.2,
         })))?;
@@ -163,6 +163,7 @@ async fn main() -> anyhow::Result<()> {
     // Noise → terrain mesh → terrain
     network.add_connection(wire("noise", "output", "terrain_mesh", "input"));
     network.add_connection(wire("terrain_mesh", "mesh", "terrain", "mesh"));
+    network.add_connection(wire("noise", "output", "terrain", "heightmap"));
 
     // All objects → scene graph
     network.add_connection(wire("blob_1", "object", "scene", "object"));
@@ -175,6 +176,7 @@ async fn main() -> anyhow::Result<()> {
     // Scene → render → encode → save PNG
     network.add_connection(wire("scene", "scene", "render", "scene"));
     network.add_connection(wire("mesh", "mesh", "render", "meshes"));
+    network.add_connection(wire("terrain_mesh", "mesh", "render", "terrain_mesh"));
     network.add_connection(wire("render", "output", "to_stream", "input"));
     network.add_connection(wire("to_stream", "stream", "encode", "stream"));
     network.add_connection(wire("encode", "output", "save_png", "input"));
@@ -190,7 +192,7 @@ async fn main() -> anyhow::Result<()> {
         to: ConnectionPoint::new("noise", "_trigger", Some(Message::Flow)),
     });
 
-    println!("Wired 17 connections + 3 triggers\n");
+    println!("Wired 19 connections + 3 triggers\n");
 
     // ── Execute ──────────────────────────────────────────────────
 

@@ -1,11 +1,13 @@
 //! Scene Render Actor — rasterizes mesh-based scenes via wgpu.
 //!
-//! Takes a scene graph (objects with transforms) and mesh data from
-//! the input pool. Renders all triangles with per-object model matrices,
+//! Takes a scene graph (objects with transforms) and actual mesh bytes
+//! from upstream actors. Renders all triangles with per-object transforms,
 //! basic diffuse lighting, and outputs RGBA bytes.
 //!
-//! SDF objects should be meshed via MarchingCubes before reaching this
-//! actor — it only rasterizes triangles.
+//! Mesh formats accepted:
+//! - `meshes` port: MarchingCubes format — 24-byte stride (pos3 + normal3), triangle list
+//! - `terrain_mesh` port: HeightmapToMesh format — 32-byte stride (pos3 + normal3 + uv2),
+//!    with u32 indices appended after vertex data
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -28,17 +30,9 @@ struct SceneUniforms {
     _pad4: [f32; 4],          // 16 bytes → 112
 }
 
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct ModelUniforms {
-    model: [[f32; 4]; 4],
-    color: [f32; 3],
-    _pad: f32,
-}
-
 #[actor(
     SceneRenderActor,
-    inports::<10>(scene, meshes),
+    inports::<10>(scene, meshes, terrain_mesh),
     outports::<1>(output, metadata, error),
     state(MemoryState),
     await_all_inports
@@ -78,9 +72,15 @@ pub async fn scene_render_actor(
         _ => return Ok(error_output("Expected scene graph on scene port")),
     };
 
-    // Get mesh bytes — all prefab meshes concatenated or from pool
-    let mesh_bytes = match payload.get("meshes") {
-        Some(Message::Bytes(b)) => Some(b.clone()),
+    // Get prefab mesh bytes (MarchingCubes: 24-byte stride, pos3+normal3)
+    let prefab_mesh = match payload.get("meshes") {
+        Some(Message::Bytes(b)) => Some(b.to_vec()),
+        _ => None,
+    };
+
+    // Get terrain mesh bytes (HeightmapToMesh: 32-byte stride, pos3+normal3+uv2, indices appended)
+    let terrain_mesh = match payload.get("terrain_mesh") {
+        Some(Message::Bytes(b)) => Some(b.to_vec()),
         _ => None,
     };
 
@@ -90,14 +90,13 @@ pub async fn scene_render_actor(
         .cloned()
         .unwrap_or_default();
 
-    let mesh_data: Option<Vec<u8>> = mesh_bytes.map(|b| b.to_vec());
     let objects_clone = objects.clone();
 
     let pixels = tokio::task::spawn_blocking(move || {
         render_scene(
             width, height, fov, cam_pos, cam_target,
             msaa_samples, clear_color,
-            &objects_clone, mesh_data.as_deref(),
+            &objects_clone, prefab_mesh.as_deref(), terrain_mesh.as_deref(),
         )
     })
     .await
@@ -115,6 +114,236 @@ pub async fn scene_render_actor(
     Ok(results)
 }
 
+/// Parse MarchingCubes mesh: 24-byte stride (pos3 + normal3), triangle list.
+/// Returns Vec of (position, normal) tuples.
+fn parse_prefab_mesh(data: &[u8]) -> Vec<([f32; 3], [f32; 3])> {
+    let stride = 24; // 6 floats × 4 bytes
+    let vertex_count = data.len() / stride;
+    let mut verts = Vec::with_capacity(vertex_count);
+
+    for i in 0..vertex_count {
+        let off = i * stride;
+        if off + stride > data.len() { break; }
+        let px = f32::from_le_bytes(data[off..off+4].try_into().unwrap());
+        let py = f32::from_le_bytes(data[off+4..off+8].try_into().unwrap());
+        let pz = f32::from_le_bytes(data[off+8..off+12].try_into().unwrap());
+        let nx = f32::from_le_bytes(data[off+12..off+16].try_into().unwrap());
+        let ny = f32::from_le_bytes(data[off+16..off+20].try_into().unwrap());
+        let nz = f32::from_le_bytes(data[off+20..off+24].try_into().unwrap());
+        verts.push(([px, py, pz], [nx, ny, nz]));
+    }
+    verts
+}
+
+/// Parse HeightmapToMesh: 32-byte stride (pos3 + normal3 + uv2), u32 indices appended.
+/// Returns (vertices, indices) where vertices are (position, normal).
+fn parse_terrain_mesh(data: &[u8]) -> (Vec<([f32; 3], [f32; 3])>, Vec<u32>) {
+    let stride = 32; // 8 floats × 4 bytes
+
+    // We need to figure out where vertices end and indices begin.
+    // HeightmapToMesh generates a grid: for WxH heightmap, vertices = W*H,
+    // indices = (W-1)*(H-1)*6. Total = vertices*32 + indices*4.
+    // We can detect the boundary: vertex data is always a multiple of 32,
+    // and the total must satisfy: data.len() = vertex_bytes + index_bytes.
+    // Try to find a split where vertex_bytes % 32 == 0 and index_bytes % 4 == 0
+    // and index_count matches expected triangle count.
+
+    // Heuristic: try common grid sizes. For a 64x64 grid:
+    // vertices = 64*64 = 4096, vertex_bytes = 4096*32 = 131072
+    // indices = 63*63*6 = 23814, index_bytes = 23814*4 = 95256
+    // total = 226328
+    //
+    // General approach: assume indices are at the end, each is u32.
+    // vertex_count * 32 + index_count * 4 = data.len()
+    // For a grid: index_count = (sqrt(vertex_count)-1)^2 * 6
+    // Solve numerically by trying grid sizes.
+
+    let total = data.len();
+
+    // Try grid sizes from 2 to 512
+    let mut vertex_bytes = total; // fallback: all vertices, no indices
+    let mut index_bytes = 0;
+
+    for grid_size in 2..=512 {
+        let vc = grid_size * grid_size;
+        let vb = vc * stride;
+        let ic = (grid_size - 1) * (grid_size - 1) * 6;
+        let ib = ic * 4;
+        if vb + ib == total {
+            vertex_bytes = vb;
+            index_bytes = ib;
+            break;
+        }
+    }
+
+    let vertex_count = vertex_bytes / stride;
+    let mut verts = Vec::with_capacity(vertex_count);
+
+    for i in 0..vertex_count {
+        let off = i * stride;
+        if off + stride > vertex_bytes { break; }
+        let px = f32::from_le_bytes(data[off..off+4].try_into().unwrap());
+        let py = f32::from_le_bytes(data[off+4..off+8].try_into().unwrap());
+        let pz = f32::from_le_bytes(data[off+8..off+12].try_into().unwrap());
+        let nx = f32::from_le_bytes(data[off+12..off+16].try_into().unwrap());
+        let ny = f32::from_le_bytes(data[off+16..off+20].try_into().unwrap());
+        let nz = f32::from_le_bytes(data[off+20..off+24].try_into().unwrap());
+        // uv at off+24..off+32 — we skip UV for now
+        verts.push(([px, py, pz], [nx, ny, nz]));
+    }
+
+    let index_count = index_bytes / 4;
+    let mut indices = Vec::with_capacity(index_count);
+    for i in 0..index_count {
+        let off = vertex_bytes + i * 4;
+        if off + 4 > total { break; }
+        let idx = u32::from_le_bytes(data[off..off+4].try_into().unwrap());
+        indices.push(idx);
+    }
+
+    (verts, indices)
+}
+
+/// Apply translate + scale to a position.
+fn transform_pos(pos: [f32; 3], translate: [f32; 3], scale: [f32; 3]) -> [f32; 3] {
+    [
+        pos[0] * scale[0] + translate[0],
+        pos[1] * scale[1] + translate[1],
+        pos[2] * scale[2] + translate[2],
+    ]
+}
+
+/// Build render vertex buffer (pos3+normal3+color3 = 36 bytes/vertex) from actual mesh data.
+fn build_vertex_buffer(
+    objects: &[serde_json::Value],
+    prefab_mesh: Option<&[u8]>,
+    terrain_mesh_data: Option<&[u8]>,
+) -> Vec<f32> {
+    let mut all_vertices: Vec<f32> = Vec::new();
+
+    // Parse meshes once
+    let prefab_verts = prefab_mesh.map(parse_prefab_mesh);
+    let terrain_parsed = terrain_mesh_data.map(parse_terrain_mesh);
+
+    // Assign colors per object for visual distinction
+    let instance_colors: [[f32; 3]; 6] = [
+        [0.85, 0.45, 0.20], // orange
+        [0.30, 0.55, 0.85], // blue
+        [0.80, 0.25, 0.35], // red
+        [0.60, 0.75, 0.30], // lime
+        [0.70, 0.40, 0.75], // purple
+        [0.90, 0.75, 0.25], // gold
+    ];
+    let mut color_idx = 0;
+
+    for obj in objects {
+        let transform = obj.get("transform").cloned().unwrap_or(json!({}));
+        let pos = transform.get("position").and_then(|p| p.as_array())
+            .map(|a| [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+            ])
+            .unwrap_or([0.0; 3]);
+
+        let scl = transform.get("scale").and_then(|s| s.as_array())
+            .map(|a| [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+            ])
+            .unwrap_or([1.0; 3]);
+
+        let obj_type = obj.get("type").and_then(|v| v.as_str()).unwrap_or("instance");
+
+        match obj_type {
+            "terrain" => {
+                if let Some((ref verts, ref indices)) = terrain_parsed {
+                    if !indices.is_empty() {
+                        // Indexed mesh — expand indices to triangle list
+                        for idx in indices {
+                            let i = *idx as usize;
+                            if i < verts.len() {
+                                let (p, n) = verts[i];
+                                let tp = transform_pos(p, pos, scl);
+                                all_vertices.extend_from_slice(&tp);
+                                all_vertices.extend_from_slice(&n);
+                                // Color terrain based on height
+                                let height_factor = (tp[1] + 1.0).max(0.0).min(3.0) / 3.0;
+                                let c = [
+                                    0.25 + 0.15 * height_factor,
+                                    0.55 + 0.20 * height_factor,
+                                    0.15 + 0.10 * (1.0 - height_factor),
+                                ];
+                                all_vertices.extend_from_slice(&c);
+                            }
+                        }
+                    } else {
+                        // Non-indexed — direct triangle list
+                        for (p, n) in verts {
+                            let tp = transform_pos(*p, pos, scl);
+                            all_vertices.extend_from_slice(&tp);
+                            all_vertices.extend_from_slice(n);
+                            let height_factor = (tp[1] + 1.0).max(0.0).min(3.0) / 3.0;
+                            let c = [
+                                0.25 + 0.15 * height_factor,
+                                0.55 + 0.20 * height_factor,
+                                0.15 + 0.10 * (1.0 - height_factor),
+                            ];
+                            all_vertices.extend_from_slice(&c);
+                        }
+                    }
+                } else {
+                    // Fallback: flat grid placeholder
+                    let tw = obj.get("terrain").and_then(|t| t.get("width")).and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
+                    let td = obj.get("terrain").and_then(|t| t.get("depth")).and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
+                    let segs = 8;
+                    for gz in 0..segs {
+                        for gx in 0..segs {
+                            let x0 = pos[0] + (gx as f32 / segs as f32 - 0.5) * tw;
+                            let z0 = pos[2] + (gz as f32 / segs as f32 - 0.5) * td;
+                            let x1 = pos[0] + ((gx + 1) as f32 / segs as f32 - 0.5) * tw;
+                            let z1 = pos[2] + ((gz + 1) as f32 / segs as f32 - 0.5) * td;
+                            let y = pos[1];
+                            let n = [0.0f32, 1.0, 0.0];
+                            let c = [0.3f32, 0.6, 0.2];
+                            for v in &[
+                                [x0, y, z0], [x1, y, z0], [x1, y, z1],
+                                [x0, y, z0], [x1, y, z1], [x0, y, z1],
+                            ] {
+                                all_vertices.extend_from_slice(v);
+                                all_vertices.extend_from_slice(&n);
+                                all_vertices.extend_from_slice(&c);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {
+                // Instance — use prefab mesh with transform applied
+                let color = instance_colors[color_idx % instance_colors.len()];
+                color_idx += 1;
+
+                if let Some(ref verts) = prefab_verts {
+                    for (p, n) in verts {
+                        let tp = transform_pos(*p, pos, scl);
+                        all_vertices.extend_from_slice(&tp);
+                        all_vertices.extend_from_slice(n);
+                        all_vertices.extend_from_slice(&color);
+                    }
+                } else {
+                    // Fallback: simple cube
+                    let s = 0.4 * scl[0];
+                    let cube = generate_cube(pos, s, color);
+                    all_vertices.extend_from_slice(&cube);
+                }
+            }
+        }
+    }
+
+    all_vertices
+}
+
 fn render_scene(
     width: u32,
     height: u32,
@@ -124,7 +353,8 @@ fn render_scene(
     msaa_samples: u32,
     clear_color: [f64; 3],
     objects: &[serde_json::Value],
-    _mesh_bytes: Option<&[u8]>,
+    prefab_mesh: Option<&[u8]>,
+    terrain_mesh: Option<&[u8]>,
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
@@ -152,77 +382,21 @@ fn render_scene(
             .map_err(|e| format!("Device: {}", e))
     })?;
 
-    // Build vertex data — for now generate simple geometry per object
-    let mut all_vertices: Vec<f32> = Vec::new();
-
-    for obj in objects {
-        let transform = obj.get("transform").cloned().unwrap_or(json!({}));
-        let pos = transform.get("position").and_then(|p| p.as_array())
-            .map(|a| [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            ])
-            .unwrap_or([0.0; 3]);
-
-        let scl = transform.get("scale").and_then(|s| s.as_array())
-            .map(|a| a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32)
-            .unwrap_or(1.0);
-
-        let obj_type = obj.get("type").and_then(|v| v.as_str()).unwrap_or("instance");
-
-        match obj_type {
-            "terrain" => {
-                // Flat grid for terrain
-                let tw = obj.get("terrain").and_then(|t| t.get("width")).and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
-                let td = obj.get("terrain").and_then(|t| t.get("depth")).and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
-                let segs = 8;
-                for gz in 0..segs {
-                    for gx in 0..segs {
-                        let x0 = pos[0] + (gx as f32 / segs as f32 - 0.5) * tw;
-                        let z0 = pos[2] + (gz as f32 / segs as f32 - 0.5) * td;
-                        let x1 = pos[0] + ((gx + 1) as f32 / segs as f32 - 0.5) * tw;
-                        let z1 = pos[2] + ((gz + 1) as f32 / segs as f32 - 0.5) * td;
-                        let y = pos[1];
-                        // Two triangles per quad
-                        // pos(3) + normal(3) + color(3) per vertex
-                        let n = [0.0f32, 1.0, 0.0];
-                        let c = [0.3f32, 0.6, 0.2]; // green terrain
-                        for v in &[
-                            [x0, y, z0], [x1, y, z0], [x1, y, z1],
-                            [x0, y, z0], [x1, y, z1], [x0, y, z1],
-                        ] {
-                            all_vertices.extend_from_slice(v);
-                            all_vertices.extend_from_slice(&n);
-                            all_vertices.extend_from_slice(&c);
-                        }
-                    }
-                }
-            }
-            _ => {
-                // Simple cube for instances
-                let s = 0.4 * scl;
-                let cube_verts = generate_cube(pos, s);
-                all_vertices.extend_from_slice(&cube_verts);
-            }
-        }
-    }
+    // Build vertex data from actual meshes
+    let all_vertices = build_vertex_buffer(objects, prefab_mesh, terrain_mesh);
 
     if all_vertices.is_empty() {
-        // Empty scene — return blank image
         return Ok(vec![30; (width * height * 4) as usize]);
     }
 
     let vertex_count = all_vertices.len() / 9; // 9 floats per vertex (pos3+normal3+color3)
 
-    // Create GPU resources
     let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Vertices"),
         contents: bytemuck::cast_slice(&all_vertices),
         usage: wgpu::BufferUsages::VERTEX,
     });
 
-    // View-projection matrix
     let view_proj = build_view_proj(cam_pos, cam_target, fov, width as f32 / height as f32);
     let uniforms = SceneUniforms {
         view_proj,
@@ -241,14 +415,12 @@ fn render_scene(
         usage: wgpu::BufferUsages::UNIFORM,
     });
 
-    // Clamp MSAA to supported values
     let sample_count = match msaa_samples {
         1 => 1,
-        2 => 2,  // not all GPUs support 2x
-        _ => 4,  // 4x is universally supported
+        2 => 2,
+        _ => 4,
     };
 
-    // Resolve target (always 1x — MSAA resolves to this)
     let resolve_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("Resolve"),
         size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
@@ -261,7 +433,6 @@ fn render_scene(
     });
     let resolve_view = resolve_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    // MSAA render target (multisampled)
     let color_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("MSAA Color"),
         size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
@@ -286,13 +457,11 @@ fn render_scene(
     });
     let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    // Shader
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Scene Shader"),
         source: wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed(SCENE_SHADER)),
     });
 
-    // Pipeline
     let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: None,
         entries: &[wgpu::BindGroupLayoutEntry {
@@ -322,9 +491,9 @@ fn render_scene(
                 array_stride: 36, // 9 floats × 4 bytes
                 step_mode: wgpu::VertexStepMode::Vertex,
                 attributes: &[
-                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },  // position
-                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 }, // normal
-                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 24, shader_location: 2 }, // color
+                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
+                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
+                    wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 24, shader_location: 2 },
                 ],
             }],
         },
@@ -340,7 +509,7 @@ fn render_scene(
         }),
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleList,
-            cull_mode: Some(wgpu::Face::Back),
+            cull_mode: None, // Disable culling — meshes may have inconsistent winding
             ..Default::default()
         },
         depth_stencil: Some(wgpu::DepthStencilState {
@@ -368,7 +537,6 @@ fn render_scene(
         }],
     });
 
-    // Render pass
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -409,7 +577,6 @@ fn render_scene(
         mapped_at_creation: false,
     });
 
-    // Copy from resolve target (1x) for readback
     let readback_src = if sample_count > 1 { &resolve_texture } else { &color_texture };
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
@@ -451,24 +618,20 @@ fn render_scene(
     Ok(pixels)
 }
 
-fn generate_cube(center: [f32; 3], half: f32) -> Vec<f32> {
+fn generate_cube(center: [f32; 3], half: f32, color: [f32; 3]) -> Vec<f32> {
     let [cx, cy, cz] = center;
     let mut verts = Vec::new();
 
-    // 6 faces × 2 triangles × 3 vertices × 9 floats (pos3+normal3+color3)
     let faces: [([f32; 3], [[f32; 3]; 4]); 6] = [
-        ([0.0, 0.0, -1.0], [[cx-half,cy-half,cz-half],[cx+half,cy-half,cz-half],[cx+half,cy+half,cz-half],[cx-half,cy+half,cz-half]]), // front
-        ([0.0, 0.0, 1.0],  [[cx+half,cy-half,cz+half],[cx-half,cy-half,cz+half],[cx-half,cy+half,cz+half],[cx+half,cy+half,cz+half]]), // back
-        ([0.0, 1.0, 0.0],  [[cx-half,cy+half,cz-half],[cx+half,cy+half,cz-half],[cx+half,cy+half,cz+half],[cx-half,cy+half,cz+half]]), // top
-        ([0.0,-1.0, 0.0],  [[cx-half,cy-half,cz+half],[cx+half,cy-half,cz+half],[cx+half,cy-half,cz-half],[cx-half,cy-half,cz-half]]), // bottom
-        ([1.0, 0.0, 0.0],  [[cx+half,cy-half,cz-half],[cx+half,cy-half,cz+half],[cx+half,cy+half,cz+half],[cx+half,cy+half,cz-half]]), // right
-        ([-1.0,0.0, 0.0],  [[cx-half,cy-half,cz+half],[cx-half,cy-half,cz-half],[cx-half,cy+half,cz-half],[cx-half,cy+half,cz+half]]), // left
+        ([0.0, 0.0, -1.0], [[cx-half,cy-half,cz-half],[cx+half,cy-half,cz-half],[cx+half,cy+half,cz-half],[cx-half,cy+half,cz-half]]),
+        ([0.0, 0.0, 1.0],  [[cx+half,cy-half,cz+half],[cx-half,cy-half,cz+half],[cx-half,cy+half,cz+half],[cx+half,cy+half,cz+half]]),
+        ([0.0, 1.0, 0.0],  [[cx-half,cy+half,cz-half],[cx+half,cy+half,cz-half],[cx+half,cy+half,cz+half],[cx-half,cy+half,cz+half]]),
+        ([0.0,-1.0, 0.0],  [[cx-half,cy-half,cz+half],[cx+half,cy-half,cz+half],[cx+half,cy-half,cz-half],[cx-half,cy-half,cz-half]]),
+        ([1.0, 0.0, 0.0],  [[cx+half,cy-half,cz-half],[cx+half,cy-half,cz+half],[cx+half,cy+half,cz+half],[cx+half,cy+half,cz-half]]),
+        ([-1.0,0.0, 0.0],  [[cx-half,cy-half,cz+half],[cx-half,cy-half,cz-half],[cx-half,cy+half,cz-half],[cx-half,cy+half,cz+half]]),
     ];
 
-    let color = [0.8f32, 0.4, 0.2]; // orange
-
     for (normal, quad) in &faces {
-        // Two triangles per quad
         for idx in &[0,1,2, 0,2,3] {
             verts.extend_from_slice(&quad[*idx]);
             verts.extend_from_slice(normal);
@@ -480,7 +643,6 @@ fn generate_cube(center: [f32; 3], half: f32) -> Vec<f32> {
 }
 
 fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32) -> [[f32; 4]; 4] {
-    // Look-at view matrix
     let fwd = normalize([target[0]-eye[0], target[1]-eye[1], target[2]-eye[2]]);
     let right = normalize(cross([0.0, 1.0, 0.0], fwd));
     let up = cross(fwd, right);
@@ -492,7 +654,6 @@ fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32) -
         [-dot(right, eye), -dot(up, eye), dot(fwd, eye), 1.0],
     ];
 
-    // Perspective projection
     let fov = fov_deg.to_radians();
     let f = 1.0 / (fov / 2.0).tan();
     let near = 0.1f32;

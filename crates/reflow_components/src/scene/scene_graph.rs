@@ -44,6 +44,15 @@ pub async fn scene_graph_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     let all_objects = ctx.get_pool("objects");
     let count = all_objects.len();
 
+    // If expectedObjects is set, suppress output until pool reaches that count
+    let expected = config
+        .get("expectedObjects")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as usize;
+    if expected > 0 && count < expected {
+        return Ok(HashMap::new());
+    }
+
     // Build scene descriptor
     let objects_list: Vec<serde_json::Value> = all_objects
         .iter()

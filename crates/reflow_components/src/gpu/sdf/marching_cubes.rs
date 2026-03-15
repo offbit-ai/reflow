@@ -129,11 +129,12 @@ fn run_marching_cubes_gpu(
             .map_err(|e| format!("Device: {}", e))
     })?;
 
-    // Max vertices: each cell can produce up to 5 triangles × 3 vertices = 15 vertices
-    // Total cells: (res-1)^3. Allocate conservatively.
-    let max_cells = (resolution - 1) * (resolution - 1) * (resolution - 1);
-    let max_vertices = max_cells * 15;
-    let vertex_buf_size = (max_vertices * 6 * 4) as u64; // 6 floats × 4 bytes
+    // Allocate vertex buffer: worst-case is (res-1)^3 × 15 vertices, but real SDFs
+    // only produce surface triangles on a thin shell. Cap at 32MB to avoid GPU OOM.
+    let max_cells = (resolution - 1) as u64 * (resolution - 1) as u64 * (resolution - 1) as u64;
+    let worst_case = max_cells * 15 * 6 * 4; // bytes
+    let max_buf: u64 = 32 * 1024 * 1024; // 32 MB cap
+    let vertex_buf_size = worst_case.min(max_buf);
 
     // Uniforms
     let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

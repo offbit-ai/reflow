@@ -7,8 +7,8 @@
       "prefab": "blob",
       "transform": {
         "position": [
-          2.0,
-          0.5,
+          3.0,
+          3.5,
           0.0
         ],
         "rotation": [
@@ -29,9 +29,9 @@
       "prefab": "blob",
       "transform": {
         "position": [
-          -2.0,
-          0.5,
-          1.0
+          -3.0,
+          3.0,
+          1.5
         ],
         "rotation": [
           0.0,
@@ -50,9 +50,16 @@
       "id": "ground",
       "terrain": {
         "depth": 20.0,
-        "hasHeightmap": false,
+        "hasHeightmap": true,
         "hasTexture": false,
         "heightScale": 2.0,
+        "heightmap": {
+          "avgHeight": 0.056,
+          "maxHeight": 0.456,
+          "minHeight": -0.394,
+          "resolution": 64,
+          "samples": 4096
+        },
         "meshSize": 226328,
         "width": 20.0
       },
