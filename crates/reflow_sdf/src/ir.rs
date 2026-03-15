@@ -24,6 +24,10 @@ pub enum SdfPrimitive {
     /// Line segment with linearly varying radius (conical frustum with rounded ends).
     /// `a` and `b` are endpoints, `radius_a` and `radius_b` are the radii at each end.
     TaperedCapsule { a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32 },
+    /// Complete tubular path — evaluates minimum distance across all segments
+    /// in a single SDF call. No union artifacts between segments.
+    /// Points are 3D positions, radii are per-point cross-section radii.
+    TubePath { points: Vec<[f32; 3]>, radii: Vec<f32> },
     /// Infinite repetition — creates `child` at every grid cell.
     InfRepeat { spacing: [f32; 3] },
 }
@@ -292,6 +296,13 @@ impl SdfNode {
 
     pub fn cone(angle: f32, height: f32) -> Self {
         SdfNode::Primitive { shape: SdfPrimitive::Cone { angle, height }, material: None }
+    }
+
+    pub fn tube_path(points: Vec<[f32; 3]>, radii: Vec<f32>) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::TubePath { points, radii },
+            material: None,
+        }
     }
 
     pub fn tapered_capsule(a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32) -> Self {

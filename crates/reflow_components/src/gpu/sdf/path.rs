@@ -80,48 +80,19 @@ pub async fn sdf_path_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     // Interpolate radius profile to match point count
     let radii = interpolate_profile(&profile, points.len());
 
-    // Build SDF: TaperedCapsule between each consecutive pair of points.
-    // Each capsule stretches from point[i] to point[i+1] with linearly
-    // interpolated radii — no gaps, smooth tapering.
-    let mut nodes: Vec<SdfNode> = Vec::new();
-
-    for i in 0..points.len() - 1 {
-        let ra = radii[i];
-        let rb = radii[i + 1];
-        if ra < 0.001 && rb < 0.001 {
-            continue;
-        }
-
-        let (ax, ay) = points[i];
-        let (bx, by) = points[i + 1];
-
-        let a = match plane {
-            "xy" => [ax, ay, 0.0],
-            "yz" => [0.0, ax, ay],
-            _ => [ax, 0.0, ay],
+    // Build SDF as a single TubePath primitive — evaluates min distance
+    // across all segments in one WGSL function call. No union artifacts.
+    let mut pts3d: Vec<[f32; 3]> = Vec::with_capacity(points.len());
+    for (px, py) in &points {
+        let p = match plane {
+            "xy" => [*px, *py, 0.0],
+            "yz" => [0.0, *px, *py],
+            _ => [*px, 0.0, *py],
         };
-        let b = match plane {
-            "xy" => [bx, by, 0.0],
-            "yz" => [0.0, bx, by],
-            _ => [bx, 0.0, by],
-        };
-
-        nodes.push(SdfNode::tapered_capsule(a, b, ra, rb));
+        pts3d.push(p);
     }
 
-    // Linear chain: each segment smooth-unions with the accumulated result.
-    // This ensures adjacent segments blend naturally along the path.
-    // For N < 30 segments the WGSL tree depth is acceptable.
-    if nodes.len() > 1 {
-        let mut acc = nodes[0].clone();
-        for i in 1..nodes.len() {
-            acc = SdfNode::smooth_union(acc, nodes[i].clone(), smoothness);
-        }
-        nodes = vec![acc];
-    }
-
-    let node = nodes.into_iter().next()
-        .ok_or_else(|| anyhow::anyhow!("No valid points in path"))?;
+    let node = SdfNode::tube_path(pts3d, radii);
 
     let mut out = sdf_output(&node);
     out.insert(

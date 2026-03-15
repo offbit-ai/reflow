@@ -43,15 +43,15 @@ async fn main() -> anyhow::Result<()> {
     // Profile defines the cross-section radius from head to tail.
     // ══════════════════════════════════════════════════════════════
     net.add_node("snake", "tpl_sdf_path", config(json!({
-        "path": "M -3,0 C -2,-1.2 -1,1.2 0,0 C 1,-1.2 2,1.0 3,0.3",
-        "profile": [0.18, 0.16, 0.14, 0.13, 0.13, 0.12, 0.11, 0.09, 0.06, 0.02],
-        "segments": 20,
-        "smoothness": 0.06,
+        "path": "M -2.5,0 C -1.5,-1.0 -0.5,1.0 0.5,0 C 1.5,-0.8 2.5,0.6 3.5,0.2",
+        "profile": [0.25, 0.23, 0.21, 0.20, 0.20, 0.18, 0.15, 0.11, 0.07, 0.03],
+        "segments": 24,
+        "smoothness": 0.0,
         "plane": "xz",
     })))?;
 
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 192, "bound": 5.0, "isoLevel": 0.0,
+        "resolution": 192, "bound": 4.5, "isoLevel": 0.0,
     })))?;
 
     net.add_connection(wire("snake", "sdf", "mc", "sdf"));
@@ -63,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "s", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": 1024, "height": 1024,
-        "cameraPosX": 2.0, "cameraPosY": 5.0, "cameraPosZ": 4.0,
+        "cameraPosX": -2.0, "cameraPosY": 6.0, "cameraPosZ": 5.0,
         "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
         "fov": 40.0,
         "bgR": 0.92, "bgG": 0.92, "bgB": 0.90,
