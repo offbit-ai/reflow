@@ -37,6 +37,9 @@ use crate::engine::{EngineEvent, EngineEventType, ExecutionEngine};
 pub struct ZipSessionConfig {
     /// Zeal server URL (e.g. "http://localhost:3000")
     pub zeal_url: String,
+    /// This Reflow server's public URL (e.g. "http://localhost:8080")
+    /// Used for webhook registration so Zeal can reach us.
+    pub server_url: String,
     /// Namespace for template registration (e.g. "reflow")
     pub namespace: String,
     /// Unique identifier for this Reflow node
@@ -220,9 +223,8 @@ impl ZipSession {
         // In Zeal-mode, commands come via WebSocket, not HTTP.
         // The webhook registration tells Zeal we're an active executor.
         let webhook_url = format!(
-            "http://{}:{}/webhook",
-            self.config.node_id,
-            8080 // default port — should come from server config
+            "{}/webhook",
+            self.config.server_url.trim_end_matches('/')
         );
 
         let config = WebhookConfig {

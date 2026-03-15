@@ -101,8 +101,11 @@ pub async fn start_server(config: Option<ServerConfig>) -> Result<()> {
         let trace_collector = Arc::new(trace_collector::TraceCollector::new(zeal_url));
 
         // ZIP session handles template registration + WebSocket event stream
+        let server_url = format!("http://{}:{}", config.bind_address, config.port);
+
         let zip_config = zip_session::ZipSessionConfig {
             zeal_url: zeal_url.clone(),
+            server_url,
             namespace: config.namespace.clone(),
             node_id: config.node_id.clone(),
             api_key: None,
