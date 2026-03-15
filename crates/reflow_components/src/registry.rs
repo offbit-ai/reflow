@@ -9,9 +9,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::flow_control::{
-    CollectActor, ConditionalBranchActor, DelayActor, FilterActor, GateActor,
-    LoopActor, MapActor, MergeActor, PassthroughActor, ReduceActor, SplitActor,
-    SwitchCaseActor,
+    CollectActor, ConditionalBranchActor, CronTriggerActor, DelayActor, FilterActor,
+    GateActor, IntervalTriggerActor, LoopActor, MapActor, MergeActor, PassthroughActor,
+    ReduceActor, ServerRequestActor, ServerResponseActor, SplitActor, SwitchCaseActor,
 };
 use crate::math::{
     MathAbsoluteActor, MathAddActor, MathAverageActor, MathClampActor, MathDivideActor,
@@ -73,6 +73,14 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_if_branch" => Some(Arc::new(ConditionalBranchActor::new())),
         "tpl_switch" => Some(Arc::new(SwitchCaseActor::new())),
         "tpl_loop" => Some(Arc::new(LoopActor::new())),
+
+        // Triggers
+        "tpl_interval_trigger" => Some(Arc::new(IntervalTriggerActor::new())),
+        "tpl_cron_trigger" => Some(Arc::new(CronTriggerActor::new())),
+
+        // Server
+        "tpl_server_request" => Some(Arc::new(ServerRequestActor::new())),
+        "tpl_server_response" => Some(Arc::new(ServerResponseActor::new())),
 
         // Flow Utilities
         "tpl_map" => Some(Arc::new(MapActor::new())),
@@ -325,6 +333,12 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Image DSP (continued)
     mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
+
+    // Triggers + Server
+    mapping.insert("tpl_interval_trigger".to_string(), "IntervalTriggerActor".to_string());
+    mapping.insert("tpl_cron_trigger".to_string(), "CronTriggerActor".to_string());
+    mapping.insert("tpl_server_request".to_string(), "ServerRequestActor".to_string());
+    mapping.insert("tpl_server_response".to_string(), "ServerResponseActor".to_string());
 
     // Flow Utilities
     for (id, name) in [
