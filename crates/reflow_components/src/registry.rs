@@ -8,7 +8,11 @@ use crate::Actor;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::flow_control::{ConditionalBranchActor, LoopActor, SwitchCaseActor};
+use crate::flow_control::{
+    CollectActor, ConditionalBranchActor, DelayActor, FilterActor, GateActor,
+    LoopActor, MapActor, MergeActor, PassthroughActor, ReduceActor, SplitActor,
+    SwitchCaseActor,
+};
 use crate::math::{
     MathAbsoluteActor, MathAddActor, MathAverageActor, MathClampActor, MathDivideActor,
     MathExpressionActor, MathMinMaxActor, MathModuloActor, MathMultiplyActor, MathPowerActor,
@@ -69,6 +73,17 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_if_branch" => Some(Arc::new(ConditionalBranchActor::new())),
         "tpl_switch" => Some(Arc::new(SwitchCaseActor::new())),
         "tpl_loop" => Some(Arc::new(LoopActor::new())),
+
+        // Flow Utilities
+        "tpl_map" => Some(Arc::new(MapActor::new())),
+        "tpl_filter" => Some(Arc::new(FilterActor::new())),
+        "tpl_reduce" => Some(Arc::new(ReduceActor::new())),
+        "tpl_merge" => Some(Arc::new(MergeActor::new())),
+        "tpl_split" => Some(Arc::new(SplitActor::new())),
+        "tpl_delay" => Some(Arc::new(DelayActor::new())),
+        "tpl_gate" => Some(Arc::new(GateActor::new())),
+        "tpl_collect" => Some(Arc::new(CollectActor::new())),
+        "tpl_passthrough" => Some(Arc::new(PassthroughActor::new())),
 
         // Data Processing
         "tpl_data_transformer" => Some(Arc::new(DataTransformActor::new())),
@@ -310,6 +325,17 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Image DSP (continued)
     mapping.insert("tpl_image_resize".to_string(), "ImageResizeActor".to_string());
+
+    // Flow Utilities
+    for (id, name) in [
+        ("tpl_map", "MapActor"), ("tpl_filter", "FilterActor"),
+        ("tpl_reduce", "ReduceActor"), ("tpl_merge", "MergeActor"),
+        ("tpl_split", "SplitActor"), ("tpl_delay", "DelayActor"),
+        ("tpl_gate", "GateActor"), ("tpl_collect", "CollectActor"),
+        ("tpl_passthrough", "PassthroughActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
 
     // Math
     for (id, name) in [
