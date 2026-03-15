@@ -33,6 +33,11 @@ mod envelope_follower;
 mod peak_detect;
 mod silence_detect;
 
+// Video
+mod render_frame_collector;
+#[cfg(feature = "video-encode")]
+mod video_encode;
+
 // Audio DSP — spectral / advanced
 mod convolve;
 mod correlator;
@@ -81,3 +86,8 @@ pub use peak_detect::PeakDetectActor;
 pub use pitch_shift::PitchShiftActor;
 pub use silence_detect::SilenceDetectActor;
 pub use time_stretch::TimeStretchActor;
+
+// Video re-exports
+pub use render_frame_collector::RenderFrameCollectorActor;
+#[cfg(feature = "video-encode")]
+pub use video_encode::VideoEncoderActor;

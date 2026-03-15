@@ -8,6 +8,10 @@ use crate::Actor;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::animation::{
+    AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
+    SkinBindActor, SkeletonActor, SkinningActor,
+};
 use crate::scene::{InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
 use crate::flow_control::{
     CollectActor, ConditionalBranchActor, CronTriggerActor, DelayActor, FilterActor, GateActor,
@@ -91,9 +95,11 @@ use crate::stream_ops::{
     CorrelatorActor, CrossoverActor, DCOffsetActor, DeEsserActor, EnvelopeFollowerActor,
     EqualizerActor, GrayscaleFilterActor, IFFTActor, ImageDecodeActor, ImageEncodeActor,
     ImageResizeActor, LimiterActor, NoiseGateActor, NoiseReductionActor, PeakDetectActor,
-    PitchShiftActor, SilenceDetectActor, StreamBufferActor, StreamStatsActor, StreamTeeActor,
-    StreamThrottleActor, StreamToBytesActor, TimeStretchActor,
+    PitchShiftActor, RenderFrameCollectorActor, SilenceDetectActor, StreamBufferActor,
+    StreamStatsActor, StreamTeeActor, StreamThrottleActor, StreamToBytesActor, TimeStretchActor,
 };
+#[cfg(feature = "video-encode")]
+use crate::stream_ops::VideoEncoderActor;
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
@@ -312,6 +318,20 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_mesh_to_sdf" => Some(Arc::new(MeshToSdfActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_scene_render" => Some(Arc::new(SceneRenderActor::new())),
+
+        // Animation
+        "tpl_skeleton" => Some(Arc::new(SkeletonActor::new())),
+        "tpl_animation_clip" => Some(Arc::new(AnimationClipActor::new())),
+        "tpl_skin_bind" => Some(Arc::new(SkinBindActor::new())),
+        "tpl_animation_sampler" => Some(Arc::new(AnimationSamplerActor::new())),
+        "tpl_skinning" => Some(Arc::new(SkinningActor::new())),
+        "tpl_animation_time" => Some(Arc::new(AnimationTimeActor::new())),
+        "tpl_animation_mixer" => Some(Arc::new(AnimationMixerActor::new())),
+
+        // Video
+        "tpl_render_frame_collector" => Some(Arc::new(RenderFrameCollectorActor::new())),
+        #[cfg(feature = "video-encode")]
+        "tpl_video_encoder" => Some(Arc::new(VideoEncoderActor::new())),
 
         // Mesh export
         "tpl_obj_export" => Some(Arc::new(ObjExportActor::new())),
@@ -624,6 +644,24 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
     mapping.insert("tpl_stl_export".to_string(), "StlExportActor".to_string());
     mapping.insert("tpl_gltf_export".to_string(), "GltfExportActor".to_string());
+
+    // Animation
+    for (id, name) in [
+        ("tpl_skeleton", "SkeletonActor"),
+        ("tpl_animation_clip", "AnimationClipActor"),
+        ("tpl_skin_bind", "SkinBindActor"),
+        ("tpl_animation_sampler", "AnimationSamplerActor"),
+        ("tpl_skinning", "SkinningActor"),
+        ("tpl_animation_time", "AnimationTimeActor"),
+        ("tpl_animation_mixer", "AnimationMixerActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
+
+    // Video
+    mapping.insert("tpl_render_frame_collector".to_string(), "RenderFrameCollectorActor".to_string());
+    #[cfg(feature = "video-encode")]
+    mapping.insert("tpl_video_encoder".to_string(), "VideoEncoderActor".to_string());
 
     // Audio DSP (continued)
     mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());
