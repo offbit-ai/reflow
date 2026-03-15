@@ -464,6 +464,85 @@ impl ActorContext {
         self.load.reset();
     }
 
+    // ── Input Pool ─────────────────────────────────────────────────
+
+    /// Upsert an object into the actor's state pool by ID.
+    ///
+    /// Multiple connections can feed into the same port. Each call
+    /// adds or updates an entry keyed by `id`. The actor reads the
+    /// full pool via `get_pool()` on each invocation.
+    ///
+    /// ```rust,ignore
+    /// // Each connected instance sends its data:
+    /// context.pool_upsert("objects", "tree_01", json!({ "mesh": ..., "pos": [1,0,0] }));
+    /// // Later, read all:
+    /// let all_objects = context.get_pool("objects"); // Vec<Value>
+    /// ```
+    pub fn pool_upsert(&self, pool_name: &str, id: &str, value: serde_json::Value) {
+        let mut state_lock = self.state.lock();
+        if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
+            let key = format!("_pool:{}", pool_name);
+            let pool = memory
+                .get_mut(&key)
+                .and_then(|v| v.as_object_mut());
+            if let Some(pool) = pool {
+                pool.insert(id.to_string(), value);
+            } else {
+                let mut map = serde_json::Map::new();
+                map.insert(id.to_string(), value);
+                memory.insert(&key, serde_json::Value::Object(map));
+            }
+        }
+    }
+
+    /// Remove an object from the pool by ID.
+    pub fn pool_remove(&self, pool_name: &str, id: &str) {
+        let mut state_lock = self.state.lock();
+        if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
+            let key = format!("_pool:{}", pool_name);
+            if let Some(pool) = memory.get_mut(&key).and_then(|v| v.as_object_mut()) {
+                pool.remove(id);
+            }
+        }
+    }
+
+    /// Read all objects from a pool as a Vec.
+    /// Returns `(id, value)` pairs.
+    pub fn get_pool(&self, pool_name: &str) -> Vec<(String, serde_json::Value)> {
+        let state_lock = self.state.lock();
+        if let Some(memory) = state_lock.as_any().downcast_ref::<MemoryState>() {
+            let key = format!("_pool:{}", pool_name);
+            if let Some(pool) = memory.get(&key).and_then(|v| v.as_object()) {
+                return pool
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
+            }
+        }
+        Vec::new()
+    }
+
+    /// Get the number of objects in a pool.
+    pub fn pool_count(&self, pool_name: &str) -> usize {
+        let state_lock = self.state.lock();
+        if let Some(memory) = state_lock.as_any().downcast_ref::<MemoryState>() {
+            let key = format!("_pool:{}", pool_name);
+            if let Some(pool) = memory.get(&key).and_then(|v| v.as_object()) {
+                return pool.len();
+            }
+        }
+        0
+    }
+
+    /// Clear all objects from a pool.
+    pub fn pool_clear(&self, pool_name: &str) {
+        let mut state_lock = self.state.lock();
+        if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
+            let key = format!("_pool:{}", pool_name);
+            memory.remove(&key);
+        }
+    }
+
     // ── Streaming helpers ────────────────────────────────────────────
 
     /// Create a new outbound data stream.

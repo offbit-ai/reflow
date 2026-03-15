@@ -755,18 +755,32 @@ impl Network {
         self.connectors.push(connector);
     }
 
+    /// Check how many connections target a specific (actor, port) pair.
+    pub fn connection_count_to_port(&self, actor_id: &str, port: &str) -> usize {
+        self.connectors
+            .iter()
+            .filter(|c| c.to.actor == actor_id && c.to.port == port)
+            .count()
+    }
+
+    /// Get all ports on an actor that have multiple incoming connections (fan-in).
+    /// Returns a map of port_name → connection_count for ports with count > 1.
+    pub fn fan_in_ports(&self, actor_id: &str) -> HashMap<String, usize> {
+        let mut port_counts: HashMap<String, usize> = HashMap::new();
+        for c in &self.connectors {
+            if c.to.actor == actor_id {
+                *port_counts.entry(c.to.port.clone()).or_insert(0) += 1;
+            }
+        }
+        port_counts.retain(|_, count| *count > 1);
+        port_counts
+    }
+
     /// Inject an input event into all actors matching a component type.
     ///
     /// The runtime calls this when system/browser events occur.
     /// Finds all nodes whose component matches `component_type` and
     /// sends the event data as `Message::Object` on the `_event` port.
-    ///
-    /// ```rust,ignore
-    /// // Browser keydown → inject into all KeyboardInputActor nodes
-    /// network.inject_input_event("tpl_keyboard_input", json!({
-    ///     "type": "keydown", "key": "a", "code": "KeyA"
-    /// }));
-    /// ```
     pub fn inject_input_event(
         &self,
         component_type: &str,
