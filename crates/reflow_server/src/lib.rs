@@ -24,6 +24,7 @@ pub mod peer_mesh;
 pub mod rest_api;
 pub mod template_metadata;
 pub mod trace_collector;
+pub mod workflow_store;
 pub mod zeal_converter;
 pub mod zip_session;
 
@@ -59,6 +60,11 @@ pub struct ServerConfig {
     /// Unique node ID in the distributed mesh.
     #[serde(default = "default_node_id")]
     pub node_id: String,
+    /// Optional Redis URL for workflow persistence.
+    /// When set, published workflows survive server restarts.
+    /// Falls back to in-memory when not set or Redis is unreachable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redis_url: Option<String>,
 }
 
 fn default_namespace() -> String {
@@ -80,6 +86,7 @@ impl Default for ServerConfig {
             zeal_url: None,
             namespace: default_namespace(),
             node_id: default_node_id(),
+            redis_url: None,
         }
     }
 }
@@ -92,8 +99,8 @@ impl Default for ServerConfig {
 pub async fn start_server(config: Option<ServerConfig>) -> Result<()> {
     let config = config.unwrap_or_default();
 
-    // 1. Create the shared execution engine
-    let engine = Arc::new(ExecutionEngine::new());
+    // 1. Create the shared execution engine (with Redis persistence if configured)
+    let engine = Arc::new(ExecutionEngine::new_with_redis(config.redis_url.clone()));
 
     // 2. Optionally create the observability pipeline (TraceCollector + ZipSession + EventBridge)
     let event_bridge = if let Some(zeal_url) = &config.zeal_url {

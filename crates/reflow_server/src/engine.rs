@@ -179,10 +179,9 @@ pub struct ExecutionResult {
 #[derive(Clone)]
 pub struct ExecutionEngine {
     executions: Arc<DashMap<String, ExecutionState>>,
-    /// Stored workflow graphs for webhook triggering.
-    /// Populated when a workflow is executed via Zeal — the graph is
-    /// kept so subsequent webhook triggers can re-execute it.
-    workflow_graphs: Arc<DashMap<String, serde_json::Value>>,
+    /// Persisted workflow graphs for webhook triggering.
+    /// Uses Redis when available, falls back to in-memory.
+    workflow_store: Arc<crate::workflow_store::WorkflowStore>,
 }
 
 impl Default for ExecutionEngine {
@@ -193,20 +192,32 @@ impl Default for ExecutionEngine {
 
 impl ExecutionEngine {
     pub fn new() -> Self {
+        Self::new_with_redis(None)
+    }
+
+    pub fn new_with_redis(redis_url: Option<String>) -> Self {
         Self {
             executions: Arc::new(DashMap::new()),
-            workflow_graphs: Arc::new(DashMap::new()),
+            workflow_store: Arc::new(crate::workflow_store::WorkflowStore::new(redis_url)),
         }
     }
 
     /// Store a workflow graph for later webhook triggering.
     pub fn store_workflow(&self, workflow_id: &str, graph_json: serde_json::Value) {
-        self.workflow_graphs.insert(workflow_id.to_string(), graph_json);
+        let store = self.workflow_store.clone();
+        let wid = workflow_id.to_string();
+        tokio::spawn(async move {
+            store.store(&wid, graph_json).await;
+        });
     }
 
     /// Remove a stored workflow graph (unpublish).
     pub fn remove_workflow(&self, workflow_id: &str) {
-        self.workflow_graphs.remove(workflow_id);
+        let store = self.workflow_store.clone();
+        let wid = workflow_id.to_string();
+        tokio::spawn(async move {
+            store.remove(&wid).await;
+        });
     }
 
     /// Start a workflow execution in the background.
@@ -282,9 +293,9 @@ impl ExecutionEngine {
         request_data: serde_json::Value,
     ) -> Result<(String, flume::Receiver<EngineEvent>)> {
         let graph_json = self
-            .workflow_graphs
+            .workflow_store
             .get(workflow_id)
-            .map(|entry| entry.value().clone())
+            .await
             .ok_or_else(|| anyhow!("Workflow '{}' not found", workflow_id))?;
 
         let graph_json = Self::inject_server_request_payload(graph_json, &request_data);
