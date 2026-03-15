@@ -13,6 +13,7 @@
 pub mod api;
 pub mod flow_control;
 pub mod gpu;
+pub mod input;
 pub mod integration;
 pub mod io;
 pub mod logic;

@@ -22,6 +22,9 @@ use crate::gpu::sdf::{
     SdfSmoothDifferenceActor, SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor,
     SdfTorusActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
+use crate::input::{
+    GamepadInputActor, KeyboardInputActor, MouseInputActor, TouchInputActor, WindowEventActor,
+};
 use crate::integration::HttpRequestActor;
 use crate::io::{FileLoadActor, FileSaveActor, GltfExportActor, ObjExportActor, StlExportActor};
 use crate::logic::RulesEngineActor;
@@ -101,6 +104,13 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_if_branch" => Some(Arc::new(ConditionalBranchActor::new())),
         "tpl_switch" => Some(Arc::new(SwitchCaseActor::new())),
         "tpl_loop" => Some(Arc::new(LoopActor::new())),
+
+        // Input Events
+        "tpl_keyboard_input" => Some(Arc::new(KeyboardInputActor::new())),
+        "tpl_mouse_input" => Some(Arc::new(MouseInputActor::new())),
+        "tpl_gamepad_input" => Some(Arc::new(GamepadInputActor::new())),
+        "tpl_touch_input" => Some(Arc::new(TouchInputActor::new())),
+        "tpl_window_event" => Some(Arc::new(WindowEventActor::new())),
 
         // Triggers
         "tpl_interval_trigger" => Some(Arc::new(IntervalTriggerActor::new())),
@@ -399,6 +409,17 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_image_resize".to_string(),
         "ImageResizeActor".to_string(),
     );
+
+    // Input Events
+    for (id, name) in [
+        ("tpl_keyboard_input", "KeyboardInputActor"),
+        ("tpl_mouse_input", "MouseInputActor"),
+        ("tpl_gamepad_input", "GamepadInputActor"),
+        ("tpl_touch_input", "TouchInputActor"),
+        ("tpl_window_event", "WindowEventActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
 
     // Triggers + Server
     mapping.insert(
