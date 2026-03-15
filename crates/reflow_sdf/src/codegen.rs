@@ -128,37 +128,40 @@ impl CodegenContext {
             SdfPrimitive::TaperedCapsule { a, b, radius_a, radius_b } =>
                 format!("sdf_tapered_capsule({}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
                     pos, a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b),
-            SdfPrimitive::TubePath { points, radii, k } => {
-                // Emit an inline loop that evaluates min distance across all segments
+            SdfPrimitive::TubePath { points, radii, k: _ } => {
+                // Emit a function that finds the closest point on the polyline
+                // and returns distance minus interpolated radius. Single continuous
+                // evaluation — no min/smin junctions, no normal discontinuities.
                 let n = points.len().min(radii.len());
                 if n < 2 {
                     "999.0".to_string()
                 } else {
-                    // Generate unique function name
                     let fn_name = format!("sdf_tube_{}", var);
                     let mut func = format!("fn {}(p: vec3f) -> f32 {{\n", fn_name);
-                    func.push_str("  var d = 999.0;\n");
-                    let use_smin = *k > 0.001;
+                    // Find closest point on polyline + interpolated radius
+                    func.push_str("  var best_d2 = 1e10;\n");
+                    func.push_str("  var best_r = 0.0;\n");
                     for i in 0..n - 1 {
                         let a = points[i];
                         let b = points[i + 1];
                         let ra = radii[i];
                         let rb = radii[i + 1];
-                        if use_smin {
-                            self.uses_smooth_ops = true;
-                            func.push_str(&format!(
-                                "  d = smin(d, sdf_tapered_capsule(p, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6}), {:.6});\n",
-                                a[0], a[1], a[2], b[0], b[1], b[2], ra, rb, k
-                            ));
-                        } else {
-                            func.push_str(&format!(
-                                "  d = min(d, sdf_tapered_capsule(p, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6}));\n",
-                                a[0], a[1], a[2], b[0], b[1], b[2], ra, rb
-                            ));
-                        }
+                        func.push_str(&format!(
+                            "  {{\n    let a = vec3f({:.6}, {:.6}, {:.6});\n    let b = vec3f({:.6}, {:.6}, {:.6});\n",
+                            a[0], a[1], a[2], b[0], b[1], b[2]
+                        ));
+                        func.push_str("    let ba = b - a;\n");
+                        func.push_str("    let pa = p - a;\n");
+                        func.push_str("    let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);\n");
+                        func.push_str("    let closest = pa - ba * h;\n");
+                        func.push_str("    let d2 = dot(closest, closest);\n");
+                        func.push_str(&format!(
+                            "    let r = mix({:.6}, {:.6}, h);\n", ra, rb
+                        ));
+                        func.push_str("    if d2 < best_d2 { best_d2 = d2; best_r = r; }\n");
+                        func.push_str("  }\n");
                     }
-                    func.push_str("  return d;\n}\n");
-                    // Prepend the function before sdf_scene
+                    func.push_str("  return sqrt(best_d2) - best_r;\n}\n");
                     self.helpers.push(func);
                     format!("{}({})", fn_name, pos)
                 }
