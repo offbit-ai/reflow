@@ -1,9 +1,4 @@
-//! Touch input actor.
-//!
-//! Outputs touch event data when triggered by the runtime.
-//! Config (injected by runtime on each event):
-//!   type (touchstart/touchmove/touchend/touchcancel),
-//!   touches: [{ id, x, y, force, radiusX, radiusY }]
+//! Touch input actor with pressure/force support.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -18,53 +13,22 @@ use std::collections::HashMap;
     outports::<50>(event, touches, count, pressure),
     state(MemoryState)
 )]
-pub async fn touch_input_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
-    let config = ctx.get_config_hashmap();
+pub async fn touch_input_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let e = super::extract_event_data(&ctx);
 
-    let event_type = config
-        .get("type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("touchstart")
-        .to_string();
-
-    let touches = config
-        .get("touches")
-        .cloned()
-        .unwrap_or(json!([]));
-
-    let count = if let Some(arr) = touches.as_array() {
-        arr.len() as i64
-    } else {
-        0
-    };
-
-    let mut out = HashMap::new();
-    out.insert(
-        "event".to_string(),
-        Message::object(EncodableValue::from(json!({
-            "type": event_type,
-            "touches": touches,
-            "count": count,
-        }))),
-    );
-    out.insert(
-        "touches".to_string(),
-        Message::object(EncodableValue::from(touches)),
-    );
-    out.insert("count".to_string(), Message::Integer(count));
-
-    // Extract pressure/force from first touch (for stylus/pen support)
-    let empty = json!([]);
-    let touches_ref = config.get("touches").unwrap_or(&empty);
-    let pressure = touches_ref
+    let touches = e.get("touches").cloned().unwrap_or(json!([]));
+    let count = touches.as_array().map(|a| a.len() as i64).unwrap_or(0);
+    let pressure = touches
         .as_array()
         .and_then(|arr| arr.first())
         .and_then(|t| t.get("force").or(t.get("pressure")))
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0);
-    out.insert("pressure".to_string(), Message::Float(pressure));
 
+    let mut out = HashMap::new();
+    out.insert("event".to_string(), Message::object(EncodableValue::from(e)));
+    out.insert("touches".to_string(), Message::object(EncodableValue::from(touches)));
+    out.insert("count".to_string(), Message::Integer(count));
+    out.insert("pressure".to_string(), Message::Float(pressure));
     Ok(out)
 }

@@ -47,10 +47,12 @@ bytemuck = { version = "1.14", features = ["derive"], optional = true }
 pollster = { version = "0.4", optional = true }
 
 [features]
-default = ["api", "av-core", "gpu"]
+default = ["api", "av-core", "gpu", "window-events"]
 api = []
 av-core = ["dep:reflow_dsp", "dep:reflow_pixel"]
 gpu = ["dep:wgpu", "dep:bytemuck", "dep:pollster"]
+window-events = []
+browser-events = ["window-events"]
 
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }

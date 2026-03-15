@@ -22,6 +22,7 @@ use crate::gpu::sdf::{
     SdfSmoothDifferenceActor, SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor,
     SdfTorusActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
+#[cfg(feature = "window-events")]
 use crate::input::{
     GamepadInputActor, KeyboardInputActor, MouseInputActor, TouchInputActor, WindowEventActor,
 };
@@ -105,11 +106,16 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_switch" => Some(Arc::new(SwitchCaseActor::new())),
         "tpl_loop" => Some(Arc::new(LoopActor::new())),
 
-        // Input Events
+        // Input Events (feature-gated)
+        #[cfg(feature = "window-events")]
         "tpl_keyboard_input" => Some(Arc::new(KeyboardInputActor::new())),
+        #[cfg(feature = "window-events")]
         "tpl_mouse_input" => Some(Arc::new(MouseInputActor::new())),
+        #[cfg(feature = "window-events")]
         "tpl_gamepad_input" => Some(Arc::new(GamepadInputActor::new())),
+        #[cfg(feature = "window-events")]
         "tpl_touch_input" => Some(Arc::new(TouchInputActor::new())),
+        #[cfg(feature = "window-events")]
         "tpl_window_event" => Some(Arc::new(WindowEventActor::new())),
 
         // Triggers
@@ -410,7 +416,8 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "ImageResizeActor".to_string(),
     );
 
-    // Input Events
+    // Input Events (feature-gated)
+    #[cfg(feature = "window-events")]
     for (id, name) in [
         ("tpl_keyboard_input", "KeyboardInputActor"),
         ("tpl_mouse_input", "MouseInputActor"),

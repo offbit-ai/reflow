@@ -755,6 +755,74 @@ impl Network {
         self.connectors.push(connector);
     }
 
+    /// Inject an input event into all actors matching a component type.
+    ///
+    /// The runtime calls this when system/browser events occur.
+    /// Finds all nodes whose component matches `component_type` and
+    /// sends the event data as `Message::Object` on the `_event` port.
+    ///
+    /// ```rust,ignore
+    /// // Browser keydown → inject into all KeyboardInputActor nodes
+    /// network.inject_input_event("tpl_keyboard_input", json!({
+    ///     "type": "keydown", "key": "a", "code": "KeyA"
+    /// }));
+    /// ```
+    pub fn inject_input_event(
+        &self,
+        component_type: &str,
+        event_data: serde_json::Value,
+    ) -> Result<(), anyhow::Error> {
+        let msg = Message::from(event_data);
+        let mut found = false;
+
+        // Find all nodes with matching component and send the event
+        let node_ids: Vec<String> = self
+            .nodes
+            .iter()
+            .filter(|(_, node)| node.component == component_type)
+            .map(|(id, _)| id.clone())
+            .collect();
+
+        for node_id in &node_ids {
+            self.send_to_actor(node_id, "_event", msg.clone())?;
+            found = true;
+        }
+
+        if !found {
+            // Also try matching by actor name (template_id or component name)
+            let alt_ids: Vec<String> = self
+                .nodes
+                .iter()
+                .filter(|(_, node)| {
+                    node.component.contains(component_type)
+                        || node
+                            .metadata
+                            .as_ref()
+                            .and_then(|m| m.get("template_id"))
+                            .and_then(|v| v.as_str())
+                            .map(|t| t == component_type)
+                            .unwrap_or(false)
+                })
+                .map(|(id, _)| id.clone())
+                .collect();
+
+            for node_id in &alt_ids {
+                self.send_to_actor(node_id, "_event", msg.clone())?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get all node IDs matching a component type.
+    pub fn find_nodes_by_component(&self, component_type: &str) -> Vec<String> {
+        self.nodes
+            .iter()
+            .filter(|(_, node)| node.component == component_type)
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
     pub fn add_initial(&mut self, connector: InitialPacket) {
         self.initials.push(connector);
     }
@@ -1263,6 +1331,24 @@ impl GraphNetwork {
         if let Ok(network) = self.network.lock().as_mut() {
             network.next(callback);
         }
+    }
+
+    /// Inject an input event into actors matching a component type.
+    /// Called from JavaScript when browser events occur.
+    #[wasm_bindgen(js_name = injectInputEvent)]
+    pub fn inject_input_event(
+        &self,
+        component_type: &str,
+        event_data: JsValue,
+    ) -> Result<(), JsValue> {
+        let value: serde_json::Value = serde_wasm_bindgen::from_value(event_data)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        if let Ok(network) = self.network.lock() {
+            network
+                .inject_input_event(component_type, value)
+                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        }
+        Ok(())
     }
 
     /// Shutdown the network

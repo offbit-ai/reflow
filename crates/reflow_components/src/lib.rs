@@ -13,6 +13,7 @@
 pub mod api;
 pub mod flow_control;
 pub mod gpu;
+#[cfg(feature = "window-events")]
 pub mod input;
 pub mod integration;
 pub mod io;
