@@ -204,6 +204,11 @@ impl ExecutionEngine {
         self.workflow_graphs.insert(workflow_id.to_string(), graph_json);
     }
 
+    /// Remove a stored workflow graph (unpublish).
+    pub fn remove_workflow(&self, workflow_id: &str) {
+        self.workflow_graphs.remove(workflow_id);
+    }
+
     /// Start a workflow execution in the background.
     /// Returns the execution ID immediately.
     pub async fn start_execution(

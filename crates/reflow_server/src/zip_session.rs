@@ -330,6 +330,17 @@ impl ZipSession {
                 }
             }
 
+            // Zeal unpublishes a workflow — remove from store
+            "workflow.unpublish" | "workflow.undeploy" | "workflow.delete" => {
+                let workflow_id = cmd.get("workflowId")
+                    .or(cmd.get("workflow_id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+
+                engine.remove_workflow(workflow_id);
+                info!("[ZipWS] Unpublished workflow '{}' — webhook removed", workflow_id);
+            }
+
             // Ping/pong for keepalive
             "ping" => {
                 debug!("[ZipWS] Received ping");
