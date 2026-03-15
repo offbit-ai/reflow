@@ -25,7 +25,7 @@ use crate::math::{
     QuatFromEulerActor, QuatMultiplyActor, QuatSlerpActor, QuatRotateVec3Actor,
 };
 use crate::integration::HttpRequestActor;
-use crate::io::{FileLoadActor, FileSaveActor, ObjExportActor};
+use crate::io::{FileLoadActor, FileSaveActor, GltfExportActor, ObjExportActor, StlExportActor};
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor,
     NoiseGeneratorActor,
@@ -40,7 +40,7 @@ use crate::gpu::sdf::{
     SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
 #[cfg(feature = "gpu")]
-use crate::gpu::sdf::{SdfRenderActor, SdfMarchingCubesActor};
+use crate::gpu::sdf::{MeshToSdfActor, SdfMarchingCubesActor, SdfRenderActor};
 use crate::logic::RulesEngineActor;
 use crate::media::{
     AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
@@ -228,9 +228,13 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_render" => Some(Arc::new(SdfRenderActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_sdf_marching_cubes" => Some(Arc::new(SdfMarchingCubesActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_mesh_to_sdf" => Some(Arc::new(MeshToSdfActor::new())),
 
         // Mesh export
         "tpl_obj_export" => Some(Arc::new(ObjExportActor::new())),
+        "tpl_stl_export" => Some(Arc::new(StlExportActor::new())),
+        "tpl_gltf_export" => Some(Arc::new(GltfExportActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -376,8 +380,11 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     {
         mapping.insert("tpl_sdf_render".to_string(), "SdfRenderActor".to_string());
         mapping.insert("tpl_sdf_marching_cubes".to_string(), "SdfMarchingCubesActor".to_string());
+        mapping.insert("tpl_mesh_to_sdf".to_string(), "MeshToSdfActor".to_string());
     }
     mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
+    mapping.insert("tpl_stl_export".to_string(), "StlExportActor".to_string());
+    mapping.insert("tpl_gltf_export".to_string(), "GltfExportActor".to_string());
 
     // Audio DSP (continued)
     mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());

@@ -3,6 +3,8 @@ pub mod primitives;
 #[cfg(feature = "gpu")]
 pub mod marching_cubes;
 #[cfg(feature = "gpu")]
+pub mod mesh_to_sdf;
+#[cfg(feature = "gpu")]
 pub mod render;
 pub mod scene;
 pub mod transforms;
@@ -11,6 +13,8 @@ pub use operations::*;
 pub use primitives::*;
 #[cfg(feature = "gpu")]
 pub use marching_cubes::SdfMarchingCubesActor;
+#[cfg(feature = "gpu")]
+pub use mesh_to_sdf::MeshToSdfActor;
 #[cfg(feature = "gpu")]
 pub use render::SdfRenderActor;
 pub use scene::*;
