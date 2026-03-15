@@ -8,6 +8,7 @@ use crate::Actor;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::scene::{InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
 use crate::flow_control::{
     CollectActor, ConditionalBranchActor, CronTriggerActor, DelayActor, FilterActor, GateActor,
     IntervalTriggerActor, LoopActor, MapActor, MergeActor, PassthroughActor, ReduceActor,
@@ -105,6 +106,12 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_if_branch" => Some(Arc::new(ConditionalBranchActor::new())),
         "tpl_switch" => Some(Arc::new(SwitchCaseActor::new())),
         "tpl_loop" => Some(Arc::new(LoopActor::new())),
+
+        // Scene
+        "tpl_prefab" => Some(Arc::new(PrefabActor::new())),
+        "tpl_instance" => Some(Arc::new(InstanceActor::new())),
+        "tpl_scene_graph" => Some(Arc::new(SceneGraphActor::new())),
+        "tpl_terrain" => Some(Arc::new(TerrainActor::new())),
 
         // Input Events (feature-gated)
         #[cfg(feature = "window-events")]
@@ -424,6 +431,16 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_gamepad_input", "GamepadInputActor"),
         ("tpl_touch_input", "TouchInputActor"),
         ("tpl_window_event", "WindowEventActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
+
+    // Scene
+    for (id, name) in [
+        ("tpl_prefab", "PrefabActor"),
+        ("tpl_instance", "InstanceActor"),
+        ("tpl_scene_graph", "SceneGraphActor"),
+        ("tpl_terrain", "TerrainActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }

@@ -22,6 +22,7 @@ pub mod math;
 pub mod media;
 pub mod procedural;
 pub mod registry;
+pub mod scene;
 pub mod stream_ops;
 pub mod text;
 pub mod transform;
