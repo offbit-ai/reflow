@@ -49,9 +49,9 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
         let mut rotations = Vec::new();
 
         // Phase offset per bone — wave propagates from head to tail
-        let phase = bone_idx as f64 * std::f64::consts::PI * 0.4;
-        // Amplitude increases toward the tail
-        let amplitude = 0.25 + bone_idx as f64 * 0.08;
+        let phase = bone_idx as f64 * std::f64::consts::PI * 0.5;
+        // Larger amplitude so bending is clearly visible
+        let amplitude = 0.4 + bone_idx as f64 * 0.12;
 
         for i in 0..=n {
             let t = i as f64 / fps as f64;
@@ -110,19 +110,19 @@ async fn main() -> anyhow::Result<()> {
 
     // ── Nodes ────────────────────────────────────────────────────
 
-    // Capsule mesh — elongated along Y axis (tall and thin)
+    // Capsule mesh — visible girth, elongated along Y
     net.add_node("capsule", "tpl_sdf_capsule", config(json!({
-        "radius": 0.15, "height": 2.0,
+        "radius": 0.35, "height": 3.0,
     })))?;
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 48, "bound": 1.5, "isoLevel": 0.0,
+        "resolution": 48, "bound": 2.0, "isoLevel": 0.0,
     })))?;
 
-    // 6-bone skeleton along Y axis: bones spaced 0.4 apart
-    let bone_spacing = 2.0 / (bone_count - 1) as f64;
+    // 6-bone skeleton along Y axis, spanning the capsule length
+    let bone_spacing = 3.0 / (bone_count - 1) as f64;
     let mut bones = Vec::new();
     for i in 0..bone_count {
-        let y = -1.0 + i as f64 * bone_spacing; // -1.0 to +1.0
+        let y = -1.5 + i as f64 * bone_spacing; // -1.5 to +1.5
         bones.push(json!({
             "name": format!("bone_{}", i),
             "parent": if i == 0 { -1 } else { i as i64 - 1 },
@@ -159,7 +159,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "snake_scene", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": img_size, "height": img_size,
-        "cameraPosX": 0.0, "cameraPosY": 0.5, "cameraPosZ": 4.0,
+        "cameraPosX": 4.0, "cameraPosY": 1.0, "cameraPosZ": 3.0,
         "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
         "bgR": 0.08, "bgG": 0.08, "bgB": 0.12,
     })))?;
