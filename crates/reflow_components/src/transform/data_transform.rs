@@ -27,10 +27,9 @@ pub async fn data_transform_actor(
         .get("input")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let transform_type = property_values
-        .and_then(|pv| pv.get("transform_type").or_else(|| pv.get("operation")))
+    let transform_type = config
+        .get("transform_type")
+        .or_else(|| config.get("operation"))
         .and_then(|v| v.as_str())
         .unwrap_or("passthrough");
 
@@ -61,8 +60,9 @@ pub async fn data_transform_actor(
             _ => input.clone(),
         },
         "extract_field" => {
-            let field_name = property_values
-                .and_then(|pv| pv.get("field_name").or_else(|| pv.get("field")))
+            let field_name = config
+                .get("field_name")
+                .or_else(|| config.get("field"))
                 .and_then(|v| v.as_str());
 
             if let Some(field) = field_name {
@@ -81,12 +81,14 @@ pub async fn data_transform_actor(
             }
         }
         "set_field" => {
-            let field_name = property_values
-                .and_then(|pv| pv.get("field_name").or_else(|| pv.get("field")))
+            let field_name = config
+                .get("field_name")
+                .or_else(|| config.get("field"))
                 .and_then(|v| v.as_str());
 
-            let field_value =
-                property_values.and_then(|pv| pv.get("field_value").or_else(|| pv.get("value")));
+            let field_value = config
+                .get("field_value")
+                .or_else(|| config.get("value"));
 
             if let (Some(field), Some(value)) = (field_name, field_value) {
                 let mut obj_value = if let Message::Object(obj) = input {
@@ -105,8 +107,8 @@ pub async fn data_transform_actor(
             }
         }
         "template" => {
-            let template = property_values
-                .and_then(|pv| pv.get("template"))
+            let template = config
+                .get("template")
                 .and_then(|v| v.as_str())
                 .unwrap_or("${value}");
 

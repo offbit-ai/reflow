@@ -37,20 +37,18 @@ pub async fn audio_stream_display_actor(
     context: ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let autoplay = property_values
-        .and_then(|pv| pv.get("autoplay"))
+    let autoplay = config
+        .get("autoplay")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let loop_playback = property_values
-        .and_then(|pv| pv.get("loop"))
+    let loop_playback = config
+        .get("loop")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let show_waveform = property_values
-        .and_then(|pv| pv.get("showWaveform"))
+    let show_waveform = config
+        .get("showWaveform")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -78,8 +76,8 @@ pub async fn audio_stream_display_actor(
     let ct = content_type.as_deref().unwrap_or("application/octet-stream");
 
     // Validate audio content type
-    let accepted: Vec<String> = property_values
-        .and_then(|pv| pv.get("acceptedFormats"))
+    let accepted: Vec<String> = config
+        .get("acceptedFormats")
         .and_then(|v| v.as_str())
         .map(|s| s.split(',').map(|f| f.trim().to_string()).collect())
         .unwrap_or_else(|| {

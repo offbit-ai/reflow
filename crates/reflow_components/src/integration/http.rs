@@ -21,20 +21,18 @@ pub async fn http_request_actor(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let config = context.get_config_hashmap();
 
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let url = property_values
-        .and_then(|pv| pv.get("url"))
+    let url = config
+        .get("url")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("URL not configured in Zeal node"))?;
 
-    let method = property_values
-        .and_then(|pv| pv.get("method"))
+    let method = config
+        .get("method")
         .and_then(|v| v.as_str())
         .unwrap_or("GET");
 
-    let timeout_ms = property_values
-        .and_then(|pv| pv.get("timeout"))
+    let timeout_ms = config
+        .get("timeout")
         .and_then(|v| v.as_u64())
         .unwrap_or(30000);
 
@@ -64,9 +62,9 @@ pub async fn http_request_actor(context: ActorContext) -> Result<HashMap<String,
         }
     }
 
-    // Apply headers from propertyValues
-    if let Some(headers) = property_values
-        .and_then(|pv| pv.get("headers"))
+    // Apply headers from config
+    if let Some(headers) = config
+        .get("headers")
         .and_then(|v| v.as_object())
     {
         for (key, value) in headers {
@@ -82,8 +80,8 @@ pub async fn http_request_actor(context: ActorContext) -> Result<HashMap<String,
         request_builder = request_builder.json(&body_json);
     }
 
-    // Apply body from propertyValues
-    if let Some(body) = property_values.and_then(|pv| pv.get("body")) {
+    // Apply body from config
+    if let Some(body) = config.get("body") {
         request_builder = request_builder.json(body);
     }
 

@@ -24,10 +24,9 @@ pub async fn switch_case_actor(context: ActorContext) -> Result<HashMap<String, 
         .get("data")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let switch_field = property_values
-        .and_then(|pv| pv.get("switch_field").or_else(|| pv.get("field")))
+    let switch_field = config
+        .get("switch_field")
+        .or_else(|| config.get("field"))
         .and_then(|v| v.as_str());
 
     let switch_value = if let Some(field) = switch_field {
@@ -41,10 +40,10 @@ pub async fn switch_case_actor(context: ActorContext) -> Result<HashMap<String, 
         Some(serde_json::to_value(data)?)
     };
 
-    let case1_value = property_values.and_then(|pv| pv.get("case1_value"));
-    let case2_value = property_values.and_then(|pv| pv.get("case2_value"));
-    let case3_value = property_values.and_then(|pv| pv.get("case3_value"));
-    let case4_value = property_values.and_then(|pv| pv.get("case4_value"));
+    let case1_value = config.get("case1_value");
+    let case2_value = config.get("case2_value");
+    let case3_value = config.get("case3_value");
+    let case4_value = config.get("case4_value");
 
     let output_port = match switch_value {
         Some(val) if case1_value == Some(&val) => "case1",

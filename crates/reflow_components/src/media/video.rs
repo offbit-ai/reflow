@@ -28,15 +28,13 @@ const DEFAULT_TIMEOUT_MS: u64 = 120_000;
 pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let config = context.get_config_hashmap();
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let source_type = property_values
-        .and_then(|pv| pv.get("source"))
+    let source_type = config
+        .get("source")
         .and_then(|v| v.as_str())
         .unwrap_or("url");
 
-    let accepted_formats: Vec<String> = property_values
-        .and_then(|pv| pv.get("acceptedFormats"))
+    let accepted_formats: Vec<String> = config
+        .get("acceptedFormats")
         .and_then(|v| v.as_str())
         .map(|s| s.split(',').map(|f| f.trim().to_string()).collect())
         .unwrap_or_else(|| {
@@ -46,35 +44,35 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
                 .collect()
         });
 
-    let max_file_size = property_values
-        .and_then(|pv| pv.get("maxFileSize"))
+    let max_file_size = config
+        .get("maxFileSize")
         .and_then(|v| v.as_u64())
         .unwrap_or(DEFAULT_MAX_FILE_SIZE_MB)
         * 1024
         * 1024;
 
-    let autoplay = property_values
-        .and_then(|pv| pv.get("autoplay"))
+    let autoplay = config
+        .get("autoplay")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let loop_playback = property_values
-        .and_then(|pv| pv.get("loop"))
+    let loop_playback = config
+        .get("loop")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let muted = property_values
-        .and_then(|pv| pv.get("muted"))
+    let muted = config
+        .get("muted")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let show_controls = property_values
-        .and_then(|pv| pv.get("showControls"))
+    let show_controls = config
+        .get("showControls")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let stream_type = property_values
-        .and_then(|pv| pv.get("streamType"))
+    let stream_type = config
+        .get("streamType")
         .and_then(|v| v.as_str())
         .unwrap_or("auto");
 
@@ -89,7 +87,7 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
 
     match source_type {
         "url" => {
-            let url = get_url(property_values, inputs)?;
+            let url = get_url(&config, inputs)?;
 
             let client = reqwest::Client::builder()
                 .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
@@ -165,7 +163,7 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
             );
         }
         "stream" => {
-            let url = get_url(property_values, inputs)?;
+            let url = get_url(&config, inputs)?;
 
             let resolved_stream_type = if stream_type == "auto" {
                 detect_stream_type(url)
@@ -205,7 +203,7 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
             );
         }
         "youtube" => {
-            let url = get_url(property_values, inputs)?;
+            let url = get_url(&config, inputs)?;
             let video_id = extract_youtube_id(url);
 
             let embed_url = video_id
@@ -236,7 +234,7 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
             );
         }
         "vimeo" => {
-            let url = get_url(property_values, inputs)?;
+            let url = get_url(&config, inputs)?;
             let video_id = extract_vimeo_id(url);
 
             let embed_url = video_id
@@ -270,7 +268,7 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
         // after uploading to S3, so by the time the graph reaches Reflow,
         // uploads are already URLs. Treat the same as "url".
         "upload" => {
-            let url = get_url(property_values, inputs)?;
+            let url = get_url(&config, inputs)?;
             let client = reqwest::Client::builder()
                 .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
                 .build()?;
@@ -325,11 +323,11 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
 }
 
 fn get_url<'a>(
-    property_values: Option<&'a serde_json::Map<String, serde_json::Value>>,
+    config: &'a HashMap<String, serde_json::Value>,
     inputs: &'a HashMap<String, Message>,
 ) -> Result<&'a str> {
-    property_values
-        .and_then(|pv| pv.get("url"))
+    config
+        .get("url")
         .and_then(|v| v.as_str())
         .or_else(|| {
             inputs.get("source").and_then(|m| {

@@ -27,10 +27,8 @@ const DEFAULT_TIMEOUT_MS: u64 = 60_000;
 pub async fn audio_input_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let config = context.get_config_hashmap();
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let accepted_formats: Vec<String> = property_values
-        .and_then(|pv| pv.get("acceptedFormats"))
+    let accepted_formats: Vec<String> = config
+        .get("acceptedFormats")
         .and_then(|v| v.as_str())
         .map(|s| s.split(',').map(|f| f.trim().to_string()).collect())
         .unwrap_or_else(|| {
@@ -40,31 +38,31 @@ pub async fn audio_input_actor(context: ActorContext) -> Result<HashMap<String, 
                 .collect()
         });
 
-    let max_file_size = property_values
-        .and_then(|pv| pv.get("maxFileSize"))
+    let max_file_size = config
+        .get("maxFileSize")
         .and_then(|v| v.as_u64())
         .unwrap_or(DEFAULT_MAX_FILE_SIZE_MB)
         * 1024
         * 1024;
 
-    let autoplay = property_values
-        .and_then(|pv| pv.get("autoplay"))
+    let autoplay = config
+        .get("autoplay")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let loop_playback = property_values
-        .and_then(|pv| pv.get("loop"))
+    let loop_playback = config
+        .get("loop")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let show_waveform = property_values
-        .and_then(|pv| pv.get("showWaveform"))
+    let show_waveform = config
+        .get("showWaveform")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    // Resolve URL: propertyValues.url takes precedence, then source input port
-    let url = property_values
-        .and_then(|pv| pv.get("url"))
+    // Resolve URL: config.url takes precedence, then source input port
+    let url = config
+        .get("url")
         .and_then(|v| v.as_str())
         .or_else(|| {
             inputs.get("source").and_then(|m| {

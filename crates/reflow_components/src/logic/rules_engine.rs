@@ -25,10 +25,9 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
         .get("data")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let rules = property_values
-        .and_then(|pv| pv.get("rules").or_else(|| pv.get("propertyRules")))
+    let rules = config
+        .get("rules")
+        .or_else(|| config.get("propertyRules"))
         .and_then(|v| v.as_object());
 
     if let Some(rules_obj) = rules {

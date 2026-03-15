@@ -39,10 +39,8 @@ pub async fn image_stream_display_actor(
     context: ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
     let config = context.get_config_hashmap();
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let display_mode = property_values
-        .and_then(|pv| pv.get("displayMode"))
+    let display_mode = config
+        .get("displayMode")
         .and_then(|v| v.as_str())
         .unwrap_or("contain");
 
@@ -70,8 +68,8 @@ pub async fn image_stream_display_actor(
     let ct = content_type.as_deref().unwrap_or("application/octet-stream");
 
     // Validate image content type
-    let accepted: Vec<String> = property_values
-        .and_then(|pv| pv.get("acceptedFormats"))
+    let accepted: Vec<String> = config
+        .get("acceptedFormats")
         .and_then(|v| v.as_str())
         .map(|s| s.split(',').map(|f| f.trim().to_string()).collect())
         .unwrap_or_else(|| {

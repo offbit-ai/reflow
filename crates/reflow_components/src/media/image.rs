@@ -27,10 +27,8 @@ const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 pub async fn image_input_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let config = context.get_config_hashmap();
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let accepted_formats: Vec<String> = property_values
-        .and_then(|pv| pv.get("acceptedFormats"))
+    let accepted_formats: Vec<String> = config
+        .get("acceptedFormats")
         .and_then(|v| v.as_str())
         .map(|s| s.split(',').map(|f| f.trim().to_string()).collect())
         .unwrap_or_else(|| {
@@ -40,21 +38,21 @@ pub async fn image_input_actor(context: ActorContext) -> Result<HashMap<String, 
                 .collect()
         });
 
-    let max_file_size = property_values
-        .and_then(|pv| pv.get("maxFileSize"))
+    let max_file_size = config
+        .get("maxFileSize")
         .and_then(|v| v.as_u64())
         .unwrap_or(DEFAULT_MAX_FILE_SIZE_MB)
         * 1024
         * 1024;
 
-    let display_mode = property_values
-        .and_then(|pv| pv.get("displayMode"))
+    let display_mode = config
+        .get("displayMode")
         .and_then(|v| v.as_str())
         .unwrap_or("contain");
 
-    // Resolve URL: propertyValues.url takes precedence, then source input port
-    let url = property_values
-        .and_then(|pv| pv.get("url"))
+    // Resolve URL: config.url takes precedence, then source input port
+    let url = config
+        .get("url")
         .and_then(|v| v.as_str())
         .or_else(|| {
             inputs.get("source").and_then(|m| {

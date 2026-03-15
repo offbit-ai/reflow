@@ -27,11 +27,9 @@ pub async fn conditional_branch_actor(
         .get("data")
         .ok_or_else(|| anyhow::anyhow!("No input data provided"))?;
 
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
     // Check for decisionRules first (for tpl_if_branch)
-    if let Some(decision_rules) = property_values
-        .and_then(|pv| pv.get("decisionRules"))
+    if let Some(decision_rules) = config
+        .get("decisionRules")
         .and_then(|v| v.as_object())
     {
         let rule_type = decision_rules
@@ -86,16 +84,18 @@ pub async fn conditional_branch_actor(
     }
 
     // Fallback to simple condition configuration
-    let condition_type = property_values
-        .and_then(|pv| pv.get("condition_type"))
+    let condition_type = config
+        .get("condition_type")
         .and_then(|v| v.as_str())
         .unwrap_or("equals");
 
-    let condition_value =
-        property_values.and_then(|pv| pv.get("condition_value").or_else(|| pv.get("value")));
+    let condition_value = config
+        .get("condition_value")
+        .or_else(|| config.get("value"));
 
-    let condition_field = property_values
-        .and_then(|pv| pv.get("condition_field").or_else(|| pv.get("field")))
+    let condition_field = config
+        .get("condition_field")
+        .or_else(|| config.get("field"))
         .and_then(|v| v.as_str());
 
     let condition_met = match condition_type {

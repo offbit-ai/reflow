@@ -29,10 +29,8 @@ pub async fn data_operations_actor(
 
     let all_inputs = payload.clone();
 
-    let property_values = config.get("propertyValues").and_then(|v| v.as_object());
-
-    let operation_sets = property_values
-        .and_then(|pv| pv.get("dataOperations"))
+    let operation_sets = config
+        .get("dataOperations")
         .and_then(|v| v.as_array());
 
     if let Some(sets) = operation_sets {
