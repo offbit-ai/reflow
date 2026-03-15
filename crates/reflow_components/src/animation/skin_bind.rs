@@ -111,32 +111,69 @@ pub async fn skin_bind_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     Ok(out)
 }
 
-/// Auto-assign bone weights by nearest bone head position.
-/// Returns packed bytes: per vertex, `max_influences` entries of [u16 bone_index, f32 weight].
+/// Auto-assign bone weights by distance to bone segments.
+///
+/// For each vertex, computes the distance to every bone's line segment
+/// (from parent joint to child joint in world space), not just the bone
+/// head. This gives smooth weight falloff along the bone's length and
+/// prevents mesh tearing at segment boundaries.
 fn auto_assign_weights(
     mesh_bytes: &[u8],
     stride: usize,
     bones: &[Value],
     max_influences: usize,
 ) -> Vec<u8> {
+    use super::math_helpers::{mat4_mul, MAT4_IDENTITY};
+
     let vertex_count = mesh_bytes.len() / stride;
     let entry_size = 2 + 4; // u16 + f32
     let mut out = Vec::with_capacity(vertex_count * max_influences * entry_size);
+    let bone_count = bones.len();
 
-    // Extract bone world positions from bind transforms
-    let bone_positions: Vec<[f32; 3]> = bones
-        .iter()
-        .map(|b| {
-            if let Some(local) = b.get("localBindTransform").and_then(|v| v.as_array()) {
-                // Translation is in columns 12,13,14 of the mat4
-                // But for hierarchy we'd need world positions. Approximate with local translation.
-                let tx = local.get(12).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-                let ty = local.get(13).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-                let tz = local.get(14).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-                [tx, ty, tz]
-            } else {
-                [0.0; 3]
+    // Parse parent indices and local bind transforms
+    let mut parents: Vec<i32> = Vec::with_capacity(bone_count);
+    let mut local_mats: Vec<[f32; 16]> = Vec::with_capacity(bone_count);
+
+    for b in bones {
+        parents.push(b.get("parent").and_then(|v| v.as_i64()).unwrap_or(-1) as i32);
+        let m = if let Some(arr) = b.get("localBindTransform").and_then(|v| v.as_array()) {
+            let mut mat = [0.0f32; 16];
+            for (i, v) in arr.iter().enumerate().take(16) {
+                mat[i] = v.as_f64().unwrap_or(0.0) as f32;
             }
+            mat
+        } else {
+            MAT4_IDENTITY
+        };
+        local_mats.push(m);
+    }
+
+    // Compute world positions by walking hierarchy: world = parent_world * local
+    let mut world_positions: Vec<[f32; 3]> = vec![[0.0; 3]; bone_count];
+    let mut world_mats: Vec<[f32; 16]> = vec![MAT4_IDENTITY; bone_count];
+    for i in 0..bone_count {
+        let p = parents[i];
+        if p >= 0 && (p as usize) < bone_count {
+            world_mats[i] = mat4_mul(&world_mats[p as usize], &local_mats[i]);
+        } else {
+            world_mats[i] = local_mats[i];
+        }
+        // World position = translation column of world matrix
+        world_positions[i] = [world_mats[i][12], world_mats[i][13], world_mats[i][14]];
+    }
+
+    // Build bone segments: each bone defines a segment from parent_pos to bone_pos.
+    // Root bone (no parent) uses a zero-length segment at its position.
+    let segments: Vec<([f32; 3], [f32; 3])> = (0..bone_count)
+        .map(|i| {
+            let p = parents[i];
+            let bone_pos = world_positions[i];
+            let parent_pos = if p >= 0 && (p as usize) < bone_count {
+                world_positions[p as usize]
+            } else {
+                bone_pos // root: zero-length segment
+            };
+            (parent_pos, bone_pos)
         })
         .collect();
 
@@ -145,25 +182,24 @@ fn auto_assign_weights(
         let vx = f32::from_le_bytes(mesh_bytes[off..off + 4].try_into().unwrap());
         let vy = f32::from_le_bytes(mesh_bytes[off + 4..off + 8].try_into().unwrap());
         let vz = f32::from_le_bytes(mesh_bytes[off + 8..off + 12].try_into().unwrap());
+        let vertex = [vx, vy, vz];
 
-        // Find closest bones
-        let mut dists: Vec<(usize, f32)> = bone_positions
+        // Distance to each bone segment
+        let mut dists: Vec<(usize, f32)> = segments
             .iter()
             .enumerate()
-            .map(|(bi, bp)| {
-                let dx = vx - bp[0];
-                let dy = vy - bp[1];
-                let dz = vz - bp[2];
-                (bi, dx * dx + dy * dy + dz * dz)
+            .map(|(bi, (seg_a, seg_b))| {
+                let d = point_to_segment_distance(vertex, *seg_a, *seg_b);
+                (bi, d)
             })
             .collect();
         dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
-        // Take top max_influences, compute inverse-distance weights
+        // Inverse-distance weighting with smoothing
         let top: Vec<(usize, f32)> = dists
             .iter()
             .take(max_influences)
-            .map(|(bi, d2)| (*bi, 1.0 / (d2.sqrt() + 0.001)))
+            .map(|(bi, d)| (*bi, 1.0 / (d + 0.01)))
             .collect();
 
         let total: f32 = top.iter().map(|(_, w)| w).sum();
@@ -181,4 +217,30 @@ fn auto_assign_weights(
     }
 
     out
+}
+
+/// Distance from point `p` to line segment `a→b`.
+fn point_to_segment_distance(p: [f32; 3], a: [f32; 3], b: [f32; 3]) -> f32 {
+    let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let ap = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
+    let ab_len_sq = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
+
+    if ab_len_sq < 1e-8 {
+        // Zero-length segment: just point distance
+        return (ap[0] * ap[0] + ap[1] * ap[1] + ap[2] * ap[2]).sqrt();
+    }
+
+    // Project p onto the line, clamped to [0, 1]
+    let t = ((ap[0] * ab[0] + ap[1] * ab[1] + ap[2] * ab[2]) / ab_len_sq).clamp(0.0, 1.0);
+
+    let closest = [
+        a[0] + t * ab[0],
+        a[1] + t * ab[1],
+        a[2] + t * ab[2],
+    ];
+
+    let dx = p[0] - closest[0];
+    let dy = p[1] - closest[1];
+    let dz = p[2] - closest[2];
+    (dx * dx + dy * dy + dz * dz).sqrt()
 }

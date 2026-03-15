@@ -80,7 +80,9 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let entry_size = 6; // u16 + f32
     let weights_per_vertex = max_influences * entry_size;
 
-    // Output: 24-byte stride (pos3 + normal3)
+    // Deform vertices: transform positions and normals by blended bone matrices.
+    // Use the original smooth normals from MarchingCubes (SDF gradient-based),
+    // transformed by the upper 3x3 of the blended matrix.
     let mut output = Vec::with_capacity(vertex_count * 24);
 
     for i in 0..vertex_count {
@@ -94,10 +96,8 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         let ny = f32::from_le_bytes(mesh_bytes[mesh_off + 16..mesh_off + 20].try_into().unwrap());
         let nz = f32::from_le_bytes(mesh_bytes[mesh_off + 20..mesh_off + 24].try_into().unwrap());
 
-        let pos = [px, py, pz];
-        let nor = [nx, ny, nz];
-
         let mut blended = [0.0f32; 16];
+        let mut total_weight = 0.0f32;
         for j in 0..max_influences {
             let w_off = skin_off + j * entry_size;
             if w_off + entry_size > skin_bytes.len() { break; }
@@ -106,10 +106,16 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
             if weight < 1e-6 || bone_idx >= bone_count { continue; }
             let m = &bone_matrices[bone_idx];
             for k in 0..16 { blended[k] += m[k] * weight; }
+            total_weight += weight;
         }
 
-        let new_pos = mat4_transform_point(&blended, pos);
-        let new_nor = vec3_normalize(mat4_transform_dir(&blended, nor));
+        // Fallback to identity if no bone influences
+        if total_weight < 1e-6 {
+            blended = super::math_helpers::MAT4_IDENTITY;
+        }
+
+        let new_pos = mat4_transform_point(&blended, [px, py, pz]);
+        let new_nor = vec3_normalize(mat4_transform_dir(&blended, [nx, ny, nz]));
 
         output.extend_from_slice(&new_pos[0].to_le_bytes());
         output.extend_from_slice(&new_pos[1].to_le_bytes());
