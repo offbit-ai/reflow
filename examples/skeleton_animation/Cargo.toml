@@ -16,4 +16,3 @@ reflow_components = { path = "../../crates/reflow_components", default-features 
 anyhow = "1.0"
 tokio = { version = "1", features = ["full"] }
 serde_json = "1.0"
-image = { version = "0.25", default-features = false, features = ["png"] }

@@ -40,6 +40,12 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         ctx.pool_upsert("_cache", "skin", v);
     }
 
+    // Log what we receive
+    let ports: Vec<&str> = payload.keys().map(|s| s.as_str()).collect();
+    if !ports.is_empty() && !ports.contains(&"bone_transforms") {
+        eprintln!("[Skinning] caching: {:?}", ports);
+    }
+
     // bone_transforms is the per-frame trigger
     let bone_bytes = match payload.get("bone_transforms") {
         Some(Message::Bytes(b)) => b.to_vec(),
@@ -48,6 +54,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
 
     // Retrieve cached data
     let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
+    eprintln!("[Skinning] bone_transforms received, cache keys: {:?}", cache.keys().collect::<Vec<_>>());
 
     let mesh_bytes = match cache.get("mesh_b64").and_then(|v| v.as_str()) {
         Some(s) => b64_decode(s),
@@ -58,6 +65,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         None => return Ok(HashMap::new()),
     };
     let skin_info = cache.get("skin").cloned().unwrap_or(json!({"maxInfluences": 4}));
+    eprintln!("[Skinning] mesh={} weights={} skin={}", mesh_bytes.len(), skin_bytes.len(), skin_info);
 
     let vertex_count = mesh_bytes.len() / stride;
     let max_influences = skin_info
@@ -119,6 +127,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         output.extend_from_slice(&new_nor[2].to_le_bytes());
     }
 
+    eprintln!("[Skinning] OUTPUT deformed_mesh {} bytes", output.len());
     let mut out = HashMap::new();
     out.insert("deformed_mesh".to_string(), Message::bytes(output));
     out.insert(

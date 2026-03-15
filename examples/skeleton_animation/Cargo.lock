@@ -2335,6 +2335,7 @@ dependencies = [
  "flume",
  "futures",
  "image",
+ "js-sys",
  "openh264",
  "parking_lot",
  "pollster",
@@ -2347,6 +2348,8 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "wasm-bindgen-futures",
+ "web-sys",
  "wgpu",
 ]
 
@@ -2965,7 +2968,6 @@ name = "skeleton_animation"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "image",
  "reflow_actor",
  "reflow_components",
  "reflow_network",

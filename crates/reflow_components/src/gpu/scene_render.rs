@@ -34,8 +34,7 @@ struct SceneUniforms {
     SceneRenderActor,
     inports::<10>(scene, meshes, terrain_mesh),
     outports::<1>(output, metadata, error),
-    state(MemoryState),
-    await_all_inports
+    state(MemoryState)
 )]
 pub async fn scene_render_actor(
     ctx: ActorContext,
@@ -63,26 +62,42 @@ pub async fn scene_render_actor(
         config.get("bgB").and_then(|v| v.as_f64()).unwrap_or(0.15),
     ];
 
-    // Parse scene graph
+    // Cache meshes in state (they arrive once, scene arrives per-frame)
+    if let Some(Message::Bytes(b)) = payload.get("meshes") {
+        use base64::Engine;
+        ctx.pool_upsert("_cache", "meshes_b64",
+            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)));
+    }
+    if let Some(Message::Bytes(b)) = payload.get("terrain_mesh") {
+        use base64::Engine;
+        ctx.pool_upsert("_cache", "terrain_b64",
+            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)));
+    }
+
+    let ports: Vec<&str> = payload.keys().map(|s| s.as_str()).collect();
+    if !ports.is_empty() {
+        eprintln!("[SceneRender] received: {:?}", ports);
+    }
+
+    // Scene is the per-frame trigger — if missing, just cache and return
     let scene_data = match payload.get("scene") {
         Some(Message::Object(obj)) => {
             let v: serde_json::Value = obj.as_ref().clone().into();
             v
         }
-        _ => return Ok(error_output("Expected scene graph on scene port")),
+        _ => return Ok(HashMap::new()),
     };
 
-    // Get prefab mesh bytes (MarchingCubes: 24-byte stride, pos3+normal3)
-    let prefab_mesh = match payload.get("meshes") {
-        Some(Message::Bytes(b)) => Some(b.to_vec()),
-        _ => None,
-    };
-
-    // Get terrain mesh bytes (HeightmapToMesh: 32-byte stride, pos3+normal3+uv2, indices appended)
-    let terrain_mesh = match payload.get("terrain_mesh") {
-        Some(Message::Bytes(b)) => Some(b.to_vec()),
-        _ => None,
-    };
+    // Read cached meshes
+    let cache: HashMap<String, serde_json::Value> = ctx.get_pool("_cache").into_iter().collect();
+    let prefab_mesh: Option<Vec<u8>> = cache.get("meshes_b64").and_then(|v| v.as_str()).map(|s| {
+        use base64::Engine;
+        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+    });
+    let terrain_mesh: Option<Vec<u8>> = cache.get("terrain_b64").and_then(|v| v.as_str()).map(|s| {
+        use base64::Engine;
+        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+    });
 
     let objects = scene_data
         .get("objects")
