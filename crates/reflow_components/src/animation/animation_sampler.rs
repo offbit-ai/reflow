@@ -1,7 +1,7 @@
 //! Animation sampler — samples a clip at time t, outputs bone pose matrices.
 //!
-//! Walks the bone hierarchy, interpolates keyframes, computes world transforms,
-//! and multiplies by inverse bind matrices to produce final skinning matrices.
+//! Caches clip, skeleton, and IBM data in state on first receipt. Fires
+//! on every `time` input once all required data has been cached.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -16,8 +16,7 @@ use super::math_helpers::*;
     AnimationSamplerActor,
     inports::<10>(clip, time, skeleton, inverse_bind_matrices),
     outports::<1>(bone_transforms, metadata),
-    state(MemoryState),
-    await_all_inports
+    state(MemoryState)
 )]
 pub async fn animation_sampler_actor(
     ctx: ActorContext,
@@ -30,19 +29,46 @@ pub async fn animation_sampler_actor(
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    // Parse time
+    // Cache static inputs in pool on first receipt
+    if let Some(Message::Object(obj)) = payload.get("clip") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_cache", "clip", v);
+    }
+    if let Some(Message::Object(obj)) = payload.get("skeleton") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_cache", "skeleton", v);
+    }
+    if let Some(Message::Bytes(b)) = payload.get("inverse_bind_matrices") {
+        // Store IBM as base64 in pool (pool only holds JSON values)
+        let encoded = base64_encode(&b);
+        ctx.pool_upsert("_cache", "ibm_b64", json!(encoded));
+    }
+
+    // Get time — this is the trigger for each frame
     let time = match payload.get("time") {
         Some(Message::Float(f)) => *f as f32,
         Some(Message::Integer(i)) => *i as f32,
-        _ => 0.0,
+        _ => return Ok(HashMap::new()), // No time → no output
     };
+
+    // Retrieve cached data
+    let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
+
+    let clip = match cache.get("clip") {
+        Some(v) => v.clone(),
+        None => return Ok(HashMap::new()), // Not ready yet
+    };
+    let skeleton = match cache.get("skeleton") {
+        Some(v) => v.clone(),
+        None => return Ok(HashMap::new()),
+    };
+    let ibm_bytes: Vec<u8> = cache
+        .get("ibm_b64")
+        .and_then(|v| v.as_str())
+        .map(base64_decode)
+        .unwrap_or_default();
 
     // Parse clip
-    let clip: Value = match payload.get("clip") {
-        Some(Message::Object(obj)) => obj.as_ref().clone().into(),
-        _ => return Err(anyhow::anyhow!("Expected clip on clip port")),
-    };
-
     let duration = clip.get("duration").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
     let channels = clip
         .get("channels")
@@ -50,23 +76,12 @@ pub async fn animation_sampler_actor(
         .cloned()
         .unwrap_or_default();
 
-    // Parse skeleton
-    let skeleton: Value = match payload.get("skeleton") {
-        Some(Message::Object(obj)) => obj.as_ref().clone().into(),
-        _ => return Err(anyhow::anyhow!("Expected skeleton")),
-    };
-
+    // Parse skeleton bones
     let bones = skeleton
         .get("bones")
         .and_then(|v| v.as_array())
         .ok_or_else(|| anyhow::anyhow!("Skeleton missing bones"))?;
     let bone_count = bones.len();
-
-    // Parse inverse bind matrices (packed f32 bytes, bone_count * 64)
-    let ibm_bytes = match payload.get("inverse_bind_matrices") {
-        Some(Message::Bytes(b)) => b.to_vec(),
-        _ => vec![],
-    };
 
     // Wrap time
     let t = if do_loop && duration > 0.0 {
@@ -90,9 +105,8 @@ pub async fn animation_sampler_actor(
                     m
                 })
                 .unwrap_or(MAT4_IDENTITY);
-            // Extract TRS from bind transform (approximate: just use translation)
             let pos = [local[12], local[13], local[14]];
-            let rot = [0.0f32, 0.0, 0.0, 1.0]; // identity rotation as default
+            let rot = [0.0f32, 0.0, 0.0, 1.0];
             let scl = [1.0f32; 3];
             (pos, rot, scl)
         })
@@ -101,17 +115,9 @@ pub async fn animation_sampler_actor(
     // Sample each channel at time t
     for ch in &channels {
         let bone_idx = ch.get("boneIndex").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-        if bone_idx >= bone_count {
-            continue;
-        }
-        let property = ch
-            .get("property")
-            .and_then(|v| v.as_str())
-            .unwrap_or("rotation");
-        let interp = ch
-            .get("interpolation")
-            .and_then(|v| v.as_str())
-            .unwrap_or("linear");
+        if bone_idx >= bone_count { continue; }
+        let property = ch.get("property").and_then(|v| v.as_str()).unwrap_or("rotation");
+        let interp = ch.get("interpolation").and_then(|v| v.as_str()).unwrap_or("linear");
         let times = ch.get("times").and_then(|v| v.as_array());
         let values = ch.get("values").and_then(|v| v.as_array());
 
@@ -119,87 +125,67 @@ pub async fn animation_sampler_actor(
             (Some(t), Some(v)) => (t, v),
             _ => continue,
         };
+        if times.is_empty() { continue; }
 
-        if times.is_empty() {
-            continue;
-        }
-
-        // Binary search for bracketing keyframes
         let (idx0, idx1, frac) = find_keyframe_pair(times, t);
 
         match property {
             "position" => {
                 let v0 = parse_vec3_value(values.get(idx0));
                 let v1 = parse_vec3_value(values.get(idx1));
-                local_transforms[bone_idx].0 = match interp {
-                    "step" => v0,
-                    _ => vec3_lerp(v0, v1, frac),
-                };
+                local_transforms[bone_idx].0 = if interp == "step" { v0 } else { vec3_lerp(v0, v1, frac) };
             }
             "rotation" => {
                 let v0 = parse_quat_value(values.get(idx0));
                 let v1 = parse_quat_value(values.get(idx1));
-                local_transforms[bone_idx].1 = match interp {
-                    "step" => v0,
-                    _ => quat_slerp(v0, v1, frac),
-                };
+                local_transforms[bone_idx].1 = if interp == "step" { v0 } else { quat_slerp(v0, v1, frac) };
             }
             "scale" => {
                 let v0 = parse_vec3_value(values.get(idx0));
                 let v1 = parse_vec3_value(values.get(idx1));
-                local_transforms[bone_idx].2 = match interp {
-                    "step" => v0,
-                    _ => vec3_lerp(v0, v1, frac),
-                };
+                local_transforms[bone_idx].2 = if interp == "step" { v0 } else { vec3_lerp(v0, v1, frac) };
             }
             _ => {}
         }
     }
 
-    // Build local matrices from sampled TRS
+    // Build local matrices
     let local_matrices: Vec<[f32; 16]> = local_transforms
         .iter()
         .map(|(p, r, s)| trs_to_mat4(*p, *r, *s))
         .collect();
 
-    // Walk hierarchy: world = parent_world * local
+    // Walk hierarchy
     let parents: Vec<i32> = bones
         .iter()
         .map(|b| b.get("parent").and_then(|v| v.as_i64()).unwrap_or(-1) as i32)
         .collect();
 
-    let mut world_transforms: Vec<[f32; 16]> = vec![MAT4_IDENTITY; bone_count];
+    let mut world_transforms = vec![MAT4_IDENTITY; bone_count];
     for i in 0..bone_count {
         let p = parents[i];
-        if p >= 0 && (p as usize) < bone_count {
-            world_transforms[i] = mat4_mul(&world_transforms[p as usize], &local_matrices[i]);
+        world_transforms[i] = if p >= 0 && (p as usize) < bone_count {
+            mat4_mul(&world_transforms[p as usize], &local_matrices[i])
         } else {
-            world_transforms[i] = local_matrices[i];
-        }
+            local_matrices[i]
+        };
     }
 
-    // Multiply by inverse bind matrices: skinMatrix = world * ibm
-    let mut skin_matrices: Vec<[f32; 16]> = Vec::with_capacity(bone_count);
+    // Multiply by inverse bind matrices
+    let mut out_bytes = Vec::with_capacity(bone_count * 64);
     for i in 0..bone_count {
         let ibm = if ibm_bytes.len() >= (i + 1) * 64 {
             let off = i * 64;
             let mut m = [0.0f32; 16];
             for j in 0..16 {
-                m[j] = f32::from_le_bytes(
-                    ibm_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap(),
-                );
+                m[j] = f32::from_le_bytes(ibm_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
             }
             m
         } else {
             MAT4_IDENTITY
         };
-        skin_matrices.push(mat4_mul(&world_transforms[i], &ibm));
-    }
-
-    // Pack as bytes: bone_count * 16 floats * 4 bytes = bone_count * 64
-    let mut out_bytes = Vec::with_capacity(bone_count * 64);
-    for m in &skin_matrices {
-        for f in m {
+        let skin_mat = mat4_mul(&world_transforms[i], &ibm);
+        for f in &skin_mat {
             out_bytes.extend_from_slice(&f.to_le_bytes());
         }
     }
@@ -219,44 +205,21 @@ pub async fn animation_sampler_actor(
 
 fn find_keyframe_pair(times: &[Value], t: f32) -> (usize, usize, f32) {
     let n = times.len();
-    if n == 0 {
-        return (0, 0, 0.0);
-    }
-    if n == 1 {
-        return (0, 0, 0.0);
-    }
-
+    if n <= 1 { return (0, 0, 0.0); }
     let last = times[n - 1].as_f64().unwrap_or(1.0) as f32;
-    if t >= last {
-        return (n - 1, n - 1, 0.0);
-    }
-
+    if t >= last { return (n - 1, n - 1, 0.0); }
     let first = times[0].as_f64().unwrap_or(0.0) as f32;
-    if t <= first {
-        return (0, 0, 0.0);
-    }
+    if t <= first { return (0, 0, 0.0); }
 
-    // Binary search
     let mut lo = 0;
     let mut hi = n - 1;
     while lo < hi - 1 {
         let mid = (lo + hi) / 2;
-        let mid_t = times[mid].as_f64().unwrap_or(0.0) as f32;
-        if t < mid_t {
-            hi = mid;
-        } else {
-            lo = mid;
-        }
+        if t < times[mid].as_f64().unwrap_or(0.0) as f32 { hi = mid; } else { lo = mid; }
     }
-
     let t0 = times[lo].as_f64().unwrap_or(0.0) as f32;
     let t1 = times[hi].as_f64().unwrap_or(1.0) as f32;
-    let frac = if (t1 - t0).abs() > 1e-8 {
-        (t - t0) / (t1 - t0)
-    } else {
-        0.0
-    };
-
+    let frac = if (t1 - t0).abs() > 1e-8 { (t - t0) / (t1 - t0) } else { 0.0 };
     (lo, hi, frac.clamp(0.0, 1.0))
 }
 
@@ -281,4 +244,15 @@ fn parse_quat_value(v: Option<&Value>) -> [f32; 4] {
         ],
         _ => [0.0, 0.0, 0.0, 1.0],
     }
+}
+
+// Simple base64 encode/decode for storing bytes in JSON pool
+fn base64_encode(data: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.encode(data)
+}
+
+fn base64_decode(s: &str) -> Vec<u8> {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
 }

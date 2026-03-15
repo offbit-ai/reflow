@@ -1,7 +1,8 @@
 //! CPU skinning actor — linear blend skinning.
 //!
-//! Takes mesh bytes + skin weights + bone transform matrices,
-//! outputs deformed mesh in standard 24-byte stride (pos3+normal3).
+//! Caches mesh, skin descriptor, and weights in state on first receipt.
+//! Fires on every `bone_transforms` input once static data is cached.
+//! Outputs deformed mesh in standard 24-byte stride (pos3+normal3).
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -16,8 +17,7 @@ use super::math_helpers::*;
     SkinningActor,
     inports::<10>(mesh, skinned_mesh, bone_transforms, skin),
     outports::<1>(deformed_mesh, metadata),
-    state(MemoryState),
-    await_all_inports
+    state(MemoryState)
 )]
 pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -28,36 +28,42 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         .and_then(|v| v.as_u64())
         .unwrap_or(24) as usize;
 
-    // Parse mesh bytes (pos3+normal3 at minimum)
-    let mesh_bytes = match payload.get("mesh") {
+    // Cache static inputs on first receipt
+    if let Some(Message::Bytes(b)) = payload.get("mesh") {
+        ctx.pool_upsert("_cache", "mesh_b64", json!(b64_encode(&b)));
+    }
+    if let Some(Message::Bytes(b)) = payload.get("skinned_mesh") {
+        ctx.pool_upsert("_cache", "weights_b64", json!(b64_encode(&b)));
+    }
+    if let Some(Message::Object(obj)) = payload.get("skin") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_cache", "skin", v);
+    }
+
+    // bone_transforms is the per-frame trigger
+    let bone_bytes = match payload.get("bone_transforms") {
         Some(Message::Bytes(b)) => b.to_vec(),
-        _ => return Err(anyhow::anyhow!("Expected mesh bytes")),
+        _ => return Ok(HashMap::new()),
     };
+
+    // Retrieve cached data
+    let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
+
+    let mesh_bytes = match cache.get("mesh_b64").and_then(|v| v.as_str()) {
+        Some(s) => b64_decode(s),
+        None => return Ok(HashMap::new()),
+    };
+    let skin_bytes = match cache.get("weights_b64").and_then(|v| v.as_str()) {
+        Some(s) => b64_decode(s),
+        None => return Ok(HashMap::new()),
+    };
+    let skin_info = cache.get("skin").cloned().unwrap_or(json!({"maxInfluences": 4}));
 
     let vertex_count = mesh_bytes.len() / stride;
-
-    // Parse skin weights (from SkinBindActor): per vertex, max_influences * (u16 + f32)
-    let skin_bytes = match payload.get("skinned_mesh") {
-        Some(Message::Bytes(b)) => b.to_vec(),
-        _ => return Err(anyhow::anyhow!("Expected skin weights")),
-    };
-
-    // Parse skin descriptor for maxInfluences
-    let skin_info: Value = match payload.get("skin") {
-        Some(Message::Object(obj)) => obj.as_ref().clone().into(),
-        _ => json!({"maxInfluences": 4}),
-    };
     let max_influences = skin_info
         .get("maxInfluences")
         .and_then(|v| v.as_u64())
         .unwrap_or(4) as usize;
-
-    // Parse bone transform matrices (packed f32 bytes)
-    let bone_bytes = match payload.get("bone_transforms") {
-        Some(Message::Bytes(b)) => b.to_vec(),
-        _ => return Err(anyhow::anyhow!("Expected bone_transforms bytes")),
-    };
-
     let bone_count = bone_bytes.len() / 64;
 
     // Parse bone matrices
@@ -71,7 +77,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         bone_matrices.push(m);
     }
 
-    let entry_size = 2 + 4; // u16 bone_index + f32 weight
+    let entry_size = 6; // u16 + f32
     let weights_per_vertex = max_influences * entry_size;
 
     // Output: 24-byte stride (pos3 + normal3)
@@ -81,7 +87,6 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         let mesh_off = i * stride;
         let skin_off = i * weights_per_vertex;
 
-        // Read original position and normal
         let px = f32::from_le_bytes(mesh_bytes[mesh_off..mesh_off + 4].try_into().unwrap());
         let py = f32::from_le_bytes(mesh_bytes[mesh_off + 4..mesh_off + 8].try_into().unwrap());
         let pz = f32::from_le_bytes(mesh_bytes[mesh_off + 8..mesh_off + 12].try_into().unwrap());
@@ -92,31 +97,20 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         let pos = [px, py, pz];
         let nor = [nx, ny, nz];
 
-        // Compute blended skin matrix
         let mut blended = [0.0f32; 16];
         for j in 0..max_influences {
             let w_off = skin_off + j * entry_size;
-            if w_off + entry_size > skin_bytes.len() {
-                break;
-            }
+            if w_off + entry_size > skin_bytes.len() { break; }
             let bone_idx = u16::from_le_bytes(skin_bytes[w_off..w_off + 2].try_into().unwrap()) as usize;
             let weight = f32::from_le_bytes(skin_bytes[w_off + 2..w_off + 6].try_into().unwrap());
-
-            if weight < 1e-6 || bone_idx >= bone_count {
-                continue;
-            }
-
+            if weight < 1e-6 || bone_idx >= bone_count { continue; }
             let m = &bone_matrices[bone_idx];
-            for k in 0..16 {
-                blended[k] += m[k] * weight;
-            }
+            for k in 0..16 { blended[k] += m[k] * weight; }
         }
 
-        // Transform position and normal
         let new_pos = mat4_transform_point(&blended, pos);
         let new_nor = vec3_normalize(mat4_transform_dir(&blended, nor));
 
-        // Write output vertex (24 bytes)
         output.extend_from_slice(&new_pos[0].to_le_bytes());
         output.extend_from_slice(&new_pos[1].to_le_bytes());
         output.extend_from_slice(&new_pos[2].to_le_bytes());
@@ -137,4 +131,14 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         }))),
     );
     Ok(out)
+}
+
+fn b64_encode(data: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.encode(data)
+}
+
+fn b64_decode(s: &str) -> Vec<u8> {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
 }

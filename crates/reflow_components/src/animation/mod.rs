@@ -10,7 +10,7 @@
 //! - [`AnimationTimeActor`] — stateful time accumulator for playback
 //! - [`AnimationMixerActor`] — blends two poses
 
-pub(crate) mod math_helpers;
+pub mod math_helpers;
 
 mod skeleton;
 mod animation_clip;

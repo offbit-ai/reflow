@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "skeleton_animation"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "skeleton_animation"
+path = "main.rs"
+
+[dependencies]
+reflow_network = { path = "../../crates/reflow_network" }
+reflow_actor = { path = "../../crates/reflow_actor" }
+reflow_components = { path = "../../crates/reflow_components", default-features = false, features = ["gpu", "video-encode"] }
+anyhow = "1.0"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+image = { version = "0.25", default-features = false, features = ["png"] }
