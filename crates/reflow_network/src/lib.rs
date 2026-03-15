@@ -14,6 +14,7 @@ pub mod distributed_composition;
 pub mod distributed_network;
 pub mod graph;
 mod helper;
+pub mod input_events;
 #[cfg(test)]
 mod integration_tests;
 pub mod message;

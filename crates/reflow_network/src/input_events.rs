@@ -26,7 +26,7 @@ use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = bindInputEvents)]
 pub fn bind_input_events(
-    network: &crate::GraphNetwork,
+    network: &crate::network::GraphNetwork,
     target: web_sys::EventTarget,
 ) -> Result<js_sys::Function, JsValue> {
     use std::cell::RefCell;
