@@ -3,6 +3,7 @@ pub mod marching_cubes;
 #[cfg(feature = "gpu")]
 pub mod mesh_to_sdf;
 pub mod operations;
+pub mod path;
 pub mod primitives;
 #[cfg(feature = "gpu")]
 pub mod render;
@@ -17,5 +18,6 @@ pub use operations::*;
 pub use primitives::*;
 #[cfg(feature = "gpu")]
 pub use render::SdfRenderActor;
+pub use path::SdfPathActor;
 pub use scene::*;
 pub use transforms::*;

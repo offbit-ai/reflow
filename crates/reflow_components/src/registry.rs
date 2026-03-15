@@ -20,6 +20,8 @@ use crate::flow_control::{
 };
 #[cfg(feature = "gpu")]
 use crate::gpu::scene_render::SceneRenderActor;
+use crate::gpu::sdf::SdfPathActor;
+#[cfg(feature = "gpu")]
 use crate::gpu::sdf::{MeshToSdfActor, SdfMarchingCubesActor, SdfRenderActor};
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
@@ -308,6 +310,9 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_displace" => Some(Arc::new(SdfDisplaceActor::new())),
         "tpl_sdf_material" => Some(Arc::new(SdfMaterialActor::new())),
         "tpl_sdf_scene" => Some(Arc::new(SdfSceneActor::new())),
+
+        // SDF path (always available — pure IR composition)
+        "tpl_sdf_path" => Some(Arc::new(SdfPathActor::new())),
 
         // GPU compute (requires wgpu)
         #[cfg(feature = "gpu")]
@@ -627,6 +632,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_sdf_repeat", "SdfRepeatActor"),
         ("tpl_sdf_displace", "SdfDisplaceActor"),
         ("tpl_sdf_material", "SdfMaterialActor"),
+        ("tpl_sdf_path", "SdfPathActor"),
         ("tpl_sdf_scene", "SdfSceneActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());

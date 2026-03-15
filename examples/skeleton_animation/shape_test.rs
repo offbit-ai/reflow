@@ -1,4 +1,4 @@
-//! Shape test — build the snake body from SDF actors, render to PNG.
+//! Shape test — build the snake with SdfPath actor, render to PNG.
 //! Run: cd examples/skeleton_animation && cargo run --bin shape_test
 
 use std::collections::HashMap;
@@ -24,94 +24,48 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("=== Snake Shape Test ===\n");
+    println!("=== Snake Shape Test (SdfPath) ===\n");
 
     let mut net = Network::new(NetworkConfig::default());
 
-    // Register base actors
     for tpl in [
-        "tpl_sdf_capsule", "tpl_sdf_sphere",
-        "tpl_sdf_translate", "tpl_sdf_rotate", "tpl_sdf_scale",
-        "tpl_sdf_smooth_union", "tpl_sdf_smooth_difference",
-        "tpl_sdf_marching_cubes",
+        "tpl_sdf_path", "tpl_sdf_marching_cubes",
         "tpl_prefab", "tpl_instance", "tpl_scene_graph", "tpl_scene_render",
         "tpl_bytes_to_stream", "tpl_image_encode", "tpl_file_save",
     ] {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
     }
 
-    // Extra instances for the construction
-    for name in ["tpl_head_sphere", "tpl_head_tr", "tpl_head_union",
-                  "tpl_tail_cone", "tpl_tail_tr", "tpl_tail_scale",
-                  "tpl_lay_flat"] {
-        let base = match name {
-            n if n.contains("sphere") => "tpl_sdf_sphere",
-            n if n.contains("cone") => "tpl_sdf_capsule", // use thin capsule as tail
-            n if n.contains("tr") => "tpl_sdf_translate",
-            n if n.contains("union") => "tpl_sdf_smooth_union",
-            n if n.contains("scale") => "tpl_sdf_scale",
-            n if n.contains("flat") => "tpl_sdf_rotate",
-            _ => "tpl_sdf_sphere",
-        };
-        net.register_actor_arc(name, reflow_components::get_actor_for_template(base).unwrap())?;
-    }
-
     // ══════════════════════════════════════════════════════════════
-    // SNAKE BODY: One long capsule (along Y) — smooth, no segments.
-    // The capsule gives a uniform cylinder with hemispherical caps.
-    // This is the simplest shape that looks like a snake body.
+    // SNAKE via SdfPath — one actor, one config
+    //
+    // The path describes the snake's spine as an S-curve in the XZ plane.
+    // Profile defines the cross-section radius from head to tail.
     // ══════════════════════════════════════════════════════════════
-
-    // Main body: long and thin
-    let body_radius = 0.12;
-    let body_length = 7.0;
-
-    net.add_node("body", "tpl_sdf_capsule", config(json!({
-        "radius": body_radius, "height": body_length,
+    net.add_node("snake", "tpl_sdf_path", config(json!({
+        "path": "M -3,0 C -2,-1.2 -1,1.2 0,0 C 1,-1.2 2,1.0 3,0.3",
+        "profile": [0.18, 0.16, 0.14, 0.13, 0.13, 0.12, 0.11, 0.09, 0.06, 0.03],
+        "segments": 80,
+        "smoothness": 0.10,
+        "plane": "xz",
     })))?;
 
-    // Head: slightly wider sphere at the front, blended smoothly
-    net.add_node("head", "tpl_head_sphere", config(json!({ "radius": 0.16 })))?;
-    net.add_node("head_tr", "tpl_head_tr", config(json!({
-        "x": 0.0, "y": body_length / 2.0 + 0.05, "z": 0.0,
-    })))?;
-    net.add_connection(wire("head", "sdf", "head_tr", "sdf"));
-    net.add_initial(iip("head", "_trigger", Message::Flow));
-
-    // Join head to body
-    net.add_node("head_union", "tpl_head_union", config(json!({ "smoothness": 0.12 })))?;
-    net.add_connection(wire("body", "sdf", "head_union", "sdf_a"));
-    net.add_connection(wire("head_tr", "sdf", "head_union", "sdf_b"));
-    net.add_initial(iip("body", "_trigger", Message::Flow));
-
-    // Rotate to lay flat in XZ plane (capsule Y → Z)
-    net.add_node("lay_flat", "tpl_lay_flat", config(json!({
-        "x": 1.5708, "y": 0.0, "z": 0.7854,
-    })))?;
-    net.add_connection(wire("head_union", "sdf", "lay_flat", "sdf"));
-
-    // ══════════════════════════════════════════════════════════════
-    // MARCHING CUBES — high resolution for smooth surface
-    // ══════════════════════════════════════════════════════════════
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 128, "bound": 5.5, "isoLevel": 0.0,
+        "resolution": 192, "bound": 5.0, "isoLevel": 0.0,
     })))?;
-    net.add_connection(wire("lay_flat", "sdf", "mc", "sdf"));
 
-    // ══════════════════════════════════════════════════════════════
-    // SCENE RENDER
-    // ══════════════════════════════════════════════════════════════
+    net.add_connection(wire("snake", "sdf", "mc", "sdf"));
+    net.add_initial(iip("snake", "_trigger", Message::Flow));
+
+    // Scene render
     net.add_node("prefab", "tpl_prefab", config(json!({ "name": "snake" })))?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "snake_0" })))?;
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "s", "expectedObjects": 1 })))?;
-
-    // Camera: 3/4 view from above, framing the body diagonally
-    // Body is now along Z after rotation, ~6 units long
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": 1024, "height": 1024,
-        "cameraPosX": 1.0, "cameraPosY": 8.0, "cameraPosZ": 2.5,
+        "cameraPosX": 2.0, "cameraPosY": 5.0, "cameraPosZ": 4.0,
         "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
-        "fov": 35.0,
+        "fov": 40.0,
         "bgR": 0.92, "bgG": 0.92, "bgB": 0.90,
     })))?;
 
@@ -121,9 +75,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("scene", "scene", "render", "scene"));
     net.add_connection(wire("mc", "mesh", "render", "meshes"));
 
-    // ══════════════════════════════════════════════════════════════
-    // ENCODE + SAVE PNG
-    // ══════════════════════════════════════════════════════════════
+    // Encode + save
     net.add_node("to_stream", "tpl_bytes_to_stream", config(json!({
         "chunkSize": 65536, "contentType": "image/raw-rgba",
     })))?;
@@ -134,9 +86,8 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("to_stream", "stream", "encode", "stream"));
     net.add_connection(wire("encode", "output", "save", "input"));
 
-    println!("Body: capsule r={}, h={}", body_radius, body_length);
-    println!("Head: sphere r=0.16");
-    println!("MC: 128³, bound=4.0");
+    println!("SdfPath: S-curve spine, 24 segments, tapered profile");
+    println!("MC: 192³, bound=4.5");
     println!("Render: 1024x1024\n");
     println!("Running...");
 
