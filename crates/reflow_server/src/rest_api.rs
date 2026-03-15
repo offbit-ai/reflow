@@ -229,6 +229,67 @@ async fn convert_zeal_workflow(
     }
 }
 
+/// Webhook trigger endpoint.
+///
+/// When a POST hits /webhook/{workflow_id}, the server:
+/// 1. Looks up the workflow graph (stored by a prior /zeal/workflows call)
+/// 2. Finds all ServerRequestActor nodes in the graph
+/// 3. Injects the HTTP request data (body, headers, method, path) into their config
+/// 4. Starts the workflow execution
+///
+/// The ServerRequestActor reads the request from its config and outputs
+/// structured fields (body, headers, params, method, url) to downstream actors.
+async fn handle_webhook(
+    State(state): State<AppState>,
+    Path(workflow_id): Path<String>,
+    headers: axum::http::HeaderMap,
+    body: axum::body::Bytes,
+) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
+    // Parse body as JSON (fall back to string)
+    let body_json = serde_json::from_slice::<serde_json::Value>(&body)
+        .unwrap_or_else(|_| serde_json::json!(String::from_utf8_lossy(&body).to_string()));
+
+    // Extract headers as JSON object
+    let headers_json: serde_json::Map<String, serde_json::Value> = headers
+        .iter()
+        .filter_map(|(k, v)| {
+            v.to_str().ok().map(|val| (k.to_string(), serde_json::json!(val)))
+        })
+        .collect();
+
+    // Build the request data that ServerRequestActor will read from config
+    let request_data = serde_json::json!({
+        "body": body_json,
+        "headers": headers_json,
+        "method": "POST",
+        "path": format!("/webhook/{}", workflow_id),
+    });
+
+    // Execute the workflow with the request data as input.
+    // The engine's run_execution injects this into ServerRequestActor nodes' config.
+    match state
+        .engine
+        .start_webhook_execution(&workflow_id, request_data.clone())
+        .await
+    {
+        Ok((execution_id, event_rx)) => {
+            if let Some(bridge) = &state.event_bridge {
+                bridge.attach(workflow_id.clone(), execution_id.clone(), event_rx);
+            }
+
+            Ok(Json(ApiResponse::success(serde_json::json!({
+                "execution_id": execution_id,
+                "workflow_id": workflow_id,
+                "status": "triggered",
+            }))))
+        }
+        Err(e) => {
+            error!("Webhook execution error for {}: {}", workflow_id, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
 async fn websocket_handler(
     ws: WebSocketUpgrade,
     State(state): State<AppState>,
@@ -461,6 +522,8 @@ pub fn build_router(
         .route("/workflows/{execution_id}/cancel", post(cancel_workflow))
         .route("/zeal/workflows", post(execute_zeal_workflow))
         .route("/zeal/convert", post(convert_zeal_workflow))
+        .route("/webhook/{workflow_id}", post(handle_webhook))
+        .route("/webhook/{workflow_id}/{path:.*}", post(handle_webhook))
         .route("/ws", get(websocket_handler))
         .layer(CorsLayer::permissive())
         .with_state(state)

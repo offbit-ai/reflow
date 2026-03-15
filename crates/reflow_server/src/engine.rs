@@ -179,6 +179,10 @@ pub struct ExecutionResult {
 #[derive(Clone)]
 pub struct ExecutionEngine {
     executions: Arc<DashMap<String, ExecutionState>>,
+    /// Stored workflow graphs for webhook triggering.
+    /// Populated when a workflow is executed via Zeal — the graph is
+    /// kept so subsequent webhook triggers can re-execute it.
+    workflow_graphs: Arc<DashMap<String, serde_json::Value>>,
 }
 
 impl Default for ExecutionEngine {
@@ -191,7 +195,13 @@ impl ExecutionEngine {
     pub fn new() -> Self {
         Self {
             executions: Arc::new(DashMap::new()),
+            workflow_graphs: Arc::new(DashMap::new()),
         }
+    }
+
+    /// Store a workflow graph for later webhook triggering.
+    pub fn store_workflow(&self, workflow_id: &str, graph_json: serde_json::Value) {
+        self.workflow_graphs.insert(workflow_id.to_string(), graph_json);
     }
 
     /// Start a workflow execution in the background.
@@ -244,8 +254,59 @@ impl ExecutionEngine {
         let execution_id = format!("zeal_exec_{}", uuid::Uuid::new_v4());
         let workflow_id = zeal_workflow.id.clone();
 
+        // Store graph for later webhook triggering
+        self.store_workflow(&workflow_id, graph_json.clone());
+
         self.start_execution(graph_json, input, execution_id, workflow_id)
             .await
+    }
+
+    /// Start a webhook-triggered execution.
+    ///
+    /// Looks up the workflow by ID, injects the HTTP request data into
+    /// any ServerRequestActor nodes' config, then starts the workflow.
+    ///
+    /// Used by both the direct REST webhook route and the ZIP session
+    /// when Zeal forwards a webhook trigger command.
+    pub async fn start_webhook_execution(
+        &self,
+        workflow_id: &str,
+        request_data: serde_json::Value,
+    ) -> Result<(String, flume::Receiver<EngineEvent>)> {
+        // Look up the stored workflow graph for this workflow_id
+        let graph_json = self
+            .workflow_graphs
+            .get(workflow_id)
+            .map(|entry| entry.value().clone())
+            .ok_or_else(|| anyhow!("Workflow '{}' not found", workflow_id))?;
+
+        // Inject request data into ServerRequestActor nodes' metadata
+        let mut modified_graph = graph_json.clone();
+        if let Some(processes) = modified_graph.get_mut("processes").and_then(|p| p.as_object_mut()) {
+            for (_id, node) in processes.iter_mut() {
+                let component = node.get("component").and_then(|c| c.as_str()).unwrap_or("");
+                if component == "tpl_server_request" || component == "ServerRequestActor" {
+                    // Merge request data into node metadata (becomes actor config)
+                    if let Some(metadata) = node.get_mut("metadata").and_then(|m| m.as_object_mut()) {
+                        if let Some(req_obj) = request_data.as_object() {
+                            for (k, v) in req_obj {
+                                metadata.insert(k.clone(), v.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let execution_id = format!("webhook_exec_{}", uuid::Uuid::new_v4());
+
+        self.start_execution(
+            modified_graph,
+            request_data,
+            execution_id,
+            workflow_id.to_string(),
+        )
+        .await
     }
 
     /// Get the current state of an execution.
