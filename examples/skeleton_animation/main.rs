@@ -45,10 +45,10 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
     for bone_idx in 0..bone_count {
         let mut times = Vec::new();
         let mut rotations = Vec::new();
-        // Wave travels from head (bone 0) to tail
-        let phase = bone_idx as f64 * std::f64::consts::PI * 0.4;
-        // Strong per-bone rotation — cumulative through hierarchy creates S-curve
-        let amplitude = 0.18;
+        // Wave travels from head to tail with wider spacing for clear S-shape
+        let phase = bone_idx as f64 * std::f64::consts::PI * 0.35;
+        // Per-bone rotation — cumulative through hierarchy creates S-curve
+        let amplitude = 0.22;
 
         for i in 0..=n {
             let t = i as f64 / fps as f64;
@@ -78,9 +78,9 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
 async fn main() -> anyhow::Result<()> {
     println!("=== Skeleton Animation — Snake ===\n");
 
-    let bone_count = 8;
-    let body_length = 4.0f32; // total capsule height along Y
-    let body_radius = 0.25f32;
+    let bone_count = 10;
+    let body_length = 5.0f32;
+    let body_radius = 0.3f32;
     let duration = 4.0f64;
     let fps = 30u32;
     let total_frames = (duration * fps as f64) as usize;
@@ -111,7 +111,7 @@ async fn main() -> anyhow::Result<()> {
         "radius": body_radius, "height": body_length,
     })))?;
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 64, "bound": 2.5, "isoLevel": 0.0,
+        "resolution": 80, "bound": 3.0, "isoLevel": 0.0,
     })))?;
 
     // ── Skeleton: 8 bones along Y ───────────────────────────────
@@ -139,7 +139,7 @@ async fn main() -> anyhow::Result<()> {
         "channels": clip_data.get("channels").unwrap().clone(),
     })))?;
 
-    net.add_node("bind", "tpl_skin_bind", config(json!({ "maxInfluences": 2, "stride": 24 })))?;
+    net.add_node("bind", "tpl_skin_bind", config(json!({ "maxInfluences": 3, "stride": 24 })))?;
 
     // ── Animation loop ──────────────────────────────────────────
     net.add_node("tick", "tpl_interval_trigger", config(json!({
@@ -156,9 +156,9 @@ async fn main() -> anyhow::Result<()> {
     // Camera: elevated view looking down to see the S-curve slithering
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": img_size, "height": img_size,
-        "cameraPosX": 0.5, "cameraPosY": 0.5, "cameraPosZ": 9.0,
+        "cameraPosX": 0.0, "cameraPosY": 1.0, "cameraPosZ": 8.0,
         "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
-        "bgR": 0.06, "bgG": 0.08, "bgB": 0.10,
+        "bgR": 0.05, "bgG": 0.07, "bgB": 0.09,
     })))?;
 
     // ── Video ───────────────────────────────────────────────────

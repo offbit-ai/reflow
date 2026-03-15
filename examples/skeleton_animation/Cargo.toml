@@ -9,6 +9,10 @@ edition = "2021"
 name = "skeleton_animation"
 path = "main.rs"
 
+[[bin]]
+name = "shape_test"
+path = "shape_test.rs"
+
 [dependencies]
 reflow_network = { path = "../../crates/reflow_network" }
 reflow_components = { path = "../../crates/reflow_components", default-features = false, features = ["gpu", "video-encode"] }
