@@ -24,5 +24,6 @@
 
 pub mod codegen;
 pub mod ir;
+pub mod marching_cubes;
 pub mod noise;
 pub mod primitives;

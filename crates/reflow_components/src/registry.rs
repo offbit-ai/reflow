@@ -25,7 +25,7 @@ use crate::math::{
     QuatFromEulerActor, QuatMultiplyActor, QuatSlerpActor, QuatRotateVec3Actor,
 };
 use crate::integration::HttpRequestActor;
-use crate::io::{FileLoadActor, FileSaveActor};
+use crate::io::{FileLoadActor, FileSaveActor, ObjExportActor};
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor,
     NoiseGeneratorActor,
@@ -40,7 +40,7 @@ use crate::gpu::sdf::{
     SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
 #[cfg(feature = "gpu")]
-use crate::gpu::sdf::SdfRenderActor;
+use crate::gpu::sdf::{SdfRenderActor, SdfMarchingCubesActor};
 use crate::logic::RulesEngineActor;
 use crate::media::{
     AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
@@ -56,15 +56,6 @@ use crate::stream_ops::{
     PeakDetectActor, PitchShiftActor, SilenceDetectActor, StreamBufferActor,
     StreamStatsActor, StreamTeeActor, StreamThrottleActor, StreamToBytesActor,
     TimeStretchActor,
-};
-#[cfg(feature = "gpu")]
-use crate::gpu::sdf::{
-    SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor,
-    SdfDifferenceActor, SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor,
-    SdfMirrorActor, SdfPlaneActor, SdfRepeatActor, SdfRotateActor, SdfRoundActor,
-    SdfScaleActor, SdfSceneActor, SdfShellActor, SdfSmoothDifferenceActor,
-    SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor, SdfTorusActor,
-    SdfRenderActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
 use crate::transform::{DataOperationsActor, DataTransformActor};
 
@@ -232,9 +223,14 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_material" => Some(Arc::new(SdfMaterialActor::new())),
         "tpl_sdf_scene" => Some(Arc::new(SdfSceneActor::new())),
 
-        // GPU render (requires wgpu)
+        // GPU compute (requires wgpu)
         #[cfg(feature = "gpu")]
         "tpl_sdf_render" => Some(Arc::new(SdfRenderActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_marching_cubes" => Some(Arc::new(SdfMarchingCubesActor::new())),
+
+        // Mesh export
+        "tpl_obj_export" => Some(Arc::new(ObjExportActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -377,7 +373,11 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         mapping.insert(id.to_string(), name.to_string());
     }
     #[cfg(feature = "gpu")]
-    mapping.insert("tpl_sdf_render".to_string(), "SdfRenderActor".to_string());
+    {
+        mapping.insert("tpl_sdf_render".to_string(), "SdfRenderActor".to_string());
+        mapping.insert("tpl_sdf_marching_cubes".to_string(), "SdfMarchingCubesActor".to_string());
+    }
+    mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
 
     // Audio DSP (continued)
     mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());
