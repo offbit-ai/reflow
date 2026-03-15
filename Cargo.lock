@@ -4983,6 +4983,7 @@ version = "0.1.0"
 dependencies = [
  "actor_macro",
  "anyhow",
+ "base64 0.22.1",
  "bytemuck",
  "chrono",
  "flume",
@@ -5274,6 +5275,7 @@ dependencies = [
  "futures 0.3.31",
  "futures-util",
  "log",
+ "redis",
  "reflow_components",
  "reflow_graph",
  "reflow_network",
