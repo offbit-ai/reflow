@@ -1,4 +1,8 @@
 //! Loop iteration actor for collection processing.
+//!
+//! Iterates over an entire collection in one invocation, emitting each
+//! item to the outport channel directly. This drives downstream actors
+//! once per item without requiring external re-invocation.
 
 use crate::{Actor, ActorBehavior, MemoryState, Message, Port};
 use actor_macro::actor;
@@ -10,6 +14,8 @@ use std::collections::HashMap;
 /// Loop Actor - Compatible with tpl_loop
 ///
 /// Iterates over a collection, emitting each item with its index.
+/// All items are emitted in sequence via the outport channel.
+/// After the last item, emits `completed: true`.
 #[actor(
     LoopActor,
     inports::<100>(collection, initial_value),
@@ -17,41 +23,43 @@ use std::collections::HashMap;
     state(MemoryState)
 )]
 pub async fn loop_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
-    let mut result = HashMap::new();
-    let _config = context.get_config_hashmap();
     let payload = context.get_payload();
-    let state = context.get_state();
 
     if let Some(Message::Array(collection)) = payload.get("collection") {
-        let mut state_lock = state.lock();
-        let memory_state = state_lock
-            .as_mut_any()
-            .downcast_mut::<MemoryState>()
-            .ok_or_else(|| anyhow::anyhow!("Invalid state type"))?;
+        if collection.is_empty() {
+            return Ok([("completed".to_string(), Message::Boolean(true))].into());
+        }
 
-        let current_index = memory_state
-            .get("loop_index")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize;
+        // Get the outport sender to emit multiple items
+        let outport_tx = context.get_outports().0;
 
-        if current_index < collection.len() {
-            let item = &collection[current_index];
-            result.insert(
+        // Emit all items except the last via the outport channel
+        for i in 0..collection.len().saturating_sub(1) {
+            let item = &collection[i];
+            let mut out = HashMap::new();
+            out.insert(
                 "item".to_string(),
                 Message::object(EncodableValue::from(json!({
                     "value": serde_json::to_value(item)?,
-                    "index": current_index
+                    "index": i
                 }))),
             );
-
-            memory_state.insert("loop_index", json!(current_index + 1));
-        } else {
-            result.insert("completed".to_string(), Message::Boolean(true));
-            memory_state.insert("loop_index", json!(0));
+            let _ = outport_tx.send(out);
         }
-    } else {
-        result.insert("completed".to_string(), Message::Boolean(true));
-    }
 
-    Ok(result)
+        // Return the last item + completed via the normal return path
+        let last_idx = collection.len() - 1;
+        let last_item = &collection[last_idx];
+        let mut result = HashMap::new();
+        result.insert(
+            "item".to_string(),
+            Message::object(EncodableValue::from(json!({
+                "value": serde_json::to_value(last_item)?,
+                "index": last_idx
+            }))),
+        );
+        Ok(result)
+    } else {
+        Ok([("completed".to_string(), Message::Boolean(true))].into())
+    }
 }

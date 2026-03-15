@@ -2,6 +2,10 @@
 //!
 //! These actors emit trigger signals on a schedule. They run
 //! continuously until the network shuts down or maxExecutions is reached.
+//!
+//! The IntervalTrigger spawns a background task that keeps sending to
+//! the outport channel on each interval tick. This drives the downstream
+//! pipeline repeatedly without requiring external re-invocation.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -11,10 +15,43 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+// ── Cross-platform helpers ──────────────────────────────────────
+
+/// Spawn a future on the appropriate runtime (tokio native, spawn_local wasm).
+#[cfg(not(target_arch = "wasm32"))]
+fn spawn_task<F: std::future::Future<Output = ()> + Send + 'static>(f: F) {
+    tokio::spawn(f);
+}
+
+#[cfg(target_arch = "wasm32")]
+fn spawn_task<F: std::future::Future<Output = ()> + 'static>(f: F) {
+    wasm_bindgen_futures::spawn_local(f);
+}
+
+/// Sleep for `ms` milliseconds on any target.
+#[cfg(not(target_arch = "wasm32"))]
+async fn sleep_ms(ms: u64) {
+    tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn sleep_ms(ms: u64) {
+    let promise = js_sys::Promise::new(&mut |resolve, _| {
+        let _ = web_sys::window()
+            .unwrap()
+            .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms as i32);
+    });
+    let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+}
+
 // ── Interval Trigger ────────────────────────────────────────────
 
 /// Emits a trigger signal at regular intervals.
 /// Config: interval (ms), intervalUnit, startImmediately, maxExecutions.
+///
+/// Spawns a background task that sends trigger messages directly to
+/// the outport channel. The first trigger is emitted immediately
+/// (if startImmediately=true), then every `interval` ms after that.
 #[actor(
     IntervalTriggerActor,
     inports::<1>(),
@@ -58,27 +95,45 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
         .unwrap_or(r#"{"timestamp": "${timestamp}"}"#)
         .to_string();
 
-    let mut execution_count: u64 = 0;
+    // Get the outport sender so we can emit from a background task
+    let outport_tx = ctx.get_outports().0;
 
-    // First trigger (immediate if configured)
-    if start_immediately {
-        execution_count += 1;
-        let payload = build_trigger_payload(&payload_template, execution_count);
-        return Ok([("trigger".to_string(), payload)].into());
-    }
+    // Spawn background task that keeps firing on both native and wasm
+    spawn_task(async move {
+        let mut execution_count: u64 = 0;
 
-    // Wait for interval then trigger
-    #[cfg(not(target_arch = "wasm32"))]
-    tokio::time::sleep(std::time::Duration::from_millis(interval)).await;
+        // First trigger (immediate)
+        if start_immediately {
+            execution_count += 1;
+            let payload = build_trigger_payload(&payload_template, execution_count);
+            let mut out = HashMap::new();
+            out.insert("trigger".to_string(), payload);
+            if outport_tx.send(out).is_err() {
+                return;
+            }
+        }
 
-    execution_count += 1;
+        // Subsequent triggers at interval
+        loop {
+            sleep_ms(interval).await;
 
-    if max_executions > 0 && execution_count > max_executions {
-        return Ok(HashMap::new());
-    }
+            execution_count += 1;
 
-    let payload = build_trigger_payload(&payload_template, execution_count);
-    Ok([("trigger".to_string(), payload)].into())
+            if max_executions > 0 && execution_count > max_executions {
+                break;
+            }
+
+            let payload = build_trigger_payload(&payload_template, execution_count);
+            let mut out = HashMap::new();
+            out.insert("trigger".to_string(), payload);
+            if outport_tx.send(out).is_err() {
+                break; // network shut down, channel closed
+            }
+        }
+    });
+
+    // Return empty — all output goes through the background task
+    Ok(HashMap::new())
 }
 
 // ── Cron Trigger ────────────────────────────────────────────────
@@ -125,29 +180,44 @@ pub async fn cron_trigger_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         .unwrap_or(r#"{"timestamp": "${timestamp}", "schedule": "${schedule}"}"#)
         .to_string();
 
-    // Calculate next trigger time from cron expression
     let interval_ms = parse_cron_to_interval(cron_expr);
+    let cron_expr_owned = cron_expr.to_string();
+    let outport_tx = ctx.get_outports().0;
 
-    #[cfg(not(target_arch = "wasm32"))]
-    if interval_ms > 0 {
-        tokio::time::sleep(std::time::Duration::from_millis(interval_ms)).await;
-    }
+    // Spawn background cron loop
+    spawn_task(async move {
+        let mut execution_count: u64 = 0;
 
-    if max_executions > 0 && max_executions <= 1 {
-        // Only trigger once if max is 1
-    }
+        loop {
+            if interval_ms > 0 {
+                sleep_ms(interval_ms).await;
+            }
 
-    let now = chrono::Utc::now();
-    let payload_str = payload_template
-        .replace("${timestamp}", &now.to_rfc3339())
-        .replace("${schedule}", cron_expr);
+            execution_count += 1;
 
-    let payload = match serde_json::from_str::<serde_json::Value>(&payload_str) {
-        Ok(val) => Message::object(EncodableValue::from(val)),
-        Err(_) => Message::String(payload_str.into()),
-    };
+            if max_executions > 0 && execution_count > max_executions {
+                break;
+            }
 
-    Ok([("trigger".to_string(), payload)].into())
+            let now = chrono::Utc::now();
+            let payload_str = payload_template
+                .replace("${timestamp}", &now.to_rfc3339())
+                .replace("${schedule}", &cron_expr_owned);
+
+            let payload = match serde_json::from_str::<serde_json::Value>(&payload_str) {
+                Ok(val) => Message::object(EncodableValue::from(val)),
+                Err(_) => Message::String(payload_str.into()),
+            };
+
+            let mut out = HashMap::new();
+            out.insert("trigger".to_string(), payload);
+            if outport_tx.send(out).is_err() {
+                break;
+            }
+        }
+    });
+
+    Ok(HashMap::new())
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -172,7 +242,6 @@ fn parse_cron_to_interval(expr: &str) -> u64 {
         return 60_000; // default 1 minute
     }
 
-    // Very basic parsing — handles common patterns
     match parts[0] {
         "*" => 60_000,                        // every minute
         "*/5" => 300_000,                     // every 5 minutes
