@@ -33,13 +33,26 @@ pub async fn server_request_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    // The request arrives as the IIP data on the trigger port
-    let request = payload.get("trigger").cloned().unwrap_or(Message::Flow);
+    // The request arrives as the IIP data on the trigger port.
+    // The ZIP session populates this with the incoming HTTP request object.
+    let request = match payload.get("trigger") {
+        Some(msg @ Message::Object(_)) => msg,
+        Some(msg @ Message::String(_)) => msg,
+        _ => {
+            // No request data — output defaults from config
+            let path = config.get("path").and_then(|v| v.as_str()).unwrap_or("/webhook");
+            let method = config.get("method").and_then(|v| v.as_str()).unwrap_or("POST");
+            let mut out = HashMap::new();
+            out.insert("body".to_string(), Message::object(EncodableValue::from(json!({}))));
+            out.insert("method".to_string(), Message::String(method.to_string().into()));
+            out.insert("url".to_string(), Message::String(path.to_string().into()));
+            return Ok(out);
+        }
+    };
 
     let mut out = HashMap::new();
 
-    // Extract structured fields from the request object
-    if let Message::Object(obj) = &request {
+    if let Message::Object(obj) = request {
         let val: serde_json::Value = obj.as_ref().clone().into();
 
         if let Some(body) = val.get("body") {
@@ -58,8 +71,8 @@ pub async fn server_request_actor(
             out.insert("url".to_string(), Message::String(url.to_string().into()));
         }
     } else {
-        // Non-object trigger — output as body
-        out.insert("body".to_string(), request);
+        // String trigger — output as body
+        out.insert("body".to_string(), request.clone());
     }
 
     // Fill defaults from config if not present in request
