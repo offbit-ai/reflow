@@ -92,7 +92,7 @@ pub async fn sdf_path_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         pts3d.push(p);
     }
 
-    let node = SdfNode::tube_path(pts3d, radii);
+    let node = SdfNode::tube_path(pts3d, radii, smoothness);
 
     let mut out = sdf_output(&node);
     out.insert(

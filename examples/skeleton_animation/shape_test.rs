@@ -46,12 +46,12 @@ async fn main() -> anyhow::Result<()> {
         "path": "M -2.5,0 C -1.5,-1.0 -0.5,1.0 0.5,0 C 1.5,-0.8 2.5,0.6 3.5,0.2",
         "profile": [0.25, 0.23, 0.21, 0.20, 0.20, 0.18, 0.15, 0.11, 0.07, 0.03],
         "segments": 24,
-        "smoothness": 0.0,
+        "smoothness": 0.04,
         "plane": "xz",
     })))?;
 
     net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 192, "bound": 4.5, "isoLevel": 0.0,
+        "resolution": 384, "bound": 4.5, "isoLevel": 0.0,
     })))?;
 
     net.add_connection(wire("snake", "sdf", "mc", "sdf"));

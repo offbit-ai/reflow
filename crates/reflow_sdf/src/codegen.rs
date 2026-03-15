@@ -128,7 +128,7 @@ impl CodegenContext {
             SdfPrimitive::TaperedCapsule { a, b, radius_a, radius_b } =>
                 format!("sdf_tapered_capsule({}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
                     pos, a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b),
-            SdfPrimitive::TubePath { points, radii } => {
+            SdfPrimitive::TubePath { points, radii, k } => {
                 // Emit an inline loop that evaluates min distance across all segments
                 let n = points.len().min(radii.len());
                 if n < 2 {
@@ -138,15 +138,24 @@ impl CodegenContext {
                     let fn_name = format!("sdf_tube_{}", var);
                     let mut func = format!("fn {}(p: vec3f) -> f32 {{\n", fn_name);
                     func.push_str("  var d = 999.0;\n");
+                    let use_smin = *k > 0.001;
                     for i in 0..n - 1 {
                         let a = points[i];
                         let b = points[i + 1];
                         let ra = radii[i];
                         let rb = radii[i + 1];
-                        func.push_str(&format!(
-                            "  d = min(d, sdf_tapered_capsule(p, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6}));\n",
-                            a[0], a[1], a[2], b[0], b[1], b[2], ra, rb
-                        ));
+                        if use_smin {
+                            self.uses_smooth_ops = true;
+                            func.push_str(&format!(
+                                "  d = smin(d, sdf_tapered_capsule(p, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6}), {:.6});\n",
+                                a[0], a[1], a[2], b[0], b[1], b[2], ra, rb, k
+                            ));
+                        } else {
+                            func.push_str(&format!(
+                                "  d = min(d, sdf_tapered_capsule(p, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6}));\n",
+                                a[0], a[1], a[2], b[0], b[1], b[2], ra, rb
+                            ));
+                        }
                     }
                     func.push_str("  return d;\n}\n");
                     // Prepend the function before sdf_scene
