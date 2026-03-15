@@ -257,6 +257,9 @@ impl ExecutionEngine {
         // Store graph for later webhook triggering
         self.store_workflow(&workflow_id, graph_json.clone());
 
+        // Inject input payload into ServerRequestActor nodes
+        let graph_json = Self::inject_server_request_payload(graph_json, &input);
+
         self.start_execution(graph_json, input, execution_id, workflow_id)
             .await
     }
@@ -273,23 +276,42 @@ impl ExecutionEngine {
         workflow_id: &str,
         request_data: serde_json::Value,
     ) -> Result<(String, flume::Receiver<EngineEvent>)> {
-        // Look up the stored workflow graph for this workflow_id
         let graph_json = self
             .workflow_graphs
             .get(workflow_id)
             .map(|entry| entry.value().clone())
             .ok_or_else(|| anyhow!("Workflow '{}' not found", workflow_id))?;
 
-        // Inject request data into ServerRequestActor nodes' metadata
-        let mut modified_graph = graph_json.clone();
-        if let Some(processes) = modified_graph.get_mut("processes").and_then(|p| p.as_object_mut()) {
+        let graph_json = Self::inject_server_request_payload(graph_json, &request_data);
+
+        let execution_id = format!("webhook_exec_{}", uuid::Uuid::new_v4());
+
+        self.start_execution(
+            graph_json,
+            request_data,
+            execution_id,
+            workflow_id.to_string(),
+        )
+        .await
+    }
+
+    /// Inject payload data into ServerRequestActor nodes' metadata.
+    ///
+    /// ServerRequestActor has no inports — it reads the HTTP request
+    /// from its config. This method merges the payload (body, headers,
+    /// method, path) into the actor's node metadata so it's available
+    /// via `config.get("body")` etc.
+    fn inject_server_request_payload(
+        mut graph_json: serde_json::Value,
+        payload: &serde_json::Value,
+    ) -> serde_json::Value {
+        if let Some(processes) = graph_json.get_mut("processes").and_then(|p| p.as_object_mut()) {
             for (_id, node) in processes.iter_mut() {
                 let component = node.get("component").and_then(|c| c.as_str()).unwrap_or("");
                 if component == "tpl_server_request" || component == "ServerRequestActor" {
-                    // Merge request data into node metadata (becomes actor config)
                     if let Some(metadata) = node.get_mut("metadata").and_then(|m| m.as_object_mut()) {
-                        if let Some(req_obj) = request_data.as_object() {
-                            for (k, v) in req_obj {
+                        if let Some(obj) = payload.as_object() {
+                            for (k, v) in obj {
                                 metadata.insert(k.clone(), v.clone());
                             }
                         }
@@ -297,16 +319,7 @@ impl ExecutionEngine {
                 }
             }
         }
-
-        let execution_id = format!("webhook_exec_{}", uuid::Uuid::new_v4());
-
-        self.start_execution(
-            modified_graph,
-            request_data,
-            execution_id,
-            workflow_id.to_string(),
-        )
-        .await
+        graph_json
     }
 
     /// Get the current state of an execution.
