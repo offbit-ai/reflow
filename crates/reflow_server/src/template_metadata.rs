@@ -1424,12 +1424,19 @@ pub fn build_stream_actor_templates(
         ("tpl_convolve", display_inline(
             "reflow-ir", IR_JS, &[], None,
         )),
-        // Texture actors — preview thumbnail
+        // Texture actors — preview thumbnail.
+        // observedProps must include output metadata fields (thumbnail, textureWidth,
+        // textureHeight, mapping) so Zeal forwards them to the display component
+        // when the EventBridge pushes node.output via update_node_properties().
         ("tpl_triplanar_texture", display_inline(
-            "reflow-texture-preview", TEXTURE_PREVIEW_JS, &["scale", "sharpness"], None,
+            "reflow-texture-preview", TEXTURE_PREVIEW_JS,
+            &["scale", "sharpness", "thumbnail", "textureWidth", "textureHeight", "mapping"],
+            None,
         )),
         ("tpl_uv_texture", display_inline(
-            "reflow-texture-preview", TEXTURE_PREVIEW_JS, &["stride", "uvOffset"], None,
+            "reflow-texture-preview", TEXTURE_PREVIEW_JS,
+            &["stride", "uvOffset", "thumbnail", "textureWidth", "textureHeight", "mapping"],
+            None,
         )),
 
         // Crossover — 3-band frequency response with draggable points
