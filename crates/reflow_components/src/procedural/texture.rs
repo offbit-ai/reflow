@@ -10,6 +10,7 @@ use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
+use std::io::Cursor;
 use std::sync::Arc;
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -30,6 +31,27 @@ impl TextureData {
             width: w,
             height: h,
         })
+    }
+
+    /// Generate a base64 PNG thumbnail (max 64×64) for display components.
+    fn thumbnail_base64(&self) -> String {
+        let thumb = image::imageops::thumbnail(
+            &image::RgbaImage::from_raw(self.width, self.height, self.pixels.clone())
+                .unwrap_or_else(|| image::RgbaImage::new(1, 1)),
+            64,
+            64,
+        );
+        let mut buf = Vec::new();
+        let encoder = image::codecs::png::PngEncoder::new(Cursor::new(&mut buf));
+        use image::ImageEncoder;
+        let _ = encoder.write_image(
+            thumb.as_raw(),
+            thumb.width(),
+            thumb.height(),
+            image::ExtendedColorType::Rgba8,
+        );
+        use base64::Engine;
+        base64::engine::general_purpose::STANDARD.encode(&buf)
     }
 
     /// Sample texture at UV coordinates (0–1 range, wrapping).
@@ -145,6 +167,7 @@ pub async fn triplanar_texture_actor(
 
     let mut results = HashMap::new();
     results.insert("mesh".to_string(), Message::bytes(out_bytes));
+    let thumb = texture.thumbnail_base64();
     results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
         "vertexCount": vertex_count,
         "stride": out_stride,
@@ -152,6 +175,7 @@ pub async fn triplanar_texture_actor(
         "textureWidth": texture.width,
         "textureHeight": texture.height,
         "mapping": "triplanar",
+        "thumbnail": format!("data:image/png;base64,{}", thumb),
     }))));
     Ok(results)
 }
@@ -231,13 +255,15 @@ pub async fn uv_texture_actor(
 
     let mut results = HashMap::new();
     results.insert("mesh".to_string(), Message::bytes(out_bytes));
+    let thumb = texture.thumbnail_base64();
     results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
         "vertexCount": vertex_count,
         "stride": out_stride,
-        "format": format!("pos3_normal3_uv2_color3_f32"),
+        "format": "pos3_normal3_uv2_color3_f32",
         "textureWidth": texture.width,
         "textureHeight": texture.height,
         "mapping": "uv",
+        "thumbnail": format!("data:image/png;base64,{}", thumb),
     }))));
     Ok(results)
 }
