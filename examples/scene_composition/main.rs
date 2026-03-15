@@ -56,13 +56,13 @@ async fn main() -> anyhow::Result<()> {
         // SDF
         "tpl_sdf_sphere", "tpl_sdf_box", "tpl_sdf_smooth_union",
         // GPU
-        "tpl_sdf_marching_cubes",
+        "tpl_sdf_marching_cubes", "tpl_scene_render",
         // Procedural
         "tpl_noise_generator", "tpl_heightmap_to_mesh",
         // Scene
         "tpl_prefab", "tpl_instance", "tpl_terrain", "tpl_scene_graph",
-        // I/O
-        "tpl_file_save",
+        // Encode + I/O
+        "tpl_bytes_to_stream", "tpl_image_encode", "tpl_file_save",
     ];
 
     for tpl_id in &templates {
@@ -120,12 +120,31 @@ async fn main() -> anyhow::Result<()> {
     network.add_node("scene", "tpl_scene_graph",
         config(json!({ "name": "my_scene" })))?;
 
-    // ── Save ─────────────────────────────────────────────────────
+    // ── Scene Render ──────────────────────────────────────────────
 
-    network.add_node("save", "tpl_file_save",
+    network.add_node("render", "tpl_scene_render",
+        config(json!({
+            "width": 512, "height": 512, "fov": 45.0,
+            "cameraPosX": 8.0, "cameraPosY": 6.0, "cameraPosZ": 10.0,
+            "msaa": 4,
+            "bgR": 0.15, "bgG": 0.15, "bgB": 0.2,
+        })))?;
+
+    // ── Encode + Save ────────────────────────────────────────────
+
+    network.add_node("to_stream", "tpl_bytes_to_stream",
+        config(json!({ "chunkSize": 65536, "contentType": "image/raw-rgba" })))?;
+    network.add_node("encode", "tpl_image_encode",
+        config(json!({ "format": "png" })))?;
+    network.add_node("save_json", "tpl_file_save",
         config(json!({ "path": "scene_output.json", "createDirs": true })))?;
+    // Register a second FileSave for PNG
+    let save2 = reflow_components::get_actor_for_template("tpl_file_save").unwrap();
+    network.register_actor_arc("tpl_file_save_png", save2)?;
+    network.add_node("save_png", "tpl_file_save_png",
+        config(json!({ "path": "scene_render.png", "createDirs": true })))?;
 
-    println!("Built graph: 13 nodes");
+    println!("Built graph: 17 nodes");
 
     // ── Wire connections ─────────────────────────────────────────
 
@@ -150,8 +169,15 @@ async fn main() -> anyhow::Result<()> {
     network.add_connection(wire("blob_2", "object", "scene", "object"));
     network.add_connection(wire("terrain", "object", "scene", "object"));
 
-    // Scene → save (serialize scene JSON)
-    network.add_connection(wire("scene", "scene", "save", "input"));
+    // Scene → save JSON
+    network.add_connection(wire("scene", "scene", "save_json", "input"));
+
+    // Scene → render → encode → save PNG
+    network.add_connection(wire("scene", "scene", "render", "scene"));
+    network.add_connection(wire("mesh", "mesh", "render", "meshes"));
+    network.add_connection(wire("render", "output", "to_stream", "input"));
+    network.add_connection(wire("to_stream", "stream", "encode", "stream"));
+    network.add_connection(wire("encode", "output", "save_png", "input"));
 
     // Trigger source actors
     network.add_initial(InitialPacket {
@@ -164,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
         to: ConnectionPoint::new("noise", "_trigger", Some(Message::Flow)),
     });
 
-    println!("Wired 12 connections + 3 triggers\n");
+    println!("Wired 17 connections + 3 triggers\n");
 
     // ── Execute ──────────────────────────────────────────────────
 
@@ -177,26 +203,28 @@ async fn main() -> anyhow::Result<()> {
     let start = std::time::Instant::now();
     network.start()?;
 
-    // Wait for output
-    let output_path = std::path::Path::new("scene_output.json");
+    // Wait for both outputs
+    let json_path = std::path::Path::new("scene_output.json");
+    let png_path = std::path::Path::new("scene_render.png");
     let timeout = std::time::Duration::from_secs(30);
 
     loop {
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-        if output_path.exists() {
+        if json_path.exists() && png_path.exists() {
             tokio::time::sleep(std::time::Duration::from_millis(300)).await;
             break;
         }
         if start.elapsed() > timeout {
-            eprintln!("Timeout");
+            if !json_path.exists() { eprintln!("Timeout: JSON not produced"); }
+            if !png_path.exists() { eprintln!("Timeout: PNG not produced"); }
             break;
         }
     }
 
     let elapsed = start.elapsed();
 
-    if output_path.exists() {
-        let content = std::fs::read_to_string(output_path)?;
+    if json_path.exists() {
+        let content = std::fs::read_to_string(json_path)?;
         let scene: serde_json::Value = serde_json::from_str(&content).unwrap_or_default();
 
         println!("Pipeline completed in {:.0}ms\n", elapsed.as_secs_f64() * 1000.0);
@@ -219,11 +247,16 @@ async fn main() -> anyhow::Result<()> {
             }
         }
 
-        let size = std::fs::metadata(output_path)?.len();
-        println!("\nSaved: scene_output.json ({} bytes)", size);
+        let json_size = std::fs::metadata(json_path)?.len();
+        println!("\nSaved: scene_output.json ({} bytes)", json_size);
+
+        if png_path.exists() {
+            let png_size = std::fs::metadata(png_path)?.len();
+            println!("Saved: scene_render.png ({} bytes)", png_size);
+        }
     } else {
         println!("Pipeline failed after {:.0}ms", elapsed.as_secs_f64() * 1000.0);
-        for node in ["mesh", "prefab", "blob_1", "blob_2", "terrain", "scene", "save"] {
+        for node in ["mesh", "prefab", "blob_1", "blob_2", "terrain", "scene", "render", "save_json", "save_png"] {
             for (port, msg) in network.read_actor_output(node) {
                 if port == "error" {
                     eprintln!("  [{}] {:?}", node, msg);

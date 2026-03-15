@@ -15,6 +15,7 @@ use crate::flow_control::{
     ServerRequestActor, ServerResponseActor, SplitActor, SwitchCaseActor,
 };
 #[cfg(feature = "gpu")]
+use crate::gpu::scene_render::SceneRenderActor;
 use crate::gpu::sdf::{MeshToSdfActor, SdfMarchingCubesActor, SdfRenderActor};
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
@@ -309,6 +310,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_marching_cubes" => Some(Arc::new(SdfMarchingCubesActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_mesh_to_sdf" => Some(Arc::new(MeshToSdfActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_scene_render" => Some(Arc::new(SceneRenderActor::new())),
 
         // Mesh export
         "tpl_obj_export" => Some(Arc::new(ObjExportActor::new())),
@@ -616,6 +619,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
             "SdfMarchingCubesActor".to_string(),
         );
         mapping.insert("tpl_mesh_to_sdf".to_string(), "MeshToSdfActor".to_string());
+        mapping.insert("tpl_scene_render".to_string(), "SceneRenderActor".to_string());
     }
     mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
     mapping.insert("tpl_stl_export".to_string(), "StlExportActor".to_string());
