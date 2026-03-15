@@ -32,7 +32,8 @@ use crate::integration::HttpRequestActor;
 use crate::io::{FileLoadActor, FileSaveActor, GltfExportActor, ObjExportActor, StlExportActor};
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor,
-    LSystemActor, NoiseGeneratorActor, ParticleEmitterActor, VoronoiActor,
+    LSystemActor, NoiseGeneratorActor, ParticleEmitterActor, TriplanarTextureActor,
+    UVTextureActor, VoronoiActor,
 };
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
 use crate::gpu::sdf::{
@@ -164,6 +165,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_voronoi" => Some(Arc::new(VoronoiActor::new())),
         "tpl_lsystem" => Some(Arc::new(LSystemActor::new())),
         "tpl_particle_emitter" => Some(Arc::new(ParticleEmitterActor::new())),
+        "tpl_triplanar_texture" => Some(Arc::new(TriplanarTextureActor::new())),
+        "tpl_uv_texture" => Some(Arc::new(UVTextureActor::new())),
 
         // Text / Utilities
         "tpl_json_parser" => Some(Arc::new(JsonParserActor::new())),
@@ -392,6 +395,8 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_voronoi".to_string(), "VoronoiActor".to_string());
     mapping.insert("tpl_lsystem".to_string(), "LSystemActor".to_string());
     mapping.insert("tpl_particle_emitter".to_string(), "ParticleEmitterActor".to_string());
+    mapping.insert("tpl_triplanar_texture".to_string(), "TriplanarTextureActor".to_string());
+    mapping.insert("tpl_uv_texture".to_string(), "UVTextureActor".to_string());
 
     // Text / Utilities
     mapping.insert("tpl_json_parser".to_string(), "JsonParserActor".to_string());
