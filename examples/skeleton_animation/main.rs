@@ -39,9 +39,9 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
     // Each bone rotates in Y (yaw), creating side-to-side motion.
     // Phase increases with bone index — wave propagates backward.
     // The head (bone 0) leads, tail follows with delay.
-    let wave_speed = 0.5; // slow — half cycle per second
-    let wave_length = 0.6; // tighter wave — more S-curves visible at once
-    let amplitude = 0.30; // stronger bend per bone for deep curves
+    let wave_speed = 0.6; // gentle undulation
+    let wave_length = 0.5; // tight wave — 2+ S-curves across body
+    let amplitude = 0.15; // moderate per-bone — 12 bones gives gentle S-curves
 
     for bone_idx in 0..bone_count {
         let mut times = Vec::new();
@@ -49,15 +49,17 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
 
         // Phase delay increases toward tail — wave travels head→tail
         let phase = bone_idx as f64 * wave_length;
+        // Amplitude increases toward tail — head is steady, tail whips
+        let bone_amp = amplitude * (0.5 + 0.5 * bone_idx as f64 / (bone_count - 1) as f64);
 
         for i in 0..=n {
             let t = i as f64 / fps as f64;
             times.push(t);
 
-            let angle = (t * std::f64::consts::PI * 2.0 * wave_speed - phase).sin() * amplitude;
+            let angle = (t * std::f64::consts::PI * 2.0 * wave_speed - phase).sin() * bone_amp;
             let half = angle / 2.0;
-            // Z rotation = bends body in XY plane (visible from side/above camera)
-            rotations.push(json!([0.0, 0.0, half.sin(), half.cos()]));
+            // Y rotation = yaw (sideways bending in XZ plane — snake slithering)
+            rotations.push(json!([0.0, half.sin(), 0.0, half.cos()]));
         }
 
         channels.push(json!({
@@ -180,7 +182,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "snake_scene", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": img_size, "height": img_size,
-        "cameraPosX": 1.0, "cameraPosY": 7.0, "cameraPosZ": 9.0,
+        "cameraPosX": 1.0, "cameraPosY": 10.0, "cameraPosZ": 2.0,
         "cameraTargetX": 1.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
         "fov": 45.0,
         "bgR": 0.08, "bgG": 0.08, "bgB": 0.12,
