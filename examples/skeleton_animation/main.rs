@@ -34,24 +34,55 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
     let n = (fps as f64 * duration) as usize;
     let mut channels = Vec::new();
+
+    // Lateral undulation: traveling sine wave from head to tail.
+    // Each bone rotates in Y (yaw), creating side-to-side motion.
+    // Phase increases with bone index — wave propagates backward.
+    // The head (bone 0) leads, tail follows with delay.
+    let wave_speed = 1.0; // ~1 full cycle per second
+    let wave_length = 0.8; // phase offset per bone
+    let amplitude = 0.22; // per-bone bend — 12 bones × 0.22 = visible S-curves
+
     for bone_idx in 0..bone_count {
         let mut times = Vec::new();
         let mut rotations = Vec::new();
-        let phase = bone_idx as f64 * std::f64::consts::PI * 0.4;
-        let amplitude = 0.20;
+
+        // Phase delay increases toward tail — wave travels head→tail
+        let phase = bone_idx as f64 * wave_length;
+
         for i in 0..=n {
             let t = i as f64 / fps as f64;
             times.push(t);
-            let angle = (t * std::f64::consts::PI * 2.0 - phase).sin() * amplitude;
+
+            let angle = (t * std::f64::consts::PI * 2.0 * wave_speed - phase).sin() * amplitude;
             let half = angle / 2.0;
-            // Z rotation bends the body in XY plane (visible from XZ camera)
-            rotations.push(json!([0.0, half.sin(), 0.0, half.cos()]));
+            // Z rotation = bends body in XY plane (visible from side/above camera)
+            rotations.push(json!([0.0, 0.0, half.sin(), half.cos()]));
         }
+
         channels.push(json!({
             "boneIndex": bone_idx, "property": "rotation",
             "interpolation": "linear", "times": times, "values": rotations,
         }));
     }
+
+    // Root bone (bone 0) also moves forward slowly — snake locomotion
+    {
+        let mut times = Vec::new();
+        let mut positions = Vec::new();
+        for i in 0..=n {
+            let t = i as f64 / fps as f64;
+            times.push(t);
+            // Slow forward movement along X
+            let x = -3.0 + t * 0.5; // 0.5 units per second forward
+            positions.push(json!([x, 0.0, 0.0]));
+        }
+        channels.push(json!({
+            "boneIndex": 0, "property": "position",
+            "interpolation": "linear", "times": times, "values": positions,
+        }));
+    }
+
     json!({ "name": "slither", "duration": duration, "channelCount": channels.len(), "channels": channels })
 }
 
@@ -59,7 +90,7 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
 async fn main() -> anyhow::Result<()> {
     println!("=== Snake Skeleton Animation → Video ===\n");
 
-    let bone_count = 8;
+    let bone_count = 12;
     let duration = 4.0f64;
     let fps = 30u32;
     let total_frames = (duration * fps as f64) as usize;
