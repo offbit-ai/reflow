@@ -260,32 +260,20 @@ pub async fn sdf_live_render_actor(
         .and_then(|c| c.get("fov")).and_then(|v| v.as_f64())
         .unwrap_or(config.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0)) as f32;
 
-    // Render on blocking thread
-    let wgsl_clone = wgsl.clone();
-    let pixels = tokio::task::spawn_blocking(move || {
-        render_frame(&wgsl_clone, width, height, time, camera_pos, camera_target, fov)
-    })
-    .await
-    .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
-    .map_err(|e| anyhow::anyhow!("{}", e))?;
-
     let mut results = HashMap::new();
 
-    // Check if we already have a stream
+    // Get or create stream
     let existing_stream_id = cache.get("stream_id").and_then(|v| v.as_u64());
 
-    if let Some(stream_id) = existing_stream_id {
-        // Subsequent frame — send via existing stream
-        if let Some(tx) = STREAM_REGISTRY.clone_sender(stream_id) {
-            let _ = tx.send(StreamFrame::Data(Arc::new(pixels)));
-        }
+    let stream_sender = if let Some(stream_id) = existing_stream_id {
+        STREAM_REGISTRY.clone_sender(stream_id)
     } else {
-        // First frame — create stream and send Begin + first Data
+        // First invocation — create stream
         let (tx, handle) = ctx.create_stream(
             "stream",
             Some("video/raw-rgba".to_string()),
             None,
-            Some(64), // buffer size
+            Some(4), // small buffer — backpressure if consumer is slow
         );
         ctx.pool_upsert("_sdf", "stream_id", json!(handle.stream_id));
 
@@ -299,13 +287,22 @@ pub async fn sdf_live_render_actor(
                 "format": "RGBA8",
             })),
         });
-        let _ = tx.send(StreamFrame::Data(Arc::new(pixels)));
 
         results.insert("stream".to_string(), Message::stream_handle(handle));
+        Some(tx)
+    };
+
+    // Dispatch render + stream send on blocking thread — non-blocking return
+    let wgsl_clone = wgsl.clone();
+    if let Some(tx) = stream_sender {
+        tokio::task::spawn_blocking(move || {
+            match render_frame(&wgsl_clone, width, height, time, camera_pos, camera_target, fov) {
+                Ok(pixels) => { let _ = tx.send(StreamFrame::Data(Arc::new(pixels))); }
+                Err(e) => { let _ = tx.send(StreamFrame::Error(e)); }
+            }
+        });
     }
 
-    // Always output raw bytes too (for non-streaming consumers)
-    // This is cheap since pixels is already computed
     results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
         "width": width,
         "height": height,
