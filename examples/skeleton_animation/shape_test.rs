@@ -1,4 +1,4 @@
-//! Shape test — build the snake with SdfPath actor, render to PNG.
+//! Shape test — build the snake with TubeMesh (procedural), render to PNG.
 //! Run: cd examples/skeleton_animation && cargo run --bin shape_test
 
 use std::collections::HashMap;
@@ -24,40 +24,28 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("=== Snake Shape Test (SdfPath) ===\n");
+    println!("=== Snake Shape Test (TubeMesh) ===\n");
 
     let mut net = Network::new(NetworkConfig::default());
 
     for tpl in [
-        "tpl_sdf_path", "tpl_sdf_marching_cubes",
+        "tpl_tube_mesh",
         "tpl_prefab", "tpl_instance", "tpl_scene_graph", "tpl_scene_render",
         "tpl_bytes_to_stream", "tpl_image_encode", "tpl_file_save",
     ] {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // SNAKE via SdfPath — one actor, one config
-    //
-    // The path describes the snake's spine as an S-curve in the XZ plane.
-    // Profile defines the cross-section radius from head to tail.
-    // ══════════════════════════════════════════════════════════════
-    net.add_node("snake", "tpl_sdf_path", config(json!({
+    // Snake body — procedural tube mesh, no SDF, no MarchingCubes
+    net.add_node("snake", "tpl_tube_mesh", config(json!({
         "path": "M -2.5,0 C -1.5,-0.8 -0.5,0.8 0.5,0 C 1.5,-0.6 2.5,0.4 3.5,0.1",
-        "profile": [0.25, 0.23, 0.21, 0.20, 0.20, 0.18, 0.15, 0.11, 0.07, 0.03],
-        "segments": 24,
-        "smoothness": 0.0,
+        "profile": [0.22, 0.20, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
+        "segments": 64,
+        "rings": 24,
         "plane": "xz",
     })))?;
 
-    net.add_node("mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 256, "bound": 4.5, "isoLevel": 0.0,
-    })))?;
-
-    net.add_connection(wire("snake", "sdf", "mc", "sdf"));
-    net.add_initial(iip("snake", "_trigger", Message::Flow));
-
-    // Scene render
+    // Scene render — directly from mesh, no MC needed
     net.add_node("prefab", "tpl_prefab", config(json!({ "name": "snake" })))?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "snake_0" })))?;
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "s", "expectedObjects": 1 })))?;
@@ -69,13 +57,13 @@ async fn main() -> anyhow::Result<()> {
         "bgR": 0.92, "bgG": 0.92, "bgB": 0.90,
     })))?;
 
-    net.add_connection(wire("mc", "mesh", "prefab", "mesh"));
+    net.add_connection(wire("snake", "mesh", "prefab", "mesh"));
     net.add_connection(wire("prefab", "prefab", "inst", "prefab"));
     net.add_connection(wire("inst", "object", "scene", "object"));
     net.add_connection(wire("scene", "scene", "render", "scene"));
-    net.add_connection(wire("mc", "mesh", "render", "meshes"));
+    net.add_connection(wire("snake", "mesh", "render", "meshes"));
 
-    // Encode + save
+    // Encode + save PNG
     net.add_node("to_stream", "tpl_bytes_to_stream", config(json!({
         "chunkSize": 65536, "contentType": "image/raw-rgba",
     })))?;
@@ -86,16 +74,17 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("to_stream", "stream", "encode", "stream"));
     net.add_connection(wire("encode", "output", "save", "input"));
 
-    println!("SdfPath: S-curve spine, 24 segments, tapered profile");
-    println!("MC: 192³, bound=4.5");
-    println!("Render: 1024x1024\n");
+    net.add_initial(iip("snake", "_trigger", Message::Flow));
+
+    println!("Procedural TubeMesh: 64 segments, 24 rings");
+    println!("Direct mesh → SceneRender (no SDF, no MC)\n");
     println!("Running...");
 
     net.start()?;
 
     let png_path = std::path::Path::new("snake_shape.png");
     let start = std::time::Instant::now();
-    let timeout = std::time::Duration::from_secs(60);
+    let timeout = std::time::Duration::from_secs(30);
     loop {
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         if png_path.exists() && png_path.metadata().map(|m| m.len() > 100).unwrap_or(false) {

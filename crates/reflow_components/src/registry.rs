@@ -89,7 +89,8 @@ use crate::media::{
 };
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor, LSystemActor,
-    NoiseGeneratorActor, ParticleEmitterActor, TriplanarTextureActor, UVTextureActor, VoronoiActor,
+    NoiseGeneratorActor, ParticleEmitterActor, TriplanarTextureActor, TubeMeshActor,
+    UVTextureActor, VoronoiActor,
 };
 use crate::stream_ops::{
     AudioGainActor, AudioNormalizeActor, AudioSpectrumActor, BiquadFilterActor,
@@ -225,6 +226,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_lsystem" => Some(Arc::new(LSystemActor::new())),
         "tpl_particle_emitter" => Some(Arc::new(ParticleEmitterActor::new())),
         "tpl_triplanar_texture" => Some(Arc::new(TriplanarTextureActor::new())),
+        "tpl_tube_mesh" => Some(Arc::new(TubeMeshActor::new())),
         "tpl_uv_texture" => Some(Arc::new(UVTextureActor::new())),
 
         // Text / Utilities
@@ -585,6 +587,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_triplanar_texture".to_string(),
         "TriplanarTextureActor".to_string(),
     );
+    mapping.insert("tpl_tube_mesh".to_string(), "TubeMeshActor".to_string());
     mapping.insert("tpl_uv_texture".to_string(), "UVTextureActor".to_string());
 
     // Text / Utilities

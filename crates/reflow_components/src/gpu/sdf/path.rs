@@ -108,14 +108,14 @@ pub async fn sdf_path_actor(ctx: ActorContext) -> Result<HashMap<String, Message
 // ─── Path parsing ────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
-enum PathCmd {
+pub enum PathCmd {
     MoveTo(f32, f32),
     LineTo(f32, f32),
     CubicBezier(f32, f32, f32, f32, f32, f32), // cx1,cy1, cx2,cy2, x,y
     QuadBezier(f32, f32, f32, f32),             // cx,cy, x,y
 }
 
-fn parse_path(s: &str) -> Vec<PathCmd> {
+pub fn parse_path(s: &str) -> Vec<PathCmd> {
     let mut cmds = Vec::new();
     let mut chars = s.chars().peekable();
     let mut current_cmd = ' ';
@@ -217,7 +217,7 @@ fn parse_number(chars: &mut std::iter::Peekable<std::str::Chars>) -> Option<f32>
 // ─── Path sampling ───────────────────────────────────────────────
 
 /// Sample N evenly-spaced points along the parsed path commands.
-fn sample_path(cmds: &[PathCmd], n: usize) -> Vec<(f32, f32)> {
+pub fn sample_path(cmds: &[PathCmd], n: usize) -> Vec<(f32, f32)> {
     // First, expand commands into fine-grained line segments
     let mut polyline: Vec<(f32, f32)> = Vec::new();
     let mut cx = 0.0f32;
@@ -327,7 +327,7 @@ fn path_length(points: &[(f32, f32)]) -> f32 {
     len
 }
 
-fn interpolate_profile(profile: &[f32], n: usize) -> Vec<f32> {
+pub fn interpolate_profile(profile: &[f32], n: usize) -> Vec<f32> {
     if profile.is_empty() {
         return vec![0.1; n];
     }

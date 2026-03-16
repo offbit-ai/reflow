@@ -6,6 +6,7 @@ mod mesh;
 mod noise;
 mod particle;
 mod texture;
+mod tube_mesh;
 mod voronoi;
 
 pub use heightmap::{HeightmapToImageActor, ImageToHeightmapActor};
@@ -14,4 +15,5 @@ pub use mesh::HeightmapToMeshActor;
 pub use noise::NoiseGeneratorActor;
 pub use particle::ParticleEmitterActor;
 pub use texture::{TriplanarTextureActor, UVTextureActor};
+pub use tube_mesh::TubeMeshActor;
 pub use voronoi::VoronoiActor;
