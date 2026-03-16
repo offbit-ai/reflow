@@ -337,9 +337,92 @@ fn run_marching_cubes_gpu(
         .map_err(|e| format!("Vertex map: {:?}", e))?;
 
     let vertex_data = slice2.get_mapped_range();
-    let result = vertex_data.to_vec();
+    let raw = vertex_data.to_vec();
     drop(vertex_data);
     vertex_readback.unmap();
 
-    Ok(result)
+    // Post-process: smooth normals by averaging across shared vertices.
+    // MC produces duplicate vertices at shared positions with per-face normals.
+    // Averaging produces smooth shading that eliminates banding artifacts.
+    Ok(smooth_normals(&raw))
+}
+
+/// Smooth normals by welding nearby vertices and averaging their normals.
+/// Input/output: packed f32 bytes, stride 24 (pos3 + normal3).
+fn smooth_normals(data: &[u8]) -> Vec<u8> {
+    let stride = 24; // 6 floats * 4 bytes
+    let vertex_count = data.len() / stride;
+    if vertex_count < 3 {
+        return data.to_vec();
+    }
+
+    // Parse vertices
+    let mut positions: Vec<[f32; 3]> = Vec::with_capacity(vertex_count);
+    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(vertex_count);
+    for i in 0..vertex_count {
+        let off = i * stride;
+        let px = f32::from_le_bytes(data[off..off + 4].try_into().unwrap());
+        let py = f32::from_le_bytes(data[off + 4..off + 8].try_into().unwrap());
+        let pz = f32::from_le_bytes(data[off + 8..off + 12].try_into().unwrap());
+        let nx = f32::from_le_bytes(data[off + 12..off + 16].try_into().unwrap());
+        let ny = f32::from_le_bytes(data[off + 16..off + 20].try_into().unwrap());
+        let nz = f32::from_le_bytes(data[off + 20..off + 24].try_into().unwrap());
+        positions.push([px, py, pz]);
+        normals.push([nx, ny, nz]);
+    }
+
+    // Spatial hashing: quantize positions to detect shared vertices.
+    // Two vertices are "shared" if their positions match within epsilon.
+    use std::collections::HashMap;
+    let epsilon = 1e-5;
+    let inv_eps = 1.0 / epsilon;
+
+    // Map: quantized position key → list of vertex indices at that position
+    let mut buckets: HashMap<(i64, i64, i64), Vec<usize>> = HashMap::new();
+    for (i, p) in positions.iter().enumerate() {
+        let key = (
+            (p[0] * inv_eps).round() as i64,
+            (p[1] * inv_eps).round() as i64,
+            (p[2] * inv_eps).round() as i64,
+        );
+        buckets.entry(key).or_default().push(i);
+    }
+
+    // For each bucket, compute the average normal and assign to all vertices
+    let mut smoothed = normals.clone();
+    for indices in buckets.values() {
+        if indices.len() <= 1 {
+            continue;
+        }
+        // Accumulate normals
+        let mut avg = [0.0f32; 3];
+        for &idx in indices {
+            avg[0] += normals[idx][0];
+            avg[1] += normals[idx][1];
+            avg[2] += normals[idx][2];
+        }
+        // Normalize
+        let len = (avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]).sqrt();
+        if len > 1e-8 {
+            avg[0] /= len;
+            avg[1] /= len;
+            avg[2] /= len;
+        }
+        // Write back
+        for &idx in indices {
+            smoothed[idx] = avg;
+        }
+    }
+
+    // Repack
+    let mut out = Vec::with_capacity(data.len());
+    for i in 0..vertex_count {
+        out.extend_from_slice(&positions[i][0].to_le_bytes());
+        out.extend_from_slice(&positions[i][1].to_le_bytes());
+        out.extend_from_slice(&positions[i][2].to_le_bytes());
+        out.extend_from_slice(&smoothed[i][0].to_le_bytes());
+        out.extend_from_slice(&smoothed[i][1].to_le_bytes());
+        out.extend_from_slice(&smoothed[i][2].to_le_bytes());
+    }
+    out
 }
