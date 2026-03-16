@@ -372,12 +372,10 @@ fn smooth_normals(data: &[u8]) -> Vec<u8> {
     }
 
     // Spatial hashing: quantize positions to detect shared vertices.
-    // Two vertices are "shared" if their positions match within epsilon.
     use std::collections::HashMap;
     let epsilon = 1e-5;
     let inv_eps = 1.0 / epsilon;
 
-    // Map: quantized position key → list of vertex indices at that position
     let mut buckets: HashMap<(i64, i64, i64), Vec<usize>> = HashMap::new();
     for (i, p) in positions.iter().enumerate() {
         let key = (
@@ -388,27 +386,20 @@ fn smooth_normals(data: &[u8]) -> Vec<u8> {
         buckets.entry(key).or_default().push(i);
     }
 
-    // For each bucket, compute the average normal and assign to all vertices
+    // Smooth normals: average across shared vertices to eliminate MC banding
     let mut smoothed = normals.clone();
     for indices in buckets.values() {
-        if indices.len() <= 1 {
-            continue;
-        }
-        // Accumulate normals
+        if indices.len() <= 1 { continue; }
         let mut avg = [0.0f32; 3];
         for &idx in indices {
             avg[0] += normals[idx][0];
             avg[1] += normals[idx][1];
             avg[2] += normals[idx][2];
         }
-        // Normalize
         let len = (avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]).sqrt();
         if len > 1e-8 {
-            avg[0] /= len;
-            avg[1] /= len;
-            avg[2] /= len;
+            avg[0] /= len; avg[1] /= len; avg[2] /= len;
         }
-        // Write back
         for &idx in indices {
             smoothed[idx] = avg;
         }

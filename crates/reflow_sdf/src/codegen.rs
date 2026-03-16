@@ -129,78 +129,46 @@ impl CodegenContext {
                 format!("sdf_tapered_capsule({}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
                     pos, a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b),
             SdfPrimitive::TubePath { points, radii, k: _ } => {
-                // Emit a function that evaluates distance to a tubular polyline.
-                // Finds closest point on the polyline and uses global arc-length
-                // parameterization for radius — ensures radius is continuous
-                // across segment boundaries (no Voronoi artifacts).
+                // Emit a function with constant arrays + loop for the tubular path.
+                // Uses closest-point on polyline with arc-length radius interpolation.
                 let n = points.len().min(radii.len());
                 if n < 2 {
                     "999.0".to_string()
                 } else {
-                    // Precompute cumulative arc lengths
-                    let mut arc_lengths = vec![0.0f32; n];
-                    for i in 1..n {
-                        let dx = points[i][0] - points[i-1][0];
-                        let dy = points[i][1] - points[i-1][1];
-                        let dz = points[i][2] - points[i-1][2];
-                        arc_lengths[i] = arc_lengths[i-1] + (dx*dx + dy*dy + dz*dz).sqrt();
-                    }
-                    let total_len = arc_lengths[n-1];
-
                     let fn_name = format!("sdf_tube_{}", var);
-                    let mut func = format!("fn {}(p: vec3f) -> f32 {{\n", fn_name);
-                    // Find closest point + its arc-length parameter
+                    let mut func = String::new();
+
+                    // Emit constant arrays
+                    func.push_str(&format!("const TUBE_{}_N: u32 = {}u;\n", var, n));
+                    func.push_str(&format!("const TUBE_{}_PTS: array<vec3f, {}> = array<vec3f, {}>(\n", var, n, n));
+                    for (i, p) in points.iter().take(n).enumerate() {
+                        func.push_str(&format!("  vec3f({:.6}, {:.6}, {:.6}){}\n",
+                            p[0], p[1], p[2], if i < n - 1 { "," } else { "" }));
+                    }
+                    func.push_str(");\n");
+                    func.push_str(&format!("const TUBE_{}_RAD: array<f32, {}> = array<f32, {}>(\n", var, n, n));
+                    for (i, r) in radii.iter().take(n).enumerate() {
+                        func.push_str(&format!("  {:.6}{}\n", r, if i < n - 1 { "," } else { "" }));
+                    }
+                    func.push_str(");\n");
+
+                    // Emit function with loop
+                    func.push_str(&format!("fn {}(p: vec3f) -> f32 {{\n", fn_name));
                     func.push_str("  var best_d2 = 1e10;\n");
-                    func.push_str("  var best_t = 0.0;\n"); // global [0,1] parameter
-                    for i in 0..n - 1 {
-                        let a = points[i];
-                        let b = points[i + 1];
-                        let arc_a = arc_lengths[i];
-                        let arc_b = arc_lengths[i + 1];
-                        func.push_str(&format!(
-                            "  {{\n    let a = vec3f({:.6}, {:.6}, {:.6});\n    let b = vec3f({:.6}, {:.6}, {:.6});\n",
-                            a[0], a[1], a[2], b[0], b[1], b[2]
-                        ));
-                        func.push_str("    let ba = b - a;\n");
-                        func.push_str("    let pa = p - a;\n");
-                        func.push_str("    let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);\n");
-                        func.push_str("    let closest = pa - ba * h;\n");
-                        func.push_str("    let d2 = dot(closest, closest);\n");
-                        // Arc-length parameter at closest point
-                        func.push_str(&format!(
-                            "    let t = mix({:.6}, {:.6}, h);\n",
-                            arc_a / total_len, arc_b / total_len
-                        ));
-                        func.push_str("    if d2 < best_d2 { best_d2 = d2; best_t = t; }\n");
-                        func.push_str("  }\n");
-                    }
-                    // Interpolate radius from global arc-length parameter
-                    // Emit piecewise linear radius lookup from the profile
-                    func.push_str("  // Radius from arc-length parameter\n");
-                    func.push_str("  var r = 0.0;\n");
-                    for i in 0..n - 1 {
-                        let t_a = arc_lengths[i] / total_len;
-                        let t_b = arc_lengths[i + 1] / total_len;
-                        let ra = radii[i];
-                        let rb = radii[i + 1];
-                        if i == 0 {
-                            func.push_str(&format!(
-                                "  if best_t < {:.6} {{ r = mix({:.6}, {:.6}, best_t / {:.6}); }}\n",
-                                t_b, ra, rb, t_b
-                            ));
-                        } else if i == n - 2 {
-                            func.push_str(&format!(
-                                "  else {{ r = mix({:.6}, {:.6}, (best_t - {:.6}) / {:.6}); }}\n",
-                                ra, rb, t_a, t_b - t_a
-                            ));
-                        } else {
-                            func.push_str(&format!(
-                                "  else if best_t < {:.6} {{ r = mix({:.6}, {:.6}, (best_t - {:.6}) / {:.6}); }}\n",
-                                t_b, ra, rb, t_a, t_b - t_a
-                            ));
-                        }
-                    }
-                    func.push_str("  return sqrt(best_d2) - r;\n}\n");
+                    func.push_str("  var best_r = 0.0;\n");
+                    func.push_str(&format!("  for (var i = 0u; i < TUBE_{}_N - 1u; i = i + 1u) {{\n", var));
+                    func.push_str(&format!("    let a = TUBE_{}_PTS[i];\n", var));
+                    func.push_str(&format!("    let b = TUBE_{}_PTS[i + 1u];\n", var));
+                    func.push_str("    let ba = b - a;\n");
+                    func.push_str("    let pa = p - a;\n");
+                    func.push_str("    let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);\n");
+                    func.push_str("    let closest = pa - ba * h;\n");
+                    func.push_str("    let d2 = dot(closest, closest);\n");
+                    func.push_str(&format!("    let r = mix(TUBE_{}_RAD[i], TUBE_{}_RAD[i + 1u], h);\n", var, var));
+                    func.push_str("    if d2 < best_d2 { best_d2 = d2; best_r = r; }\n");
+                    func.push_str("  }\n");
+                    func.push_str("  return sqrt(best_d2) - best_r;\n}\n");
+
                     self.helpers.push(func);
                     format!("{}({})", fn_name, pos)
                 }
