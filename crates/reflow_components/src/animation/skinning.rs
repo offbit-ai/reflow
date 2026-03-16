@@ -83,7 +83,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     // Deform vertices: transform positions and normals by blended bone matrices.
     // Use the original smooth normals from MarchingCubes (SDF gradient-based),
     // transformed by the upper 3x3 of the blended matrix.
-    let mut output = Vec::with_capacity(vertex_count * 24);
+    let mut output = Vec::with_capacity(vertex_count * stride);
 
     for i in 0..vertex_count {
         let mesh_off = i * stride;
@@ -123,6 +123,11 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         output.extend_from_slice(&new_nor[0].to_le_bytes());
         output.extend_from_slice(&new_nor[1].to_le_bytes());
         output.extend_from_slice(&new_nor[2].to_le_bytes());
+
+        // Pass through extra bytes beyond pos3+normal3 (e.g. color3 for 36-byte stride)
+        if stride > 24 && mesh_off + stride <= mesh_bytes.len() {
+            output.extend_from_slice(&mesh_bytes[mesh_off + 24..mesh_off + stride]);
+        }
     }
 
     let mut out = HashMap::new();
@@ -132,8 +137,8 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         Message::object(EncodableValue::from(json!({
             "vertexCount": vertex_count,
             "boneCount": bone_count,
-            "stride": 24,
-            "format": "pos3_normal3_f32",
+            "stride": stride,
+            "format": if stride > 24 { "pos3_normal3_color3_f32" } else { "pos3_normal3_f32" },
         }))),
     );
     Ok(out)

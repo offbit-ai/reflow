@@ -105,9 +105,8 @@ async fn main() -> anyhow::Result<()> {
 
     // Register all actors
     for tpl in [
-        // Mesh generation
-        "tpl_tube_mesh", "tpl_mesh_combine",
-        "tpl_sdf_sphere", "tpl_sdf_translate", "tpl_sdf_marching_cubes",
+        // Mesh generation + coloring
+        "tpl_tube_mesh", "tpl_noise_generator", "tpl_vertex_color",
         // Skeleton + animation
         "tpl_skeleton", "tpl_animation_clip", "tpl_skin_bind",
         "tpl_interval_trigger", "tpl_animation_time", "tpl_animation_sampler", "tpl_skinning",
@@ -119,27 +118,29 @@ async fn main() -> anyhow::Result<()> {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
     }
 
-    // ═══ MESH: body + head ═══
+    // ═══ MESH: body with procedural coloring ═══
     net.add_node("body", "tpl_tube_mesh", config(json!({
         "path": "M -3,0 C -1.5,-0.6 0.5,0.6 2,0 C 3,-0.3 4,0.2 5,0",
-        "profile": [0.20, 0.19, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
+        "profile": [0.22, 0.20, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
         "segments": 48,
         "rings": 16,
         "plane": "xz",
     })))?;
 
-    net.add_node("head_sphere", "tpl_sdf_sphere", config(json!({ "radius": 0.22 })))?;
-    net.add_node("head_tr", "tpl_sdf_translate", config(json!({ "x": -3.0, "y": 0.0, "z": 0.0 })))?;
-    net.add_node("head_mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 48, "bound": 3.5, "isoLevel": 0.0,
+    net.add_node("noise", "tpl_noise_generator", config(json!({
+        "noiseType": "perlin", "width": 64, "height": 64,
+        "scale": 4.0, "octaves": 3, "persistence": 0.5,
     })))?;
 
-    net.add_connection(wire("head_sphere", "sdf", "head_tr", "sdf"));
-    net.add_connection(wire("head_tr", "sdf", "head_mc", "sdf"));
+    net.add_node("colorize", "tpl_vertex_color", config(json!({
+        "color1": [0.35, 0.42, 0.25],
+        "color2": [0.15, 0.18, 0.08],
+        "noiseScale": 6.0, "noiseWidth": 64,
+    })))?;
 
-    net.add_node("combine", "tpl_mesh_combine", config(json!({ "stride": 24 })))?;
-    net.add_connection(wire("body", "mesh", "combine", "mesh_a"));
-    net.add_connection(wire("head_mc", "mesh", "combine", "mesh_b"));
+    net.add_connection(wire("body", "mesh", "colorize", "mesh"));
+    net.add_connection(wire("body", "uv", "colorize", "uv"));
+    net.add_connection(wire("noise", "output", "colorize", "noise"));
 
     // ═══ SKELETON: 8 bones along the body path ═══
     let body_len = 8.0f64; // approximate path length
@@ -166,7 +167,7 @@ async fn main() -> anyhow::Result<()> {
         "channels": clip_data.get("channels").unwrap().clone(),
     })))?;
 
-    net.add_node("bind", "tpl_skin_bind", config(json!({ "maxInfluences": 3, "stride": 24 })))?;
+    net.add_node("bind", "tpl_skin_bind", config(json!({ "maxInfluences": 3, "stride": 36 })))?;
 
     // ═══ ANIMATION LOOP ═══
     net.add_node("tick", "tpl_interval_trigger", config(json!({
@@ -174,12 +175,12 @@ async fn main() -> anyhow::Result<()> {
     })))?;
     net.add_node("anim_time", "tpl_animation_time", config(json!({ "fps": fps, "speed": 1.0 })))?;
     net.add_node("sampler", "tpl_animation_sampler", config(json!({ "loop": true })))?;
-    net.add_node("skin", "tpl_skinning", config(json!({ "stride": 24 })))?;
+    net.add_node("skin", "tpl_skinning", config(json!({ "stride": 36 })))?;
 
     // ═══ SCENE ═══
     net.add_node("prefab", "tpl_prefab", config(json!({
         "name": "snake",
-        "material": { "color": [0.30, 0.38, 0.22] },
+        "stride": 36,
     })))?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "snake_0" })))?;
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "snake_scene", "expectedObjects": 1 })))?;
@@ -201,7 +202,7 @@ async fn main() -> anyhow::Result<()> {
     // ═══ CONNECTIONS ═══
 
     // Mesh → skin bind
-    net.add_connection(wire("combine", "mesh", "bind", "mesh"));
+    net.add_connection(wire("colorize", "colored_mesh", "bind", "mesh"));
     net.add_connection(wire("skeleton", "skeleton", "bind", "skeleton"));
 
     // Animation sampler
@@ -212,7 +213,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("anim_time", "time", "sampler", "time"));
 
     // Skinning
-    net.add_connection(wire("combine", "mesh", "skin", "mesh"));
+    net.add_connection(wire("colorize", "colored_mesh", "skin", "mesh"));
     net.add_connection(wire("bind", "skinned_mesh", "skin", "skinned_mesh"));
     net.add_connection(wire("bind", "skin", "skin", "skin"));
     net.add_connection(wire("sampler", "bone_transforms", "skin", "bone_transforms"));
@@ -235,7 +236,7 @@ async fn main() -> anyhow::Result<()> {
 
     // IIPs
     net.add_initial(iip("body", "_trigger", Message::Flow));
-    net.add_initial(iip("head_sphere", "_trigger", Message::Flow));
+    net.add_initial(iip("noise", "_trigger", Message::Flow));
     net.add_initial(iip("skeleton", "_trigger", Message::Flow));
     net.add_initial(iip("clip", "_trigger", Message::Flow));
 
