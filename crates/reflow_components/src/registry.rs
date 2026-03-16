@@ -22,7 +22,7 @@ use crate::flow_control::{
 use crate::gpu::scene_render::SceneRenderActor;
 use crate::gpu::sdf::SdfPathActor;
 #[cfg(feature = "gpu")]
-use crate::gpu::sdf::{MeshToSdfActor, SdfMarchingCubesActor, SdfRenderActor};
+use crate::gpu::sdf::{MeshToSdfActor, SdfLiveRenderActor, SdfMarchingCubesActor, SdfRenderActor};
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
     SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor,
@@ -320,6 +320,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_path" => Some(Arc::new(SdfPathActor::new())),
 
         // GPU compute (requires wgpu)
+        #[cfg(feature = "gpu")]
+        "tpl_sdf_live_render" => Some(Arc::new(SdfLiveRenderActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_sdf_render" => Some(Arc::new(SdfRenderActor::new())),
         #[cfg(feature = "gpu")]
