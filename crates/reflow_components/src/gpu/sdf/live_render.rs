@@ -12,7 +12,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{
+    message::EncodableValue,
+    stream::{StreamFrame, STREAM_REGISTRY},
+    ActorContext, MemoryState,
+};
 use reflow_sdf::ir::{SceneSettings, SdfNode};
 use serde_json::json;
 use std::collections::HashMap;
@@ -176,7 +180,7 @@ fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
 #[actor(
     SdfLiveRenderActor,
     inports::<100>(sdf, camera, time),
-    outports::<50>(output, metadata, error),
+    outports::<50>(stream, metadata, error),
     state(MemoryState)
 )]
 pub async fn sdf_live_render_actor(
@@ -265,14 +269,49 @@ pub async fn sdf_live_render_actor(
     .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
     .map_err(|e| anyhow::anyhow!("{}", e))?;
 
-    let mut out = HashMap::new();
-    out.insert("output".to_string(), Message::bytes(pixels));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
+    let mut results = HashMap::new();
+
+    // Check if we already have a stream
+    let existing_stream_id = cache.get("stream_id").and_then(|v| v.as_u64());
+
+    if let Some(stream_id) = existing_stream_id {
+        // Subsequent frame — send via existing stream
+        if let Some(tx) = STREAM_REGISTRY.clone_sender(stream_id) {
+            let _ = tx.send(StreamFrame::Data(Arc::new(pixels)));
+        }
+    } else {
+        // First frame — create stream and send Begin + first Data
+        let (tx, handle) = ctx.create_stream(
+            "stream",
+            Some("video/raw-rgba".to_string()),
+            None,
+            Some(64), // buffer size
+        );
+        ctx.pool_upsert("_sdf", "stream_id", json!(handle.stream_id));
+
+        let _ = tx.send(StreamFrame::Begin {
+            content_type: Some("video/raw-rgba".to_string()),
+            size_hint: None,
+            metadata: Some(json!({
+                "width": width,
+                "height": height,
+                "fps": 60,
+                "format": "RGBA8",
+            })),
+        });
+        let _ = tx.send(StreamFrame::Data(Arc::new(pixels)));
+
+        results.insert("stream".to_string(), Message::stream_handle(handle));
+    }
+
+    // Always output raw bytes too (for non-streaming consumers)
+    // This is cheap since pixels is already computed
+    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
         "width": width,
         "height": height,
         "format": "RGBA8",
     }))));
-    Ok(out)
+    Ok(results)
 }
 
 fn render_frame(
