@@ -39,9 +39,9 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
     // Each bone rotates in Y (yaw), creating side-to-side motion.
     // Phase increases with bone index — wave propagates backward.
     // The head (bone 0) leads, tail follows with delay.
-    let wave_speed = 1.0; // ~1 full cycle per second
-    let wave_length = 0.8; // phase offset per bone
-    let amplitude = 0.22; // per-bone bend — 12 bones × 0.22 = visible S-curves
+    let wave_speed = 0.5; // slow — half cycle per second
+    let wave_length = 0.6; // tighter wave — more S-curves visible at once
+    let amplitude = 0.30; // stronger bend per bone for deep curves
 
     for bone_idx in 0..bone_count {
         let mut times = Vec::new();
@@ -74,7 +74,7 @@ fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
             let t = i as f64 / fps as f64;
             times.push(t);
             // Slow forward movement along X
-            let x = -3.0 + t * 0.5; // 0.5 units per second forward
+            let x = -3.0 + t * 0.3; // slow forward crawl
             positions.push(json!([x, 0.0, 0.0]));
         }
         channels.push(json!({
