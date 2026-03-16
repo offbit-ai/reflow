@@ -742,6 +742,7 @@ struct VertexOutput {
     @builtin(position) clip_pos: vec4f,
     @location(0) normal: vec3f,
     @location(1) color: vec3f,
+    @location(2) world_pos: vec3f,
 };
 
 @vertex
@@ -750,7 +751,22 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.clip_pos = u.view_proj * vec4f(in.position, 1.0);
     out.normal = in.normal;
     out.color = in.color;
+    out.world_pos = in.position;
     return out;
+}
+
+fn procedural_pattern(p: vec3f, base: vec3f) -> vec3f {
+    let u_coord = p.x * 1.5;
+    let v_coord = atan2(p.y, max(abs(p.z), 0.001)) * 3.0;
+    let diamond = sin(u_coord * 8.0 + v_coord) * sin(u_coord * 8.0 - v_coord);
+    let scales = smoothstep(-0.1, 0.1, diamond);
+    let stripe = smoothstep(0.3, 0.7, sin(u_coord * 3.0) * 0.5 + 0.5);
+    let dorsal = smoothstep(0.85, 0.95, cos(v_coord / 3.0));
+    let pattern = scales * 0.4 + stripe * 0.3 + 0.3;
+    let dark = base * 0.5;
+    var col = mix(dark, base, pattern);
+    col = mix(col, base * 0.3, dorsal * 0.5);
+    return col;
 }
 
 @fragment
@@ -758,7 +774,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let n = normalize(in.normal);
     let diff = max(dot(n, u.light_dir), 0.0);
     let light = u.ambient + diff * 0.8;
-    let col = in.color * light;
+    let patterned = procedural_pattern(in.world_pos, in.color);
+    let col = patterned * light;
     return vec4f(col, 1.0);
 }
 "#;
