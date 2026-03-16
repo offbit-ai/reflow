@@ -18,21 +18,59 @@ use super::math_helpers::{mat4_inverse, mat4_mul, trs_to_mat4, MAT4_IDENTITY};
 pub async fn skeleton_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
 
-    // Bones come from config or inport
-    let bones_json = config
-        .get("bones")
-        .cloned()
-        .unwrap_or_else(|| json!([]));
-
-    let bones = bones_json
-        .as_array()
-        .ok_or_else(|| anyhow::anyhow!("bones must be an array"))?;
-
     let name = config
         .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or("skeleton")
         .to_string();
+
+    // High-level config: generate bones from boneCount + spacing + axis
+    // OR explicit bones array (backward compatible)
+    let bones_json = if let Some(count_val) = config.get("boneCount") {
+        let bone_count = count_val.as_u64().unwrap_or(1) as usize;
+        let spacing = config
+            .get("spacing")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0);
+        let axis = config
+            .get("axis")
+            .and_then(|v| v.as_str())
+            .unwrap_or("x");
+        let start = parse_vec3(config.get("startPosition"), [0.0; 3]);
+
+        let dir: [f64; 3] = match axis {
+            "y" | "Y" => [0.0, 1.0, 0.0],
+            "z" | "Z" => [0.0, 0.0, 1.0],
+            _ => [1.0, 0.0, 0.0], // default: x
+        };
+
+        let mut bones = Vec::with_capacity(bone_count);
+        for i in 0..bone_count {
+            // Root bone gets world startPosition; children get local offset along axis
+            let pos = if i == 0 {
+                [start[0] as f64, start[1] as f64, start[2] as f64]
+            } else {
+                [dir[0] * spacing, dir[1] * spacing, dir[2] * spacing]
+            };
+            bones.push(json!({
+                "name": format!("bone_{}", i),
+                "parent": if i == 0 { -1i64 } else { i as i64 - 1 },
+                "bindPosition": pos,
+                "bindRotation": [0, 0, 0, 1],
+                "bindScale": [1, 1, 1],
+            }));
+        }
+        json!(bones)
+    } else {
+        config
+            .get("bones")
+            .cloned()
+            .unwrap_or_else(|| json!([]))
+    };
+
+    let bones = bones_json
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("bones must be an array"))?;
 
     let bone_count = bones.len();
 

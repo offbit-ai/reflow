@@ -1,10 +1,14 @@
 //! # Skeleton Animation — Snake Slithering
 //!
-//! TubeMesh snake body + SDF head → MeshCombine → Skeleton → Animation → Video
+//! TubeMesh snake body → VertexColor → Skeleton → Animation → Video
+//!
+//! All skeleton and animation data generated from high-level actor configs —
+//! no manual for-loops needed. This is how Zeal visual editor users will
+//! orchestrate the pipeline.
 //!
 //! ```text
-//! TubeMesh(body) + SdfSphere(head) → MeshCombine
-//!   → SkinBind ← Skeleton(8 bones along body)
+//! TubeMesh(body) → VertexColor ← NoiseGenerator
+//!   → SkinBind ← Skeleton(boneCount=12, axis=x)
 //!     → Skinning ← AnimSampler ← AnimTime ← IntervalTrigger
 //!       → Prefab → Instance → SceneGraph → SceneRender
 //!         → FrameCollector → VideoEncoder → FileSave
@@ -31,73 +35,18 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
     InitialPacket { to: ConnectionPoint::new(node, port, Some(msg)) }
 }
 
-fn snake_clip(duration: f64, fps: u32, bone_count: usize) -> Value {
-    let n = (fps as f64 * duration) as usize;
-    let mut channels = Vec::new();
-
-    // Lateral undulation: traveling sine wave from head to tail.
-    // Each bone rotates in Y (yaw), creating side-to-side motion.
-    // Phase increases with bone index — wave propagates backward.
-    // The head (bone 0) leads, tail follows with delay.
-    let wave_speed = 0.6; // gentle undulation
-    let wave_length = 0.5; // tight wave — 2+ S-curves across body
-    let amplitude = 0.15; // moderate per-bone — 12 bones gives gentle S-curves
-
-    for bone_idx in 0..bone_count {
-        let mut times = Vec::new();
-        let mut rotations = Vec::new();
-
-        // Phase delay increases toward tail — wave travels head→tail
-        let phase = bone_idx as f64 * wave_length;
-        // Amplitude increases toward tail — head is steady, tail whips
-        let bone_amp = amplitude * (0.5 + 0.5 * bone_idx as f64 / (bone_count - 1) as f64);
-
-        for i in 0..=n {
-            let t = i as f64 / fps as f64;
-            times.push(t);
-
-            let angle = (t * std::f64::consts::PI * 2.0 * wave_speed - phase).sin() * bone_amp;
-            let half = angle / 2.0;
-            // Y rotation = yaw (sideways bending in XZ plane — snake slithering)
-            rotations.push(json!([0.0, half.sin(), 0.0, half.cos()]));
-        }
-
-        channels.push(json!({
-            "boneIndex": bone_idx, "property": "rotation",
-            "interpolation": "linear", "times": times, "values": rotations,
-        }));
-    }
-
-    // Root bone (bone 0) also moves forward slowly — snake locomotion
-    {
-        let mut times = Vec::new();
-        let mut positions = Vec::new();
-        for i in 0..=n {
-            let t = i as f64 / fps as f64;
-            times.push(t);
-            // Slow forward movement along X
-            let x = -3.0 + t * 0.3; // slow forward crawl
-            positions.push(json!([x, 0.0, 0.0]));
-        }
-        channels.push(json!({
-            "boneIndex": 0, "property": "position",
-            "interpolation": "linear", "times": times, "values": positions,
-        }));
-    }
-
-    json!({ "name": "slither", "duration": duration, "channelCount": channels.len(), "channels": channels })
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     println!("=== Snake Skeleton Animation → Video ===\n");
 
-    let bone_count = 12;
+    let bone_count = 12u64;
     let duration = 4.0f64;
     let fps = 30u32;
     let total_frames = (duration * fps as f64) as usize;
     let img_size = 1024u32;
     let interval_ms = 1000 / fps as u64;
+    let body_len = 8.0f64;
+    let bone_spacing = body_len / (bone_count - 1) as f64;
 
     println!("Target: {:.0}s @ {}fps = {} frames, {} bones\n", duration, fps, total_frames, bone_count);
 
@@ -142,29 +91,32 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("body", "uv", "colorize", "uv"));
     net.add_connection(wire("noise", "output", "colorize", "noise"));
 
-    // ═══ SKELETON: 8 bones along the body path ═══
-    let body_len = 8.0f64; // approximate path length
-    let bone_spacing = body_len / (bone_count - 1) as f64;
-    let mut bones = Vec::new();
-    for i in 0..bone_count {
-        let x = -3.0 + i as f64 * bone_spacing;
-        bones.push(json!({
-            "name": format!("bone_{}", i),
-            "parent": if i == 0 { -1 } else { i as i64 - 1 },
-            "bindPosition": [if i == 0 { x } else { bone_spacing }, 0.0, 0.0],
-            "bindRotation": [0, 0, 0, 1],
-            "bindScale": [1, 1, 1],
-        }));
-    }
-
+    // ═══ SKELETON: high-level config — no for-loop needed ═══
     net.add_node("skeleton", "tpl_skeleton", config(json!({
-        "name": "snake_spine", "bones": bones,
+        "name": "snake_spine",
+        "boneCount": bone_count,
+        "spacing": bone_spacing,
+        "axis": "x",
+        "startPosition": [-3.0, 0.0, 0.0],
     })))?;
 
-    let clip_data = snake_clip(duration, fps, bone_count);
+    // ═══ ANIMATION CLIP: high-level wave config — no keyframe arrays needed ═══
     net.add_node("clip", "tpl_animation_clip", config(json!({
-        "name": "slither", "duration": duration,
-        "channels": clip_data.get("channels").unwrap().clone(),
+        "name": "slither",
+        "duration": duration,
+        "fps": fps,
+        "boneCount": bone_count,
+        "type": "wave",
+        "speed": 0.6,
+        "amplitude": 0.15,
+        "waveLength": 0.5,
+        "rotationAxis": "y",
+        "amplitudeCurve": "tailHeavy",
+        "locomotion": {
+            "axis": "x",
+            "speed": 0.3,
+            "startPosition": [-3.0, 0.0, 0.0],
+        },
     })))?;
 
     net.add_node("bind", "tpl_skin_bind", config(json!({ "maxInfluences": 3, "stride": 36 })))?;
@@ -240,7 +192,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_initial(iip("skeleton", "_trigger", Message::Flow));
     net.add_initial(iip("clip", "_trigger", Message::Flow));
 
-    println!("Pipeline: TubeMesh + SDF head → MeshCombine → Skeleton → Animation → Video");
+    println!("Pipeline: TubeMesh → VertexColor → Skeleton → Animation → Video");
     println!("Running...\n");
 
     let start = std::time::Instant::now();

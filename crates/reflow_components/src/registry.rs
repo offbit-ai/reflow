@@ -105,7 +105,7 @@ use crate::stream_ops::{
 #[cfg(feature = "video-encode")]
 use crate::stream_ops::VideoEncoderActor;
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
-use crate::transform::{DataOperationsActor, DataTransformActor};
+use crate::transform::{DataOperationsActor, DataTransformActor, GeneratorActor};
 
 /// Get an actor instance for a given Zeal template ID
 pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
@@ -158,6 +158,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         // Data Processing
         "tpl_data_transformer" => Some(Arc::new(DataTransformActor::new())),
         "tpl_data_operations" => Some(Arc::new(DataOperationsActor::new())),
+        "tpl_generator" => Some(Arc::new(GeneratorActor::new())),
 
         // Logic
         "tpl_rules_engine" => Some(Arc::new(RulesEngineActor::new())),
@@ -380,6 +381,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_data_operations".to_string(),
         "DataOperationsActor".to_string(),
     );
+    mapping.insert("tpl_generator".to_string(), "GeneratorActor".to_string());
     mapping.insert(
         "tpl_rules_engine".to_string(),
         "RulesEngineActor".to_string(),
