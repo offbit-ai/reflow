@@ -235,8 +235,8 @@ fn build_vertex_buffer(
     let prefab_verts = prefab_mesh.map(parse_prefab_mesh);
     let terrain_parsed = terrain_mesh_data.map(parse_terrain_mesh);
 
-    // Assign colors per object for visual distinction
-    let instance_colors: [[f32; 3]; 6] = [
+    // Fallback colors for objects without material
+    let fallback_colors: [[f32; 3]; 6] = [
         [0.85, 0.45, 0.20], // orange
         [0.30, 0.55, 0.85], // blue
         [0.80, 0.25, 0.35], // red
@@ -330,21 +330,33 @@ fn build_vertex_buffer(
                 }
             }
             _ => {
-                // Instance — use prefab mesh with transform applied
-                let color = instance_colors[color_idx % instance_colors.len()];
-                color_idx += 1;
+                // Instance — read material from scene object
+                let mat = obj.get("material");
+                let base_color = mat
+                    .and_then(|m| m.get("color"))
+                    .and_then(|c| c.as_array())
+                    .map(|a| [
+                        a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
+                        a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
+                        a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
+                    ])
+                    .unwrap_or_else(|| {
+                        let c = fallback_colors[color_idx % fallback_colors.len()];
+                        color_idx += 1;
+                        c
+                    });
 
                 if let Some(ref verts) = prefab_verts {
                     for (p, n) in verts {
                         let tp = transform_pos(*p, pos, scl);
                         all_vertices.extend_from_slice(&tp);
                         all_vertices.extend_from_slice(n);
-                        all_vertices.extend_from_slice(&color);
+                        all_vertices.extend_from_slice(&base_color);
                     }
                 } else {
                     // Fallback: simple cube
                     let s = 0.4 * scl[0];
-                    let cube = generate_cube(pos, s, color);
+                    let cube = generate_cube(pos, s, base_color);
                     all_vertices.extend_from_slice(&cube);
                 }
             }

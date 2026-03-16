@@ -32,16 +32,17 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
     };
 
     // Extract material properties
+    // Material from inport (upstream actor) or config (node properties)
     let material = match payload.get("material") {
         Some(Message::Object(obj)) => {
             let v: serde_json::Value = obj.as_ref().clone().into();
             v
         }
-        _ => json!({
+        _ => config.get("material").cloned().unwrap_or(json!({
             "color": [0.8, 0.8, 0.8],
             "roughness": 0.5,
             "metallic": 0.0,
-        }),
+        })),
     };
 
     // Build prefab descriptor

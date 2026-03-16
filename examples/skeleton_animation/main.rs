@@ -177,7 +177,10 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("skin", "tpl_skinning", config(json!({ "stride": 24 })))?;
 
     // ═══ SCENE ═══
-    net.add_node("prefab", "tpl_prefab", config(json!({ "name": "snake" })))?;
+    net.add_node("prefab", "tpl_prefab", config(json!({
+        "name": "snake",
+        "material": { "color": [0.30, 0.38, 0.22] },
+    })))?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "snake_0" })))?;
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "snake_scene", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({

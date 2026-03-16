@@ -83,10 +83,16 @@ pub async fn instance_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         }
     };
 
+    // Pass material from prefab into the scene object
+    let material = prefab.get("material").cloned().unwrap_or(json!({
+        "color": [0.8, 0.8, 0.8],
+    }));
+
     let object = json!({
         "id": id,
         "type": "instance",
         "prefab": prefab.get("id").and_then(|v| v.as_str()).unwrap_or("default"),
+        "material": material,
         "transform": {
             "position": pos,
             "rotation": rot,
