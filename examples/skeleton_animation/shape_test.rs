@@ -39,7 +39,9 @@ async fn main() -> anyhow::Result<()> {
     // Snake body — procedural tube mesh, no SDF, no MarchingCubes
     net.add_node("snake", "tpl_tube_mesh", config(json!({
         "path": "M -2.5,0 C -1.5,-0.8 -0.5,0.8 0.5,0 C 1.5,-0.6 2.5,0.4 3.5,0.1",
-        "profile": [0.22, 0.20, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
+        "profile": [0.28, 0.24, 0.20, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
+        "headLength": 0.08,
+        "headFlatten": 0.5,
         "segments": 64,
         "rings": 24,
         "plane": "xz",
@@ -51,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "s", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
         "width": 1024, "height": 1024,
-        "cameraPosX": -2.0, "cameraPosY": 6.0, "cameraPosZ": 5.0,
+        "cameraPosX": -1.0, "cameraPosY": 7.0, "cameraPosZ": 4.0,
         "cameraTargetX": 0.0, "cameraTargetY": 0.0, "cameraTargetZ": 0.0,
         "fov": 40.0,
         "bgR": 0.92, "bgG": 0.92, "bgB": 0.90,

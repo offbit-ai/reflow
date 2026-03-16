@@ -36,6 +36,10 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let segments = config.get("segments").and_then(|v| v.as_u64()).unwrap_or(32) as usize;
     let rings = config.get("rings").and_then(|v| v.as_u64()).unwrap_or(16) as usize;
     let plane = config.get("plane").and_then(|v| v.as_str()).unwrap_or("xz");
+    // Head shaping: headLength = fraction of tube that's the "head" (0-1),
+    // headFlatten = vertical squash factor in head region (0=flat, 1=round)
+    let head_length = config.get("headLength").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+    let head_flatten = config.get("headFlatten").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
 
     // Parse and sample path
     let commands = parse_path(path_str);
@@ -131,18 +135,35 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         let nor = normals[i];
         let bin = binormals[i];
 
+        // Head flattening: squash the normal axis in the head region
+        let t = i as f32 / (n - 1).max(1) as f32; // 0 = head, 1 = tail
+        let flatten = if head_length > 0.0 && t < head_length {
+            let head_t = t / head_length; // 0 at tip, 1 at neck
+            // Smooth transition from flattened to round
+            head_flatten + (1.0 - head_flatten) * head_t * head_t
+        } else {
+            1.0
+        };
+
         let mut ring_verts = Vec::with_capacity(rings);
         for j in 0..rings {
             let angle = 2.0 * std::f32::consts::PI * j as f32 / rings as f32;
             let cos_a = angle.cos();
             let sin_a = angle.sin();
 
-            // Position on circle
-            let offset = add3(scale3(nor, cos_a * r), scale3(bin, sin_a * r));
+            // Position on ellipse (flatten normal axis for head)
+            let offset = add3(
+                scale3(nor, cos_a * r * flatten),
+                scale3(bin, sin_a * r),
+            );
             let pos = add3(center, offset);
 
-            // Normal = outward direction from center
-            let normal = normalize3(offset);
+            // Normal accounts for flattening
+            let nor_scaled = add3(
+                scale3(nor, cos_a * flatten),
+                scale3(bin, sin_a),
+            );
+            let normal = normalize3(nor_scaled);
 
             ring_verts.push((pos, normal));
         }
@@ -175,16 +196,71 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         }
     }
 
-    // Cap the ends
-    // Start cap
+    // Start cap: rounded head (dome along negative tangent direction)
     {
-        let center = points[0];
-        let nor = scale3(tangents[0], -1.0); // inward-facing normal
+        let head_rings = 6; // number of dome rings
+        let head_r = radii[0];
+        let head_dir = scale3(tangents[0], -1.0); // forward direction (away from body)
+        let head_nor = normals[0];
+        let head_bin = binormals[0];
+        let head_center = points[0];
+
+        let head_flatten_val = if head_length > 0.0 { head_flatten } else { 1.0 };
+
+        let mut prev_ring = circle_verts[0].clone();
+
+        for hi in 1..=head_rings {
+            let t = hi as f32 / head_rings as f32; // 0 at first ring, 1 at tip
+            let phi = t * std::f32::consts::FRAC_PI_2; // 0 to 90 degrees
+            let ring_r = head_r * phi.cos(); // shrinks to 0 at tip
+            let forward = head_r * phi.sin() * 1.2; // how far forward
+
+            let ring_center = add3(head_center, scale3(head_dir, forward));
+
+            let mut curr_ring = Vec::with_capacity(rings);
+            for j in 0..rings {
+                let angle = 2.0 * std::f32::consts::PI * j as f32 / rings as f32;
+                let cos_a = angle.cos();
+                let sin_a = angle.sin();
+
+                let flatten = head_flatten_val + (1.0 - head_flatten_val) * (1.0 - t);
+                let offset = add3(
+                    scale3(head_nor, cos_a * ring_r * flatten),
+                    scale3(head_bin, sin_a * ring_r),
+                );
+                let pos = add3(ring_center, offset);
+                let normal = normalize3(add3(offset, scale3(head_dir, ring_r * 0.5)));
+                curr_ring.push((pos, normal));
+            }
+
+            // Connect prev_ring to curr_ring
+            for j in 0..rings {
+                let j_next = (j + 1) % rings;
+                let (pa, na) = prev_ring[j];
+                let (pb, nb) = curr_ring[j];
+                let (pc, nc) = curr_ring[j_next];
+                let (pd, nd) = prev_ring[j_next];
+
+                emit_vertex(&mut mesh_data, pa, na);
+                emit_vertex(&mut mesh_data, pb, nb);
+                emit_vertex(&mut mesh_data, pc, nc);
+
+                emit_vertex(&mut mesh_data, pa, na);
+                emit_vertex(&mut mesh_data, pc, nc);
+                emit_vertex(&mut mesh_data, pd, nd);
+            }
+
+            prev_ring = curr_ring;
+        }
+
+        // Close the tip with a fan
+        let tip = add3(head_center, scale3(head_dir, head_r * 1.2));
+        let tip_nor = head_dir;
         for j in 0..rings {
             let j_next = (j + 1) % rings;
-            emit_vertex(&mut mesh_data, center, nor);
-            emit_vertex(&mut mesh_data, circle_verts[0][j_next].0, nor);
-            emit_vertex(&mut mesh_data, circle_verts[0][j].0, nor);
+            emit_vertex(&mut mesh_data, tip, tip_nor);
+            emit_vertex(&mut mesh_data, prev_ring[j_next].0, prev_ring[j_next].1);
+            emit_vertex(&mut mesh_data, prev_ring[j].0, prev_ring[j].1);
         }
     }
     // End cap
