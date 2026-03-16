@@ -231,8 +231,13 @@ fn build_vertex_buffer(
 ) -> Vec<f32> {
     let mut all_vertices: Vec<f32> = Vec::new();
 
-    // Parse meshes once
-    let prefab_verts = prefab_mesh.map(parse_prefab_mesh);
+    // Determine mesh stride from scene objects (36 = pre-colored, 24 = standard)
+    let mesh_stride = objects.first()
+        .and_then(|o| o.get("meshStride"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(24) as usize;
+    let prefab_is_colored = mesh_stride >= 36;
+    let prefab_verts = if prefab_is_colored { None } else { prefab_mesh.as_ref().map(|m| parse_prefab_mesh(m)) };
     let terrain_parsed = terrain_mesh_data.map(parse_terrain_mesh);
 
     // Fallback colors for objects without material
@@ -346,7 +351,32 @@ fn build_vertex_buffer(
                         c
                     });
 
-                if let Some(ref verts) = prefab_verts {
+                if prefab_is_colored {
+                    // Pre-colored mesh (36-byte stride) — parse and pass through
+                    if let Some(ref mesh) = prefab_mesh {
+                        let stride = 36; // pos3+normal3+color3
+                        let vc = mesh.len() / stride;
+                        for vi in 0..vc {
+                            let off = vi * stride;
+                            if off + stride > mesh.len() { break; }
+                            let px = f32::from_le_bytes(mesh[off..off+4].try_into().unwrap());
+                            let py = f32::from_le_bytes(mesh[off+4..off+8].try_into().unwrap());
+                            let pz = f32::from_le_bytes(mesh[off+8..off+12].try_into().unwrap());
+                            let tp = transform_pos([px, py, pz], pos, scl);
+                            all_vertices.extend_from_slice(&tp);
+                            // normal (3 floats)
+                            for k in 0..3 {
+                                let f = f32::from_le_bytes(mesh[off+12+k*4..off+16+k*4].try_into().unwrap());
+                                all_vertices.push(f);
+                            }
+                            // color (3 floats) — from the mesh, not material
+                            for k in 0..3 {
+                                let f = f32::from_le_bytes(mesh[off+24+k*4..off+28+k*4].try_into().unwrap());
+                                all_vertices.push(f);
+                            }
+                        }
+                    }
+                } else if let Some(ref verts) = prefab_verts {
                     for (p, n) in verts {
                         let tp = transform_pos(*p, pos, scl);
                         all_vertices.extend_from_slice(&tp);

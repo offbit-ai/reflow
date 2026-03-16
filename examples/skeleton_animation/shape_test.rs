@@ -1,4 +1,5 @@
-//! Shape test — snake built from DAG: TubeMesh(body) + SDF(head) → MeshCombine
+//! Shape test — snake with procedural vertex coloring
+//! DAG: TubeMesh → VertexColor ← NoiseGenerator → Prefab → SceneRender
 //! Run: cd examples/skeleton_animation && cargo run --bin shape_test
 
 use std::collections::HashMap;
@@ -24,51 +25,52 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("=== Snake Shape (DAG: TubeMesh + SDF Head) ===\n");
+    println!("=== Snake Shape (Procedural Vertex Color) ===\n");
 
     let mut net = Network::new(NetworkConfig::default());
 
     for tpl in [
-        "tpl_tube_mesh", "tpl_mesh_combine",
-        "tpl_sdf_sphere", "tpl_sdf_scale", "tpl_sdf_translate", "tpl_sdf_marching_cubes",
+        "tpl_tube_mesh", "tpl_noise_generator", "tpl_vertex_color",
         "tpl_prefab", "tpl_instance", "tpl_scene_graph", "tpl_scene_render",
         "tpl_bytes_to_stream", "tpl_image_encode", "tpl_file_save",
     ] {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
     }
 
-    // ═══ BODY: Procedural tube mesh ═══
+    // ═══ MESH with UV ═══
     net.add_node("body", "tpl_tube_mesh", config(json!({
         "path": "M -2.5,0 C -1.5,-0.8 -0.5,0.8 0.5,0 C 1.5,-0.6 2.5,0.4 3.5,0.1",
-        "profile": [0.20, 0.19, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
+        "profile": [0.22, 0.20, 0.18, 0.17, 0.17, 0.15, 0.12, 0.09, 0.05, 0.02],
         "segments": 64,
         "rings": 24,
         "plane": "xz",
     })))?;
     net.add_initial(iip("body", "_trigger", Message::Flow));
 
-    // ═══ HEAD: SDF sphere → scale (flatten) → translate → MC ═══
-    // The head is an ellipsoid positioned at the start of the body path.
-    // The first point of the path is at (-2.5, 0, 0) in the XZ plane.
-    net.add_node("head_sphere", "tpl_sdf_sphere", config(json!({ "radius": 0.22 })))?;
-    net.add_node("head_translate", "tpl_sdf_translate", config(json!({
-        "x": -2.5, "y": 0.0, "z": 0.0,
+    // ═══ NOISE for skin pattern ═══
+    net.add_node("noise", "tpl_noise_generator", config(json!({
+        "noiseType": "perlin",
+        "width": 64, "height": 64,
+        "scale": 4.0, "octaves": 3, "persistence": 0.5,
     })))?;
-    net.add_node("head_mc", "tpl_sdf_marching_cubes", config(json!({
-        "resolution": 64, "bound": 3.0, "isoLevel": 0.0,
+    net.add_initial(iip("noise", "_trigger", Message::Flow));
+
+    // ═══ VERTEX COLOR: mesh + uv + noise → colored mesh ═══
+    net.add_node("colorize", "tpl_vertex_color", config(json!({
+        "color1": [0.35, 0.42, 0.25],
+        "color2": [0.15, 0.18, 0.08],
+        "noiseScale": 6.0,
+        "noiseWidth": 64,
     })))?;
 
-    net.add_connection(wire("head_sphere", "sdf", "head_translate", "sdf"));
-    net.add_connection(wire("head_translate", "sdf", "head_mc", "sdf"));
-    net.add_initial(iip("head_sphere", "_trigger", Message::Flow));
-
-    // ═══ COMBINE: body mesh + head mesh ═══
-    net.add_node("combine", "tpl_mesh_combine", config(json!({ "stride": 24 })))?;
-    net.add_connection(wire("body", "mesh", "combine", "mesh_a"));
-    net.add_connection(wire("head_mc", "mesh", "combine", "mesh_b"));
+    net.add_connection(wire("body", "mesh", "colorize", "mesh"));
+    net.add_connection(wire("body", "uv", "colorize", "uv"));
+    net.add_connection(wire("noise", "output", "colorize", "noise"));
 
     // ═══ SCENE RENDER ═══
-    net.add_node("prefab", "tpl_prefab", config(json!({ "name": "snake" })))?;
+    // The colored mesh is 36-byte stride (pos3+normal3+color3).
+    // SceneRenderActor build_vertex_buffer handles this if mesh is pre-colored.
+    net.add_node("prefab", "tpl_prefab", config(json!({ "name": "snake", "stride": 36 })))?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "snake_0" })))?;
     net.add_node("scene", "tpl_scene_graph", config(json!({ "name": "s", "expectedObjects": 1 })))?;
     net.add_node("render", "tpl_scene_render", config(json!({
@@ -79,11 +81,12 @@ async fn main() -> anyhow::Result<()> {
         "bgR": 0.92, "bgG": 0.92, "bgB": 0.90,
     })))?;
 
-    net.add_connection(wire("combine", "mesh", "prefab", "mesh"));
+    // Colored mesh goes directly to render (36-byte stride already has colors)
+    net.add_connection(wire("colorize", "colored_mesh", "prefab", "mesh"));
     net.add_connection(wire("prefab", "prefab", "inst", "prefab"));
     net.add_connection(wire("inst", "object", "scene", "object"));
     net.add_connection(wire("scene", "scene", "render", "scene"));
-    net.add_connection(wire("combine", "mesh", "render", "meshes"));
+    net.add_connection(wire("colorize", "colored_mesh", "render", "meshes"));
 
     // ═══ ENCODE + SAVE ═══
     net.add_node("to_stream", "tpl_bytes_to_stream", config(json!({
@@ -96,7 +99,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("to_stream", "stream", "encode", "stream"));
     net.add_connection(wire("encode", "output", "save", "input"));
 
-    println!("DAG: TubeMesh(body) + SdfSphere(head) → MeshCombine → SceneRender\n");
+    println!("DAG: TubeMesh → VertexColor ← NoiseGenerator → SceneRender\n");
     println!("Running...");
 
     net.start()?;

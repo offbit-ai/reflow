@@ -8,6 +8,7 @@ mod particle;
 mod texture;
 mod mesh_combine;
 mod tube_mesh;
+mod vertex_color;
 mod voronoi;
 
 pub use heightmap::{HeightmapToImageActor, ImageToHeightmapActor};
@@ -18,4 +19,5 @@ pub use particle::ParticleEmitterActor;
 pub use texture::{TriplanarTextureActor, UVTextureActor};
 pub use mesh_combine::MeshCombineActor;
 pub use tube_mesh::TubeMeshActor;
+pub use vertex_color::VertexColorActor;
 pub use voronoi::VoronoiActor;

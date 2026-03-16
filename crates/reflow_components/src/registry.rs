@@ -90,6 +90,7 @@ use crate::media::{
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor, LSystemActor,
     MeshCombineActor, NoiseGeneratorActor, ParticleEmitterActor, TriplanarTextureActor, TubeMeshActor,
+    VertexColorActor,
     UVTextureActor, VoronoiActor,
 };
 use crate::stream_ops::{
@@ -228,6 +229,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_triplanar_texture" => Some(Arc::new(TriplanarTextureActor::new())),
         "tpl_mesh_combine" => Some(Arc::new(MeshCombineActor::new())),
         "tpl_tube_mesh" => Some(Arc::new(TubeMeshActor::new())),
+        "tpl_vertex_color" => Some(Arc::new(VertexColorActor::new())),
         "tpl_uv_texture" => Some(Arc::new(UVTextureActor::new())),
 
         // Text / Utilities
@@ -590,6 +592,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     );
     mapping.insert("tpl_mesh_combine".to_string(), "MeshCombineActor".to_string());
     mapping.insert("tpl_tube_mesh".to_string(), "TubeMeshActor".to_string());
+    mapping.insert("tpl_vertex_color".to_string(), "VertexColorActor".to_string());
     mapping.insert("tpl_uv_texture".to_string(), "UVTextureActor".to_string());
 
     // Text / Utilities

@@ -23,7 +23,7 @@ use crate::gpu::sdf::path::{parse_path, sample_path, interpolate_profile, PathCm
 #[actor(
     TubeMeshActor,
     inports::<1>(),
-    outports::<1>(mesh, metadata),
+    outports::<1>(mesh, uv, metadata),
     state(MemoryState)
 )]
 pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
@@ -66,6 +66,7 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let stride = 24; // pos3 + normal3
 
     let mut mesh_data = Vec::with_capacity(triangle_count * 3 * stride);
+    let mut uv_data: Vec<u8> = Vec::with_capacity(triangle_count * 3 * 8); // 2 floats per vertex
 
     // Compute per-point tangent, normal, binormal (Frenet frame)
     let mut tangents: Vec<[f32; 3]> = Vec::with_capacity(n);
@@ -127,8 +128,8 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         binormals.push(normalize3(new_b));
     }
 
-    // Generate circle vertices at each cross-section
-    let mut circle_verts: Vec<Vec<([f32; 3], [f32; 3])>> = Vec::with_capacity(n);
+    // Generate circle vertices at each cross-section: (pos, normal, u, v)
+    let mut circle_verts: Vec<Vec<([f32; 3], [f32; 3], f32, f32)>> = Vec::with_capacity(n);
     for i in 0..n {
         let center = points[i];
         let r = radii[i];
@@ -165,7 +166,11 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
             );
             let normal = normalize3(nor_scaled);
 
-            ring_verts.push((pos, normal));
+            // UV: u = position along curve, v = position around ring
+            let u = i as f32 / (n - 1).max(1) as f32;
+            let v = j as f32 / rings as f32;
+
+            ring_verts.push((pos, normal, u, v));
         }
         circle_verts.push(ring_verts);
     }
@@ -178,21 +183,26 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         for j in 0..rings {
             let j_next = (j + 1) % rings;
 
-            // Two triangles per quad
-            let (pa, na) = ring_a[j];
-            let (pb, nb) = ring_b[j];
-            let (pc, nc) = ring_b[j_next];
-            let (pd, nd) = ring_a[j_next];
+            let (pa, na, ua, va) = ring_a[j];
+            let (pb, nb, ub, vb) = ring_b[j];
+            let (pc, nc, uc, vc) = ring_b[j_next];
+            let (pd, nd, ud, vd) = ring_a[j_next];
 
             // Triangle 1: a, b, c
             emit_vertex(&mut mesh_data, pa, na);
+            emit_uv(&mut uv_data, ua, va);
             emit_vertex(&mut mesh_data, pb, nb);
+            emit_uv(&mut uv_data, ub, vb);
             emit_vertex(&mut mesh_data, pc, nc);
+            emit_uv(&mut uv_data, uc, vc);
 
             // Triangle 2: a, c, d
             emit_vertex(&mut mesh_data, pa, na);
+            emit_uv(&mut uv_data, ua, va);
             emit_vertex(&mut mesh_data, pc, nc);
+            emit_uv(&mut uv_data, uc, vc);
             emit_vertex(&mut mesh_data, pd, nd);
+            emit_uv(&mut uv_data, ud, vd);
         }
     }
 
@@ -230,24 +240,26 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
                 );
                 let pos = add3(ring_center, offset);
                 let normal = normalize3(add3(offset, scale3(head_dir, ring_r * 0.5)));
-                curr_ring.push((pos, normal));
+                let u_head = -t * 0.1; // negative u for head region
+                let v_ring = j as f32 / rings as f32;
+                curr_ring.push((pos, normal, u_head, v_ring));
             }
 
             // Connect prev_ring to curr_ring
             for j in 0..rings {
                 let j_next = (j + 1) % rings;
-                let (pa, na) = prev_ring[j];
-                let (pb, nb) = curr_ring[j];
-                let (pc, nc) = curr_ring[j_next];
-                let (pd, nd) = prev_ring[j_next];
+                let (pa, na, ua, va) = prev_ring[j];
+                let (pb, nb, ub, vb) = curr_ring[j];
+                let (pc, nc, uc, vc) = curr_ring[j_next];
+                let (pd, nd, ud, vd) = prev_ring[j_next];
 
-                emit_vertex(&mut mesh_data, pa, na);
-                emit_vertex(&mut mesh_data, pb, nb);
-                emit_vertex(&mut mesh_data, pc, nc);
+                emit_vertex(&mut mesh_data, pa, na); emit_uv(&mut uv_data, ua, va);
+                emit_vertex(&mut mesh_data, pb, nb); emit_uv(&mut uv_data, ub, vb);
+                emit_vertex(&mut mesh_data, pc, nc); emit_uv(&mut uv_data, uc, vc);
 
-                emit_vertex(&mut mesh_data, pa, na);
-                emit_vertex(&mut mesh_data, pc, nc);
-                emit_vertex(&mut mesh_data, pd, nd);
+                emit_vertex(&mut mesh_data, pa, na); emit_uv(&mut uv_data, ua, va);
+                emit_vertex(&mut mesh_data, pc, nc); emit_uv(&mut uv_data, uc, vc);
+                emit_vertex(&mut mesh_data, pd, nd); emit_uv(&mut uv_data, ud, vd);
             }
 
             prev_ring = curr_ring;
@@ -258,20 +270,24 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         let tip_nor = head_dir;
         for j in 0..rings {
             let j_next = (j + 1) % rings;
-            emit_vertex(&mut mesh_data, tip, tip_nor);
+            emit_vertex(&mut mesh_data, tip, tip_nor); emit_uv(&mut uv_data, -0.1, 0.5);
             emit_vertex(&mut mesh_data, prev_ring[j_next].0, prev_ring[j_next].1);
+            emit_uv(&mut uv_data, prev_ring[j_next].2, prev_ring[j_next].3);
             emit_vertex(&mut mesh_data, prev_ring[j].0, prev_ring[j].1);
+            emit_uv(&mut uv_data, prev_ring[j].2, prev_ring[j].3);
         }
     }
-    // End cap
+    // End cap (tail)
     {
         let center = points[n - 1];
         let nor = tangents[n - 1];
         for j in 0..rings {
             let j_next = (j + 1) % rings;
-            emit_vertex(&mut mesh_data, center, nor);
+            emit_vertex(&mut mesh_data, center, nor); emit_uv(&mut uv_data, 1.0, 0.5);
             emit_vertex(&mut mesh_data, circle_verts[n - 1][j].0, nor);
+            emit_uv(&mut uv_data, circle_verts[n - 1][j].2, circle_verts[n - 1][j].3);
             emit_vertex(&mut mesh_data, circle_verts[n - 1][j_next].0, nor);
+            emit_uv(&mut uv_data, circle_verts[n - 1][j_next].2, circle_verts[n - 1][j_next].3);
         }
     }
 
@@ -279,6 +295,7 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
 
     let mut out = HashMap::new();
     out.insert("mesh".to_string(), Message::bytes(mesh_data));
+    out.insert("uv".to_string(), Message::bytes(uv_data));
     out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
         "vertexCount": total_verts,
         "triangleCount": total_verts / 3,
@@ -288,6 +305,11 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         "format": "pos3_normal3_f32",
     }))));
     Ok(out)
+}
+
+fn emit_uv(buf: &mut Vec<u8>, u: f32, v: f32) {
+    buf.extend_from_slice(&u.to_le_bytes());
+    buf.extend_from_slice(&v.to_le_bytes());
 }
 
 fn emit_vertex(buf: &mut Vec<u8>, pos: [f32; 3], nor: [f32; 3]) {
