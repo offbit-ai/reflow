@@ -43,9 +43,9 @@ async fn main() -> anyhow::Result<()> {
     // Profile defines the cross-section radius from head to tail.
     // ══════════════════════════════════════════════════════════════
     net.add_node("snake", "tpl_sdf_path", config(json!({
-        "path": "M -2.5,0 C -1.5,-1.0 -0.5,1.0 0.5,0 C 1.5,-0.8 2.5,0.6 3.5,0.2",
+        "path": "M -2.5,0 C -1.5,-0.8 -0.5,0.8 0.5,0 C 1.5,-0.6 2.5,0.4 3.5,0.1",
         "profile": [0.25, 0.23, 0.21, 0.20, 0.20, 0.18, 0.15, 0.11, 0.07, 0.03],
-        "segments": 48,
+        "segments": 24,
         "smoothness": 0.0,
         "plane": "xz",
     })))?;

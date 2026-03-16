@@ -152,11 +152,31 @@ impl CodegenContext {
                     }
                     func.push_str(");\n");
 
-                    // Emit function with loop
+                    // Precompute cumulative arc lengths for global t parameterization
+                    let mut arc = vec![0.0f32; n];
+                    for ii in 1..n {
+                        let dx = points[ii][0] - points[ii-1][0];
+                        let dy = points[ii][1] - points[ii-1][1];
+                        let dz = points[ii][2] - points[ii-1][2];
+                        arc[ii] = arc[ii-1] + (dx*dx + dy*dy + dz*dz).sqrt();
+                    }
+                    let total_arc = if arc[n-1] > 0.0 { arc[n-1] } else { 1.0 };
+
+                    // Emit arc-length lookup table
+                    func.push_str(&format!("const TUBE_{}_ARC: array<f32, {}> = array<f32, {}>(\n", var, n, n));
+                    for (ii, a) in arc.iter().enumerate() {
+                        func.push_str(&format!("  {:.8}{}\n", a / total_arc, if ii < n - 1 { "," } else { "" }));
+                    }
+                    func.push_str(");\n");
+
+                    // Emit function: hard closest-point with arc-length radius.
+                    // Distance is C0 at Voronoi boundaries but radius is continuous
+                    // via global arc-length parameterization.
                     func.push_str(&format!("fn {}(p: vec3f) -> f32 {{\n", fn_name));
+                    func.push_str(&format!("  let N = TUBE_{}_N;\n", var));
                     func.push_str("  var best_d2 = 1e10;\n");
-                    func.push_str("  var best_r = 0.0;\n");
-                    func.push_str(&format!("  for (var i = 0u; i < TUBE_{}_N - 1u; i = i + 1u) {{\n", var));
+                    func.push_str("  var best_gt = 0.0;\n");
+                    func.push_str("  for (var i = 0u; i < N - 1u; i = i + 1u) {\n");
                     func.push_str(&format!("    let a = TUBE_{}_PTS[i];\n", var));
                     func.push_str(&format!("    let b = TUBE_{}_PTS[i + 1u];\n", var));
                     func.push_str("    let ba = b - a;\n");
@@ -164,10 +184,21 @@ impl CodegenContext {
                     func.push_str("    let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);\n");
                     func.push_str("    let closest = pa - ba * h;\n");
                     func.push_str("    let d2 = dot(closest, closest);\n");
-                    func.push_str(&format!("    let r = mix(TUBE_{}_RAD[i], TUBE_{}_RAD[i + 1u], h);\n", var, var));
-                    func.push_str("    if d2 < best_d2 { best_d2 = d2; best_r = r; }\n");
+                    func.push_str(&format!("    let gt = mix(TUBE_{}_ARC[i], TUBE_{}_ARC[i + 1u], h);\n", var, var));
+                    func.push_str("    if d2 < best_d2 { best_d2 = d2; best_gt = gt; }\n");
                     func.push_str("  }\n");
-                    func.push_str("  return sqrt(best_d2) - best_r;\n}\n");
+                    // Radius from global arc-length
+                    func.push_str(&format!("  var r = TUBE_{}_RAD[N - 1u];\n", var));
+                    func.push_str("  for (var i = 0u; i < N - 1u; i = i + 1u) {\n");
+                    func.push_str(&format!("    if best_gt <= TUBE_{}_ARC[i + 1u] {{\n", var));
+                    func.push_str(&format!("      let t0 = TUBE_{}_ARC[i];\n", var));
+                    func.push_str(&format!("      let t1 = TUBE_{}_ARC[i + 1u];\n", var));
+                    func.push_str("      let lt = (best_gt - t0) / max(t1 - t0, 0.0001);\n");
+                    func.push_str(&format!("      r = mix(TUBE_{}_RAD[i], TUBE_{}_RAD[i + 1u], lt);\n", var, var));
+                    func.push_str("      break;\n");
+                    func.push_str("    }\n");
+                    func.push_str("  }\n");
+                    func.push_str("  return sqrt(best_d2) - r;\n}\n");
 
                     self.helpers.push(func);
                     format!("{}({})", fn_name, pos)
