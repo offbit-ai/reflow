@@ -179,7 +179,7 @@ fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
 
 #[actor(
     SdfLiveRenderActor,
-    inports::<100>(sdf, camera, time),
+    inports::<100>(sdf, scene, camera, time),
     outports::<50>(stream, metadata, error),
     state(MemoryState)
 )]
@@ -192,8 +192,8 @@ pub async fn sdf_live_render_actor(
     let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
 
-    // Cache SDF IR when it arrives
-    if let Some(sdf_msg) = payload.get("sdf") {
+    // Cache SDF when it arrives — accepts raw SDF node or pre-composed scene
+    if let Some(sdf_msg) = payload.get("sdf").or(payload.get("scene")) {
         if let Some(root) = parse_sdf(Some(sdf_msg)) {
             let settings = SceneSettings {
                 width, height,
