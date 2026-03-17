@@ -16,6 +16,49 @@ pub enum BlendMode {
     Overlay,
     /// Additive: result = base + overlay (clamped).
     Add,
+    /// Soft light: gentle dodge/burn.
+    SoftLight,
+    /// Hard light: overlay with swapped roles.
+    HardLight,
+    /// Difference: |base - overlay|.
+    Difference,
+    /// Exclusion: base + overlay - 2*base*overlay.
+    Exclusion,
+    /// Color dodge: base / (1 - overlay).
+    ColorDodge,
+    /// Color burn: 1 - (1-base) / overlay.
+    ColorBurn,
+    /// Darken: min(base, overlay).
+    Darken,
+    /// Lighten: max(base, overlay).
+    Lighten,
+    /// Subtract: base - overlay (clamped).
+    Subtract,
+    /// Divide: base / overlay.
+    Divide,
+}
+
+impl BlendMode {
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().replace(['-', '_', ' '], "").as_str() {
+            "normal" => Self::Normal,
+            "multiply" => Self::Multiply,
+            "screen" => Self::Screen,
+            "overlay" => Self::Overlay,
+            "add" | "lineardodge" => Self::Add,
+            "softlight" => Self::SoftLight,
+            "hardlight" => Self::HardLight,
+            "difference" => Self::Difference,
+            "exclusion" => Self::Exclusion,
+            "colordodge" => Self::ColorDodge,
+            "colorburn" => Self::ColorBurn,
+            "darken" => Self::Darken,
+            "lighten" => Self::Lighten,
+            "subtract" | "linearburn" => Self::Subtract,
+            "divide" => Self::Divide,
+            _ => Self::Normal,
+        }
+    }
 }
 
 /// Alpha-composite a single foreground pixel over a background pixel (RGBA).
@@ -92,6 +135,107 @@ pub fn blend_rows(base: &mut [u8], overlay: &[u8], mode: BlendMode, opacity: f32
                 let mut out = [0u8; 3];
                 for i in 0..3 {
                     out[i] = (bg_px[i] as u16 + fg_px[i] as u16).min(255) as u8;
+                }
+                out
+            }
+            BlendMode::SoftLight => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    let b = bg_px[i] as f32 / 255.0;
+                    let f = fg_px[i] as f32 / 255.0;
+                    let v = if f <= 0.5 {
+                        b - (1.0 - 2.0 * f) * b * (1.0 - b)
+                    } else {
+                        let d = if b <= 0.25 {
+                            ((16.0 * b - 12.0) * b + 4.0) * b
+                        } else {
+                            b.sqrt()
+                        };
+                        b + (2.0 * f - 1.0) * (d - b)
+                    };
+                    out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
+                }
+                out
+            }
+            BlendMode::HardLight => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    let b = bg_px[i] as f32 / 255.0;
+                    let f = fg_px[i] as f32 / 255.0;
+                    let v = if f < 0.5 {
+                        2.0 * b * f
+                    } else {
+                        1.0 - 2.0 * (1.0 - b) * (1.0 - f)
+                    };
+                    out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
+                }
+                out
+            }
+            BlendMode::Difference => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    out[i] = (bg_px[i] as i16 - fg_px[i] as i16).unsigned_abs() as u8;
+                }
+                out
+            }
+            BlendMode::Exclusion => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    let b = bg_px[i] as f32 / 255.0;
+                    let f = fg_px[i] as f32 / 255.0;
+                    let v = b + f - 2.0 * b * f;
+                    out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
+                }
+                out
+            }
+            BlendMode::ColorDodge => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    let b = bg_px[i] as f32 / 255.0;
+                    let f = fg_px[i] as f32 / 255.0;
+                    let v = if f >= 1.0 { 1.0 } else { (b / (1.0 - f)).min(1.0) };
+                    out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
+                }
+                out
+            }
+            BlendMode::ColorBurn => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    let b = bg_px[i] as f32 / 255.0;
+                    let f = fg_px[i] as f32 / 255.0;
+                    let v = if f <= 0.0 { 0.0 } else { 1.0 - ((1.0 - b) / f).min(1.0) };
+                    out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
+                }
+                out
+            }
+            BlendMode::Darken => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    out[i] = bg_px[i].min(fg_px[i]);
+                }
+                out
+            }
+            BlendMode::Lighten => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    out[i] = bg_px[i].max(fg_px[i]);
+                }
+                out
+            }
+            BlendMode::Subtract => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    out[i] = bg_px[i].saturating_sub(fg_px[i]);
+                }
+                out
+            }
+            BlendMode::Divide => {
+                let mut out = [0u8; 3];
+                for i in 0..3 {
+                    let b = bg_px[i] as f32 / 255.0;
+                    let f = fg_px[i] as f32 / 255.0;
+                    let v = if f <= 0.0 { 1.0 } else { (b / f).min(1.0) };
+                    out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
                 }
                 out
             }

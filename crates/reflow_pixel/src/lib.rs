@@ -18,6 +18,7 @@
 //! - [`chroma`] — Chroma key removal (green/blue screen)
 
 pub mod blend;
+pub mod blur;
 pub mod chroma;
 pub mod color;
 pub mod format;
