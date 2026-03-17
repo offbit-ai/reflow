@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
 use crate::systems::{
-    ExpressionSystemActor, SceneCameraSystemActor, SceneLightCollectorActor,
+    BehaviorSystemActor, SceneCameraSystemActor, SceneLightCollectorActor,
     SceneMaterialSystemActor, ScenePhysicsSystemActor, StateMachineSystemActor,
     TimelineSystemActor, TweenSystemActor,
 };
@@ -134,7 +134,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_tween_system" => Some(Arc::new(TweenSystemActor::new())),
         "tpl_timeline_system" => Some(Arc::new(TimelineSystemActor::new())),
         "tpl_state_machine_system" => Some(Arc::new(StateMachineSystemActor::new())),
-        "tpl_expression_system" => Some(Arc::new(ExpressionSystemActor::new())),
+        "tpl_behavior_system" => Some(Arc::new(BehaviorSystemActor::new())),
 
         // Integration
         "tpl_http_request" => Some(Arc::new(HttpRequestActor::new())),
@@ -411,7 +411,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_tween_system".to_string(), "TweenSystemActor".to_string());
     mapping.insert("tpl_timeline_system".to_string(), "TimelineSystemActor".to_string());
     mapping.insert("tpl_state_machine_system".to_string(), "StateMachineSystemActor".to_string());
-    mapping.insert("tpl_expression_system".to_string(), "ExpressionSystemActor".to_string());
+    mapping.insert("tpl_behavior_system".to_string(), "BehaviorSystemActor".to_string());
 
     mapping.insert(
         "tpl_http_request".to_string(),

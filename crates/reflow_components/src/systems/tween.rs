@@ -35,7 +35,7 @@ use std::collections::HashMap;
 
 #[actor(
     TweenSystemActor,
-    inports::<10>(tick, dt),
+    inports::<10>(tick, dt, entity_id),
     outports::<1>(completed, metadata),
     state(MemoryState)
 )]
@@ -51,8 +51,14 @@ pub async fn scene_tween_system_actor(ctx: ActorContext) -> Result<HashMap<Strin
 
     let db = get_or_create_db(db_path)?;
 
-    // Find all tween components (any entity with a component starting with "tween")
-    let cache = db.query(&reflow_assets::AssetQuery::new().asset_type("tween"))?;
+    let selected = super::selector::resolve_entities(&payload, &config, &db);
+    let cache = if selected.is_empty() {
+        db.query(&reflow_assets::AssetQuery::new().asset_type("tween"))?
+    } else {
+        selected.iter().filter_map(|e| {
+            db.get_entry(&format!("{}:tween", e)).ok()
+        }).collect()
+    };
 
     let mut completed = Vec::new();
     let mut active_count = 0;

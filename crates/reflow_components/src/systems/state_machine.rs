@@ -54,7 +54,7 @@ use std::collections::HashMap;
 
 #[actor(
     StateMachineSystemActor,
-    inports::<10>(tick, trigger),
+    inports::<10>(tick, trigger, entity_id),
     outports::<1>(state_changes, metadata),
     state(MemoryState)
 )]
@@ -66,7 +66,6 @@ pub async fn scene_state_machine_system_actor(
 
     let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
 
-    // Global triggers from inport (broadcast to all state machines)
     let global_triggers: Vec<String> = match payload.get("trigger") {
         Some(Message::String(s)) => vec![s.to_string()],
         Some(Message::Object(obj)) => {
@@ -80,7 +79,14 @@ pub async fn scene_state_machine_system_actor(
 
     let db = get_or_create_db(db_path)?;
 
-    let sm_entries = db.query(&reflow_assets::AssetQuery::new().asset_type("state_machine"))?;
+    let selected = super::selector::resolve_entities(&payload, &config, &db);
+    let sm_entries = if selected.is_empty() {
+        db.query(&reflow_assets::AssetQuery::new().asset_type("state_machine"))?
+    } else {
+        selected.iter().filter_map(|e| {
+            db.get_entry(&format!("{}:state_machine", e)).ok()
+        }).collect()
+    };
 
     let mut state_changes = Vec::new();
     let mut processed = 0;

@@ -45,7 +45,7 @@ use std::collections::HashMap;
 
 #[actor(
     TimelineSystemActor,
-    inports::<10>(tick, dt, command),
+    inports::<10>(tick, dt, command, entity_id),
     outports::<1>(events, metadata),
     state(MemoryState)
 )]
@@ -63,7 +63,14 @@ pub async fn scene_timeline_system_actor(
 
     let db = get_or_create_db(db_path)?;
 
-    let timelines = db.query(&reflow_assets::AssetQuery::new().asset_type("timeline"))?;
+    let selected = super::selector::resolve_entities(&payload, &config, &db);
+    let timelines = if selected.is_empty() {
+        db.query(&reflow_assets::AssetQuery::new().asset_type("timeline"))?
+    } else {
+        selected.iter().filter_map(|e| {
+            db.get_entry(&format!("{}:timeline", e)).ok()
+        }).collect()
+    };
 
     let mut events = Vec::new();
     let mut active_count = 0;

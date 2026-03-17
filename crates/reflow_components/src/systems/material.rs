@@ -39,11 +39,12 @@ const MATERIAL_STRIDE: usize = 64;
 
 #[actor(
     SceneMaterialSystemActor,
-    inports::<10>(tick),
+    inports::<10>(tick, entity_id),
     outports::<1>(materials, material_map, metadata),
     state(MemoryState)
 )]
 pub async fn material_system_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
     let db_path = config
@@ -53,7 +54,12 @@ pub async fn material_system_actor(ctx: ActorContext) -> Result<HashMap<String, 
 
     let db = get_or_create_db(db_path)?;
 
-    let material_entities = db.entities_with(&["material"])?;
+    let selected = super::selector::resolve_entities(&payload, &config, &db);
+    let material_entities = if selected.is_empty() {
+        db.entities_with(&["material"])?
+    } else {
+        selected.into_iter().filter(|e| db.has_component(e, "material")).collect()
+    };
 
     let mut material_buffer = Vec::new();
     let mut material_map = serde_json::Map::new();

@@ -132,11 +132,12 @@ fn get_physics_world(db_path: &str, gravity: [f32; 3]) -> Arc<Mutex<PhysicsWorld
 
 #[actor(
     ScenePhysicsSystemActor,
-    inports::<10>(tick),
+    inports::<10>(tick, entity_id),
     outports::<1>(collisions, metadata, error),
     state(MemoryState)
 )]
 pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
     let db_path = config
@@ -163,8 +164,17 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
     let world = get_physics_world(db_path, gravity);
     let mut world = world.lock().map_err(|e| anyhow::anyhow!("{}", e))?;
 
-    // Sync AssetDB → rapier: add/update entities
-    let physics_entities = db.entities_with(&["rigidbody", "transform"])?;
+    // Resolve which entities to simulate
+    let selected = super::selector::resolve_entities(&payload, &config, &db);
+    let physics_entities = if selected.is_empty() {
+        // Fallback: if nothing explicitly selected, find entities with rigidbody+transform
+        db.entities_with(&["rigidbody", "transform"])?
+    } else {
+        // Filter selected to only those that actually have rigidbody+transform
+        selected.into_iter().filter(|e| {
+            db.has_component(e, "rigidbody") && db.has_component(e, "transform")
+        }).collect()
+    };
 
     for entity in &physics_entities {
         let rb_asset = db.get_component(entity, "rigidbody")?;

@@ -37,11 +37,12 @@ const LIGHT_STRIDE: usize = 64;
 
 #[actor(
     SceneLightCollectorActor,
-    inports::<10>(tick),
+    inports::<10>(tick, entity_id),
     outports::<1>(lights, light_count, metadata),
     state(MemoryState)
 )]
 pub async fn light_collector_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
     let db_path = config
@@ -51,8 +52,12 @@ pub async fn light_collector_actor(ctx: ActorContext) -> Result<HashMap<String, 
 
     let db = get_or_create_db(db_path)?;
 
-    // Find all entities with a light component
-    let light_entities = db.entities_with(&["light"])?;
+    let selected = super::selector::resolve_entities(&payload, &config, &db);
+    let light_entities = if selected.is_empty() {
+        db.entities_with(&["light"])?
+    } else {
+        selected.into_iter().filter(|e| db.has_component(e, "light")).collect()
+    };
 
     let mut light_buffer = vec![0u8; MAX_LIGHTS * LIGHT_STRIDE];
     let mut light_count = 0usize;
