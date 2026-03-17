@@ -118,7 +118,10 @@ use crate::stream_ops::{
 use crate::stream_ops::VideoEncoderActor;
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
 use crate::transform::{DataOperationsActor, DataTransformActor, GeneratorActor};
-use crate::vector::{BlendModeActor, GaussianBlurActor, Shape2DActor, VectorRasterizeActor};
+use crate::vector::{
+    BackgroundActor, BlendModeActor, Canvas2DActor, GaussianBlurActor, Shape2DActor,
+    VectorRasterizeActor,
+};
 
 /// Get an actor instance for a given Zeal template ID
 pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
@@ -403,6 +406,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_vector_rasterize" => Some(Arc::new(VectorRasterizeActor::new())),
         "tpl_gaussian_blur" => Some(Arc::new(GaussianBlurActor::new())),
         "tpl_blend_mode" => Some(Arc::new(BlendModeActor::new())),
+        "tpl_canvas_2d" => Some(Arc::new(Canvas2DActor::new())),
+        "tpl_background" => Some(Arc::new(BackgroundActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
@@ -800,6 +805,8 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_vector_rasterize".to_string(), "VectorRasterizeActor".to_string());
     mapping.insert("tpl_gaussian_blur".to_string(), "GaussianBlurActor".to_string());
     mapping.insert("tpl_blend_mode".to_string(), "BlendModeActor".to_string());
+    mapping.insert("tpl_canvas_2d".to_string(), "Canvas2DActor".to_string());
+    mapping.insert("tpl_background".to_string(), "BackgroundActor".to_string());
 
     mapping
 }

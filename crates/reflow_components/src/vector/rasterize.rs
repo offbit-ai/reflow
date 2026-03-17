@@ -30,7 +30,7 @@ use tiny_skia as tsk;
 
 #[actor(
     VectorRasterizeActor,
-    inports::<10>(path, fill, stroke),
+    inports::<10>(path, fill, stroke, transform),
     outports::<1>(image, metadata),
     state(MemoryState),
     await_inports(path)
@@ -91,6 +91,32 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let ts_path = path2d_to_tiny_skia(&vec_path)
         .ok_or_else(|| anyhow::anyhow!("Failed to build tiny-skia path"))?;
 
+    // Build transform from inport or config: { x, y, rotation, scaleX, scaleY }
+    let tf_data = match payload.get("transform") {
+        Some(Message::Object(obj)) => {
+            let v: Value = obj.as_ref().clone().into();
+            Some(v)
+        }
+        _ => config.get("transform").cloned(),
+    };
+
+    let transform = if let Some(ref tf) = tf_data {
+        let tx = tf.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+        let ty = tf.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+        let rot = tf.get("rotation").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+        let sx = tf.get("scaleX").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let sy = tf.get("scaleY").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let scale = tf.get("scale").and_then(|v| v.as_f64()).map(|s| s as f32);
+
+        let (sx, sy) = if let Some(s) = scale { (s, s) } else { (sx, sy) };
+
+        tsk::Transform::from_translate(tx, ty)
+            .post_rotate(rot)
+            .post_scale(sx, sy)
+    } else {
+        tsk::Transform::identity()
+    };
+
     let fill_rule = tsk::FillRule::Winding;
 
     // Fill
@@ -100,7 +126,7 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
         paint.set_color(color);
         paint.anti_alias = anti_alias;
 
-        pixmap.fill_path(&ts_path, &paint, fill_rule, tsk::Transform::identity(), None);
+        pixmap.fill_path(&ts_path, &paint, fill_rule, transform, None);
     }
 
     // Stroke
@@ -139,7 +165,7 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
             }
         }
 
-        pixmap.stroke_path(&ts_path, &paint, &ts_stroke, tsk::Transform::identity(), None);
+        pixmap.stroke_path(&ts_path, &paint, &ts_stroke, transform, None);
     }
 
     // Output RGBA bytes
