@@ -18,6 +18,7 @@
 //! | `spiral` | DNA helix, rising smoke, screw | radius, rise, speed |
 //! | `figure8` | Juggling, figure skating, Lissajous | scaleX, scaleY, speed |
 //! | `tremble` | Fear, cold shiver, engine vibration | intensity, frequency |
+//! | `sprite` | Walk cycle, explosion VFX, coin spin | frameCount, startFrame, pingpong |
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
