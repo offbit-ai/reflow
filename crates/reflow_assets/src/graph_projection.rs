@@ -87,20 +87,42 @@ impl GraphProjection {
 
     /// Schema DDL — run these once on KyuGraph initialization to create
     /// the node and relationship tables. KyuGraph requires typed schema.
+    ///
+    /// Organized by knowledge boundary:
+    /// - **World**: Entity, Component (what exists)
+    /// - **Skills**: ActorTemplate, Actor (how to do things)
+    /// - **Results**: RenderResult, QualityScore (what happened)
+    /// - **Diagnostics**: Trace, Warning (what went wrong)
     pub fn schema_ddl() -> Vec<&'static str> {
         vec![
-            // Node tables
+            // ─── World knowledge ───
             "CREATE NODE TABLE IF NOT EXISTS Entity (name STRING, created_at STRING, PRIMARY KEY (name))",
             "CREATE NODE TABLE IF NOT EXISTS Component (id STRING, type STRING, entity STRING, data STRING, updated STRING, PRIMARY KEY (id))",
-            "CREATE NODE TABLE IF NOT EXISTS Actor (name STRING, template STRING, config STRING, PRIMARY KEY (name))",
-
-            // Relationship tables
             "CREATE REL TABLE IF NOT EXISTS HAS_COMPONENT (FROM Entity TO Component)",
-            "CREATE REL TABLE IF NOT EXISTS CONNECTS_TO (FROM Actor TO Actor, from_port STRING, to_port STRING)",
-            "CREATE REL TABLE IF NOT EXISTS TARGETS (FROM Actor TO Entity)",
             "CREATE REL TABLE IF NOT EXISTS REFERENCES (FROM Entity TO Entity, component STRING, field STRING)",
             "CREATE REL TABLE IF NOT EXISTS SPAWNED_FROM (FROM Entity TO Entity)",
-            "CREATE REL TABLE IF NOT EXISTS TAGGED (FROM Entity TO Entity)",
+
+            // ─── Skills knowledge ───
+            "CREATE NODE TABLE IF NOT EXISTS Actor (name STRING, template STRING, config STRING, PRIMARY KEY (name))",
+            "CREATE NODE TABLE IF NOT EXISTS ActorTemplate (id STRING, name STRING, inports STRING, outports STRING, description STRING, category STRING, PRIMARY KEY (id))",
+            "CREATE REL TABLE IF NOT EXISTS CONNECTS_TO (FROM Actor TO Actor, from_port STRING, to_port STRING)",
+            "CREATE REL TABLE IF NOT EXISTS TARGETS (FROM Actor TO Entity)",
+            "CREATE REL TABLE IF NOT EXISTS INSTANCE_OF (FROM Actor TO ActorTemplate)",
+            // Wiring patterns: known good DAG fragments
+            "CREATE NODE TABLE IF NOT EXISTS WiringPattern (id STRING, name STRING, description STRING, actors STRING, connections STRING, PRIMARY KEY (id))",
+            "CREATE REL TABLE IF NOT EXISTS USES_TEMPLATE (FROM WiringPattern TO ActorTemplate)",
+
+            // ─── Results knowledge ───
+            "CREATE NODE TABLE IF NOT EXISTS RenderResult (id STRING, entity STRING, timestamp STRING, image_path STRING, width INT64, height INT64, PRIMARY KEY (id))",
+            "CREATE NODE TABLE IF NOT EXISTS QualityScore (id STRING, render_id STRING, score DOUBLE, analysis STRING, timestamp STRING, PRIMARY KEY (id))",
+            "CREATE REL TABLE IF NOT EXISTS RENDERED_BY (FROM RenderResult TO Entity)",
+            "CREATE REL TABLE IF NOT EXISTS SCORED (FROM QualityScore TO RenderResult)",
+
+            // ─── Diagnostics knowledge ───
+            "CREATE NODE TABLE IF NOT EXISTS Trace (id STRING, actor STRING, timestamp STRING, duration_ms DOUBLE, input_keys STRING, output_keys STRING, PRIMARY KEY (id))",
+            "CREATE NODE TABLE IF NOT EXISTS Warning (id STRING, entity STRING, type STRING, message STRING, timestamp STRING, PRIMARY KEY (id))",
+            "CREATE REL TABLE IF NOT EXISTS TRACED_BY (FROM Trace TO Actor)",
+            "CREATE REL TABLE IF NOT EXISTS WARNS_ABOUT (FROM Warning TO Entity)",
         ]
     }
 
@@ -202,6 +224,154 @@ impl GraphProjection {
                 "to": to_actor, "tp": to_port,
             }),
         });
+    }
+
+    // ─── Results knowledge ───
+
+    /// Record a render result — the visual feedback loop.
+    /// VLM agents read these to evaluate quality.
+    pub fn project_render_result(
+        &self,
+        entity: &str,
+        image_path: &str,
+        width: u32,
+        height: u32,
+    ) {
+        let id = format!("render_{}_{}", entity, now_iso_compact());
+        self.push(CypherDelta {
+            statement: concat!(
+                "CREATE (r:RenderResult {id: $id, entity: $entity, timestamp: $ts, ",
+                "image_path: $path, width: $w, height: $h}) ",
+                "WITH r MATCH (e:Entity {name: $entity}) ",
+                "CREATE (r)-[:RENDERED_BY]->(e)"
+            ).into(),
+            params: json!({
+                "id": id,
+                "entity": entity,
+                "ts": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                "path": image_path,
+                "w": width,
+                "h": height,
+            }),
+        });
+    }
+
+    /// Record a VLM quality assessment of a render.
+    pub fn project_quality_score(
+        &self,
+        render_id: &str,
+        score: f64,
+        analysis: &str,
+    ) {
+        let id = format!("score_{}", now_iso_compact());
+        self.push(CypherDelta {
+            statement: concat!(
+                "CREATE (q:QualityScore {id: $id, render_id: $rid, score: $score, ",
+                "analysis: $analysis, timestamp: $ts}) ",
+                "WITH q MATCH (r:RenderResult {id: $rid}) ",
+                "CREATE (q)-[:SCORED]->(r)"
+            ).into(),
+            params: json!({
+                "id": id,
+                "rid": render_id,
+                "score": score,
+                "analysis": analysis,
+                "ts": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            }),
+        });
+    }
+
+    // ─── Diagnostics knowledge ───
+
+    /// Record an actor execution trace.
+    pub fn project_trace(
+        &self,
+        actor: &str,
+        duration_ms: f64,
+        input_keys: &[String],
+        output_keys: &[String],
+    ) {
+        let id = format!("trace_{}_{}", actor, now_iso_compact());
+        self.push(CypherDelta {
+            statement: concat!(
+                "CREATE (t:Trace {id: $id, actor: $actor, timestamp: $ts, ",
+                "duration_ms: $dur, input_keys: $ik, output_keys: $ok}) ",
+                "WITH t MATCH (a:Actor {name: $actor}) ",
+                "CREATE (t)-[:TRACED_BY]->(a)"
+            ).into(),
+            params: json!({
+                "id": id,
+                "actor": actor,
+                "ts": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                "dur": duration_ms,
+                "ik": serde_json::to_string(input_keys).unwrap_or_default(),
+                "ok": serde_json::to_string(output_keys).unwrap_or_default(),
+            }),
+        });
+    }
+
+    /// Record a diagnostic warning.
+    pub fn project_warning(
+        &self,
+        entity: &str,
+        warning_type: &str,
+        message: &str,
+    ) {
+        let id = format!("warn_{}_{}", entity, now_iso_compact());
+        self.push(CypherDelta {
+            statement: concat!(
+                "CREATE (w:Warning {id: $id, entity: $entity, type: $wtype, ",
+                "message: $msg, timestamp: $ts}) ",
+                "WITH w MATCH (e:Entity {name: $entity}) ",
+                "CREATE (w)-[:WARNS_ABOUT]->(e)"
+            ).into(),
+            params: json!({
+                "id": id,
+                "entity": entity,
+                "wtype": warning_type,
+                "msg": message,
+                "ts": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            }),
+        });
+    }
+
+    // ─── Skills knowledge: wiring patterns ───
+
+    /// Register a known-good wiring pattern (DAG fragment).
+    /// AI agents reference these when building DAGs for common tasks.
+    pub fn project_wiring_pattern(
+        &self,
+        id: &str,
+        name: &str,
+        description: &str,
+        actors: &[(&str, &str)], // (name, template)
+        connections: &[(&str, &str, &str, &str)], // (from_actor, from_port, to_actor, to_port)
+    ) {
+        self.push(CypherDelta {
+            statement: concat!(
+                "MERGE (p:WiringPattern {id: $id}) ",
+                "SET p.name = $name, p.description = $desc, ",
+                "p.actors = $actors, p.connections = $conns"
+            ).into(),
+            params: json!({
+                "id": id,
+                "name": name,
+                "desc": description,
+                "actors": serde_json::to_string(actors).unwrap_or_default(),
+                "conns": serde_json::to_string(connections).unwrap_or_default(),
+            }),
+        });
+
+        // Link to templates used
+        for (_, template) in actors {
+            self.push(CypherDelta {
+                statement: concat!(
+                    "MATCH (p:WiringPattern {id: $pid}), (t:ActorTemplate {id: $tid}) ",
+                    "MERGE (p)-[:USES_TEMPLATE]->(t)"
+                ).into(),
+                params: json!({"pid": id, "tid": template}),
+            });
+        }
     }
 
     fn push(&self, delta: CypherDelta) {
@@ -316,6 +486,10 @@ impl DeltaListener for GraphProjection {
 /// This is generic — works for any domain, not just game components.
 /// camera.target = "player", behavior.vars.source = "sensor_1:data",
 /// http.upstream = "api_gateway", etc.
+fn now_iso_compact() -> String {
+    chrono::Utc::now().format("%Y%m%d%H%M%S%3f").to_string()
+}
+
 fn extract_references(
     entity: &str,
     component: &str,
