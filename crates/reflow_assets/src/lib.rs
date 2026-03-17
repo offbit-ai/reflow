@@ -777,6 +777,41 @@ impl AssetDB {
         self.put_json(&id, data, metadata)
     }
 
+    /// Merge fields into an existing JSON component. Creates if missing.
+    /// Only the keys present in `patch` are overwritten; all other fields preserved.
+    pub fn merge_component_json(
+        &self,
+        entity: &str,
+        component: &str,
+        patch: Value,
+        metadata: Value,
+    ) -> Result<()> {
+        let id = format!("{}:{}", entity, component);
+
+        // Load existing
+        let mut base = match self.get(&id) {
+            Ok(asset) => {
+                if let Some(ref inline) = asset.entry.inline_data {
+                    inline.clone()
+                } else {
+                    serde_json::from_slice(&asset.data).unwrap_or(Value::Object(Default::default()))
+                }
+            }
+            Err(_) => Value::Object(Default::default()),
+        };
+
+        // Merge patch on top
+        if let (Value::Object(ref mut base_map), Value::Object(patch_map)) = (&mut base, &patch) {
+            for (k, v) in patch_map {
+                base_map.insert(k.clone(), v.clone());
+            }
+        } else {
+            base = patch;
+        }
+
+        self.put_json(&id, base, metadata)
+    }
+
     /// Get a component from an entity.
     pub fn get_component(&self, entity: &str, component: &str) -> Result<Asset> {
         self.get(&format!("{}:{}", entity, component))

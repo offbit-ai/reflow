@@ -153,38 +153,12 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
     }
 
     // Generic component from inport: { "name": "...", "data": {...} }
-    // Merges into existing component — inport fields override, config fields preserved.
+    // Merges into existing — only inport fields override, rest preserved.
     if let Some(Message::Object(obj)) = payload.get("component") {
         let v: Value = obj.as_ref().clone().into();
         if let Some(comp_name) = v.get("name").and_then(|v| v.as_str()) {
             if let Some(comp_data) = v.get("data") {
-                // Start from config base (if component was defined in config)
-                let mut merged = config
-                    .get(comp_name)
-                    .cloned()
-                    .unwrap_or(json!({}));
-
-                // Also pull existing component from DB (in case of multi-tick accumulation)
-                if let Ok(existing) = db.get_component(&entity_name, comp_name) {
-                    if let Some(ref inline) = existing.entry.inline_data {
-                        if let Value::Object(map) = inline {
-                            if let Value::Object(ref mut m) = merged {
-                                for (k, v) in map {
-                                    m.entry(k.clone()).or_insert(v.clone());
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Merge inport data on top
-                if let (Value::Object(ref mut base), Value::Object(patch)) = (&mut merged, comp_data) {
-                    for (k, v) in patch {
-                        base.insert(k.clone(), v.clone());
-                    }
-                }
-
-                db.set_component_json(&entity_name, comp_name, merged, json!({}))?;
+                db.merge_component_json(&entity_name, comp_name, comp_data.clone(), json!({}))?;
             }
         }
     }
