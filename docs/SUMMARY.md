@@ -24,6 +24,8 @@
 - [SubgraphActor](architecture/subgraph-actor.md)
 - [Multi-Graph Composition](architecture/multi-graph-composition.md)
 - [dynASB — Actor FaaS](architecture/dynasb.md)
+- [AssetDB — ECS Data Store](architecture/asset-db.md)
+- [Layout Sync — DOM Integration](architecture/layout-sync.md)
 
 ---
 
@@ -87,6 +89,7 @@
 - [Distributed Workflow Example](tutorials/distributed-workflow-example.md)
 - [Multi-Graph Workspace](tutorials/multi-graph-workspace.md)
 - [Browser Actor Development](tutorials/browser-actor-development.md)
+- [Game Programming with Reflow](tutorials/game-programming.md)
 
 ---
 
