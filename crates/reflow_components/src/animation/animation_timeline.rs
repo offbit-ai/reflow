@@ -34,9 +34,31 @@
 //!   "duration": 2.0,
 //!   "loop": false,
 //!   "autoplay": true,
-//!   "speed": 1.0
+//!   "speed": 1.0,
+//!   "stagger": {
+//!     "delay": 0.1,
+//!     "order": "index",
+//!     "from": "start",
+//!     "easing": "easeOutCubic"
+//!   }
 //! }
 //! ```
+//!
+//! ## Stagger
+//!
+//! Automatically offsets each track's start time. Useful for cascading
+//! animations across multiple elements (list items, grid cells, letters).
+//!
+//! - `delay` — time offset between consecutive tracks (seconds)
+//! - `order` — `"index"` (arrival order), `"name"` (alphabetical), `"reverse"`
+//! - `from` — `"start"` (first track has zero delay), `"center"`, `"end"`
+//! - `easing` — ease the stagger distribution itself (optional)
+//!
+//! Example: 5 tracks with stagger delay 0.1 from start:
+//!   track 0 starts at 0.0s, track 1 at 0.1s, track 2 at 0.2s, ...
+//!
+//! With `from: "center"`:
+//!   track 0 at 0.2s, track 1 at 0.1s, track 2 at 0.0s, track 3 at 0.1s, track 4 at 0.2s
 //!
 //! ## Control (on `control` inport)
 //!
@@ -148,18 +170,23 @@ pub async fn animation_timeline_actor(
 
     let progress = if duration > 0.0 { elapsed / duration } else { 1.0 };
 
-    // ─── Evaluate all pooled tracks ───
+    // ─── Evaluate all pooled tracks with stagger ───
     let track_pool: Vec<(String, Value)> = ctx.get_pool("_tracks").into_iter().collect();
     let mut out = HashMap::new();
 
-    for (track_name, track_data) in &track_pool {
+    // Compute stagger delays
+    let stagger_delays = compute_stagger(&config, &track_pool);
+
+    for (i, (track_name, track_data)) in track_pool.iter().enumerate() {
         let keyframes = track_data
             .get("keyframes")
             .and_then(|v| v.as_array());
 
         if let Some(kf) = keyframes {
-            let delay = track_data.get("delay").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let track_time = elapsed - delay;
+            // Per-track delay = explicit delay + stagger offset
+            let explicit_delay = track_data.get("delay").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let stagger_delay = stagger_delays.get(i).copied().unwrap_or(0.0);
+            let track_time = elapsed - explicit_delay - stagger_delay;
 
             if track_time >= 0.0 {
                 if let Some(value) = evaluate_keyframes(kf, track_time) {
@@ -186,6 +213,78 @@ pub async fn animation_timeline_actor(
         }))),
     );
     Ok(out)
+}
+
+/// Compute per-track stagger delays from config.
+fn compute_stagger(
+    config: &HashMap<String, Value>,
+    tracks: &[(String, Value)],
+) -> Vec<f64> {
+    let n = tracks.len();
+    if n == 0 {
+        return Vec::new();
+    }
+
+    let stagger = match config.get("stagger") {
+        Some(v) if v.is_object() => v,
+        // Shorthand: "stagger": 0.1 → delay 0.1 per track
+        Some(v) if v.is_number() => {
+            let delay = v.as_f64().unwrap_or(0.0);
+            return (0..n).map(|i| i as f64 * delay).collect();
+        }
+        _ => return vec![0.0; n],
+    };
+
+    let delay = stagger.get("delay").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    if delay == 0.0 {
+        return vec![0.0; n];
+    }
+
+    let order = stagger.get("order").and_then(|v| v.as_str()).unwrap_or("index");
+    let from = stagger.get("from").and_then(|v| v.as_str()).unwrap_or("start");
+    let stagger_easing = stagger.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
+
+    // Build index order
+    let mut indices: Vec<usize> = (0..n).collect();
+    match order {
+        "name" => {
+            let mut named: Vec<(usize, &str)> = tracks.iter().enumerate()
+                .map(|(i, (name, _))| (i, name.as_str()))
+                .collect();
+            named.sort_by_key(|(_, name)| *name);
+            indices = named.iter().map(|(i, _)| *i).collect();
+        }
+        "reverse" => indices.reverse(),
+        _ => {} // "index" = arrival order, already correct
+    }
+
+    // Compute raw positions [0..1] for each track in the stagger
+    let mut delays = vec![0.0f64; n];
+    let max_idx = (n - 1).max(1) as f64;
+
+    for (rank, &original_idx) in indices.iter().enumerate() {
+        let normalized = rank as f64 / max_idx; // 0..1
+
+        // Apply "from" mode
+        let adjusted = match from {
+            "end" => 1.0 - normalized,
+            "center" => {
+                let center_dist = (normalized - 0.5).abs() * 2.0; // 0 at center, 1 at edges
+                center_dist
+            }
+            "edges" => {
+                let center_dist = (normalized - 0.5).abs() * 2.0;
+                1.0 - center_dist // 0 at edges, 1 at center
+            }
+            _ => normalized, // "start"
+        };
+
+        // Apply stagger easing
+        let eased = easing::eval(stagger_easing, adjusted);
+        delays[original_idx] = eased * delay * max_idx;
+    }
+
+    delays
 }
 
 fn evaluate_keyframes(keyframes: &[Value], time: f64) -> Option<Value> {
