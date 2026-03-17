@@ -10,8 +10,9 @@ use std::sync::Arc;
 
 use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
 use crate::systems::{
-    BehaviorSystemActor, LayoutSyncSystemActor, SceneCameraSystemActor,
-    SceneLightCollectorActor, SceneMaterialSystemActor, ScenePhysicsSystemActor,
+    BehaviorSystemActor, LayoutSyncSystemActor, SceneBillboardSystemActor,
+    SceneCameraSystemActor, SceneLightCollectorActor, SceneMaterialSystemActor,
+    ScenePhysicsSystemActor, SceneSkyboxSystemActor, SceneWeatherSystemActor,
     StateMachineSystemActor, TimelineSystemActor, TweenSystemActor,
 };
 use crate::animation::{
@@ -129,6 +130,9 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_scene_camera" => Some(Arc::new(SceneCameraSystemActor::new())),
         "tpl_scene_light_collector" => Some(Arc::new(SceneLightCollectorActor::new())),
         "tpl_scene_material" => Some(Arc::new(SceneMaterialSystemActor::new())),
+        "tpl_scene_billboard" => Some(Arc::new(SceneBillboardSystemActor::new())),
+        "tpl_scene_skybox" => Some(Arc::new(SceneSkyboxSystemActor::new())),
+        "tpl_scene_weather" => Some(Arc::new(SceneWeatherSystemActor::new())),
 
         // Universal Systems (motion design, interactive animation, design engineering)
         "tpl_tween_system" => Some(Arc::new(TweenSystemActor::new())),
@@ -407,6 +411,9 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_scene_camera".to_string(), "SceneCameraSystemActor".to_string());
     mapping.insert("tpl_scene_light_collector".to_string(), "SceneLightCollectorActor".to_string());
     mapping.insert("tpl_scene_material".to_string(), "SceneMaterialSystemActor".to_string());
+    mapping.insert("tpl_scene_billboard".to_string(), "SceneBillboardSystemActor".to_string());
+    mapping.insert("tpl_scene_skybox".to_string(), "SceneSkyboxSystemActor".to_string());
+    mapping.insert("tpl_scene_weather".to_string(), "SceneWeatherSystemActor".to_string());
 
     // Universal Systems
     mapping.insert("tpl_tween_system".to_string(), "TweenSystemActor".to_string());
