@@ -19,6 +19,8 @@ mod animation_sampler;
 mod skinning;
 mod animation_time;
 mod animation_mixer;
+mod animation_timeline;
+mod keyframe;
 
 pub use skeleton::SkeletonActor;
 pub use animation_clip::AnimationClipActor;
@@ -27,3 +29,5 @@ pub use animation_sampler::AnimationSamplerActor;
 pub use skinning::SkinningActor;
 pub use animation_time::AnimationTimeActor;
 pub use animation_mixer::AnimationMixerActor;
+pub use animation_timeline::AnimationTimelineActor;
+pub use keyframe::KeyframeActor;

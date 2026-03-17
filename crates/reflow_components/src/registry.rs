@@ -18,7 +18,7 @@ use crate::systems::{
 };
 use crate::animation::{
     AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
-    SkinBindActor, SkeletonActor, SkinningActor,
+    AnimationTimelineActor, KeyframeActor, SkinBindActor, SkeletonActor, SkinningActor,
 };
 use crate::scene::{InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
 use crate::flow_control::{
@@ -374,6 +374,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_skinning" => Some(Arc::new(SkinningActor::new())),
         "tpl_animation_time" => Some(Arc::new(AnimationTimeActor::new())),
         "tpl_animation_mixer" => Some(Arc::new(AnimationMixerActor::new())),
+        "tpl_keyframe" => Some(Arc::new(KeyframeActor::new())),
+        "tpl_animation_timeline" => Some(Arc::new(AnimationTimelineActor::new())),
 
         // Video
         "tpl_render_frame_collector" => Some(Arc::new(RenderFrameCollectorActor::new())),
@@ -747,6 +749,8 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_skinning", "SkinningActor"),
         ("tpl_animation_time", "AnimationTimeActor"),
         ("tpl_animation_mixer", "AnimationMixerActor"),
+        ("tpl_keyframe", "KeyframeActor"),
+        ("tpl_animation_timeline", "AnimationTimelineActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }
