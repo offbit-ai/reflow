@@ -181,6 +181,7 @@ pub async fn animation_timeline_actor(
 
     // ─── Evaluate all pooled tracks with stagger ───
     let track_pool: Vec<(String, Value)> = ctx.get_pool("_tracks").into_iter().collect();
+
     let mut out = HashMap::new();
 
     // Compute stagger delays
@@ -197,19 +198,24 @@ pub async fn animation_timeline_actor(
             let stagger_delay = stagger_delays.get(i).copied().unwrap_or(0.0);
             let track_time = elapsed - explicit_delay - stagger_delay;
 
-            if track_time >= 0.0 {
-                if let Some(value) = evaluate_keyframes(kf, track_time) {
-                    // Output as the most specific type for direct wiring
-                    let msg = match &value {
-                        Value::Number(n) => {
-                            if let Some(f) = n.as_f64() { Message::Float(f) }
-                            else if let Some(i) = n.as_i64() { Message::Integer(i) }
-                            else { Message::object(EncodableValue::from(value.clone())) }
-                        }
-                        _ => Message::object(EncodableValue::from(value)),
-                    };
-                    out.insert(track_name.clone(), msg);
-                }
+            // Before delay: hold at first keyframe value (start state).
+            // After delay: interpolate keyframes normally.
+            let value = if track_time >= 0.0 {
+                evaluate_keyframes(kf, track_time)
+            } else {
+                kf.first().and_then(|kf0| kf0.get("value").cloned())
+            };
+
+            if let Some(value) = value {
+                let msg = match &value {
+                    Value::Number(n) => {
+                        if let Some(f) = n.as_f64() { Message::Float(f) }
+                        else if let Some(i) = n.as_i64() { Message::Integer(i) }
+                        else { Message::object(EncodableValue::from(value.clone())) }
+                    }
+                    _ => Message::object(EncodableValue::from(value)),
+                };
+                out.insert(track_name.clone(), msg);
             }
         }
     }

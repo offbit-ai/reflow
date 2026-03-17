@@ -1,11 +1,10 @@
 //! # Abstract Motion — GPU SDF Rendering
 //!
-//! All shapes rendered in ONE GPU draw call via SDF instancing.
-//! Timelines drive per-shape transforms. No CPU rasterization.
+//! All shapes + text rendered in ONE GPU draw call via SDF instancing.
+//! Single timeline drives shapes (sN_*) and text characters (cN_*).
 //!
 //! ```text
-//! tick → 4 timelines → anim_0..3 → Gpu2DRender(shapes config) → image
-//!                                     → FrameCollector → VideoEncoder → FileSave
+//! tick → timeline(shapes + staggered text) → values → Gpu2DRender → video
 //! ```
 
 use std::collections::HashMap;
@@ -60,113 +59,131 @@ async fn main() -> anyhow::Result<()> {
     })))?;
     net.add_node("time", "tpl_animation_time", config(json!({ "fps": fps, "speed": 1.0 })))?;
 
-    // ═══ TIMELINES ═══
+    // Build tracks programmatically to avoid json! macro recursion limit
+    let mut tracks = serde_json::Map::new();
+
+    // Helper: keyframes shorthand
+    let kf = |frames: Value| -> Value { json!({ "keyframes": frames }) };
+    let kfd = |frames: Value, delay: f64| -> Value { json!({ "keyframes": frames, "delay": delay }) };
 
     // Shape 0: Orange rect — spirals, scales in/out, rotates 2 full turns
-    net.add_node("tl_0", "tpl_animation_timeline", config(json!({
-        "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
-        "tracks": {
-            "x": { "keyframes": [
-                { "time": 0.0, "value": cx, "easing": "easeInOutCubic" },
-                { "time": 2.0, "value": cx + 150.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cx, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cx - 150.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cx },
-            ]},
-            "y": { "keyframes": [
-                { "time": 0.0, "value": cy, "easing": "easeInOutCubic" },
-                { "time": 2.0, "value": cy - 100.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cy + 100.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cy - 100.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cy },
-            ]},
-            "scale": { "keyframes": [
-                { "time": 0.0, "value": 0.0, "easing": "easeOutBack" },
-                { "time": 1.5, "value": 1.0 },
-                { "time": 6.5, "value": 1.0, "easing": "easeInCubic" },
-                { "time": 8.0, "value": 0.0 },
-            ]},
-            "rotation": { "keyframes": [
-                { "time": 0.0, "value": 0.0 }, { "time": 8.0, "value": 720.0 },
-            ]},
-        }
-    })))?;
+    tracks.insert("s0_x".into(), kf(json!([
+        {"time": 0.0, "value": cx, "easing": "easeInOutCubic"},
+        {"time": 2.0, "value": cx + 150.0, "easing": "easeInOutSine"},
+        {"time": 4.0, "value": cx, "easing": "easeInOutSine"},
+        {"time": 6.0, "value": cx - 150.0, "easing": "easeInOutSine"},
+        {"time": 8.0, "value": cx}
+    ])));
+    tracks.insert("s0_y".into(), kf(json!([
+        {"time": 0.0, "value": cy, "easing": "easeInOutCubic"},
+        {"time": 2.0, "value": cy - 100.0, "easing": "easeInOutSine"},
+        {"time": 4.0, "value": cy + 100.0, "easing": "easeInOutSine"},
+        {"time": 6.0, "value": cy - 100.0, "easing": "easeInOutSine"},
+        {"time": 8.0, "value": cy}
+    ])));
+    tracks.insert("s0_scale".into(), kf(json!([
+        {"time": 0.0, "value": 0.0, "easing": "easeOutBack"},
+        {"time": 1.5, "value": 1.0},
+        {"time": 6.5, "value": 1.0, "easing": "easeInCubic"},
+        {"time": 8.0, "value": 0.0}
+    ])));
+    tracks.insert("s0_rotation".into(), kf(json!([
+        {"time": 0.0, "value": 0.0}, {"time": 8.0, "value": 720.0}
+    ])));
 
     // Shape 1: Blue circle — wide orbit
-    net.add_node("tl_1", "tpl_animation_timeline", config(json!({
-        "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
-        "tracks": {
-            "x": { "keyframes": [
-                { "time": 0.0, "value": cx + 250.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cx, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cx - 250.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cx, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cx + 250.0 },
-            ]},
-            "y": { "keyframes": [
-                { "time": 0.0, "value": cy - 120.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cy + 120.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cy - 120.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cy + 120.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cy - 120.0 },
-            ]},
-            "scale": { "keyframes": [
-                { "time": 0.0, "value": 0.0 },
-                { "time": 0.5, "value": 0.0, "easing": "easeOutBack" },
-                { "time": 1.5, "value": 1.0 },
-                { "time": 7.0, "value": 1.0, "easing": "easeInCubic" },
-                { "time": 8.0, "value": 0.0 },
-            ]},
-        }
-    })))?;
+    tracks.insert("s1_x".into(), kf(json!([
+        {"time": 0.0, "value": cx + 250.0, "easing": "easeInOutSine"},
+        {"time": 2.0, "value": cx, "easing": "easeInOutSine"},
+        {"time": 4.0, "value": cx - 250.0, "easing": "easeInOutSine"},
+        {"time": 6.0, "value": cx, "easing": "easeInOutSine"},
+        {"time": 8.0, "value": cx + 250.0}
+    ])));
+    tracks.insert("s1_y".into(), kf(json!([
+        {"time": 0.0, "value": cy - 120.0, "easing": "easeInOutSine"},
+        {"time": 2.0, "value": cy + 120.0, "easing": "easeInOutSine"},
+        {"time": 4.0, "value": cy - 120.0, "easing": "easeInOutSine"},
+        {"time": 6.0, "value": cy + 120.0, "easing": "easeInOutSine"},
+        {"time": 8.0, "value": cy - 120.0}
+    ])));
+    tracks.insert("s1_scale".into(), kf(json!([
+        {"time": 0.0, "value": 0.0},
+        {"time": 0.5, "value": 0.0, "easing": "easeOutBack"},
+        {"time": 1.5, "value": 1.0},
+        {"time": 7.0, "value": 1.0, "easing": "easeInCubic"},
+        {"time": 8.0, "value": 0.0}
+    ])));
 
     // Shape 2: Pink circle — counter-orbit
-    net.add_node("tl_2", "tpl_animation_timeline", config(json!({
-        "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
-        "tracks": {
-            "x": { "keyframes": [
-                { "time": 0.0, "value": cx - 200.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cx + 200.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cx - 200.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cx + 200.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cx - 200.0 },
-            ]},
-            "y": { "keyframes": [
-                { "time": 0.0, "value": cy + 100.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cy - 100.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cy + 100.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cy - 100.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cy + 100.0 },
-            ]},
-            "scale": { "keyframes": [
-                { "time": 0.0, "value": 0.0 },
-                { "time": 1.0, "value": 0.0, "easing": "easeOutBack" },
-                { "time": 2.0, "value": 1.0 },
-                { "time": 6.5, "value": 1.0, "easing": "easeInCubic" },
-                { "time": 8.0, "value": 0.0 },
-            ]},
-        }
-    })))?;
+    tracks.insert("s2_x".into(), kf(json!([
+        {"time": 0.0, "value": cx - 200.0, "easing": "easeInOutSine"},
+        {"time": 2.0, "value": cx + 200.0, "easing": "easeInOutSine"},
+        {"time": 4.0, "value": cx - 200.0, "easing": "easeInOutSine"},
+        {"time": 6.0, "value": cx + 200.0, "easing": "easeInOutSine"},
+        {"time": 8.0, "value": cx - 200.0}
+    ])));
+    tracks.insert("s2_y".into(), kf(json!([
+        {"time": 0.0, "value": cy + 100.0, "easing": "easeInOutSine"},
+        {"time": 2.0, "value": cy - 100.0, "easing": "easeInOutSine"},
+        {"time": 4.0, "value": cy + 100.0, "easing": "easeInOutSine"},
+        {"time": 6.0, "value": cy - 100.0, "easing": "easeInOutSine"},
+        {"time": 8.0, "value": cy + 100.0}
+    ])));
+    tracks.insert("s2_scale".into(), kf(json!([
+        {"time": 0.0, "value": 0.0},
+        {"time": 1.0, "value": 0.0, "easing": "easeOutBack"},
+        {"time": 2.0, "value": 1.0},
+        {"time": 6.5, "value": 1.0, "easing": "easeInCubic"},
+        {"time": 8.0, "value": 0.0}
+    ])));
 
     // Shape 3: Purple hex border — pulses at center, slow counter-rotation
-    net.add_node("tl_3", "tpl_animation_timeline", config(json!({
+    tracks.insert("s3_x".into(), kf(json!([{"time": 0.0, "value": cx}, {"time": 8.0, "value": cx}])));
+    tracks.insert("s3_y".into(), kf(json!([{"time": 0.0, "value": cy}, {"time": 8.0, "value": cy}])));
+    tracks.insert("s3_scale".into(), kf(json!([
+        {"time": 0.0, "value": 0.0},
+        {"time": 2.0, "value": 0.0, "easing": "easeOutElastic"},
+        {"time": 3.5, "value": 1.0},
+        {"time": 4.5, "value": 0.85, "easing": "easeInOutSine"},
+        {"time": 5.5, "value": 1.0, "easing": "easeInOutSine"},
+        {"time": 6.5, "value": 0.85, "easing": "easeInCubic"},
+        {"time": 8.0, "value": 0.0}
+    ])));
+    tracks.insert("s3_rotation".into(), kf(json!([
+        {"time": 0.0, "value": 0.0}, {"time": 8.0, "value": -180.0}
+    ])));
+
+    // Text "REFLOW" — staggered reveal at t=3.0s
+    // Each character: scale 0→1 (pop in), slide up 25px, fade in.
+    // 0.1s stagger between characters. Fade out before end.
+    let text = "REFLOW";
+    for (i, _ch) in text.chars().enumerate() {
+        let d = 3.0 + i as f64 * 0.1; // stagger delay
+        let hold = 3.5 - i as f64 * 0.1; // hold duration (earlier chars stay longer)
+
+        tracks.insert(format!("c{}_scale", i), kfd(json!([
+            {"time": 0.0, "value": 0, "easing": "easeOutBack"},
+            {"time": 0.5, "value": 1.0},
+            {"time": hold, "value": 1.0, "easing": "easeInCubic"},
+            {"time": hold + 0.7, "value": 0}
+        ]), d));
+
+        tracks.insert(format!("c{}_y", i), kfd(json!([
+            {"time": 0.0, "value": 25, "easing": "easeOutCubic"},
+            {"time": 0.4, "value": 0}
+        ]), d));
+
+        tracks.insert(format!("c{}_opacity", i), kfd(json!([
+            {"time": 0.0, "value": 0},
+            {"time": 0.3, "value": 1.0},
+            {"time": hold, "value": 1.0},
+            {"time": hold + 0.5, "value": 0}
+        ]), d));
+    }
+
+    net.add_node("tl", "tpl_animation_timeline", config(json!({
         "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
-        "tracks": {
-            "x": { "keyframes": [{ "time": 0.0, "value": cx }, { "time": 8.0, "value": cx }] },
-            "y": { "keyframes": [{ "time": 0.0, "value": cy }, { "time": 8.0, "value": cy }] },
-            "scale": { "keyframes": [
-                { "time": 0.0, "value": 0.0 },
-                { "time": 2.0, "value": 0.0, "easing": "easeOutElastic" },
-                { "time": 3.5, "value": 1.0 },
-                { "time": 4.5, "value": 0.85, "easing": "easeInOutSine" },
-                { "time": 5.5, "value": 1.0, "easing": "easeInOutSine" },
-                { "time": 6.5, "value": 0.85, "easing": "easeInCubic" },
-                { "time": 8.0, "value": 0.0 },
-            ]},
-            "rotation": { "keyframes": [
-                { "time": 0.0, "value": 0.0 }, { "time": 8.0, "value": -180.0 },
-            ]},
-        }
+        "tracks": Value::Object(tracks),
     })))?;
 
     // ═══ GPU 2D RENDERER ═══
@@ -194,6 +211,16 @@ async fn main() -> anyhow::Result<()> {
                 "color": [0.0, 0.0, 0.0, 0.0], "cornerRadius": 0.0,
                 "border": { "width": 2.0, "color": [0.5, 0.38, 1.0, 0.7] },
             },
+        ],
+        "text": [
+            {
+                "content": "REFLOW",
+                "x": cx, "y": cy + 140.0,
+                "size": 52.0,
+                "color": [0.9, 0.88, 1.0, 1.0],
+                "tracking": 10.0,
+                "center": true,
+            },
         ]
     })))?;
 
@@ -206,16 +233,10 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
-    net.add_connection(wire("tick", "trigger", "tl_0", "tick"));
-    net.add_connection(wire("tick", "trigger", "tl_1", "tick"));
-    net.add_connection(wire("tick", "trigger", "tl_2", "tick"));
-    net.add_connection(wire("tick", "trigger", "tl_3", "tick"));
-    net.add_connection(wire("tick", "trigger", "render", "tick"));
 
-    net.add_connection(wire("tl_0", "values", "render", "anim_0"));
-    net.add_connection(wire("tl_1", "values", "render", "anim_1"));
-    net.add_connection(wire("tl_2", "values", "render", "anim_2"));
-    net.add_connection(wire("tl_3", "values", "render", "anim_3"));
+    // Single timeline driven by tick → atomic values output to renderer
+    net.add_connection(wire("tick", "trigger", "tl", "tick"));
+    net.add_connection(wire("tl", "values", "render", "values"));
 
     net.add_connection(wire("render", "image", "collector", "frame"));
     net.add_connection(wire("time", "frame_number", "collector", "frame_number"));
@@ -224,7 +245,7 @@ async fn main() -> anyhow::Result<()> {
 
     net.add_initial(iip("tick", "start", Message::Flow));
 
-    println!("DAG: 4 timelines → Gpu2DRender (SDF instanced) → video");
+    println!("DAG: 1 timeline (all shapes) → Gpu2DRender (SDF instanced) → video");
     println!("Running...\n");
 
     let start = std::time::Instant::now();
