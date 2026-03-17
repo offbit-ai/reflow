@@ -134,23 +134,20 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     }
 
     // Accept full transform object inport (timeline `values` output or direct)
-    // Also support config `transformMap` to rename fields:
-    //   { "transformMap": { "star_scale": "scale", "star_rot": "rotation" } }
-    static DEBUG_COUNT2: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let dc2 = DEBUG_COUNT2.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if dc2 < 6 {
-        eprintln!("[rasterize] transform payload key present: {}, type: {:?}",
-            payload.contains_key("transform"),
-            payload.get("transform").map(|m| std::mem::discriminant(m)));
-    }
+    static TF_DBG: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let tf_dbg = TF_DBG.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
     if let Some(Message::Object(obj)) = payload.get("transform") {
         let v: Value = obj.as_ref().clone().into();
         let tf_map = config.get("transformMap");
 
+        if tf_dbg < 10 {
+            eprintln!("[TF {}] value={}", tf_dbg, v);
+        }
+
         if let Value::Object(map) = v {
             for (k, val) in &map {
                 if let Some(f) = val.as_f64() {
-                    // Map field name if transformMap is configured
                     let target_key = tf_map
                         .and_then(|m| m.get(k))
                         .and_then(|v| v.as_str())
@@ -158,7 +155,12 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
                     ctx.pool_upsert("_tf", target_key, json!(f));
                 }
             }
+        } else if tf_dbg < 5 {
+            eprintln!("[TF {}] NOT OBJECT: {:?}", tf_dbg, v);
         }
+    } else if tf_dbg < 5 && payload.contains_key("transform") {
+        eprintln!("[TF {}] transform present but NOT Message::Object, type={:?}",
+            tf_dbg, payload.get("transform").map(|m| format!("{:?}", std::mem::discriminant(m))));
     }
 
     // Build transform: pool (from inports) > config defaults
@@ -171,7 +173,7 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
             .unwrap_or(default) as f32
     };
 
-    // Re-read pool AFTER transform inport processing (pool was just updated)
+    // Re-read pool AFTER transform inport processing
     let tf_pool: HashMap<String, Value> = ctx.get_pool("_tf").into_iter().collect();
     let get_tf = |key: &str, default: f64| -> f32 {
         tf_pool.get(key).and_then(|v| v.as_f64())
@@ -184,11 +186,13 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let rot = get_tf("rotation", 0.0);
     let scale = get_tf("scale", 1.0);
 
-    // Debug: print first few frames
-    static DEBUG_COUNT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let dc = DEBUG_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if dc < 5 {
-        eprintln!("[rasterize] frame={} tx={} ty={} scale={} rot={} pool={:?}", dc, tx, ty, scale, rot, tf_pool);
+    static DC: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let dc = DC.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if dc < 10 {
+        let has_tf = payload.contains_key("transform");
+        let keys: Vec<&String> = payload.keys().collect();
+        eprintln!("[rast {}] keys={:?} has_tf={} pool={:?} → tx={} ty={} sc={} rot={}",
+            dc, keys, has_tf, tf_pool, tx, ty, scale, rot);
     }
 
     let transform = tsk::Transform::from_translate(tx, ty)
