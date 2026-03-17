@@ -32,6 +32,8 @@ use crate::gpu::scene_render::SceneRenderActor;
 use crate::gpu::sdf::SdfPathActor;
 #[cfg(feature = "gpu")]
 use crate::gpu::sdf::{MeshToSdfActor, SdfLiveRenderActor, SdfMarchingCubesActor, SdfRenderActor};
+#[cfg(feature = "gpu")]
+use crate::gpu::sdf_2d::Gpu2DRenderActor;
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
     SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor,
@@ -371,6 +373,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_mesh_to_sdf" => Some(Arc::new(MeshToSdfActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_scene_render" => Some(Arc::new(SceneRenderActor::new())),
+        #[cfg(feature = "gpu")]
+        "tpl_gpu_2d_render" => Some(Arc::new(Gpu2DRenderActor::new())),
 
         // Animation
         "tpl_skeleton" => Some(Arc::new(SkeletonActor::new())),
