@@ -506,8 +506,19 @@ impl StorageBackend for IndexedDbBackend {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Delta events — every mutation emits a delta for listeners
+// Delta events — KyuGraph-compatible change stream
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// The delta system is designed for compatibility with KyuGraph's delta
+// upsert protocol. Every AssetDB mutation emits a Delta that can be
+// projected into Cypher MERGE/DELETE statements and applied to KyuGraph
+// incrementally — no full graph rebuilds.
+//
+// KyuGraph supports both in-memory and S3-backed storage, so the
+// knowledge graph works in development (instant) and production
+// (persistent, cross-session).
+//
+// See `graph_projection.rs` for the Cypher projection layer.
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Delta {

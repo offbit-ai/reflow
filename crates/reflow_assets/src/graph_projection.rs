@@ -1,5 +1,12 @@
 //! Knowledge graph projection — projects AssetDB + Reflow Network
-//! into a property graph queryable via Cypher (KyuGraph).
+//! into KyuGraph, a property graph database queryable via Cypher.
+//!
+//! Designed around KyuGraph's delta upsert protocol: every AssetDB
+//! mutation emits a delta that maps to a Cypher MERGE/DELETE statement.
+//! KyuGraph applies these incrementally — no full graph rebuilds.
+//!
+//! KyuGraph supports in-memory (development) and S3-backed (production)
+//! storage, so the knowledge graph persists across sessions when needed.
 //!
 //! ## Graph schema
 //!
@@ -18,17 +25,22 @@
 //! (Entity)-[:SPAWNED_FROM]->(Entity)  // template relationship
 //! ```
 //!
-//! ## Usage
+//! ## Setup
 //!
 //! ```ignore
-//! let projector = GraphProjection::new();
-//! db.add_listener(Arc::new(projector));
+//! // 1. Initialize KyuGraph schema (once)
+//! for ddl in GraphProjection::schema_ddl() {
+//!     kyu.execute(ddl)?;
+//! }
 //!
-//! // AssetDB mutations now emit Cypher deltas:
-//! // MERGE (e:Entity {name: "player"})
-//! // MERGE (c:Component {id: "player:rigidbody", type: "rigidbody"})
-//! // SET c.data = {mass: 80, bodyType: "dynamic"}
-//! // MERGE (e)-[:HAS_COMPONENT]->(c)
+//! // 2. Register projection as AssetDB delta listener
+//! let projector = Arc::new(GraphProjection::new());
+//! db.add_listener(projector.clone());
+//!
+//! // 3. Drain deltas and apply to KyuGraph each tick (or on demand)
+//! for delta in projector.drain() {
+//!     kyu.execute_with_params(&delta.statement, &delta.params)?;
+//! }
 //! ```
 //!
 //! ## AI Agent queries
@@ -71,6 +83,25 @@ impl GraphProjection {
         Self {
             buffer: RwLock::new(Vec::new()),
         }
+    }
+
+    /// Schema DDL — run these once on KyuGraph initialization to create
+    /// the node and relationship tables. KyuGraph requires typed schema.
+    pub fn schema_ddl() -> Vec<&'static str> {
+        vec![
+            // Node tables
+            "CREATE NODE TABLE IF NOT EXISTS Entity (name STRING, created_at STRING, PRIMARY KEY (name))",
+            "CREATE NODE TABLE IF NOT EXISTS Component (id STRING, type STRING, entity STRING, data STRING, updated STRING, PRIMARY KEY (id))",
+            "CREATE NODE TABLE IF NOT EXISTS Actor (name STRING, template STRING, config STRING, PRIMARY KEY (name))",
+
+            // Relationship tables
+            "CREATE REL TABLE IF NOT EXISTS HAS_COMPONENT (FROM Entity TO Component)",
+            "CREATE REL TABLE IF NOT EXISTS CONNECTS_TO (FROM Actor TO Actor, from_port STRING, to_port STRING)",
+            "CREATE REL TABLE IF NOT EXISTS TARGETS (FROM Actor TO Entity)",
+            "CREATE REL TABLE IF NOT EXISTS REFERENCES (FROM Entity TO Entity, component STRING, field STRING)",
+            "CREATE REL TABLE IF NOT EXISTS SPAWNED_FROM (FROM Entity TO Entity)",
+            "CREATE REL TABLE IF NOT EXISTS TAGGED (FROM Entity TO Entity)",
+        ]
     }
 
     /// Drain all buffered Cypher deltas.
@@ -236,25 +267,56 @@ impl DeltaListener for GraphProjection {
 }
 
 /// Extract cross-entity references from component data.
-/// e.g. camera.target = "player" → (camera_entity)-[:REFERENCES]->(player)
+///
+/// Scans all string values in the component JSON. Any string that looks
+/// like an entity reference (contains no spaces, no special chars besides
+/// `:`, `_`, `-`, `/`) is treated as a potential entity reference.
+///
+/// This is generic — works for any domain, not just game components.
+/// camera.target = "player", behavior.vars.source = "sensor_1:data",
+/// http.upstream = "api_gateway", etc.
 fn extract_references(
     entity: &str,
     component: &str,
     data: &Value,
     projection: &GraphProjection,
 ) {
-    // Known reference fields by component type
-    let ref_fields: &[&str] = match component {
-        "camera" => &["target"],
-        "billboard" => &["target"],
-        "behavior" => return, // behaviors have complex var refs, skip for now
-        "state_machine" => return,
-        _ => return,
-    };
-
     if let Value::Object(map) = data {
-        for field in ref_fields {
-            if let Some(Value::String(ref target)) = map.get(*field) {
+        for (field, val) in map {
+            extract_refs_recursive(entity, component, field, val, projection);
+        }
+    }
+}
+
+fn extract_refs_recursive(
+    entity: &str,
+    component: &str,
+    field: &str,
+    value: &Value,
+    projection: &GraphProjection,
+) {
+    match value {
+        Value::String(s) => {
+            // Heuristic: looks like an entity reference if it's a simple
+            // identifier (alphanumeric + _ - / :) and not a URL, path, or expression
+            let s = s.trim();
+            if !s.is_empty()
+                && !s.contains(' ')
+                && !s.starts_with('/')
+                && !s.starts_with("http")
+                && !s.starts_with('@')
+                && !s.starts_with('$')
+                && !s.contains('(')
+                && s.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == ':' || c == '/')
+                && s != entity // don't self-reference
+            {
+                // Extract the entity name (before ':' if present)
+                let target_entity = if let Some(colon) = s.rfind(':') {
+                    &s[..colon]
+                } else {
+                    s
+                };
+
                 projection.push(CypherDelta {
                     statement: concat!(
                         "MATCH (src:Entity {name: $src}), (dst:Entity {name: $dst}) ",
@@ -262,12 +324,23 @@ fn extract_references(
                     ).into(),
                     params: json!({
                         "src": entity,
-                        "dst": target,
+                        "dst": target_entity,
                         "comp": component,
                         "field": field,
                     }),
                 });
             }
         }
+        Value::Object(map) => {
+            for (k, v) in map {
+                extract_refs_recursive(entity, component, &format!("{}.{}", field, k), v, projection);
+            }
+        }
+        Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                extract_refs_recursive(entity, component, &format!("{}[{}]", field, i), v, projection);
+            }
+        }
+        _ => {}
     }
 }
