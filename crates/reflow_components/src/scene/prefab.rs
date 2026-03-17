@@ -153,13 +153,23 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
     }
 
     // Generic component from inport: { "name": "...", "data": {...} }
-    // Merges into existing — only inport fields override, rest preserved.
+    // Multiple ComponentNodes wire into the same inport — each pooled and merged.
     if let Some(Message::Object(obj)) = payload.get("component") {
         let v: Value = obj.as_ref().clone().into();
-        if let Some(comp_name) = v.get("name").and_then(|v| v.as_str()) {
-            if let Some(comp_data) = v.get("data") {
-                db.merge_component_json(&entity_name, comp_name, comp_data.clone(), json!({}))?;
-            }
+        let comp_name = v.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        if !comp_name.is_empty() {
+            ctx.pool_upsert("_components", &comp_name, v);
+        }
+    }
+
+    // Apply all pooled components
+    let pooled: Vec<(String, Value)> = ctx.get_pool("_components").into_iter().collect();
+    for (_, comp) in &pooled {
+        if let (Some(comp_name), Some(comp_data)) = (
+            comp.get("name").and_then(|v| v.as_str()),
+            comp.get("data"),
+        ) {
+            db.merge_component_json(&entity_name, comp_name, comp_data.clone(), json!({}))?;
         }
     }
 
