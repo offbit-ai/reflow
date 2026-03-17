@@ -101,7 +101,16 @@ pub async fn animation_timeline_actor(
         .and_then(|v| v.as_f64())
         .unwrap_or(1.0 / 60.0);
 
-    // ─── Pool incoming tracks ───
+    // ─── Load config tracks into pool on first invocation ───
+    if ctx.get_pool("_tracks").is_empty() {
+        if let Some(Value::Object(tracks_map)) = config.get("tracks") {
+            for (name, track_data) in tracks_map {
+                ctx.pool_upsert("_tracks", name, track_data.clone());
+            }
+        }
+    }
+
+    // ─── Pool incoming tracks from inport (override config) ───
     // Each message on `tracks` adds/replaces a named track.
     if let Some(Message::Object(obj)) = payload.get("tracks") {
         let v: Value = obj.as_ref().clone().into();
@@ -222,6 +231,14 @@ pub async fn animation_timeline_actor(
                 Message::object(EncodableValue::from(Value::Object(values_obj))),
             );
         }
+    }
+
+    static TL_DBG: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let tl_dbg = TL_DBG.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if tl_dbg < 5 {
+        let keys: Vec<&String> = out.keys().collect();
+        let has_values = out.contains_key("values");
+        eprintln!("[TL {}] output keys={:?} has_values={}", tl_dbg, keys, has_values);
     }
 
     out.insert("state".to_string(), Message::String(playback_state.clone().into()));
