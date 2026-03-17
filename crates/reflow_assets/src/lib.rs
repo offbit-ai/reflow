@@ -98,6 +98,16 @@ pub struct AssetEntry {
     pub updated_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inline_data: Option<Value>,
+    /// True if the blob is LZ4-compressed. Decompression is transparent on read.
+    #[serde(default)]
+    pub compressed: bool,
+    /// Original uncompressed size (for pre-allocating decompress buffer).
+    #[serde(default, rename = "rawSize", skip_serializing_if = "is_zero")]
+    pub raw_size: u64,
+}
+
+fn is_zero(v: &u64) -> bool {
+    *v == 0
 }
 
 pub struct Asset {
@@ -539,37 +549,41 @@ impl AssetDB {
         metadata: Value,
     ) -> Result<()> {
         let hash = content_hash(data);
+        let (asset_type, name) = parse_entity_id(id);
+
+        // Compress if beneficial
+        let (blob, compressed) = compress_blob(data, &asset_type);
+        let raw_size = data.len() as u64;
 
         if !self.backend.blob_exists(&hash) {
-            self.backend.write_blob(&hash, data)?;
+            self.backend.write_blob(&hash, &blob)?;
         }
 
-        let (asset_type, name) = parse_entity_id(id);
         let now = now_iso();
-
         let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
 
         if let Some(existing) = cache.iter_mut().find(|a| a.id == id) {
-            // Upsert: update existing
             let old_hash = existing.blob_hash.clone();
             existing.blob_hash = hash;
-            existing.blob_size = data.len() as u64;
+            existing.blob_size = blob.len() as u64;
+            existing.raw_size = raw_size;
+            existing.compressed = compressed;
             existing.metadata = metadata;
             existing.updated_at = now;
             existing.inline_data = None;
 
-            // GC old blob if no longer referenced
             if !cache.iter().any(|a| a.blob_hash == old_hash) {
                 let _ = self.backend.delete_blob(&old_hash);
             }
         } else {
-            // Insert new
             cache.push(AssetEntry {
                 id: id.to_string(),
                 name,
                 asset_type,
                 blob_hash: hash,
-                blob_size: data.len() as u64,
+                blob_size: blob.len() as u64,
+                raw_size,
+                compressed,
                 metadata,
                 tags: Vec::new(),
                 created_at: now.clone(),
@@ -599,6 +613,8 @@ impl AssetDB {
         if let Some(existing) = cache.iter_mut().find(|a| a.id == id) {
             existing.blob_hash = hash;
             existing.blob_size = serialized.len() as u64;
+            existing.raw_size = 0;
+            existing.compressed = false;
             existing.metadata = metadata;
             existing.updated_at = now;
             existing.inline_data = Some(json_data);
@@ -609,6 +625,8 @@ impl AssetDB {
                 asset_type,
                 blob_hash: hash,
                 blob_size: serialized.len() as u64,
+                raw_size: 0,
+                compressed: false,
                 metadata,
                 tags: Vec::new(),
                 created_at: now.clone(),
@@ -820,7 +838,12 @@ impl AssetDB {
         let data = if let Some(ref inline) = entry.inline_data {
             serde_json::to_vec(inline)?
         } else {
-            self.backend.read_blob(&entry.blob_hash)?
+            let raw = self.backend.read_blob(&entry.blob_hash)?;
+            if entry.compressed {
+                decompress_blob(&raw, entry.raw_size)?
+            } else {
+                raw
+            }
         };
         Ok(Asset {
             entry: entry.clone(),
@@ -1227,6 +1250,40 @@ pub async fn get_or_create_db_async(name: &str) -> Result<Arc<AssetDB>> {
 // ═══════════════════════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LZ4 compression — transparent, selective
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Minimum blob size to bother compressing (small blobs have overhead > savings).
+const COMPRESS_THRESHOLD: usize = 256;
+
+/// Asset types that are already compressed (PNG, JPEG, H.264, etc.) — skip LZ4.
+fn is_precompressed(asset_type: &AssetType) -> bool {
+    matches!(asset_type, AssetType::Texture | AssetType::Audio | AssetType::Video)
+}
+
+/// Compress data with LZ4 if it's worth it. Returns (compressed_data, is_compressed).
+fn compress_blob(data: &[u8], asset_type: &AssetType) -> (Vec<u8>, bool) {
+    if data.len() < COMPRESS_THRESHOLD || is_precompressed(asset_type) {
+        return (data.to_vec(), false);
+    }
+
+    let compressed = lz4_flex::compress_prepend_size(data);
+
+    // Only use compression if it actually saves space
+    if compressed.len() < data.len() {
+        (compressed, true)
+    } else {
+        (data.to_vec(), false)
+    }
+}
+
+/// Decompress LZ4 data.
+fn decompress_blob(data: &[u8], raw_size: u64) -> Result<Vec<u8>> {
+    lz4_flex::decompress_size_prepended(data)
+        .map_err(|e| anyhow::anyhow!("LZ4 decompress failed: {}", e))
+}
 
 /// Parse entity ID convention: "name:type" → (AssetType, name).
 /// If no colon, type defaults to Generic and the whole string is the name.
