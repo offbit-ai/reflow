@@ -35,19 +35,10 @@ pub async fn gltf_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
         _ => return Ok(error_output("Expected Bytes on file_data port")),
     };
 
-    #[cfg(not(feature = "model-import"))]
-    {
-        let _ = (data, config);
-        return Ok(error_output("model-import feature not enabled"));
-    }
-
-    #[cfg(feature = "model-import")]
-    {
-        import_gltf(&data, &config)
-    }
+    import_gltf(&data, &config)
 }
 
-#[cfg(feature = "model-import")]
+
 pub(crate) fn import_gltf(
     data: &[u8],
     config: &HashMap<String, Value>,
@@ -174,7 +165,7 @@ pub(crate) fn import_gltf(
 // Buffer resolution
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[cfg(feature = "model-import")]
+
 fn load_buffers(gltf: &gltf::Gltf, data: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
     let mut buffers = Vec::new();
     for buffer in gltf.buffers() {
@@ -216,7 +207,7 @@ fn load_buffers(gltf: &gltf::Gltf, data: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
 // Accessor reading
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[cfg(feature = "model-import")]
+
 fn read_accessor_raw(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u8> {
     let view = match accessor.view() {
         Some(v) => v,
@@ -244,7 +235,7 @@ fn read_accessor_raw(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u8> 
     result
 }
 
-#[cfg(feature = "model-import")]
+
 fn read_accessor_f32(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<f32> {
     let raw = read_accessor_raw(accessor, buffers);
     raw.chunks_exact(4)
@@ -252,7 +243,7 @@ fn read_accessor_f32(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<f32>
         .collect()
 }
 
-#[cfg(feature = "model-import")]
+
 fn read_accessor_u16(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u16> {
     let raw = read_accessor_raw(accessor, buffers);
     match accessor.data_type() {
@@ -269,7 +260,7 @@ fn read_accessor_u16(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u16>
     }
 }
 
-#[cfg(feature = "model-import")]
+
 fn read_indices(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u32> {
     let raw = read_accessor_raw(accessor, buffers);
     match accessor.data_type() {
@@ -290,7 +281,7 @@ fn read_indices(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u32> {
 // Mesh extraction
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[cfg(feature = "model-import")]
+
 fn extract_mesh(
     mesh: &gltf::Mesh,
     buffers: &[Vec<u8>],
@@ -382,7 +373,7 @@ fn extract_mesh(
     Ok((all_bytes, total_verts, has_colors))
 }
 
-#[cfg(feature = "model-import")]
+
 fn compute_face_normals_if_missing(mesh: &mut [u8], stride: usize) {
     let vertex_count = mesh.len() / stride;
     let tri_count = vertex_count / 3;
@@ -430,7 +421,7 @@ fn compute_face_normals_if_missing(mesh: &mut [u8], stride: usize) {
 // Skeleton extraction
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[cfg(feature = "model-import")]
+
 fn extract_skeleton(skin: &gltf::Skin, gltf: &gltf::Gltf) -> Result<Value, Error> {
     let joints: Vec<_> = skin.joints().collect();
     let bone_count = joints.len();
@@ -479,7 +470,7 @@ fn extract_skeleton(skin: &gltf::Skin, gltf: &gltf::Gltf) -> Result<Value, Error
     }))
 }
 
-#[cfg(feature = "model-import")]
+
 fn trs_to_mat4_f32(t: [f32; 3], r: [f32; 4], s: [f32; 3]) -> [f32; 16] {
     // Quaternion [x, y, z, w] to rotation matrix
     let (x, y, z, w) = (r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
@@ -524,7 +515,7 @@ fn trs_to_mat4_f32(t: [f32; 3], r: [f32; 4], s: [f32; 3]) -> [f32; 16] {
 // Skin weights extraction
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[cfg(feature = "model-import")]
+
 fn extract_skin_weights(
     mesh: &gltf::Mesh,
     joints: &[gltf::Node],
@@ -630,7 +621,7 @@ fn extract_skin_weights(
 // Animation extraction
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[cfg(feature = "model-import")]
+
 fn extract_animation(
     anim: &gltf::Animation,
     joint_map: &HashMap<usize, usize>,

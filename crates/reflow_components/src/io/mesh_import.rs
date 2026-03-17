@@ -38,7 +38,7 @@ pub async fn mesh_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     };
 
     match detected.as_str() {
-        #[cfg(feature = "model-import")]
+
         "glb" | "gltf" => {
             // Use glTF import, extract mesh only
             let full = super::gltf_import::import_gltf(&data, &config)?;
@@ -57,7 +57,7 @@ pub async fn mesh_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
         "stl" => {
             super::stl_import::parse_stl(&data, false)
         }
-        #[cfg(feature = "model-import")]
+
         "obj" => {
             super::obj_import::parse_obj(&data)
         }

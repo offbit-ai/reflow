@@ -50,8 +50,8 @@ pollster = { version = "0.4", optional = true }
 openh264 = { version = "0.6", optional = true }
 
 # 3D model import (pure Rust, Wasm-safe)
-gltf = { version = "1", optional = true }
-tobj = { version = "4", optional = true }
+gltf = "1"
+tobj = "4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
@@ -59,12 +59,11 @@ js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window"] }
 
 [features]
-default = ["api", "av-core", "gpu", "window-events", "model-import"]
+default = ["api", "av-core", "gpu", "window-events"]
 api = []
 av-core = ["dep:reflow_dsp", "dep:reflow_pixel"]
 gpu = ["dep:wgpu", "dep:bytemuck", "dep:pollster", "dep:once_cell"]
 video-encode = ["dep:openh264"]
-model-import = ["dep:gltf", "dep:tobj"]
 window-events = []
 browser-events = ["window-events"]
 

@@ -28,10 +28,10 @@ pub async fn scene_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     let format = super::mesh_import::detect_format(&data);
 
     match format.as_str() {
-        #[cfg(feature = "model-import")]
+
         "glb" | "gltf" => super::gltf_import::import_gltf(&data, &config),
         "stl" => super::stl_import::parse_stl(&data, false),
-        #[cfg(feature = "model-import")]
+
         "obj" => super::obj_import::parse_obj(&data),
         _ => Ok(error_output("Unknown or unsupported format for scene import")),
     }

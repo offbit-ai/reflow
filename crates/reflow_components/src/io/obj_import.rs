@@ -10,9 +10,6 @@ use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
 use serde_json::json;
 use std::collections::HashMap;
 
-#[cfg(feature = "model-import")]
-use tobj;
-
 #[actor(
     ObjImportActor,
     inports::<10>(file_data),
@@ -28,19 +25,10 @@ pub async fn obj_import_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
         _ => return Ok(error_output("Expected Bytes or String on file_data port")),
     };
 
-    #[cfg(not(feature = "model-import"))]
-    {
-        let _ = data;
-        return Ok(error_output("model-import feature not enabled"));
-    }
-
-    #[cfg(feature = "model-import")]
-    {
-        parse_obj(&data)
-    }
+    parse_obj(&data)
 }
 
-#[cfg(feature = "model-import")]
+
 pub(crate) fn parse_obj(data: &[u8]) -> Result<HashMap<String, Message>, Error> {
     let text = std::str::from_utf8(data)
         .map_err(|e| anyhow::anyhow!("OBJ is not valid UTF-8: {}", e))?;
