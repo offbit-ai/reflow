@@ -75,7 +75,7 @@ use std::collections::HashMap;
 #[actor(
     AnimationTimelineActor,
     inports::<100>(tick, tracks, control),
-    outports::<50>(state, progress, metadata),
+    outports::<50>(values, state, progress, metadata),
     state(MemoryState)
 )]
 pub async fn animation_timeline_actor(

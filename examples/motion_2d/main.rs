@@ -65,17 +65,32 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("star_tl", "tpl_animation_timeline", config(json!({
         "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
         "tracks": {
+            "x": {
+                "keyframes": [
+                    { "time": 0.0, "value": 100.0, "easing": "easeInOutCubic" },
+                    { "time": 3.0, "value": 540.0, "easing": "easeInOutCubic" },
+                    { "time": 6.0, "value": 100.0 },
+                ]
+            },
+            "y": {
+                "keyframes": [
+                    { "time": 0.0, "value": 100.0, "easing": "easeInOutSine" },
+                    { "time": 3.0, "value": 260.0, "easing": "easeInOutSine" },
+                    { "time": 6.0, "value": 100.0 },
+                ]
+            },
             "scale": {
                 "keyframes": [
-                    { "time": 0.0, "value": 0.0, "easing": "easeOutBack" },
+                    { "time": 0.0, "value": 0.2, "easing": "easeOutCubic" },
                     { "time": 2.0, "value": 1.0 },
-                    { "time": 6.0, "value": 1.0 },
+                    { "time": 4.0, "value": 1.0, "easing": "easeInCubic" },
+                    { "time": 6.0, "value": 0.2 },
                 ]
             },
             "rotation": {
                 "keyframes": [
                     { "time": 0.0, "value": 0.0, "easing": "linear" },
-                    { "time": 6.0, "value": 180.0 },
+                    { "time": 6.0, "value": 360.0 },
                 ]
             }
         }
@@ -129,7 +144,6 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("star_render", "tpl_vector_rasterize", config(json!({
         "width": w, "height": h,
         "fill": { "color": "#ffa028" },
-        "transform": { "x": 320.0, "y": 170.0, "scale": 1.0, "rotation": 0.0 },
     })))?;
     net.add_node("circle_render", "tpl_vector_rasterize", config(json!({
         "width": w, "height": h,
