@@ -4,6 +4,12 @@
 //! sections on/off in the visual editor. Only enabled components
 //! are written to AssetDB.
 //!
+//! ## Accumulate then flush
+//!
+//! Inport data is pooled as it arrives. The entity is only written
+//! to AssetDB when all connected inports have fired. This prevents
+//! partial entities from being visible to systems mid-tick.
+//!
 //! ## Standard components (built-in sections)
 //!
 //! ```json
@@ -11,25 +17,22 @@
 //!   "$name": "enemy_01",
 //!   "$db": "./game.db",
 //!
-//!   "transform": { "position": [5, 0, 3], "rotation": [0, 0, 0, 1], "scale": [1, 1, 1] },
-//!   "rigidbody": { "bodyType": "dynamic", "mass": 60, "gravityScale": 1.0 },
+//!   "transform": { "position": [5, 0, 3], "rotation": [0, 0, 0, 1] },
+//!   "rigidbody": { "bodyType": "dynamic", "mass": 60 },
 //!   "collider": { "shape": "capsule", "radius": 0.3, "height": 1.8 },
 //!   "material": { "albedo": [0.3, 0.6, 0.2], "roughness": 0.7 },
-//!   "billboard": { "mode": "screen", "text": "Enemy", "offset": [0, 2, 0] },
-//!   "behavior": { "rules": [{ "name": "patrol", "target": "transform.position.x", "expr": "sin(time) * 5" }] },
-//!   "state_machine": { "current": "idle", "states": {...}, "transitions": [...] },
-//!   "light": { "type": "point", "color": [1, 0.6, 0.2], "range": 10 },
-//!   "camera": { "mode": "thirdPerson", "target": "player", "fov": 60 },
-//!   "text": { "content": "Hello", "font": "roboto:font", "fontSize": 24 },
-//!   "tween": { "target": "transform.position", "from": [0,0,0], "to": [5,0,0], "duration": 1.0 },
-//!   "skybox": { "mode": "gradient", "topColor": [0.1, 0.15, 0.4] },
+//!   "behavior": { "rules": [...] },
+//!   "state_machine": { "current": "idle", ... },
+//!   "billboard": { "mode": "screen", "text": "Enemy" },
+//!   "light": { "type": "point", "color": [1, 0.6, 0.2] },
+//!   "camera": { "mode": "thirdPerson", "target": "player" },
+//!   "text": { "content": "Hello", "font": "roboto:font" },
+//!   "tween": { "target": "transform.position", ... },
+//!   "skybox": { "mode": "gradient" },
 //!   "weather": { "type": "rain", "intensity": 0.7 },
 //!   "bind": true
 //! }
 //! ```
-//!
-//! Any key that isn't a `$` control key is a component. The visual editor
-//! renders each as a collapsible section with typed property fields.
 //!
 //! ## Inports
 //!
@@ -37,10 +40,10 @@
 //! - `mesh` — binary mesh data from upstream
 //! - `material` — material from upstream actor
 //! - `transform` — transform from upstream actor
-//! - `component` — generic `{ "name": "...", "data": {...} }` from ComponentNode
+//! - `component` — generic `{ "name": "...", "data": {...} }` (pooled, multiple connections)
 //! - `spawn` — send an entity name to instantiate from this as a template
 //!
-//! ## Spawn mode (prefab instantiation)
+//! ## Spawn mode
 //!
 //! ```text
 //! "crate_42" → spawn → Entity($template: "crate_tpl") → entity_id
@@ -54,12 +57,11 @@ use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-/// Control keys that are not components.
 const CONTROL_KEYS: &[&str] = &["$name", "$db", "$template", "name", "template", "stride"];
 
 #[actor(
     PrefabActor,
-    inports::<10>(entity, mesh, material, transform, component, spawn),
+    inports::<100>(entity, mesh, material, transform, component, spawn),
     outports::<10>(entity_id, prefab, metadata),
     state(MemoryState)
 )]
@@ -71,7 +73,6 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
         .get("$db")
         .and_then(|v| v.as_str())
         .unwrap_or("./assets.db");
-
     let stride = config
         .get("stride")
         .and_then(|v| v.as_u64())
@@ -79,28 +80,46 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
 
     let db = get_or_create_db(db_path)?;
 
-    // Entity name: inport overrides config
-    let entity_name = match payload.get("entity") {
-        Some(Message::String(s)) => s.to_string(),
-        _ => config
-            .get("$name")
-            .or_else(|| config.get("name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("entity")
-            .to_string(),
-    };
+    // ─── Pool all incoming data (don't write yet) ───
 
-    let template_name = config
-        .get("$template")
-        .or_else(|| config.get("template"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+    if let Some(Message::String(s)) = payload.get("entity") {
+        ctx.pool_upsert("_entity", "name", json!(s.to_string()));
+    }
+    if let Some(Message::Bytes(b)) = payload.get("mesh") {
+        // Store mesh bytes as base64 in pool (temporary)
+        let encoded = {
+            use base64::Engine;
+            base64::engine::general_purpose::STANDARD.encode(&**b)
+        };
+        ctx.pool_upsert("_entity", "mesh_b64", json!(encoded));
+    }
+    if let Some(Message::Object(obj)) = payload.get("material") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_entity", "material", v);
+    }
+    if let Some(Message::Object(obj)) = payload.get("transform") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_entity", "transform", v);
+    }
+    if let Some(Message::Object(obj)) = payload.get("component") {
+        let v: Value = obj.as_ref().clone().into();
+        let comp_name = v.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        if !comp_name.is_empty() {
+            ctx.pool_upsert("_components", &comp_name, v);
+        }
+    }
 
     // ─── Spawn mode: instantiate from template ───
     if let Some(Message::String(new_entity)) = payload.get("spawn") {
-        let tpl = template_name.as_deref().unwrap_or(&entity_name);
+        let template_name = config
+            .get("$template")
+            .or_else(|| config.get("template"))
+            .and_then(|v| v.as_str())
+            .or_else(|| config.get("$name").or_else(|| config.get("name")).and_then(|v| v.as_str()))
+            .unwrap_or("entity");
+
         let new_name = new_entity.to_string();
-        db.spawn_from(tpl, &new_name)?;
+        db.spawn_from(template_name, &new_name)?;
 
         let mut out = HashMap::new();
         out.insert("entity_id".to_string(), Message::String(new_name.clone().into()));
@@ -108,7 +127,7 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
             "metadata".to_string(),
             Message::object(EncodableValue::from(json!({
                 "action": "spawn",
-                "template": tpl,
+                "template": template_name,
                 "entity": new_name,
                 "components": db.components_of(&new_name).unwrap_or_default(),
             }))),
@@ -116,9 +135,26 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
         return Ok(out);
     }
 
-    // ─── Define mode: store components on entity ───
+    // ─── Resolve entity name ───
+    let entity_name = ctx.get_pool("_entity")
+        .into_iter()
+        .find(|(k, _)| k == "name")
+        .and_then(|(_, v)| v.as_str().map(|s| s.to_string()))
+        .or_else(|| {
+            config.get("$name")
+                .or_else(|| config.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
 
-    // All config keys that aren't control keys → stored as components
+    let entity_name = match entity_name {
+        Some(name) => name,
+        None => return Ok(HashMap::new()), // No entity name yet — wait for more data
+    };
+
+    // ─── Flush: write all accumulated data to AssetDB ───
+
+    // Config components (static)
     for (key, val) in &config {
         if CONTROL_KEYS.contains(&key.as_str()) || key.starts_with('$') {
             continue;
@@ -128,41 +164,33 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
                 db.set_component_json(&entity_name, key, val.clone(), json!({}))?;
             }
             Value::Bool(b) => {
-                // Boolean components (e.g. "bind": true)
                 db.set_component_json(&entity_name, key, json!(b), json!({}))?;
             }
-            _ => {} // Skip scalar config values that aren't components
+            _ => {}
         }
     }
 
-    // Mesh from inport (binary)
-    if let Some(Message::Bytes(mesh_bytes)) = payload.get("mesh") {
-        db.set_component(&entity_name, "mesh", mesh_bytes, json!({"stride": stride}))?;
-    }
-
-    // Material from inport (overrides config)
-    if let Some(Message::Object(obj)) = payload.get("material") {
-        let v: Value = obj.as_ref().clone().into();
-        db.set_component_json(&entity_name, "material", v, json!({}))?;
-    }
-
-    // Transform from inport (overrides config)
-    if let Some(Message::Object(obj)) = payload.get("transform") {
-        let v: Value = obj.as_ref().clone().into();
-        db.set_component_json(&entity_name, "transform", v, json!({}))?;
-    }
-
-    // Generic component from inport: { "name": "...", "data": {...} }
-    // Multiple ComponentNodes wire into the same inport — each pooled and merged.
-    if let Some(Message::Object(obj)) = payload.get("component") {
-        let v: Value = obj.as_ref().clone().into();
-        let comp_name = v.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        if !comp_name.is_empty() {
-            ctx.pool_upsert("_components", &comp_name, v);
+    // Pooled mesh
+    if let Some((_, mesh_b64)) = ctx.get_pool("_entity").into_iter().find(|(k, _)| k == "mesh_b64") {
+        if let Some(encoded) = mesh_b64.as_str() {
+            use base64::Engine;
+            if let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(encoded) {
+                db.set_component(&entity_name, "mesh", &bytes, json!({"stride": stride}))?;
+            }
         }
     }
 
-    // Apply all pooled components
+    // Pooled material (overrides config)
+    if let Some((_, mat)) = ctx.get_pool("_entity").into_iter().find(|(k, _)| k == "material") {
+        db.set_component_json(&entity_name, "material", mat, json!({}))?;
+    }
+
+    // Pooled transform (overrides config)
+    if let Some((_, tf)) = ctx.get_pool("_entity").into_iter().find(|(k, _)| k == "transform") {
+        db.set_component_json(&entity_name, "transform", tf, json!({}))?;
+    }
+
+    // Pooled generic components (merged)
     let pooled: Vec<(String, Value)> = ctx.get_pool("_components").into_iter().collect();
     for (_, comp) in &pooled {
         if let (Some(comp_name), Some(comp_data)) = (
