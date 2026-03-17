@@ -249,6 +249,13 @@ pub trait Actor: Send + Sync + 'static {
         false
     }
 
+    /// Selective await: the runtime accumulates packets until all listed
+    /// inports have received data. Unlisted inports are optional.
+    /// Empty vec = no selective await (use await_all_inports or fire-on-any).
+    fn required_inports(&self) -> Vec<String> {
+        Vec::new()
+    }
+
     /// Factory for the actor's mutable state. Override to provide a
     /// custom `ActorState` implementation (e.g. Redis-backed state).
     fn create_state(&self) -> Arc<Mutex<dyn ActorState>> {
@@ -275,6 +282,7 @@ pub trait Actor: Send + Sync + 'static {
             self.get_behavior(),
             self.inport_names(),
             self.await_all_inports(),
+            self.required_inports(),
             self.get_inports().1,
             self.get_outports(),
             self.create_state(),

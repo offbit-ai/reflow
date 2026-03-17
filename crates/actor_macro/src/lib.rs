@@ -40,6 +40,7 @@ struct ActorArgs {
     inports: PortsDefinition,
     outports: PortsDefinition,
     await_all_inports: bool,
+    await_inports: Vec<String>,
 }
 
 impl Parse for ActorArgs {
@@ -49,6 +50,7 @@ impl Parse for ActorArgs {
         let mut outports = PortsDefinition::default();
         let mut _state = None;
         let mut await_all_inports = false;
+        let mut await_inports: Vec<String> = Vec::new();
 
         // Parse optional struct name
         if !input.peek(syn::token::Paren) {
@@ -80,10 +82,17 @@ impl Parse for ActorArgs {
                 "await_all_inports" => {
                     await_all_inports = true;
                 }
+                "await_inports" => {
+                    // Parse: await_inports(port1, port2, port3)
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let ports = Punctuated::<syn::Ident, Token![,]>::parse_terminated(&content)?;
+                    await_inports = ports.into_iter().map(|i| i.to_string()).collect();
+                }
                 _ => {
                     return Err(syn::Error::new(
                         ident.span(),
-                        "Expected 'inports' or 'outports'",
+                        "Expected 'inports', 'outports', 'await_all_inports', or 'await_inports'",
                     ));
                 }
             }
@@ -99,6 +108,7 @@ impl Parse for ActorArgs {
             inports,
             outports,
             await_all_inports,
+            await_inports,
         })
     }
 }
@@ -143,6 +153,8 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     let out_ports_cap = args.outports.capacity;
     let in_ports_cap = args.inports.capacity;
     let await_all_inports = args.await_all_inports;
+    let await_inports_list = &args.await_inports;
+    let has_selective_await = !await_inports_list.is_empty();
 
     let out_ports_channel = if let Some(out_ports_cap) = out_ports_cap {
         if out_ports_cap < 1 {
@@ -237,6 +249,10 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn await_all_inports(&self) -> bool {
                 #await_all_inports
+            }
+
+            fn required_inports(&self) -> Vec<String> {
+                vec![#(String::from(#await_inports_list)),*]
             }
 
             // create_process() and create_state() use the trait defaults

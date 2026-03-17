@@ -29,6 +29,7 @@ pub struct ActorProcess {
     behavior: ActorBehavior,
     inport_names: Vec<String>,
     await_all_inports: bool,
+    required_inports: Vec<String>,
     inport_rx: flume::Receiver<HashMap<String, Message>>,
     outports: Port,
     state: Arc<Mutex<dyn ActorState>>,
@@ -44,6 +45,7 @@ impl ActorProcess {
         behavior: ActorBehavior,
         inport_names: Vec<String>,
         await_all_inports: bool,
+        required_inports: Vec<String>,
         inport_rx: flume::Receiver<HashMap<String, Message>>,
         outports: Port,
         state: Arc<Mutex<dyn ActorState>>,
@@ -56,6 +58,7 @@ impl ActorProcess {
             behavior,
             inport_names,
             await_all_inports,
+            required_inports,
             inport_rx,
             outports,
             state,
@@ -84,17 +87,25 @@ impl ActorProcess {
 
             self.load.inc();
 
-            // ── Accumulate if await_all_inports ──────────────────────
+            // ── Accumulate if awaiting inports ──────────────────────
             let payload = if self.await_all_inports {
+                // Wait for ALL declared inports
                 accumulated.extend(packet);
                 if accumulated.len() < inports_count {
-                    // Not all ports have data yet — keep waiting.
-                    // Load stays incremented to reflect queued work,
-                    // matching the existing macro-generated behavior.
+                    continue;
+                }
+                std::mem::take(&mut accumulated)
+            } else if !self.required_inports.is_empty() {
+                // Wait for SPECIFIC required inports (selective await)
+                accumulated.extend(packet);
+                let has_all_required = self.required_inports.iter()
+                    .all(|req| accumulated.contains_key(req));
+                if !has_all_required {
                     continue;
                 }
                 std::mem::take(&mut accumulated)
             } else {
+                // Fire on any input
                 packet
             };
 
