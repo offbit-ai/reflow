@@ -1,0 +1,9 @@
+[package]
+name = "reflow_vector"
+version = "0.1.0"
+edition = "2021"
+description = "2D vector graphics: paths, shapes, boolean ops, rasterization"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }

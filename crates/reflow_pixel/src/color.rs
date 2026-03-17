@@ -187,6 +187,149 @@ pub fn row_saturation(row: &mut [u8], factor: f32) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// HSL color space
+// ═══════════════════════════════════════════════════════════════════════════
+
+#[derive(Debug, Clone, Copy)]
+pub struct Hsl {
+    pub h: f32, // 0..360
+    pub s: f32, // 0..1
+    pub l: f32, // 0..1
+}
+
+pub fn rgb_to_hsl(r: u8, g: u8, b: u8) -> Hsl {
+    let rf = r as f32 / 255.0;
+    let gf = g as f32 / 255.0;
+    let bf = b as f32 / 255.0;
+    let max = rf.max(gf).max(bf);
+    let min = rf.min(gf).min(bf);
+    let l = (max + min) / 2.0;
+    let delta = max - min;
+
+    if delta < 1e-6 {
+        return Hsl { h: 0.0, s: 0.0, l };
+    }
+
+    let s = if l > 0.5 { delta / (2.0 - max - min) } else { delta / (max + min) };
+    let h = if (max - rf).abs() < 1e-6 {
+        ((gf - bf) / delta) % 6.0
+    } else if (max - gf).abs() < 1e-6 {
+        (bf - rf) / delta + 2.0
+    } else {
+        (rf - gf) / delta + 4.0
+    } * 60.0;
+
+    Hsl { h: if h < 0.0 { h + 360.0 } else { h }, s, l }
+}
+
+pub fn hsl_to_rgb(hsl: Hsl) -> (u8, u8, u8) {
+    let Hsl { h, s, l } = hsl;
+    if s < 1e-6 {
+        let v = (l * 255.0).round().clamp(0.0, 255.0) as u8;
+        return (v, v, v);
+    }
+    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+    let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
+    let m = l - c / 2.0;
+    let (r1, g1, b1) = if h < 60.0 { (c, x, 0.0) }
+        else if h < 120.0 { (x, c, 0.0) }
+        else if h < 180.0 { (0.0, c, x) }
+        else if h < 240.0 { (0.0, x, c) }
+        else if h < 300.0 { (x, 0.0, c) }
+        else { (c, 0.0, x) };
+    let to_u8 = |v: f32| ((v + m) * 255.0).round().clamp(0.0, 255.0) as u8;
+    (to_u8(r1), to_u8(g1), to_u8(b1))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OKLAB color space — perceptually uniform, ideal for interpolation
+// ═══════════════════════════════════════════════════════════════════════════
+
+#[derive(Debug, Clone, Copy)]
+pub struct Oklab {
+    pub l: f32, // lightness 0..1
+    pub a: f32, // green-red axis ~-0.4..0.4
+    pub b: f32, // blue-yellow axis ~-0.4..0.4
+}
+
+pub fn rgb_to_oklab(r: u8, g: u8, b: u8) -> Oklab {
+    // sRGB → linear
+    let rl = srgb_to_linear(r as f32 / 255.0);
+    let gl = srgb_to_linear(g as f32 / 255.0);
+    let bl = srgb_to_linear(b as f32 / 255.0);
+
+    // Linear RGB → LMS
+    let l = 0.4122214708 * rl + 0.5363325363 * gl + 0.0514459929 * bl;
+    let m = 0.2119034982 * rl + 0.6806995451 * gl + 0.1073969566 * bl;
+    let s = 0.0883024619 * rl + 0.2817188376 * gl + 0.6299787005 * bl;
+
+    // LMS → LMS (cube root)
+    let l_ = l.cbrt();
+    let m_ = m.cbrt();
+    let s_ = s.cbrt();
+
+    // LMS → Oklab
+    Oklab {
+        l: 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+        a: 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+        b: 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_,
+    }
+}
+
+pub fn oklab_to_rgb(lab: Oklab) -> (u8, u8, u8) {
+    // Oklab → LMS (cube root)
+    let l_ = lab.l + 0.3963377774 * lab.a + 0.2158037573 * lab.b;
+    let m_ = lab.l - 0.1055613458 * lab.a - 0.0638541728 * lab.b;
+    let s_ = lab.l - 0.0894841775 * lab.a - 1.2914855480 * lab.b;
+
+    // LMS (cube root) → LMS
+    let l = l_ * l_ * l_;
+    let m = m_ * m_ * m_;
+    let s = s_ * s_ * s_;
+
+    // LMS → linear RGB
+    let rl = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+    let gl = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+    let bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+    // linear → sRGB
+    let to_u8 = |v: f32| (linear_to_srgb(v) * 255.0).round().clamp(0.0, 255.0) as u8;
+    (to_u8(rl), to_u8(gl), to_u8(bl))
+}
+
+/// Interpolate two RGB colors in OKLAB space (perceptually uniform).
+pub fn lerp_oklab(r1: u8, g1: u8, b1: u8, r2: u8, g2: u8, b2: u8, t: f32) -> (u8, u8, u8) {
+    let a = rgb_to_oklab(r1, g1, b1);
+    let b = rgb_to_oklab(r2, g2, b2);
+    oklab_to_rgb(Oklab {
+        l: a.l + (b.l - a.l) * t,
+        a: a.a + (b.a - a.a) * t,
+        b: a.b + (b.b - a.b) * t,
+    })
+}
+
+fn srgb_to_linear(v: f32) -> f32 {
+    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+}
+
+fn linear_to_srgb(v: f32) -> f32 {
+    if v <= 0.0031308 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+}
+
+/// Apply hue shift to an RGBA row in-place.
+pub fn row_hue_shift(row: &mut [u8], degrees: f32) {
+    for pixel in row.chunks_exact_mut(4) {
+        let mut hsl = rgb_to_hsl(pixel[0], pixel[1], pixel[2]);
+        hsl.h = (hsl.h + degrees) % 360.0;
+        if hsl.h < 0.0 { hsl.h += 360.0; }
+        let (r, g, b) = hsl_to_rgb(hsl);
+        pixel[0] = r;
+        pixel[1] = g;
+        pixel[2] = b;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,8 +401,53 @@ mod tests {
     fn test_saturation_zero_is_gray() {
         let mut row = [255, 0, 0, 255];
         row_saturation(&mut row, 0.0);
-        // All channels should be equal (gray)
         assert_eq!(row[0], row[1]);
         assert_eq!(row[1], row[2]);
+    }
+
+    #[test]
+    fn test_hsl_roundtrip() {
+        for &(r, g, b) in &[(255u8, 0, 0), (0, 255, 0), (0, 0, 255), (128, 64, 32)] {
+            let hsl = rgb_to_hsl(r, g, b);
+            let (r2, g2, b2) = hsl_to_rgb(hsl);
+            assert!(
+                (r as i32 - r2 as i32).abs() <= 1
+                    && (g as i32 - g2 as i32).abs() <= 1
+                    && (b as i32 - b2 as i32).abs() <= 1,
+                "HSL roundtrip failed for ({},{},{}) → ({},{},{})", r, g, b, r2, g2, b2
+            );
+        }
+    }
+
+    #[test]
+    fn test_oklab_roundtrip() {
+        for &(r, g, b) in &[(255u8, 0, 0), (0, 255, 0), (0, 0, 255), (128, 128, 128), (255, 255, 0)] {
+            let lab = rgb_to_oklab(r, g, b);
+            let (r2, g2, b2) = oklab_to_rgb(lab);
+            assert!(
+                (r as i32 - r2 as i32).abs() <= 2
+                    && (g as i32 - g2 as i32).abs() <= 2
+                    && (b as i32 - b2 as i32).abs() <= 2,
+                "OKLAB roundtrip failed for ({},{},{}) → ({},{},{})", r, g, b, r2, g2, b2
+            );
+        }
+    }
+
+    #[test]
+    fn test_oklab_lerp_midpoint() {
+        let (r, g, b) = lerp_oklab(0, 0, 0, 255, 255, 255, 0.5);
+        // OKLAB perceptual midpoint is lighter than linear midpoint (128)
+        // Should be roughly equal across channels (gray)
+        assert!((r as i32 - g as i32).abs() <= 2, "r={} g={} should be close", r, g);
+        assert!((g as i32 - b as i32).abs() <= 2, "g={} b={} should be close", g, b);
+        assert!(r > 50 && r < 250, "OKLAB midpoint r={} should be reasonable", r);
+    }
+
+    #[test]
+    fn test_hue_shift() {
+        let mut row = [255, 0, 0, 255]; // red
+        row_hue_shift(&mut row, 120.0); // shift to green
+        // Should be roughly green
+        assert!(row[1] > row[0], "Hue shift 120° from red should increase green");
     }
 }
