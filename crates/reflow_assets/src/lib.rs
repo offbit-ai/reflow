@@ -519,7 +519,163 @@ impl AssetDB {
         Self::with_backend(Box::new(MemoryBackend::new()))
     }
 
-    /// Store binary data. Returns the asset ID.
+    // ─── Entity-style access (ECS pattern) ───
+    //
+    // Assets have stable, user-defined IDs like "snake:mesh" or
+    // "character/idle:animation". Put is an upsert. Get is direct lookup.
+    //
+    //   db.put("snake:mesh", &mesh_bytes, json!({ "stride": 24 }))?;
+    //   let asset = db.get("snake:mesh")?;
+    //
+    // The ID encodes intent. Convention: "entity:component" or "path/name:type".
+
+    /// Put (upsert) an asset by ID. If the ID already exists, the data
+    /// and metadata are replaced. The blob is content-addressed, so
+    /// re-storing identical data is free.
+    pub fn put(
+        &self,
+        id: &str,
+        data: &[u8],
+        metadata: Value,
+    ) -> Result<()> {
+        let hash = content_hash(data);
+
+        if !self.backend.blob_exists(&hash) {
+            self.backend.write_blob(&hash, data)?;
+        }
+
+        let (asset_type, name) = parse_entity_id(id);
+        let now = now_iso();
+
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        if let Some(existing) = cache.iter_mut().find(|a| a.id == id) {
+            // Upsert: update existing
+            let old_hash = existing.blob_hash.clone();
+            existing.blob_hash = hash;
+            existing.blob_size = data.len() as u64;
+            existing.metadata = metadata;
+            existing.updated_at = now;
+            existing.inline_data = None;
+
+            // GC old blob if no longer referenced
+            if !cache.iter().any(|a| a.blob_hash == old_hash) {
+                let _ = self.backend.delete_blob(&old_hash);
+            }
+        } else {
+            // Insert new
+            cache.push(AssetEntry {
+                id: id.to_string(),
+                name,
+                asset_type,
+                blob_hash: hash,
+                blob_size: data.len() as u64,
+                metadata,
+                tags: Vec::new(),
+                created_at: now.clone(),
+                updated_at: now,
+                inline_data: None,
+            });
+        }
+
+        self.backend.write_manifest(&cache)?;
+        Ok(())
+    }
+
+    /// Put JSON inline (materials, skeletons, configs). Upsert by ID.
+    pub fn put_json(
+        &self,
+        id: &str,
+        json_data: Value,
+        metadata: Value,
+    ) -> Result<()> {
+        let serialized = serde_json::to_vec(&json_data)?;
+        let hash = content_hash(&serialized);
+        let (asset_type, name) = parse_entity_id(id);
+        let now = now_iso();
+
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        if let Some(existing) = cache.iter_mut().find(|a| a.id == id) {
+            existing.blob_hash = hash;
+            existing.blob_size = serialized.len() as u64;
+            existing.metadata = metadata;
+            existing.updated_at = now;
+            existing.inline_data = Some(json_data);
+        } else {
+            cache.push(AssetEntry {
+                id: id.to_string(),
+                name,
+                asset_type,
+                blob_hash: hash,
+                blob_size: serialized.len() as u64,
+                metadata,
+                tags: Vec::new(),
+                created_at: now.clone(),
+                updated_at: now,
+                inline_data: Some(json_data),
+            });
+        }
+
+        self.backend.write_manifest(&cache)?;
+        Ok(())
+    }
+
+    /// Tag an entity. Additive — doesn't remove existing tags.
+    pub fn tag(&self, id: &str, tags: &[&str]) -> Result<()> {
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+        let entry = cache
+            .iter_mut()
+            .find(|a| a.id == id)
+            .ok_or_else(|| anyhow::anyhow!("Asset not found: {}", id))?;
+        for t in tags {
+            let s = t.to_string();
+            if !entry.tags.contains(&s) {
+                entry.tags.push(s);
+            }
+        }
+        entry.updated_at = now_iso();
+        self.backend.write_manifest(&cache)?;
+        Ok(())
+    }
+
+    /// Get a single asset by exact ID. This is the primary access path.
+    ///
+    /// ```ignore
+    /// let mesh = db.get("snake:mesh")?;
+    /// ```
+    pub fn get(&self, id: &str) -> Result<Asset> {
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+        let entry = cache
+            .iter()
+            .find(|a| a.id == id)
+            .ok_or_else(|| anyhow::anyhow!("Entity not found: {}", id))?
+            .clone();
+        drop(cache);
+        self.load_entry(&entry)
+    }
+
+    /// Check if an entity exists.
+    pub fn has(&self, id: &str) -> bool {
+        self.cache
+            .read()
+            .map(|c| c.iter().any(|a| a.id == id))
+            .unwrap_or(false)
+    }
+
+    /// Get just the metadata for an entity (no blob load).
+    pub fn get_entry(&self, id: &str) -> Result<AssetEntry> {
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+        cache
+            .iter()
+            .find(|a| a.id == id)
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("Entity not found: {}", id))
+    }
+
+    // ─── Legacy name-based access (kept for convenience) ───
+
+    /// Store with auto-generated ID. Returns the ID.
     pub fn store(
         &self,
         asset_type: &str,
@@ -528,35 +684,15 @@ impl AssetDB {
         metadata: Value,
         tags: &[&str],
     ) -> Result<AssetId> {
-        let hash = content_hash(data);
-
-        if !self.backend.blob_exists(&hash) {
-            self.backend.write_blob(&hash, data)?;
+        let id = format!("{}:{}", name, asset_type);
+        self.put(&id, data, metadata)?;
+        if !tags.is_empty() {
+            self.tag(&id, tags)?;
         }
-
-        let now = now_iso();
-        let id = gen_id();
-
-        let entry = AssetEntry {
-            id: id.clone(),
-            name: name.to_string(),
-            asset_type: AssetType::from_str(asset_type),
-            blob_hash: hash,
-            blob_size: data.len() as u64,
-            metadata,
-            tags: tags.iter().map(|s| s.to_string()).collect(),
-            created_at: now.clone(),
-            updated_at: now,
-            inline_data: None,
-        };
-
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
-        cache.push(entry);
-        self.backend.write_manifest(&cache)?;
         Ok(id)
     }
 
-    /// Store JSON inline (materials, skeletons, small configs).
+    /// Store JSON with auto-generated ID. Returns the ID.
     pub fn store_json(
         &self,
         asset_type: &str,
@@ -565,62 +701,21 @@ impl AssetDB {
         metadata: Value,
         tags: &[&str],
     ) -> Result<AssetId> {
-        let serialized = serde_json::to_vec(&json_data)?;
-        let hash = content_hash(&serialized);
-        let now = now_iso();
-        let id = gen_id();
-
-        let entry = AssetEntry {
-            id: id.clone(),
-            name: name.to_string(),
-            asset_type: AssetType::from_str(asset_type),
-            blob_hash: hash,
-            blob_size: serialized.len() as u64,
-            metadata,
-            tags: tags.iter().map(|s| s.to_string()).collect(),
-            created_at: now.clone(),
-            updated_at: now,
-            inline_data: Some(json_data),
-        };
-
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
-        cache.push(entry);
-        self.backend.write_manifest(&cache)?;
+        let id = format!("{}:{}", name, asset_type);
+        self.put_json(&id, json_data, metadata)?;
+        if !tags.is_empty() {
+            self.tag(&id, tags)?;
+        }
         Ok(id)
     }
 
-    /// Load by ID.
-    pub fn load(&self, id: &str) -> Result<Asset> {
-        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
-        let entry = cache
-            .iter()
-            .find(|a| a.id == id)
-            .ok_or_else(|| anyhow::anyhow!("Asset not found: {}", id))?
-            .clone();
-        drop(cache);
-        self.load_entry(&entry)
-    }
-
-    /// Load by name (first match).
+    /// Load by name (convenience — looks up "name:*" pattern).
     pub fn load_by_name(&self, name: &str) -> Result<Asset> {
         let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
         let entry = cache
             .iter()
-            .find(|a| a.name == name)
+            .find(|a| a.name == name || a.id.starts_with(&format!("{}:", name)))
             .ok_or_else(|| anyhow::anyhow!("Asset not found: {}", name))?
-            .clone();
-        drop(cache);
-        self.load_entry(&entry)
-    }
-
-    /// Load by name + type.
-    pub fn load_by_name_and_type(&self, name: &str, asset_type: &str) -> Result<Asset> {
-        let at = AssetType::from_str(asset_type);
-        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
-        let entry = cache
-            .iter()
-            .find(|a| a.name == name && a.asset_type == at)
-            .ok_or_else(|| anyhow::anyhow!("Asset not found: {} ({})", name, asset_type))?
             .clone();
         drop(cache);
         self.load_entry(&entry)
@@ -1132,6 +1227,18 @@ pub async fn get_or_create_db_async(name: &str) -> Result<Arc<AssetDB>> {
 // ═══════════════════════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════════════════════
+
+/// Parse entity ID convention: "name:type" → (AssetType, name).
+/// If no colon, type defaults to Generic and the whole string is the name.
+fn parse_entity_id(id: &str) -> (AssetType, String) {
+    if let Some(colon) = id.rfind(':') {
+        let name = &id[..colon];
+        let type_str = &id[colon + 1..];
+        (AssetType::from_str(type_str), name.to_string())
+    } else {
+        (AssetType::Generic, id.to_string())
+    }
+}
 
 fn content_hash(data: &[u8]) -> String {
     use std::collections::hash_map::DefaultHasher;
