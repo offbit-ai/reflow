@@ -16,7 +16,8 @@ use super::math_helpers::mat4_transform_point;
     SkinBindActor,
     inports::<10>(mesh, skeleton, weights),
     outports::<1>(skin, skinned_mesh, metadata),
-    state(MemoryState)
+    state(MemoryState),
+    await_inports(mesh, skeleton)
 )]
 pub async fn skin_bind_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -51,19 +52,14 @@ pub async fn skin_bind_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         ctx.pool_upsert("_cache", "weights_b64", json!(encoded));
     }
 
-    // Check if we have both required inputs (weights is optional)
+    // Retrieve required inputs (framework guarantees mesh + skeleton are present via await_inports)
     let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
-    let mesh_bytes = match cache.get("mesh_b64").and_then(|v| v.as_str()) {
-        Some(s) => {
-            use base64::Engine;
-            base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
-        }
-        None => return Ok(HashMap::new()), // Not ready yet
+    let mesh_bytes = {
+        use base64::Engine;
+        let s = cache.get("mesh_b64").and_then(|v| v.as_str()).unwrap();
+        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
     };
-    let skeleton: Value = match cache.get("skeleton") {
-        Some(v) => v.clone(),
-        None => return Ok(HashMap::new()), // Not ready yet
-    };
+    let skeleton: Value = cache.get("skeleton").cloned().unwrap();
 
     let vertex_count = mesh_bytes.len() / stride;
 

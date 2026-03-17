@@ -16,7 +16,8 @@ use super::math_helpers::*;
     AnimationSamplerActor,
     inports::<10>(clip, time, skeleton, inverse_bind_matrices),
     outports::<1>(bone_transforms, metadata),
-    state(MemoryState)
+    state(MemoryState),
+    await_inports(clip, skeleton, time)
 )]
 pub async fn animation_sampler_actor(
     ctx: ActorContext,
@@ -44,28 +45,18 @@ pub async fn animation_sampler_actor(
         ctx.pool_upsert("_cache", "ibm_b64", json!(encoded));
     }
 
-    // Get time — this is the trigger for each frame
+    // Get time — guaranteed present via await_inports
     let time = match payload.get("time") {
         Some(Message::Float(f)) => *f as f32,
         Some(Message::Integer(i)) => *i as f32,
-        _ => return Ok(HashMap::new()), // No time → no output
+        _ => unreachable!("await_inports guarantees time"),
     };
 
-    // Retrieve cached data
+    // Retrieve cached data (guaranteed populated via await_inports for clip + skeleton)
     let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
 
-    let clip = match cache.get("clip") {
-        Some(v) => v.clone(),
-        None => {
-            return Ok(HashMap::new());
-        }
-    };
-    let skeleton = match cache.get("skeleton") {
-        Some(v) => v.clone(),
-        None => {
-            return Ok(HashMap::new());
-        }
-    };
+    let clip = cache.get("clip").cloned().unwrap();
+    let skeleton = cache.get("skeleton").cloned().unwrap();
     let ibm_bytes: Vec<u8> = cache
         .get("ibm_b64")
         .and_then(|v| v.as_str())

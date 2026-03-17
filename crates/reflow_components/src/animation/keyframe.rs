@@ -45,17 +45,18 @@ use std::collections::HashMap;
     KeyframeActor,
     inports::<10>(time),
     outports::<1>(value, progress, metadata),
-    state(MemoryState)
+    state(MemoryState),
+    await_inports(time)
 )]
 pub async fn keyframe_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    // Time from inport (absolute seconds)
+    // Time from inport (guaranteed present via await_inports)
     let time = match payload.get("time") {
         Some(Message::Float(f)) => *f,
         Some(Message::Integer(i)) => *i as f64,
-        _ => return Ok(HashMap::new()),
+        _ => unreachable!("await_inports guarantees time"),
     };
 
     let keyframes = config

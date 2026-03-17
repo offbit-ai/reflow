@@ -18,7 +18,8 @@ use std::collections::HashMap;
     TerrainActor,
     inports::<10>(mesh, texture, heightmap),
     outports::<10>(object, metadata),
-    state(MemoryState)
+    state(MemoryState),
+    await_inports(mesh, heightmap)
 )]
 pub async fn terrain_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -62,15 +63,8 @@ pub async fn terrain_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
         }));
     }
 
-    // Check if we have the required inputs
+    // Retrieve state (mesh + heightmap guaranteed present via await_inports)
     let state: HashMap<String, serde_json::Value> = ctx.get_pool("_state").into_iter().collect();
-    let has_mesh = state.contains_key("mesh_size");
-    let has_heightmap = state.contains_key("heightmap");
-
-    // Wait until both mesh and heightmap have arrived
-    if !has_mesh || !has_heightmap {
-        return Ok(HashMap::new());
-    }
 
     let id = config
         .get("id")

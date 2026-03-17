@@ -20,7 +20,8 @@ use std::collections::HashMap;
     VertexColorActor,
     inports::<10>(mesh, uv, noise),
     outports::<1>(colored_mesh, metadata),
-    state(MemoryState)
+    state(MemoryState),
+    await_inports(mesh, uv)
 )]
 pub async fn vertex_color_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -43,15 +44,17 @@ pub async fn vertex_color_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             base64::engine::general_purpose::STANDARD.encode(&**b)));
     }
 
-    // Need mesh + uv at minimum
+    // Retrieve required inputs (guaranteed populated via await_inports for mesh + uv)
     let cache: HashMap<String, serde_json::Value> = ctx.get_pool("_cache").into_iter().collect();
-    let mesh_bytes = match cache.get("mesh_b64").and_then(|v| v.as_str()) {
-        Some(s) => { use base64::Engine; base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default() }
-        None => return Ok(HashMap::new()),
+    let mesh_bytes = {
+        use base64::Engine;
+        let s = cache.get("mesh_b64").and_then(|v| v.as_str()).unwrap();
+        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
     };
-    let uv_bytes = match cache.get("uv_b64").and_then(|v| v.as_str()) {
-        Some(s) => { use base64::Engine; base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default() }
-        None => return Ok(HashMap::new()),
+    let uv_bytes = {
+        use base64::Engine;
+        let s = cache.get("uv_b64").and_then(|v| v.as_str()).unwrap();
+        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
     };
 
     // Optional noise field (from NoiseGeneratorActor)

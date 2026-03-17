@@ -24,7 +24,8 @@ use std::sync::Arc;
     RenderFrameCollectorActor,
     inports::<100>(frame, frame_number, done),
     outports::<50>(stream, progress, error),
-    state(MemoryState)
+    state(MemoryState),
+    await_inports(frame)
 )]
 pub async fn render_frame_collector_actor(
     ctx: ActorContext,
@@ -49,9 +50,10 @@ pub async fn render_frame_collector_actor(
         .and_then(|v| v.as_u64())
         .unwrap_or(30) as u32;
 
+    // frame guaranteed present via await_inports
     let frame_bytes = match payload.get("frame") {
         Some(Message::Bytes(b)) => b.clone(),
-        _ => return Ok(HashMap::new()),
+        _ => unreachable!("await_inports guarantees frame"),
     };
 
     let frame_number = match payload.get("frame_number") {
