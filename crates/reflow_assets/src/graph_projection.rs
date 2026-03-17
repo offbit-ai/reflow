@@ -104,6 +104,39 @@ impl GraphProjection {
         ]
     }
 
+    /// Project the actor template catalog into the graph.
+    /// Call once at startup with all registered template IDs.
+    /// AI agents use this to discover what actors are available and how to wire them.
+    pub fn project_catalog(
+        &self,
+        templates: &[(String, String, Vec<String>, Vec<String>)], // (template_id, actor_name, inports, outports)
+    ) {
+        // Schema: ActorTemplate node
+        self.push(CypherDelta {
+            statement: "CREATE NODE TABLE IF NOT EXISTS ActorTemplate (id STRING, name STRING, inports STRING, outports STRING, PRIMARY KEY (id))".into(),
+            params: json!({}),
+        });
+        self.push(CypherDelta {
+            statement: "CREATE REL TABLE IF NOT EXISTS INSTANCE_OF (FROM Actor TO ActorTemplate)".into(),
+            params: json!({}),
+        });
+
+        for (template_id, actor_name, inports, outports) in templates {
+            self.push(CypherDelta {
+                statement: concat!(
+                    "MERGE (t:ActorTemplate {id: $id}) ",
+                    "SET t.name = $name, t.inports = $inports, t.outports = $outports"
+                ).into(),
+                params: json!({
+                    "id": template_id,
+                    "name": actor_name,
+                    "inports": serde_json::to_string(inports).unwrap_or_default(),
+                    "outports": serde_json::to_string(outports).unwrap_or_default(),
+                }),
+            });
+        }
+    }
+
     /// Drain all buffered Cypher deltas.
     pub fn drain(&self) -> Vec<CypherDelta> {
         let mut buf = self.buffer.write().unwrap_or_else(|e| e.into_inner());
@@ -115,6 +148,14 @@ impl GraphProjection {
         self.push(CypherDelta {
             statement: "MERGE (a:Actor {name: $name}) SET a.template = $template, a.config = $config".into(),
             params: json!({"name": name, "template": template, "config": config}),
+        });
+        // Link to template catalog
+        self.push(CypherDelta {
+            statement: concat!(
+                "MATCH (a:Actor {name: $name}), (t:ActorTemplate {id: $template}) ",
+                "MERGE (a)-[:INSTANCE_OF]->(t)"
+            ).into(),
+            params: json!({"name": name, "template": template}),
         });
     }
 
