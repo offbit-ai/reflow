@@ -21,6 +21,7 @@ mod animation_time;
 mod animation_mixer;
 mod animation_timeline;
 mod keyframe;
+mod sprite_animation;
 
 pub use skeleton::SkeletonActor;
 pub use animation_clip::AnimationClipActor;
@@ -31,3 +32,4 @@ pub use animation_time::AnimationTimeActor;
 pub use animation_mixer::AnimationMixerActor;
 pub use animation_timeline::AnimationTimelineActor;
 pub use keyframe::KeyframeActor;
+pub use sprite_animation::SpriteAnimationActor;

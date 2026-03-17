@@ -18,7 +18,8 @@
 //! | `spiral` | DNA helix, rising smoke, screw | radius, rise, speed |
 //! | `figure8` | Juggling, figure skating, Lissajous | scaleX, scaleY, speed |
 //! | `tremble` | Fear, cold shiver, engine vibration | intensity, frequency |
-//! | `sprite` | Walk cycle, explosion VFX, coin spin | frameCount, startFrame, pingpong |
+//!
+//! Sprite animation uses [`SpriteAnimationActor`] — separate from the bone pipeline.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -81,7 +82,6 @@ pub async fn animation_clip_actor(ctx: ActorContext) -> Result<HashMap<String, M
             "spiral" => generate_spiral(&ctx),
             "figure8" => generate_figure8(&ctx),
             "tremble" => generate_tremble(&ctx),
-            "sprite" => generate_sprite(&ctx),
             _ => {
                 return Err(anyhow::anyhow!("unknown clip type: {}", gen_type));
             }
@@ -1028,71 +1028,3 @@ fn generate_tremble(ctx: &GenContext) -> Vec<Value> {
     channels
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Generator: sprite — 2D sprite sheet animation
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// Use cases: character walk cycle, explosion VFX, UI icon animation,
-//            coin spin, fire/smoke sprite loop, retro pixel art
-//
-// Config:
-//   frameCount (4) — total frames in the sprite sheet
-//   startFrame (0) — first frame index
-//   endFrame (null) — last frame index (default: frameCount - 1)
-//   pingpong (false) — play forward then reverse (1,2,3,2,1,...)
-//
-// Output channel: property "frame" with integer frame indices (step interpolation).
-// The billboard system reads this to select the atlas cell.
-
-fn generate_sprite(ctx: &GenContext) -> Vec<Value> {
-    let frame_count = ctx.f("frameCount", 4.0) as usize;
-    let start_frame = ctx.f("startFrame", 0.0) as usize;
-    let end_frame = ctx.config
-        .get("endFrame")
-        .and_then(|v| v.as_u64())
-        .map(|v| v as usize)
-        .unwrap_or(frame_count.saturating_sub(1));
-    let pingpong = ctx.config
-        .get("pingpong")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-
-    let active_frames = if end_frame >= start_frame {
-        end_frame - start_frame + 1
-    } else {
-        1
-    };
-
-    // Build the frame sequence
-    let sequence: Vec<usize> = if pingpong && active_frames > 2 {
-        let mut seq: Vec<usize> = (start_frame..=end_frame).collect();
-        let reverse: Vec<usize> = (start_frame + 1..end_frame).rev().collect();
-        seq.extend(reverse);
-        seq
-    } else {
-        (start_frame..=end_frame).collect()
-    };
-
-    let seq_len = sequence.len();
-    let total_frames = (ctx.fps as f64 * ctx.duration) as usize;
-
-    let mut times = Vec::with_capacity(total_frames + 1);
-    let mut values = Vec::with_capacity(total_frames + 1);
-
-    for i in 0..=total_frames {
-        let t = i as f64 / ctx.fps as f64;
-        times.push(t);
-
-        let progress = if ctx.duration > 0.0 { t / ctx.duration } else { 0.0 };
-        let seq_idx = ((progress * seq_len as f64) as usize).min(seq_len - 1);
-        values.push(json!(sequence[seq_idx]));
-    }
-
-    vec![json!({
-        "boneIndex": 0,
-        "property": "frame",
-        "interpolation": "step",
-        "times": times,
-        "values": values,
-    })]
-}
