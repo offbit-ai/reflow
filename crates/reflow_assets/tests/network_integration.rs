@@ -435,6 +435,118 @@ fn full_layout_tween_cycle() {
     let _ = std::fs::remove_dir_all(db_path);
 }
 
+/// Test: :bind component enables auto two-way sync.
+#[test]
+fn bind_component_enables_auto_sync() {
+    let db_path = "./test_bind.db";
+    let _ = std::fs::remove_dir_all(db_path);
+    let db = get_or_create_db(db_path).unwrap();
+
+    // Slider entity with DOM + transform + bind
+    db.set_component_json(
+        "slider",
+        "dom",
+        json!({ "tag": "input", "type": "range", "width": 200, "height": 20 }),
+        json!({}),
+    ).unwrap();
+
+    db.set_component_json(
+        "slider",
+        "transform",
+        json!({ "position": [100.0, 50.0, 0.0] }),
+        json!({}),
+    ).unwrap();
+
+    // Enable full bind
+    db.set_component_json("slider", "bind", json!(true), json!({})).unwrap();
+
+    // Also test selective bind on another entity
+    db.set_component_json("scroller", "dom", json!({ "tag": "div" }), json!({})).unwrap();
+    db.set_component_json("scroller", "bind", json!({ "scroll": true, "transform": false }), json!({})).unwrap();
+
+    // Set up headless backend with layout data
+    let backend = Arc::new(layout::HeadlessLayoutBackend::new());
+    layout::set_layout_backend(db_path, backend.clone());
+
+    // Simulate: layout has different position (user dragged the slider)
+    backend.set_node("slider", layout::LayoutNode {
+        tag: "input".to_string(),
+        x: 150.0,   // layout says x=150 (was 100 in AssetDB)
+        y: 50.0,
+        width: 200.0,
+        height: 20.0,
+        opacity: 1.0,
+        ..Default::default()
+    });
+
+    // Simulate: scroller has scroll data
+    backend.set_node("scroller", layout::LayoutNode {
+        tag: "div".to_string(),
+        height: 600.0,
+        scroll_y: 300.0,
+        scroll_height: 3000.0,
+        ..Default::default()
+    });
+
+    // Verify bind entities are discoverable
+    let bound = db.entities_with(&["bind"]).unwrap();
+    assert_eq!(bound.len(), 2);
+
+    // Simulate the pull phase: layout → AssetDB for bound entities
+    // (This is what LayoutSyncSystem does internally)
+    for entity in &bound {
+        let bind_asset = db.get_component(entity, "bind").unwrap();
+        let bind_config: serde_json::Value = serde_json::from_slice(&bind_asset.data).unwrap();
+
+        let bind_all = bind_config.as_bool().unwrap_or(false);
+        let bind_transform = bind_all
+            || bind_config.get("transform").and_then(|v| v.as_bool()).unwrap_or(false);
+        let bind_scroll = bind_all
+            || bind_config.get("scroll").and_then(|v| v.as_bool()).unwrap_or(false);
+
+        if bind_transform {
+            if let (Some(x), Some(y)) = (backend.query(entity, "x"), backend.query(entity, "y")) {
+                db.set_component_json(entity, "transform",
+                    json!({ "position": [x, y, 0.0] }),
+                    json!({"source": "layout_pull"}),
+                ).unwrap();
+            }
+        }
+
+        if bind_scroll {
+            if let (Some(sy), Some(progress)) = (
+                backend.query(entity, "scrollY"),
+                backend.query(entity, "scrollProgress"),
+            ) {
+                db.set_component_json(entity, "scroll",
+                    json!({ "y": sy, "progress": progress }),
+                    json!({"source": "layout_pull"}),
+                ).unwrap();
+            }
+        }
+    }
+
+    // Verify: slider transform was updated from layout (150, not 100)
+    let tf = db.get_component("slider", "transform").unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&tf.data).unwrap();
+    assert_eq!(v["position"][0], 150.0);
+
+    // Verify: slider metadata shows source = layout_pull
+    assert_eq!(tf.entry.metadata["source"], "layout_pull");
+
+    // Verify: scroller got scroll data (bind_scroll=true)
+    let scroll = db.get_component("scroller", "scroll").unwrap();
+    let sv: serde_json::Value = serde_json::from_slice(&scroll.data).unwrap();
+    assert_eq!(sv["y"], 300.0);
+    let progress = sv["progress"].as_f64().unwrap();
+    assert!((progress - 0.125).abs() < 0.001); // 300 / (3000-600) = 0.125
+
+    // Verify: scroller transform was NOT pulled (bind_transform=false)
+    assert!(!db.has_component("scroller", "transform"));
+
+    let _ = std::fs::remove_dir_all(db_path);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Helpers (minimal reimplementations for test isolation)
 // ═══════════════════════════════════════════════════════════════════════════
