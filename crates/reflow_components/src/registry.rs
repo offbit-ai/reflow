@@ -35,7 +35,10 @@ use crate::input::{
     GamepadInputActor, KeyboardInputActor, MouseInputActor, TouchInputActor, WindowEventActor,
 };
 use crate::integration::HttpRequestActor;
-use crate::io::{FileLoadActor, FileSaveActor, GltfExportActor, ObjExportActor, StlExportActor};
+use crate::io::{
+    FileLoadActor, FileSaveActor, GltfExportActor, GltfImportActor, MeshImportActor,
+    ObjExportActor, ObjImportActor, SceneImportActor, StlExportActor, StlImportActor,
+};
 use crate::logic::RulesEngineActor;
 use crate::math::{
     Mat4IdentityActor,
@@ -351,6 +354,13 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_stl_export" => Some(Arc::new(StlExportActor::new())),
         "tpl_gltf_export" => Some(Arc::new(GltfExportActor::new())),
 
+        // Model/scene import
+        "tpl_stl_import" => Some(Arc::new(StlImportActor::new())),
+        "tpl_obj_import" => Some(Arc::new(ObjImportActor::new())),
+        "tpl_gltf_import" => Some(Arc::new(GltfImportActor::new())),
+        "tpl_mesh_import" => Some(Arc::new(MeshImportActor::new())),
+        "tpl_scene_import" => Some(Arc::new(SceneImportActor::new())),
+
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
         other => crate::api::api_registry::get_api_actor_for_template(other),
@@ -662,6 +672,17 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
     mapping.insert("tpl_stl_export".to_string(), "StlExportActor".to_string());
     mapping.insert("tpl_gltf_export".to_string(), "GltfExportActor".to_string());
+
+    // Model/scene import
+    for (id, name) in [
+        ("tpl_stl_import", "StlImportActor"),
+        ("tpl_obj_import", "ObjImportActor"),
+        ("tpl_gltf_import", "GltfImportActor"),
+        ("tpl_mesh_import", "MeshImportActor"),
+        ("tpl_scene_import", "SceneImportActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
 
     // Animation
     for (id, name) in [
