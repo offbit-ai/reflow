@@ -13,7 +13,8 @@ use crate::systems::{
     BehaviorSystemActor, LayoutSyncSystemActor, SceneBillboardSystemActor,
     SceneCameraSystemActor, SceneLightCollectorActor, SceneMaterialSystemActor,
     ScenePhysicsSystemActor, SceneSkyboxSystemActor, SceneWeatherSystemActor,
-    StateMachineSystemActor, TimelineSystemActor, TweenSystemActor,
+    StateMachineSystemActor, TextRenderSystemActor, TextSdfSystemActor,
+    TimelineSystemActor, TweenSystemActor,
 };
 use crate::animation::{
     AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
@@ -140,6 +141,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_state_machine_system" => Some(Arc::new(StateMachineSystemActor::new())),
         "tpl_behavior_system" => Some(Arc::new(BehaviorSystemActor::new())),
         "tpl_layout_sync" => Some(Arc::new(LayoutSyncSystemActor::new())),
+        "tpl_text_render" => Some(Arc::new(TextRenderSystemActor::new())),
+        "tpl_text_sdf" => Some(Arc::new(TextSdfSystemActor::new())),
 
         // Integration
         "tpl_http_request" => Some(Arc::new(HttpRequestActor::new())),
@@ -421,6 +424,8 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_state_machine_system".to_string(), "StateMachineSystemActor".to_string());
     mapping.insert("tpl_behavior_system".to_string(), "BehaviorSystemActor".to_string());
     mapping.insert("tpl_layout_sync".to_string(), "LayoutSyncSystemActor".to_string());
+    mapping.insert("tpl_text_render".to_string(), "TextRenderSystemActor".to_string());
+    mapping.insert("tpl_text_sdf".to_string(), "TextSdfSystemActor".to_string());
 
     mapping.insert(
         "tpl_http_request".to_string(),

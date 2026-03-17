@@ -59,6 +59,9 @@ tobj = "4"
 # Physics (pure Rust, Wasm-safe)
 rapier3d = { version = "0.22", features = ["serde-serialize"] }
 
+# Font rasterization (pure Rust, Wasm-safe)
+fontdue = "0.9"
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"

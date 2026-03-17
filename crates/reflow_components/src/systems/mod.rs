@@ -4,7 +4,7 @@
 //!
 //! Scene-specific systems are prefixed "Scene" (physics, camera, lights, materials,
 //! billboard, skybox, weather).
-//! Universal systems (tween, timeline, state machine, behavior, layout) work across domains.
+//! Universal systems (tween, timeline, state machine, behavior, layout, text) work across domains.
 
 // Shared entity selector
 mod selector;
@@ -22,6 +22,8 @@ mod weather;
 mod behavior;
 mod layout_sync;
 mod state_machine;
+mod text_render;
+mod text_sdf;
 mod timeline;
 mod tween;
 
@@ -36,5 +38,7 @@ pub use weather::SceneWeatherSystemActor;
 pub use behavior::BehaviorSystemActor;
 pub use layout_sync::LayoutSyncSystemActor;
 pub use state_machine::StateMachineSystemActor;
+pub use text_render::TextRenderSystemActor;
+pub use text_sdf::TextSdfSystemActor;
 pub use timeline::TimelineSystemActor;
 pub use tween::TweenSystemActor;
