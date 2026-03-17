@@ -31,6 +31,7 @@ use std::sync::OnceLock;
 
 #[cfg(feature = "gpu")]
 use super::context::GPU_CONTEXT;
+use super::font_atlas::GlyphAtlasGpu;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GPU Primitive (matches WGSL struct layout)
@@ -85,6 +86,18 @@ impl GpuPrimitive {
         p.color = color;
         p.rotation = [0.0, 1.0, 0.0, 1.0];
         p.type_info = [2, 0, 0, 0]; // PRIM_SEGMENT
+        p
+    }
+
+    /// Textured glyph quad — samples from SDF atlas texture.
+    /// `uv` = [u0, v0, u1, v1] in atlas texture coordinates (0..1).
+    pub fn glyph(x: f32, y: f32, w: f32, h: f32, uv: [f32; 4], color: [f32; 4]) -> Self {
+        let mut p = Self::zeroed();
+        p.bounds = [x, y, w, h];
+        p.gradient_params = uv; // atlas UV coordinates
+        p.color = color;
+        p.rotation = [0.0, 1.0, 0.0, 1.0];
+        p.type_info = [3, 0, 0, 0]; // PRIM_GLYPH
         p
     }
 
@@ -143,6 +156,7 @@ struct Uniforms {
 const PRIM_RECT: u32 = 0u;
 const PRIM_CIRCLE: u32 = 1u;
 const PRIM_SEGMENT: u32 = 2u;
+const PRIM_GLYPH: u32 = 3u;
 
 struct Primitive {
     bounds: vec4<f32>,
@@ -160,6 +174,9 @@ struct Primitive {
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var<storage, read> primitives: array<Primitive>;
+
+@group(1) @binding(0) var glyph_atlas: texture_2d<f32>;
+@group(1) @binding(1) var glyph_sampler: sampler;
 
 @vertex
 fn vs_main(
@@ -254,7 +271,20 @@ fn eval_sdf(p: vec2<f32>, prim: Primitive) -> f32 {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let prim = primitives[in.instance_index];
+    let prim_type = prim.type_info.x;
     let p = in.uv;
+
+    // PRIM_GLYPH: sample SDF atlas texture, apply color
+    if prim_type == PRIM_GLYPH {
+        let uv0 = prim.gradient_params.xy;
+        let uv1 = prim.gradient_params.zw;
+        let frac = (p - prim.bounds.xy) / prim.bounds.zw;
+        let tex_uv = mix(uv0, uv1, clamp(frac, vec2<f32>(0.0), vec2<f32>(1.0)));
+        let sdf_val = textureSample(glyph_atlas, glyph_sampler, tex_uv).r;
+        let alpha = smoothstep(0.45, 0.55, sdf_val) * prim.color.a;
+        if alpha < 0.001 { discard; }
+        return vec4<f32>(prim.color.rgb, alpha);
+    }
 
     // Apply rotation around bounds center
     let sin_r = prim.rotation.x;
@@ -306,6 +336,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 struct CachedPipeline {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
+    atlas_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 #[cfg(feature = "gpu")]
@@ -320,6 +351,7 @@ fn get_pipeline() -> &'static CachedPipeline {
             source: wgpu::ShaderSource::Wgsl(SDF_2D_SHADER.into()),
         });
 
+        // Group 0: uniforms + primitives storage
         let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("SDF 2D BGL"),
             entries: &[
@@ -346,9 +378,32 @@ fn get_pipeline() -> &'static CachedPipeline {
             ],
         });
 
+        // Group 1: glyph atlas texture + sampler
+        let atlas_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("SDF 2D Atlas BGL"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("SDF 2D Pipeline Layout"),
-            bind_group_layouts: &[&bgl],
+            bind_group_layouts: &[&bgl, &atlas_bgl],
             push_constant_ranges: &[],
         });
 
@@ -395,6 +450,7 @@ fn get_pipeline() -> &'static CachedPipeline {
         CachedPipeline {
             pipeline,
             bind_group_layout: bgl,
+            atlas_bind_group_layout: atlas_bgl,
         }
     })
 }
@@ -409,6 +465,7 @@ pub fn render_2d(
     width: u32,
     height: u32,
     bg_color: [f32; 4],
+    glyph_atlas: Option<&GlyphAtlasGpu>,
 ) -> Vec<u8> {
     use wgpu::util::DeviceExt;
 
@@ -435,6 +492,42 @@ pub fn render_2d(
         entries: &[
             wgpu::BindGroupEntry { binding: 0, resource: uniform_buf.as_entire_binding() },
             wgpu::BindGroupEntry { binding: 1, resource: prim_buf.as_entire_binding() },
+        ],
+    });
+
+    // Atlas texture for PRIM_GLYPH (1px placeholder if no atlas provided)
+    let (atlas_data, atlas_w, atlas_h) = match glyph_atlas {
+        Some(a) => (&a.data[..], a.width, a.height),
+        None => (&[128u8] as &[u8], 1u32, 1u32),
+    };
+    let atlas_tex = device.create_texture_with_data(
+        queue,
+        &wgpu::TextureDescriptor {
+            label: Some("Glyph Atlas"),
+            size: wgpu::Extent3d { width: atlas_w, height: atlas_h, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        },
+        wgpu::util::TextureDataOrder::LayerMajor,
+        atlas_data,
+    );
+    let atlas_view = atlas_tex.create_view(&Default::default());
+    let atlas_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        label: Some("Glyph Sampler"),
+        mag_filter: wgpu::FilterMode::Linear,
+        min_filter: wgpu::FilterMode::Linear,
+        ..Default::default()
+    });
+    let atlas_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Atlas Bind Group"),
+        layout: &cached.atlas_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&atlas_view) },
+            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&atlas_sampler) },
         ],
     });
 
@@ -478,6 +571,7 @@ pub fn render_2d(
         });
         pass.set_pipeline(&cached.pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
+        pass.set_bind_group(1, &atlas_bind_group, &[]);
         pass.draw(0..6, 0..primitives.len() as u32);
     }
 
@@ -586,7 +680,7 @@ fn glyph_strokes(ch: char) -> &'static [[f32; 4]] {
 
 #[actor(
     Gpu2DRenderActor,
-    inports::<100>(primitives, tick, values),
+    inports::<100>(primitives, tick, values, atlas, metrics, atlas_size),
     outports::<1>(image, metadata),
     state(MemoryState)
 )]
@@ -604,6 +698,19 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     if let Some(Message::Object(obj)) = payload.get("primitives") {
         let v: Value = obj.as_ref().clone().into();
         ctx.pool_upsert("_2d", "prims", v);
+    }
+
+    // Cache glyph atlas from GlyphAtlasActor (one-shot, persists across ticks)
+    if let Some(Message::Bytes(bytes)) = payload.get("atlas") {
+        ctx.pool_upsert("_atlas", "bitmap", json!(base64_encode(bytes)));
+    }
+    if let Some(Message::Object(obj)) = payload.get("metrics") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_atlas", "metrics", v);
+    }
+    if let Some(Message::Object(obj)) = payload.get("atlas_size") {
+        let v: Value = obj.as_ref().clone().into();
+        ctx.pool_upsert("_atlas", "size", v);
     }
 
     // ── Parse animation values from timeline ──
@@ -694,6 +801,15 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         gpu_prims.push(p);
     }
 
+    // ── Load cached glyph atlas from pool ──
+    let atlas_pool: HashMap<String, Value> = ctx.get_pool("_atlas").into_iter().collect();
+    let glyph_metrics: Option<&Value> = atlas_pool.get("metrics");
+    let atlas_size: Option<(u32, u32)> = atlas_pool.get("size").and_then(|v| {
+        let arr = v.as_array()?;
+        Some((arr.get(0)?.as_u64()? as u32, arr.get(1)?.as_u64()? as u32))
+    });
+    let has_atlas = glyph_metrics.is_some() && atlas_size.is_some();
+
     // ── Text (cN_ prefix per character) ──
     for text_cfg in &text_configs {
         let content = text_cfg.get("content").and_then(|v| v.as_str()).unwrap_or("");
@@ -704,15 +820,40 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
         }).unwrap_or([1.0, 1.0, 1.0, 1.0]);
         let tracking = text_cfg.get("tracking").and_then(|v| v.as_f64()).unwrap_or(6.0) as f32;
-        let thickness = size * 0.055;
-        let char_w = size * 0.6;
-        let advance = char_w + tracking;
         let centered = text_cfg.get("center").and_then(|v| v.as_bool()).unwrap_or(false);
 
-        let total_w = content.chars().count() as f32 * advance - tracking;
+        // Compute character advance using atlas metrics or fallback
+        let font_scale = if has_atlas {
+            // Atlas was rasterized at a specific size; scale to requested size
+            let atlas_font_size = glyph_metrics.and_then(|m| {
+                // Estimate atlas font size from a known glyph (e.g., 'H')
+                m.get("H").and_then(|g| g.get("h")).and_then(|v| v.as_f64())
+            }).unwrap_or(size as f64) as f32;
+            size / atlas_font_size.max(1.0)
+        } else {
+            1.0
+        };
+
+        // Layout: compute per-char x positions using advance from metrics
+        let mut char_positions: Vec<(usize, char, f32)> = Vec::new();
+        let mut cursor_x = 0.0f32;
+        for (ci, ch) in content.chars().enumerate() {
+            char_positions.push((ci, ch, cursor_x));
+            let adv = if has_atlas {
+                glyph_metrics
+                    .and_then(|m| m.get(&ch.to_string()))
+                    .and_then(|g| g.get("advance"))
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(size as f64 * 0.6) as f32 * font_scale
+            } else {
+                size * 0.6
+            };
+            cursor_x += adv + tracking;
+        }
+        let total_w = cursor_x - tracking;
         let start_x = if centered { tx - total_w / 2.0 } else { tx };
 
-        for (ci, ch) in content.chars().enumerate() {
+        for &(ci, ch, cx) in &char_positions {
             if ch == ' ' { continue; }
             let pfx = format!("c{}", ci);
             let char_scale = get_val(&pfx, "scale").unwrap_or(1.0);
@@ -721,22 +862,56 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
             if char_scale < 0.01 || char_opacity < 0.01 { continue; }
 
-            let ccx = start_x + ci as f32 * advance + char_w * 0.5;
-            let ccy = ty + size * 0.5 + char_y_off;
-
             let mut color = base_color;
             color[3] *= char_opacity as f32;
 
-            let strokes = glyph_strokes(ch);
-            let s = char_scale as f32;
-            let hw = char_w * 0.5;
-            let hs = size * 0.5;
-            for seg in strokes {
-                let sx1 = ccx + (seg[0] * size - hw) * s;
-                let sy1 = ccy + (seg[1] * size - hs) * s;
-                let sx2 = ccx + (seg[2] * size - hw) * s;
-                let sy2 = ccy + (seg[3] * size - hs) * s;
-                gpu_prims.push(GpuPrimitive::segment(sx1, sy1, sx2, sy2, thickness * s, color));
+            if has_atlas {
+                // ── PRIM_GLYPH path: textured SDF quad ──
+                let (aw, ah) = atlas_size.unwrap();
+                if let Some(glyph) = glyph_metrics.and_then(|m| m.get(&ch.to_string())) {
+                    let gx = glyph.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let gy = glyph.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let gw = glyph.get("w").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let gh = glyph.get("h").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let bearing_x = glyph.get("bearing_x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let bearing_y = glyph.get("bearing_y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+
+                    let s = char_scale as f32;
+                    let qw = gw * font_scale * s;
+                    let qh = gh * font_scale * s;
+
+                    // Position: baseline at ty + size*0.8 (typical ascent ratio),
+                    // then offset by font metrics. bearing_y = ymin (from baseline).
+                    // In fontdue: glyph top = baseline - (gh - bearing_y) in glyph coords.
+                    let baseline_y = ty + size * 0.78 + char_y_off;
+                    let qx = start_x + cx + bearing_x * font_scale * s;
+                    let qy = baseline_y - (gh as f32 + bearing_y) * font_scale * s;
+
+                    // UV in atlas (normalized 0..1)
+                    let u0 = gx / aw as f32;
+                    let v0 = gy / ah as f32;
+                    let u1 = (gx + gw) / aw as f32;
+                    let v1 = (gy + gh) / ah as f32;
+
+                    gpu_prims.push(GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color));
+                }
+            } else {
+                // ── Fallback: geometric segment font ──
+                let char_w = size * 0.6;
+                let ccx = start_x + cx + char_w * 0.5;
+                let ccy = ty + size * 0.5 + char_y_off;
+                let thickness = size * 0.055;
+                let s = char_scale as f32;
+                let hw = char_w * 0.5;
+                let hs = size * 0.5;
+                let strokes = glyph_strokes(ch);
+                for seg in strokes {
+                    let sx1 = ccx + (seg[0] * size - hw) * s;
+                    let sy1 = ccy + (seg[1] * size - hs) * s;
+                    let sx2 = ccx + (seg[2] * size - hw) * s;
+                    let sy2 = ccy + (seg[3] * size - hs) * s;
+                    gpu_prims.push(GpuPrimitive::segment(sx1, sy1, sx2, sy2, thickness * s, color));
+                }
             }
         }
     }
@@ -745,8 +920,15 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         return Ok(HashMap::new());
     }
 
+    // Build GPU atlas from cached pool data
+    let atlas_gpu: Option<GlyphAtlasGpu> = atlas_pool.get("bitmap").and_then(|v| {
+        let data = base64_decode(v.as_str()?)?;
+        let (w, h) = atlas_size?;
+        Some(GlyphAtlasGpu { data, width: w, height: h })
+    });
+
     #[cfg(feature = "gpu")]
-    let rgba = render_2d(&gpu_prims, width, height, bg);
+    let rgba = render_2d(&gpu_prims, width, height, bg, atlas_gpu.as_ref());
 
     #[cfg(not(feature = "gpu"))]
     let rgba = vec![0u8; (width * height * 4) as usize];
@@ -766,4 +948,56 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
 fn fv(a: &[Value], idx: usize) -> f32 {
     a.get(idx).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32
+}
+
+fn base64_encode(data: &[u8]) -> String {
+    const TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = Vec::with_capacity(data.len() * 4 / 3 + 4);
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0];
+        let b1 = if chunk.len() > 1 { chunk[1] } else { 0 };
+        let b2 = if chunk.len() > 2 { chunk[2] } else { 0 };
+        out.push(TABLE[(b0 >> 2) as usize]);
+        out.push(TABLE[(((b0 & 3) << 4) | (b1 >> 4)) as usize]);
+        if chunk.len() > 1 {
+            out.push(TABLE[(((b1 & 0xF) << 2) | (b2 >> 6)) as usize]);
+        } else {
+            out.push(b'=');
+        }
+        if chunk.len() > 2 {
+            out.push(TABLE[(b2 & 0x3F) as usize]);
+        } else {
+            out.push(b'=');
+        }
+    }
+    String::from_utf8(out).unwrap_or_default()
+}
+
+fn base64_decode(s: &str) -> Option<Vec<u8>> {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len() * 3 / 4);
+    let mut i = 0;
+    while i + 3 < bytes.len() {
+        let a = b64val(bytes[i])?;
+        let b = b64val(bytes[i + 1])?;
+        let c = b64val(bytes[i + 2])?;
+        let d = b64val(bytes[i + 3])?;
+        out.push((a << 2) | (b >> 4));
+        if bytes[i + 2] != b'=' { out.push((b << 4) | (c >> 2)); }
+        if bytes[i + 3] != b'=' { out.push((c << 6) | d); }
+        i += 4;
+    }
+    Some(out)
+}
+
+fn b64val(c: u8) -> Option<u8> {
+    match c {
+        b'A'..=b'Z' => Some(c - b'A'),
+        b'a'..=b'z' => Some(c - b'a' + 26),
+        b'0'..=b'9' => Some(c - b'0' + 52),
+        b'+' => Some(62),
+        b'/' => Some(63),
+        b'=' => Some(0),
+        _ => None,
+    }
 }

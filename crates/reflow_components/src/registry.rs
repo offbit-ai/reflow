@@ -34,6 +34,8 @@ use crate::gpu::sdf::SdfPathActor;
 use crate::gpu::sdf::{MeshToSdfActor, SdfLiveRenderActor, SdfMarchingCubesActor, SdfRenderActor};
 #[cfg(feature = "gpu")]
 use crate::gpu::sdf_2d::Gpu2DRenderActor;
+use crate::gpu::font_load::FontLoadActor;
+use crate::gpu::glyph_atlas::GlyphAtlasActor;
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
     SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor,
@@ -375,6 +377,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_scene_render" => Some(Arc::new(SceneRenderActor::new())),
         #[cfg(feature = "gpu")]
         "tpl_gpu_2d_render" => Some(Arc::new(Gpu2DRenderActor::new())),
+        "tpl_font_load" => Some(Arc::new(FontLoadActor::new())),
+        "tpl_glyph_atlas" => Some(Arc::new(GlyphAtlasActor::new())),
 
         // Animation
         "tpl_skeleton" => Some(Arc::new(SkeletonActor::new())),
@@ -744,7 +748,10 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         );
         mapping.insert("tpl_mesh_to_sdf".to_string(), "MeshToSdfActor".to_string());
         mapping.insert("tpl_scene_render".to_string(), "SceneRenderActor".to_string());
+        mapping.insert("tpl_gpu_2d_render".to_string(), "Gpu2DRenderActor".to_string());
     }
+    mapping.insert("tpl_font_load".to_string(), "FontLoadActor".to_string());
+    mapping.insert("tpl_glyph_atlas".to_string(), "GlyphAtlasActor".to_string());
     mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
     mapping.insert("tpl_stl_export".to_string(), "StlExportActor".to_string());
     mapping.insert("tpl_gltf_export".to_string(), "GltfExportActor".to_string());

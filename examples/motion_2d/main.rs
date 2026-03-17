@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
 
     for tpl in [
         "tpl_interval_trigger", "tpl_animation_time", "tpl_animation_timeline",
-        "tpl_gpu_2d_render",
+        "tpl_gpu_2d_render", "tpl_font_load", "tpl_glyph_atlas",
         "tpl_render_frame_collector", "tpl_video_encoder", "tpl_file_save",
     ] {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
@@ -58,6 +58,15 @@ async fn main() -> anyhow::Result<()> {
         "interval": ms, "maxExecutions": frames, "startImmediately": true,
     })))?;
     net.add_node("time", "tpl_animation_time", config(json!({ "fps": fps, "speed": 1.0 })))?;
+
+    // ═══ FONT PIPELINE ═══
+    // FontLoad → GlyphAtlas → Renderer (atlas + metrics persist across ticks)
+    net.add_node("font", "tpl_font_load", config(json!({
+        "path": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    })))?;
+    net.add_node("atlas", "tpl_glyph_atlas", config(json!({
+        "fontSize": 64, "sdf": true,
+    })))?;
 
     // Build tracks programmatically to avoid json! macro recursion limit
     let mut tracks = serde_json::Map::new();
@@ -234,6 +243,12 @@ async fn main() -> anyhow::Result<()> {
     // ═══ WIRING ═══
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
 
+    // Font pipeline: font → atlas → renderer (one-shot, persists in pools)
+    net.add_connection(wire("font", "font_data", "atlas", "font_data"));
+    net.add_connection(wire("atlas", "atlas", "render", "atlas"));
+    net.add_connection(wire("atlas", "metrics", "render", "metrics"));
+    net.add_connection(wire("atlas", "atlas_size", "render", "atlas_size"));
+
     // Single timeline driven by tick → atomic values output to renderer
     net.add_connection(wire("tick", "trigger", "tl", "tick"));
     net.add_connection(wire("tl", "values", "render", "values"));
@@ -243,9 +258,11 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
+    // Trigger font loading on start (one-shot)
+    net.add_initial(iip("font", "tick", Message::Flow));
     net.add_initial(iip("tick", "start", Message::Flow));
 
-    println!("DAG: 1 timeline (all shapes) → Gpu2DRender (SDF instanced) → video");
+    println!("DAG: font → atlas → renderer + timeline → Gpu2DRender → video");
     println!("Running...\n");
 
     let start = std::time::Instant::now();
