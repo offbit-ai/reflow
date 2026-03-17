@@ -64,6 +64,7 @@ pub async fn text_sdf_system_actor(
     };
 
     let mut processed = 0;
+    let mut last_ir: Option<Value> = None;
 
     for entity in &text_entities {
         let text_asset = match db.get_component(entity, "text_sdf") {
@@ -182,16 +183,25 @@ pub async fn text_sdf_system_actor(
         };
 
         // Write SDF IR component
-        let _ = db.set_component_json(entity, "sdf_text_ir", final_ir.clone(), json!({
+        let ir_metadata = json!({
             "glyphCount": content.chars().filter(|c| !c.is_whitespace()).count(),
             "totalWidth": total_width,
             "depth": depth,
-        }));
+        });
+        let _ = db.set_component_json(entity, "sdf_text_ir", final_ir.clone(), ir_metadata);
 
+        // Output the last processed SDF IR for direct DAG wiring
+        last_ir = Some(final_ir);
         processed += 1;
     }
 
     let mut out = HashMap::new();
+    if let Some(ir) = last_ir {
+        out.insert(
+            "sdf_ir".to_string(),
+            Message::object(EncodableValue::from(ir)),
+        );
+    }
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
