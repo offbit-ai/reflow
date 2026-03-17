@@ -29,6 +29,7 @@ pub mod stream_ops;
 pub mod systems;
 pub mod text;
 pub mod transform;
+pub mod vector;
 
 #[cfg(test)]
 mod tests;
