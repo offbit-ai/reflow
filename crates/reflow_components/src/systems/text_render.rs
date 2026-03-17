@@ -340,7 +340,7 @@ fn layout_text(
 #[actor(
     TextRenderSystemActor,
     inports::<10>(tick, entity_id),
-    outports::<1>(metadata),
+    outports::<1>(text_quads, metadata),
     state(MemoryState)
 )]
 pub async fn text_render_system_actor(
@@ -360,6 +360,7 @@ pub async fn text_render_system_actor(
     };
 
     let mut processed = 0;
+    let mut all_quads: Vec<Value> = Vec::new();
 
     for entity in &text_entities {
         let text_asset = match db.get_component(entity, "text") {
@@ -422,19 +423,9 @@ pub async fn text_render_system_actor(
             })
         }).collect();
 
-        // Write text_quads component
-        let _ = db.set_component_json(entity, "text_quads", json!({
-            "quads": quads,
-            "atlasWidth": atlas.width,
-            "atlasHeight": atlas.height,
-            "textWidth": text_width,
-            "textHeight": text_height,
-            "color": color,
-            "sdf": is_sdf,
-            "font": font_id,
-            "outline": text_data.get("outline"),
-            "shadow": text_data.get("shadow"),
-        }), json!({}));
+        // Quads are ephemeral — flow through DAG, not persisted.
+        // Only the source :text component (prefab data) is stored.
+        // The atlas IS persisted since it's a cacheable asset.
 
         // Store atlas bitmap as binary component on the font entity
         let atlas_id = format!("{}:atlas_{}_{}", font_id.split(':').next().unwrap_or("font"),
@@ -448,10 +439,30 @@ pub async fn text_render_system_actor(
             }));
         }
 
+        all_quads.push(json!({
+            "entity": entity,
+            "quads": quads,
+            "atlasWidth": atlas.width,
+            "atlasHeight": atlas.height,
+            "textWidth": text_width,
+            "textHeight": text_height,
+            "color": color,
+            "sdf": is_sdf,
+            "font": font_id,
+            "outline": text_data.get("outline"),
+            "shadow": text_data.get("shadow"),
+        }));
+
         processed += 1;
     }
 
     let mut out = HashMap::new();
+    if !all_quads.is_empty() {
+        out.insert(
+            "text_quads".to_string(),
+            Message::object(EncodableValue::from(json!(all_quads))),
+        );
+    }
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({

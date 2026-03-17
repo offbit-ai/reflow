@@ -198,7 +198,7 @@ pub async fn scene_billboard_system_actor(
             "distance": vlen(vsub(pos, cam_pos)),
         });
 
-        let _ = db.set_component_json(entity, "billboard_quad", quad.clone(), json!({}));
+        // Quads are ephemeral — flow through DAG outport, not persisted.
         quad_data.push(quad);
         processed += 1;
     }

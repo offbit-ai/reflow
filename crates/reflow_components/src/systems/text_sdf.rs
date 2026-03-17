@@ -182,15 +182,8 @@ pub async fn text_sdf_system_actor(
             combined_ir
         };
 
-        // Write SDF IR component
-        let ir_metadata = json!({
-            "glyphCount": content.chars().filter(|c| !c.is_whitespace()).count(),
-            "totalWidth": total_width,
-            "depth": depth,
-        });
-        let _ = db.set_component_json(entity, "sdf_text_ir", final_ir.clone(), ir_metadata);
-
-        // Output the last processed SDF IR for direct DAG wiring
+        // IR is ephemeral — flows through DAG, not persisted to AssetDB.
+        // Only the source :text_sdf component (prefab data) is stored.
         last_ir = Some(final_ir);
         processed += 1;
     }
