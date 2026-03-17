@@ -260,6 +260,235 @@ impl StorageBackend for MemoryBackend {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// IndexedDbBackend (wasm — persistent browser storage)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// IndexedDB-backed storage for wasm. Uses in-memory cache for sync trait
+/// methods and flushes writes to IndexedDB asynchronously.
+///
+/// Two object stores: "manifest" (single entry, key "entries") and "blobs" (keyed by hash).
+///
+/// Call `IndexedDbBackend::open(name).await` to create + hydrate from IDB.
+#[cfg(target_arch = "wasm32")]
+pub struct IndexedDbBackend {
+    memory: MemoryBackend,
+    db_name: String,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl IndexedDbBackend {
+    /// Open (or create) an IndexedDB database and hydrate the in-memory cache.
+    pub async fn open(name: &str) -> Result<Self> {
+        use js_sys::{Array, Uint8Array};
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen_futures::JsFuture;
+        use web_sys::{IdbTransactionMode, IdbObjectStoreParameters};
+
+        let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("No window"))?;
+        let idb_factory = window
+            .indexed_db()
+            .map_err(|_| anyhow::anyhow!("IndexedDB not available"))?
+            .ok_or_else(|| anyhow::anyhow!("IndexedDB not available"))?;
+
+        // Open DB (version 1)
+        let open_req = idb_factory
+            .open_with_u32(name, 1)
+            .map_err(|_| anyhow::anyhow!("Failed to open IndexedDB"))?;
+
+        // Handle upgrade (create object stores)
+        let on_upgrade = Closure::once(move |event: web_sys::IdbVersionChangeEvent| {
+            let db: web_sys::IdbDatabase = event
+                .target()
+                .unwrap()
+                .dyn_into::<web_sys::IdbOpenDbRequest>()
+                .unwrap()
+                .result()
+                .unwrap()
+                .dyn_into()
+                .unwrap();
+
+            if !db.object_store_names().contains(&"manifest".into()) {
+                db.create_object_store("manifest").unwrap();
+            }
+            if !db.object_store_names().contains(&"blobs".into()) {
+                db.create_object_store("blobs").unwrap();
+            }
+        });
+        open_req.set_onupgradeneeded(Some(on_upgrade.as_ref().unchecked_ref()));
+        on_upgrade.forget();
+
+        let db: web_sys::IdbDatabase = JsFuture::from(open_req)
+            .await
+            .map_err(|_| anyhow::anyhow!("IndexedDB open failed"))?
+            .dyn_into()
+            .map_err(|_| anyhow::anyhow!("IndexedDB cast failed"))?;
+
+        // Hydrate manifest
+        let tx = db
+            .transaction_with_str_and_mode("manifest", IdbTransactionMode::Readonly)
+            .map_err(|_| anyhow::anyhow!("Failed to create transaction"))?;
+        let store = tx.object_store("manifest").map_err(|_| anyhow::anyhow!("No manifest store"))?;
+        let get_req = store.get(&"entries".into()).map_err(|_| anyhow::anyhow!("get failed"))?;
+        let result = JsFuture::from(get_req).await;
+
+        let memory = MemoryBackend::new();
+
+        if let Ok(val) = result {
+            if !val.is_undefined() && !val.is_null() {
+                if let Some(s) = val.as_string() {
+                    if let Ok(entries) = serde_json::from_str::<Vec<AssetEntry>>(&s) {
+                        let mut m = memory.manifest.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+                        *m = entries;
+                    }
+                }
+            }
+        }
+
+        // Hydrate blobs — read all keys and values
+        let tx = db
+            .transaction_with_str_and_mode("blobs", IdbTransactionMode::Readonly)
+            .map_err(|_| anyhow::anyhow!("Failed to create blob transaction"))?;
+        let store = tx.object_store("blobs").map_err(|_| anyhow::anyhow!("No blobs store"))?;
+        let keys_req = store.get_all_keys().map_err(|_| anyhow::anyhow!("getAllKeys failed"))?;
+        let keys_result = JsFuture::from(keys_req).await;
+
+        if let Ok(keys_val) = keys_result {
+            let keys: Array = keys_val.dyn_into().unwrap_or_else(|_| Array::new());
+            for i in 0..keys.length() {
+                let key = keys.get(i);
+                if let Some(hash) = key.as_string() {
+                    let get_req = store.get(&key).ok();
+                    if let Some(req) = get_req {
+                        if let Ok(blob_val) = JsFuture::from(req).await {
+                            if let Ok(arr) = blob_val.dyn_into::<Uint8Array>() {
+                                let data = arr.to_vec();
+                                let _ = memory.write_blob(&hash, &data);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        db.close();
+
+        Ok(Self {
+            memory,
+            db_name: name.to_string(),
+        })
+    }
+
+    /// Flush a blob write to IndexedDB (fire-and-forget).
+    fn flush_blob(&self, hash: &str, data: &[u8]) {
+        let db_name = self.db_name.clone();
+        let hash = hash.to_string();
+        let data = data.to_vec();
+        wasm_bindgen_futures::spawn_local(async move {
+            let _ = Self::idb_put_blob(&db_name, &hash, &data).await;
+        });
+    }
+
+    /// Flush manifest to IndexedDB (fire-and-forget).
+    fn flush_manifest(&self, entries: &[AssetEntry]) {
+        let db_name = self.db_name.clone();
+        let json = serde_json::to_string(entries).unwrap_or_default();
+        wasm_bindgen_futures::spawn_local(async move {
+            let _ = Self::idb_put_manifest(&db_name, &json).await;
+        });
+    }
+
+    async fn idb_put_blob(db_name: &str, hash: &str, data: &[u8]) -> Result<()> {
+        use js_sys::Uint8Array;
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen_futures::JsFuture;
+        use web_sys::IdbTransactionMode;
+
+        let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("No window"))?;
+        let factory = window.indexed_db().ok().flatten().ok_or_else(|| anyhow::anyhow!("No IDB"))?;
+        let open_req = factory.open(db_name).map_err(|_| anyhow::anyhow!("open failed"))?;
+        let db: web_sys::IdbDatabase = JsFuture::from(open_req)
+            .await
+            .map_err(|_| anyhow::anyhow!("open await failed"))?
+            .dyn_into()
+            .map_err(|_| anyhow::anyhow!("cast failed"))?;
+
+        let tx = db.transaction_with_str_and_mode("blobs", IdbTransactionMode::Readwrite)
+            .map_err(|_| anyhow::anyhow!("tx failed"))?;
+        let store = tx.object_store("blobs").map_err(|_| anyhow::anyhow!("store failed"))?;
+        let arr = Uint8Array::from(data);
+        store.put_with_key(&arr, &hash.into()).map_err(|_| anyhow::anyhow!("put failed"))?;
+
+        db.close();
+        Ok(())
+    }
+
+    async fn idb_put_manifest(db_name: &str, json: &str) -> Result<()> {
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen_futures::JsFuture;
+        use web_sys::IdbTransactionMode;
+
+        let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("No window"))?;
+        let factory = window.indexed_db().ok().flatten().ok_or_else(|| anyhow::anyhow!("No IDB"))?;
+        let open_req = factory.open(db_name).map_err(|_| anyhow::anyhow!("open failed"))?;
+        let db: web_sys::IdbDatabase = JsFuture::from(open_req)
+            .await
+            .map_err(|_| anyhow::anyhow!("open await failed"))?
+            .dyn_into()
+            .map_err(|_| anyhow::anyhow!("cast failed"))?;
+
+        let tx = db.transaction_with_str_and_mode("manifest", IdbTransactionMode::Readwrite)
+            .map_err(|_| anyhow::anyhow!("tx failed"))?;
+        let store = tx.object_store("manifest").map_err(|_| anyhow::anyhow!("store failed"))?;
+        store.put_with_key(&json.into(), &"entries".into()).map_err(|_| anyhow::anyhow!("put failed"))?;
+
+        db.close();
+        Ok(())
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl StorageBackend for IndexedDbBackend {
+    fn read_manifest(&self) -> Result<Vec<AssetEntry>> {
+        self.memory.read_manifest()
+    }
+
+    fn write_manifest(&self, entries: &[AssetEntry]) -> Result<()> {
+        self.memory.write_manifest(entries)?;
+        self.flush_manifest(entries);
+        Ok(())
+    }
+
+    fn read_blob(&self, hash: &str) -> Result<Vec<u8>> {
+        self.memory.read_blob(hash)
+    }
+
+    fn write_blob(&self, hash: &str, data: &[u8]) -> Result<()> {
+        self.memory.write_blob(hash, data)?;
+        self.flush_blob(hash, data);
+        Ok(())
+    }
+
+    fn blob_exists(&self, hash: &str) -> bool {
+        self.memory.blob_exists(hash)
+    }
+
+    fn delete_blob(&self, hash: &str) -> Result<()> {
+        self.memory.delete_blob(hash)?;
+        // IDB delete is fire-and-forget
+        let db_name = self.db_name.clone();
+        let hash = hash.to_string();
+        wasm_bindgen_futures::spawn_local(async move {
+            let _ = Self::idb_put_blob(&db_name, &hash, &[]).await; // overwrite with empty
+        });
+        Ok(())
+    }
+
+    fn backend_name(&self) -> &'static str {
+        "indexeddb"
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // AssetDB
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -585,15 +814,36 @@ pub fn get_or_create_db(path: &str) -> Result<Arc<AssetDB>> {
     Ok(db)
 }
 
-/// Get or create an in-memory AssetDB (wasm).
+/// Get or create an AssetDB (wasm — returns in-memory if not yet hydrated).
+/// For full IndexedDB persistence, use `get_or_create_db_async` instead.
 #[cfg(target_arch = "wasm32")]
 pub fn get_or_create_db(path: &str) -> Result<Arc<AssetDB>> {
     let mut reg = registry().lock().map_err(|e| anyhow::anyhow!("{}", e))?;
     if let Some(db) = reg.get(path) {
         return Ok(Arc::clone(db));
     }
+    // Sync fallback: in-memory only. Use get_or_create_db_async for IndexedDB.
     let db = AssetDB::in_memory()?;
     reg.insert(path.to_string(), Arc::clone(&db));
+    Ok(db)
+}
+
+/// Get or create an IndexedDB-backed AssetDB (wasm, async).
+/// Hydrates from IndexedDB on first call, returns cached instance after.
+#[cfg(target_arch = "wasm32")]
+pub async fn get_or_create_db_async(name: &str) -> Result<Arc<AssetDB>> {
+    // Check cache first (sync)
+    {
+        let reg = registry().lock().map_err(|e| anyhow::anyhow!("{}", e))?;
+        if let Some(db) = reg.get(name) {
+            return Ok(Arc::clone(db));
+        }
+    }
+    // Hydrate from IndexedDB (async)
+    let backend = IndexedDbBackend::open(name).await?;
+    let db = AssetDB::with_backend(Box::new(backend))?;
+    let mut reg = registry().lock().map_err(|e| anyhow::anyhow!("{}", e))?;
+    reg.insert(name.to_string(), Arc::clone(&db));
     Ok(db)
 }
 
