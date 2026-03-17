@@ -21,7 +21,7 @@ use crate::animation::{
     AnimationTimelineActor, KeyframeActor, SkinBindActor, SkeletonActor, SkinningActor,
     SpriteAnimationActor,
 };
-use crate::scene::{InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
+use crate::scene::{ComponentNodeActor, InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
 use crate::flow_control::{
     CollectActor, ConditionalBranchActor, CronTriggerActor, DelayActor, FilterActor, GateActor,
     IntervalTriggerActor, LoopActor, MapActor, MergeActor, PassthroughActor, ReduceActor,
@@ -154,6 +154,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_loop" => Some(Arc::new(LoopActor::new())),
 
         // Scene
+        "tpl_component" => Some(Arc::new(ComponentNodeActor::new())),
         "tpl_prefab" => Some(Arc::new(PrefabActor::new())),
         "tpl_instance" => Some(Arc::new(InstanceActor::new())),
         "tpl_scene_graph" => Some(Arc::new(SceneGraphActor::new())),
@@ -542,6 +543,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // Scene
     for (id, name) in [
+        ("tpl_component", "ComponentNodeActor"),
         ("tpl_prefab", "PrefabActor"),
         ("tpl_instance", "InstanceActor"),
         ("tpl_scene_graph", "SceneGraphActor"),
