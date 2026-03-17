@@ -26,6 +26,7 @@ pub mod procedural;
 pub mod registry;
 pub mod scene;
 pub mod stream_ops;
+pub mod systems;
 pub mod text;
 pub mod transform;
 

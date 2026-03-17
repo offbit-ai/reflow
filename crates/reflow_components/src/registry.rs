@@ -9,6 +9,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
+use crate::systems::{
+    SceneCameraSystemActor, SceneLightCollectorActor, SceneMaterialSystemActor,
+    ScenePhysicsSystemActor,
+};
 use crate::animation::{
     AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
     SkinBindActor, SkeletonActor, SkinningActor,
@@ -118,6 +122,12 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_asset_store" => Some(Arc::new(AssetStoreActor::new())),
         "tpl_asset_load" => Some(Arc::new(AssetLoadActor::new())),
         "tpl_asset_query" => Some(Arc::new(AssetQueryActor::new())),
+
+        // Scene Systems (ECS — read/write AssetDB components)
+        "tpl_scene_physics" => Some(Arc::new(ScenePhysicsSystemActor::new())),
+        "tpl_scene_camera" => Some(Arc::new(SceneCameraSystemActor::new())),
+        "tpl_scene_light_collector" => Some(Arc::new(SceneLightCollectorActor::new())),
+        "tpl_scene_material" => Some(Arc::new(SceneMaterialSystemActor::new())),
 
         // Integration
         "tpl_http_request" => Some(Arc::new(HttpRequestActor::new())),
@@ -383,6 +393,12 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_asset_store".to_string(), "AssetStoreActor".to_string());
     mapping.insert("tpl_asset_load".to_string(), "AssetLoadActor".to_string());
     mapping.insert("tpl_asset_query".to_string(), "AssetQueryActor".to_string());
+
+    // Scene Systems
+    mapping.insert("tpl_scene_physics".to_string(), "ScenePhysicsSystemActor".to_string());
+    mapping.insert("tpl_scene_camera".to_string(), "SceneCameraSystemActor".to_string());
+    mapping.insert("tpl_scene_light_collector".to_string(), "SceneLightCollectorActor".to_string());
+    mapping.insert("tpl_scene_material".to_string(), "SceneMaterialSystemActor".to_string());
 
     mapping.insert(
         "tpl_http_request".to_string(),
