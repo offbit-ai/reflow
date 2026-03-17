@@ -17,7 +17,7 @@ use super::math_helpers::*;
     inports::<10>(clip, time, skeleton, inverse_bind_matrices),
     outports::<1>(bone_transforms, metadata),
     state(MemoryState),
-    await_inports(clip, skeleton, time)
+    await_inports(time)
 )]
 pub async fn animation_sampler_actor(
     ctx: ActorContext,
@@ -52,11 +52,17 @@ pub async fn animation_sampler_actor(
         _ => unreachable!("await_inports guarantees time"),
     };
 
-    // Retrieve cached data (guaranteed populated via await_inports for clip + skeleton)
+    // Retrieve cached data (clip + skeleton arrive once, cached in pool)
     let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
 
-    let clip = cache.get("clip").cloned().unwrap();
-    let skeleton = cache.get("skeleton").cloned().unwrap();
+    let clip = match cache.get("clip") {
+        Some(v) => v.clone(),
+        None => return Ok(HashMap::new()), // Not arrived yet
+    };
+    let skeleton = match cache.get("skeleton") {
+        Some(v) => v.clone(),
+        None => return Ok(HashMap::new()), // Not arrived yet
+    };
     let ibm_bytes: Vec<u8> = cache
         .get("ibm_b64")
         .and_then(|v| v.as_str())

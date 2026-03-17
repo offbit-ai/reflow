@@ -18,7 +18,7 @@ use super::math_helpers::*;
     inports::<10>(mesh, skinned_mesh, bone_transforms, skin),
     outports::<1>(deformed_mesh, metadata),
     state(MemoryState),
-    await_inports(mesh, skinned_mesh, bone_transforms)
+    await_inports(bone_transforms)
 )]
 pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -47,11 +47,17 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         _ => unreachable!("await_inports guarantees bone_transforms"),
     };
 
-    // Retrieve cached data (guaranteed populated via await_inports for mesh + skinned_mesh)
+    // Retrieve cached data (mesh + skinned_mesh arrive once, cached in pool)
     let cache: HashMap<String, Value> = ctx.get_pool("_cache").into_iter().collect();
 
-    let mesh_bytes = b64_decode(cache.get("mesh_b64").and_then(|v| v.as_str()).unwrap());
-    let skin_bytes = b64_decode(cache.get("weights_b64").and_then(|v| v.as_str()).unwrap());
+    let mesh_bytes = match cache.get("mesh_b64").and_then(|v| v.as_str()) {
+        Some(s) => b64_decode(s),
+        None => return Ok(HashMap::new()), // Not arrived yet
+    };
+    let skin_bytes = match cache.get("weights_b64").and_then(|v| v.as_str()) {
+        Some(s) => b64_decode(s),
+        None => return Ok(HashMap::new()), // Not arrived yet
+    };
     let skin_info = cache.get("skin").cloned().unwrap_or(json!({"maxInfluences": 4}));
 
     let vertex_count = mesh_bytes.len() / stride;
