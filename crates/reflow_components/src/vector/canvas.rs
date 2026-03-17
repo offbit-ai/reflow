@@ -43,8 +43,7 @@ use std::collections::HashMap;
     Canvas2DActor,
     inports::<100>(layer_0, layer_1, layer_2, layer_3, layer_4, layer_5, layer_6, layer_7),
     outports::<1>(frame, metadata),
-    state(MemoryState),
-    await_all_inports  // Uses network connection counting: fires after all 4 layers arrive
+    state(MemoryState)
 )]
 pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -77,15 +76,11 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         }
     }
 
-    // Check if all configured layers have data
-    let expected_names: Vec<String> = layers_config.iter()
-        .filter_map(|l| l.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .collect();
-
     let pool: HashMap<String, Value> = ctx.get_pool("_layers").into_iter().collect();
 
-    // With await_all_inports + network connection counting, the framework
-    // guarantees all connected layers have arrived before this fires.
+    // Composite on every invocation using cached layer data.
+    // Layers persist in pool — each new arrival overwrites its slot.
+    // First few frames may have incomplete layers; that's OK.
 
     // ─── Composite ───
 
@@ -137,7 +132,7 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         Message::object(EncodableValue::from(json!({
             "width": width,
             "height": height,
-            "layerCount": expected_names.len(),
+            "layerCount": layers_config.len(),
         }))),
     );
     Ok(out)

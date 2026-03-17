@@ -134,9 +134,6 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     }
 
     // Accept full transform object inport (timeline `values` output or direct)
-    static TF_DBG: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let tf_dbg = TF_DBG.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-
     if let Some(Message::Object(obj)) = payload.get("transform") {
         let v: Value = obj.as_ref().clone().into();
         let tf_map = config.get("transformMap");
@@ -186,14 +183,6 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let rot = get_tf("rotation", 0.0);
     let scale = get_tf("scale", 1.0);
 
-    static DC: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let dc = DC.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if dc < 10 {
-        let has_tf = payload.contains_key("transform");
-        let keys: Vec<&String> = payload.keys().collect();
-        eprintln!("[rast {}] keys={:?} has_tf={} pool={:?} → tx={} ty={} sc={} rot={}",
-            dc, keys, has_tf, tf_pool, tx, ty, scale, rot);
-    }
 
     let transform = tsk::Transform::from_translate(tx, ty)
         .post_rotate(rot)

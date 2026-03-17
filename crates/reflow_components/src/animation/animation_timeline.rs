@@ -233,14 +233,6 @@ pub async fn animation_timeline_actor(
         }
     }
 
-    static TL_DBG: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let tl_dbg = TL_DBG.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if tl_dbg < 5 {
-        let keys: Vec<&String> = out.keys().collect();
-        let has_values = out.contains_key("values");
-        eprintln!("[TL {}] output keys={:?} has_values={}", tl_dbg, keys, has_values);
-    }
-
     out.insert("state".to_string(), Message::String(playback_state.clone().into()));
     out.insert("progress".to_string(), Message::Float(progress));
     out.insert(
