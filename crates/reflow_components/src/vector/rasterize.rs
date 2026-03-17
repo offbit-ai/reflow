@@ -30,7 +30,7 @@ use tiny_skia as tsk;
 
 #[actor(
     VectorRasterizeActor,
-    inports::<10>(path, fill, stroke, transform, tick),
+    inports::<10>(path, fill, stroke, transform, tick, x, y, scale, rotation),
     outports::<1>(image, metadata),
     state(MemoryState)
 )]
@@ -104,31 +104,52 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let ts_path = path2d_to_tiny_skia(&vec_path)
         .ok_or_else(|| anyhow::anyhow!("Failed to build tiny-skia path"))?;
 
-    // Build transform from inport or config: { x, y, rotation, scaleX, scaleY }
-    let tf_data = match payload.get("transform") {
-        Some(Message::Object(obj)) => {
-            let v: Value = obj.as_ref().clone().into();
-            Some(v)
+    // Cache individual transform fields from inports
+    for (port, key) in [("x", "x"), ("y", "y"), ("scale", "scale"), ("rotation", "rotation")] {
+        if let Some(msg) = payload.get(port) {
+            let val = match msg {
+                Message::Float(f) => *f,
+                Message::Integer(i) => *i as f64,
+                Message::Object(obj) => {
+                    let v: Value = obj.as_ref().clone().into();
+                    v.as_f64().unwrap_or(0.0)
+                }
+                _ => continue,
+            };
+            ctx.pool_upsert("_tf", key, json!(val));
         }
-        _ => config.get("transform").cloned(),
+    }
+
+    // Build transform: individual inports > transform object > config
+    let tf_config = config.get("transform").cloned().unwrap_or(json!({}));
+    let tf_pool: HashMap<String, Value> = ctx.get_pool("_tf").into_iter().collect();
+
+    let get_tf = |key: &str, default: f64| -> f32 {
+        tf_pool.get(key).and_then(|v| v.as_f64())
+            .or_else(|| tf_config.get(key).and_then(|v| v.as_f64()))
+            .unwrap_or(default) as f32
     };
 
-    let transform = if let Some(ref tf) = tf_data {
-        let tx = tf.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let ty = tf.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let rot = tf.get("rotation").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let sx = tf.get("scaleX").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let sy = tf.get("scaleY").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let scale = tf.get("scale").and_then(|v| v.as_f64()).map(|s| s as f32);
+    // Also accept full transform object inport (overrides everything)
+    if let Some(Message::Object(obj)) = payload.get("transform") {
+        let v: Value = obj.as_ref().clone().into();
+        if let Value::Object(map) = v {
+            for (k, val) in map {
+                if let Some(f) = val.as_f64() {
+                    ctx.pool_upsert("_tf", &k, json!(f));
+                }
+            }
+        }
+    }
 
-        let (sx, sy) = if let Some(s) = scale { (s, s) } else { (sx, sy) };
+    let tx = get_tf("x", 0.0);
+    let ty = get_tf("y", 0.0);
+    let rot = get_tf("rotation", 0.0);
+    let scale = get_tf("scale", 1.0);
 
-        tsk::Transform::from_translate(tx, ty)
-            .post_rotate(rot)
-            .post_scale(sx, sy)
-    } else {
-        tsk::Transform::identity()
-    };
+    let transform = tsk::Transform::from_translate(tx, ty)
+        .post_rotate(rot)
+        .post_scale(scale, scale);
 
     let fill_rule = tsk::FillRule::Winding;
 

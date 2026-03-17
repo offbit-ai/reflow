@@ -105,9 +105,22 @@ pub async fn keyframe_actor(ctx: ActorContext) -> Result<HashMap<String, Message
 
     let mut out = HashMap::new();
     if let Some(v) = value {
+        // Output as the most specific Message type for direct wiring
+        let msg = match &v {
+            Value::Number(n) => {
+                if let Some(f) = n.as_f64() {
+                    Message::Float(f)
+                } else if let Some(i) = n.as_i64() {
+                    Message::Integer(i)
+                } else {
+                    Message::object(EncodableValue::from(v.clone()))
+                }
+            }
+            _ => Message::object(EncodableValue::from(v.clone())),
+        };
         out.insert(
             "value".to_string(),
-            Message::object(EncodableValue::from(v)),
+            msg,
         );
     }
     out.insert("progress".to_string(), Message::Float(progress));
