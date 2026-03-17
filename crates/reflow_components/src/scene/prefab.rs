@@ -24,13 +24,30 @@
 //!
 //! ## Config
 //!
+//! Any key that isn't a control key (`name`, `template`, `$db`, `stride`)
+//! is stored as a component on the template entity. This means prefabs
+//! can include physics, behaviors, state machines — the full entity:
+//!
 //! ```json
 //! {
-//!   "name": "crate",
-//!   "template": "crate_tpl",
+//!   "name": "enemy",
 //!   "$db": "./game.db",
 //!   "transform": { "position": [0, 0, 0] },
-//!   "material": { "albedo": [0.6, 0.4, 0.2], "roughness": 0.8 }
+//!   "material": { "albedo": [0.3, 0.6, 0.2] },
+//!   "rigidbody": { "bodyType": "dynamic", "mass": 60 },
+//!   "collider": { "shape": "capsule", "radius": 0.3, "height": 1.6 },
+//!   "behavior": {
+//!     "rules": [
+//!       { "name": "patrol", "target": "transform.position.x", "expr": "sin(time) * 5" }
+//!     ]
+//!   },
+//!   "state_machine": {
+//!     "current": "idle",
+//!     "states": { "idle": {}, "chase": {}, "attack": {} },
+//!     "transitions": [
+//!       { "from": "idle", "to": "chase", "trigger": "playerNear" }
+//!     ]
+//!   }
 //! }
 //! ```
 
@@ -44,7 +61,7 @@ use std::collections::HashMap;
 
 #[actor(
     PrefabActor,
-    inports::<10>(mesh, material, transform, spawn),
+    inports::<10>(mesh, material, transform, component, spawn),
     outports::<10>(entity_id, prefab, metadata),
     state(MemoryState)
 )]
@@ -110,6 +127,22 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
     };
     if let Some(tf) = transform {
         db.set_component_json(template_name, "transform", tf, json!({}))?;
+    }
+
+    // Generic component inport: { "name": "rigidbody", "data": {...} }
+    // Wire any actor's output into a prefab as a named component.
+    if let Some(Message::Object(obj)) = payload.get("component") {
+        let v: Value = obj.as_ref().clone().into();
+        if let Some(comp_name) = v.get("name").and_then(|v| v.as_str()) {
+            if let Some(comp_data) = v.get("data") {
+                if let Value::Object(_) | Value::Array(_) = comp_data {
+                    db.set_component_json(template_name, comp_name, comp_data.clone(), json!({}))?;
+                } else if let Some(s) = comp_data.as_str() {
+                    // String data → store as binary
+                    db.set_component(template_name, comp_name, s.as_bytes(), json!({}))?;
+                }
+            }
+        }
     }
 
     // Store any other config keys as components (excluding control keys)
