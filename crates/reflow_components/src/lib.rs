@@ -12,6 +12,7 @@
 #[allow(clippy::all, unused_variables)]
 pub mod api;
 pub mod animation;
+pub mod assets;
 pub mod flow_control;
 pub mod gpu;
 #[cfg(feature = "window-events")]

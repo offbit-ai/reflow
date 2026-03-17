@@ -1,0 +1,11 @@
+[package]
+name = "reflow_assets"
+version = "0.1.0"
+edition = "2021"
+description = "Content-addressed asset database for Reflow workflows"
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }

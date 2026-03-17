@@ -8,6 +8,7 @@ use crate::Actor;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
 use crate::animation::{
     AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
     SkinBindActor, SkeletonActor, SkinningActor,
@@ -113,6 +114,11 @@ use crate::transform::{DataOperationsActor, DataTransformActor, GeneratorActor};
 /// Get an actor instance for a given Zeal template ID
 pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
     match template_id {
+        // Asset DB
+        "tpl_asset_store" => Some(Arc::new(AssetStoreActor::new())),
+        "tpl_asset_load" => Some(Arc::new(AssetLoadActor::new())),
+        "tpl_asset_query" => Some(Arc::new(AssetQueryActor::new())),
+
         // Integration
         "tpl_http_request" => Some(Arc::new(HttpRequestActor::new())),
 
@@ -372,6 +378,11 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
 /// Get the complete mapping of template IDs to actor names
 pub fn get_template_mapping() -> HashMap<String, String> {
     let mut mapping = HashMap::new();
+
+    // Asset DB
+    mapping.insert("tpl_asset_store".to_string(), "AssetStoreActor".to_string());
+    mapping.insert("tpl_asset_load".to_string(), "AssetLoadActor".to_string());
+    mapping.insert("tpl_asset_query".to_string(), "AssetQueryActor".to_string());
 
     mapping.insert(
         "tpl_http_request".to_string(),
