@@ -736,6 +736,7 @@ impl ApiToolGenerator {
             resolved_env: std::collections::HashMap::new(),
             config: std::collections::HashMap::new(),
             namespace: None,
+            inport_connection_counts: std::collections::HashMap::new(),
         };
 
         let context = ActorContext::new(payload, outports, state, actor_config, load);

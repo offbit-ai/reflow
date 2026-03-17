@@ -426,7 +426,17 @@ impl Network {
                 let actor = self.actors.get(&node.component).unwrap_or_else(|| {
                     panic!("Expected to find actor {} for node {}", node.component, id)
                 });
-                let config = ActorConfig::from_node(node.clone())?;
+                let mut config = ActorConfig::from_node(node.clone())?;
+
+                // Count upstream connections per inport for this actor
+                for conn in &self.connectors {
+                    if conn.to.actor == id {
+                        *config.inport_connection_counts
+                            .entry(conn.to.port.clone())
+                            .or_insert(0) += 1;
+                    }
+                }
+
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     let tracing_integration = self.tracing_integration.clone();

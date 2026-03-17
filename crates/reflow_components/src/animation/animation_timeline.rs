@@ -190,12 +190,37 @@ pub async fn animation_timeline_actor(
 
             if track_time >= 0.0 {
                 if let Some(value) = evaluate_keyframes(kf, track_time) {
-                    out.insert(
-                        track_name.clone(),
-                        Message::object(EncodableValue::from(value)),
-                    );
+                    // Output as the most specific type for direct wiring
+                    let msg = match &value {
+                        Value::Number(n) => {
+                            if let Some(f) = n.as_f64() { Message::Float(f) }
+                            else if let Some(i) = n.as_i64() { Message::Integer(i) }
+                            else { Message::object(EncodableValue::from(value.clone())) }
+                        }
+                        _ => Message::object(EncodableValue::from(value)),
+                    };
+                    out.insert(track_name.clone(), msg);
                 }
             }
+        }
+    }
+
+    // Output all track values as one object on `values` outport
+    // so downstream actors get all animated values in one message per tick
+    if !out.is_empty() {
+        let mut values_obj = serde_json::Map::new();
+        for (k, v) in &out {
+            match v {
+                Message::Float(f) => { values_obj.insert(k.clone(), json!(f)); }
+                Message::Integer(i) => { values_obj.insert(k.clone(), json!(i)); }
+                _ => {}
+            }
+        }
+        if !values_obj.is_empty() {
+            out.insert(
+                "values".to_string(),
+                Message::object(EncodableValue::from(Value::Object(values_obj))),
+            );
         }
     }
 

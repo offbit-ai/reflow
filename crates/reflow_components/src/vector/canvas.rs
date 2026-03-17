@@ -1,37 +1,36 @@
-//! Canvas2D actor — composites N RGBA layers in z-order.
+//! Canvas2D actor — composites multiple RGBA layers per frame.
 //!
-//! The core 2D compositing node. Multiple sources wire into the `layer`
-//! inport. Each layer is pooled with a name and z-index. The canvas
-//! composites them back-to-front each tick.
-//!
-//! ## Inports
-//!
-//! - `layer` — pooled: `{ "name": "star", "z": 1, "blend": "normal", "opacity": 1.0 }`
-//!             + image data as `Message::Bytes` on the `image` key, OR sent
-//!             as a separate `{ "name": "star", "image": <bytes> }` object.
-//! - `tick` — triggers compositing of all pooled layers
+//! Each layer is a named inport. Config defines z-order, blend mode,
+//! and opacity per layer. The actor pools all layers and composites
+//! when every expected layer has arrived for the current frame.
 //!
 //! ## Config
 //!
 //! ```json
 //! {
-//!   "width": 1280,
-//!   "height": 720,
-//!   "background": [0, 0, 0, 255]
+//!   "width": 640,
+//!   "height": 360,
+//!   "background": [8, 4, 25, 255],
+//!   "layers": [
+//!     { "name": "bg", "blend": "normal", "opacity": 1.0 },
+//!     { "name": "glow", "blend": "screen", "opacity": 0.5 },
+//!     { "name": "star", "blend": "normal", "opacity": 1.0 },
+//!     { "name": "circle", "blend": "add", "opacity": 0.7 }
+//!   ]
 //! }
 //! ```
 //!
 //! ## DAG wiring
 //!
 //! ```text
-//! VectorRasterize("star")  → layer ─┐
-//! VectorRasterize("circle") → layer ─┤
-//! Background(gradient)      → layer ─┼→ Canvas2D → frame → FrameCollector
-//! GaussianBlur(glow)       → layer ─┤
-//! TextRender               → layer ─┘
-//!
-//! IntervalTrigger ──────────→ tick ──→
+//! Background    → bg     ─┐
+//! GaussianBlur  → glow   ─┤
+//! StarRender    → star   ─┼→ Canvas2D → frame → collector
+//! CircleRender  → circle ─┘
 //! ```
+//!
+//! The actor fires and composites when ALL configured layers have
+//! image data (pooled across invocations).
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -42,16 +41,19 @@ use std::collections::HashMap;
 
 #[actor(
     Canvas2DActor,
-    inports::<100>(layer, tick),
+    inports::<100>(layer_0, layer_1, layer_2, layer_3, layer_4, layer_5, layer_6, layer_7),
     outports::<1>(frame, metadata),
-    state(MemoryState)
+    state(MemoryState),
+    await_all_inports  // Uses network connection counting: fires after all 4 layers arrive
 )]
 pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(1280) as usize;
-    let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(720) as usize;
+    let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(640) as usize;
+    let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(360) as usize;
+    let pixel_count = width * height * 4;
+
     let bg_color = config.get("background").and_then(|v| v.as_array()).map(|a| {
         [
             a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
@@ -61,56 +63,33 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         ]
     }).unwrap_or([0, 0, 0, 255]);
 
-    let pixel_count = width * height * 4;
+    let layers_config = config.get("layers").and_then(|v| v.as_array()).cloned().unwrap_or_default();
 
-    // Pool incoming layers
-    if let Some(Message::Object(obj)) = payload.get("layer") {
-        let v: Value = obj.as_ref().clone().into();
-        let name = v.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
-        ctx.pool_upsert("_layers_meta", &name, v);
-    }
-    // Also pool raw image bytes if layer sends them separately
-    if let Some(Message::Bytes(bytes)) = payload.get("layer") {
-        // Anonymous layer — use counter
-        let count: u64 = ctx.get_pool("_counter")
-            .into_iter()
-            .find(|(k, _)| k == "n")
-            .and_then(|(_, v)| v.as_u64())
-            .unwrap_or(0);
-        ctx.pool_upsert("_counter", "n", json!(count + 1));
-        ctx.pool_upsert("_layers_data", &format!("layer_{}", count), json!({
-            "name": format!("layer_{}", count),
-            "z": count,
-        }));
-        // Store image as base64 in pool
-        let encoded = {
-            use base64::Engine;
-            base64::engine::general_purpose::STANDARD.encode(&**bytes)
-        };
-        ctx.pool_upsert("_layers_img", &format!("layer_{}", count), json!(encoded));
+    // Pool every incoming image by port name
+    let all_ports = ["layer_0", "layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6", "layer_7"];
+    for port_name in &all_ports {
+        if let Some(Message::Bytes(bytes)) = payload.get(*port_name) {
+            let encoded = {
+                use base64::Engine;
+                base64::engine::general_purpose::STANDARD.encode(&**bytes)
+            };
+            ctx.pool_upsert("_layers", port_name, json!(encoded));
+        }
     }
 
-    // Only composite on tick
-    if !payload.contains_key("tick") {
-        return Ok(HashMap::new());
-    }
+    // Check if all configured layers have data
+    let expected_names: Vec<String> = layers_config.iter()
+        .filter_map(|l| l.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .collect();
 
-    // Collect all layers with metadata
-    let layer_metas: Vec<(String, Value)> = ctx.get_pool("_layers_meta").into_iter().collect();
-    let layer_imgs: Vec<(String, Value)> = ctx.get_pool("_layers_img").into_iter().collect();
+    let pool: HashMap<String, Value> = ctx.get_pool("_layers").into_iter().collect();
 
-    // Sort by z-index
-    let mut sorted_layers: Vec<(String, f64, String, f32)> = Vec::new(); // (name, z, blend, opacity)
+    // With await_all_inports + network connection counting, the framework
+    // guarantees all connected layers have arrived before this fires.
 
-    for (name, meta) in &layer_metas {
-        let z = meta.get("z").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let blend = meta.get("blend").and_then(|v| v.as_str()).unwrap_or("normal").to_string();
-        let opacity = meta.get("opacity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        sorted_layers.push((name.clone(), z, blend, opacity));
-    }
-    sorted_layers.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    // ─── Composite ───
 
-    // Build canvas with background
+    // Start with background color
     let mut canvas = vec![0u8; pixel_count];
     for i in 0..(width * height) {
         canvas[i * 4] = bg_color[0];
@@ -119,24 +98,37 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         canvas[i * 4 + 3] = bg_color[3];
     }
 
-    // Composite layers
-    for (name, _z, blend_mode, opacity) in &sorted_layers {
-        // Find image data
-        let img_data = layer_imgs.iter()
-            .find(|(n, _)| n == name)
-            .and_then(|(_, v)| v.as_str())
-            .and_then(|encoded| {
-                use base64::Engine;
-                base64::engine::general_purpose::STANDARD.decode(encoded).ok()
-            });
+    // Composite layers in config order (z-order)
+    for layer_cfg in &layers_config {
+        let name = match layer_cfg.get("name").and_then(|v| v.as_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        let blend_mode = layer_cfg.get("blend").and_then(|v| v.as_str()).unwrap_or("normal");
+        let opacity = layer_cfg.get("opacity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
 
-        if let Some(layer_bytes) = img_data {
-            if layer_bytes.len() == pixel_count {
-                let mode = reflow_pixel::blend::BlendMode::from_str(blend_mode);
-                reflow_pixel::blend::blend_rows(&mut canvas, &layer_bytes, mode, *opacity);
+        let layer_bytes = match pool.get(name).and_then(|v| v.as_str()) {
+            Some(encoded) => {
+                use base64::Engine;
+                match base64::engine::general_purpose::STANDARD.decode(encoded) {
+                    Ok(bytes) => bytes,
+                    Err(_) => continue,
+                }
             }
+            None => continue,
+        };
+
+        if layer_bytes.len() != pixel_count {
+            continue;
         }
+
+        let mode = reflow_pixel::blend::BlendMode::from_str(blend_mode);
+        reflow_pixel::blend::blend_rows(&mut canvas, &layer_bytes, mode, opacity);
     }
+
+    // DON'T clear pool — layers stay cached. Next tick's arrivals
+    // overwrite them. This prevents blank frames when layers arrive
+    // at slightly different times within a tick.
 
     let mut out = HashMap::new();
     out.insert("frame".to_string(), Message::bytes(canvas));
@@ -145,8 +137,7 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         Message::object(EncodableValue::from(json!({
             "width": width,
             "height": height,
-            "layerCount": sorted_layers.len(),
-            "layers": sorted_layers.iter().map(|(n, z, b, o)| json!({"name": n, "z": z, "blend": b, "opacity": o})).collect::<Vec<_>>(),
+            "layerCount": expected_names.len(),
         }))),
     );
     Ok(out)

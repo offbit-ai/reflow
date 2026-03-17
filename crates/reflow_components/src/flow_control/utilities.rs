@@ -193,7 +193,7 @@ pub async fn reduce_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
 // ── Merge (combine multiple inputs into one object) ─────────────
 
 /// Merges multiple inputs into a single object or array.
-#[actor(MergeActor, inports::<10>(a, b, c, d), outports::<1>(output), state(MemoryState), await_all_inports)]
+#[actor(MergeActor, inports::<10>(a, b, c, d), outports::<1>(output), state(MemoryState))]
 pub async fn merge_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();

@@ -78,6 +78,8 @@ impl ActorProcess {
         let mut accumulated: HashMap<String, Message> = HashMap::new();
         let inports_count = self.inport_names.len();
         let actor_id = self.config.get_node_id();
+        let total_connections: usize = self.config.inport_connection_counts.values().sum();
+        let mut tick_message_count: usize = 0;
         loop {
             let packet = match self.inport_rx.clone().stream().next().await {
                 Some(p) => p,
@@ -88,25 +90,33 @@ impl ActorProcess {
 
             // ── Accumulate if awaiting inports ──────────────────────
             let payload = if self.await_all_inports {
-                // Wait for ALL declared inports
+                // Wait for ALL connected inports (uses graph topology)
                 accumulated.extend(packet);
-                if accumulated.len() < inports_count {
+                tick_message_count += 1;
+                let needed = if total_connections > 0 { total_connections } else { inports_count };
+                if tick_message_count < needed {
                     continue;
                 }
-                // Take all data, reset accumulator
+                tick_message_count = 0;
                 std::mem::take(&mut accumulated)
             } else if !self.required_inports.is_empty() {
-                // Wait for SPECIFIC required inports (selective await)
+                // Wait for SPECIFIC required inports using connection counts
                 accumulated.extend(packet);
+                tick_message_count += 1;
+
+                // Count how many connections feed the required ports
+                let required_connections: usize = self.required_inports.iter()
+                    .map(|req| self.config.inport_connection_counts
+                        .get(req).copied().unwrap_or(1))
+                    .sum();
+
                 let has_all_required = self.required_inports.iter()
                     .all(|req| accumulated.contains_key(req));
                 if !has_all_required {
                     continue;
                 }
-                // Take the accumulated data but DON'T clear — keep cached
-                // values so next message doesn't need to re-collect all ports.
-                // Clone the full state, then only remove required ports so
-                // they must arrive fresh next time.
+                // Keep cached values, only clear required ports
+                tick_message_count = 0;
                 let payload = accumulated.clone();
                 for req in &self.required_inports {
                     accumulated.remove(req);

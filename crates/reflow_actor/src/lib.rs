@@ -66,6 +66,10 @@ pub struct ActorConfig {
     pub config: HashMap<String, Value>,
     /// Graph namespace (for multi-graph support)
     pub namespace: Option<String>,
+    /// Number of upstream connections per inport name.
+    /// Set by the network at startup from the connection topology.
+    /// Used by ActorProcess to know when all inputs for a tick have arrived.
+    pub inport_connection_counts: HashMap<String, usize>,
 }
 
 impl Default for ActorConfig {
@@ -79,6 +83,7 @@ impl Default for ActorConfig {
             resolved_env: HashMap::new(),
             config: HashMap::new(),
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         }
     }
 }
@@ -138,6 +143,7 @@ impl ActorConfig {
             resolved_env,
             config,
             namespace,
+            inport_connection_counts: HashMap::new(),
         })
     }
 

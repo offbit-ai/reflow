@@ -47,16 +47,29 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
         ctx.pool_upsert("_raster", "path", json!(s.to_string()));
     }
 
-    // Get cached or fresh path
-    let svg_d = match payload.get("path") {
-        Some(Message::String(s)) => s.to_string(),
-        _ => {
-            match ctx.get_pool("_raster").into_iter().find(|(k, _)| k == "path") {
-                Some((_, v)) => v.as_str().unwrap_or("").to_string(),
-                None => return Ok(HashMap::new()), // No path yet
-            }
-        }
-    };
+    // Only render when transform or tick arrives — not on path-only input.
+    // Path is cached for reuse; the per-tick trigger is transform/tick.
+    let has_trigger = payload.contains_key("transform")
+        || payload.contains_key("tick")
+        || payload.contains_key("scale")
+        || payload.contains_key("rotation")
+        || payload.contains_key("x")
+        || payload.contains_key("y");
+
+    if !has_trigger {
+        return Ok(HashMap::new()); // Path cached, waiting for per-tick trigger
+    }
+
+    // Get cached path
+    let svg_d = ctx.get_pool("_raster")
+        .into_iter()
+        .find(|(k, _)| k == "path")
+        .and_then(|(_, v)| v.as_str().map(|s| s.to_string()))
+        .or_else(|| payload.get("path").and_then(|m| match m {
+            Message::String(s) => Some(s.to_string()),
+            _ => None,
+        }))
+        .unwrap_or_default();
 
     if svg_d.is_empty() {
         return Ok(HashMap::new());
@@ -120,7 +133,28 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
         }
     }
 
-    // Build transform: individual inports > transform object > config
+    // Accept full transform object inport (timeline `values` output or direct)
+    // Also support config `transformMap` to rename fields:
+    //   { "transformMap": { "star_scale": "scale", "star_rot": "rotation" } }
+    if let Some(Message::Object(obj)) = payload.get("transform") {
+        let v: Value = obj.as_ref().clone().into();
+        let tf_map = config.get("transformMap");
+
+        if let Value::Object(map) = v {
+            for (k, val) in &map {
+                if let Some(f) = val.as_f64() {
+                    // Map field name if transformMap is configured
+                    let target_key = tf_map
+                        .and_then(|m| m.get(k))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or(k);
+                    ctx.pool_upsert("_tf", target_key, json!(f));
+                }
+            }
+        }
+    }
+
+    // Build transform: pool (from inports) > config defaults
     let tf_config = config.get("transform").cloned().unwrap_or(json!({}));
     let tf_pool: HashMap<String, Value> = ctx.get_pool("_tf").into_iter().collect();
 
@@ -129,18 +163,6 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
             .or_else(|| tf_config.get(key).and_then(|v| v.as_f64()))
             .unwrap_or(default) as f32
     };
-
-    // Also accept full transform object inport (overrides everything)
-    if let Some(Message::Object(obj)) = payload.get("transform") {
-        let v: Value = obj.as_ref().clone().into();
-        if let Value::Object(map) = v {
-            for (k, val) in map {
-                if let Some(f) = val.as_f64() {
-                    ctx.pool_upsert("_tf", &k, json!(f));
-                }
-            }
-        }
-    }
 
     let tx = get_tf("x", 0.0);
     let ty = get_tf("y", 0.0);
