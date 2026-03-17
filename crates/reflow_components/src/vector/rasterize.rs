@@ -138,10 +138,6 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
         let v: Value = obj.as_ref().clone().into();
         let tf_map = config.get("transformMap");
 
-        if tf_dbg < 10 {
-            eprintln!("[TF {}] value={}", tf_dbg, v);
-        }
-
         if let Value::Object(map) = v {
             for (k, val) in &map {
                 if let Some(f) = val.as_f64() {
@@ -152,12 +148,7 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
                     ctx.pool_upsert("_tf", target_key, json!(f));
                 }
             }
-        } else if tf_dbg < 5 {
-            eprintln!("[TF {}] NOT OBJECT: {:?}", tf_dbg, v);
         }
-    } else if tf_dbg < 5 && payload.contains_key("transform") {
-        eprintln!("[TF {}] transform present but NOT Message::Object, type={:?}",
-            tf_dbg, payload.get("transform").map(|m| format!("{:?}", std::mem::discriminant(m))));
     }
 
     // Build transform: pool (from inports) > config defaults

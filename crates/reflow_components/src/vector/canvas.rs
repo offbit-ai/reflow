@@ -41,7 +41,7 @@ use std::collections::HashMap;
 
 #[actor(
     Canvas2DActor,
-    inports::<100>(layer_0, layer_1, layer_2, layer_3, layer_4, layer_5, layer_6, layer_7),
+    inports::<100>(tick, layer_0, layer_1, layer_2, layer_3, layer_4, layer_5, layer_6, layer_7),
     outports::<1>(frame, metadata),
     state(MemoryState)
 )]
@@ -78,9 +78,11 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
 
     let pool: HashMap<String, Value> = ctx.get_pool("_layers").into_iter().collect();
 
-    // Composite on every invocation using cached layer data.
-    // Layers persist in pool — each new arrival overwrites its slot.
-    // First few frames may have incomplete layers; that's OK.
+    // Only composite when tick arrives — ensures one frame per tick.
+    // Layer data arrives and is cached in pool; tick triggers the composite.
+    if !payload.contains_key("tick") {
+        return Ok(HashMap::new());
+    }
 
     // ─── Composite ───
 
