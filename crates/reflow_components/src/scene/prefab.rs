@@ -1,54 +1,49 @@
-//! Prefab actor — entity template and spawner via AssetDB.
+//! Entity actor — the primary node for creating entities in the DAG.
 //!
-//! Two modes:
+//! One node = one entity. All components defined in config. Toggle
+//! sections on/off in the visual editor. Only enabled components
+//! are written to AssetDB.
 //!
-//! ## 1. Define a prefab (store template in AssetDB)
-//!
-//! Wire mesh, material, and other data into the prefab. It stores them
-//! as components on a template entity in the AssetDB.
-//!
-//! ```text
-//! TubeMesh → mesh ────┐
-//! NoiseGen → material ─┼→ PrefabActor(name: "crate", $db: "./game.db")
-//!                      │     stores: crate_tpl:mesh, crate_tpl:material, crate_tpl:transform
-//! ```
-//!
-//! ## 2. Spawn from a prefab (instantiate)
-//!
-//! Send an entity name to the `spawn` inport. The actor calls
-//! `db.spawn_from(template, new_entity)` and outputs the new entity ID.
-//!
-//! ```text
-//! "crate_42" → spawn → PrefabActor(template: "crate_tpl") → entity_id
-//! ```
-//!
-//! ## Config
-//!
-//! Any key that isn't a control key (`name`, `template`, `$db`, `stride`)
-//! is stored as a component on the template entity. This means prefabs
-//! can include physics, behaviors, state machines — the full entity:
+//! ## Standard components (built-in sections)
 //!
 //! ```json
 //! {
-//!   "name": "enemy",
+//!   "$name": "enemy_01",
 //!   "$db": "./game.db",
-//!   "transform": { "position": [0, 0, 0] },
-//!   "material": { "albedo": [0.3, 0.6, 0.2] },
-//!   "rigidbody": { "bodyType": "dynamic", "mass": 60 },
-//!   "collider": { "shape": "capsule", "radius": 0.3, "height": 1.6 },
-//!   "behavior": {
-//!     "rules": [
-//!       { "name": "patrol", "target": "transform.position.x", "expr": "sin(time) * 5" }
-//!     ]
-//!   },
-//!   "state_machine": {
-//!     "current": "idle",
-//!     "states": { "idle": {}, "chase": {}, "attack": {} },
-//!     "transitions": [
-//!       { "from": "idle", "to": "chase", "trigger": "playerNear" }
-//!     ]
-//!   }
+//!
+//!   "transform": { "position": [5, 0, 3], "rotation": [0, 0, 0, 1], "scale": [1, 1, 1] },
+//!   "rigidbody": { "bodyType": "dynamic", "mass": 60, "gravityScale": 1.0 },
+//!   "collider": { "shape": "capsule", "radius": 0.3, "height": 1.8 },
+//!   "material": { "albedo": [0.3, 0.6, 0.2], "roughness": 0.7 },
+//!   "billboard": { "mode": "screen", "text": "Enemy", "offset": [0, 2, 0] },
+//!   "behavior": { "rules": [{ "name": "patrol", "target": "transform.position.x", "expr": "sin(time) * 5" }] },
+//!   "state_machine": { "current": "idle", "states": {...}, "transitions": [...] },
+//!   "light": { "type": "point", "color": [1, 0.6, 0.2], "range": 10 },
+//!   "camera": { "mode": "thirdPerson", "target": "player", "fov": 60 },
+//!   "text": { "content": "Hello", "font": "roboto:font", "fontSize": 24 },
+//!   "tween": { "target": "transform.position", "from": [0,0,0], "to": [5,0,0], "duration": 1.0 },
+//!   "skybox": { "mode": "gradient", "topColor": [0.1, 0.15, 0.4] },
+//!   "weather": { "type": "rain", "intensity": 0.7 },
+//!   "bind": true
 //! }
+//! ```
+//!
+//! Any key that isn't a `$` control key is a component. The visual editor
+//! renders each as a collapsible section with typed property fields.
+//!
+//! ## Inports
+//!
+//! - `entity` — entity name (overrides `$name` config)
+//! - `mesh` — binary mesh data from upstream
+//! - `material` — material from upstream actor
+//! - `transform` — transform from upstream actor
+//! - `component` — generic `{ "name": "...", "data": {...} }` from ComponentNode
+//! - `spawn` — send an entity name to instantiate from this as a template
+//!
+//! ## Spawn mode (prefab instantiation)
+//!
+//! ```text
+//! "crate_42" → spawn → Entity($template: "crate_tpl") → entity_id
 //! ```
 
 use crate::{Actor, ActorBehavior, Message, Port};
@@ -59,9 +54,12 @@ use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
+/// Control keys that are not components.
+const CONTROL_KEYS: &[&str] = &["$name", "$db", "$template", "name", "template", "stride"];
+
 #[actor(
     PrefabActor,
-    inports::<10>(mesh, material, transform, component, spawn),
+    inports::<10>(entity, mesh, material, transform, component, spawn),
     outports::<10>(entity_id, prefab, metadata),
     state(MemoryState)
 )]
@@ -69,22 +67,10 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let name = config
-        .get("name")
-        .and_then(|v| v.as_str())
-        .unwrap_or("prefab")
-        .to_string();
-
     let db_path = config
         .get("$db")
         .and_then(|v| v.as_str())
         .unwrap_or("./assets.db");
-
-    let default_template = format!("{}_tpl", name);
-    let template_name = config
-        .get("template")
-        .and_then(|v| v.as_str())
-        .unwrap_or(&default_template);
 
     let stride = config
         .get("stride")
@@ -93,121 +79,108 @@ pub async fn prefab_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
 
     let db = get_or_create_db(db_path)?;
 
-    // ─── Mode 1: Define prefab (store components on template entity) ───
-
-    // Mesh from inport
-    if let Some(Message::Bytes(mesh_bytes)) = payload.get("mesh") {
-        db.set_component(
-            template_name,
-            "mesh",
-            mesh_bytes,
-            json!({"stride": stride}),
-        )?;
-    }
-
-    // Material from inport or config
-    let material = match payload.get("material") {
-        Some(Message::Object(obj)) => {
-            let v: Value = obj.as_ref().clone().into();
-            Some(v)
-        }
-        _ => config.get("material").cloned(),
+    // Entity name: inport overrides config
+    let entity_name = match payload.get("entity") {
+        Some(Message::String(s)) => s.to_string(),
+        _ => config
+            .get("$name")
+            .or_else(|| config.get("name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("entity")
+            .to_string(),
     };
-    if let Some(mat) = material {
-        db.set_component_json(template_name, "material", mat, json!({}))?;
-    }
 
-    // Transform from inport or config
-    let transform = match payload.get("transform") {
-        Some(Message::Object(obj)) => {
-            let v: Value = obj.as_ref().clone().into();
-            Some(v)
-        }
-        _ => config.get("transform").cloned(),
-    };
-    if let Some(tf) = transform {
-        db.set_component_json(template_name, "transform", tf, json!({}))?;
-    }
+    let template_name = config
+        .get("$template")
+        .or_else(|| config.get("template"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
-    // Generic component inport: { "name": "rigidbody", "data": {...} }
-    // Wire any actor's output into a prefab as a named component.
-    if let Some(Message::Object(obj)) = payload.get("component") {
-        let v: Value = obj.as_ref().clone().into();
-        if let Some(comp_name) = v.get("name").and_then(|v| v.as_str()) {
-            if let Some(comp_data) = v.get("data") {
-                if let Value::Object(_) | Value::Array(_) = comp_data {
-                    db.set_component_json(template_name, comp_name, comp_data.clone(), json!({}))?;
-                } else if let Some(s) = comp_data.as_str() {
-                    // String data → store as binary
-                    db.set_component(template_name, comp_name, s.as_bytes(), json!({}))?;
-                }
-            }
-        }
-    }
-
-    // Store any other config keys as components (excluding control keys)
-    for (key, val) in &config {
-        match key.as_str() {
-            "name" | "template" | "$db" | "stride" | "material" | "transform" => continue,
-            component => {
-                if val.is_object() || val.is_array() {
-                    db.set_component_json(template_name, component, val.clone(), json!({}))?;
-                }
-            }
-        }
-    }
-
-    let mut out = HashMap::new();
-
-    // ─── Mode 2: Spawn instance ───
-
+    // ─── Spawn mode: instantiate from template ───
     if let Some(Message::String(new_entity)) = payload.get("spawn") {
+        let tpl = template_name.as_deref().unwrap_or(&entity_name);
         let new_name = new_entity.to_string();
-        db.spawn_from(template_name, &new_name)?;
+        db.spawn_from(tpl, &new_name)?;
 
-        out.insert(
-            "entity_id".to_string(),
-            Message::String(new_name.clone().into()),
-        );
-
+        let mut out = HashMap::new();
+        out.insert("entity_id".to_string(), Message::String(new_name.clone().into()));
         out.insert(
             "metadata".to_string(),
             Message::object(EncodableValue::from(json!({
                 "action": "spawn",
-                "template": template_name,
+                "template": tpl,
                 "entity": new_name,
                 "components": db.components_of(&new_name).unwrap_or_default(),
             }))),
         );
-
         return Ok(out);
     }
 
-    // ─── Output prefab descriptor (backward compatible) ───
+    // ─── Define mode: store components on entity ───
 
-    let components = db.components_of(template_name).unwrap_or_default();
+    // All config keys that aren't control keys → stored as components
+    for (key, val) in &config {
+        if CONTROL_KEYS.contains(&key.as_str()) || key.starts_with('$') {
+            continue;
+        }
+        match val {
+            Value::Object(_) | Value::Array(_) => {
+                db.set_component_json(&entity_name, key, val.clone(), json!({}))?;
+            }
+            Value::Bool(b) => {
+                // Boolean components (e.g. "bind": true)
+                db.set_component_json(&entity_name, key, json!(b), json!({}))?;
+            }
+            _ => {} // Skip scalar config values that aren't components
+        }
+    }
 
-    let prefab_desc = json!({
-        "id": template_name,
-        "name": name,
-        "type": "prefab",
-        "components": components,
-        "stride": stride,
-    });
+    // Mesh from inport (binary)
+    if let Some(Message::Bytes(mesh_bytes)) = payload.get("mesh") {
+        db.set_component(&entity_name, "mesh", mesh_bytes, json!({"stride": stride}))?;
+    }
 
+    // Material from inport (overrides config)
+    if let Some(Message::Object(obj)) = payload.get("material") {
+        let v: Value = obj.as_ref().clone().into();
+        db.set_component_json(&entity_name, "material", v, json!({}))?;
+    }
+
+    // Transform from inport (overrides config)
+    if let Some(Message::Object(obj)) = payload.get("transform") {
+        let v: Value = obj.as_ref().clone().into();
+        db.set_component_json(&entity_name, "transform", v, json!({}))?;
+    }
+
+    // Generic component from inport: { "name": "...", "data": {...} }
+    if let Some(Message::Object(obj)) = payload.get("component") {
+        let v: Value = obj.as_ref().clone().into();
+        if let Some(comp_name) = v.get("name").and_then(|v| v.as_str()) {
+            if let Some(comp_data) = v.get("data") {
+                db.set_component_json(&entity_name, comp_name, comp_data.clone(), json!({}))?;
+            }
+        }
+    }
+
+    // ─── Output ───
+    let components = db.components_of(&entity_name).unwrap_or_default();
+
+    let mut out = HashMap::new();
+    out.insert("entity_id".to_string(), Message::String(entity_name.clone().into()));
     out.insert(
         "prefab".to_string(),
-        Message::object(EncodableValue::from(prefab_desc)),
+        Message::object(EncodableValue::from(json!({
+            "id": entity_name,
+            "components": components,
+        }))),
     );
-
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
             "action": "define",
-            "template": template_name,
+            "entity": entity_name,
             "components": components,
         }))),
     );
-
     Ok(out)
 }
