@@ -10,8 +10,9 @@ use std::sync::Arc;
 
 use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
 use crate::systems::{
-    SceneCameraSystemActor, SceneLightCollectorActor, SceneMaterialSystemActor,
-    ScenePhysicsSystemActor,
+    ExpressionSystemActor, SceneCameraSystemActor, SceneLightCollectorActor,
+    SceneMaterialSystemActor, ScenePhysicsSystemActor, StateMachineSystemActor,
+    TimelineSystemActor, TweenSystemActor,
 };
 use crate::animation::{
     AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
@@ -128,6 +129,12 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_scene_camera" => Some(Arc::new(SceneCameraSystemActor::new())),
         "tpl_scene_light_collector" => Some(Arc::new(SceneLightCollectorActor::new())),
         "tpl_scene_material" => Some(Arc::new(SceneMaterialSystemActor::new())),
+
+        // Universal Systems (motion design, interactive animation, design engineering)
+        "tpl_tween_system" => Some(Arc::new(TweenSystemActor::new())),
+        "tpl_timeline_system" => Some(Arc::new(TimelineSystemActor::new())),
+        "tpl_state_machine_system" => Some(Arc::new(StateMachineSystemActor::new())),
+        "tpl_expression_system" => Some(Arc::new(ExpressionSystemActor::new())),
 
         // Integration
         "tpl_http_request" => Some(Arc::new(HttpRequestActor::new())),
@@ -399,6 +406,12 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_scene_camera".to_string(), "SceneCameraSystemActor".to_string());
     mapping.insert("tpl_scene_light_collector".to_string(), "SceneLightCollectorActor".to_string());
     mapping.insert("tpl_scene_material".to_string(), "SceneMaterialSystemActor".to_string());
+
+    // Universal Systems
+    mapping.insert("tpl_tween_system".to_string(), "TweenSystemActor".to_string());
+    mapping.insert("tpl_timeline_system".to_string(), "TimelineSystemActor".to_string());
+    mapping.insert("tpl_state_machine_system".to_string(), "StateMachineSystemActor".to_string());
+    mapping.insert("tpl_expression_system".to_string(), "ExpressionSystemActor".to_string());
 
     mapping.insert(
         "tpl_http_request".to_string(),
