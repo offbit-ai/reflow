@@ -626,41 +626,34 @@ impl AssetDB {
         self.load_entry(&entry)
     }
 
+    /// Query from JSON DSL — primary interface for DAG actors.
+    ///
+    /// ```json
+    /// { "type": "mesh", "tags": ["snake"], "$sort": "newest", "$limit": 5 }
+    /// ```
+    pub fn query_dsl(&self, dsl: &Value) -> Result<Vec<AssetEntry>> {
+        self.query(&AssetQuery::from_json(dsl))
+    }
+
     /// Query metadata (no blob data).
     pub fn query(&self, q: &AssetQuery) -> Result<Vec<AssetEntry>> {
         let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
 
         let mut results: Vec<AssetEntry> = cache
             .iter()
-            .filter(|a| {
-                if let Some(ref at) = q.asset_type {
-                    if &a.asset_type != at {
-                        return false;
-                    }
-                }
-                if let Some(ref name) = q.name_contains {
-                    if !a.name.to_lowercase().contains(name) {
-                        return false;
-                    }
-                }
-                if !q.tags.is_empty() {
-                    match q.tag_match {
-                        TagMatch::Any => {
-                            if !q.tags.iter().any(|qt| a.tags.contains(qt)) {
-                                return false;
-                            }
-                        }
-                        TagMatch::All => {
-                            if !q.tags.iter().all(|qt| a.tags.contains(qt)) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-                true
-            })
+            .filter(|a| q.filters.iter().all(|f| matches_filter(a, f)))
             .cloned()
             .collect();
+
+        // Sort
+        match q.sort {
+            SortOrder::Newest => results.sort_by(|a, b| b.created_at.cmp(&a.created_at)),
+            SortOrder::Oldest => results.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
+            SortOrder::Largest => results.sort_by(|a, b| b.blob_size.cmp(&a.blob_size)),
+            SortOrder::Smallest => results.sort_by(|a, b| a.blob_size.cmp(&b.blob_size)),
+            SortOrder::Name => results.sort_by(|a, b| a.name.cmp(&b.name)),
+            SortOrder::None => {}
+        }
 
         if let Some(limit) = q.limit {
             results.truncate(limit);
@@ -742,16 +735,88 @@ impl AssetDB {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Query builder
+// Query DSL — document-style, DAG-friendly
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// The query describes the shape of what you're looking for.
+// Plain values are exact matches. Operator objects refine the match.
+//
+//   // Find all meshes tagged "snake"
+//   { "type": "mesh", "tags": ["snake"] }
+//
+//   // Find assets whose name contains "body"
+//   { "name": { "$contains": "body" } }
+//
+//   // Find large meshes with specific metadata
+//   { "type": "mesh", "size": { "$gt": 10000 }, "metadata.stride": 24 }
+//
+//   // Combine conditions
+//   {
+//     "type": { "$in": ["mesh", "texture"] },
+//     "tags": { "$all": ["snake", "procedural"] },
+//     "name": { "$startsWith": "snake_" },
+//     "$sort": "newest",
+//     "$limit": 10
+//   }
+//
+// ## Operators
+//
+//   $gt, $gte, $lt, $lte  — numeric comparison
+//   $in                    — value in set
+//   $contains              — substring match (strings) or has-any (tags)
+//   $startsWith            — prefix match
+//   $all                   — tags: has all listed values
+//   $exists                — metadata field exists (true/false)
+//   $between               — [lo, hi] range
+//   $not                   — negate: { "$not": "mesh" }
+//
+// ## Control keys
+//
+//   $sort   — "newest" | "oldest" | "largest" | "smallest" | "name"
+//   $limit  — max results
+//
 
+/// Internal query representation parsed from JSON DSL.
 #[derive(Default)]
 pub struct AssetQuery {
-    pub asset_type: Option<AssetType>,
-    pub name_contains: Option<String>,
-    pub tags: Vec<String>,
-    pub tag_match: TagMatch,
+    pub filters: Vec<Filter>,
+    pub sort: SortOrder,
     pub limit: Option<usize>,
+}
+
+#[derive(Clone)]
+pub struct Filter {
+    pub field: String,
+    pub op: FilterOp,
+    pub value: Value,
+}
+
+#[derive(Clone)]
+pub enum FilterOp {
+    Eq,
+    Neq,
+    Contains,
+    StartsWith,
+    In,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
+    Between,
+    HasAny,
+    HasAll,
+    Exists,
+}
+
+#[derive(Default, Clone)]
+pub enum SortOrder {
+    #[default]
+    None,
+    Newest,
+    Oldest,
+    Largest,
+    Smallest,
+    Name,
 }
 
 #[derive(Default, Clone)]
@@ -765,30 +830,247 @@ impl AssetQuery {
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// Parse a query from the document-style JSON DSL.
+    ///
+    /// ```json
+    /// { "type": "mesh", "tags": ["snake"], "metadata.stride": 24, "$limit": 10 }
+    /// ```
+    pub fn from_json(v: &Value) -> Self {
+        let mut q = Self::default();
+
+        let map = match v.as_object() {
+            Some(m) => m,
+            None => return q,
+        };
+
+        // Control keys
+        q.limit = map.get("$limit").and_then(|v| v.as_u64()).map(|n| n as usize);
+        if let Some(s) = map.get("$sort").and_then(|v| v.as_str()) {
+            q.sort = match s {
+                "newest" => SortOrder::Newest,
+                "oldest" => SortOrder::Oldest,
+                "largest" => SortOrder::Largest,
+                "smallest" => SortOrder::Smallest,
+                "name" => SortOrder::Name,
+                _ => SortOrder::None,
+            };
+        }
+
+        // Each non-$ key is a field filter
+        for (key, val) in map {
+            if key.starts_with('$') {
+                continue;
+            }
+            parse_field_filter(&mut q.filters, key, val);
+        }
+
+        q
+    }
+
+    /// Rust builder — still available for programmatic use.
     pub fn asset_type(mut self, t: &str) -> Self {
-        self.asset_type = Some(AssetType::from_str(t));
+        self.filters.push(Filter {
+            field: "type".into(),
+            op: FilterOp::Eq,
+            value: json!(t),
+        });
         self
     }
     pub fn name_contains(mut self, n: &str) -> Self {
-        self.name_contains = Some(n.to_lowercase());
+        self.filters.push(Filter {
+            field: "name".into(),
+            op: FilterOp::Contains,
+            value: json!(n),
+        });
         self
     }
     pub fn tag(mut self, t: &str) -> Self {
-        self.tags.push(t.to_string());
+        self.filters.push(Filter {
+            field: "tags".into(),
+            op: FilterOp::HasAny,
+            value: json!([t]),
+        });
         self
     }
     pub fn tags(mut self, tags: &[&str]) -> Self {
-        self.tags.extend(tags.iter().map(|s| s.to_string()));
+        self.filters.push(Filter {
+            field: "tags".into(),
+            op: FilterOp::HasAny,
+            value: json!(tags),
+        });
         self
     }
     pub fn match_all_tags(mut self) -> Self {
-        self.tag_match = TagMatch::All;
+        // Convert last HasAny to HasAll
+        if let Some(f) = self.filters.last_mut() {
+            if matches!(f.op, FilterOp::HasAny) && f.field == "tags" {
+                f.op = FilterOp::HasAll;
+            }
+        }
         self
     }
     pub fn limit(mut self, n: usize) -> Self {
         self.limit = Some(n);
         self
     }
+}
+
+/// Parse a field:value pair from the document-style DSL.
+///
+/// Plain value → exact match: `"type": "mesh"`
+/// Array value → has-any for tags, in for others: `"tags": ["snake", "body"]`
+/// Object value → operator: `"name": { "$contains": "body" }`
+fn parse_field_filter(filters: &mut Vec<Filter>, field: &str, val: &Value) {
+    match val {
+        // Operator object: { "$contains": "body", "$gt": 100 }
+        Value::Object(ops) => {
+            for (op_key, op_val) in ops {
+                let op = match op_key.as_str() {
+                    "$gt" => FilterOp::Gt,
+                    "$gte" => FilterOp::Gte,
+                    "$lt" => FilterOp::Lt,
+                    "$lte" => FilterOp::Lte,
+                    "$in" => FilterOp::In,
+                    "$contains" => FilterOp::Contains,
+                    "$startsWith" => FilterOp::StartsWith,
+                    "$all" => FilterOp::HasAll,
+                    "$between" => FilterOp::Between,
+                    "$exists" => FilterOp::Exists,
+                    "$not" => FilterOp::Neq,
+                    _ => continue,
+                };
+                filters.push(Filter {
+                    field: field.to_string(),
+                    op,
+                    value: op_val.clone(),
+                });
+            }
+        }
+        // Array: tags → has-any, others → in
+        Value::Array(_) => {
+            let op = if field == "tags" {
+                FilterOp::HasAny
+            } else {
+                FilterOp::In
+            };
+            filters.push(Filter {
+                field: field.to_string(),
+                op,
+                value: val.clone(),
+            });
+        }
+        // Scalar: exact match
+        _ => {
+            filters.push(Filter {
+                field: field.to_string(),
+                op: FilterOp::Eq,
+                value: val.clone(),
+            });
+        }
+    }
+}
+
+/// Evaluate a filter against an asset entry.
+fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
+    match filter.field.as_str() {
+        "type" => match filter.op {
+            FilterOp::Eq => filter.value.as_str().map(|s| AssetType::from_str(s) == entry.asset_type).unwrap_or(false),
+            FilterOp::Neq => filter.value.as_str().map(|s| AssetType::from_str(s) != entry.asset_type).unwrap_or(false),
+            FilterOp::In => filter.value.as_array().map(|arr| arr.iter().any(|v| v.as_str().map(|s| AssetType::from_str(s) == entry.asset_type).unwrap_or(false))).unwrap_or(false),
+            _ => true,
+        },
+        "name" => {
+            let name = &entry.name;
+            match filter.op {
+                FilterOp::Eq => filter.value.as_str().map(|s| name == s).unwrap_or(false),
+                FilterOp::Neq => filter.value.as_str().map(|s| name != s).unwrap_or(false),
+                FilterOp::Contains => filter.value.as_str().map(|s| name.to_lowercase().contains(&s.to_lowercase())).unwrap_or(false),
+                FilterOp::StartsWith => filter.value.as_str().map(|s| name.to_lowercase().starts_with(&s.to_lowercase())).unwrap_or(false),
+                FilterOp::In => filter.value.as_array().map(|arr| arr.iter().any(|v| v.as_str() == Some(name.as_str()))).unwrap_or(false),
+                _ => true,
+            }
+        },
+        "tags" => {
+            let tags = &entry.tags;
+            match filter.op {
+                FilterOp::HasAny | FilterOp::Contains => {
+                    if let Some(arr) = filter.value.as_array() {
+                        arr.iter().any(|v| v.as_str().map(|s| tags.contains(&s.to_string())).unwrap_or(false))
+                    } else if let Some(s) = filter.value.as_str() {
+                        tags.contains(&s.to_string())
+                    } else {
+                        false
+                    }
+                }
+                FilterOp::HasAll => {
+                    if let Some(arr) = filter.value.as_array() {
+                        arr.iter().all(|v| v.as_str().map(|s| tags.contains(&s.to_string())).unwrap_or(false))
+                    } else {
+                        false
+                    }
+                }
+                FilterOp::Eq => filter.value.as_str().map(|s| tags.contains(&s.to_string())).unwrap_or(false),
+                _ => true,
+            }
+        },
+        "size" => {
+            let size = entry.blob_size as f64;
+            match_numeric(&filter.op, size, &filter.value)
+        },
+        "id" => match filter.op {
+            FilterOp::Eq => filter.value.as_str().map(|s| entry.id == s).unwrap_or(false),
+            FilterOp::In => filter.value.as_array().map(|arr| arr.iter().any(|v| v.as_str() == Some(entry.id.as_str()))).unwrap_or(false),
+            _ => true,
+        },
+        field if field.starts_with("metadata.") => {
+            let path = &field["metadata.".len()..];
+            let val = get_json_path(&entry.metadata, path);
+            match filter.op {
+                FilterOp::Eq => val.map(|v| v == &filter.value).unwrap_or(false),
+                FilterOp::Neq => val.map(|v| v != &filter.value).unwrap_or(true),
+                FilterOp::Exists => val.is_some(),
+                FilterOp::Gt | FilterOp::Gte | FilterOp::Lt | FilterOp::Lte | FilterOp::Between => {
+                    val.and_then(|v| v.as_f64()).map(|n| match_numeric(&filter.op, n, &filter.value)).unwrap_or(false)
+                }
+                FilterOp::Contains => {
+                    val.and_then(|v| v.as_str()).map(|s| {
+                        filter.value.as_str().map(|q| s.to_lowercase().contains(&q.to_lowercase())).unwrap_or(false)
+                    }).unwrap_or(false)
+                }
+                _ => true,
+            }
+        },
+        _ => true, // unknown field = no filter
+    }
+}
+
+fn match_numeric(op: &FilterOp, actual: f64, value: &Value) -> bool {
+    match op {
+        FilterOp::Gt => value.as_f64().map(|v| actual > v).unwrap_or(false),
+        FilterOp::Gte => value.as_f64().map(|v| actual >= v).unwrap_or(false),
+        FilterOp::Lt => value.as_f64().map(|v| actual < v).unwrap_or(false),
+        FilterOp::Lte => value.as_f64().map(|v| actual <= v).unwrap_or(false),
+        FilterOp::Eq => value.as_f64().map(|v| (actual - v).abs() < f64::EPSILON).unwrap_or(false),
+        FilterOp::Between => {
+            if let Some(arr) = value.as_array() {
+                let lo = arr.first().and_then(|v| v.as_f64()).unwrap_or(f64::MIN);
+                let hi = arr.get(1).and_then(|v| v.as_f64()).unwrap_or(f64::MAX);
+                actual >= lo && actual <= hi
+            } else {
+                false
+            }
+        }
+        _ => true,
+    }
+}
+
+fn get_json_path<'a>(v: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut current = v;
+    for key in path.split('.') {
+        current = current.get(key)?;
+    }
+    Some(current)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
