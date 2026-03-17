@@ -19,6 +19,7 @@
 //!     ab/abcdef1234...  ← binary data keyed by content hash
 //! ```
 
+pub mod graph_projection;
 pub mod layout;
 
 use anyhow::Result;
@@ -504,9 +505,43 @@ impl StorageBackend for IndexedDbBackend {
 // AssetDB
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Delta events — every mutation emits a delta for listeners
+// ═══════════════════════════════════════════════════════════════════════════
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Delta {
+    pub op: DeltaOp,
+    pub id: String,
+    pub entity: String,
+    pub component: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Value>,
+    pub timestamp: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DeltaOp {
+    Put,
+    Merge,
+    Delete,
+    Tag,
+    Spawn,
+    Destroy,
+}
+
+/// Listener that receives deltas from AssetDB mutations.
+pub trait DeltaListener: Send + Sync {
+    fn on_delta(&self, delta: &Delta);
+}
+
 pub struct AssetDB {
     backend: Box<dyn StorageBackend>,
     cache: RwLock<Vec<AssetEntry>>,
+    listeners: RwLock<Vec<Arc<dyn DeltaListener>>>,
 }
 
 impl AssetDB {
@@ -516,7 +551,39 @@ impl AssetDB {
         Ok(Arc::new(Self {
             backend,
             cache: RwLock::new(entries),
+            listeners: RwLock::new(Vec::new()),
         }))
+    }
+
+    /// Register a delta listener. Returns index for removal.
+    pub fn add_listener(&self, listener: Arc<dyn DeltaListener>) {
+        if let Ok(mut listeners) = self.listeners.write() {
+            listeners.push(listener);
+        }
+    }
+
+    fn emit_delta(&self, op: DeltaOp, id: &str, data: Option<Value>, metadata: Option<Value>) {
+        let (entity, component) = if let Some(colon) = id.rfind(':') {
+            (id[..colon].to_string(), id[colon + 1..].to_string())
+        } else {
+            (id.to_string(), String::new())
+        };
+
+        let delta = Delta {
+            op,
+            id: id.to_string(),
+            entity,
+            component,
+            data,
+            metadata,
+            timestamp: now_iso(),
+        };
+
+        if let Ok(listeners) = self.listeners.read() {
+            for listener in listeners.iter() {
+                listener.on_delta(&delta);
+            }
+        }
     }
 
     /// Open a file-backed AssetDB at the given path (native only).
@@ -594,7 +661,9 @@ impl AssetDB {
             });
         }
 
+        let delta_meta = json!({});
         self.backend.write_manifest(&cache)?;
+        self.emit_delta(DeltaOp::Put, id, None, Some(delta_meta));
         Ok(())
     }
 
@@ -609,6 +678,7 @@ impl AssetDB {
         let hash = content_hash(&serialized);
         let (asset_type, name) = parse_entity_id(id);
         let now = now_iso();
+        let delta_data = json_data.clone();
 
         let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
 
@@ -638,6 +708,7 @@ impl AssetDB {
         }
 
         self.backend.write_manifest(&cache)?;
+        self.emit_delta(DeltaOp::Put, id, Some(delta_data), None);
         Ok(())
     }
 
@@ -656,6 +727,7 @@ impl AssetDB {
         }
         entry.updated_at = now_iso();
         self.backend.write_manifest(&cache)?;
+        self.emit_delta(DeltaOp::Tag, id, Some(json!(tags)), None);
         Ok(())
     }
 
@@ -956,6 +1028,7 @@ impl AssetDB {
                 self.tag(&new_id, &tag_refs)?;
             }
         }
+        self.emit_delta(DeltaOp::Spawn, new_entity, Some(json!({"template": template_entity})), None);
         Ok(())
     }
 
@@ -981,6 +1054,7 @@ impl AssetDB {
         }
 
         self.backend.write_manifest(&cache)?;
+        self.emit_delta(DeltaOp::Destroy, entity, None, None);
         Ok(())
     }
 
@@ -1033,6 +1107,7 @@ impl AssetDB {
             let _ = self.backend.delete_blob(&entry.blob_hash);
         }
         self.backend.write_manifest(&cache)?;
+        self.emit_delta(DeltaOp::Delete, id, None, None);
         Ok(())
     }
 
