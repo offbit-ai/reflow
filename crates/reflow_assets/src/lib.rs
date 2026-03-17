@@ -19,6 +19,8 @@
 //!     ab/abcdef1234...  ← binary data keyed by content hash
 //! ```
 
+pub mod layout;
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};

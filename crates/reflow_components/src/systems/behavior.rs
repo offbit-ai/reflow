@@ -173,14 +173,21 @@ pub async fn behavior_system_actor(
             if let Some(var_map) = rule.get("vars").and_then(|v| v.as_object()) {
                 for (name, val) in var_map {
                     if let Some(path) = val.as_str() {
-                        // Resolve "self:" prefix to the owning entity
-                        let resolved_path = if let Some(rest) = path.strip_prefix("self:") {
-                            format!("{}:{}", entity, rest)
+                        if let Some(query) = path.strip_prefix("@layout(").and_then(|s| s.strip_suffix(')')) {
+                            // Layout query: @layout(entity:property)
+                            if let Some(v) = reflow_assets::layout::resolve_layout_query(db_path, query) {
+                                vars.insert(name.clone(), v);
+                            }
                         } else {
-                            path.to_string()
-                        };
-                        if let Some(v) = resolve_path(&db, &resolved_path) {
-                            vars.insert(name.clone(), v);
+                            // AssetDB path: resolve "self:" to owning entity
+                            let resolved_path = if let Some(rest) = path.strip_prefix("self:") {
+                                format!("{}:{}", entity, rest)
+                            } else {
+                                path.to_string()
+                            };
+                            if let Some(v) = resolve_path(&db, &resolved_path) {
+                                vars.insert(name.clone(), v);
+                            }
                         }
                     } else if let Some(n) = val.as_f64() {
                         vars.insert(name.clone(), n);
