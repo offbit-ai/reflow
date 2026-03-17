@@ -93,6 +93,9 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
+    // Start the interval trigger
+    net.add_initial(iip("tick", "start", Message::Flow));
+
     println!("DAG: tick → Background → FrameCollector → VideoEncoder → FileSave");
     println!("Running...\n");
 
