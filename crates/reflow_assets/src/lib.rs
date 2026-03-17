@@ -739,6 +739,214 @@ impl AssetDB {
         self.load_entry(&entry)
     }
 
+    // ─── ECS-style component access ───
+    //
+    // Entities are name prefixes. Components are type suffixes.
+    //
+    //   db.set_component("player", "transform", &transform_bytes, json!({}))?;
+    //   db.set_component("player", "rigidbody", &rb_bytes, json!({"mass": 1.0}))?;
+    //   db.set_component("sun", "light", &light_bytes, json!({"type": "directional"}))?;
+    //
+    //   let tf = db.get_component("player", "transform")?;
+    //   let entities = db.entities_with(&["rigidbody", "transform"])?;
+    //   let components = db.components_of("player")?;
+
+    /// Set a component on an entity. Upserts "entity:component" in the DB.
+    pub fn set_component(
+        &self,
+        entity: &str,
+        component: &str,
+        data: &[u8],
+        metadata: Value,
+    ) -> Result<()> {
+        let id = format!("{}:{}", entity, component);
+        self.put(&id, data, metadata)
+    }
+
+    /// Set a JSON component on an entity.
+    pub fn set_component_json(
+        &self,
+        entity: &str,
+        component: &str,
+        data: Value,
+        metadata: Value,
+    ) -> Result<()> {
+        let id = format!("{}:{}", entity, component);
+        self.put_json(&id, data, metadata)
+    }
+
+    /// Get a component from an entity.
+    pub fn get_component(&self, entity: &str, component: &str) -> Result<Asset> {
+        self.get(&format!("{}:{}", entity, component))
+    }
+
+    /// Check if an entity has a specific component.
+    pub fn has_component(&self, entity: &str, component: &str) -> bool {
+        self.has(&format!("{}:{}", entity, component))
+    }
+
+    /// Remove a component from an entity.
+    pub fn remove_component(&self, entity: &str, component: &str) -> Result<()> {
+        self.delete(&format!("{}:{}", entity, component))
+    }
+
+    /// List all component types attached to an entity.
+    ///
+    /// ```ignore
+    /// db.components_of("player") → ["transform", "rigidbody", "collider", "mesh"]
+    /// ```
+    pub fn components_of(&self, entity: &str) -> Result<Vec<String>> {
+        let prefix = format!("{}:", entity);
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+        Ok(cache
+            .iter()
+            .filter(|a| a.id.starts_with(&prefix))
+            .map(|a| a.id[prefix.len()..].to_string())
+            .collect())
+    }
+
+    /// Find all entity names that have ALL of the specified components.
+    ///
+    /// ```ignore
+    /// db.entities_with(&["rigidbody", "transform"])
+    /// → ["player", "enemy_1", "crate_3"]
+    /// ```
+    pub fn entities_with(&self, components: &[&str]) -> Result<Vec<String>> {
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        // Collect all entity names (everything before the last ':')
+        let mut entity_names: HashMap<&str, Vec<&str>> = HashMap::new();
+        for entry in cache.iter() {
+            if let Some(colon) = entry.id.rfind(':') {
+                let entity = &entry.id[..colon];
+                let comp = &entry.id[colon + 1..];
+                entity_names.entry(entity).or_default().push(comp);
+            }
+        }
+
+        // Filter to entities that have ALL requested components
+        Ok(entity_names
+            .into_iter()
+            .filter(|(_, comps)| components.iter().all(|c| comps.contains(c)))
+            .map(|(name, _)| name.to_string())
+            .collect())
+    }
+
+    /// Find all entity names that have ANY of the specified components.
+    pub fn entities_with_any(&self, components: &[&str]) -> Result<Vec<String>> {
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        let mut seen = std::collections::HashSet::new();
+        let mut result = Vec::new();
+
+        for entry in cache.iter() {
+            if let Some(colon) = entry.id.rfind(':') {
+                let entity = &entry.id[..colon];
+                let comp = &entry.id[colon + 1..];
+                if components.contains(&comp) && seen.insert(entity) {
+                    result.push(entity.to_string());
+                }
+            }
+        }
+        Ok(result)
+    }
+
+    /// Get all components for an entity as a JSON object.
+    /// Loads inline_data for JSON components, metadata for binary ones.
+    ///
+    /// ```ignore
+    /// db.entity_snapshot("player")
+    /// → { "transform": { "position": [0,1,0], ... },
+    ///      "rigidbody": { "mass": 1.0, ... } }
+    /// ```
+    pub fn entity_snapshot(&self, entity: &str) -> Result<Value> {
+        let prefix = format!("{}:", entity);
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        let mut snapshot = serde_json::Map::new();
+        for entry in cache.iter() {
+            if entry.id.starts_with(&prefix) {
+                let comp = &entry.id[prefix.len()..];
+                let val = if let Some(ref inline) = entry.inline_data {
+                    inline.clone()
+                } else {
+                    // For binary components, expose metadata
+                    json!({
+                        "$binary": true,
+                        "size": entry.blob_size,
+                        "metadata": entry.metadata,
+                    })
+                };
+                snapshot.insert(comp.to_string(), val);
+            }
+        }
+        Ok(Value::Object(snapshot))
+    }
+
+    /// Spawn an entity from a template (prefab). Copies all components
+    /// from source entity to a new entity name.
+    pub fn spawn_from(&self, template_entity: &str, new_entity: &str) -> Result<()> {
+        let prefix = format!("{}:", template_entity);
+        let cache = self.cache.read().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        let entries: Vec<AssetEntry> = cache
+            .iter()
+            .filter(|a| a.id.starts_with(&prefix))
+            .cloned()
+            .collect();
+        drop(cache);
+
+        for entry in entries {
+            let comp = &entry.id[prefix.len()..];
+            let new_id = format!("{}:{}", new_entity, comp);
+
+            if let Some(ref inline) = entry.inline_data {
+                self.put_json(&new_id, inline.clone(), entry.metadata.clone())?;
+            } else {
+                let data = self.backend.read_blob(&entry.blob_hash)?;
+                // If compressed, we need the raw data
+                let raw = if entry.compressed {
+                    decompress_blob(&data, entry.raw_size)?
+                } else {
+                    data
+                };
+                self.put(&new_id, &raw, entry.metadata.clone())?;
+            }
+
+            // Copy tags
+            if !entry.tags.is_empty() {
+                let tag_refs: Vec<&str> = entry.tags.iter().map(|s| s.as_str()).collect();
+                self.tag(&new_id, &tag_refs)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Delete all components for an entity.
+    pub fn destroy_entity(&self, entity: &str) -> Result<()> {
+        let prefix = format!("{}:", entity);
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        let to_remove: Vec<usize> = cache
+            .iter()
+            .enumerate()
+            .filter(|(_, a)| a.id.starts_with(&prefix))
+            .map(|(i, _)| i)
+            .collect();
+
+        // Remove in reverse order to preserve indices
+        for &idx in to_remove.iter().rev() {
+            let entry = cache.remove(idx);
+            let hash_used = cache.iter().any(|a| a.blob_hash == entry.blob_hash);
+            if !hash_used && entry.inline_data.is_none() {
+                let _ = self.backend.delete_blob(&entry.blob_hash);
+            }
+        }
+
+        self.backend.write_manifest(&cache)?;
+        Ok(())
+    }
+
     /// Query from JSON DSL — primary interface for DAG actors.
     ///
     /// ```json
