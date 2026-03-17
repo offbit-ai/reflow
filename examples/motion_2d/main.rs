@@ -1,8 +1,12 @@
-//! # Abstract Motion Choreography
+//! # Abstract Motion — GPU SDF Rendering
 //!
-//! Multiple shapes with coordinated animation: a star spirals from center
-//! while circles orbit outward. Glow blur and screen blend create depth.
-//! All driven by AnimationTimeline actors through the Reflow DAG.
+//! All shapes rendered in ONE GPU draw call via SDF instancing.
+//! Timelines drive per-shape transforms. No CPU rasterization.
+//!
+//! ```text
+//! tick → 4 timelines → anim_0..3 → Gpu2DRender(shapes config) → image
+//!                                     → FrameCollector → VideoEncoder → FileSave
+//! ```
 
 use std::collections::HashMap;
 use reflow_network::{
@@ -27,7 +31,7 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("=== Abstract Motion Choreography ===\n");
+    println!("=== Abstract Motion — GPU SDF ===\n");
 
     let w = 800u32;
     let h = 450u32;
@@ -44,8 +48,7 @@ async fn main() -> anyhow::Result<()> {
 
     for tpl in [
         "tpl_interval_trigger", "tpl_animation_time", "tpl_animation_timeline",
-        "tpl_shape_2d", "tpl_vector_rasterize", "tpl_background",
-        "tpl_gaussian_blur", "tpl_canvas_2d",
+        "tpl_gpu_2d_render",
         "tpl_render_frame_collector", "tpl_video_encoder", "tpl_file_save",
     ] {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
@@ -57,56 +60,55 @@ async fn main() -> anyhow::Result<()> {
     })))?;
     net.add_node("time", "tpl_animation_time", config(json!({ "fps": fps, "speed": 1.0 })))?;
 
-    // ═══ STAR: spirals from center outward, scales up, rotates ═══
-    net.add_node("star_tl", "tpl_animation_timeline", config(json!({
+    // ═══ TIMELINES ═══
+
+    // Shape 0: Orange rect — spirals, scales in/out, rotates 2 full turns
+    net.add_node("tl_0", "tpl_animation_timeline", config(json!({
         "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
         "tracks": {
             "x": { "keyframes": [
                 { "time": 0.0, "value": cx, "easing": "easeInOutCubic" },
-                { "time": 2.0, "value": cx + 120.0, "easing": "easeInOutSine" },
+                { "time": 2.0, "value": cx + 150.0, "easing": "easeInOutSine" },
                 { "time": 4.0, "value": cx, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cx - 120.0, "easing": "easeInOutSine" },
+                { "time": 6.0, "value": cx - 150.0, "easing": "easeInOutSine" },
                 { "time": 8.0, "value": cx },
             ]},
             "y": { "keyframes": [
                 { "time": 0.0, "value": cy, "easing": "easeInOutCubic" },
-                { "time": 2.0, "value": cy - 80.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cy + 80.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cy - 80.0, "easing": "easeInOutSine" },
+                { "time": 2.0, "value": cy - 100.0, "easing": "easeInOutSine" },
+                { "time": 4.0, "value": cy + 100.0, "easing": "easeInOutSine" },
+                { "time": 6.0, "value": cy - 100.0, "easing": "easeInOutSine" },
                 { "time": 8.0, "value": cy },
             ]},
             "scale": { "keyframes": [
                 { "time": 0.0, "value": 0.0, "easing": "easeOutBack" },
-                { "time": 1.5, "value": 1.2 },
-                { "time": 3.0, "value": 0.8, "easing": "easeInOutSine" },
-                { "time": 5.0, "value": 1.0, "easing": "easeInOutSine" },
-                { "time": 7.0, "value": 1.2, "easing": "easeInCubic" },
+                { "time": 1.5, "value": 1.0 },
+                { "time": 6.5, "value": 1.0, "easing": "easeInCubic" },
                 { "time": 8.0, "value": 0.0 },
             ]},
             "rotation": { "keyframes": [
-                { "time": 0.0, "value": 0.0, "easing": "linear" },
-                { "time": 8.0, "value": 720.0 },
+                { "time": 0.0, "value": 0.0 }, { "time": 8.0, "value": 720.0 },
             ]},
         }
     })))?;
 
-    // ═══ CIRCLE 1: orbits wide, delayed entrance ═══
-    net.add_node("c1_tl", "tpl_animation_timeline", config(json!({
+    // Shape 1: Blue circle — wide orbit
+    net.add_node("tl_1", "tpl_animation_timeline", config(json!({
         "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
         "tracks": {
             "x": { "keyframes": [
-                { "time": 0.0, "value": cx + 200.0, "easing": "easeInOutSine" },
+                { "time": 0.0, "value": cx + 250.0, "easing": "easeInOutSine" },
                 { "time": 2.0, "value": cx, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cx - 200.0, "easing": "easeInOutSine" },
+                { "time": 4.0, "value": cx - 250.0, "easing": "easeInOutSine" },
                 { "time": 6.0, "value": cx, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cx + 200.0 },
+                { "time": 8.0, "value": cx + 250.0 },
             ]},
             "y": { "keyframes": [
-                { "time": 0.0, "value": cy - 100.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cy + 100.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cy - 100.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cy + 100.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cy - 100.0 },
+                { "time": 0.0, "value": cy - 120.0, "easing": "easeInOutSine" },
+                { "time": 2.0, "value": cy + 120.0, "easing": "easeInOutSine" },
+                { "time": 4.0, "value": cy - 120.0, "easing": "easeInOutSine" },
+                { "time": 6.0, "value": cy + 120.0, "easing": "easeInOutSine" },
+                { "time": 8.0, "value": cy - 120.0 },
             ]},
             "scale": { "keyframes": [
                 { "time": 0.0, "value": 0.0 },
@@ -118,116 +120,80 @@ async fn main() -> anyhow::Result<()> {
         }
     })))?;
 
-    // ═══ CIRCLE 2: counter-orbit, different phase ═══
-    net.add_node("c2_tl", "tpl_animation_timeline", config(json!({
+    // Shape 2: Pink circle — counter-orbit
+    net.add_node("tl_2", "tpl_animation_timeline", config(json!({
         "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
         "tracks": {
             "x": { "keyframes": [
-                { "time": 0.0, "value": cx - 180.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cx + 180.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cx - 180.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cx + 180.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cx - 180.0 },
+                { "time": 0.0, "value": cx - 200.0, "easing": "easeInOutSine" },
+                { "time": 2.0, "value": cx + 200.0, "easing": "easeInOutSine" },
+                { "time": 4.0, "value": cx - 200.0, "easing": "easeInOutSine" },
+                { "time": 6.0, "value": cx + 200.0, "easing": "easeInOutSine" },
+                { "time": 8.0, "value": cx - 200.0 },
             ]},
             "y": { "keyframes": [
-                { "time": 0.0, "value": cy + 80.0, "easing": "easeInOutSine" },
-                { "time": 2.0, "value": cy - 80.0, "easing": "easeInOutSine" },
-                { "time": 4.0, "value": cy + 80.0, "easing": "easeInOutSine" },
-                { "time": 6.0, "value": cy - 80.0, "easing": "easeInOutSine" },
-                { "time": 8.0, "value": cy + 80.0 },
+                { "time": 0.0, "value": cy + 100.0, "easing": "easeInOutSine" },
+                { "time": 2.0, "value": cy - 100.0, "easing": "easeInOutSine" },
+                { "time": 4.0, "value": cy + 100.0, "easing": "easeInOutSine" },
+                { "time": 6.0, "value": cy - 100.0, "easing": "easeInOutSine" },
+                { "time": 8.0, "value": cy + 100.0 },
             ]},
             "scale": { "keyframes": [
                 { "time": 0.0, "value": 0.0 },
                 { "time": 1.0, "value": 0.0, "easing": "easeOutBack" },
-                { "time": 2.0, "value": 0.8 },
-                { "time": 6.5, "value": 0.8, "easing": "easeInCubic" },
+                { "time": 2.0, "value": 1.0 },
+                { "time": 6.5, "value": 1.0, "easing": "easeInCubic" },
                 { "time": 8.0, "value": 0.0 },
             ]},
         }
     })))?;
 
-    // ═══ POLYGON: hexagon pulses at center ═══
-    net.add_node("hex_tl", "tpl_animation_timeline", config(json!({
+    // Shape 3: Purple hex border — pulses at center, slow counter-rotation
+    net.add_node("tl_3", "tpl_animation_timeline", config(json!({
         "duration": dur, "autoplay": true, "dt": 1.0 / fps as f64,
         "tracks": {
-            "x": { "keyframes": [
-                { "time": 0.0, "value": cx },
-                { "time": 8.0, "value": cx },
-            ]},
-            "y": { "keyframes": [
-                { "time": 0.0, "value": cy },
-                { "time": 8.0, "value": cy },
-            ]},
+            "x": { "keyframes": [{ "time": 0.0, "value": cx }, { "time": 8.0, "value": cx }] },
+            "y": { "keyframes": [{ "time": 0.0, "value": cy }, { "time": 8.0, "value": cy }] },
             "scale": { "keyframes": [
                 { "time": 0.0, "value": 0.0 },
                 { "time": 2.0, "value": 0.0, "easing": "easeOutElastic" },
-                { "time": 3.5, "value": 0.6 },
-                { "time": 4.5, "value": 0.5, "easing": "easeInOutSine" },
-                { "time": 5.5, "value": 0.6, "easing": "easeInOutSine" },
-                { "time": 6.5, "value": 0.5, "easing": "easeInCubic" },
+                { "time": 3.5, "value": 1.0 },
+                { "time": 4.5, "value": 0.85, "easing": "easeInOutSine" },
+                { "time": 5.5, "value": 1.0, "easing": "easeInOutSine" },
+                { "time": 6.5, "value": 0.85, "easing": "easeInCubic" },
                 { "time": 8.0, "value": 0.0 },
             ]},
             "rotation": { "keyframes": [
-                { "time": 0.0, "value": 0.0, "easing": "linear" },
-                { "time": 8.0, "value": -180.0 },
+                { "time": 0.0, "value": 0.0 }, { "time": 8.0, "value": -180.0 },
             ]},
         }
     })))?;
 
-    // ═══ BACKGROUND ═══
-    net.add_node("bg", "tpl_background", config(json!({
-        "type": "radialGradient",
-        "from": [25, 12, 60, 255], "to": [5, 2, 18, 255],
-        "center": [0.5, 0.45], "radius": 0.9,
+    // ═══ GPU 2D RENDERER ═══
+    net.add_node("render", "tpl_gpu_2d_render", config(json!({
         "width": w, "height": h,
-    })))?;
-
-    // ═══ SHAPES ═══
-    net.add_node("star_shape", "tpl_shape_2d", config(json!({
-        "shape": "star", "outerRadius": 50.0, "innerRadius": 22.0, "points": 5,
-    })))?;
-    net.add_node("c1_shape", "tpl_shape_2d", config(json!({
-        "shape": "circle", "radius": 28.0,
-    })))?;
-    net.add_node("c2_shape", "tpl_shape_2d", config(json!({
-        "shape": "circle", "radius": 20.0,
-    })))?;
-    net.add_node("hex_shape", "tpl_shape_2d", config(json!({
-        "shape": "polygon", "radius": 70.0, "sides": 6,
-    })))?;
-
-    // ═══ RASTERIZERS ═══
-    net.add_node("star_r", "tpl_vector_rasterize", config(json!({
-        "width": w, "height": h, "fill": { "color": "#ff8820" },
-    })))?;
-    net.add_node("c1_r", "tpl_vector_rasterize", config(json!({
-        "width": w, "height": h, "fill": { "color": "#40c0ff" },
-    })))?;
-    net.add_node("c2_r", "tpl_vector_rasterize", config(json!({
-        "width": w, "height": h, "fill": { "color": "#ff4080" },
-    })))?;
-    net.add_node("hex_r", "tpl_vector_rasterize", config(json!({
-        "width": w, "height": h,
-        "fill": { "color": "#ffffff" },
-        "stroke": { "width": 2.0, "color": "#8060ff" },
-    })))?;
-
-    // ═══ GLOW ═══
-    net.add_node("glow", "tpl_gaussian_blur", config(json!({
-        "radius": 12, "width": w, "height": h,
-    })))?;
-
-    // ═══ CANVAS: 6 layers ═══
-    net.add_node("canvas", "tpl_canvas_2d", config(json!({
-        "width": w, "height": h,
-        "background": [5, 2, 18, 255],
-        "layers": [
-            { "name": "layer_0", "blend": "normal", "opacity": 1.0 },
-            { "name": "layer_1", "blend": "screen", "opacity": 0.4 },
-            { "name": "layer_2", "blend": "normal", "opacity": 0.9 },
-            { "name": "layer_3", "blend": "add", "opacity": 0.6 },
-            { "name": "layer_4", "blend": "add", "opacity": 0.5 },
-            { "name": "layer_5", "blend": "normal", "opacity": 0.8 },
+        "background": [0.02, 0.008, 0.06, 1.0],
+        "shapes": [
+            {
+                "type": "rect", "bounds": [0, 0, 100, 100],
+                "color": [1.0, 0.53, 0.13, 1.0], "cornerRadius": 10.0,
+                "shadow": { "x": 0, "y": 4, "blur": 25, "color": [1.0, 0.4, 0.0, 0.5] },
+            },
+            {
+                "type": "circle", "bounds": [0, 0, 56, 56],
+                "color": [0.25, 0.75, 1.0, 0.9],
+                "shadow": { "x": 0, "y": 2, "blur": 20, "color": [0.2, 0.6, 1.0, 0.4] },
+            },
+            {
+                "type": "circle", "bounds": [0, 0, 40, 40],
+                "color": [1.0, 0.25, 0.5, 0.85],
+                "shadow": { "x": 0, "y": 2, "blur": 15, "color": [1.0, 0.2, 0.4, 0.3] },
+            },
+            {
+                "type": "rect", "bounds": [0, 0, 140, 140],
+                "color": [0.0, 0.0, 0.0, 0.0], "cornerRadius": 0.0,
+                "border": { "width": 2.0, "color": [0.5, 0.38, 1.0, 0.7] },
+            },
         ]
     })))?;
 
@@ -239,64 +205,33 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("save", "tpl_file_save", config(json!({ "path": "motion_2d.mp4" })))?;
 
     // ═══ WIRING ═══
-
-    // Timing
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
-    net.add_connection(wire("tick", "trigger", "star_tl", "tick"));
-    net.add_connection(wire("tick", "trigger", "c1_tl", "tick"));
-    net.add_connection(wire("tick", "trigger", "c2_tl", "tick"));
-    net.add_connection(wire("tick", "trigger", "hex_tl", "tick"));
+    net.add_connection(wire("tick", "trigger", "tl_0", "tick"));
+    net.add_connection(wire("tick", "trigger", "tl_1", "tick"));
+    net.add_connection(wire("tick", "trigger", "tl_2", "tick"));
+    net.add_connection(wire("tick", "trigger", "tl_3", "tick"));
+    net.add_connection(wire("tick", "trigger", "render", "tick"));
 
-    // Timelines → rasterizer transforms
-    net.add_connection(wire("star_tl", "values", "star_r", "transform"));
-    net.add_connection(wire("c1_tl", "values", "c1_r", "transform"));
-    net.add_connection(wire("c2_tl", "values", "c2_r", "transform"));
-    net.add_connection(wire("hex_tl", "values", "hex_r", "transform"));
+    net.add_connection(wire("tl_0", "values", "render", "anim_0"));
+    net.add_connection(wire("tl_1", "values", "render", "anim_1"));
+    net.add_connection(wire("tl_2", "values", "render", "anim_2"));
+    net.add_connection(wire("tl_3", "values", "render", "anim_3"));
 
-    // Shapes (one-shot)
-    net.add_connection(wire("star_shape", "path", "star_r", "path"));
-    net.add_connection(wire("c1_shape", "path", "c1_r", "path"));
-    net.add_connection(wire("c2_shape", "path", "c2_r", "path"));
-    net.add_connection(wire("hex_shape", "path", "hex_r", "path"));
-
-    // Background
-    net.add_connection(wire("time", "time", "bg", "tick"));
-
-    // Glow from star
-    net.add_connection(wire("star_r", "image", "glow", "image"));
-
-    // Tick drives canvas (one composite per tick)
-    net.add_connection(wire("tick", "trigger", "canvas", "tick"));
-
-    // All layers → Canvas2D
-    net.add_connection(wire("bg", "image", "canvas", "layer_0"));
-    net.add_connection(wire("glow", "image", "canvas", "layer_1"));
-    net.add_connection(wire("hex_r", "image", "canvas", "layer_2"));
-    net.add_connection(wire("c1_r", "image", "canvas", "layer_3"));
-    net.add_connection(wire("c2_r", "image", "canvas", "layer_4"));
-    net.add_connection(wire("star_r", "image", "canvas", "layer_5"));
-
-    // Video
-    net.add_connection(wire("canvas", "frame", "collector", "frame"));
+    net.add_connection(wire("render", "image", "collector", "frame"));
     net.add_connection(wire("time", "frame_number", "collector", "frame_number"));
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
-    // Start
     net.add_initial(iip("tick", "start", Message::Flow));
-    net.add_initial(iip("star_shape", "params", Message::Flow));
-    net.add_initial(iip("c1_shape", "params", Message::Flow));
-    net.add_initial(iip("c2_shape", "params", Message::Flow));
-    net.add_initial(iip("hex_shape", "params", Message::Flow));
 
-    println!("DAG: 4 timelines → 4 shapes → 4 rasterizers + glow → 6-layer canvas → video");
+    println!("DAG: 4 timelines → Gpu2DRender (SDF instanced) → video");
     println!("Running...\n");
 
     let start = std::time::Instant::now();
     net.start()?;
 
     let mp4_path = std::path::Path::new("motion_2d.mp4");
-    let timeout = std::time::Duration::from_secs(180);
+    let timeout = std::time::Duration::from_secs(120);
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
         if mp4_path.exists() && mp4_path.metadata().map(|m| m.len() > 100).unwrap_or(false) {

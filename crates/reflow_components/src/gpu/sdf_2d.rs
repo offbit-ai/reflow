@@ -511,7 +511,7 @@ pub fn render_2d(
 
 #[actor(
     Gpu2DRenderActor,
-    inports::<100>(primitives, tick),
+    inports::<100>(primitives, tick, anim_0, anim_1, anim_2, anim_3, anim_4, anim_5, anim_6, anim_7),
     outports::<1>(image, metadata),
     state(MemoryState)
 )]
@@ -536,26 +536,60 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         ctx.pool_upsert("_2d", "prims", v);
     }
 
+    // Cache per-shape animation values from timeline outputs
+    // anim_0 through anim_7 carry { x, y, scale, rotation } for shape 0..7
+    for i in 0..8 {
+        let port = format!("anim_{}", i);
+        if let Some(Message::Object(obj)) = payload.get(&port) {
+            let v: Value = obj.as_ref().clone().into();
+            ctx.pool_upsert("_anim", &port, v);
+        }
+    }
+
     // Only render on tick
     if !payload.contains_key("tick") {
         return Ok(HashMap::new());
     }
 
-    // Build GPU primitives from JSON
+    // Load shapes from config (first invocation) or from primitives inport
+    let shapes_config = config.get("shapes").and_then(|v| v.as_array()).cloned().unwrap_or_default();
     let prims_json = ctx.get_pool("_2d")
         .into_iter()
         .find(|(k, _)| k == "prims")
-        .map(|(_, v)| v)
-        .unwrap_or(json!([]));
+        .map(|(_, v)| v);
 
-    let prims_array = prims_json.as_array().cloned().unwrap_or_default();
+    let prims_array = if let Some(p) = prims_json {
+        p.as_array().cloned().unwrap_or_default()
+    } else {
+        shapes_config
+    };
+
+    // Load animation values
+    let anim_pool: HashMap<String, Value> = ctx.get_pool("_anim").into_iter().collect();
     let mut gpu_prims: Vec<GpuPrimitive> = Vec::with_capacity(prims_array.len());
 
-    for prim_json in &prims_array {
+    for (idx, prim_json) in prims_array.iter().enumerate() {
+        // Get animation override for this shape (if any)
+        let anim_key = format!("anim_{}", idx);
+        let anim = anim_pool.get(&anim_key);
+
         let ptype = prim_json.get("type").and_then(|v| v.as_str()).unwrap_or("rect");
-        let bounds = prim_json.get("bounds").and_then(|v| v.as_array()).map(|a| {
+
+        // Base bounds from config
+        let base_bounds = prim_json.get("bounds").and_then(|v| v.as_array()).map(|a| {
             [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
         }).unwrap_or([0.0, 0.0, 100.0, 100.0]);
+
+        // Apply animation: x, y override position; scale multiplies size
+        let anim_x = anim.and_then(|a| a.get("x")).and_then(|v| v.as_f64());
+        let anim_y = anim.and_then(|a| a.get("y")).and_then(|v| v.as_f64());
+        let anim_scale = anim.and_then(|a| a.get("scale")).and_then(|v| v.as_f64()).unwrap_or(1.0);
+
+        let w = base_bounds[2] * anim_scale as f32;
+        let h = base_bounds[3] * anim_scale as f32;
+        let x = anim_x.map(|v| v as f32 - w / 2.0).unwrap_or(base_bounds[0]);
+        let y = anim_y.map(|v| v as f32 - h / 2.0).unwrap_or(base_bounds[1]);
+        let bounds = [x, y, w, h];
         let color = prim_json.get("color").and_then(|v| v.as_array()).map(|a| {
             [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
         }).unwrap_or([1.0, 1.0, 1.0, 1.0]);
@@ -571,7 +605,11 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             }
         };
 
-        if let Some(rot) = prim_json.get("rotation").and_then(|v| v.as_f64()) {
+        // Rotation: anim overrides config
+        let rot = anim.and_then(|a| a.get("rotation")).and_then(|v| v.as_f64())
+            .or_else(|| prim_json.get("rotation").and_then(|v| v.as_f64()))
+            .unwrap_or(0.0);
+        if rot.abs() > 0.001 {
             p = p.with_rotation(rot as f32);
         }
         if let Some(shadow) = prim_json.get("shadow") {
