@@ -337,14 +337,22 @@ struct CachedPipeline {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
     atlas_bind_group_layout: wgpu::BindGroupLayout,
+    sample_count: u32,
 }
 
 #[cfg(feature = "gpu")]
-static PIPELINE_2D: OnceLock<CachedPipeline> = OnceLock::new();
+static PIPELINE_2D_1X: OnceLock<CachedPipeline> = OnceLock::new();
+#[cfg(feature = "gpu")]
+static PIPELINE_2D_4X: OnceLock<CachedPipeline> = OnceLock::new();
 
 #[cfg(feature = "gpu")]
-fn get_pipeline() -> &'static CachedPipeline {
-    PIPELINE_2D.get_or_init(|| {
+fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
+    let (lock, sample_count) = if msaa > 1 {
+        (&PIPELINE_2D_4X, 4u32)
+    } else {
+        (&PIPELINE_2D_1X, 1u32)
+    };
+    lock.get_or_init(|| {
         let device = GPU_CONTEXT.device();
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("SDF 2D Shader"),
@@ -442,7 +450,11 @@ fn get_pipeline() -> &'static CachedPipeline {
                 ..Default::default()
             },
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview: None,
             cache: None,
         });
@@ -451,6 +463,7 @@ fn get_pipeline() -> &'static CachedPipeline {
             pipeline,
             bind_group_layout: bgl,
             atlas_bind_group_layout: atlas_bgl,
+            sample_count,
         }
     })
 }
@@ -466,12 +479,14 @@ pub fn render_2d(
     height: u32,
     bg_color: [f32; 4],
     glyph_atlas: Option<&GlyphAtlasGpu>,
+    msaa: u32,
 ) -> Vec<u8> {
     use wgpu::util::DeviceExt;
 
     let device = GPU_CONTEXT.device();
     let queue = GPU_CONTEXT.queue();
-    let cached = get_pipeline();
+    let cached = get_pipeline(msaa);
+    let sample_count = cached.sample_count;
 
     let uniforms = [width as f32, height as f32, 0.0, 0.0];
     let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -531,8 +546,9 @@ pub fn render_2d(
         ],
     });
 
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("SDF 2D Target"),
+    // Resolve texture (always 1x) — readback target
+    let resolve_tex = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("SDF 2D Resolve"),
         size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
         mip_level_count: 1,
         sample_count: 1,
@@ -541,7 +557,29 @@ pub fn render_2d(
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
         view_formats: &[],
     });
-    let view = texture.create_view(&Default::default());
+    let resolve_view = resolve_tex.create_view(&Default::default());
+
+    // MSAA color texture (sample_count > 1 for anti-aliasing)
+    let msaa_tex = if sample_count > 1 {
+        Some(device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("SDF 2D MSAA"),
+            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        }))
+    } else {
+        None
+    };
+
+    let msaa_view = msaa_tex.as_ref().map(|t| t.create_view(&Default::default()));
+    let (color_view, resolve_target) = match &msaa_view {
+        Some(mv) => (mv, Some(&resolve_view)),
+        None => (&resolve_view, None),
+    };
 
     let bytes_per_row = ((width * 4 + 255) / 256) * 256;
     let readback_buf = device.create_buffer(&wgpu::BufferDescriptor {
@@ -556,8 +594,8 @@ pub fn render_2d(
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("SDF 2D Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
+                view: color_view,
+                resolve_target,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
                         r: bg_color[0] as f64, g: bg_color[1] as f64,
@@ -575,9 +613,10 @@ pub fn render_2d(
         pass.draw(0..6, 0..primitives.len() as u32);
     }
 
+    // Copy resolved (1x) texture to readback buffer
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
-            texture: &texture, mip_level: 0,
+            texture: &resolve_tex, mip_level: 0,
             origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All,
         },
         wgpu::TexelCopyBufferInfo {
@@ -927,8 +966,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         Some(GlyphAtlasGpu { data, width: w, height: h })
     });
 
+    let msaa = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
+
     #[cfg(feature = "gpu")]
-    let rgba = render_2d(&gpu_prims, width, height, bg, atlas_gpu.as_ref());
+    let rgba = render_2d(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa);
 
     #[cfg(not(feature = "gpu"))]
     let rgba = vec![0u8; (width * height * 4) as usize];
