@@ -78,7 +78,6 @@ impl ActorProcess {
         let mut accumulated: HashMap<String, Message> = HashMap::new();
         let inports_count = self.inport_names.len();
         let actor_id = self.config.get_node_id();
-
         loop {
             let packet = match self.inport_rx.clone().stream().next().await {
                 Some(p) => p,
@@ -94,6 +93,7 @@ impl ActorProcess {
                 if accumulated.len() < inports_count {
                     continue;
                 }
+                // Take all data, reset accumulator
                 std::mem::take(&mut accumulated)
             } else if !self.required_inports.is_empty() {
                 // Wait for SPECIFIC required inports (selective await)
@@ -103,7 +103,15 @@ impl ActorProcess {
                 if !has_all_required {
                     continue;
                 }
-                std::mem::take(&mut accumulated)
+                // Take the accumulated data but DON'T clear — keep cached
+                // values so next message doesn't need to re-collect all ports.
+                // Clone the full state, then only remove required ports so
+                // they must arrive fresh next time.
+                let payload = accumulated.clone();
+                for req in &self.required_inports {
+                    accumulated.remove(req);
+                }
+                payload
             } else {
                 // Fire on any input
                 packet

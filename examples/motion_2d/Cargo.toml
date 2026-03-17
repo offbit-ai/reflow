@@ -1,0 +1,20 @@
+[workspace]
+
+[package]
+name = "motion_2d"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "motion_2d"
+path = "main.rs"
+
+[dependencies]
+reflow_network = { path = "../../crates/reflow_network" }
+reflow_components = { path = "../../crates/reflow_components", default-features = false, features = ["video-encode"] }
+reflow_vector = { path = "../../crates/reflow_vector" }
+reflow_pixel = { path = "../../crates/reflow_pixel" }
+anyhow = "1.0"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+tiny-skia = "0.11"

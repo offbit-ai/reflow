@@ -30,10 +30,9 @@ use tiny_skia as tsk;
 
 #[actor(
     VectorRasterizeActor,
-    inports::<10>(path, fill, stroke, transform),
+    inports::<10>(path, fill, stroke, transform, tick),
     outports::<1>(image, metadata),
-    state(MemoryState),
-    await_inports(path)
+    state(MemoryState)
 )]
 pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
@@ -43,11 +42,25 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let anti_alias = config.get("antiAlias").and_then(|v| v.as_bool()).unwrap_or(true);
 
-    // Get SVG path string
+    // Cache path in pool — it arrives once, transform arrives every tick
+    if let Some(Message::String(s)) = payload.get("path") {
+        ctx.pool_upsert("_raster", "path", json!(s.to_string()));
+    }
+
+    // Get cached or fresh path
     let svg_d = match payload.get("path") {
         Some(Message::String(s)) => s.to_string(),
-        _ => return Err(anyhow::anyhow!("Expected path string")),
+        _ => {
+            match ctx.get_pool("_raster").into_iter().find(|(k, _)| k == "path") {
+                Some((_, v)) => v.as_str().unwrap_or("").to_string(),
+                None => return Ok(HashMap::new()), // No path yet
+            }
+        }
     };
+
+    if svg_d.is_empty() {
+        return Ok(HashMap::new());
+    }
 
     // Parse fill config (inport overrides config)
     let fill_cfg = match payload.get("fill") {
