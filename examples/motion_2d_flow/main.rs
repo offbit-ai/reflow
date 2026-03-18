@@ -106,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
         config(json!({
             "interval": ms,
             "maxExecutions": frames,
-            "startImmediately": true,
+            "startImmediately": false,
         })),
     )?;
     net.add_node(
@@ -286,7 +286,7 @@ async fn main() -> anyhow::Result<()> {
         "tpl_animation_timeline",
         config(json!({
             "duration": dur,
-            "autoplay": false,
+            "autoplay": true,
             "dt": 1.0 / fps as f64,
         })),
     )?;
@@ -414,11 +414,9 @@ async fn main() -> anyhow::Result<()> {
     net.add_initial(iip("shape_1", "params", Message::Flow));
     net.add_initial(iip("shape_2", "params", Message::Flow));
     net.add_initial(iip("shape_3", "params", Message::Flow));
-    // Start tick loop — IIPs are delivered in declaration order:
-    // tracks + shapes first, then tick + play
+    // Start tick loop — startImmediately:false delays first tick by one
+    // interval (33ms), giving IIPs time to deliver tracks and shapes.
     net.add_initial(iip("tick", "start", Message::Flow));
-    // Tell timeline to start playing (after tracks are loaded from IIPs above)
-    net.add_initial(iip("tl", "control", Message::Flow));
 
     let n_kf = tracks.len();
     println!("DAG topology:");
