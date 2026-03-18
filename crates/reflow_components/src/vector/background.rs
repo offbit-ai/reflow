@@ -20,7 +20,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -82,7 +82,7 @@ pub async fn background_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
                 .and_then(|v| v.as_array())
                 .map(|a| {
                     [
-                        a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.5),
+                        a.first().and_then(|v| v.as_f64()).unwrap_or(0.5),
                         a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.5),
                     ]
                 })
@@ -133,7 +133,7 @@ fn parse_rgba(params: &HashMap<String, Value>, key: &str, default: [u8; 4]) -> [
         .and_then(|v| v.as_array())
         .map(|a| {
             [
-                a.get(0)
+                a.first()
                     .and_then(|v| v.as_u64())
                     .unwrap_or(default[0] as u64) as u8,
                 a.get(1)

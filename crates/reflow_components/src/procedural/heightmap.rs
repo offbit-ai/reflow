@@ -10,7 +10,6 @@ use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 // ── Image → Heightmap ───────────────────────────────────────────
 

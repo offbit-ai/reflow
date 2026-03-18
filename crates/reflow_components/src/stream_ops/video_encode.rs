@@ -8,10 +8,9 @@ use actor_macro::actor;
 use anyhow::{Error, Result};
 use openh264::encoder::{Encoder, EncoderConfig};
 use openh264::formats::{RgbSliceU8, YUVBuffer};
-use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 #[actor(
     VideoEncoderActor,
@@ -207,6 +206,7 @@ fn annex_b_to_avcc(data: &[u8]) -> Vec<u8> {
     out
 }
 
+#[allow(dead_code)]
 fn extract_sps_pps(first_frame: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let mut sps = Vec::new();
     let mut pps = Vec::new();
@@ -505,7 +505,7 @@ fn build_vmhd() -> Vec<u8> {
 
 fn build_dinf() -> Vec<u8> {
     // url box (self-contained)
-    let mut url = vec![0, 0, 0, 1]; // version=0, flags=1 (self-contained)
+    let url = vec![0, 0, 0, 1]; // version=0, flags=1 (self-contained)
     let url_box = mp4_box(b"url ", &url);
 
     let mut dref = vec![0u8; 4]; // version + flags

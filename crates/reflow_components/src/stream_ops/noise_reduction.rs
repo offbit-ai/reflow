@@ -130,7 +130,7 @@ pub async fn noise_reduction_actor(
                             let noise_ref = noise_profile.clone();
                             let s = strength;
                             let mut output = Vec::new();
-                            stft.process(&input, &mut output, |mut frame| {
+                            stft.process(&input, &mut output, |frame| {
                                 let mags = frame.magnitudes();
                                 let phases = frame.phases();
                                 let new_mags: Vec<f32> = mags

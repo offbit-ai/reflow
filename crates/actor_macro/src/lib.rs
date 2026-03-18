@@ -154,7 +154,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     let in_ports_cap = args.inports.capacity;
     let await_all_inports = args.await_all_inports;
     let await_inports_list = &args.await_inports;
-    let has_selective_await = !await_inports_list.is_empty();
+    let _has_selective_await = !await_inports_list.is_empty();
 
     let out_ports_channel = if let Some(out_ports_cap) = out_ports_cap {
         if out_ports_cap < 1 {

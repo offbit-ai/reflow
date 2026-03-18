@@ -27,6 +27,11 @@ impl FftFrame {
         self.bins.len()
     }
 
+    /// Whether this frame has no bins.
+    pub fn is_empty(&self) -> bool {
+        self.bins.is_empty()
+    }
+
     /// Get magnitude spectrum.
     pub fn magnitudes(&self) -> Vec<f32> {
         self.bins.iter().map(|c| c.norm()).collect()
@@ -171,11 +176,9 @@ impl StftProcessor {
             self.input_buf.push(sample);
             self.samples_since_fft += 1;
 
-            if !self.primed {
-                if self.input_buf.len() >= self.window_size {
-                    self.primed = true;
-                    self.samples_since_fft = self.hop_size; // trigger first frame
-                }
+            if !self.primed && self.input_buf.len() >= self.window_size {
+                self.primed = true;
+                self.samples_since_fft = self.hop_size; // trigger first frame
             }
 
             if self.primed && self.samples_since_fft >= self.hop_size {
@@ -208,11 +211,9 @@ impl StftProcessor {
             self.input_buf.push(sample);
             self.samples_since_fft += 1;
 
-            if !self.primed {
-                if self.input_buf.len() >= self.window_size {
-                    self.primed = true;
-                    self.samples_since_fft = self.hop_size;
-                }
+            if !self.primed && self.input_buf.len() >= self.window_size {
+                self.primed = true;
+                self.samples_since_fft = self.hop_size;
             }
 
             if self.primed && self.samples_since_fft >= self.hop_size {

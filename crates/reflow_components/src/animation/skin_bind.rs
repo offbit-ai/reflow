@@ -6,11 +6,9 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-
-use super::math_helpers::mat4_transform_point;
 
 #[actor(
     SkinBindActor,

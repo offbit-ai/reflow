@@ -31,7 +31,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -68,7 +68,7 @@ pub async fn scene_camera_system_actor(
     let camera_entities = db.entities_with(&["camera"])?;
 
     let mut active_entity = String::new();
-    let mut active_eye = [0.0f32; 3];
+    let mut _active_eye = [0.0f32; 3];
     let mut cameras_processed = 0;
 
     for entity in &camera_entities {
@@ -126,7 +126,7 @@ pub async fn scene_camera_system_actor(
 
         if active_entity.is_empty() && (tag_match || (camera_tag.is_none() && is_active)) {
             active_entity = entity.clone();
-            active_eye = eye;
+            _active_eye = eye;
         }
 
         cameras_processed += 1;
@@ -247,7 +247,7 @@ fn read_vec3(v: &Value, key: &str, default: [f32; 3]) -> [f32; 3] {
         .and_then(|a| a.as_array())
         .map(|a| {
             [
-                a.get(0)
+                a.first()
                     .and_then(|v| v.as_f64())
                     .unwrap_or(default[0] as f64) as f32,
                 a.get(1)

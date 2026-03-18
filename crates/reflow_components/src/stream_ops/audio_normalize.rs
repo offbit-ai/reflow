@@ -57,14 +57,14 @@ pub async fn audio_normalize_actor(
         let mut stream = input_rx.into_stream();
         let mut all_chunks: Vec<StreamFrame> = Vec::new();
         let mut peak: f32 = 0.0;
-        let mut begin_frame = None;
+        let mut _begin_frame = None;
 
         // Pass 1: collect and find peak
         while let Some(frame) = stream.next().await {
             let is_terminal = frame.is_terminal();
             match &frame {
                 StreamFrame::Begin { .. } => {
-                    begin_frame = Some(frame.clone());
+                    _begin_frame = Some(frame.clone());
                 }
                 StreamFrame::Data(data) => {
                     for chunk in data.chunks_exact(4) {

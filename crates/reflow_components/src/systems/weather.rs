@@ -46,7 +46,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;

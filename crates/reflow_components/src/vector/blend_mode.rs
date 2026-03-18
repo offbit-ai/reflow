@@ -11,7 +11,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -65,7 +65,7 @@ pub async fn blend_mode_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
         .and_then(|v| v.as_f64())
         .unwrap_or(1.0) as f32;
 
-    let mode = <reflow_pixel::blend::BlendMode>::from_str(mode_str);
+    let mode = <reflow_pixel::blend::BlendMode>::parse(mode_str);
 
     let len = base_data.len().min(overlay_data.len());
     reflow_pixel::blend::blend_rows(&mut base_data[..len], &overlay_data[..len], mode, opacity);

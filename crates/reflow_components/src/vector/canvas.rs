@@ -35,7 +35,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -58,7 +58,7 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         .and_then(|v| v.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.first().and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 a.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 a.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 a.get(3).and_then(|v| v.as_u64()).unwrap_or(255) as u8,
@@ -135,7 +135,7 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
             continue;
         }
 
-        let mode = reflow_pixel::blend::BlendMode::from_str(blend_mode);
+        let mode = reflow_pixel::blend::BlendMode::parse(blend_mode);
         reflow_pixel::blend::blend_rows(&mut canvas, &layer_bytes, mode, opacity);
     }
 

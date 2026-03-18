@@ -49,7 +49,7 @@ fn blur_horizontal(
     width: usize,
     height: usize,
     kernel: &[f32],
-    radius: usize,
+    _radius: usize,
 ) {
     for y in 0..height {
         let row_off = y * width * 4;
@@ -59,9 +59,7 @@ fn blur_horizontal(
             let mut b = 0.0f32;
             let mut a = 0.0f32;
 
-            for k in 0..kernel.len() {
-                let w = kernel[k];
-
+            for (k, &w) in kernel.iter().enumerate() {
                 // Center
                 if k == 0 {
                     let off = row_off + x * 4;
@@ -71,7 +69,7 @@ fn blur_horizontal(
                     a += src[off + 3] as f32 * w;
                 } else {
                     // Left
-                    let lx = if x >= k { x - k } else { 0 };
+                    let lx = x.saturating_sub(k);
                     let off = row_off + lx * 4;
                     r += src[off] as f32 * w;
                     g += src[off + 1] as f32 * w;
@@ -103,7 +101,7 @@ fn blur_vertical(
     width: usize,
     height: usize,
     kernel: &[f32],
-    radius: usize,
+    _radius: usize,
 ) {
     for y in 0..height {
         for x in 0..width {
@@ -112,9 +110,7 @@ fn blur_vertical(
             let mut b = 0.0f32;
             let mut a = 0.0f32;
 
-            for k in 0..kernel.len() {
-                let w = kernel[k];
-
+            for (k, &w) in kernel.iter().enumerate() {
                 if k == 0 {
                     let off = (y * width + x) * 4;
                     r += src[off] as f32 * w;
@@ -122,7 +118,7 @@ fn blur_vertical(
                     b += src[off + 2] as f32 * w;
                     a += src[off + 3] as f32 * w;
                 } else {
-                    let ty = if y >= k { y - k } else { 0 };
+                    let ty = y.saturating_sub(k);
                     let off = (ty * width + x) * 4;
                     r += src[off] as f32 * w;
                     g += src[off + 1] as f32 * w;

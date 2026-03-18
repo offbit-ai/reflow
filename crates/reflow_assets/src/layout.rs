@@ -98,6 +98,12 @@ pub struct LayoutNode {
     pub string_props: std::collections::HashMap<String, String>,
 }
 
+impl Default for HeadlessLayoutBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HeadlessLayoutBackend {
     pub fn new() -> Self {
         Self {
@@ -135,24 +141,26 @@ impl LayoutBackend for HeadlessLayoutBackend {
                     serde_json::from_slice(&asset.data).unwrap_or_default()
                 };
 
-                let mut node = LayoutNode::default();
-                node.tag = v
-                    .get("tag")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("div")
-                    .to_string();
-                node.text = v
-                    .get("text")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                node.parent = v
-                    .get("parent")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                node.width = v.get("width").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                node.height = v.get("height").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                node.opacity = 1.0;
+                let mut node = LayoutNode {
+                    tag: v
+                        .get("tag")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("div")
+                        .to_string(),
+                    text: v
+                        .get("text")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    parent: v
+                        .get("parent")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    width: v.get("width").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                    height: v.get("height").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                    opacity: 1.0,
+                    ..Default::default()
+                };
 
                 // Read transform component for position
                 if let Ok(tf) = db.get_component(entity, "transform") {

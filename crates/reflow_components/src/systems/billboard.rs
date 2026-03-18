@@ -48,7 +48,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -125,7 +125,7 @@ pub async fn scene_billboard_system_actor(
             .and_then(|v| v.as_array())
             .map(|a| {
                 [
-                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
+                    a.first().and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
                     a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
                 ]
             })
@@ -136,7 +136,7 @@ pub async fn scene_billboard_system_actor(
             .and_then(|v| v.as_array())
             .map(|a| {
                 [
-                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.first().and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
                     a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
                     a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
                 ]
@@ -327,7 +327,7 @@ fn read_vec3(v: &Value, default: [f32; 3]) -> [f32; 3] {
     v.as_array()
         .map(|a| {
             [
-                a.get(0)
+                a.first()
                     .and_then(|v| v.as_f64())
                     .unwrap_or(default[0] as f64) as f32,
                 a.get(1)

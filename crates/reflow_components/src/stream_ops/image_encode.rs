@@ -6,11 +6,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{
-    message::EncodableValue,
-    stream::{stream_collect, StreamFrame},
-    ActorContext,
-};
+use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -124,7 +120,7 @@ pub async fn image_encode_actor(context: ActorContext) -> Result<HashMap<String,
 }
 
 fn encode_png(pixels: &[u8], width: u32, height: u32, channels: u32) -> Result<Vec<u8>, String> {
-    use image::{ImageBuffer, ImageEncoder};
+    use image::ImageEncoder;
 
     let mut buf = Vec::new();
     let encoder = image::codecs::png::PngEncoder::new(&mut buf);
@@ -149,7 +145,7 @@ fn encode_jpeg(
     channels: u32,
     quality: u8,
 ) -> Result<Vec<u8>, String> {
-    use image::{ImageBuffer, ImageEncoder};
+    use image::ImageEncoder;
 
     // JPEG needs RGB, not RGBA
     let rgb_pixels = if channels == 4 {

@@ -13,8 +13,8 @@ use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     message::EncodableValue,
-    stream::{StreamFrame, StreamHandle, STREAM_REGISTRY},
-    ActorContext, MemoryState,
+    stream::{StreamFrame, STREAM_REGISTRY},
+    ActorContext,
 };
 use serde_json::json;
 use std::collections::HashMap;
@@ -47,7 +47,7 @@ pub async fn render_frame_collector_actor(
         _ => unreachable!("await_inports guarantees frame"),
     };
 
-    let frame_number = match payload.get("frame_number") {
+    let _frame_number = match payload.get("frame_number") {
         Some(Message::Integer(i)) => *i as usize,
         _ => 0,
     };

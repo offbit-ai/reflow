@@ -62,7 +62,7 @@
 
 use super::{Delta, DeltaListener, DeltaOp};
 use serde_json::{json, Value};
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 
 /// Cypher statement ready for KyuGraph execution.
 #[derive(Debug, Clone)]
@@ -76,6 +76,12 @@ pub struct CypherDelta {
 pub struct GraphProjection {
     /// Buffered Cypher statements. Consumers drain this.
     buffer: RwLock<Vec<CypherDelta>>,
+}
+
+impl Default for GraphProjection {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GraphProjection {

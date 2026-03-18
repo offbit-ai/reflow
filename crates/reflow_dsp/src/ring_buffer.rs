@@ -84,11 +84,11 @@ impl RingBuffer {
         let cap = self.buf.len();
         let start = (self.write_pos + cap - self.len) % cap;
 
-        for i in 0..n {
-            output[i] = self.buf[(start + i) % cap];
+        for (i, out) in output.iter_mut().enumerate().take(n) {
+            *out = self.buf[(start + i) % cap];
         }
-        for i in n..output.len() {
-            output[i] = 0.0;
+        for out in output.iter_mut().skip(n) {
+            *out = 0.0;
         }
     }
 

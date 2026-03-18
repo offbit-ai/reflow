@@ -11,7 +11,6 @@ use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::Cursor;
-use std::sync::Arc;
 
 // ─── Helpers ─────────────────────────────────────────────────────
 

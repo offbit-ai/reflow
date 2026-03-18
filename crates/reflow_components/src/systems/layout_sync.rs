@@ -37,7 +37,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::{get_or_create_db, layout};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -54,7 +54,7 @@ static HYDRATED: AtomicBool = AtomicBool::new(false);
 pub async fn layout_sync_system_actor(
     ctx: ActorContext,
 ) -> Result<HashMap<String, Message>, Error> {
-    let payload = ctx.get_payload();
+    let _payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
     let db_path = config
@@ -114,7 +114,7 @@ pub async fn layout_sync_system_actor(
                 .get("transform")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
-        let bind_style = bind_all
+        let _bind_style = bind_all
             || bind_config
                 .get("style")
                 .and_then(|v| v.as_bool())

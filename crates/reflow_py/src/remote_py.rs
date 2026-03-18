@@ -633,7 +633,7 @@ impl PyExecClient {
         let max_delay = self.config.reconnect_max_delay_ms;
 
         // Calculate exponential backoff
-        let exp_backoff = base_delay * (2_u64.pow(attempts as u32).min(10)); // Cap at 2^10 to avoid overflow
+        let exp_backoff = base_delay * (2_u64.pow(attempts).min(10)); // Cap at 2^10 to avoid overflow
 
         // Add some jitter (±20%)
         let jitter_factor = 0.8 + (rand::random::<f64>() * 0.4);

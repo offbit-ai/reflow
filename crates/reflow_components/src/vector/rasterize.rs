@@ -23,7 +23,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use tiny_skia as tsk;
@@ -105,7 +105,7 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
         .and_then(|v| v.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.first().and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 a.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 a.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                 a.get(3).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
@@ -170,7 +170,7 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let tf_config = config.get("transform").cloned().unwrap_or(json!({}));
     let tf_pool: HashMap<String, Value> = ctx.get_pool("_tf").into_iter().collect();
 
-    let get_tf = |key: &str, default: f64| -> f32 {
+    let _get_tf = |key: &str, default: f64| -> f32 {
         tf_pool
             .get(key)
             .and_then(|v| v.as_f64())
@@ -306,7 +306,7 @@ fn parse_color(val: Option<&Value>) -> tsk::Color {
             tsk::Color::from_rgba8(r, g, b, a)
         }
         Some(Value::Array(arr)) => {
-            let r = arr.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let r = arr.first().and_then(|v| v.as_f64()).unwrap_or(0.0);
             let g = arr.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0);
             let b = arr.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0);
             let a = arr.get(3).and_then(|v| v.as_f64()).unwrap_or(1.0);

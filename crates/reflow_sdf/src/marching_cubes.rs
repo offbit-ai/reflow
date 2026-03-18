@@ -35,7 +35,7 @@ pub const TRI_TABLE: [i32; 4096] = include!("mc_tri_table.inc");
 ///
 /// The shader evaluates `sdf_scene(p)` from the compiled SDF, then runs
 /// marching cubes on a 3D grid. Output is an atomic counter + vertex buffer.
-pub fn generate_marching_cubes_wgsl(sdf_wgsl: &str, resolution: u32) -> String {
+pub fn generate_marching_cubes_wgsl(sdf_wgsl: &str, _resolution: u32) -> String {
     let mut shader = String::with_capacity(sdf_wgsl.len() + 8192);
 
     // Uniforms
@@ -94,12 +94,12 @@ fn emit_vertex(pos: vec3f, nor: vec3f) {
     );
 
     // Compute entry point
-    shader.push_str(&format!(
+    shader.push_str(
         r#"
 @compute @workgroup_size(4, 4, 4)
-fn main(@builtin(global_invocation_id) gid: vec3u) {{
+fn main(@builtin(global_invocation_id) gid: vec3u) {
   let res = mc.resolution;
-  if gid.x >= res - 1u || gid.y >= res - 1u || gid.z >= res - 1u {{ return; }}
+  if gid.x >= res - 1u || gid.y >= res - 1u || gid.z >= res - 1u { return; }
 
   let step = (mc.bound_max - mc.bound_min) / f32(res);
   let base = mc.bound_min + vec3f(f32(gid.x), f32(gid.y), f32(gid.z)) * step;
@@ -125,38 +125,38 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {{
 
   var cube_index = 0u;
   let iso = mc.iso_level;
-  if v0 < iso {{ cube_index |= 1u; }}
-  if v1 < iso {{ cube_index |= 2u; }}
-  if v2 < iso {{ cube_index |= 4u; }}
-  if v3 < iso {{ cube_index |= 8u; }}
-  if v4 < iso {{ cube_index |= 16u; }}
-  if v5 < iso {{ cube_index |= 32u; }}
-  if v6 < iso {{ cube_index |= 64u; }}
-  if v7 < iso {{ cube_index |= 128u; }}
+  if v0 < iso { cube_index |= 1u; }
+  if v1 < iso { cube_index |= 2u; }
+  if v2 < iso { cube_index |= 4u; }
+  if v3 < iso { cube_index |= 8u; }
+  if v4 < iso { cube_index |= 16u; }
+  if v5 < iso { cube_index |= 32u; }
+  if v6 < iso { cube_index |= 64u; }
+  if v7 < iso { cube_index |= 128u; }
 
   let edges = edge_table[cube_index];
-  if edges == 0u {{ return; }}
+  if edges == 0u { return; }
 
   // Interpolate edge vertices
   var vert_list: array<vec3f, 12>;
-  if (edges & 1u) != 0u    {{ vert_list[0]  = mc_interp(p0, p1, v0, v1, iso); }}
-  if (edges & 2u) != 0u    {{ vert_list[1]  = mc_interp(p1, p2, v1, v2, iso); }}
-  if (edges & 4u) != 0u    {{ vert_list[2]  = mc_interp(p2, p3, v2, v3, iso); }}
-  if (edges & 8u) != 0u    {{ vert_list[3]  = mc_interp(p3, p0, v3, v0, iso); }}
-  if (edges & 16u) != 0u   {{ vert_list[4]  = mc_interp(p4, p5, v4, v5, iso); }}
-  if (edges & 32u) != 0u   {{ vert_list[5]  = mc_interp(p5, p6, v5, v6, iso); }}
-  if (edges & 64u) != 0u   {{ vert_list[6]  = mc_interp(p6, p7, v6, v7, iso); }}
-  if (edges & 128u) != 0u  {{ vert_list[7]  = mc_interp(p7, p4, v7, v4, iso); }}
-  if (edges & 256u) != 0u  {{ vert_list[8]  = mc_interp(p0, p4, v0, v4, iso); }}
-  if (edges & 512u) != 0u  {{ vert_list[9]  = mc_interp(p1, p5, v1, v5, iso); }}
-  if (edges & 1024u) != 0u {{ vert_list[10] = mc_interp(p2, p6, v2, v6, iso); }}
-  if (edges & 2048u) != 0u {{ vert_list[11] = mc_interp(p3, p7, v3, v7, iso); }}
+  if (edges & 1u) != 0u    { vert_list[0]  = mc_interp(p0, p1, v0, v1, iso); }
+  if (edges & 2u) != 0u    { vert_list[1]  = mc_interp(p1, p2, v1, v2, iso); }
+  if (edges & 4u) != 0u    { vert_list[2]  = mc_interp(p2, p3, v2, v3, iso); }
+  if (edges & 8u) != 0u    { vert_list[3]  = mc_interp(p3, p0, v3, v0, iso); }
+  if (edges & 16u) != 0u   { vert_list[4]  = mc_interp(p4, p5, v4, v5, iso); }
+  if (edges & 32u) != 0u   { vert_list[5]  = mc_interp(p5, p6, v5, v6, iso); }
+  if (edges & 64u) != 0u   { vert_list[6]  = mc_interp(p6, p7, v6, v7, iso); }
+  if (edges & 128u) != 0u  { vert_list[7]  = mc_interp(p7, p4, v7, v4, iso); }
+  if (edges & 256u) != 0u  { vert_list[8]  = mc_interp(p0, p4, v0, v4, iso); }
+  if (edges & 512u) != 0u  { vert_list[9]  = mc_interp(p1, p5, v1, v5, iso); }
+  if (edges & 1024u) != 0u { vert_list[10] = mc_interp(p2, p6, v2, v6, iso); }
+  if (edges & 2048u) != 0u { vert_list[11] = mc_interp(p3, p7, v3, v7, iso); }
 
   // Generate triangles
   let tri_base = cube_index * 16u;
-  for (var i = 0u; i < 15u; i = i + 3u) {{
+  for (var i = 0u; i < 15u; i = i + 3u) {
     let e0 = tri_table[tri_base + i];
-    if e0 < 0 {{ break; }}
+    if e0 < 0 { break; }
     let e1 = tri_table[tri_base + i + 1u];
     let e2 = tri_table[tri_base + i + 2u];
 
@@ -171,10 +171,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {{
     emit_vertex(va, na);
     emit_vertex(vb, nb);
     emit_vertex(vc, nc);
-  }}
-}}
-"#
-    ));
+  }
+}
+"#,
+    );
 
     shader
 }

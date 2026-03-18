@@ -1,6 +1,6 @@
 //! Shape primitives — generate Path2D from high-level parameters.
 
-use crate::path::{Path2D, Point};
+use crate::path::Path2D;
 use std::f64::consts::PI;
 
 /// Rectangle with optional corner radius.

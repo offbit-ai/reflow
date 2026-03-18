@@ -15,7 +15,7 @@ use anyhow::{Error, Result};
 use reflow_actor::{
     message::EncodableValue,
     stream::{StreamFrame, STREAM_REGISTRY},
-    ActorContext, MemoryState,
+    ActorContext,
 };
 use reflow_sdf::ir::{SceneSettings, SdfNode};
 use serde_json::json;
@@ -37,6 +37,7 @@ static SDF_PIPELINE_CACHE: Lazy<RwLock<HashMap<u64, Arc<CachedSdfPipeline>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// Cached render targets for a specific resolution.
+#[allow(dead_code)]
 struct CachedTargets {
     width: u32,
     height: u32,
@@ -269,7 +270,7 @@ pub async fn sdf_live_render_actor(ctx: ActorContext) -> Result<HashMap<String, 
         .and_then(|p| p.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
+                a.first().and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
                 a.get(1).and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
                 a.get(2).and_then(|v| v.as_f64()).unwrap_or(4.0) as f32,
             ]
@@ -293,7 +294,7 @@ pub async fn sdf_live_render_actor(ctx: ActorContext) -> Result<HashMap<String, 
         .and_then(|p| p.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.first().and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
                 a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
                 a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
             ]
@@ -430,7 +431,7 @@ fn render_frame(
         });
         pass.set_pipeline(&cached_pipeline.pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
-        pass.dispatch_workgroups((width + 7) / 8, (height + 7) / 8, 1);
+        pass.dispatch_workgroups(width.div_ceil(8), height.div_ceil(8), 1);
     }
 
     // Copy texture to readback buffer

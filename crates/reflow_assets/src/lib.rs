@@ -50,7 +50,7 @@ pub enum AssetType {
 }
 
 impl AssetType {
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "mesh" => Self::Mesh,
             "texture" | "image" => Self::Texture,
@@ -213,6 +213,12 @@ impl StorageBackend for FileBackend {
 pub struct MemoryBackend {
     manifest: RwLock<Vec<AssetEntry>>,
     blobs: RwLock<HashMap<String, Vec<u8>>>,
+}
+
+impl Default for MemoryBackend {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MemoryBackend {
@@ -1467,12 +1473,12 @@ fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
             FilterOp::Eq => filter
                 .value
                 .as_str()
-                .map(|s| AssetType::from_str(s) == entry.asset_type)
+                .map(|s| AssetType::parse(s) == entry.asset_type)
                 .unwrap_or(false),
             FilterOp::Neq => filter
                 .value
                 .as_str()
-                .map(|s| AssetType::from_str(s) != entry.asset_type)
+                .map(|s| AssetType::parse(s) != entry.asset_type)
                 .unwrap_or(false),
             FilterOp::In => filter
                 .value
@@ -1480,7 +1486,7 @@ fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
                 .map(|arr| {
                     arr.iter().any(|v| {
                         v.as_str()
-                            .map(|s| AssetType::from_str(s) == entry.asset_type)
+                            .map(|s| AssetType::parse(s) == entry.asset_type)
                             .unwrap_or(false)
                     })
                 })
@@ -1714,7 +1720,7 @@ fn compress_blob(data: &[u8], asset_type: &AssetType) -> (Vec<u8>, bool) {
 }
 
 /// Decompress LZ4 data.
-fn decompress_blob(data: &[u8], raw_size: u64) -> Result<Vec<u8>> {
+fn decompress_blob(data: &[u8], _raw_size: u64) -> Result<Vec<u8>> {
     lz4_flex::decompress_size_prepended(data)
         .map_err(|e| anyhow::anyhow!("LZ4 decompress failed: {}", e))
 }
@@ -1725,7 +1731,7 @@ fn parse_entity_id(id: &str) -> (AssetType, String) {
     if let Some(colon) = id.rfind(':') {
         let name = &id[..colon];
         let type_str = &id[colon + 1..];
-        (AssetType::from_str(type_str), name.to_string())
+        (AssetType::parse(type_str), name.to_string())
     } else {
         (AssetType::Generic, id.to_string())
     }
@@ -1747,6 +1753,7 @@ fn content_hash(data: &[u8]) -> String {
     format!("{:016x}{:016x}", a, b)
 }
 
+#[allow(dead_code)]
 fn gen_id() -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::SystemTime;
@@ -1763,7 +1770,7 @@ fn gen_id() -> String {
     format!(
         "{:08x}-{:04x}-4{:03x}-{:04x}-{:012x}",
         (a >> 32) as u32,
-        (a >> 16) as u16 & 0xFFFF,
+        (a >> 16) as u16,
         a as u16 & 0x0FFF,
         (b >> 48) as u16 & 0x3FFF | 0x8000,
         b & 0xFFFF_FFFF_FFFF,

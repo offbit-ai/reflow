@@ -39,7 +39,7 @@ pub enum BlendMode {
 }
 
 impl BlendMode {
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().replace(['-', '_', ' '], "").as_str() {
             "normal" => Self::Normal,
             "multiply" => Self::Multiply,

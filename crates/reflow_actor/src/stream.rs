@@ -118,14 +118,14 @@ impl StreamRegistry {
 
         // If observers are registered, interpose a broadcaster
         let observer_senders = self.observers.write().remove(&stream_id);
-        if let Some(mut obs) = observer_senders {
-            if !obs.is_empty() {
-                // Create a new channel for the primary consumer
-                let (consumer_tx, consumer_rx) = flume::bounded(DEFAULT_STREAM_BUFFER);
-                obs.push(consumer_tx);
-                StreamBroadcaster::spawn(original_rx, obs);
-                return Some(consumer_rx);
-            }
+        if let Some(mut obs) = observer_senders
+            && !obs.is_empty()
+        {
+            // Create a new channel for the primary consumer
+            let (consumer_tx, consumer_rx) = flume::bounded(DEFAULT_STREAM_BUFFER);
+            obs.push(consumer_tx);
+            StreamBroadcaster::spawn(original_rx, obs);
+            return Some(consumer_rx);
         }
 
         Some(original_rx)

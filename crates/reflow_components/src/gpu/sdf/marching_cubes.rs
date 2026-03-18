@@ -262,7 +262,7 @@ fn run_marching_cubes_gpu(
     });
 
     // Dispatch
-    let wg = (resolution + 3) / 4; // workgroup size is 4×4×4
+    let wg = resolution.div_ceil(4); // workgroup size is 4×4×4
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {

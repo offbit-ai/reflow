@@ -10,10 +10,8 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
-use serde_json::json;
+use reflow_actor::{message::EncodableValue, ActorContext};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 // ── Cross-platform helpers ──────────────────────────────────────
 

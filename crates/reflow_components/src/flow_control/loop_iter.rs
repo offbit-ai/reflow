@@ -4,7 +4,7 @@
 //! item to the outport channel directly. This drives downstream actors
 //! once per item without requiring external re-invocation.
 
-use crate::{Actor, ActorBehavior, MemoryState, Message, Port};
+use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};

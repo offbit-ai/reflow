@@ -64,16 +64,16 @@ pub async fn crossover_actor(context: ActorContext) -> Result<HashMap<String, Me
             // Linkwitz-Riley: two cascaded biquads per crossover point
             let lp1_coeffs =
                 BiquadCoeffs::design(FilterType::LowPass, low_freq, 0.707, 0.0, sample_rate);
-            let lp2_coeffs = lp1_coeffs.clone();
+            let lp2_coeffs = lp1_coeffs;
             let hp1_coeffs =
                 BiquadCoeffs::design(FilterType::HighPass, low_freq, 0.707, 0.0, sample_rate);
-            let hp2_coeffs = hp1_coeffs.clone();
+            let hp2_coeffs = hp1_coeffs;
             let lp3_coeffs =
                 BiquadCoeffs::design(FilterType::LowPass, high_freq, 0.707, 0.0, sample_rate);
-            let lp4_coeffs = lp3_coeffs.clone();
+            let lp4_coeffs = lp3_coeffs;
             let hp3_coeffs =
                 BiquadCoeffs::design(FilterType::HighPass, high_freq, 0.707, 0.0, sample_rate);
-            let hp4_coeffs = hp3_coeffs.clone();
+            let hp4_coeffs = hp3_coeffs;
 
             // Low: LPF @ low_freq (LR4)
             let mut lp1 = Biquad::new(lp1_coeffs);

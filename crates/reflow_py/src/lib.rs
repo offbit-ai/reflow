@@ -90,6 +90,7 @@ impl PythonRuntime {
         Ok(())
     }
 
+    #[allow(clippy::result_large_err)]
     pub async fn execute(
         &self,
         session_id: uuid::Uuid,

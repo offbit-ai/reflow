@@ -6,8 +6,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{ActorContext, MemoryState};
-use serde_json::Value;
+use reflow_actor::ActorContext;
 use std::collections::HashMap;
 
 #[actor(

@@ -13,12 +13,12 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
 
 // Reuse the path parsing from SdfPathActor
-use crate::gpu::sdf::path::{interpolate_profile, parse_path, sample_path, PathCmd};
+use crate::gpu::sdf::path::{interpolate_profile, parse_path, sample_path};
 
 #[actor(
     TubeMeshActor,
@@ -82,7 +82,7 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
 
     // Generate tube mesh
     let n = points.len();
-    let vertex_count = n * rings;
+    let _vertex_count = n * rings;
     let triangle_count = (n - 1) * rings * 2;
     let stride = 24; // pos3 + normal3
 

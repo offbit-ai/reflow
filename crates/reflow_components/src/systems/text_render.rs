@@ -37,16 +37,17 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Font atlas cache — shared across ticks
 // ═══════════════════════════════════════════════════════════════════════════
 
+#[allow(dead_code)]
 struct FontAtlas {
     /// Atlas bitmap: grayscale (1 byte per pixel) or SDF (1 byte per pixel)
     bitmap: Vec<u8>,

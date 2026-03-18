@@ -6,7 +6,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{ActorContext, MemoryState};
+use reflow_actor::ActorContext;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -21,7 +21,7 @@ pub async fn animation_time_actor(ctx: ActorContext) -> Result<HashMap<String, M
 
     let speed = config.get("speed").and_then(|v| v.as_f64()).unwrap_or(1.0);
     let fps = config.get("fps").and_then(|v| v.as_f64()).unwrap_or(30.0);
-    let duration = config
+    let _duration = config
         .get("duration")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0); // 0 = unlimited

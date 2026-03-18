@@ -36,7 +36,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -120,7 +120,7 @@ pub async fn text_sdf_system_actor(ctx: ActorContext) -> Result<HashMap<String, 
         let raster_size = 64.0f32; // Rasterize at this size for SDF generation
         let scale = font_size as f32 / raster_size;
         let mut glyph_nodes: Vec<Value> = Vec::new();
-        let mut cursor_x = 0.0f64;
+        let mut cursor_x: f64;
 
         // First pass: compute total width for alignment
         let mut total_width = 0.0f64;

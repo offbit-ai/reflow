@@ -63,7 +63,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -140,7 +140,7 @@ pub async fn scene_skybox_system_actor(
                     .and_then(|v| v.as_array())
                     .map(|a| {
                         [
-                            a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.3),
+                            a.first().and_then(|v| v.as_f64()).unwrap_or(0.3),
                             a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.8),
                             a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.5),
                         ]

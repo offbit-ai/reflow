@@ -108,19 +108,6 @@ impl ActorProcess {
                 accumulated.extend(packet);
                 tick_message_count += 1;
 
-                // Count how many connections feed the required ports
-                let required_connections: usize = self
-                    .required_inports
-                    .iter()
-                    .map(|req| {
-                        self.config
-                            .inport_connection_counts
-                            .get(req)
-                            .copied()
-                            .unwrap_or(1)
-                    })
-                    .sum();
-
                 let has_all_required = self
                     .required_inports
                     .iter()

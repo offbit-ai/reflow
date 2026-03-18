@@ -221,7 +221,7 @@ fn run_mesh_to_sdf_gpu(
         ],
     });
 
-    let wg = (resolution + 3) / 4;
+    let wg = resolution.div_ceil(4);
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {

@@ -24,7 +24,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -610,7 +610,7 @@ pub fn render_2d(
         None => (&resolve_view, None),
     };
 
-    let bytes_per_row = ((width * 4 + 255) / 256) * 256;
+    let bytes_per_row = ((width * 4).div_ceil(256)) * 256;
     let readback_buf = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("SDF 2D Readback"),
         size: (bytes_per_row * height) as u64,
@@ -1062,7 +1062,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let glyph_metrics: Option<&Value> = atlas_pool.get("metrics");
     let atlas_size: Option<(u32, u32)> = atlas_pool.get("size").and_then(|v| {
         let arr = v.as_array()?;
-        Some((arr.get(0)?.as_u64()? as u32, arr.get(1)?.as_u64()? as u32))
+        Some((arr.first()?.as_u64()? as u32, arr.get(1)?.as_u64()? as u32))
     });
     let has_atlas = glyph_metrics.is_some() && atlas_size.is_some();
 

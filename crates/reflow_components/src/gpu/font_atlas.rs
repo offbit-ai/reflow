@@ -175,7 +175,7 @@ pub fn get_or_build_atlas(
 
     // Blit glyphs into atlas bitmap
     let mut bitmap = vec![0u8; (atlas_width * atlas_height) as usize];
-    for (ch, glyph_bmp, gw, _, _) in &glyph_bitmaps {
+    for (ch, glyph_bmp, _gw, _, _) in &glyph_bitmaps {
         if let Some(info) = glyphs.get(ch) {
             for y in 0..info.height {
                 for x in 0..info.width {
@@ -216,7 +216,7 @@ fn generate_sdf(bitmap: &[u8], w: usize, h: usize, padding: u32) -> Vec<u8> {
     let spread = padding as f32;
     let pad = padding as usize;
     let n = pw * ph;
-    let inf = (pw + ph) as f32;
+    let _inf = (pw + ph) as f32;
 
     // Sample source bitmap with padding (outside = 0)
     let sample = |gx: i32, gy: i32| -> bool {

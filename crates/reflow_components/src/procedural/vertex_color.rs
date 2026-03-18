@@ -12,7 +12,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -83,7 +83,7 @@ pub async fn vertex_color_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         .and_then(|v| v.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.35) as f32,
+                a.first().and_then(|v| v.as_f64()).unwrap_or(0.35) as f32,
                 a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.40) as f32,
                 a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.25) as f32,
             ]
@@ -94,7 +94,7 @@ pub async fn vertex_color_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         .and_then(|v| v.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.15) as f32,
+                a.first().and_then(|v| v.as_f64()).unwrap_or(0.15) as f32,
                 a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.20) as f32,
                 a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.10) as f32,
             ]

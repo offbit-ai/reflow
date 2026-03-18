@@ -82,6 +82,7 @@ pub struct ScriptActor {
 }
 
 impl ScriptActor {
+    #[allow(unreachable_code, unused_variables)]
     pub fn new(config: ScriptConfig) -> Self {
         let engine: Arc<Mutex<dyn ScriptEngine>> = match config.runtime {
             #[cfg(feature = "deno")]

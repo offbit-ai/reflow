@@ -24,7 +24,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::f64::consts::PI;
@@ -268,7 +268,7 @@ fn append_locomotion(
             .and_then(|v| {
                 v.as_array().map(|a| {
                     [
-                        a.get(0).and_then(|x| x.as_f64()).unwrap_or(0.0),
+                        a.first().and_then(|x| x.as_f64()).unwrap_or(0.0),
                         a.get(1).and_then(|x| x.as_f64()).unwrap_or(0.0),
                         a.get(2).and_then(|x| x.as_f64()).unwrap_or(0.0),
                     ]

@@ -15,7 +15,7 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
-use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -227,6 +227,7 @@ fn expand_template(template: &Value, index: usize, count: usize) -> Value {
     }
 }
 
+#[allow(dead_code)]
 fn json_value_to_message(value: Value) -> Message {
     match value {
         Value::Null => Message::Optional(None),

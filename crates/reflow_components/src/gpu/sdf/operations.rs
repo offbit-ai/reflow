@@ -27,6 +27,7 @@ fn sdf_output(node: &SdfNode) -> HashMap<String, Message> {
     out
 }
 
+#[allow(dead_code)]
 fn error_output(msg: &str) -> HashMap<String, Message> {
     let mut out = HashMap::new();
     out.insert("error".to_string(), Message::Error(msg.to_string().into()));
