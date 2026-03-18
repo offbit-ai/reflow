@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use parking_lot::Mutex;
 use reflow_tracing_protocol::client::TracingIntegration;
+use serde_json::Value;
 
-use crate::message::Message;
+use crate::message::{EncodableValue, Message};
 use crate::{ActorBehavior, ActorConfig, ActorContext, ActorLoad, ActorState, Port};
 
 /// Runtime-managed execution loop for an actor node.
@@ -80,6 +81,8 @@ impl ActorProcess {
         let actor_id = self.config.get_node_id();
         let total_connections: usize = self.config.inport_connection_counts.values().sum();
         let mut tick_message_count: usize = 0;
+        // Per-port message counter for connection-count-aware synchronization
+        let mut port_counts: HashMap<String, usize> = HashMap::new();
         loop {
             let packet = match self.inport_rx.clone().stream().next().await {
                 Some(p) => p,
@@ -90,8 +93,10 @@ impl ActorProcess {
 
             // ── Accumulate if awaiting inports ──────────────────────
             let payload = if self.await_all_inports {
-                // Wait for ALL connected inports (uses graph topology)
-                accumulated.extend(packet);
+                // Wait for ALL connected inports (uses graph topology).
+                // Fan-in: merge Object messages on the same port instead
+                // of overwriting, so multiple sources are preserved.
+                merge_accumulate(&mut accumulated, packet);
                 tick_message_count += 1;
                 let needed = if total_connections > 0 {
                     total_connections
@@ -104,22 +109,35 @@ impl ActorProcess {
                 tick_message_count = 0;
                 std::mem::take(&mut accumulated)
             } else if !self.required_inports.is_empty() {
-                // Wait for SPECIFIC required inports using connection counts
-                accumulated.extend(packet);
+                // Wait for SPECIFIC required inports.
+                // Connection-count-aware: for each required port, wait
+                // until ALL upstream connections on that port have sent.
+                merge_accumulate(&mut accumulated, packet.clone());
                 tick_message_count += 1;
+                for port in packet.keys() {
+                    *port_counts.entry(port.clone()).or_insert(0) += 1;
+                }
 
-                let has_all_required = self
-                    .required_inports
-                    .iter()
-                    .all(|req| accumulated.contains_key(req));
+                let has_all_required =
+                    self.required_inports.iter().all(|req| {
+                        let needed = self
+                            .config
+                            .inport_connection_counts
+                            .get(req)
+                            .copied()
+                            .unwrap_or(1);
+                        let received = port_counts.get(req).copied().unwrap_or(0);
+                        received >= needed
+                    });
                 if !has_all_required {
                     continue;
                 }
-                // Keep cached values, only clear required ports
+                // Keep cached values, only clear required ports and counts
                 tick_message_count = 0;
                 let payload = accumulated.clone();
                 for req in &self.required_inports {
                     accumulated.remove(req);
+                    port_counts.remove(req);
                 }
                 payload
             } else {
@@ -163,5 +181,41 @@ impl ActorProcess {
         self,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>> {
         Box::pin(self.run())
+    }
+}
+
+/// Merge-aware accumulation for fan-in synchronization.
+///
+/// When multiple connections fan-in to the same port and both carry
+/// Object messages, their keys are merged (shallow) so no data is lost.
+/// For non-Object types, last-write-wins (same as HashMap::extend).
+fn merge_accumulate(
+    accumulated: &mut HashMap<String, Message>,
+    packet: HashMap<String, Message>,
+) {
+    for (port, msg) in packet {
+        match accumulated.get(&port) {
+            Some(Message::Object(existing_obj)) => {
+                if let Message::Object(new_obj) = &msg {
+                    // Both Objects: merge keys
+                    let mut merged: Value = existing_obj.as_ref().clone().into();
+                    let new_v: Value = new_obj.as_ref().clone().into();
+                    if let (Some(m), Some(n)) = (merged.as_object_mut(), new_v.as_object()) {
+                        for (k, v) in n {
+                            m.insert(k.clone(), v.clone());
+                        }
+                    }
+                    accumulated.insert(
+                        port,
+                        Message::Object(Arc::new(EncodableValue::from(merged))),
+                    );
+                } else {
+                    accumulated.insert(port, msg);
+                }
+            }
+            _ => {
+                accumulated.insert(port, msg);
+            }
+        }
     }
 }

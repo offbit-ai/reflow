@@ -28,9 +28,31 @@
 //! Chain multiple for multi-property animation:
 //!
 //! ```text
-//!                      ┌→ Keyframe(position) → position
-//! AnimationTime → time ┼→ Keyframe(rotation) → rotation
-//!                      └→ Keyframe(scale)    → scale
+//!                      ┌→ Keyframe(position) → value → target
+//! AnimationTime → time ┼→ Keyframe(rotation) → value → target
+//!                      └→ Keyframe(scale)    → value → target
+//! ```
+//!
+//! ## Timeline feeding mode
+//!
+//! When `trigger` inport fires, the actor emits its track definition on the
+//! `track` outport for consumption by AnimationTimeline. Multiple KeyframeActors
+//! fan-in to the timeline, which handles synchronization:
+//!
+//! ```text
+//! IIP → Keyframe(name="s0_x", kf:[...]) → track ──→ timeline:tracks  (fan-in)
+//! IIP → Keyframe(name="s0_y", kf:[...]) → track ──→ timeline:tracks
+//!       tick ──→ timeline:tick
+//!       timeline:values ──→ renderer:values  (atomic per-tick output)
+//! ```
+//!
+//! ## Named output (fan-in to renderer, no timeline)
+//!
+//! When `name` config is set, the `value` outport emits a one-key object
+//! `{ "name": interpolated_value }` for self-describing fan-in:
+//!
+//! ```text
+//! time → Keyframe(name="s0_x", kf:[...]) → {"s0_x": 400.0} ──→ renderer:values
 //! ```
 
 use crate::math::easing;
@@ -43,20 +65,44 @@ use std::collections::HashMap;
 
 #[actor(
     KeyframeActor,
-    inports::<10>(time),
-    outports::<1>(value, progress, metadata),
-    state(MemoryState),
-    await_inports(time)
+    inports::<10>(time, trigger),
+    outports::<1>(value, track, progress, metadata),
+    state(MemoryState)
 )]
 pub async fn keyframe_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    // Time from inport (guaranteed present via await_inports)
+    // ── Track definition output (trigger mode for timeline feeding) ──
+    // On trigger (or first time input), emit track definition on `track` outport.
+    let name = config.get("name").and_then(|v| v.as_str());
+    let has_trigger = payload.contains_key("trigger");
+
+    if has_trigger {
+        if let Some(keyframes) = config.get("keyframes") {
+            let track_name = name.unwrap_or("default");
+            let mut track_def = json!({
+                "name": track_name,
+                "keyframes": keyframes,
+            });
+            // Forward optional delay/duration
+            if let Some(d) = config.get("delay") {
+                track_def["delay"] = d.clone();
+            }
+            let mut out = HashMap::new();
+            out.insert(
+                "track".to_string(),
+                Message::object(EncodableValue::from(track_def)),
+            );
+            return Ok(out);
+        }
+    }
+
+    // ── Evaluation mode (time input) ──
     let time = match payload.get("time") {
         Some(Message::Float(f)) => *f,
         Some(Message::Integer(i)) => *i as f64,
-        _ => unreachable!("await_inports guarantees time"),
+        _ => return Ok(HashMap::new()),
     };
 
     let keyframes = config
@@ -112,20 +158,27 @@ pub async fn keyframe_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     // Evaluate keyframes
     let value = evaluate_keyframes(keyframes, effective_time);
 
+    let name = config.get("name").and_then(|v| v.as_str());
+
     let mut out = HashMap::new();
     if let Some(v) = value {
-        // Output as the most specific Message type for direct wiring
-        let msg = match &v {
-            Value::Number(n) => {
-                if let Some(f) = n.as_f64() {
-                    Message::Float(f)
-                } else if let Some(i) = n.as_i64() {
-                    Message::Integer(i)
-                } else {
-                    Message::object(EncodableValue::from(v.clone()))
+        let msg = if let Some(name) = name {
+            // Named output: wrap as { "name": value } for fan-in to downstream actors
+            Message::object(EncodableValue::from(json!({ name: v })))
+        } else {
+            // Bare output: most specific Message type for direct wiring
+            match &v {
+                Value::Number(n) => {
+                    if let Some(f) = n.as_f64() {
+                        Message::Float(f)
+                    } else if let Some(i) = n.as_i64() {
+                        Message::Integer(i)
+                    } else {
+                        Message::object(EncodableValue::from(v.clone()))
+                    }
                 }
+                _ => Message::object(EncodableValue::from(v.clone())),
             }
-            _ => Message::object(EncodableValue::from(v.clone())),
         };
         out.insert("value".to_string(), msg);
     }

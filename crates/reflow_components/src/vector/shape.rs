@@ -17,7 +17,9 @@
 //!
 //! ## Outports
 //! - `path` — SVG path string (d attribute)
-//! - `metadata` — bounds, length, segment count
+//! - `metadata` — bounds, length, segment count, plus any rendering
+//!   properties from config (`color`, `shadow`, `border`, `index`,
+//!   `cornerRadius`) for downstream GPU renderers
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -122,19 +124,38 @@ pub async fn shape_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let (min, max) = path.bounds();
     let length = path.length();
 
+    // Build metadata with geometry + passthrough rendering properties
+    // Bounds = [x, y, w, h]. cx/cy define the initial center position for
+    // GPU renderer fallback (before animation provides sN_x/sN_y).
+    let w = max.x - min.x;
+    let h = max.y - min.y;
+    let bx = cx - w / 2.0;
+    let by = cy - h / 2.0;
+    let mut meta = json!({
+        "type": shape,
+        "bounds": [bx, by, w, h],
+        "width": w,
+        "height": h,
+        "length": length,
+        "segments": path.segment_count(),
+        "closed": path.is_closed(),
+    });
+
+    // Pass through rendering properties for GPU consumers
+    let render_keys = ["color", "shadow", "border", "index", "cornerRadius"];
+    if let Some(obj) = meta.as_object_mut() {
+        for key in render_keys {
+            if let Some(val) = params.get(key) {
+                obj.insert(key.to_string(), val.clone());
+            }
+        }
+    }
+
     let mut out = HashMap::new();
     out.insert("path".to_string(), Message::String(svg.into()));
     out.insert(
         "metadata".to_string(),
-        Message::object(EncodableValue::from(json!({
-            "shape": shape,
-            "bounds": { "min": [min.x, min.y], "max": [max.x, max.y] },
-            "width": max.x - min.x,
-            "height": max.y - min.y,
-            "length": length,
-            "segments": path.segment_count(),
-            "closed": path.is_closed(),
-        }))),
+        Message::object(EncodableValue::from(meta)),
     );
     Ok(out)
 }

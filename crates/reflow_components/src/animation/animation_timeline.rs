@@ -111,15 +111,25 @@ pub async fn animation_timeline_actor(
     }
 
     // ─── Pool incoming tracks from inport (override config) ───
-    // Each message on `tracks` adds/replaces a named track.
+    // Accepts two formats:
+    //   Single track:  { "name": "s0_x", "keyframes": [...] }
+    //   Batched tracks: { "tracks": { "s0_x": { "keyframes": [...] }, "s0_y": { ... } } }
     if let Some(Message::Object(obj)) = payload.get("tracks") {
         let v: Value = obj.as_ref().clone().into();
-        let name = v
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("default")
-            .to_string();
-        ctx.pool_upsert("_tracks", &name, v);
+        if let Some(Value::Object(batch)) = v.get("tracks") {
+            // Batched: multiple named tracks in one message
+            for (name, track_data) in batch {
+                ctx.pool_upsert("_tracks", name, track_data.clone());
+            }
+        } else {
+            // Single track with "name" field
+            let name = v
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("default")
+                .to_string();
+            ctx.pool_upsert("_tracks", &name, v);
+        }
     }
 
     // ─── Process control ───

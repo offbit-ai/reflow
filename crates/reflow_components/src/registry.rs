@@ -119,7 +119,7 @@ use crate::systems::{
     TextRenderSystemActor, TextSdfSystemActor, TimelineSystemActor, TweenSystemActor,
 };
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
-use crate::transform::{DataOperationsActor, DataTransformActor, GeneratorActor};
+use crate::transform::{DataEmitActor, DataOperationsActor, DataTransformActor, GeneratorActor};
 use crate::vector::{
     BackgroundActor, BlendModeActor, Canvas2DActor, GaussianBlurActor, Shape2DActor,
     VectorRasterizeActor,
@@ -198,6 +198,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_passthrough" => Some(Arc::new(PassthroughActor::new())),
 
         // Data Processing
+        "tpl_data_emit" => Some(Arc::new(DataEmitActor::new())),
         "tpl_data_transformer" => Some(Arc::new(DataTransformActor::new())),
         "tpl_data_operations" => Some(Arc::new(DataOperationsActor::new())),
         "tpl_generator" => Some(Arc::new(GeneratorActor::new())),
@@ -499,6 +500,10 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     );
     mapping.insert("tpl_switch".to_string(), "SwitchCaseActor".to_string());
     mapping.insert("tpl_loop".to_string(), "LoopActor".to_string());
+    mapping.insert(
+        "tpl_data_emit".to_string(),
+        "DataEmitActor".to_string(),
+    );
     mapping.insert(
         "tpl_data_transformer".to_string(),
         "DataTransformActor".to_string(),

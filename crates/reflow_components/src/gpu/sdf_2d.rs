@@ -920,10 +920,37 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
         .unwrap_or([0.02, 0.01, 0.07, 1.0]);
 
-    // Cache primitives from inport
+    // Cache primitives from inport (fan-in: multiple shape sources accumulate)
+    // Accepts:
+    //   Single shape:   { "index": 0, "type": "rect", "bounds": [...], ... }
+    //   Shape array:    [ { "type": "rect", ... }, { "type": "circle", ... } ]
+    //   Keyed batch:    { "shapes": [ ... ] }
     if let Some(Message::Object(obj)) = payload.get("primitives") {
         let v: Value = obj.as_ref().clone().into();
-        ctx.pool_upsert("_2d", "prims", v);
+        if let Some(arr) = v.get("shapes").and_then(|s| s.as_array()) {
+            // Keyed batch: { "shapes": [...] }
+            for (i, shape) in arr.iter().enumerate() {
+                ctx.pool_upsert("_shapes", &format!("s{}", i), shape.clone());
+            }
+        } else if v.is_array() {
+            // Direct array
+            if let Some(arr) = v.as_array() {
+                for (i, shape) in arr.iter().enumerate() {
+                    ctx.pool_upsert("_shapes", &format!("s{}", i), shape.clone());
+                }
+            }
+        } else if v.get("type").is_some() {
+            // Single shape with optional "index" for ordering
+            let idx = v
+                .get("index")
+                .and_then(|i| i.as_u64())
+                .map(|i| format!("s{}", i))
+                .unwrap_or_else(|| {
+                    let n = ctx.get_pool("_shapes").len();
+                    format!("s{}", n)
+                });
+            ctx.pool_upsert("_shapes", &idx, v);
+        }
     }
 
     // Cache glyph atlas from GlyphAtlasActor (one-shot, persists across ticks)
@@ -939,31 +966,38 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         ctx.pool_upsert("_atlas", "size", v);
     }
 
-    // ── Parse animation values from timeline ──
-    // Flat map: "s0_x" → 400.0, "c2_scale" → 0.8, etc.
+    // ── Parse animation values ──
+    // Supports two sources:
+    //   1. Timeline: full object { "s0_x": 400.0, "s0_y": 225.0, ... }
+    //   2. KeyframeActor fan-in: individual { "s0_x": 400.0 } merged into pool
     let mut vals: HashMap<String, f64> = HashMap::new();
     if let Some(Message::Object(obj)) = payload.get("values") {
         let v: Value = obj.as_ref().clone().into();
         if let Some(map) = v.as_object() {
             for (k, val) in map {
                 if let Some(f) = val.as_f64() {
-                    vals.insert(k.clone(), f);
-                }
-            }
-        }
-        ctx.pool_upsert("_vals", "map", v);
-    } else if let Some((_, stored)) = ctx.get_pool("_vals").into_iter().find(|(k, _)| k == "map") {
-        if let Some(map) = stored.as_object() {
-            for (k, val) in map {
-                if let Some(f) = val.as_f64() {
+                    // Pool each named value individually for fan-in accumulation
+                    ctx.pool_upsert("_vals", k, json!(f));
                     vals.insert(k.clone(), f);
                 }
             }
         }
     }
+    // Restore all pooled values (includes fan-in accumulation from prior messages)
+    for (k, stored) in ctx.get_pool("_vals") {
+        if !vals.contains_key(&k) {
+            if let Some(f) = stored.as_f64() {
+                vals.insert(k, f);
+            }
+        }
+    }
 
-    // Only render when values or tick arrives
+    // Only render when values arrive (from timeline or direct keyframes).
     if !payload.contains_key("values") && !payload.contains_key("tick") {
+        return Ok(HashMap::new());
+    }
+    // Skip rendering until animation values have been received at least once
+    if vals.is_empty() {
         return Ok(HashMap::new());
     }
 
@@ -971,11 +1005,19 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         vals.get(&format!("{}_{}", prefix, prop)).copied()
     };
 
-    let shapes = config
-        .get("shapes")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
+    // Resolve shapes: pooled from inport (fan-in) takes precedence over config
+    let pooled_shapes: Vec<(String, Value)> = ctx.get_pool("_shapes").into_iter().collect();
+    let shapes: Vec<Value> = if !pooled_shapes.is_empty() {
+        let mut sorted = pooled_shapes;
+        sorted.sort_by(|(a, _), (b, _)| a.cmp(b));
+        sorted.into_iter().map(|(_, v)| v).collect()
+    } else {
+        config
+            .get("shapes")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+    };
     let text_configs = config
         .get("text")
         .and_then(|v| v.as_array())
