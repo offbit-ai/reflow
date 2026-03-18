@@ -89,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
         config(json!({
             "interval": ms,
             "maxExecutions": frames,
-            "startImmediately": true,
+            "startImmediately": false,
         })),
     )?;
     net.add_node(
@@ -133,11 +133,11 @@ async fn main() -> anyhow::Result<()> {
         kf(json!([
             {"time": 0.0, "value": 90.0},
             {"time": 0.5, "value": 90.0, "easing": "easeInOutCubic"},
-            {"time": 2.0, "value": btn_x + 25.0},
-            {"time": 3.0, "value": btn_x + 25.0},
-            {"time": 3.2, "value": btn_x + 25.0},
-            {"time": 3.8, "value": btn_x + 25.0},
-            {"time": 4.5, "value": btn_x + 35.0, "easing": "easeInOutCubic"},
+            {"time": 2.0, "value": btn_x + 50.0},
+            {"time": 3.0, "value": btn_x + 50.0},
+            {"time": 3.2, "value": btn_x + 50.0},
+            {"time": 3.8, "value": btn_x + 50.0},
+            {"time": 4.5, "value": btn_x + 55.0, "easing": "easeInOutCubic"},
             {"time": 6.0, "value": 560.0}
         ])),
     );
@@ -146,11 +146,11 @@ async fn main() -> anyhow::Result<()> {
         kf(json!([
             {"time": 0.0, "value": 290.0},
             {"time": 0.5, "value": 290.0, "easing": "easeInOutCubic"},
-            {"time": 2.0, "value": btn_y + 10.0},
-            {"time": 3.0, "value": btn_y + 10.0, "easing": "easeOutCubic"},
-            {"time": 3.15, "value": btn_y + 15.0},
-            {"time": 3.3, "value": btn_y + 10.0},
-            {"time": 3.8, "value": btn_y + 10.0},
+            {"time": 2.0, "value": btn_y + 16.0},
+            {"time": 3.0, "value": btn_y + 16.0, "easing": "easeOutCubic"},
+            {"time": 3.15, "value": btn_y + 20.0},
+            {"time": 3.3, "value": btn_y + 16.0},
+            {"time": 3.8, "value": btn_y + 16.0},
             {"time": 4.5, "value": btn_y + 30.0, "easing": "easeInOutCubic"},
             {"time": 6.0, "value": 70.0}
         ])),
@@ -339,7 +339,7 @@ async fn main() -> anyhow::Result<()> {
                 {
                     "content": label,
                     "x": btn_x,
-                    "y": btn_y + 2.0,
+                    "y": btn_y - 3.0,
                     "size": 20.0,
                     "color": [1.0, 1.0, 1.0, 1.0],
                     "tracking": 1.0,

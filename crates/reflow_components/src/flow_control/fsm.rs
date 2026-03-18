@@ -563,11 +563,15 @@ fn execute_transition(
         }))),
     );
 
-    // emit: merged entry/exit values
+    // emit: signal with id = target state, data = merged entry/exit values.
+    // Subscribers can filter by state name to react to specific transitions.
     if !emit_values.is_empty() {
         out.insert(
             "emit".to_string(),
-            Message::object(EncodableValue::from(Value::Object(emit_values))),
+            Message::object(EncodableValue::from(json!({
+                "id": final_state,
+                "data": Value::Object(emit_values),
+            }))),
         );
     }
 
