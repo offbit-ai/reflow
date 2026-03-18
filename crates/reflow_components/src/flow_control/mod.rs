@@ -1,4 +1,5 @@
 mod conditional;
+mod fsm;
 mod loop_iter;
 mod server;
 mod switch;
@@ -6,6 +7,7 @@ mod triggers;
 mod utilities;
 
 pub use conditional::ConditionalBranchActor;
+pub use fsm::FsmActor;
 pub use loop_iter::LoopActor;
 pub use server::{ServerRequestActor, ServerResponseActor};
 pub use switch::SwitchCaseActor;
