@@ -94,7 +94,7 @@ pub fn get_or_build_atlas(
     }
 
     // Rasterize each glyph
-    let sdf_padding = if is_sdf { 8u32 } else { 1 };
+    let sdf_padding = if is_sdf { 16u32 } else { 1 };
     let mut glyph_bitmaps: Vec<(char, Vec<u8>, usize, usize, fontdue::Metrics)> = Vec::new();
 
     for &ch in &unique_chars {

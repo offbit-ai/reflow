@@ -51,11 +51,17 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         return Ok(error_out("No frames received"));
     }
 
+    // Bitrate in kbps from config (default 5000 = 5 Mbps for crisp output)
+    let bitrate_kbps = config
+        .get("bitrate")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(5000) as u32;
+
     // Encode in blocking thread
     let w = width;
     let h = height;
     let mp4_bytes = tokio::task::spawn_blocking(move || {
-        encode_h264_mp4(&frames, w, h, fps)
+        encode_h264_mp4(&frames, w, h, fps, bitrate_kbps)
     })
     .await
     .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
@@ -112,8 +118,12 @@ fn encode_h264_mp4(
     width: u32,
     height: u32,
     fps: u32,
+    bitrate_kbps: u32,
 ) -> Result<Vec<u8>, String> {
-    let config = EncoderConfig::new();
+    let config = EncoderConfig::new()
+        .set_bitrate_bps(bitrate_kbps * 1000)
+        .max_frame_rate(fps as f32)
+        .rate_control_mode(openh264::encoder::RateControlMode::Bufferbased);
     let api = openh264::OpenH264API::from_source();
     let mut encoder = Encoder::with_api_config(api, config)
         .map_err(|e| format!("Encoder init: {}", e))?;

@@ -274,14 +274,17 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let prim_type = prim.type_info.x;
     let p = in.uv;
 
-    // PRIM_GLYPH: sample SDF atlas texture, apply color
+    // PRIM_GLYPH: sample SDF atlas texture with screen-space adaptive AA
     if prim_type == PRIM_GLYPH {
         let uv0 = prim.gradient_params.xy;
         let uv1 = prim.gradient_params.zw;
         let frac = (p - prim.bounds.xy) / prim.bounds.zw;
         let tex_uv = mix(uv0, uv1, clamp(frac, vec2<f32>(0.0), vec2<f32>(1.0)));
         let sdf_val = textureSample(glyph_atlas, glyph_sampler, tex_uv).r;
-        let alpha = smoothstep(0.45, 0.55, sdf_val) * prim.color.a;
+        // Screen-space derivative for pixel-perfect AA at any scale (Valve SDF technique)
+        let fw = fwidth(sdf_val);
+        let edge = clamp(fw * 0.7, 0.02, 0.25);
+        let alpha = smoothstep(0.5 - edge, 0.5 + edge, sdf_val) * prim.color.a;
         if alpha < 0.001 { discard; }
         return vec4<f32>(prim.color.rgb, alpha);
     }

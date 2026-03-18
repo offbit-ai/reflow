@@ -237,7 +237,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("collector", "tpl_render_frame_collector", config(json!({
         "totalFrames": frames, "width": w, "height": h, "fps": fps,
     })))?;
-    net.add_node("encoder", "tpl_video_encoder", config(json!({ "fps": fps, "bitrate": 3000 })))?;
+    net.add_node("encoder", "tpl_video_encoder", config(json!({ "fps": fps, "bitrate": 8000 })))?;
     net.add_node("save", "tpl_file_save", config(json!({ "path": "motion_2d.mp4" })))?;
 
     // ═══ WIRING ═══
