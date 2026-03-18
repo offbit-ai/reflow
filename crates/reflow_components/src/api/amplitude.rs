@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://api2.amplitude.com/2";
 const ENV_KEY: &str = "AMPLITUDE_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -37,7 +41,9 @@ fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestB
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_send_event(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_send_event(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -68,20 +74,28 @@ pub async fn amplitude_send_event(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /httpapi failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /httpapi failed: {}", e).into()),
+            );
         }
     }
 
@@ -97,7 +111,9 @@ pub async fn amplitude_send_event(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_create_batch_event(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_create_batch_event(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -131,20 +147,28 @@ pub async fn amplitude_create_batch_event(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /batch failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /batch failed: {}", e).into()),
+            );
         }
     }
 
@@ -160,7 +184,9 @@ pub async fn amplitude_create_batch_event(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_update_user_property(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_update_user_property(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -200,20 +226,28 @@ pub async fn amplitude_update_user_property(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /identify failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /identify failed: {}", e).into()),
+            );
         }
     }
 
@@ -229,7 +263,9 @@ pub async fn amplitude_update_user_property(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_event_segmentation(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_event_segmentation(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -281,20 +317,28 @@ pub async fn amplitude_read_event_segmentation(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /events/segmentation failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /events/segmentation failed: {}", e).into()),
+            );
         }
     }
 
@@ -310,7 +354,9 @@ pub async fn amplitude_read_event_segmentation(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_funnel(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_funnel(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -356,20 +402,28 @@ pub async fn amplitude_read_funnel(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /funnels failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /funnels failed: {}", e).into()),
+            );
         }
     }
 
@@ -385,7 +439,9 @@ pub async fn amplitude_read_funnel(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_retention(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_retention(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -431,20 +487,28 @@ pub async fn amplitude_read_retention(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /retention failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /retention failed: {}", e).into()),
+            );
         }
     }
 
@@ -460,7 +524,9 @@ pub async fn amplitude_read_retention(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_user_activity(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_user_activity(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -500,20 +566,28 @@ pub async fn amplitude_read_user_activity(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /useractivity failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /useractivity failed: {}", e).into()),
+            );
         }
     }
 
@@ -529,7 +603,9 @@ pub async fn amplitude_read_user_activity(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_user_search(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_user_search(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -557,20 +633,28 @@ pub async fn amplitude_read_user_search(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /usersearch failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /usersearch failed: {}", e).into()),
+            );
         }
     }
 
@@ -586,7 +670,9 @@ pub async fn amplitude_read_user_search(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_events_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_events_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -617,20 +703,28 @@ pub async fn amplitude_read_events_list(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /taxonomy/event failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /taxonomy/event failed: {}", e).into()),
+            );
         }
     }
 
@@ -646,7 +740,9 @@ pub async fn amplitude_read_events_list(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_event_properties(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_event_properties(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -680,20 +776,30 @@ pub async fn amplitude_read_event_properties(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /taxonomy/event/{{eventName}}/properties failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /taxonomy/event/{{eventName}}/properties failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -709,7 +815,9 @@ pub async fn amplitude_read_event_properties(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_user_properties(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_user_properties(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -740,20 +848,28 @@ pub async fn amplitude_read_user_properties(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /taxonomy/user-property failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /taxonomy/user-property failed: {}", e).into()),
+            );
         }
     }
 
@@ -769,7 +885,9 @@ pub async fn amplitude_read_user_properties(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_cohort(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_cohort(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -789,20 +907,28 @@ pub async fn amplitude_read_cohort(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /cohorts failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /cohorts failed: {}", e).into()),
+            );
         }
     }
 
@@ -818,7 +944,9 @@ pub async fn amplitude_read_cohort(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_download_cohort_members(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_download_cohort_members(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -852,20 +980,28 @@ pub async fn amplitude_download_cohort_members(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /cohorts/request/{{cohortId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /cohorts/request/{{cohortId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -881,7 +1017,9 @@ pub async fn amplitude_download_cohort_members(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_dashboard(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_dashboard(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -901,20 +1039,28 @@ pub async fn amplitude_read_dashboard(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /dashboards failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /dashboards failed: {}", e).into()),
+            );
         }
     }
 
@@ -930,7 +1076,9 @@ pub async fn amplitude_read_dashboard(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_delete_user_data(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_delete_user_data(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -970,20 +1118,28 @@ pub async fn amplitude_delete_user_data(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /deletions/users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /deletions/users failed: {}", e).into()),
+            );
         }
     }
 
@@ -999,7 +1155,9 @@ pub async fn amplitude_delete_user_data(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_deletion_job(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_deletion_job(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1030,20 +1188,28 @@ pub async fn amplitude_read_deletion_job(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /deletions/users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /deletions/users failed: {}", e).into()),
+            );
         }
     }
 
@@ -1059,7 +1225,9 @@ pub async fn amplitude_read_deletion_job(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn amplitude_read_revenue_ltv(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn amplitude_read_revenue_ltv(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1099,23 +1267,30 @@ pub async fn amplitude_read_revenue_ltv(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /revenue/ltv failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /revenue/ltv failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

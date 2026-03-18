@@ -15,24 +15,59 @@ pub struct Transform2D {
 
 impl Transform2D {
     pub fn identity() -> Self {
-        Self { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 0.0, ty: 0.0 }
+        Self {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            tx: 0.0,
+            ty: 0.0,
+        }
     }
 
     pub fn translate(x: f64, y: f64) -> Self {
-        Self { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: x, ty: y }
+        Self {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            tx: x,
+            ty: y,
+        }
     }
 
     pub fn scale(sx: f64, sy: f64) -> Self {
-        Self { a: sx, b: 0.0, c: 0.0, d: sy, tx: 0.0, ty: 0.0 }
+        Self {
+            a: sx,
+            b: 0.0,
+            c: 0.0,
+            d: sy,
+            tx: 0.0,
+            ty: 0.0,
+        }
     }
 
     pub fn rotate(angle_rad: f64) -> Self {
         let (s, c) = (angle_rad.sin(), angle_rad.cos());
-        Self { a: c, b: s, c: -s, d: c, tx: 0.0, ty: 0.0 }
+        Self {
+            a: c,
+            b: s,
+            c: -s,
+            d: c,
+            tx: 0.0,
+            ty: 0.0,
+        }
     }
 
     pub fn skew(ax: f64, ay: f64) -> Self {
-        Self { a: 1.0, b: ay.tan(), c: ax.tan(), d: 1.0, tx: 0.0, ty: 0.0 }
+        Self {
+            a: 1.0,
+            b: ay.tan(),
+            c: ax.tan(),
+            d: 1.0,
+            tx: 0.0,
+            ty: 0.0,
+        }
     }
 
     pub fn apply(&self, p: Point) -> Point {
@@ -62,8 +97,17 @@ pub fn transform_path(path: &Path2D, t: &Transform2D) -> Path2D {
             PathCmd::MoveTo(p) => PathCmd::MoveTo(t.apply(*p)),
             PathCmd::LineTo(p) => PathCmd::LineTo(t.apply(*p)),
             PathCmd::QuadTo(c, p) => PathCmd::QuadTo(t.apply(*c), t.apply(*p)),
-            PathCmd::CubicTo(c1, c2, p) => PathCmd::CubicTo(t.apply(*c1), t.apply(*c2), t.apply(*p)),
-            PathCmd::ArcTo { rx, ry, rotation, large_arc, sweep, end } => {
+            PathCmd::CubicTo(c1, c2, p) => {
+                PathCmd::CubicTo(t.apply(*c1), t.apply(*c2), t.apply(*p))
+            }
+            PathCmd::ArcTo {
+                rx,
+                ry,
+                rotation,
+                large_arc,
+                sweep,
+                end,
+            } => {
                 // Simplified: transform endpoint, scale radii
                 let scale = ((t.a * t.a + t.b * t.b).sqrt() + (t.c * t.c + t.d * t.d).sqrt()) / 2.0;
                 PathCmd::ArcTo {

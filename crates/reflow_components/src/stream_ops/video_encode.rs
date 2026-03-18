@@ -8,11 +8,7 @@ use actor_macro::actor;
 use anyhow::{Error, Result};
 use openh264::encoder::{Encoder, EncoderConfig};
 use openh264::formats::{RgbSliceU8, YUVBuffer};
-use reflow_actor::{
-    message::EncodableValue,
-    stream::StreamFrame,
-    ActorContext, MemoryState,
-};
+use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext, MemoryState};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -26,10 +22,7 @@ use std::sync::Arc;
 pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
 
-    let target_fps = config
-        .get("fps")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(30) as u32;
+    let target_fps = config.get("fps").and_then(|v| v.as_u64()).unwrap_or(30) as u32;
 
     // Take stream receiver — only proceed if we actually got a StreamHandle
     let rx = match ctx.take_stream_receiver("stream") {
@@ -38,11 +31,10 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     };
 
     // Collect all frames
-    let (frames, width, height, fps) =
-        tokio::task::spawn_blocking(move || collect_frames(rx))
-            .await
-            .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
-            .map_err(|e| anyhow::anyhow!("{}", e))?;
+    let (frames, width, height, fps) = tokio::task::spawn_blocking(move || collect_frames(rx))
+        .await
+        .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
 
     let fps = if fps > 0 { fps } else { target_fps };
     let frame_count = frames.len();
@@ -60,12 +52,11 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     // Encode in blocking thread
     let w = width;
     let h = height;
-    let mp4_bytes = tokio::task::spawn_blocking(move || {
-        encode_h264_mp4(&frames, w, h, fps, bitrate_kbps)
-    })
-    .await
-    .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
-    .map_err(|e| anyhow::anyhow!("{}", e))?;
+    let mp4_bytes =
+        tokio::task::spawn_blocking(move || encode_h264_mp4(&frames, w, h, fps, bitrate_kbps))
+            .await
+            .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
 
     let mut out = HashMap::new();
     out.insert("output".to_string(), Message::bytes(mp4_bytes.clone()));
@@ -125,8 +116,8 @@ fn encode_h264_mp4(
         .max_frame_rate(fps as f32)
         .rate_control_mode(openh264::encoder::RateControlMode::Bufferbased);
     let api = openh264::OpenH264API::from_source();
-    let mut encoder = Encoder::with_api_config(api, config)
-        .map_err(|e| format!("Encoder init: {}", e))?;
+    let mut encoder =
+        Encoder::with_api_config(api, config).map_err(|e| format!("Encoder init: {}", e))?;
 
     let mut nal_units: Vec<Vec<u8>> = Vec::new();
     let mut avcc_sizes: Vec<u32> = Vec::new();
@@ -137,9 +128,7 @@ fn encode_h264_mp4(
         let rgb_source = RgbSliceU8::new(&rgb, (width as usize, height as usize));
         let yuv = YUVBuffer::from_rgb_source(rgb_source);
 
-        let bitstream = encoder
-            .encode(&yuv)
-            .map_err(|e| format!("Encode: {}", e))?;
+        let bitstream = encoder.encode(&yuv).map_err(|e| format!("Encode: {}", e))?;
 
         let mut frame_data = Vec::new();
         for layer_idx in 0..bitstream.num_layers() {
@@ -255,14 +244,24 @@ fn extract_sps_pps(first_frame: &[u8]) -> (Vec<u8>, Vec<u8>) {
         i = end;
     }
 
-    if sps.is_empty() { sps = vec![0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2]; }
-    if pps.is_empty() { pps = vec![0x68, 0xce, 0x38, 0x80]; }
+    if sps.is_empty() {
+        sps = vec![0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2];
+    }
+    if pps.is_empty() {
+        pps = vec![0x68, 0xce, 0x38, 0x80];
+    }
     (sps, pps)
 }
 
 // ─── Minimal MP4 Muxer ──────────────────────────────────────────────
 
-fn mux_mp4(nal_units: &[Vec<u8>], avcc_sizes: &[u32], width: u32, height: u32, fps: u32) -> Vec<u8> {
+fn mux_mp4(
+    nal_units: &[Vec<u8>],
+    avcc_sizes: &[u32],
+    width: u32,
+    height: u32,
+    fps: u32,
+) -> Vec<u8> {
     let timescale = 90000u32;
     let frame_duration = timescale / fps;
     let total_duration = frame_duration * nal_units.len() as u32;
@@ -286,11 +285,31 @@ fn mux_mp4(nal_units: &[Vec<u8>], avcc_sizes: &[u32], width: u32, height: u32, f
 
     // Build ftyp + moov (with placeholder offset), measure, then rebuild with correct offset
     let ftyp = build_ftyp();
-    let moov_placeholder = build_moov(width, height, timescale, total_duration, frame_duration, avcc_sizes, &sps, &pps, 0);
+    let moov_placeholder = build_moov(
+        width,
+        height,
+        timescale,
+        total_duration,
+        frame_duration,
+        avcc_sizes,
+        &sps,
+        &pps,
+        0,
+    );
     let mdat_header_size = 8u32;
     let mdat_offset = ftyp.len() as u32 + moov_placeholder.len() as u32 + mdat_header_size;
 
-    let moov = build_moov(width, height, timescale, total_duration, frame_duration, avcc_sizes, &sps, &pps, mdat_offset);
+    let moov = build_moov(
+        width,
+        height,
+        timescale,
+        total_duration,
+        frame_duration,
+        avcc_sizes,
+        &sps,
+        &pps,
+        mdat_offset,
+    );
 
     let mdat_size = mdat_header_size + mdat_payload.len() as u32;
     let mut mdat = Vec::new();
@@ -325,8 +344,12 @@ fn extract_sps_pps_from_avcc(avcc_data: &[u8]) -> (Vec<u8>, Vec<u8>) {
             break;
         }
     }
-    if sps.is_empty() { sps = vec![0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2]; }
-    if pps.is_empty() { pps = vec![0x68, 0xce, 0x38, 0x80]; }
+    if sps.is_empty() {
+        sps = vec![0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2];
+    }
+    if pps.is_empty() {
+        pps = vec![0x68, 0xce, 0x38, 0x80];
+    }
     (sps, pps)
 }
 
@@ -338,7 +361,17 @@ fn build_ftyp() -> Vec<u8> {
     mp4_box(b"ftyp", &b)
 }
 
-fn build_moov(w: u32, h: u32, ts: u32, dur: u32, fd: u32, sizes: &[u32], sps: &[u8], pps: &[u8], mdat_off: u32) -> Vec<u8> {
+fn build_moov(
+    w: u32,
+    h: u32,
+    ts: u32,
+    dur: u32,
+    fd: u32,
+    sizes: &[u32],
+    sps: &[u8],
+    pps: &[u8],
+    mdat_off: u32,
+) -> Vec<u8> {
     let mvhd = build_mvhd(ts, dur);
     let trak = build_trak(w, h, ts, dur, fd, sizes, sps, pps, mdat_off);
     let mut content = mvhd;
@@ -364,7 +397,17 @@ fn build_mvhd(timescale: u32, duration: u32) -> Vec<u8> {
     mp4_box(b"mvhd", &b)
 }
 
-fn build_trak(w: u32, h: u32, ts: u32, dur: u32, fd: u32, sizes: &[u32], sps: &[u8], pps: &[u8], mdat_off: u32) -> Vec<u8> {
+fn build_trak(
+    w: u32,
+    h: u32,
+    ts: u32,
+    dur: u32,
+    fd: u32,
+    sizes: &[u32],
+    sps: &[u8],
+    pps: &[u8],
+    mdat_off: u32,
+) -> Vec<u8> {
     let tkhd = build_tkhd(w, h, dur);
     let mdia = build_mdia(w, h, ts, dur, fd, sizes, sps, pps, mdat_off);
     let mut content = tkhd;
@@ -393,7 +436,17 @@ fn build_tkhd(width: u32, height: u32, duration: u32) -> Vec<u8> {
     mp4_box(b"tkhd", &b)
 }
 
-fn build_mdia(w: u32, h: u32, ts: u32, dur: u32, fd: u32, sizes: &[u32], sps: &[u8], pps: &[u8], mdat_off: u32) -> Vec<u8> {
+fn build_mdia(
+    w: u32,
+    h: u32,
+    ts: u32,
+    dur: u32,
+    fd: u32,
+    sizes: &[u32],
+    sps: &[u8],
+    pps: &[u8],
+    mdat_off: u32,
+) -> Vec<u8> {
     let mdhd = build_mdhd(ts, dur);
     let hdlr = build_hdlr();
     let minf = build_minf(w, h, fd, sizes, sps, pps, mdat_off);
@@ -425,7 +478,15 @@ fn build_hdlr() -> Vec<u8> {
     mp4_box(b"hdlr", &b)
 }
 
-fn build_minf(w: u32, h: u32, fd: u32, sizes: &[u32], sps: &[u8], pps: &[u8], mdat_off: u32) -> Vec<u8> {
+fn build_minf(
+    w: u32,
+    h: u32,
+    fd: u32,
+    sizes: &[u32],
+    sps: &[u8],
+    pps: &[u8],
+    mdat_off: u32,
+) -> Vec<u8> {
     let vmhd = build_vmhd();
     let dinf = build_dinf();
     let stbl = build_stbl(w, h, fd, sizes, sps, pps, mdat_off);
@@ -455,7 +516,15 @@ fn build_dinf() -> Vec<u8> {
     mp4_box(b"dinf", &dref_box)
 }
 
-fn build_stbl(w: u32, h: u32, fd: u32, sizes: &[u32], sps: &[u8], pps: &[u8], mdat_off: u32) -> Vec<u8> {
+fn build_stbl(
+    w: u32,
+    h: u32,
+    fd: u32,
+    sizes: &[u32],
+    sps: &[u8],
+    pps: &[u8],
+    mdat_off: u32,
+) -> Vec<u8> {
     let stsd = build_stsd(w, h, sps, pps);
     let stts = build_stts(sizes.len() as u32, fd);
     let stsz = build_stsz(sizes);

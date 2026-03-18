@@ -97,9 +97,7 @@ impl EventBridge {
                 // When a stream opens, attach an observer and spawn a
                 // forwarding task that pipes frames to Zeal via ZipSession.
                 if let EngineEventType::StreamOpened {
-                    stream_id,
-                    node_id,
-                    ..
+                    stream_id, node_id, ..
                 } = &event.event_type
                 {
                     if let Some(zs) = &zip_session {
@@ -113,10 +111,7 @@ impl EventBridge {
                             STREAM_REGISTRY.add_observer(sid, OBSERVER_BUFFER_SIZE)
                         {
                             tokio::spawn(async move {
-                                Self::forward_stream_to_zeal(
-                                    obs_rx, sid, nid, wid, eid, zs,
-                                )
-                                .await;
+                                Self::forward_stream_to_zeal(obs_rx, sid, nid, wid, eid, zs).await;
                             });
                         } else {
                             warn!(

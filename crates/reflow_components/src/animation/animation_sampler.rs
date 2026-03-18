@@ -19,16 +19,11 @@ use super::math_helpers::*;
     state(MemoryState),
     await_inports(time)
 )]
-pub async fn animation_sampler_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn animation_sampler_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let do_loop = config
-        .get("loop")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(true);
+    let do_loop = config.get("loop").and_then(|v| v.as_bool()).unwrap_or(true);
 
     // Cache static inputs in pool on first receipt
     if let Some(Message::Object(obj)) = payload.get("clip") {
@@ -116,9 +111,17 @@ pub async fn animation_sampler_actor(
     // Sample each channel at time t
     for ch in &channels {
         let bone_idx = ch.get("boneIndex").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-        if bone_idx >= bone_count { continue; }
-        let property = ch.get("property").and_then(|v| v.as_str()).unwrap_or("rotation");
-        let interp = ch.get("interpolation").and_then(|v| v.as_str()).unwrap_or("linear");
+        if bone_idx >= bone_count {
+            continue;
+        }
+        let property = ch
+            .get("property")
+            .and_then(|v| v.as_str())
+            .unwrap_or("rotation");
+        let interp = ch
+            .get("interpolation")
+            .and_then(|v| v.as_str())
+            .unwrap_or("linear");
         let times = ch.get("times").and_then(|v| v.as_array());
         let values = ch.get("values").and_then(|v| v.as_array());
 
@@ -126,7 +129,9 @@ pub async fn animation_sampler_actor(
             (Some(t), Some(v)) => (t, v),
             _ => continue,
         };
-        if times.is_empty() { continue; }
+        if times.is_empty() {
+            continue;
+        }
 
         let (idx0, idx1, frac) = find_keyframe_pair(times, t);
 
@@ -134,17 +139,29 @@ pub async fn animation_sampler_actor(
             "position" => {
                 let v0 = parse_vec3_value(values.get(idx0));
                 let v1 = parse_vec3_value(values.get(idx1));
-                local_transforms[bone_idx].0 = if interp == "step" { v0 } else { vec3_lerp(v0, v1, frac) };
+                local_transforms[bone_idx].0 = if interp == "step" {
+                    v0
+                } else {
+                    vec3_lerp(v0, v1, frac)
+                };
             }
             "rotation" => {
                 let v0 = parse_quat_value(values.get(idx0));
                 let v1 = parse_quat_value(values.get(idx1));
-                local_transforms[bone_idx].1 = if interp == "step" { v0 } else { quat_slerp(v0, v1, frac) };
+                local_transforms[bone_idx].1 = if interp == "step" {
+                    v0
+                } else {
+                    quat_slerp(v0, v1, frac)
+                };
             }
             "scale" => {
                 let v0 = parse_vec3_value(values.get(idx0));
                 let v1 = parse_vec3_value(values.get(idx1));
-                local_transforms[bone_idx].2 = if interp == "step" { v0 } else { vec3_lerp(v0, v1, frac) };
+                local_transforms[bone_idx].2 = if interp == "step" {
+                    v0
+                } else {
+                    vec3_lerp(v0, v1, frac)
+                };
             }
             _ => {}
         }
@@ -179,7 +196,8 @@ pub async fn animation_sampler_actor(
             let off = i * 64;
             let mut m = [0.0f32; 16];
             for j in 0..16 {
-                m[j] = f32::from_le_bytes(ibm_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                m[j] =
+                    f32::from_le_bytes(ibm_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
             }
             m
         } else {
@@ -206,21 +224,35 @@ pub async fn animation_sampler_actor(
 
 fn find_keyframe_pair(times: &[Value], t: f32) -> (usize, usize, f32) {
     let n = times.len();
-    if n <= 1 { return (0, 0, 0.0); }
+    if n <= 1 {
+        return (0, 0, 0.0);
+    }
     let last = times[n - 1].as_f64().unwrap_or(1.0) as f32;
-    if t >= last { return (n - 1, n - 1, 0.0); }
+    if t >= last {
+        return (n - 1, n - 1, 0.0);
+    }
     let first = times[0].as_f64().unwrap_or(0.0) as f32;
-    if t <= first { return (0, 0, 0.0); }
+    if t <= first {
+        return (0, 0, 0.0);
+    }
 
     let mut lo = 0;
     let mut hi = n - 1;
     while lo < hi - 1 {
         let mid = (lo + hi) / 2;
-        if t < times[mid].as_f64().unwrap_or(0.0) as f32 { hi = mid; } else { lo = mid; }
+        if t < times[mid].as_f64().unwrap_or(0.0) as f32 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
     }
     let t0 = times[lo].as_f64().unwrap_or(0.0) as f32;
     let t1 = times[hi].as_f64().unwrap_or(1.0) as f32;
-    let frac = if (t1 - t0).abs() > 1e-8 { (t - t0) / (t1 - t0) } else { 0.0 };
+    let frac = if (t1 - t0).abs() > 1e-8 {
+        (t - t0) / (t1 - t0)
+    } else {
+        0.0
+    };
     (lo, hi, frac.clamp(0.0, 1.0))
 }
 
@@ -255,5 +287,7 @@ fn base64_encode(data: &[u8]) -> String {
 
 fn base64_decode(s: &str) -> Vec<u8> {
     use base64::Engine;
-    base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+    base64::engine::general_purpose::STANDARD
+        .decode(s)
+        .unwrap_or_default()
 }

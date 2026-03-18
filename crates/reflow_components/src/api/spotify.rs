@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://api.spotify.com/v1";
 const ENV_KEY: &str = "SPOTIFY_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -37,7 +41,9 @@ fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestB
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_search_tracks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_search_tracks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -77,20 +83,28 @@ pub async fn spotify_search_tracks(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /search failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /search failed: {}", e).into()),
+            );
         }
     }
 
@@ -106,7 +120,9 @@ pub async fn spotify_search_tracks(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_user_profile(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_user_profile(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -126,20 +142,28 @@ pub async fn spotify_read_user_profile(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me failed: {}", e).into()),
+            );
         }
     }
 
@@ -155,7 +179,9 @@ pub async fn spotify_read_user_profile(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_list_playlists(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_list_playlists(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -186,20 +212,28 @@ pub async fn spotify_list_playlists(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/playlists failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/playlists failed: {}", e).into()),
+            );
         }
     }
 
@@ -215,7 +249,9 @@ pub async fn spotify_list_playlists(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_an_album(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_an_album(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -235,20 +271,28 @@ pub async fn spotify_read_an_album(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /albums/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /albums/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -264,7 +308,9 @@ pub async fn spotify_read_an_album(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_an_albums_tracks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_an_albums_tracks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -284,20 +330,28 @@ pub async fn spotify_read_an_albums_tracks(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /albums/{{id}}/tracks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /albums/{{id}}/tracks failed: {}", e).into()),
+            );
         }
     }
 
@@ -313,7 +367,9 @@ pub async fn spotify_read_an_albums_tracks(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_an_artist(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_an_artist(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -333,20 +389,28 @@ pub async fn spotify_read_an_artist(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /artists/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /artists/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -362,7 +426,9 @@ pub async fn spotify_read_an_artist(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_an_artists_albums(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_an_artists_albums(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -390,20 +456,28 @@ pub async fn spotify_read_an_artists_albums(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /artists/{{id}}/albums failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /artists/{{id}}/albums failed: {}", e).into()),
+            );
         }
     }
 
@@ -419,7 +493,9 @@ pub async fn spotify_read_an_artists_albums(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_an_audiobook(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_an_audiobook(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -439,20 +515,28 @@ pub async fn spotify_read_an_audiobook(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /audiobooks/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /audiobooks/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -468,7 +552,9 @@ pub async fn spotify_read_an_audiobook(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_audiobook_chapters(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_audiobook_chapters(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -488,20 +574,28 @@ pub async fn spotify_read_audiobook_chapters(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /audiobooks/{{id}}/chapters failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /audiobooks/{{id}}/chapters failed: {}", e).into()),
+            );
         }
     }
 
@@ -517,7 +611,9 @@ pub async fn spotify_read_audiobook_chapters(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_a_chapter(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_a_chapter(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -537,20 +633,28 @@ pub async fn spotify_read_a_chapter(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /chapters/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /chapters/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -566,7 +670,9 @@ pub async fn spotify_read_a_chapter(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_an_episode(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_an_episode(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -589,20 +695,28 @@ pub async fn spotify_read_an_episode(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /episodes/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /episodes/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -618,7 +732,9 @@ pub async fn spotify_read_an_episode(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_users_saved_albums(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_users_saved_albums(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -638,20 +754,28 @@ pub async fn spotify_read_users_saved_albums(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/albums failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/albums failed: {}", e).into()),
+            );
         }
     }
 
@@ -667,7 +791,9 @@ pub async fn spotify_read_users_saved_albums(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_users_saved_audiobooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_users_saved_audiobooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -687,20 +813,28 @@ pub async fn spotify_read_users_saved_audiobooks(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/audiobooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/audiobooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -716,7 +850,9 @@ pub async fn spotify_read_users_saved_audiobooks(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_users_saved_episodes(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_users_saved_episodes(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -736,20 +872,28 @@ pub async fn spotify_read_users_saved_episodes(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/episodes failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/episodes failed: {}", e).into()),
+            );
         }
     }
 
@@ -765,7 +909,9 @@ pub async fn spotify_read_users_saved_episodes(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_followed(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_followed(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -799,20 +945,28 @@ pub async fn spotify_read_followed(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/following failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/following failed: {}", e).into()),
+            );
         }
     }
 
@@ -828,7 +982,9 @@ pub async fn spotify_read_followed(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_delete_library_items(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_delete_library_items(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -856,20 +1012,28 @@ pub async fn spotify_delete_library_items(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /me/library failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /me/library failed: {}", e).into()),
+            );
         }
     }
 
@@ -885,7 +1049,9 @@ pub async fn spotify_delete_library_items(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_update_library(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_update_library(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -913,20 +1079,28 @@ pub async fn spotify_update_library(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /me/library failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /me/library failed: {}", e).into()),
+            );
         }
     }
 
@@ -942,7 +1116,9 @@ pub async fn spotify_update_library(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_list_library(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_list_library(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -970,20 +1146,28 @@ pub async fn spotify_list_library(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/library/contains failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/library/contains failed: {}", e).into()),
+            );
         }
     }
 
@@ -999,7 +1183,9 @@ pub async fn spotify_list_library(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_update_player(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_update_player(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1030,20 +1216,28 @@ pub async fn spotify_update_player(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /me/player failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /me/player failed: {}", e).into()),
+            );
         }
     }
 
@@ -1059,7 +1253,9 @@ pub async fn spotify_update_player(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_information_about_the_users_current_playback(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_information_about_the_users_current_playback(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1079,20 +1275,28 @@ pub async fn spotify_read_information_about_the_users_current_playback(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/player failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/player failed: {}", e).into()),
+            );
         }
     }
 
@@ -1108,7 +1312,9 @@ pub async fn spotify_read_information_about_the_users_current_playback(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_the_users_currently_playing_track(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_the_users_currently_playing_track(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1128,20 +1334,28 @@ pub async fn spotify_read_the_users_currently_playing_track(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/player/currently-playing failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/player/currently-playing failed: {}", e).into()),
+            );
         }
     }
 
@@ -1157,7 +1371,9 @@ pub async fn spotify_read_the_users_currently_playing_track(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_a_users_available_devices(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_a_users_available_devices(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1177,20 +1393,28 @@ pub async fn spotify_read_a_users_available_devices(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/player/devices failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/player/devices failed: {}", e).into()),
+            );
         }
     }
 
@@ -1206,7 +1430,9 @@ pub async fn spotify_read_a_users_available_devices(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_create_player(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_create_player(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1234,20 +1460,28 @@ pub async fn spotify_create_player(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /me/player/next failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /me/player/next failed: {}", e).into()),
+            );
         }
     }
 
@@ -1263,7 +1497,9 @@ pub async fn spotify_create_player(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_pause_player(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_pause_player(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1291,20 +1527,28 @@ pub async fn spotify_pause_player(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /me/player/pause failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /me/player/pause failed: {}", e).into()),
+            );
         }
     }
 
@@ -1320,7 +1564,9 @@ pub async fn spotify_pause_player(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_start_a_users_playback(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_start_a_users_playback(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1365,20 +1611,28 @@ pub async fn spotify_start_a_users_playback(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /me/player/play failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /me/player/play failed: {}", e).into()),
+            );
         }
     }
 
@@ -1414,20 +1668,28 @@ pub async fn spotify_read_queue(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/player/queue failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/player/queue failed: {}", e).into()),
+            );
         }
     }
 
@@ -1443,7 +1705,9 @@ pub async fn spotify_read_queue(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_recently_played(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_recently_played(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1477,20 +1741,28 @@ pub async fn spotify_read_recently_played(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/player/recently-played failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/player/recently-played failed: {}", e).into()),
+            );
         }
     }
 
@@ -1506,7 +1778,9 @@ pub async fn spotify_read_recently_played(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_create_playlist(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_create_playlist(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1543,20 +1817,28 @@ pub async fn spotify_create_playlist(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /me/playlists failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /me/playlists failed: {}", e).into()),
+            );
         }
     }
 
@@ -1572,7 +1854,9 @@ pub async fn spotify_create_playlist(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_a_list_of_current_users_playlists(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_a_list_of_current_users_playlists(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1600,20 +1884,28 @@ pub async fn spotify_read_a_list_of_current_users_playlists(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/playlists failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/playlists failed: {}", e).into()),
+            );
         }
     }
 
@@ -1629,7 +1921,9 @@ pub async fn spotify_read_a_list_of_current_users_playlists(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_users_saved_shows(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_users_saved_shows(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1649,20 +1943,28 @@ pub async fn spotify_read_users_saved_shows(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/shows failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/shows failed: {}", e).into()),
+            );
         }
     }
 
@@ -1678,7 +1980,9 @@ pub async fn spotify_read_users_saved_shows(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_users_top_artists_and_tracks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_users_top_artists_and_tracks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1709,20 +2013,28 @@ pub async fn spotify_read_users_top_artists_and_tracks(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/top/{{type}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/top/{{type}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1738,7 +2050,9 @@ pub async fn spotify_read_users_top_artists_and_tracks(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_users_saved_tracks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_users_saved_tracks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1758,20 +2072,28 @@ pub async fn spotify_read_users_saved_tracks(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me/tracks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me/tracks failed: {}", e).into()),
+            );
         }
     }
 
@@ -1787,7 +2109,9 @@ pub async fn spotify_read_users_saved_tracks(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_playlist(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_playlist(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1815,20 +2139,28 @@ pub async fn spotify_read_playlist(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /playlists/{{playlist_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /playlists/{{playlist_id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1844,7 +2176,9 @@ pub async fn spotify_read_playlist(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_update_playlists(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_update_playlists(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1881,20 +2215,28 @@ pub async fn spotify_update_playlists(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /playlists/{{playlist_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /playlists/{{playlist_id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1910,7 +2252,9 @@ pub async fn spotify_update_playlists(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_playlist_cover(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_playlist_cover(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1930,20 +2274,30 @@ pub async fn spotify_read_playlist_cover(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /playlists/{{playlist_id}}/images failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /playlists/{{playlist_id}}/images failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1959,7 +2313,9 @@ pub async fn spotify_read_playlist_cover(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_upload_custom_playlist_cover(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_upload_custom_playlist_cover(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1987,20 +2343,30 @@ pub async fn spotify_upload_custom_playlist_cover(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /playlists/{{playlist_id}}/images failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /playlists/{{playlist_id}}/images failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2016,7 +2382,9 @@ pub async fn spotify_upload_custom_playlist_cover(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_create_playlists(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_create_playlists(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2058,20 +2426,30 @@ pub async fn spotify_create_playlists(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /playlists/{{playlist_id}}/items failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /playlists/{{playlist_id}}/items failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2087,7 +2465,9 @@ pub async fn spotify_create_playlists(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_playlists_items(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_playlists_items(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2115,20 +2495,30 @@ pub async fn spotify_read_playlists_items(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /playlists/{{playlist_id}}/items failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /playlists/{{playlist_id}}/items failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2144,7 +2534,9 @@ pub async fn spotify_read_playlists_items(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_delete_items_playlist(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_delete_items_playlist(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2164,20 +2556,30 @@ pub async fn spotify_delete_items_playlist(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /playlists/{{playlist_id}}/items failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /playlists/{{playlist_id}}/items failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2213,20 +2615,28 @@ pub async fn spotify_read_a_show(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /shows/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /shows/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2242,7 +2652,9 @@ pub async fn spotify_read_a_show(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn spotify_read_a_shows_episodes(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn spotify_read_a_shows_episodes(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2262,20 +2674,28 @@ pub async fn spotify_read_a_shows_episodes(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /shows/{{id}}/episodes failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /shows/{{id}}/episodes failed: {}", e).into()),
+            );
         }
     }
 
@@ -2314,23 +2734,30 @@ pub async fn spotify_read_track(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /tracks/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /tracks/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

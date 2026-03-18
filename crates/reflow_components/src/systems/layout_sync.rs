@@ -110,50 +110,98 @@ pub async fn layout_sync_system_actor(
         // Determine which properties to bind
         let bind_all = bind_config.as_bool().unwrap_or(false);
         let bind_transform = bind_all
-            || bind_config.get("transform").and_then(|v| v.as_bool()).unwrap_or(false);
+            || bind_config
+                .get("transform")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
         let bind_style = bind_all
-            || bind_config.get("style").and_then(|v| v.as_bool()).unwrap_or(false);
+            || bind_config
+                .get("style")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
         let bind_value = bind_all
-            || bind_config.get("value").and_then(|v| v.as_bool()).unwrap_or(false);
+            || bind_config
+                .get("value")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
         let bind_scroll = bind_all
-            || bind_config.get("scroll").and_then(|v| v.as_bool()).unwrap_or(false);
+            || bind_config
+                .get("scroll")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
 
         // ── Pull: layout → AssetDB ──
         if bind_transform {
             if let (Some(x), Some(y)) = (backend.query(entity, "x"), backend.query(entity, "y")) {
                 // Only write if changed (compare with current AssetDB value)
                 let current = db.get_component(entity, "transform").ok().and_then(|a| {
-                    a.entry.inline_data.clone().or_else(|| serde_json::from_slice(&a.data).ok())
+                    a.entry
+                        .inline_data
+                        .clone()
+                        .or_else(|| serde_json::from_slice(&a.data).ok())
                 });
-                let needs_update = current.as_ref().map(|c| {
-                    let cx = c.get("position").and_then(|p| p.get(0)).and_then(|v| v.as_f64()).unwrap_or(f64::NAN);
-                    let cy = c.get("position").and_then(|p| p.get(1)).and_then(|v| v.as_f64()).unwrap_or(f64::NAN);
-                    (cx - x).abs() > 0.001 || (cy - y).abs() > 0.001
-                }).unwrap_or(true);
+                let needs_update = current
+                    .as_ref()
+                    .map(|c| {
+                        let cx = c
+                            .get("position")
+                            .and_then(|p| p.get(0))
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(f64::NAN);
+                        let cy = c
+                            .get("position")
+                            .and_then(|p| p.get(1))
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(f64::NAN);
+                        (cx - x).abs() > 0.001 || (cy - y).abs() > 0.001
+                    })
+                    .unwrap_or(true);
 
                 if needs_update {
                     let mut tf = current.unwrap_or(json!({}));
                     tf["position"] = json!([x, y, 0.0]);
-                    db.set_component_json(entity, "transform", tf, json!({"source": "layout_pull"}))?;
-                    bound_changes.push(json!({"entity": entity, "direction": "pull", "property": "transform"}));
+                    db.set_component_json(
+                        entity,
+                        "transform",
+                        tf,
+                        json!({"source": "layout_pull"}),
+                    )?;
+                    bound_changes.push(
+                        json!({"entity": entity, "direction": "pull", "property": "transform"}),
+                    );
                 }
             }
         }
 
         if bind_value {
             if let Some(val) = backend.query(entity, "value") {
-                db.set_component_json(entity, "input_value", json!({"value": val}), json!({"source": "layout_pull"}))?;
-                bound_changes.push(json!({"entity": entity, "direction": "pull", "property": "value"}));
+                db.set_component_json(
+                    entity,
+                    "input_value",
+                    json!({"value": val}),
+                    json!({"source": "layout_pull"}),
+                )?;
+                bound_changes
+                    .push(json!({"entity": entity, "direction": "pull", "property": "value"}));
             }
         }
 
         if bind_scroll {
-            if let (Some(sx), Some(sy)) = (backend.query(entity, "scrollX"), backend.query(entity, "scrollY")) {
+            if let (Some(sx), Some(sy)) = (
+                backend.query(entity, "scrollX"),
+                backend.query(entity, "scrollY"),
+            ) {
                 let progress = backend.query(entity, "scrollProgress").unwrap_or(0.0);
-                db.set_component_json(entity, "scroll", json!({
-                    "x": sx, "y": sy, "progress": progress,
-                }), json!({"source": "layout_pull"}))?;
-                bound_changes.push(json!({"entity": entity, "direction": "pull", "property": "scroll"}));
+                db.set_component_json(
+                    entity,
+                    "scroll",
+                    json!({
+                        "x": sx, "y": sy, "progress": progress,
+                    }),
+                    json!({"source": "layout_pull"}),
+                )?;
+                bound_changes
+                    .push(json!({"entity": entity, "direction": "pull", "property": "scroll"}));
             }
         }
 

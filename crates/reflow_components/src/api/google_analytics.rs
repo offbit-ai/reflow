@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://analyticsreporting.googleapis.com/v4";
 const ENV_KEY: &str = "GOOGLE_ANALYTICS_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -37,7 +41,9 @@ fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestB
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_read_reports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_read_reports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -65,20 +71,28 @@ pub async fn google_analytics_read_reports(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /reports:batchGet failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /reports:batchGet failed: {}", e).into()),
+            );
         }
     }
 
@@ -94,7 +108,9 @@ pub async fn google_analytics_read_reports(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_accounts(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_accounts(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -114,20 +130,28 @@ pub async fn google_analytics_list_accounts(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /management/accounts failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /management/accounts failed: {}", e).into()),
+            );
         }
     }
 
@@ -143,7 +167,9 @@ pub async fn google_analytics_list_accounts(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_generate_report(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_generate_report(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -171,20 +197,28 @@ pub async fn google_analytics_generate_report(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /reports:batchGet failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /reports:batchGet failed: {}", e).into()),
+            );
         }
     }
 
@@ -200,7 +234,9 @@ pub async fn google_analytics_generate_report(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_read_account(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_read_account(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -231,20 +267,28 @@ pub async fn google_analytics_read_account(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /management/accounts failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /management/accounts failed: {}", e).into()),
+            );
         }
     }
 
@@ -260,7 +304,9 @@ pub async fn google_analytics_read_account(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_properties(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_properties(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -291,20 +337,34 @@ pub async fn google_analytics_list_properties(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /management/accounts/{{accountId}}/webproperties failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /management/accounts/{{accountId}}/webproperties failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -320,11 +380,14 @@ pub async fn google_analytics_list_properties(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_views(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_views(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accounts/{accountId}/webproperties/{webPropertyId}/profiles".to_string();
+    let mut endpoint =
+        "/management/accounts/{accountId}/webproperties/{webPropertyId}/profiles".to_string();
     if let Some(val) = inputs.get("accountId") {
         endpoint = endpoint.replace("{{accountId}}", &super::message_to_str(val));
     }
@@ -346,17 +409,22 @@ pub async fn google_analytics_list_views(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /management/accounts/{{accountId}}/webproperties/{{webPropertyId}}/profiles failed: {}", e).into()));
@@ -375,11 +443,15 @@ pub async fn google_analytics_list_views(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_goals(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_goals(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accounts/{accountId}/webproperties/{webPropertyId}/profiles/{profileId}/goals".to_string();
+    let mut endpoint =
+        "/management/accounts/{accountId}/webproperties/{webPropertyId}/profiles/{profileId}/goals"
+            .to_string();
     if let Some(val) = inputs.get("accountId") {
         endpoint = endpoint.replace("{{accountId}}", &super::message_to_str(val));
     }
@@ -404,17 +476,22 @@ pub async fn google_analytics_list_goals(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /management/accounts/{{accountId}}/webproperties/{{webPropertyId}}/profiles/{{profileId}}/goals failed: {}", e).into()));
@@ -433,7 +510,9 @@ pub async fn google_analytics_list_goals(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_segments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_segments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -464,20 +543,28 @@ pub async fn google_analytics_list_segments(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /management/segments failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /management/segments failed: {}", e).into()),
+            );
         }
     }
 
@@ -493,7 +580,9 @@ pub async fn google_analytics_list_segments(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_analyze_realtime_report(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_analyze_realtime_report(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -533,20 +622,28 @@ pub async fn google_analytics_analyze_realtime_report(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /data/realtime failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /data/realtime failed: {}", e).into()),
+            );
         }
     }
 
@@ -562,7 +659,9 @@ pub async fn google_analytics_analyze_realtime_report(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_analyze_ga_report(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_analyze_ga_report(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -617,20 +716,28 @@ pub async fn google_analytics_analyze_ga_report(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /data/ga failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /data/ga failed: {}", e).into()),
+            );
         }
     }
 
@@ -646,11 +753,15 @@ pub async fn google_analytics_analyze_ga_report(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_custom_dimensions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_custom_dimensions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accounts/{accountId}/webproperties/{webPropertyId}/customDimensions".to_string();
+    let mut endpoint =
+        "/management/accounts/{accountId}/webproperties/{webPropertyId}/customDimensions"
+            .to_string();
     if let Some(val) = inputs.get("accountId") {
         endpoint = endpoint.replace("{{accountId}}", &super::message_to_str(val));
     }
@@ -680,17 +791,22 @@ pub async fn google_analytics_list_custom_dimensions(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /management/accounts/{{accountId}}/webproperties/{{webPropertyId}}/customDimensions failed: {}", e).into()));
@@ -709,11 +825,14 @@ pub async fn google_analytics_list_custom_dimensions(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_custom_metrics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_custom_metrics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/management/accounts/{accountId}/webproperties/{webPropertyId}/customMetrics".to_string();
+    let mut endpoint =
+        "/management/accounts/{accountId}/webproperties/{webPropertyId}/customMetrics".to_string();
     if let Some(val) = inputs.get("accountId") {
         endpoint = endpoint.replace("{{accountId}}", &super::message_to_str(val));
     }
@@ -735,17 +854,22 @@ pub async fn google_analytics_list_custom_metrics(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /management/accounts/{{accountId}}/webproperties/{{webPropertyId}}/customMetrics failed: {}", e).into()));
@@ -764,7 +888,9 @@ pub async fn google_analytics_list_custom_metrics(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_filters(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_filters(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -787,20 +913,34 @@ pub async fn google_analytics_list_filters(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /management/accounts/{{accountId}}/filters failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /management/accounts/{{accountId}}/filters failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -816,7 +956,9 @@ pub async fn google_analytics_list_filters(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn google_analytics_list_account_summaries(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn google_analytics_list_account_summaries(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -847,23 +989,30 @@ pub async fn google_analytics_list_account_summaries(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /management/accountSummaries failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /management/accountSummaries failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://{domain}.okta.com/api/v1";
 const ENV_KEY: &str = "OKTA_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -65,20 +69,28 @@ pub async fn okta_create_user(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /users failed: {}", e).into()),
+            );
         }
     }
 
@@ -125,20 +137,28 @@ pub async fn okta_list_users(context: ActorContext) -> Result<HashMap<String, Me
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users failed: {}", e).into()),
+            );
         }
     }
 
@@ -177,20 +197,28 @@ pub async fn okta_read_user(context: ActorContext) -> Result<HashMap<String, Mes
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{userId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{userId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -240,20 +268,28 @@ pub async fn okta_update_user(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /users/{{userId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /users/{{userId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -300,20 +336,28 @@ pub async fn okta_delete_user(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /users/{{userId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /users/{{userId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -329,7 +373,9 @@ pub async fn okta_delete_user(context: ActorContext) -> Result<HashMap<String, M
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_user_activation(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_user_activation(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -360,20 +406,30 @@ pub async fn okta_create_user_activation(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{userId}}/lifecycle/activate failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /users/{{userId}}/lifecycle/activate failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -389,7 +445,9 @@ pub async fn okta_create_user_activation(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_user_deactivation(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_user_deactivation(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -420,20 +478,30 @@ pub async fn okta_create_user_deactivation(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{userId}}/lifecycle/deactivate failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /users/{{userId}}/lifecycle/deactivate failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -449,7 +517,9 @@ pub async fn okta_create_user_deactivation(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_user_suspend(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_user_suspend(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -472,20 +542,30 @@ pub async fn okta_create_user_suspend(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{userId}}/lifecycle/suspend failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /users/{{userId}}/lifecycle/suspend failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -501,7 +581,9 @@ pub async fn okta_create_user_suspend(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_user_unsuspend(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_user_unsuspend(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -524,20 +606,30 @@ pub async fn okta_create_user_unsuspend(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{userId}}/lifecycle/unsuspend failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /users/{{userId}}/lifecycle/unsuspend failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -553,7 +645,9 @@ pub async fn okta_create_user_unsuspend(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_user_password_reset(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_user_password_reset(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -584,20 +678,34 @@ pub async fn okta_create_user_password_reset(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{userId}}/lifecycle/reset_password failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /users/{{userId}}/lifecycle/reset_password failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -613,7 +721,9 @@ pub async fn okta_create_user_password_reset(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_user_unlock(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_user_unlock(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -636,20 +746,30 @@ pub async fn okta_create_user_unlock(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{userId}}/lifecycle/unlock failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /users/{{userId}}/lifecycle/unlock failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -665,7 +785,9 @@ pub async fn okta_create_user_unlock(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_user_groups(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_user_groups(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -688,20 +810,28 @@ pub async fn okta_list_user_groups(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{userId}}/groups failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{userId}}/groups failed: {}", e).into()),
+            );
         }
     }
 
@@ -740,20 +870,28 @@ pub async fn okta_list_user_apps(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{userId}}/appLinks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{userId}}/appLinks failed: {}", e).into()),
+            );
         }
     }
 
@@ -809,20 +947,28 @@ pub async fn okta_list_groups(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /groups failed: {}", e).into()),
+            );
         }
     }
 
@@ -866,20 +1012,28 @@ pub async fn okta_create_group(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /groups failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /groups failed: {}", e).into()),
+            );
         }
     }
 
@@ -918,20 +1072,28 @@ pub async fn okta_read_group(context: ActorContext) -> Result<HashMap<String, Me
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups/{{groupId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /groups/{{groupId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -978,20 +1140,28 @@ pub async fn okta_update_group(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /groups/{{groupId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /groups/{{groupId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1030,20 +1200,28 @@ pub async fn okta_delete_group(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /groups/{{groupId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /groups/{{groupId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1059,7 +1237,9 @@ pub async fn okta_delete_group(context: ActorContext) -> Result<HashMap<String, 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_group_members(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_group_members(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1093,20 +1273,28 @@ pub async fn okta_list_group_members(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups/{{groupId}}/users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /groups/{{groupId}}/users failed: {}", e).into()),
+            );
         }
     }
 
@@ -1122,7 +1310,9 @@ pub async fn okta_list_group_members(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_group_member(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_group_member(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1148,20 +1338,30 @@ pub async fn okta_create_group_member(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /groups/{{groupId}}/users/{{userId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /groups/{{groupId}}/users/{{userId}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1177,7 +1377,9 @@ pub async fn okta_create_group_member(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_group_member(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_group_member(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1203,20 +1405,30 @@ pub async fn okta_delete_group_member(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /groups/{{groupId}}/users/{{userId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /groups/{{groupId}}/users/{{userId}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1232,7 +1444,9 @@ pub async fn okta_delete_group_member(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_applications(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_applications(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1269,20 +1483,28 @@ pub async fn okta_list_applications(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /apps failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /apps failed: {}", e).into()),
+            );
         }
     }
 
@@ -1298,7 +1520,9 @@ pub async fn okta_list_applications(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1341,20 +1565,28 @@ pub async fn okta_create_application(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /apps failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /apps failed: {}", e).into()),
+            );
         }
     }
 
@@ -1370,7 +1602,9 @@ pub async fn okta_create_application(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_read_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_read_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1393,20 +1627,28 @@ pub async fn okta_read_application(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /apps/{{appId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /apps/{{appId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1422,7 +1664,9 @@ pub async fn okta_read_application(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_update_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_update_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1456,20 +1700,28 @@ pub async fn okta_update_application(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /apps/{{appId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /apps/{{appId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1485,7 +1737,9 @@ pub async fn okta_update_application(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1508,20 +1762,28 @@ pub async fn okta_delete_application(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /apps/{{appId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /apps/{{appId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1537,7 +1799,9 @@ pub async fn okta_delete_application(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_application_activation(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_application_activation(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1560,20 +1824,30 @@ pub async fn okta_create_application_activation(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /apps/{{appId}}/lifecycle/activate failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /apps/{{appId}}/lifecycle/activate failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1589,7 +1863,9 @@ pub async fn okta_create_application_activation(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_application_deactivation(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_application_deactivation(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1612,20 +1888,30 @@ pub async fn okta_create_application_deactivation(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /apps/{{appId}}/lifecycle/deactivate failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /apps/{{appId}}/lifecycle/deactivate failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1641,7 +1927,9 @@ pub async fn okta_create_application_deactivation(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_application_users(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_application_users(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1678,20 +1966,28 @@ pub async fn okta_list_application_users(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /apps/{{appId}}/users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /apps/{{appId}}/users failed: {}", e).into()),
+            );
         }
     }
 
@@ -1707,7 +2003,9 @@ pub async fn okta_list_application_users(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_application_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_application_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1744,20 +2042,28 @@ pub async fn okta_create_application_user(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /apps/{{appId}}/users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /apps/{{appId}}/users failed: {}", e).into()),
+            );
         }
     }
 
@@ -1773,7 +2079,9 @@ pub async fn okta_create_application_user(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_application_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_application_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1799,20 +2107,30 @@ pub async fn okta_delete_application_user(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /apps/{{appId}}/users/{{userId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /apps/{{appId}}/users/{{userId}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1828,7 +2146,9 @@ pub async fn okta_delete_application_user(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_application_groups(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_application_groups(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1851,20 +2171,28 @@ pub async fn okta_list_application_groups(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /apps/{{appId}}/groups failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /apps/{{appId}}/groups failed: {}", e).into()),
+            );
         }
     }
 
@@ -1880,7 +2208,9 @@ pub async fn okta_list_application_groups(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_application_group(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_application_group(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1914,20 +2244,30 @@ pub async fn okta_create_application_group(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /apps/{{appId}}/groups/{{groupId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /apps/{{appId}}/groups/{{groupId}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1943,7 +2283,9 @@ pub async fn okta_create_application_group(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_application_group(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_application_group(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1969,20 +2311,30 @@ pub async fn okta_delete_application_group(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /apps/{{appId}}/groups/{{groupId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /apps/{{appId}}/groups/{{groupId}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2021,20 +2373,28 @@ pub async fn okta_list_sessions(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{userId}}/sessions failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{userId}}/sessions failed: {}", e).into()),
+            );
         }
     }
 
@@ -2050,7 +2410,9 @@ pub async fn okta_list_sessions(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_sessions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_sessions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2081,20 +2443,28 @@ pub async fn okta_delete_sessions(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /users/{{userId}}/sessions failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /users/{{userId}}/sessions failed: {}", e).into()),
+            );
         }
     }
 
@@ -2138,20 +2508,28 @@ pub async fn okta_list_policies(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /policies failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /policies failed: {}", e).into()),
+            );
         }
     }
 
@@ -2207,20 +2585,28 @@ pub async fn okta_create_policy(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /policies failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /policies failed: {}", e).into()),
+            );
         }
     }
 
@@ -2259,20 +2645,28 @@ pub async fn okta_read_policy(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /policies/{{policyId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /policies/{{policyId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2325,20 +2719,28 @@ pub async fn okta_update_policy(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /policies/{{policyId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /policies/{{policyId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2377,20 +2779,28 @@ pub async fn okta_delete_policy(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /policies/{{policyId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /policies/{{policyId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2406,7 +2816,9 @@ pub async fn okta_delete_policy(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_policy_rules(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_policy_rules(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2429,20 +2841,28 @@ pub async fn okta_list_policy_rules(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /policies/{{policyId}}/rules failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /policies/{{policyId}}/rules failed: {}", e).into()),
+            );
         }
     }
 
@@ -2458,7 +2878,9 @@ pub async fn okta_list_policy_rules(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_policy_rule(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_policy_rule(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2498,20 +2920,28 @@ pub async fn okta_create_policy_rule(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /policies/{{policyId}}/rules failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /policies/{{policyId}}/rules failed: {}", e).into()),
+            );
         }
     }
 
@@ -2527,7 +2957,9 @@ pub async fn okta_create_policy_rule(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_authorization_servers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_authorization_servers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2555,20 +2987,28 @@ pub async fn okta_list_authorization_servers(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /authorizationServers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /authorizationServers failed: {}", e).into()),
+            );
         }
     }
 
@@ -2584,7 +3024,9 @@ pub async fn okta_list_authorization_servers(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_authorization_server(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_authorization_server(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2618,20 +3060,28 @@ pub async fn okta_create_authorization_server(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /authorizationServers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /authorizationServers failed: {}", e).into()),
+            );
         }
     }
 
@@ -2647,7 +3097,9 @@ pub async fn okta_create_authorization_server(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_read_authorization_server(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_read_authorization_server(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2670,20 +3122,30 @@ pub async fn okta_read_authorization_server(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /authorizationServers/{{authServerId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /authorizationServers/{{authServerId}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2699,7 +3161,9 @@ pub async fn okta_read_authorization_server(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_authorization_server(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_authorization_server(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2722,20 +3186,34 @@ pub async fn okta_delete_authorization_server(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /authorizationServers/{{authServerId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /authorizationServers/{{authServerId}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2751,7 +3229,9 @@ pub async fn okta_delete_authorization_server(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_event_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_event_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2771,20 +3251,28 @@ pub async fn okta_list_event_hooks(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /eventHooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /eventHooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -2800,7 +3288,9 @@ pub async fn okta_list_event_hooks(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_create_event_hook(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_create_event_hook(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2834,20 +3324,28 @@ pub async fn okta_create_event_hook(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /eventHooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /eventHooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -2863,7 +3361,9 @@ pub async fn okta_create_event_hook(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_read_event_hook(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_read_event_hook(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2886,20 +3386,28 @@ pub async fn okta_read_event_hook(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /eventHooks/{{eventHookId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /eventHooks/{{eventHookId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2915,7 +3423,9 @@ pub async fn okta_read_event_hook(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_delete_event_hook(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_delete_event_hook(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2938,20 +3448,28 @@ pub async fn okta_delete_event_hook(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /eventHooks/{{eventHookId}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /eventHooks/{{eventHookId}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2967,7 +3485,9 @@ pub async fn okta_delete_event_hook(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn okta_list_system_logs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn okta_list_system_logs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3010,23 +3530,30 @@ pub async fn okta_list_system_logs(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /logs failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /logs failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

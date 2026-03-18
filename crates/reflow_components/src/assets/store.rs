@@ -55,7 +55,9 @@ pub async fn asset_store_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     } else if let Some(Message::String(s)) = payload.get("data") {
         db.put(id, s.as_bytes(), asset_metadata)?;
     } else {
-        return Ok(error_output("Expected Bytes on data or Object on json_data"));
+        return Ok(error_output(
+            "Expected Bytes on data or Object on json_data",
+        ));
     }
 
     // Apply tags
@@ -64,7 +66,10 @@ pub async fn asset_store_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     }
 
     let mut out = HashMap::new();
-    out.insert("asset_id".to_string(), Message::String(id.to_string().into()));
+    out.insert(
+        "asset_id".to_string(),
+        Message::String(id.to_string().into()),
+    );
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({

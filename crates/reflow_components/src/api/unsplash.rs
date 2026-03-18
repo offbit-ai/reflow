@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://api.unsplash.com";
 const ENV_KEY: &str = "UNSPLASH_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -37,7 +41,9 @@ fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestB
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_search_photos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_search_photos(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -71,20 +77,28 @@ pub async fn unsplash_search_photos(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /search/photos failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /search/photos failed: {}", e).into()),
+            );
         }
     }
 
@@ -123,20 +137,28 @@ pub async fn unsplash_read_photo(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /photos/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /photos/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -152,7 +174,9 @@ pub async fn unsplash_read_photo(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_current_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_current_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -172,20 +196,28 @@ pub async fn unsplash_read_current_user(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /me failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /me failed: {}", e).into()),
+            );
         }
     }
 
@@ -201,7 +233,9 @@ pub async fn unsplash_read_current_user(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_update_current_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_update_current_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -250,20 +284,28 @@ pub async fn unsplash_update_current_user(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /me failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /me failed: {}", e).into()),
+            );
         }
     }
 
@@ -302,20 +344,28 @@ pub async fn unsplash_read_user(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -331,7 +381,9 @@ pub async fn unsplash_read_user(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_user_portfolio(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_user_portfolio(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -354,20 +406,28 @@ pub async fn unsplash_read_user_portfolio(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/portfolio failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/portfolio failed: {}", e).into()),
+            );
         }
     }
 
@@ -383,7 +443,9 @@ pub async fn unsplash_read_user_portfolio(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_user_photos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_user_photos(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -432,20 +494,28 @@ pub async fn unsplash_list_user_photos(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/photos failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/photos failed: {}", e).into()),
+            );
         }
     }
 
@@ -461,7 +531,9 @@ pub async fn unsplash_list_user_photos(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_user_liked_photos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_user_liked_photos(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -501,20 +573,28 @@ pub async fn unsplash_list_user_liked_photos(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/likes failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/likes failed: {}", e).into()),
+            );
         }
     }
 
@@ -530,7 +610,9 @@ pub async fn unsplash_list_user_liked_photos(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_user_collections(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_user_collections(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -564,20 +646,28 @@ pub async fn unsplash_list_user_collections(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/collections failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/collections failed: {}", e).into()),
+            );
         }
     }
 
@@ -593,7 +683,9 @@ pub async fn unsplash_list_user_collections(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_user_statistics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_user_statistics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -627,20 +719,28 @@ pub async fn unsplash_read_user_statistics(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/statistics failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/statistics failed: {}", e).into()),
+            );
         }
     }
 
@@ -656,7 +756,9 @@ pub async fn unsplash_read_user_statistics(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_photos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_photos(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -693,20 +795,28 @@ pub async fn unsplash_list_photos(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /photos failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /photos failed: {}", e).into()),
+            );
         }
     }
 
@@ -722,7 +832,9 @@ pub async fn unsplash_list_photos(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_photo_statistics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_photo_statistics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -756,20 +868,28 @@ pub async fn unsplash_read_photo_statistics(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /photos/{{id}}/statistics failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /photos/{{id}}/statistics failed: {}", e).into()),
+            );
         }
     }
 
@@ -785,7 +905,9 @@ pub async fn unsplash_read_photo_statistics(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_download_photo(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_download_photo(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -808,20 +930,28 @@ pub async fn unsplash_download_photo(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /photos/{{id}}/download failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /photos/{{id}}/download failed: {}", e).into()),
+            );
         }
     }
 
@@ -837,7 +967,9 @@ pub async fn unsplash_download_photo(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_update_photo(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_update_photo(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -880,20 +1012,28 @@ pub async fn unsplash_update_photo(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /photos/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /photos/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -909,7 +1049,9 @@ pub async fn unsplash_update_photo(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_search_collections(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_search_collections(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -943,20 +1085,28 @@ pub async fn unsplash_search_collections(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /search/collections failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /search/collections failed: {}", e).into()),
+            );
         }
     }
 
@@ -972,7 +1122,9 @@ pub async fn unsplash_search_collections(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_search_users(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_search_users(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1006,20 +1158,28 @@ pub async fn unsplash_search_users(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /search/users failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /search/users failed: {}", e).into()),
+            );
         }
     }
 
@@ -1035,7 +1195,9 @@ pub async fn unsplash_search_users(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_collections(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_collections(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1066,20 +1228,28 @@ pub async fn unsplash_list_collections(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /collections failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /collections failed: {}", e).into()),
+            );
         }
     }
 
@@ -1095,7 +1265,9 @@ pub async fn unsplash_list_collections(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_collection(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_collection(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1118,20 +1290,28 @@ pub async fn unsplash_read_collection(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /collections/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /collections/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1147,7 +1327,9 @@ pub async fn unsplash_read_collection(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_collection_photos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_collection_photos(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1184,20 +1366,28 @@ pub async fn unsplash_list_collection_photos(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /collections/{{id}}/photos failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /collections/{{id}}/photos failed: {}", e).into()),
+            );
         }
     }
 
@@ -1213,7 +1403,9 @@ pub async fn unsplash_list_collection_photos(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_collection_related(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_collection_related(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1236,20 +1428,28 @@ pub async fn unsplash_list_collection_related(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /collections/{{id}}/related failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /collections/{{id}}/related failed: {}", e).into()),
+            );
         }
     }
 
@@ -1265,7 +1465,9 @@ pub async fn unsplash_list_collection_related(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_create_collection(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_create_collection(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1299,20 +1501,28 @@ pub async fn unsplash_create_collection(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /collections failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /collections failed: {}", e).into()),
+            );
         }
     }
 
@@ -1328,7 +1538,9 @@ pub async fn unsplash_create_collection(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_update_collection(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_update_collection(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1365,20 +1577,28 @@ pub async fn unsplash_update_collection(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /collections/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /collections/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1394,7 +1614,9 @@ pub async fn unsplash_update_collection(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_delete_collection(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_delete_collection(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1417,20 +1639,28 @@ pub async fn unsplash_delete_collection(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /collections/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /collections/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1446,7 +1676,9 @@ pub async fn unsplash_delete_collection(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_create_collection_photo(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_create_collection_photo(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1477,20 +1709,30 @@ pub async fn unsplash_create_collection_photo(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /collections/{{collection_id}}/add failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /collections/{{collection_id}}/add failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1506,7 +1748,9 @@ pub async fn unsplash_create_collection_photo(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_delete_collection_photo(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_delete_collection_photo(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1537,20 +1781,30 @@ pub async fn unsplash_delete_collection_photo(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /collections/{{collection_id}}/remove failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /collections/{{collection_id}}/remove failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1566,7 +1820,9 @@ pub async fn unsplash_delete_collection_photo(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_topics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_topics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1603,20 +1859,28 @@ pub async fn unsplash_list_topics(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /topics failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /topics failed: {}", e).into()),
+            );
         }
     }
 
@@ -1655,20 +1919,28 @@ pub async fn unsplash_read_topic(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /topics/{{id_or_slug}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /topics/{{id_or_slug}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1684,7 +1956,9 @@ pub async fn unsplash_read_topic(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_list_topic_photos(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_list_topic_photos(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1724,20 +1998,28 @@ pub async fn unsplash_list_topic_photos(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /topics/{{id_or_slug}}/photos failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /topics/{{id_or_slug}}/photos failed: {}", e).into()),
+            );
         }
     }
 
@@ -1753,7 +2035,9 @@ pub async fn unsplash_list_topic_photos(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_stats_totals(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_stats_totals(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1773,20 +2057,28 @@ pub async fn unsplash_read_stats_totals(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /stats failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /stats failed: {}", e).into()),
+            );
         }
     }
 
@@ -1802,7 +2094,9 @@ pub async fn unsplash_read_stats_totals(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn unsplash_read_stats_month(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn unsplash_read_stats_month(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1822,23 +2116,30 @@ pub async fn unsplash_read_stats_month(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /stats/month failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /stats/month failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

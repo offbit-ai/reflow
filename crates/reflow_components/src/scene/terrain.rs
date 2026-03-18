@@ -45,8 +45,12 @@ pub async fn terrain_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
             let off = i * 8;
             if off + 8 <= b.len() {
                 let h = f64::from_le_bytes(b[off..off + 8].try_into().unwrap());
-                if h < min_h { min_h = h; }
-                if h > max_h { max_h = h; }
+                if h < min_h {
+                    min_h = h;
+                }
+                if h > max_h {
+                    max_h = h;
+                }
                 sum += h;
                 count += 1;
             }
@@ -54,13 +58,17 @@ pub async fn terrain_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
 
         let avg = if count > 0 { sum / count as f64 } else { 0.0 };
 
-        ctx.pool_upsert("_state", "heightmap", json!({
-            "resolution": grid_size,
-            "samples": sample_count,
-            "minHeight": (min_h * 1000.0).round() / 1000.0,
-            "maxHeight": (max_h * 1000.0).round() / 1000.0,
-            "avgHeight": (avg * 1000.0).round() / 1000.0,
-        }));
+        ctx.pool_upsert(
+            "_state",
+            "heightmap",
+            json!({
+                "resolution": grid_size,
+                "samples": sample_count,
+                "minHeight": (min_h * 1000.0).round() / 1000.0,
+                "maxHeight": (max_h * 1000.0).round() / 1000.0,
+                "avgHeight": (avg * 1000.0).round() / 1000.0,
+            }),
+        );
     }
 
     // Retrieve state (mesh + heightmap guaranteed present via await_inports)
@@ -72,14 +80,18 @@ pub async fn terrain_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
         .unwrap_or("terrain")
         .to_string();
 
-    let mesh_size = state.get("mesh_size")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
+    let mesh_size = state.get("mesh_size").and_then(|v| v.as_u64()).unwrap_or(0);
     let has_texture = state.contains_key("has_texture");
     let heightmap_info = state.get("heightmap").cloned();
 
-    let width = config.get("width").and_then(|v| v.as_f64()).unwrap_or(100.0);
-    let depth = config.get("depth").and_then(|v| v.as_f64()).unwrap_or(100.0);
+    let width = config
+        .get("width")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(100.0);
+    let depth = config
+        .get("depth")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(100.0);
     let height_scale = config
         .get("heightScale")
         .and_then(|v| v.as_f64())
@@ -101,7 +113,10 @@ pub async fn terrain_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
     });
 
     if let Some(hm) = &heightmap_info {
-        terrain_data.as_object_mut().unwrap().insert("heightmap".to_string(), hm.clone());
+        terrain_data
+            .as_object_mut()
+            .unwrap()
+            .insert("heightmap".to_string(), hm.clone());
     }
 
     let object = json!({

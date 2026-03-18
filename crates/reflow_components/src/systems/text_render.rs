@@ -82,7 +82,12 @@ fn get_or_build_atlas(
     is_sdf: bool,
     chars: &str,
 ) -> Result<Arc<FontAtlas>> {
-    let cache_key = format!("{}:{}:{}", font_id, font_size as u32, if is_sdf { "sdf" } else { "bmp" });
+    let cache_key = format!(
+        "{}:{}:{}",
+        font_id,
+        font_size as u32,
+        if is_sdf { "sdf" } else { "bmp" }
+    );
 
     // Check cache
     if let Ok(cache) = font_cache().read() {
@@ -129,7 +134,11 @@ fn get_or_build_atlas(
     }
 
     // Pack glyphs into atlas (simple row packing)
-    let max_glyph_h = glyph_bitmaps.iter().map(|(_, _, m)| m.height).max().unwrap_or(0);
+    let max_glyph_h = glyph_bitmaps
+        .iter()
+        .map(|(_, _, m)| m.height)
+        .max()
+        .unwrap_or(0);
     let total_width_estimate: usize = glyph_bitmaps.iter().map(|(_, _, m)| m.width + 2).sum();
     let atlas_width = ((total_width_estimate as f64).sqrt() * 1.5) as u32;
     let atlas_width = atlas_width.max(256).next_power_of_two();
@@ -151,21 +160,26 @@ fn get_or_build_atlas(
             row_height = 0;
         }
 
-        glyphs.insert(*ch, GlyphInfo {
-            atlas_x: cursor_x,
-            atlas_y: cursor_y,
-            width: gw,
-            height: gh,
-            advance: metrics.advance_width,
-            bearing_x: metrics.xmin as f32,
-            bearing_y: metrics.ymin as f32,
-        });
+        glyphs.insert(
+            *ch,
+            GlyphInfo {
+                atlas_x: cursor_x,
+                atlas_y: cursor_y,
+                width: gw,
+                height: gh,
+                advance: metrics.advance_width,
+                bearing_x: metrics.xmin as f32,
+                bearing_y: metrics.ymin as f32,
+            },
+        );
 
         cursor_x += gw + 1;
         row_height = row_height.max(gh);
     }
 
-    atlas_height = (cursor_y + row_height + 1).next_power_of_two().max(atlas_height);
+    atlas_height = (cursor_y + row_height + 1)
+        .next_power_of_two()
+        .max(atlas_height);
 
     // Second pass: blit glyphs into atlas
     let mut bitmap = vec![0u8; (atlas_width * atlas_height) as usize];
@@ -349,14 +363,20 @@ pub async fn text_render_system_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let db = get_or_create_db(db_path)?;
 
     let selected = super::selector::resolve_entities(&payload, &config, &db);
     let text_entities = if selected.is_empty() {
         db.entities_with(&["text"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "text")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "text"))
+            .collect()
     };
 
     let mut processed = 0;
@@ -367,23 +387,52 @@ pub async fn text_render_system_actor(
             Ok(a) => a,
             Err(_) => continue,
         };
-        let text_data: Value = text_asset.entry.inline_data.unwrap_or_else(|| {
-            serde_json::from_slice(&text_asset.data).unwrap_or(json!({}))
-        });
+        let text_data: Value = text_asset
+            .entry
+            .inline_data
+            .unwrap_or_else(|| serde_json::from_slice(&text_asset.data).unwrap_or(json!({})));
 
-        let content = text_data.get("content").and_then(|v| v.as_str()).unwrap_or("");
-        if content.is_empty() { continue; }
+        let content = text_data
+            .get("content")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if content.is_empty() {
+            continue;
+        }
 
-        let font_id = text_data.get("font").and_then(|v| v.as_str()).unwrap_or("default:font");
-        let font_size = text_data.get("fontSize").and_then(|v| v.as_f64()).unwrap_or(16.0) as f32;
-        let color = text_data.get("color").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0, 1.0), fv(a, 1, 1.0), fv(a, 2, 1.0), fv(a, 3, 1.0)]
-        }).unwrap_or([1.0, 1.0, 1.0, 1.0]);
-        let align = text_data.get("align").and_then(|v| v.as_str()).unwrap_or("left");
-        let max_width = text_data.get("maxWidth").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let line_height = text_data.get("lineHeight").and_then(|v| v.as_f64()).unwrap_or(1.2) as f32;
-        let letter_spacing = text_data.get("letterSpacing").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let is_sdf = text_data.get("sdf").and_then(|v| v.as_bool()).unwrap_or(false);
+        let font_id = text_data
+            .get("font")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default:font");
+        let font_size = text_data
+            .get("fontSize")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(16.0) as f32;
+        let color = text_data
+            .get("color")
+            .and_then(|v| v.as_array())
+            .map(|a| [fv(a, 0, 1.0), fv(a, 1, 1.0), fv(a, 2, 1.0), fv(a, 3, 1.0)])
+            .unwrap_or([1.0, 1.0, 1.0, 1.0]);
+        let align = text_data
+            .get("align")
+            .and_then(|v| v.as_str())
+            .unwrap_or("left");
+        let max_width = text_data
+            .get("maxWidth")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32;
+        let line_height = text_data
+            .get("lineHeight")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.2) as f32;
+        let letter_spacing = text_data
+            .get("letterSpacing")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32;
+        let is_sdf = text_data
+            .get("sdf")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         // Load font data from AssetDB
         let font_bytes = match db.get(font_id) {
@@ -402,41 +451,58 @@ pub async fn text_render_system_actor(
 
         // Layout text
         let (glyphs, text_width, text_height) = layout_text(
-            content, &atlas, font_size, max_width, line_height, letter_spacing, align,
+            content,
+            &atlas,
+            font_size,
+            max_width,
+            line_height,
+            letter_spacing,
+            align,
         );
 
         // Generate quad data
         let atlas_w = atlas.width as f32;
         let atlas_h = atlas.height as f32;
 
-        let quads: Vec<Value> = glyphs.iter().map(|g| {
-            let u0 = g.info.atlas_x as f32 / atlas_w;
-            let v0 = g.info.atlas_y as f32 / atlas_h;
-            let u1 = (g.info.atlas_x + g.info.width) as f32 / atlas_w;
-            let v1 = (g.info.atlas_y + g.info.height) as f32 / atlas_h;
+        let quads: Vec<Value> = glyphs
+            .iter()
+            .map(|g| {
+                let u0 = g.info.atlas_x as f32 / atlas_w;
+                let v0 = g.info.atlas_y as f32 / atlas_h;
+                let u1 = (g.info.atlas_x + g.info.width) as f32 / atlas_w;
+                let v1 = (g.info.atlas_y + g.info.height) as f32 / atlas_h;
 
-            json!({
-                "char": g.ch.to_string(),
-                "x": g.x, "y": g.y,
-                "width": g.info.width, "height": g.info.height,
-                "uv": [u0, v0, u1, v1],
+                json!({
+                    "char": g.ch.to_string(),
+                    "x": g.x, "y": g.y,
+                    "width": g.info.width, "height": g.info.height,
+                    "uv": [u0, v0, u1, v1],
+                })
             })
-        }).collect();
+            .collect();
 
         // Quads are ephemeral — flow through DAG, not persisted.
         // Only the source :text component (prefab data) is stored.
         // The atlas IS persisted since it's a cacheable asset.
 
         // Store atlas bitmap as binary component on the font entity
-        let atlas_id = format!("{}:atlas_{}_{}", font_id.split(':').next().unwrap_or("font"),
-            font_size as u32, if is_sdf { "sdf" } else { "bmp" });
+        let atlas_id = format!(
+            "{}:atlas_{}_{}",
+            font_id.split(':').next().unwrap_or("font"),
+            font_size as u32,
+            if is_sdf { "sdf" } else { "bmp" }
+        );
         if !db.has(&atlas_id) {
-            let _ = db.put(&atlas_id, &atlas.bitmap, json!({
-                "width": atlas.width,
-                "height": atlas.height,
-                "sdf": is_sdf,
-                "channels": 1,
-            }));
+            let _ = db.put(
+                &atlas_id,
+                &atlas.bitmap,
+                json!({
+                    "width": atlas.width,
+                    "height": atlas.height,
+                    "sdf": is_sdf,
+                    "channels": 1,
+                }),
+            );
         }
 
         all_quads.push(json!({

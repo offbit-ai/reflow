@@ -41,13 +41,16 @@ pub fn bind_input_events(
     macro_rules! add_listener {
         ($event:expr, $component:expr, $extract:expr) => {
             let net_clone = net.clone();
-            let closure = Closure::<dyn FnMut(web_sys::Event)>::new(move |event: web_sys::Event| {
-                let data = $extract(&event);
-                let _ = net_clone.inject_input_event($component, data);
-            });
+            let closure =
+                Closure::<dyn FnMut(web_sys::Event)>::new(move |event: web_sys::Event| {
+                    let data = $extract(&event);
+                    let _ = net_clone.inject_input_event($component, data);
+                });
             target
                 .add_event_listener_with_callback($event, closure.as_ref().unchecked_ref())
-                .map_err(|e| JsValue::from_str(&format!("Failed to add {} listener: {:?}", $event, e)))?;
+                .map_err(|e| {
+                    JsValue::from_str(&format!("Failed to add {} listener: {:?}", $event, e))
+                })?;
             closures.borrow_mut().push(($event.to_string(), closure));
         };
     }
@@ -64,7 +67,8 @@ pub fn bind_input_events(
             "shiftKey": ke.shift_key(),
             "metaKey": ke.meta_key(),
             "repeat": ke.repeat(),
-        })).unwrap_or(JsValue::NULL)
+        }))
+        .unwrap_or(JsValue::NULL)
     });
 
     add_listener!("keyup", "tpl_keyboard_input", |e: &web_sys::Event| {
@@ -78,11 +82,19 @@ pub fn bind_input_events(
             "shiftKey": ke.shift_key(),
             "metaKey": ke.meta_key(),
             "repeat": ke.repeat(),
-        })).unwrap_or(JsValue::NULL)
+        }))
+        .unwrap_or(JsValue::NULL)
     });
 
     // Mouse events
-    for event_name in &["mousedown", "mouseup", "mousemove", "click", "dblclick", "contextmenu"] {
+    for event_name in &[
+        "mousedown",
+        "mouseup",
+        "mousemove",
+        "click",
+        "dblclick",
+        "contextmenu",
+    ] {
         let name = event_name.to_string();
         let net_clone = net.clone();
         let closure = Closure::<dyn FnMut(web_sys::Event)>::new(move |event: web_sys::Event| {
@@ -97,13 +109,18 @@ pub fn bind_input_events(
                 "buttons": me.buttons(),
                 "movementX": me.movement_x(),
                 "movementY": me.movement_y(),
-            })).unwrap_or(JsValue::NULL);
+            }))
+            .unwrap_or(JsValue::NULL);
             let _ = net_clone.inject_input_event("tpl_mouse_input", data);
         });
         target
             .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())
-            .map_err(|e| JsValue::from_str(&format!("Failed to add {} listener: {:?}", event_name, e)))?;
-        closures.borrow_mut().push((event_name.to_string(), closure));
+            .map_err(|e| {
+                JsValue::from_str(&format!("Failed to add {} listener: {:?}", event_name, e))
+            })?;
+        closures
+            .borrow_mut()
+            .push((event_name.to_string(), closure));
     }
 
     // Wheel event
@@ -117,11 +134,11 @@ pub fn bind_input_events(
                 "deltaY": we.delta_y(),
                 "x": we.offset_x(),
                 "y": we.offset_y(),
-            })).unwrap_or(JsValue::NULL);
+            }))
+            .unwrap_or(JsValue::NULL);
             let _ = net_clone.inject_input_event("tpl_mouse_input", data);
         });
-        target
-            .add_event_listener_with_callback("wheel", closure.as_ref().unchecked_ref())?;
+        target.add_event_listener_with_callback("wheel", closure.as_ref().unchecked_ref())?;
         closures.borrow_mut().push(("wheel".to_string(), closure));
     }
 
@@ -148,12 +165,14 @@ pub fn bind_input_events(
             let data = serde_wasm_bindgen::to_value(&serde_json::json!({
                 "type": name,
                 "touches": touches,
-            })).unwrap_or(JsValue::NULL);
+            }))
+            .unwrap_or(JsValue::NULL);
             let _ = net_clone.inject_input_event("tpl_touch_input", data);
         });
-        target
-            .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())?;
-        closures.borrow_mut().push((event_name.to_string(), closure));
+        target.add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())?;
+        closures
+            .borrow_mut()
+            .push((event_name.to_string(), closure));
     }
 
     // Window resize (on window, not target)
@@ -166,12 +185,12 @@ pub fn bind_input_events(
                 "width": window.inner_width().unwrap().as_f64().unwrap_or(0.0),
                 "height": window.inner_height().unwrap().as_f64().unwrap_or(0.0),
                 "devicePixelRatio": window.device_pixel_ratio(),
-            })).unwrap_or(JsValue::NULL);
+            }))
+            .unwrap_or(JsValue::NULL);
             let _ = net_clone.inject_input_event("tpl_window_event", data);
         });
         let window = web_sys::window().unwrap();
-        window
-            .add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref())?;
+        window.add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref())?;
         closures.borrow_mut().push(("resize".to_string(), closure));
     }
 
@@ -203,9 +222,7 @@ pub fn bind_input_events(
 
 // Native stub — event injection is handled by the server/runtime
 #[cfg(not(target_arch = "wasm32"))]
-pub fn bind_input_events_native(
-    _network: &crate::network::Network,
-) {
+pub fn bind_input_events_native(_network: &crate::network::Network) {
     // On native, the runtime (winit event loop, server, etc.)
     // calls network.inject_input_event() directly.
 }

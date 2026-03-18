@@ -18,11 +18,20 @@ pub async fn window_event_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
 
     let width = e.get("width").and_then(|v| v.as_f64()).unwrap_or(0.0);
     let height = e.get("height").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let dpr = e.get("devicePixelRatio").and_then(|v| v.as_f64()).unwrap_or(1.0);
+    let dpr = e
+        .get("devicePixelRatio")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(1.0);
 
     let mut out = HashMap::new();
-    out.insert("event".to_string(), Message::object(EncodableValue::from(e)));
-    out.insert("size".to_string(), Message::object(EncodableValue::from(json!({ "x": width, "y": height }))));
+    out.insert(
+        "event".to_string(),
+        Message::object(EncodableValue::from(e)),
+    );
+    out.insert(
+        "size".to_string(),
+        Message::object(EncodableValue::from(json!({ "x": width, "y": height }))),
+    );
     out.insert("dpr".to_string(), Message::Float(dpr));
     Ok(out)
 }

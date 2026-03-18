@@ -757,7 +757,7 @@ impl Message {
 
         // Apply type-specific adjustments
         let threshold_multiplier = match self {
-            Message::Bytes(_) => 0.7, // More aggressive compression for binary data
+            Message::Bytes(_) => 0.7,  // More aggressive compression for binary data
             Message::String(_) => 1.5, // Much less aggressive for strings
             Message::Array(_) => 0.8,  // Moderate for arrays
             _ => 0.8,                  // Default threshold

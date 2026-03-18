@@ -63,8 +63,8 @@ pub fn apply_chroma_key(row: &mut [u8], config: &ChromaKeyConfig) {
         {
             // How strongly this pixel matches the key (1.0 = perfect match, 0.0 = edge)
             let hue_strength = 1.0 - (hue_diff / config.hue_tolerance);
-            let sat_strength = ((hsv.s - config.min_saturation) / (1.0 - config.min_saturation))
-                .clamp(0.0, 1.0);
+            let sat_strength =
+                ((hsv.s - config.min_saturation) / (1.0 - config.min_saturation)).clamp(0.0, 1.0);
             let match_strength = hue_strength * sat_strength;
 
             // Reduce alpha proportionally
@@ -104,7 +104,11 @@ mod tests {
     fn test_pure_green_keyed() {
         let mut row = [0, 255, 0, 255]; // pure green, fully opaque
         apply_chroma_key(&mut row, &ChromaKeyConfig::green());
-        assert!(row[3] < 30, "Pure green should be mostly transparent, got alpha={}", row[3]);
+        assert!(
+            row[3] < 30,
+            "Pure green should be mostly transparent, got alpha={}",
+            row[3]
+        );
     }
 
     #[test]
@@ -118,7 +122,10 @@ mod tests {
     fn test_blue_screen() {
         let mut row = [0, 0, 255, 255]; // pure blue
         apply_chroma_key(&mut row, &ChromaKeyConfig::blue());
-        assert!(row[3] < 30, "Pure blue should be mostly transparent with blue config");
+        assert!(
+            row[3] < 30,
+            "Pure blue should be mostly transparent with blue config"
+        );
     }
 
     #[test]
@@ -126,7 +133,10 @@ mod tests {
         // Very dark green (low value) should not be keyed
         let mut row = [0, 20, 0, 255];
         apply_chroma_key(&mut row, &ChromaKeyConfig::green());
-        assert_eq!(row[3], 255, "Dark green should not be keyed (below min_value)");
+        assert_eq!(
+            row[3], 255,
+            "Dark green should not be keyed (below min_value)"
+        );
     }
 
     #[test]

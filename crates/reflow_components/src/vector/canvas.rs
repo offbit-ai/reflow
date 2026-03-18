@@ -53,19 +53,29 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(360) as usize;
     let pixel_count = width * height * 4;
 
-    let bg_color = config.get("background").and_then(|v| v.as_array()).map(|a| {
-        [
-            a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-            a.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-            a.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-            a.get(3).and_then(|v| v.as_u64()).unwrap_or(255) as u8,
-        ]
-    }).unwrap_or([0, 0, 0, 255]);
+    let bg_color = config
+        .get("background")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            [
+                a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.get(3).and_then(|v| v.as_u64()).unwrap_or(255) as u8,
+            ]
+        })
+        .unwrap_or([0, 0, 0, 255]);
 
-    let layers_config = config.get("layers").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+    let layers_config = config
+        .get("layers")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
 
     // Pool every incoming image by port name
-    let all_ports = ["layer_0", "layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6", "layer_7"];
+    let all_ports = [
+        "layer_0", "layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6", "layer_7",
+    ];
     for port_name in &all_ports {
         if let Some(Message::Bytes(bytes)) = payload.get(*port_name) {
             let encoded = {
@@ -101,8 +111,14 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
             Some(n) => n,
             None => continue,
         };
-        let blend_mode = layer_cfg.get("blend").and_then(|v| v.as_str()).unwrap_or("normal");
-        let opacity = layer_cfg.get("opacity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let blend_mode = layer_cfg
+            .get("blend")
+            .and_then(|v| v.as_str())
+            .unwrap_or("normal");
+        let opacity = layer_cfg
+            .get("opacity")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0) as f32;
 
         let layer_bytes = match pool.get(name).and_then(|v| v.as_str()) {
             Some(encoded) => {

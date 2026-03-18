@@ -26,8 +26,14 @@ pub async fn touch_input_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
         .unwrap_or(0.0);
 
     let mut out = HashMap::new();
-    out.insert("event".to_string(), Message::object(EncodableValue::from(e)));
-    out.insert("touches".to_string(), Message::object(EncodableValue::from(touches)));
+    out.insert(
+        "event".to_string(),
+        Message::object(EncodableValue::from(e)),
+    );
+    out.insert(
+        "touches".to_string(),
+        Message::object(EncodableValue::from(touches)),
+    );
     out.insert("count".to_string(), Message::Integer(count));
     out.insert("pressure".to_string(), Message::Float(pressure));
     Ok(out)

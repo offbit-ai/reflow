@@ -8,10 +8,10 @@
 //! modules with 6,697 actor templates. Disable it for faster test builds:
 //!   cargo test -p reflow_server --no-default-features
 
+pub mod animation;
 #[cfg(feature = "api")]
 #[allow(clippy::all, unused_variables)]
 pub mod api;
-pub mod animation;
 pub mod assets;
 pub mod flow_control;
 pub mod gpu;

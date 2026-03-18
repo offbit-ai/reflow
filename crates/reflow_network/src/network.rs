@@ -431,7 +431,8 @@ impl Network {
                 // Count upstream connections per inport for this actor
                 for conn in &self.connectors {
                     if conn.to.actor == id {
-                        *config.inport_connection_counts
+                        *config
+                            .inport_connection_counts
                             .entry(conn.to.port.clone())
                             .or_insert(0) += 1;
                     }

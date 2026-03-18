@@ -64,11 +64,11 @@
 //!
 //! Send a string: `"play"`, `"pause"`, `"stop"`, `"reverse"`, `"seek:0.5"`
 
+use crate::math::easing;
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
-use crate::math::easing;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -114,7 +114,11 @@ pub async fn animation_timeline_actor(
     // Each message on `tracks` adds/replaces a named track.
     if let Some(Message::Object(obj)) = payload.get("tracks") {
         let v: Value = obj.as_ref().clone().into();
-        let name = v.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+        let name = v
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default")
+            .to_string();
         ctx.pool_upsert("_tracks", &name, v);
     }
 
@@ -124,7 +128,13 @@ pub async fn animation_timeline_actor(
         .into_iter()
         .find(|(k, _)| k == "state")
         .and_then(|(_, v)| v.as_str().map(|s| s.to_string()))
-        .unwrap_or_else(|| if autoplay { "playing".into() } else { "paused".into() });
+        .unwrap_or_else(|| {
+            if autoplay {
+                "playing".into()
+            } else {
+                "paused".into()
+            }
+        });
 
     let mut elapsed: f64 = ctx
         .get_pool("_tl")
@@ -145,8 +155,14 @@ pub async fn animation_timeline_actor(
         match cmd.as_str() {
             "play" => playback_state = "playing".into(),
             "pause" => playback_state = "paused".into(),
-            "stop" => { playback_state = "paused".into(); elapsed = 0.0; }
-            "reverse" => { speed = -speed.abs(); playback_state = "playing".into(); }
+            "stop" => {
+                playback_state = "paused".into();
+                elapsed = 0.0;
+            }
+            "reverse" => {
+                speed = -speed.abs();
+                playback_state = "playing".into();
+            }
             _ if cmd.starts_with("seek:") => {
                 if let Ok(t) = cmd[5..].trim().parse::<f64>() {
                     elapsed = t.clamp(0.0, duration);
@@ -165,11 +181,19 @@ pub async fn animation_timeline_actor(
         elapsed += dt * speed;
 
         if elapsed >= duration {
-            if do_loop { elapsed %= duration; }
-            else { elapsed = duration; playback_state = "completed".into(); }
+            if do_loop {
+                elapsed %= duration;
+            } else {
+                elapsed = duration;
+                playback_state = "completed".into();
+            }
         } else if elapsed < 0.0 {
-            if do_loop { elapsed = duration + (elapsed % duration); }
-            else { elapsed = 0.0; playback_state = "completed".into(); }
+            if do_loop {
+                elapsed = duration + (elapsed % duration);
+            } else {
+                elapsed = 0.0;
+                playback_state = "completed".into();
+            }
         }
     }
 
@@ -177,7 +201,11 @@ pub async fn animation_timeline_actor(
     ctx.pool_upsert("_tl", "elapsed", json!(elapsed));
     ctx.pool_upsert("_tl", "speed", json!(speed));
 
-    let progress = if duration > 0.0 { elapsed / duration } else { 1.0 };
+    let progress = if duration > 0.0 {
+        elapsed / duration
+    } else {
+        1.0
+    };
 
     // ─── Evaluate all pooled tracks with stagger ───
     let track_pool: Vec<(String, Value)> = ctx.get_pool("_tracks").into_iter().collect();
@@ -188,13 +216,14 @@ pub async fn animation_timeline_actor(
     let stagger_delays = compute_stagger(&config, &track_pool);
 
     for (i, (track_name, track_data)) in track_pool.iter().enumerate() {
-        let keyframes = track_data
-            .get("keyframes")
-            .and_then(|v| v.as_array());
+        let keyframes = track_data.get("keyframes").and_then(|v| v.as_array());
 
         if let Some(kf) = keyframes {
             // Per-track delay = explicit delay + stagger offset
-            let explicit_delay = track_data.get("delay").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let explicit_delay = track_data
+                .get("delay")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             let stagger_delay = stagger_delays.get(i).copied().unwrap_or(0.0);
             let track_time = elapsed - explicit_delay - stagger_delay;
 
@@ -209,9 +238,13 @@ pub async fn animation_timeline_actor(
             if let Some(value) = value {
                 let msg = match &value {
                     Value::Number(n) => {
-                        if let Some(f) = n.as_f64() { Message::Float(f) }
-                        else if let Some(i) = n.as_i64() { Message::Integer(i) }
-                        else { Message::object(EncodableValue::from(value.clone())) }
+                        if let Some(f) = n.as_f64() {
+                            Message::Float(f)
+                        } else if let Some(i) = n.as_i64() {
+                            Message::Integer(i)
+                        } else {
+                            Message::object(EncodableValue::from(value.clone()))
+                        }
                     }
                     _ => Message::object(EncodableValue::from(value)),
                 };
@@ -226,8 +259,12 @@ pub async fn animation_timeline_actor(
         let mut values_obj = serde_json::Map::new();
         for (k, v) in &out {
             match v {
-                Message::Float(f) => { values_obj.insert(k.clone(), json!(f)); }
-                Message::Integer(i) => { values_obj.insert(k.clone(), json!(i)); }
+                Message::Float(f) => {
+                    values_obj.insert(k.clone(), json!(f));
+                }
+                Message::Integer(i) => {
+                    values_obj.insert(k.clone(), json!(i));
+                }
                 _ => {}
             }
         }
@@ -239,7 +276,10 @@ pub async fn animation_timeline_actor(
         }
     }
 
-    out.insert("state".to_string(), Message::String(playback_state.clone().into()));
+    out.insert(
+        "state".to_string(),
+        Message::String(playback_state.clone().into()),
+    );
     out.insert("progress".to_string(), Message::Float(progress));
     out.insert(
         "metadata".to_string(),
@@ -256,10 +296,7 @@ pub async fn animation_timeline_actor(
 }
 
 /// Compute per-track stagger delays from config.
-fn compute_stagger(
-    config: &HashMap<String, Value>,
-    tracks: &[(String, Value)],
-) -> Vec<f64> {
+fn compute_stagger(config: &HashMap<String, Value>, tracks: &[(String, Value)]) -> Vec<f64> {
     let n = tracks.len();
     if n == 0 {
         return Vec::new();
@@ -280,15 +317,26 @@ fn compute_stagger(
         return vec![0.0; n];
     }
 
-    let order = stagger.get("order").and_then(|v| v.as_str()).unwrap_or("index");
-    let from = stagger.get("from").and_then(|v| v.as_str()).unwrap_or("start");
-    let stagger_easing = stagger.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
+    let order = stagger
+        .get("order")
+        .and_then(|v| v.as_str())
+        .unwrap_or("index");
+    let from = stagger
+        .get("from")
+        .and_then(|v| v.as_str())
+        .unwrap_or("start");
+    let stagger_easing = stagger
+        .get("easing")
+        .and_then(|v| v.as_str())
+        .unwrap_or("linear");
 
     // Build index order
     let mut indices: Vec<usize> = (0..n).collect();
     match order {
         "name" => {
-            let mut named: Vec<(usize, &str)> = tracks.iter().enumerate()
+            let mut named: Vec<(usize, &str)> = tracks
+                .iter()
+                .enumerate()
                 .map(|(i, (name, _))| (i, name.as_str()))
                 .collect();
             named.sort_by_key(|(_, name)| *name);
@@ -328,16 +376,25 @@ fn compute_stagger(
 }
 
 fn evaluate_keyframes(keyframes: &[Value], time: f64) -> Option<Value> {
-    if keyframes.is_empty() { return None; }
-    if keyframes.len() == 1 { return keyframes[0].get("value").cloned(); }
+    if keyframes.is_empty() {
+        return None;
+    }
+    if keyframes.len() == 1 {
+        return keyframes[0].get("value").cloned();
+    }
 
     let mut prev_idx = 0;
     let mut next_idx = keyframes.len() - 1;
 
     for (i, kf) in keyframes.iter().enumerate() {
         let kt = kf.get("time").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        if kt <= time { prev_idx = i; }
-        if kt >= time && i > prev_idx { next_idx = i; break; }
+        if kt <= time {
+            prev_idx = i;
+        }
+        if kt >= time && i > prev_idx {
+            next_idx = i;
+            break;
+        }
     }
 
     if prev_idx == next_idx {
@@ -350,10 +407,17 @@ fn evaluate_keyframes(keyframes: &[Value], time: f64) -> Option<Value> {
     let nt = next.get("time").and_then(|v| v.as_f64()).unwrap_or(1.0);
     let pv = prev.get("value")?;
     let nv = next.get("value")?;
-    let easing_fn = prev.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
+    let easing_fn = prev
+        .get("easing")
+        .and_then(|v| v.as_str())
+        .unwrap_or("linear");
 
     let seg = nt - pt;
-    let t = if seg > 0.0 { ((time - pt) / seg).clamp(0.0, 1.0) } else { 1.0 };
+    let t = if seg > 0.0 {
+        ((time - pt) / seg).clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
     let e = easing::eval(easing_fn, t);
 
     Some(interpolate(pv, nv, e))
@@ -367,13 +431,23 @@ fn interpolate(from: &Value, to: &Value, t: f64) -> Value {
             json!(a + (b - a) * t)
         }
         (Value::Array(a), Value::Array(b)) if a.len() == b.len() => {
-            let r: Vec<f64> = a.iter().zip(b.iter()).map(|(av, bv)| {
-                let a = av.as_f64().unwrap_or(0.0);
-                let b = bv.as_f64().unwrap_or(0.0);
-                a + (b - a) * t
-            }).collect();
+            let r: Vec<f64> = a
+                .iter()
+                .zip(b.iter())
+                .map(|(av, bv)| {
+                    let a = av.as_f64().unwrap_or(0.0);
+                    let b = bv.as_f64().unwrap_or(0.0);
+                    a + (b - a) * t
+                })
+                .collect();
             json!(r)
         }
-        _ => if t >= 0.5 { to.clone() } else { from.clone() },
+        _ => {
+            if t >= 0.5 {
+                to.clone()
+            } else {
+                from.clone()
+            }
+        }
     }
 }

@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://api.twilio.com/2010-04-01";
 const ENV_KEY: &str = "TWILIO_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Basic {}", credential));
     Ok(builder)
@@ -71,20 +75,30 @@ pub async fn twilio_send_message(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /Accounts/{{AccountSid}}/Messages.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /Accounts/{{AccountSid}}/Messages.json failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -134,20 +148,30 @@ pub async fn twilio_create_call(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /Accounts/{{AccountSid}}/Calls.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /Accounts/{{AccountSid}}/Calls.json failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -163,7 +187,9 @@ pub async fn twilio_create_call(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_account(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_account(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -191,20 +217,28 @@ pub async fn twilio_create_account(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /2010-04-01/Accounts.json failed: {}", e).into()),
+            );
         }
     }
 
@@ -260,27 +294,35 @@ pub async fn twilio_list_account(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /2010-04-01/Accounts.json failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/Addresses.json
 #[actor(
@@ -289,7 +331,9 @@ pub async fn twilio_list_account(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -347,27 +391,41 @@ pub async fn twilio_create_address(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Addresses.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Addresses.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Addresses.json
 #[actor(
@@ -425,27 +483,41 @@ pub async fn twilio_list_address(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Addresses.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Addresses.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Addresses/{AddressSid}/DependentPhoneNumbers.json
 #[actor(
@@ -454,11 +526,15 @@ pub async fn twilio_list_address(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_dependent_phone_number(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_dependent_phone_number(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Addresses/{AddressSid}/DependentPhoneNumbers.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Addresses/{AddressSid}/DependentPhoneNumbers.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -494,17 +570,22 @@ pub async fn twilio_list_dependent_phone_number(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Addresses/{{AddressSid}}/DependentPhoneNumbers.json failed: {}", e).into()));
@@ -514,7 +595,7 @@ pub async fn twilio_list_dependent_phone_number(context: ActorContext) -> Result
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /2010-04-01/Accounts/{AccountSid}/Addresses/{Sid}.json
 #[actor(
@@ -523,7 +604,9 @@ pub async fn twilio_list_dependent_phone_number(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -549,17 +632,22 @@ pub async fn twilio_delete_address(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Addresses/{{Sid}}.json failed: {}", e).into()));
@@ -569,7 +657,7 @@ pub async fn twilio_delete_address(context: ActorContext) -> Result<HashMap<Stri
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Addresses/{Sid}.json
 #[actor(
@@ -578,7 +666,9 @@ pub async fn twilio_delete_address(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -604,27 +694,41 @@ pub async fn twilio_read_api20100401_address(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Addresses/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Addresses/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/Addresses/{Sid}.json
 #[actor(
@@ -633,7 +737,9 @@ pub async fn twilio_read_api20100401_address(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -691,17 +797,22 @@ pub async fn twilio_update_address(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Addresses/{{Sid}}.json failed: {}", e).into()));
@@ -720,7 +831,9 @@ pub async fn twilio_update_address(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -760,20 +873,34 @@ pub async fn twilio_list_application(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Applications.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Applications.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -789,7 +916,9 @@ pub async fn twilio_list_application(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -816,7 +945,10 @@ pub async fn twilio_create_application(context: ActorContext) -> Result<HashMap<
         body.insert("MessageStatusCallback".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("PublicApplicationConnectEnabled") {
-        body.insert("PublicApplicationConnectEnabled".to_string(), val.clone().into());
+        body.insert(
+            "PublicApplicationConnectEnabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("SmsFallbackMethod") {
         body.insert("SmsFallbackMethod".to_string(), val.clone().into());
@@ -865,20 +997,34 @@ pub async fn twilio_create_application(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Applications.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Applications.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -894,7 +1040,9 @@ pub async fn twilio_create_application(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -920,17 +1068,22 @@ pub async fn twilio_delete_application(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Applications/{{Sid}}.json failed: {}", e).into()));
@@ -949,7 +1102,9 @@ pub async fn twilio_delete_application(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1006,7 +1161,10 @@ pub async fn twilio_update_application(context: ActorContext) -> Result<HashMap<
         body.insert("SmsUrl".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("PublicApplicationConnectEnabled") {
-        body.insert("PublicApplicationConnectEnabled".to_string(), val.clone().into());
+        body.insert(
+            "PublicApplicationConnectEnabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("VoiceMethod") {
         body.insert("VoiceMethod".to_string(), val.clone().into());
@@ -1028,17 +1186,22 @@ pub async fn twilio_update_application(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Applications/{{Sid}}.json failed: {}", e).into()));
@@ -1057,7 +1220,9 @@ pub async fn twilio_update_application(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_application(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_application(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1083,17 +1248,22 @@ pub async fn twilio_read_api20100401_application(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Applications/{{Sid}}.json failed: {}", e).into()));
@@ -1112,7 +1282,9 @@ pub async fn twilio_read_api20100401_application(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_authorized_connect_app(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_authorized_connect_app(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1149,17 +1321,22 @@ pub async fn twilio_list_authorized_connect_app(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AuthorizedConnectApps.json failed: {}", e).into()));
@@ -1178,11 +1355,14 @@ pub async fn twilio_list_authorized_connect_app(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_authorized_connect_apps(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_authorized_connect_apps(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AuthorizedConnectApps/{ConnectAppSid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AuthorizedConnectApps/{ConnectAppSid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -1204,17 +1384,22 @@ pub async fn twilio_read_authorized_connect_apps(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AuthorizedConnectApps/{{ConnectAppSid}}.json failed: {}", e).into()));
@@ -1224,7 +1409,7 @@ pub async fn twilio_read_authorized_connect_apps(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers.json
 #[actor(
@@ -1233,7 +1418,9 @@ pub async fn twilio_read_authorized_connect_apps(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_country(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_country(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1270,17 +1457,22 @@ pub async fn twilio_list_available_phone_number_country(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers.json failed: {}", e).into()));
@@ -1290,7 +1482,7 @@ pub async fn twilio_list_available_phone_number_country(context: ActorContext) -
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}.json
 #[actor(
@@ -1299,11 +1491,14 @@ pub async fn twilio_list_available_phone_number_country(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_available_phone_numbers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_available_phone_numbers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -1325,17 +1520,22 @@ pub async fn twilio_read_available_phone_numbers(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}.json failed: {}", e).into()));
@@ -1345,7 +1545,7 @@ pub async fn twilio_read_available_phone_numbers(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Local.json
 #[actor(
@@ -1354,11 +1554,15 @@ pub async fn twilio_read_available_phone_numbers(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_local(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_local(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Local.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Local.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -1448,17 +1652,22 @@ pub async fn twilio_list_available_phone_number_local(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/Local.json failed: {}", e).into()));
@@ -1468,7 +1677,7 @@ pub async fn twilio_list_available_phone_number_local(context: ActorContext) -> 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/MachineToMachine.json
 #[actor(
@@ -1477,7 +1686,9 @@ pub async fn twilio_list_available_phone_number_local(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_machine_to_machine(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_machine_to_machine(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1571,17 +1782,22 @@ pub async fn twilio_list_available_phone_number_machine_to_machine(context: Acto
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/MachineToMachine.json failed: {}", e).into()));
@@ -1591,7 +1807,7 @@ pub async fn twilio_list_available_phone_number_machine_to_machine(context: Acto
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Mobile.json
 #[actor(
@@ -1600,11 +1816,15 @@ pub async fn twilio_list_available_phone_number_machine_to_machine(context: Acto
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_mobile(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_mobile(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Mobile.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Mobile.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -1694,17 +1914,22 @@ pub async fn twilio_list_available_phone_number_mobile(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/Mobile.json failed: {}", e).into()));
@@ -1714,7 +1939,7 @@ pub async fn twilio_list_available_phone_number_mobile(context: ActorContext) ->
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/National.json
 #[actor(
@@ -1723,11 +1948,15 @@ pub async fn twilio_list_available_phone_number_mobile(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_national(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_national(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/National.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/National.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -1817,17 +2046,22 @@ pub async fn twilio_list_available_phone_number_national(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/National.json failed: {}", e).into()));
@@ -1837,7 +2071,7 @@ pub async fn twilio_list_available_phone_number_national(context: ActorContext) 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/SharedCost.json
 #[actor(
@@ -1846,11 +2080,15 @@ pub async fn twilio_list_available_phone_number_national(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_shared_cost(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_shared_cost(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/SharedCost.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/SharedCost.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -1940,17 +2178,22 @@ pub async fn twilio_list_available_phone_number_shared_cost(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/SharedCost.json failed: {}", e).into()));
@@ -1960,7 +2203,7 @@ pub async fn twilio_list_available_phone_number_shared_cost(context: ActorContex
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/TollFree.json
 #[actor(
@@ -1969,11 +2212,15 @@ pub async fn twilio_list_available_phone_number_shared_cost(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_toll_free(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_toll_free(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/TollFree.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/TollFree.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2063,17 +2310,22 @@ pub async fn twilio_list_available_phone_number_toll_free(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/TollFree.json failed: {}", e).into()));
@@ -2083,7 +2335,7 @@ pub async fn twilio_list_available_phone_number_toll_free(context: ActorContext)
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Voip.json
 #[actor(
@@ -2092,11 +2344,15 @@ pub async fn twilio_list_available_phone_number_toll_free(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_available_phone_number_voip(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_available_phone_number_voip(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Voip.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/AvailablePhoneNumbers/{CountryCode}/Voip.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2186,17 +2442,22 @@ pub async fn twilio_list_available_phone_number_voip(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/AvailablePhoneNumbers/{{CountryCode}}/Voip.json failed: {}", e).into()));
@@ -2215,7 +2476,9 @@ pub async fn twilio_list_available_phone_number_voip(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_balance(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_balance(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2238,20 +2501,34 @@ pub async fn twilio_read_api20100401_balance(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Balance.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Balance.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2334,20 +2611,34 @@ pub async fn twilio_list_call(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Calls.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2363,7 +2654,9 @@ pub async fn twilio_list_call(context: ActorContext) -> Result<HashMap<String, M
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_call_event(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_call_event(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2403,17 +2696,22 @@ pub async fn twilio_list_call_event(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Events.json failed: {}", e).into()));
@@ -2423,7 +2721,7 @@ pub async fn twilio_list_call_event(context: ActorContext) -> Result<HashMap<Str
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Notifications.json
 #[actor(
@@ -2432,11 +2730,14 @@ pub async fn twilio_list_call_event(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_call_notification(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_call_notification(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Notifications.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Notifications.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2484,17 +2785,22 @@ pub async fn twilio_list_call_notification(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Notifications.json failed: {}", e).into()));
@@ -2504,7 +2810,7 @@ pub async fn twilio_list_call_notification(context: ActorContext) -> Result<Hash
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Notifications/{Sid}.json
 #[actor(
@@ -2513,11 +2819,14 @@ pub async fn twilio_list_call_notification(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_call_notification(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_call_notification(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Notifications/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Notifications/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2542,17 +2851,22 @@ pub async fn twilio_read_api20100401_call_notification(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Notifications/{{Sid}}.json failed: {}", e).into()));
@@ -2571,11 +2885,14 @@ pub async fn twilio_read_api20100401_call_notification(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_payments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_payments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Payments.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Payments.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2656,17 +2973,22 @@ pub async fn twilio_create_payments(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Payments.json failed: {}", e).into()));
@@ -2685,11 +3007,14 @@ pub async fn twilio_create_payments(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_payments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_payments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Payments/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Payments/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2731,17 +3056,22 @@ pub async fn twilio_update_payments(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Payments/{{Sid}}.json failed: {}", e).into()));
@@ -2760,11 +3090,14 @@ pub async fn twilio_update_payments(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_call_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_call_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2790,7 +3123,10 @@ pub async fn twilio_create_call_recording(context: ActorContext) -> Result<HashM
         body.insert("RecordingStatusCallback".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("RecordingStatusCallbackMethod") {
-        body.insert("RecordingStatusCallbackMethod".to_string(), val.clone().into());
+        body.insert(
+            "RecordingStatusCallbackMethod".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("Trim") {
         body.insert("Trim".to_string(), val.clone().into());
@@ -2799,7 +3135,10 @@ pub async fn twilio_create_call_recording(context: ActorContext) -> Result<HashM
         body.insert("RecordingChannels".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("RecordingStatusCallbackEvent") {
-        body.insert("RecordingStatusCallbackEvent".to_string(), val.clone().into());
+        body.insert(
+            "RecordingStatusCallbackEvent".to_string(),
+            val.clone().into(),
+        );
     }
     if !body.is_empty() {
         builder = builder.json(&serde_json::Value::Object(body));
@@ -2809,17 +3148,22 @@ pub async fn twilio_create_call_recording(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Recordings.json failed: {}", e).into()));
@@ -2838,11 +3182,14 @@ pub async fn twilio_create_call_recording(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_call_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_call_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2887,17 +3234,22 @@ pub async fn twilio_list_call_recording(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Recordings.json failed: {}", e).into()));
@@ -2916,11 +3268,14 @@ pub async fn twilio_list_call_recording(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_call_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_call_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -2956,17 +3311,22 @@ pub async fn twilio_update_call_recording(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -2985,11 +3345,14 @@ pub async fn twilio_update_call_recording(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_call_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_call_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -3014,17 +3377,22 @@ pub async fn twilio_delete_call_recording(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -3043,11 +3411,14 @@ pub async fn twilio_delete_call_recording(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_call_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_call_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Recordings/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -3072,17 +3443,22 @@ pub async fn twilio_read_api20100401_call_recording(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -3101,7 +3477,9 @@ pub async fn twilio_read_api20100401_call_recording(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_siprec(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_siprec(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3741,17 +4119,22 @@ pub async fn twilio_create_siprec(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Siprec.json failed: {}", e).into()));
@@ -3770,11 +4153,14 @@ pub async fn twilio_create_siprec(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_siprec(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_siprec(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Siprec/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Siprec/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -3807,17 +4193,22 @@ pub async fn twilio_update_siprec(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Siprec/{{Sid}}.json failed: {}", e).into()));
@@ -3836,7 +4227,9 @@ pub async fn twilio_update_siprec(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_stream(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_stream(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4476,17 +4869,22 @@ pub async fn twilio_create_stream(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Streams.json failed: {}", e).into()));
@@ -4505,11 +4903,14 @@ pub async fn twilio_create_stream(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_stream(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_stream(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Streams/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Streams/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -4542,17 +4943,22 @@ pub async fn twilio_update_stream(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Streams/{{Sid}}.json failed: {}", e).into()));
@@ -4571,11 +4977,14 @@ pub async fn twilio_update_stream(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_realtime_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_realtime_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Transcriptions.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Transcriptions.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -4653,17 +5062,22 @@ pub async fn twilio_create_realtime_transcription(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Transcriptions.json failed: {}", e).into()));
@@ -4682,11 +5096,14 @@ pub async fn twilio_create_realtime_transcription(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_realtime_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_realtime_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Transcriptions/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/Transcriptions/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -4719,17 +5136,22 @@ pub async fn twilio_update_realtime_transcription(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/Transcriptions/{{Sid}}.json failed: {}", e).into()));
@@ -4748,11 +5170,15 @@ pub async fn twilio_update_realtime_transcription(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_user_defined_message_subscription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_user_defined_message_subscription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/UserDefinedMessageSubscriptions.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/UserDefinedMessageSubscriptions.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -4788,17 +5214,22 @@ pub async fn twilio_create_user_defined_message_subscription(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/UserDefinedMessageSubscriptions.json failed: {}", e).into()));
@@ -4817,7 +5248,9 @@ pub async fn twilio_create_user_defined_message_subscription(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_user_defined_message_subscription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_user_defined_message_subscription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4846,17 +5279,22 @@ pub async fn twilio_delete_user_defined_message_subscription(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/UserDefinedMessageSubscriptions/{{Sid}}.json failed: {}", e).into()));
@@ -4875,11 +5313,14 @@ pub async fn twilio_delete_user_defined_message_subscription(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_user_defined_message(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_user_defined_message(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/UserDefinedMessages.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Calls/{CallSid}/UserDefinedMessages.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -4912,17 +5353,22 @@ pub async fn twilio_create_user_defined_message(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{CallSid}}/UserDefinedMessages.json failed: {}", e).into()));
@@ -4941,7 +5387,9 @@ pub async fn twilio_create_user_defined_message(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_call(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_call(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4967,20 +5415,34 @@ pub async fn twilio_read_api20100401_call(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Calls/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5054,20 +5516,34 @@ pub async fn twilio_update_call(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Calls/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5109,20 +5585,34 @@ pub async fn twilio_delete_call(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Calls/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /2010-04-01/Accounts/{{AccountSid}}/Calls/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5138,7 +5628,9 @@ pub async fn twilio_delete_call(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_conference(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_conference(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -5199,20 +5691,34 @@ pub async fn twilio_list_conference(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Conferences.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Conferences.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5228,11 +5734,15 @@ pub async fn twilio_list_conference(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_participant(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_participant(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5277,17 +5787,22 @@ pub async fn twilio_list_participant(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Participants.json failed: {}", e).into()));
@@ -5297,7 +5812,7 @@ pub async fn twilio_list_participant(context: ActorContext) -> Result<HashMap<St
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants.json
 #[actor(
@@ -5306,11 +5821,15 @@ pub async fn twilio_list_participant(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_participant(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5345,10 +5864,16 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
         body.insert("ConferenceRecord".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("ConferenceStatusCallbackMethod") {
-        body.insert("ConferenceStatusCallbackMethod".to_string(), val.clone().into());
+        body.insert(
+            "ConferenceStatusCallbackMethod".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ConferenceStatusCallbackEvent") {
-        body.insert("ConferenceStatusCallbackEvent".to_string(), val.clone().into());
+        body.insert(
+            "ConferenceStatusCallbackEvent".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("Coaching") {
         body.insert("Coaching".to_string(), val.clone().into());
@@ -5360,16 +5885,25 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
         body.insert("AmdStatusCallbackMethod".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("RecordingStatusCallbackEvent") {
-        body.insert("RecordingStatusCallbackEvent".to_string(), val.clone().into());
+        body.insert(
+            "RecordingStatusCallbackEvent".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ConferenceRecordingStatusCallback") {
-        body.insert("ConferenceRecordingStatusCallback".to_string(), val.clone().into());
+        body.insert(
+            "ConferenceRecordingStatusCallback".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("Muted") {
         body.insert("Muted".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("RecordingStatusCallbackMethod") {
-        body.insert("RecordingStatusCallbackMethod".to_string(), val.clone().into());
+        body.insert(
+            "RecordingStatusCallbackMethod".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ConferenceTrim") {
         body.insert("ConferenceTrim".to_string(), val.clone().into());
@@ -5396,7 +5930,10 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
         body.insert("To".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("MachineDetectionSpeechThreshold") {
-        body.insert("MachineDetectionSpeechThreshold".to_string(), val.clone().into());
+        body.insert(
+            "MachineDetectionSpeechThreshold".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("Trim") {
         body.insert("Trim".to_string(), val.clone().into());
@@ -5405,7 +5942,10 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
         body.insert("CallToken".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("ConferenceRecordingStatusCallbackEvent") {
-        body.insert("ConferenceRecordingStatusCallbackEvent".to_string(), val.clone().into());
+        body.insert(
+            "ConferenceRecordingStatusCallbackEvent".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("WaitMethod") {
         body.insert("WaitMethod".to_string(), val.clone().into());
@@ -5417,7 +5957,10 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
         body.insert("Beep".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("MachineDetectionSpeechEndThreshold") {
-        body.insert("MachineDetectionSpeechEndThreshold".to_string(), val.clone().into());
+        body.insert(
+            "MachineDetectionSpeechEndThreshold".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("CallerDisplayName") {
         body.insert("CallerDisplayName".to_string(), val.clone().into());
@@ -5429,13 +5972,19 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
         body.insert("Byoc".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("ConferenceRecordingStatusCallbackMethod") {
-        body.insert("ConferenceRecordingStatusCallbackMethod".to_string(), val.clone().into());
+        body.insert(
+            "ConferenceRecordingStatusCallbackMethod".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ConferenceStatusCallback") {
         body.insert("ConferenceStatusCallback".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("MachineDetectionSilenceTimeout") {
-        body.insert("MachineDetectionSilenceTimeout".to_string(), val.clone().into());
+        body.insert(
+            "MachineDetectionSilenceTimeout".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("From") {
         body.insert("From".to_string(), val.clone().into());
@@ -5487,17 +6036,22 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Participants.json failed: {}", e).into()));
@@ -5516,11 +6070,15 @@ pub async fn twilio_create_participant(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_participant(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_participant(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants/{CallSid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants/{CallSid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5545,17 +6103,22 @@ pub async fn twilio_read_api20100401_participant(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Participants/{{CallSid}}.json failed: {}", e).into()));
@@ -5574,11 +6137,15 @@ pub async fn twilio_read_api20100401_participant(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_participant(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_participant(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants/{CallSid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants/{CallSid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5644,17 +6211,22 @@ pub async fn twilio_update_participant(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Participants/{{CallSid}}.json failed: {}", e).into()));
@@ -5673,11 +6245,15 @@ pub async fn twilio_update_participant(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_participant(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_participant(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants/{CallSid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Participants/{CallSid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5702,17 +6278,22 @@ pub async fn twilio_delete_participant(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Participants/{{CallSid}}.json failed: {}", e).into()));
@@ -5731,11 +6312,14 @@ pub async fn twilio_delete_participant(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_conference_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_conference_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5780,17 +6364,22 @@ pub async fn twilio_list_conference_recording(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Recordings.json failed: {}", e).into()));
@@ -5809,11 +6398,15 @@ pub async fn twilio_list_conference_recording(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_conference_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_conference_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5849,17 +6442,22 @@ pub async fn twilio_update_conference_recording(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -5878,11 +6476,15 @@ pub async fn twilio_update_conference_recording(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_recordings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_recordings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5907,17 +6509,22 @@ pub async fn twilio_read_recordings(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -5936,11 +6543,15 @@ pub async fn twilio_read_recordings(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_conference_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_conference_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Conferences/{ConferenceSid}/Recordings/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -5965,17 +6576,22 @@ pub async fn twilio_delete_conference_recording(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{ConferenceSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -5994,7 +6610,9 @@ pub async fn twilio_delete_conference_recording(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_conference(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_conference(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6020,17 +6638,22 @@ pub async fn twilio_read_api20100401_conference(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{Sid}}.json failed: {}", e).into()));
@@ -6040,7 +6663,7 @@ pub async fn twilio_read_api20100401_conference(context: ActorContext) -> Result
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/Conferences/{Sid}.json
 #[actor(
@@ -6049,7 +6672,9 @@ pub async fn twilio_read_api20100401_conference(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_conference(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_conference(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6089,17 +6714,22 @@ pub async fn twilio_update_conference(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Conferences/{{Sid}}.json failed: {}", e).into()));
@@ -6118,7 +6748,9 @@ pub async fn twilio_update_conference(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_connect_app(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_connect_app(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6155,20 +6787,34 @@ pub async fn twilio_list_connect_app(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/ConnectApps.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/ConnectApps.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6184,7 +6830,9 @@ pub async fn twilio_list_connect_app(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_connect_app(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_connect_app(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6210,17 +6858,22 @@ pub async fn twilio_read_api20100401_connect_app(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/ConnectApps/{{Sid}}.json failed: {}", e).into()));
@@ -6239,7 +6892,9 @@ pub async fn twilio_read_api20100401_connect_app(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_connect_app(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_connect_app(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6294,17 +6949,22 @@ pub async fn twilio_update_connect_app(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/ConnectApps/{{Sid}}.json failed: {}", e).into()));
@@ -6323,7 +6983,9 @@ pub async fn twilio_update_connect_app(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_connect_app(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_connect_app(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6349,17 +7011,22 @@ pub async fn twilio_delete_connect_app(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/ConnectApps/{{Sid}}.json failed: {}", e).into()));
@@ -6378,7 +7045,9 @@ pub async fn twilio_delete_connect_app(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_incoming_phone_number(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_incoming_phone_number(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6427,17 +7096,22 @@ pub async fn twilio_list_incoming_phone_number(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers.json failed: {}", e).into()));
@@ -6456,7 +7130,9 @@ pub async fn twilio_list_incoming_phone_number(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_incoming_phone_number(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_incoming_phone_number(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6556,17 +7232,22 @@ pub async fn twilio_create_incoming_phone_number(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers.json failed: {}", e).into()));
@@ -6576,7 +7257,7 @@ pub async fn twilio_create_incoming_phone_number(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Local.json
 #[actor(
@@ -6585,11 +7266,14 @@ pub async fn twilio_create_incoming_phone_number(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_incoming_phone_number_local(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_incoming_phone_number_local(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Local.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Local.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -6634,17 +7318,22 @@ pub async fn twilio_list_incoming_phone_number_local(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/Local.json failed: {}", e).into()));
@@ -6654,7 +7343,7 @@ pub async fn twilio_list_incoming_phone_number_local(context: ActorContext) -> R
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Local.json
 #[actor(
@@ -6663,11 +7352,14 @@ pub async fn twilio_list_incoming_phone_number_local(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_incoming_phone_number_local(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_incoming_phone_number_local(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Local.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Local.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -6760,17 +7452,22 @@ pub async fn twilio_create_incoming_phone_number_local(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/Local.json failed: {}", e).into()));
@@ -6780,7 +7477,7 @@ pub async fn twilio_create_incoming_phone_number_local(context: ActorContext) ->
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Mobile.json
 #[actor(
@@ -6789,11 +7486,14 @@ pub async fn twilio_create_incoming_phone_number_local(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_incoming_phone_number_mobile(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_incoming_phone_number_mobile(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Mobile.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Mobile.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -6838,17 +7538,22 @@ pub async fn twilio_list_incoming_phone_number_mobile(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/Mobile.json failed: {}", e).into()));
@@ -6858,7 +7563,7 @@ pub async fn twilio_list_incoming_phone_number_mobile(context: ActorContext) -> 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Mobile.json
 #[actor(
@@ -6867,11 +7572,14 @@ pub async fn twilio_list_incoming_phone_number_mobile(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_incoming_phone_number_mobile(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_incoming_phone_number_mobile(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Mobile.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/Mobile.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -6964,17 +7672,22 @@ pub async fn twilio_create_incoming_phone_number_mobile(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/Mobile.json failed: {}", e).into()));
@@ -6984,7 +7697,7 @@ pub async fn twilio_create_incoming_phone_number_mobile(context: ActorContext) -
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/TollFree.json
 #[actor(
@@ -6993,11 +7706,14 @@ pub async fn twilio_create_incoming_phone_number_mobile(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_incoming_phone_number_toll_free(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_incoming_phone_number_toll_free(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/TollFree.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/TollFree.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7042,17 +7758,22 @@ pub async fn twilio_list_incoming_phone_number_toll_free(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/TollFree.json failed: {}", e).into()));
@@ -7062,7 +7783,7 @@ pub async fn twilio_list_incoming_phone_number_toll_free(context: ActorContext) 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/TollFree.json
 #[actor(
@@ -7071,11 +7792,14 @@ pub async fn twilio_list_incoming_phone_number_toll_free(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_incoming_phone_number_toll_free(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_incoming_phone_number_toll_free(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/TollFree.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/TollFree.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7168,17 +7892,22 @@ pub async fn twilio_create_incoming_phone_number_toll_free(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/TollFree.json failed: {}", e).into()));
@@ -7197,11 +7926,15 @@ pub async fn twilio_create_incoming_phone_number_toll_free(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_incoming_phone_number_assigned_add_on(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_incoming_phone_number_assigned_add_on(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{ResourceSid}/AssignedAddOns.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{ResourceSid}/AssignedAddOns.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7237,17 +7970,22 @@ pub async fn twilio_list_incoming_phone_number_assigned_add_on(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{ResourceSid}}/AssignedAddOns.json failed: {}", e).into()));
@@ -7266,11 +8004,15 @@ pub async fn twilio_list_incoming_phone_number_assigned_add_on(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_incoming_phone_number_assigned_add_on(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_incoming_phone_number_assigned_add_on(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{ResourceSid}/AssignedAddOns.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{ResourceSid}/AssignedAddOns.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7300,17 +8042,22 @@ pub async fn twilio_create_incoming_phone_number_assigned_add_on(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{ResourceSid}}/AssignedAddOns.json failed: {}", e).into()));
@@ -7329,7 +8076,9 @@ pub async fn twilio_create_incoming_phone_number_assigned_add_on(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_incoming_phone_number_assigned_add_on_extension(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_incoming_phone_number_assigned_add_on_extension(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7372,17 +8121,22 @@ pub async fn twilio_list_incoming_phone_number_assigned_add_on_extension(context
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{ResourceSid}}/AssignedAddOns/{{AssignedAddOnSid}}/Extensions.json failed: {}", e).into()));
@@ -7401,7 +8155,9 @@ pub async fn twilio_list_incoming_phone_number_assigned_add_on_extension(context
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_extensions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_extensions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7433,17 +8189,22 @@ pub async fn twilio_read_extensions(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{ResourceSid}}/AssignedAddOns/{{AssignedAddOnSid}}/Extensions/{{Sid}}.json failed: {}", e).into()));
@@ -7462,7 +8223,9 @@ pub async fn twilio_read_extensions(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_assigned_add_on(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_assigned_add_on(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7491,17 +8254,22 @@ pub async fn twilio_read_api20100401_assigned_add_on(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{ResourceSid}}/AssignedAddOns/{{Sid}}.json failed: {}", e).into()));
@@ -7520,7 +8288,9 @@ pub async fn twilio_read_api20100401_assigned_add_on(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_incoming_phone_number_assigned_add_on(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_incoming_phone_number_assigned_add_on(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7549,17 +8319,22 @@ pub async fn twilio_delete_incoming_phone_number_assigned_add_on(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{ResourceSid}}/AssignedAddOns/{{Sid}}.json failed: {}", e).into()));
@@ -7578,11 +8353,14 @@ pub async fn twilio_delete_incoming_phone_number_assigned_add_on(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_incoming_phone_number(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_incoming_phone_number(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7678,17 +8456,22 @@ pub async fn twilio_update_incoming_phone_number(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{Sid}}.json failed: {}", e).into()));
@@ -7707,11 +8490,14 @@ pub async fn twilio_update_incoming_phone_number(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_incoming_phone_numbers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_incoming_phone_numbers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7733,17 +8519,22 @@ pub async fn twilio_read_incoming_phone_numbers(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{Sid}}.json failed: {}", e).into()));
@@ -7762,11 +8553,14 @@ pub async fn twilio_read_incoming_phone_numbers(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_incoming_phone_number(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_incoming_phone_number(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/IncomingPhoneNumbers/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -7788,17 +8582,22 @@ pub async fn twilio_delete_incoming_phone_number(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/IncomingPhoneNumbers/{{Sid}}.json failed: {}", e).into()));
@@ -7808,7 +8607,7 @@ pub async fn twilio_delete_incoming_phone_number(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/Keys.json
 #[actor(
@@ -7817,7 +8616,9 @@ pub async fn twilio_delete_incoming_phone_number(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_new_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_new_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7848,27 +8649,41 @@ pub async fn twilio_create_new_key(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Keys.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Keys.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Keys.json
 #[actor(
@@ -7914,27 +8729,41 @@ pub async fn twilio_list_key(context: ActorContext) -> Result<HashMap<String, Me
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Keys.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Keys.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Keys/{Sid}.json
 #[actor(
@@ -7943,7 +8772,9 @@ pub async fn twilio_list_key(context: ActorContext) -> Result<HashMap<String, Me
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7969,27 +8800,41 @@ pub async fn twilio_read_api20100401_key(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Keys/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Keys/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/Keys/{Sid}.json
 #[actor(
@@ -8032,27 +8877,41 @@ pub async fn twilio_update_key(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Keys/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Keys/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /2010-04-01/Accounts/{AccountSid}/Keys/{Sid}.json
 #[actor(
@@ -8087,20 +8946,34 @@ pub async fn twilio_delete_key(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Keys/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /2010-04-01/Accounts/{{AccountSid}}/Keys/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8116,7 +8989,9 @@ pub async fn twilio_delete_key(context: ActorContext) -> Result<HashMap<String, 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_message(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_message(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8216,20 +9091,34 @@ pub async fn twilio_create_message(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Messages.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Messages.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8297,20 +9186,34 @@ pub async fn twilio_list_message(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Messages.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Messages.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8326,11 +9229,14 @@ pub async fn twilio_list_message(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_message_feedback(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_message_feedback(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Feedback.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Feedback.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -8360,17 +9266,22 @@ pub async fn twilio_create_message_feedback(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Messages/{{MessageSid}}/Feedback.json failed: {}", e).into()));
@@ -8393,7 +9304,8 @@ pub async fn twilio_list_media(context: ActorContext) -> Result<HashMap<String, 
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Media.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Media.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -8438,17 +9350,22 @@ pub async fn twilio_list_media(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Messages/{{MessageSid}}/Media.json failed: {}", e).into()));
@@ -8467,11 +9384,14 @@ pub async fn twilio_list_media(context: ActorContext) -> Result<HashMap<String, 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_media_instance(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_media_instance(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Media/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Media/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -8496,17 +9416,22 @@ pub async fn twilio_read_api20100401_media_instance(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Messages/{{MessageSid}}/Media/{{Sid}}.json failed: {}", e).into()));
@@ -8529,7 +9454,8 @@ pub async fn twilio_delete_media(context: ActorContext) -> Result<HashMap<String
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Media/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Messages/{MessageSid}/Media/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -8554,17 +9480,22 @@ pub async fn twilio_delete_media(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Messages/{{MessageSid}}/Media/{{Sid}}.json failed: {}", e).into()));
@@ -8583,7 +9514,9 @@ pub async fn twilio_delete_media(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_message(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_message(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8609,20 +9542,34 @@ pub async fn twilio_read_api20100401_message(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Messages/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Messages/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8638,7 +9585,9 @@ pub async fn twilio_read_api20100401_message(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_message(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_message(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8675,20 +9624,34 @@ pub async fn twilio_update_message(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Messages/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Messages/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8704,7 +9667,9 @@ pub async fn twilio_update_message(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_message(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_message(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8730,17 +9695,22 @@ pub async fn twilio_delete_message(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Messages/{{Sid}}.json failed: {}", e).into()));
@@ -8759,7 +9729,9 @@ pub async fn twilio_delete_message(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_notification(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_notification(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8808,20 +9780,34 @@ pub async fn twilio_list_notification(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Notifications.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Notifications.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8837,7 +9823,9 @@ pub async fn twilio_list_notification(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_notification(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_notification(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8863,17 +9851,22 @@ pub async fn twilio_read_api20100401_notification(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Notifications/{{Sid}}.json failed: {}", e).into()));
@@ -8892,7 +9885,9 @@ pub async fn twilio_read_api20100401_notification(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_outgoing_caller_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_outgoing_caller_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8935,27 +9930,41 @@ pub async fn twilio_list_outgoing_caller_id(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/OutgoingCallerIds.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/OutgoingCallerIds.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/OutgoingCallerIds.json
 #[actor(
@@ -8964,7 +9973,9 @@ pub async fn twilio_list_outgoing_caller_id(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_validation_request(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_validation_request(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9010,17 +10021,22 @@ pub async fn twilio_create_validation_request(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/OutgoingCallerIds.json failed: {}", e).into()));
@@ -9039,7 +10055,9 @@ pub async fn twilio_create_validation_request(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_outgoing_caller_ids(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_outgoing_caller_ids(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9065,17 +10083,22 @@ pub async fn twilio_read_outgoing_caller_ids(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/OutgoingCallerIds/{{Sid}}.json failed: {}", e).into()));
@@ -9094,7 +10117,9 @@ pub async fn twilio_read_outgoing_caller_ids(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_outgoing_caller_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_outgoing_caller_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9120,17 +10145,22 @@ pub async fn twilio_delete_outgoing_caller_id(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/OutgoingCallerIds/{{Sid}}.json failed: {}", e).into()));
@@ -9149,7 +10179,9 @@ pub async fn twilio_delete_outgoing_caller_id(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_outgoing_caller_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_outgoing_caller_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9183,17 +10215,22 @@ pub async fn twilio_update_outgoing_caller_id(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/OutgoingCallerIds/{{Sid}}.json failed: {}", e).into()));
@@ -9246,20 +10283,34 @@ pub async fn twilio_create_queue(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Queues.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Queues.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9312,20 +10363,34 @@ pub async fn twilio_list_queue(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Queues.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Queues.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9345,7 +10410,8 @@ pub async fn twilio_list_member(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Queues/{QueueSid}/Members.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Queues/{QueueSid}/Members.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -9381,17 +10447,22 @@ pub async fn twilio_list_member(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Queues/{{QueueSid}}/Members.json failed: {}", e).into()));
@@ -9410,11 +10481,14 @@ pub async fn twilio_list_member(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_member(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_member(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Queues/{QueueSid}/Members/{CallSid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Queues/{QueueSid}/Members/{CallSid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -9450,17 +10524,22 @@ pub async fn twilio_update_member(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Queues/{{QueueSid}}/Members/{{CallSid}}.json failed: {}", e).into()));
@@ -9479,11 +10558,14 @@ pub async fn twilio_update_member(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_member(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_member(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Queues/{QueueSid}/Members/{CallSid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Queues/{QueueSid}/Members/{CallSid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -9508,17 +10590,22 @@ pub async fn twilio_read_api20100401_member(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Queues/{{QueueSid}}/Members/{{CallSid}}.json failed: {}", e).into()));
@@ -9537,7 +10624,9 @@ pub async fn twilio_read_api20100401_member(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_queue(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_queue(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9563,20 +10652,34 @@ pub async fn twilio_read_api20100401_queue(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Queues/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Queues/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9618,20 +10721,34 @@ pub async fn twilio_delete_queue(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Queues/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /2010-04-01/Accounts/{{AccountSid}}/Queues/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9684,20 +10801,34 @@ pub async fn twilio_update_queue(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Queues/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Queues/{{Sid}}.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9713,7 +10844,9 @@ pub async fn twilio_update_queue(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9768,27 +10901,41 @@ pub async fn twilio_list_recording(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Recordings.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions.json
 #[actor(
@@ -9797,11 +10944,15 @@ pub async fn twilio_list_recording(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_recording_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_recording_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -9837,17 +10988,22 @@ pub async fn twilio_list_recording_transcription(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{RecordingSid}}/Transcriptions.json failed: {}", e).into()));
@@ -9857,7 +11013,7 @@ pub async fn twilio_list_recording_transcription(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions/{Sid}.json
 #[actor(
@@ -9866,11 +11022,15 @@ pub async fn twilio_list_recording_transcription(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_transcriptions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_transcriptions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -9895,17 +11055,22 @@ pub async fn twilio_read_transcriptions(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{RecordingSid}}/Transcriptions/{{Sid}}.json failed: {}", e).into()));
@@ -9915,7 +11080,7 @@ pub async fn twilio_read_transcriptions(context: ActorContext) -> Result<HashMap
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions/{Sid}.json
 #[actor(
@@ -9924,11 +11089,15 @@ pub async fn twilio_read_transcriptions(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_recording_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_recording_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Recordings/{RecordingSid}/Transcriptions/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -9953,17 +11122,22 @@ pub async fn twilio_delete_recording_transcription(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{RecordingSid}}/Transcriptions/{{Sid}}.json failed: {}", e).into()));
@@ -9982,11 +11156,14 @@ pub async fn twilio_delete_recording_transcription(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_recording_add_on_result(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_recording_add_on_result(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Recordings/{ReferenceSid}/AddOnResults.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Recordings/{ReferenceSid}/AddOnResults.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -10022,17 +11199,22 @@ pub async fn twilio_list_recording_add_on_result(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults.json failed: {}", e).into()));
@@ -10051,7 +11233,9 @@ pub async fn twilio_list_recording_add_on_result(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_recording_add_on_result_payload(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_recording_add_on_result_payload(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10094,17 +11278,22 @@ pub async fn twilio_list_recording_add_on_result_payload(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults/{{AddOnResultSid}}/Payloads.json failed: {}", e).into()));
@@ -10123,7 +11312,9 @@ pub async fn twilio_list_recording_add_on_result_payload(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_data(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_data(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10155,17 +11346,22 @@ pub async fn twilio_read_api20100401_data(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults/{{AddOnResultSid}}/Payloads/{{PayloadSid}}/Data.json failed: {}", e).into()));
@@ -10184,7 +11380,9 @@ pub async fn twilio_read_api20100401_data(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_payload(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_payload(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10216,17 +11414,22 @@ pub async fn twilio_read_api20100401_payload(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults/{{AddOnResultSid}}/Payloads/{{Sid}}.json failed: {}", e).into()));
@@ -10245,7 +11448,9 @@ pub async fn twilio_read_api20100401_payload(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_recording_add_on_result_payload(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_recording_add_on_result_payload(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10277,17 +11482,22 @@ pub async fn twilio_delete_recording_add_on_result_payload(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults/{{AddOnResultSid}}/Payloads/{{Sid}}.json failed: {}", e).into()));
@@ -10306,11 +11516,15 @@ pub async fn twilio_delete_recording_add_on_result_payload(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_add_on_result(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_add_on_result(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Recordings/{ReferenceSid}/AddOnResults/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Recordings/{ReferenceSid}/AddOnResults/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -10335,17 +11549,22 @@ pub async fn twilio_read_api20100401_add_on_result(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults/{{Sid}}.json failed: {}", e).into()));
@@ -10364,11 +11583,15 @@ pub async fn twilio_read_api20100401_add_on_result(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_recording_add_on_result(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_recording_add_on_result(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/Recordings/{ReferenceSid}/AddOnResults/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/Recordings/{ReferenceSid}/AddOnResults/{Sid}.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -10393,17 +11616,22 @@ pub async fn twilio_delete_recording_add_on_result(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{ReferenceSid}}/AddOnResults/{{Sid}}.json failed: {}", e).into()));
@@ -10422,7 +11650,9 @@ pub async fn twilio_delete_recording_add_on_result(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10448,17 +11678,22 @@ pub async fn twilio_delete_recording(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -10477,7 +11712,9 @@ pub async fn twilio_delete_recording(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_recording(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_recording(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10511,17 +11748,22 @@ pub async fn twilio_read_api20100401_recording(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Recordings/{{Sid}}.json failed: {}", e).into()));
@@ -10540,7 +11782,9 @@ pub async fn twilio_read_api20100401_recording(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_credential_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_credential_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10577,17 +11821,22 @@ pub async fn twilio_list_sip_credential_list(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists.json failed: {}", e).into()));
@@ -10606,7 +11855,9 @@ pub async fn twilio_list_sip_credential_list(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_credential_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_credential_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10637,17 +11888,22 @@ pub async fn twilio_create_sip_credential_list(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists.json failed: {}", e).into()));
@@ -10666,7 +11922,9 @@ pub async fn twilio_create_sip_credential_list(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_credential(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_credential(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10703,17 +11961,22 @@ pub async fn twilio_create_sip_credential(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{CredentialListSid}}/Credentials.json failed: {}", e).into()));
@@ -10732,7 +11995,9 @@ pub async fn twilio_create_sip_credential(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_credential(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_credential(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10772,17 +12037,22 @@ pub async fn twilio_list_sip_credential(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{CredentialListSid}}/Credentials.json failed: {}", e).into()));
@@ -10801,7 +12071,9 @@ pub async fn twilio_list_sip_credential(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_credential(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_credential(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10830,17 +12102,22 @@ pub async fn twilio_read_api20100401_credential(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{CredentialListSid}}/Credentials/{{Sid}}.json failed: {}", e).into()));
@@ -10859,7 +12136,9 @@ pub async fn twilio_read_api20100401_credential(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_credential(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_credential(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10888,17 +12167,22 @@ pub async fn twilio_delete_sip_credential(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{CredentialListSid}}/Credentials/{{Sid}}.json failed: {}", e).into()));
@@ -10917,7 +12201,9 @@ pub async fn twilio_delete_sip_credential(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_sip_credential(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_sip_credential(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10954,17 +12240,22 @@ pub async fn twilio_update_sip_credential(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{CredentialListSid}}/Credentials/{{Sid}}.json failed: {}", e).into()));
@@ -10983,11 +12274,14 @@ pub async fn twilio_update_sip_credential(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_credential_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_credential_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/CredentialLists/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/CredentialLists/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -11009,17 +12303,22 @@ pub async fn twilio_delete_sip_credential_list(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{Sid}}.json failed: {}", e).into()));
@@ -11038,11 +12337,14 @@ pub async fn twilio_delete_sip_credential_list(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_credential_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_credential_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/CredentialLists/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/CredentialLists/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -11064,17 +12366,22 @@ pub async fn twilio_read_api20100401_credential_list(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{Sid}}.json failed: {}", e).into()));
@@ -11093,11 +12400,14 @@ pub async fn twilio_read_api20100401_credential_list(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_sip_credential_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_sip_credential_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/CredentialLists/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/CredentialLists/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -11127,17 +12437,22 @@ pub async fn twilio_update_sip_credential_list(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/CredentialLists/{{Sid}}.json failed: {}", e).into()));
@@ -11156,7 +12471,9 @@ pub async fn twilio_update_sip_credential_list(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_domain(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_domain(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11223,20 +12540,34 @@ pub async fn twilio_create_sip_domain(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11252,7 +12583,9 @@ pub async fn twilio_create_sip_domain(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_domain(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_domain(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11289,20 +12622,34 @@ pub async fn twilio_list_sip_domain(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11318,7 +12665,9 @@ pub async fn twilio_list_sip_domain(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_auth_calls_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_auth_calls_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11352,17 +12701,22 @@ pub async fn twilio_create_sip_auth_calls_credential_list_mapping(context: Actor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/CredentialListMappings.json failed: {}", e).into()));
@@ -11381,7 +12735,9 @@ pub async fn twilio_create_sip_auth_calls_credential_list_mapping(context: Actor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_auth_calls_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_auth_calls_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11421,17 +12777,22 @@ pub async fn twilio_list_sip_auth_calls_credential_list_mapping(context: ActorCo
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/CredentialListMappings.json failed: {}", e).into()));
@@ -11450,7 +12811,9 @@ pub async fn twilio_list_sip_auth_calls_credential_list_mapping(context: ActorCo
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_auth_calls_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_auth_calls_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11479,17 +12842,22 @@ pub async fn twilio_delete_sip_auth_calls_credential_list_mapping(context: Actor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/CredentialListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -11508,7 +12876,9 @@ pub async fn twilio_delete_sip_auth_calls_credential_list_mapping(context: Actor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_credential_list_mappings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_credential_list_mappings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11537,17 +12907,22 @@ pub async fn twilio_read_credential_list_mappings(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/CredentialListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -11566,7 +12941,9 @@ pub async fn twilio_read_credential_list_mappings(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_auth_calls_ip_access_control_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_auth_calls_ip_access_control_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11606,17 +12983,22 @@ pub async fn twilio_list_sip_auth_calls_ip_access_control_list_mapping(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/IpAccessControlListMappings.json failed: {}", e).into()));
@@ -11635,7 +13017,9 @@ pub async fn twilio_list_sip_auth_calls_ip_access_control_list_mapping(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_auth_calls_ip_access_control_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_auth_calls_ip_access_control_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11669,17 +13053,22 @@ pub async fn twilio_create_sip_auth_calls_ip_access_control_list_mapping(context
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/IpAccessControlListMappings.json failed: {}", e).into()));
@@ -11698,7 +13087,9 @@ pub async fn twilio_create_sip_auth_calls_ip_access_control_list_mapping(context
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_ip_access_control_list_mappings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_ip_access_control_list_mappings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11727,17 +13118,22 @@ pub async fn twilio_read_ip_access_control_list_mappings(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/IpAccessControlListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -11756,7 +13152,9 @@ pub async fn twilio_read_ip_access_control_list_mappings(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_auth_calls_ip_access_control_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_auth_calls_ip_access_control_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11785,17 +13183,22 @@ pub async fn twilio_delete_sip_auth_calls_ip_access_control_list_mapping(context
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Calls/IpAccessControlListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -11814,7 +13217,9 @@ pub async fn twilio_delete_sip_auth_calls_ip_access_control_list_mapping(context
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_auth_registrations_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_auth_registrations_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11848,17 +13253,22 @@ pub async fn twilio_create_sip_auth_registrations_credential_list_mapping(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Registrations/CredentialListMappings.json failed: {}", e).into()));
@@ -11877,7 +13287,9 @@ pub async fn twilio_create_sip_auth_registrations_credential_list_mapping(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_auth_registrations_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_auth_registrations_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11917,17 +13329,22 @@ pub async fn twilio_list_sip_auth_registrations_credential_list_mapping(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Registrations/CredentialListMappings.json failed: {}", e).into()));
@@ -11946,7 +13363,9 @@ pub async fn twilio_list_sip_auth_registrations_credential_list_mapping(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_auth_registrations_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_auth_registrations_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11975,17 +13394,22 @@ pub async fn twilio_delete_sip_auth_registrations_credential_list_mapping(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/Auth/Registrations/CredentialListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -12004,11 +13428,15 @@ pub async fn twilio_delete_sip_auth_registrations_credential_list_mapping(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/Domains/{DomainSid}/CredentialListMappings.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/Domains/{DomainSid}/CredentialListMappings.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -12044,17 +13472,22 @@ pub async fn twilio_list_sip_credential_list_mapping(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/CredentialListMappings.json failed: {}", e).into()));
@@ -12073,11 +13506,15 @@ pub async fn twilio_list_sip_credential_list_mapping(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/Domains/{DomainSid}/CredentialListMappings.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/Domains/{DomainSid}/CredentialListMappings.json"
+            .to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -12107,17 +13544,22 @@ pub async fn twilio_create_sip_credential_list_mapping(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/CredentialListMappings.json failed: {}", e).into()));
@@ -12136,7 +13578,9 @@ pub async fn twilio_create_sip_credential_list_mapping(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_credential_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_credential_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12165,17 +13609,22 @@ pub async fn twilio_delete_sip_credential_list_mapping(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/CredentialListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -12194,7 +13643,9 @@ pub async fn twilio_delete_sip_credential_list_mapping(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_ip_access_control_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_ip_access_control_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12234,17 +13685,22 @@ pub async fn twilio_list_sip_ip_access_control_list_mapping(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/IpAccessControlListMappings.json failed: {}", e).into()));
@@ -12263,7 +13719,9 @@ pub async fn twilio_list_sip_ip_access_control_list_mapping(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_ip_access_control_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_ip_access_control_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12297,17 +13755,22 @@ pub async fn twilio_create_sip_ip_access_control_list_mapping(context: ActorCont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/IpAccessControlListMappings.json failed: {}", e).into()));
@@ -12326,7 +13789,9 @@ pub async fn twilio_create_sip_ip_access_control_list_mapping(context: ActorCont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_ip_access_control_list_mapping(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_ip_access_control_list_mapping(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12355,17 +13820,22 @@ pub async fn twilio_delete_sip_ip_access_control_list_mapping(context: ActorCont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{DomainSid}}/IpAccessControlListMappings/{{Sid}}.json failed: {}", e).into()));
@@ -12384,7 +13854,9 @@ pub async fn twilio_delete_sip_ip_access_control_list_mapping(context: ActorCont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_domain(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_domain(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12410,17 +13882,22 @@ pub async fn twilio_read_api20100401_domain(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{Sid}}.json failed: {}", e).into()));
@@ -12439,7 +13916,9 @@ pub async fn twilio_read_api20100401_domain(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_sip_domain(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_sip_domain(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12509,17 +13988,22 @@ pub async fn twilio_update_sip_domain(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{Sid}}.json failed: {}", e).into()));
@@ -12538,7 +14022,9 @@ pub async fn twilio_update_sip_domain(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_domain(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_domain(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12564,17 +14050,22 @@ pub async fn twilio_delete_sip_domain(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/Domains/{{Sid}}.json failed: {}", e).into()));
@@ -12593,11 +14084,14 @@ pub async fn twilio_delete_sip_domain(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_ip_access_control_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_ip_access_control_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -12624,17 +14118,22 @@ pub async fn twilio_create_sip_ip_access_control_list(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists.json failed: {}", e).into()));
@@ -12653,11 +14152,14 @@ pub async fn twilio_create_sip_ip_access_control_list(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_ip_access_control_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_ip_access_control_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -12690,17 +14192,22 @@ pub async fn twilio_list_sip_ip_access_control_list(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists.json failed: {}", e).into()));
@@ -12719,7 +14226,9 @@ pub async fn twilio_list_sip_ip_access_control_list(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_sip_ip_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_sip_ip_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12759,17 +14268,22 @@ pub async fn twilio_list_sip_ip_address(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{IpAccessControlListSid}}/IpAddresses.json failed: {}", e).into()));
@@ -12788,7 +14302,9 @@ pub async fn twilio_list_sip_ip_address(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_sip_ip_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_sip_ip_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12828,17 +14344,22 @@ pub async fn twilio_create_sip_ip_address(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{IpAccessControlListSid}}/IpAddresses.json failed: {}", e).into()));
@@ -12857,7 +14378,9 @@ pub async fn twilio_create_sip_ip_address(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_sip_ip_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_sip_ip_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12886,17 +14409,22 @@ pub async fn twilio_read_api20100401_sip_ip_address(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{IpAccessControlListSid}}/IpAddresses/{{Sid}}.json failed: {}", e).into()));
@@ -12915,7 +14443,9 @@ pub async fn twilio_read_api20100401_sip_ip_address(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_sip_ip_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_sip_ip_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12958,17 +14488,22 @@ pub async fn twilio_update_sip_ip_address(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{IpAccessControlListSid}}/IpAddresses/{{Sid}}.json failed: {}", e).into()));
@@ -12987,7 +14522,9 @@ pub async fn twilio_update_sip_ip_address(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_ip_address(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_ip_address(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13016,17 +14553,22 @@ pub async fn twilio_delete_sip_ip_address(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{IpAccessControlListSid}}/IpAddresses/{{Sid}}.json failed: {}", e).into()));
@@ -13045,11 +14587,14 @@ pub async fn twilio_delete_sip_ip_address(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_sip_ip_access_control_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_sip_ip_access_control_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -13071,17 +14616,22 @@ pub async fn twilio_delete_sip_ip_access_control_list(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{Sid}}.json failed: {}", e).into()));
@@ -13100,11 +14650,14 @@ pub async fn twilio_delete_sip_ip_access_control_list(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_ip_access_control_lists(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_ip_access_control_lists(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -13126,17 +14679,22 @@ pub async fn twilio_read_ip_access_control_lists(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{Sid}}.json failed: {}", e).into()));
@@ -13155,11 +14713,14 @@ pub async fn twilio_read_ip_access_control_lists(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_sip_ip_access_control_list(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_sip_ip_access_control_list(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists/{Sid}.json".to_string();
+    let mut endpoint =
+        "/2010-04-01/Accounts/{AccountSid}/SIP/IpAccessControlLists/{Sid}.json".to_string();
     if let Some(val) = inputs.get("AccountSid") {
         endpoint = endpoint.replace("{{AccountSid}}", &super::message_to_str(val));
     }
@@ -13189,17 +14750,22 @@ pub async fn twilio_update_sip_ip_access_control_list(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SIP/IpAccessControlLists/{{Sid}}.json failed: {}", e).into()));
@@ -13218,7 +14784,9 @@ pub async fn twilio_update_sip_ip_access_control_list(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_short_code(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_short_code(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13261,20 +14829,34 @@ pub async fn twilio_list_short_code(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SMS/ShortCodes.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/SMS/ShortCodes.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13290,7 +14872,9 @@ pub async fn twilio_list_short_code(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_short_code(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_short_code(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13339,17 +14923,22 @@ pub async fn twilio_update_short_code(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SMS/ShortCodes/{{Sid}}.json failed: {}", e).into()));
@@ -13368,7 +14957,9 @@ pub async fn twilio_update_short_code(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_short_code(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_short_code(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13394,17 +14985,22 @@ pub async fn twilio_read_api20100401_short_code(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SMS/ShortCodes/{{Sid}}.json failed: {}", e).into()));
@@ -13423,7 +15019,9 @@ pub async fn twilio_read_api20100401_short_code(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_new_signing_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_new_signing_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13454,27 +15052,41 @@ pub async fn twilio_create_new_signing_key(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SigningKeys.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/SigningKeys.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/SigningKeys.json
 #[actor(
@@ -13483,7 +15095,9 @@ pub async fn twilio_create_new_signing_key(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_signing_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_signing_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13520,27 +15134,41 @@ pub async fn twilio_list_signing_key(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SigningKeys.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/SigningKeys.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /2010-04-01/Accounts/{AccountSid}/SigningKeys/{Sid}.json
 #[actor(
@@ -13549,7 +15177,9 @@ pub async fn twilio_list_signing_key(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_signing_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_signing_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13575,17 +15205,22 @@ pub async fn twilio_delete_signing_key(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/SigningKeys/{{Sid}}.json failed: {}", e).into()));
@@ -13595,7 +15230,7 @@ pub async fn twilio_delete_signing_key(context: ActorContext) -> Result<HashMap<
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /2010-04-01/Accounts/{AccountSid}/SigningKeys/{Sid}.json
 #[actor(
@@ -13604,7 +15239,9 @@ pub async fn twilio_delete_signing_key(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_signing_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_signing_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13638,17 +15275,22 @@ pub async fn twilio_update_signing_key(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/SigningKeys/{{Sid}}.json failed: {}", e).into()));
@@ -13658,7 +15300,7 @@ pub async fn twilio_update_signing_key(context: ActorContext) -> Result<HashMap<
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/SigningKeys/{Sid}.json
 #[actor(
@@ -13667,7 +15309,9 @@ pub async fn twilio_update_signing_key(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_signing_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_signing_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13693,17 +15337,22 @@ pub async fn twilio_read_api20100401_signing_key(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/SigningKeys/{{Sid}}.json failed: {}", e).into()));
@@ -13753,20 +15402,34 @@ pub async fn twilio_create_token(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Tokens.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Tokens.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13782,7 +15445,9 @@ pub async fn twilio_create_token(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13819,20 +15484,34 @@ pub async fn twilio_list_transcription(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Transcriptions.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Transcriptions.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13848,7 +15527,9 @@ pub async fn twilio_list_transcription(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13874,17 +15555,22 @@ pub async fn twilio_read_api20100401_transcription(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Transcriptions/{{Sid}}.json failed: {}", e).into()));
@@ -13903,7 +15589,9 @@ pub async fn twilio_read_api20100401_transcription(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_transcription(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_transcription(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13929,17 +15617,22 @@ pub async fn twilio_delete_transcription(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Transcriptions/{{Sid}}.json failed: {}", e).into()));
@@ -13958,7 +15651,9 @@ pub async fn twilio_delete_transcription(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14007,27 +15702,41 @@ pub async fn twilio_list_usage_record(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/AllTime.json
 #[actor(
@@ -14036,7 +15745,9 @@ pub async fn twilio_list_usage_record(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_all_time(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_all_time(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14085,17 +15796,22 @@ pub async fn twilio_list_usage_record_all_time(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/AllTime.json failed: {}", e).into()));
@@ -14105,7 +15821,7 @@ pub async fn twilio_list_usage_record_all_time(context: ActorContext) -> Result<
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/Daily.json
 #[actor(
@@ -14114,7 +15830,9 @@ pub async fn twilio_list_usage_record_all_time(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_daily(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_daily(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14163,17 +15881,22 @@ pub async fn twilio_list_usage_record_daily(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/Daily.json failed: {}", e).into()));
@@ -14183,7 +15906,7 @@ pub async fn twilio_list_usage_record_daily(context: ActorContext) -> Result<Has
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/LastMonth.json
 #[actor(
@@ -14192,7 +15915,9 @@ pub async fn twilio_list_usage_record_daily(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_last_month(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_last_month(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14241,17 +15966,22 @@ pub async fn twilio_list_usage_record_last_month(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/LastMonth.json failed: {}", e).into()));
@@ -14261,7 +15991,7 @@ pub async fn twilio_list_usage_record_last_month(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/Monthly.json
 #[actor(
@@ -14270,7 +16000,9 @@ pub async fn twilio_list_usage_record_last_month(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_monthly(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_monthly(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14319,17 +16051,22 @@ pub async fn twilio_list_usage_record_monthly(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/Monthly.json failed: {}", e).into()));
@@ -14339,7 +16076,7 @@ pub async fn twilio_list_usage_record_monthly(context: ActorContext) -> Result<H
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/ThisMonth.json
 #[actor(
@@ -14348,7 +16085,9 @@ pub async fn twilio_list_usage_record_monthly(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_this_month(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_this_month(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14397,17 +16136,22 @@ pub async fn twilio_list_usage_record_this_month(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/ThisMonth.json failed: {}", e).into()));
@@ -14417,7 +16161,7 @@ pub async fn twilio_list_usage_record_this_month(context: ActorContext) -> Resul
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/Today.json
 #[actor(
@@ -14426,7 +16170,9 @@ pub async fn twilio_list_usage_record_this_month(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_today(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_today(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14475,17 +16221,22 @@ pub async fn twilio_list_usage_record_today(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/Today.json failed: {}", e).into()));
@@ -14495,7 +16246,7 @@ pub async fn twilio_list_usage_record_today(context: ActorContext) -> Result<Has
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/Yearly.json
 #[actor(
@@ -14504,7 +16255,9 @@ pub async fn twilio_list_usage_record_today(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_yearly(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_yearly(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14553,17 +16306,22 @@ pub async fn twilio_list_usage_record_yearly(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/Yearly.json failed: {}", e).into()));
@@ -14573,7 +16331,7 @@ pub async fn twilio_list_usage_record_yearly(context: ActorContext) -> Result<Ha
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /2010-04-01/Accounts/{AccountSid}/Usage/Records/Yesterday.json
 #[actor(
@@ -14582,7 +16340,9 @@ pub async fn twilio_list_usage_record_yearly(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_record_yesterday(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_record_yesterday(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14631,17 +16391,22 @@ pub async fn twilio_list_usage_record_yesterday(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Records/Yesterday.json failed: {}", e).into()));
@@ -14660,7 +16425,9 @@ pub async fn twilio_list_usage_record_yesterday(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_create_usage_trigger(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_create_usage_trigger(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14709,20 +16476,34 @@ pub async fn twilio_create_usage_trigger(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14738,7 +16519,9 @@ pub async fn twilio_create_usage_trigger(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_list_usage_trigger(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_list_usage_trigger(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14784,20 +16567,34 @@ pub async fn twilio_list_usage_trigger(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers.json failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14813,7 +16610,9 @@ pub async fn twilio_list_usage_trigger(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_usage_trigger(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_usage_trigger(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14853,17 +16652,22 @@ pub async fn twilio_update_usage_trigger(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers/{{Sid}}.json failed: {}", e).into()));
@@ -14882,7 +16686,9 @@ pub async fn twilio_update_usage_trigger(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_trigger(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_trigger(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14908,17 +16714,22 @@ pub async fn twilio_read_api20100401_trigger(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers/{{Sid}}.json failed: {}", e).into()));
@@ -14928,7 +16739,7 @@ pub async fn twilio_read_api20100401_trigger(context: ActorContext) -> Result<Ha
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /2010-04-01/Accounts/{AccountSid}/Usage/Triggers/{Sid}.json
 #[actor(
@@ -14937,7 +16748,9 @@ pub async fn twilio_read_api20100401_trigger(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_delete_usage_trigger(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_delete_usage_trigger(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14963,17 +16776,22 @@ pub async fn twilio_delete_usage_trigger(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /2010-04-01/Accounts/{{AccountSid}}/Usage/Triggers/{{Sid}}.json failed: {}", e).into()));
@@ -14992,7 +16810,9 @@ pub async fn twilio_delete_usage_trigger(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_read_api20100401_account(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_read_api20100401_account(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15015,20 +16835,30 @@ pub async fn twilio_read_api20100401_account(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /2010-04-01/Accounts/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /2010-04-01/Accounts/{{Sid}}.json failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -15044,7 +16874,9 @@ pub async fn twilio_read_api20100401_account(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn twilio_update_account(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn twilio_update_account(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15078,23 +16910,32 @@ pub async fn twilio_update_account(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /2010-04-01/Accounts/{{Sid}}.json failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /2010-04-01/Accounts/{{Sid}}.json failed: {}", e).into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
-

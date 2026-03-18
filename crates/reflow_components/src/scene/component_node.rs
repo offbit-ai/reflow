@@ -52,9 +52,7 @@ use std::collections::HashMap;
     outports::<1>(output, metadata),
     state(MemoryState)
 )]
-pub async fn component_node_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn component_node_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -91,7 +89,10 @@ pub async fn component_node_actor(
     // Entity from inport (dynamic) or config (static)
     let entity = match payload.get("entity") {
         Some(Message::String(s)) => Some(s.to_string()),
-        _ => config.get("entity").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        _ => config
+            .get("entity")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
     };
 
     // Write to AssetDB when entity is known

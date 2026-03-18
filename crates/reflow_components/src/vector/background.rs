@@ -38,13 +38,18 @@ pub async fn background_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     if let Some(Message::Object(obj)) = payload.get("params") {
         let v: Value = obj.as_ref().clone().into();
         if let Value::Object(map) = v {
-            for (k, v) in map { params.insert(k, v); }
+            for (k, v) in map {
+                params.insert(k, v);
+            }
         }
     }
 
     let width = params.get("width").and_then(|v| v.as_u64()).unwrap_or(1280) as usize;
     let height = params.get("height").and_then(|v| v.as_u64()).unwrap_or(720) as usize;
-    let bg_type = params.get("type").and_then(|v| v.as_str()).unwrap_or("solid");
+    let bg_type = params
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("solid");
 
     let mut buf = vec![0u8; width * height * 4];
 
@@ -72,12 +77,16 @@ pub async fn background_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
         "radialGradient" => {
             let from = parse_rgba(&params, "from", [255, 255, 255, 255]);
             let to = parse_rgba(&params, "to", [0, 0, 0, 255]);
-            let center = params.get("center").and_then(|v| v.as_array()).map(|a| {
-                [
-                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.5),
-                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.5),
-                ]
-            }).unwrap_or([0.5, 0.5]);
+            let center = params
+                .get("center")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    [
+                        a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.5),
+                        a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.5),
+                    ]
+                })
+                .unwrap_or([0.5, 0.5]);
             let radius = params.get("radius").and_then(|v| v.as_f64()).unwrap_or(0.8);
 
             for y in 0..height {
@@ -119,12 +128,24 @@ pub async fn background_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
 }
 
 fn parse_rgba(params: &HashMap<String, Value>, key: &str, default: [u8; 4]) -> [u8; 4] {
-    params.get(key).and_then(|v| v.as_array()).map(|a| {
-        [
-            a.get(0).and_then(|v| v.as_u64()).unwrap_or(default[0] as u64) as u8,
-            a.get(1).and_then(|v| v.as_u64()).unwrap_or(default[1] as u64) as u8,
-            a.get(2).and_then(|v| v.as_u64()).unwrap_or(default[2] as u64) as u8,
-            a.get(3).and_then(|v| v.as_u64()).unwrap_or(default[3] as u64) as u8,
-        ]
-    }).unwrap_or(default)
+    params
+        .get(key)
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            [
+                a.get(0)
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(default[0] as u64) as u8,
+                a.get(1)
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(default[1] as u64) as u8,
+                a.get(2)
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(default[2] as u64) as u8,
+                a.get(3)
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(default[3] as u64) as u8,
+            ]
+        })
+        .unwrap_or(default)
 }

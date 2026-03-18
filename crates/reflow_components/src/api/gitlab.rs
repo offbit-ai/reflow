@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://gitlab.com/api/v4";
 const ENV_KEY: &str = "GITLAB_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -37,7 +41,9 @@ fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestB
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_list_projects(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_list_projects(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -68,20 +74,28 @@ pub async fn gitlab_list_projects(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /projects failed: {}", e).into()),
+            );
         }
     }
 
@@ -131,20 +145,28 @@ pub async fn gitlab_create_issue(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/issues failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /projects/{{id}}/issues failed: {}", e).into()),
+            );
         }
     }
 
@@ -160,7 +182,9 @@ pub async fn gitlab_create_issue(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_merge_request(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_merge_request(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -197,20 +221,30 @@ pub async fn gitlab_create_merge_request(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/merge_requests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /projects/{{id}}/merge_requests failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -226,7 +260,9 @@ pub async fn gitlab_create_merge_request(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_batched_background_migrations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_batched_background_migrations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -254,20 +290,30 @@ pub async fn gitlab_read_api_v4_admin_batched_background_migrations(context: Act
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /admin/batched_background_migrations failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /admin/batched_background_migrations failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -283,7 +329,9 @@ pub async fn gitlab_read_api_v4_admin_batched_background_migrations(context: Act
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_batched_background_migrations_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_batched_background_migrations_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -314,20 +362,34 @@ pub async fn gitlab_read_api_v4_admin_batched_background_migrations_id(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /admin/batched_background_migrations/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /admin/batched_background_migrations/{{id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -343,7 +405,9 @@ pub async fn gitlab_read_api_v4_admin_batched_background_migrations_id(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_pause(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_pause(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -374,20 +438,34 @@ pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_pause(c
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /admin/batched_background_migrations/{{id}}/pause failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /admin/batched_background_migrations/{{id}}/pause failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -403,7 +481,9 @@ pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_pause(c
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_resume(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_resume(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -434,20 +514,34 @@ pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_resume(
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /admin/batched_background_migrations/{{id}}/resume failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /admin/batched_background_migrations/{{id}}/resume failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -463,7 +557,9 @@ pub async fn gitlab_update_api_v4_admin_batched_background_migrations_id_resume(
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_admin_ci_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_admin_ci_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -506,20 +602,28 @@ pub async fn gitlab_create_api_v4_admin_ci_variables(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /admin/ci/variables failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /admin/ci/variables failed: {}", e).into()),
+            );
         }
     }
 
@@ -535,7 +639,9 @@ pub async fn gitlab_create_api_v4_admin_ci_variables(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_ci_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_ci_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -566,20 +672,28 @@ pub async fn gitlab_read_api_v4_admin_ci_variables(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /admin/ci/variables failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /admin/ci/variables failed: {}", e).into()),
+            );
         }
     }
 
@@ -595,7 +709,9 @@ pub async fn gitlab_read_api_v4_admin_ci_variables(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_admin_ci_variables_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_admin_ci_variables_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -618,20 +734,28 @@ pub async fn gitlab_delete_api_v4_admin_ci_variables_key(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /admin/ci/variables/{{key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /admin/ci/variables/{{key}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -647,7 +771,9 @@ pub async fn gitlab_delete_api_v4_admin_ci_variables_key(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_ci_variables_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_ci_variables_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -670,20 +796,28 @@ pub async fn gitlab_read_api_v4_admin_ci_variables_key(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /admin/ci/variables/{{key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /admin/ci/variables/{{key}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -699,7 +833,9 @@ pub async fn gitlab_read_api_v4_admin_ci_variables_key(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_admin_ci_variables_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_admin_ci_variables_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -742,20 +878,28 @@ pub async fn gitlab_update_api_v4_admin_ci_variables_key(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /admin/ci/variables/{{key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /admin/ci/variables/{{key}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -771,7 +915,9 @@ pub async fn gitlab_update_api_v4_admin_ci_variables_key(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_clusters(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_clusters(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -791,20 +937,28 @@ pub async fn gitlab_read_api_v4_admin_clusters(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /admin/clusters failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /admin/clusters failed: {}", e).into()),
+            );
         }
     }
 
@@ -820,7 +974,9 @@ pub async fn gitlab_read_api_v4_admin_clusters(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_admin_clusters_add(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -838,7 +994,10 @@ pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> R
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("platform_kubernetes_attributes_namespace") {
-        body.insert("platform_kubernetes_attributes[namespace]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[namespace]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
@@ -853,7 +1012,10 @@ pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> R
         body.insert("domain".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_api_url") {
-        body.insert("platform_kubernetes_attributes[api_url]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[api_url]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("environment_scope") {
         body.insert("environment_scope".to_string(), val.clone().into());
@@ -865,13 +1027,22 @@ pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> R
         body.insert("enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_token") {
-        body.insert("platform_kubernetes_attributes[token]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[token]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_ca_cert") {
-        body.insert("platform_kubernetes_attributes[ca_cert]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[ca_cert]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_authorization_type") {
-        body.insert("platform_kubernetes_attributes[authorization_type]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[authorization_type]".to_string(),
+            val.clone().into(),
+        );
     }
     if !body.is_empty() {
         builder = builder.json(&serde_json::Value::Object(body));
@@ -881,20 +1052,28 @@ pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /admin/clusters/add failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /admin/clusters/add failed: {}", e).into()),
+            );
         }
     }
 
@@ -910,7 +1089,9 @@ pub async fn gitlab_create_api_v4_admin_clusters_add(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_admin_clusters_cluster_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_admin_clusters_cluster_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -946,22 +1127,34 @@ pub async fn gitlab_update_api_v4_admin_clusters_cluster_id(context: ActorContex
         body.insert("management_project_id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_namespace") {
-        body.insert("platform_kubernetes_attributes[namespace]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[namespace]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_api_url") {
-        body.insert("platform_kubernetes_attributes[api_url]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[api_url]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_ca_cert") {
-        body.insert("platform_kubernetes_attributes[ca_cert]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[ca_cert]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("managed") {
         body.insert("managed".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("platform_kubernetes_attributes_token") {
-        body.insert("platform_kubernetes_attributes[token]".to_string(), val.clone().into());
+        body.insert(
+            "platform_kubernetes_attributes[token]".to_string(),
+            val.clone().into(),
+        );
     }
     if !body.is_empty() {
         builder = builder.json(&serde_json::Value::Object(body));
@@ -971,20 +1164,28 @@ pub async fn gitlab_update_api_v4_admin_clusters_cluster_id(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /admin/clusters/{{cluster_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /admin/clusters/{{cluster_id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1000,7 +1201,9 @@ pub async fn gitlab_update_api_v4_admin_clusters_cluster_id(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_clusters_cluster_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_clusters_cluster_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1023,20 +1226,28 @@ pub async fn gitlab_read_api_v4_admin_clusters_cluster_id(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /admin/clusters/{{cluster_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /admin/clusters/{{cluster_id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1052,7 +1263,9 @@ pub async fn gitlab_read_api_v4_admin_clusters_cluster_id(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_admin_clusters_cluster_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_admin_clusters_cluster_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1075,20 +1288,30 @@ pub async fn gitlab_delete_api_v4_admin_clusters_cluster_id(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /admin/clusters/{{cluster_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /admin/clusters/{{cluster_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1104,11 +1327,14 @@ pub async fn gitlab_delete_api_v4_admin_clusters_cluster_id(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_admin_databases_database_name_dictionary_tables_table_name(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_admin_databases_database_name_dictionary_tables_table_name(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/admin/databases/{database_name}/dictionary/tables/{table_name}".to_string();
+    let mut endpoint =
+        "/admin/databases/{database_name}/dictionary/tables/{table_name}".to_string();
     if let Some(val) = inputs.get("database_name") {
         endpoint = endpoint.replace("{{database_name}}", &super::message_to_str(val));
     }
@@ -1130,17 +1356,22 @@ pub async fn gitlab_read_api_v4_admin_databases_database_name_dictionary_tables_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /admin/databases/{{database_name}}/dictionary/tables/{{table_name}} failed: {}", e).into()));
@@ -1159,7 +1390,9 @@ pub async fn gitlab_read_api_v4_admin_databases_database_name_dictionary_tables_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_admin_migrations_timestamp_mark(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_admin_migrations_timestamp_mark(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1190,20 +1423,30 @@ pub async fn gitlab_create_api_v4_admin_migrations_timestamp_mark(context: Actor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /admin/migrations/{{timestamp}}/mark failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /admin/migrations/{{timestamp}}/mark failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -1219,7 +1462,9 @@ pub async fn gitlab_create_api_v4_admin_migrations_timestamp_mark(context: Actor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_application_appearance(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_application_appearance(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1261,7 +1506,10 @@ pub async fn gitlab_update_api_v4_application_appearance(context: ActorContext) 
         body.insert("description".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("email_header_and_footer_enabled") {
-        body.insert("email_header_and_footer_enabled".to_string(), val.clone().into());
+        body.insert(
+            "email_header_and_footer_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("message_background_color") {
         body.insert("message_background_color".to_string(), val.clone().into());
@@ -1292,20 +1540,28 @@ pub async fn gitlab_update_api_v4_application_appearance(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /application/appearance failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /application/appearance failed: {}", e).into()),
+            );
         }
     }
 
@@ -1321,7 +1577,9 @@ pub async fn gitlab_update_api_v4_application_appearance(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_application_appearance(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_application_appearance(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1341,20 +1599,28 @@ pub async fn gitlab_read_api_v4_application_appearance(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /application/appearance failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /application/appearance failed: {}", e).into()),
+            );
         }
     }
 
@@ -1370,7 +1636,9 @@ pub async fn gitlab_read_api_v4_application_appearance(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_application_plan_limits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_application_plan_limits(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1398,20 +1666,28 @@ pub async fn gitlab_read_api_v4_application_plan_limits(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /application/plan_limits failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /application/plan_limits failed: {}", e).into()),
+            );
         }
     }
 
@@ -1427,7 +1703,9 @@ pub async fn gitlab_read_api_v4_application_plan_limits(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_application_plan_limits(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1445,7 +1723,10 @@ pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext)
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("ci_registered_project_runners") {
-        body.insert("ci_registered_project_runners".to_string(), val.clone().into());
+        body.insert(
+            "ci_registered_project_runners".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ci_pipeline_schedules") {
         body.insert("ci_pipeline_schedules".to_string(), val.clone().into());
@@ -1463,7 +1744,10 @@ pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext)
         body.insert("helm_max_file_size".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("generic_packages_max_file_size") {
-        body.insert("generic_packages_max_file_size".to_string(), val.clone().into());
+        body.insert(
+            "generic_packages_max_file_size".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ci_needs_size_limit") {
         body.insert("ci_needs_size_limit".to_string(), val.clone().into());
@@ -1478,13 +1762,19 @@ pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext)
         body.insert("conan_max_file_size".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("terraform_module_max_file_size") {
-        body.insert("terraform_module_max_file_size".to_string(), val.clone().into());
+        body.insert(
+            "terraform_module_max_file_size".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ci_pipeline_size") {
         body.insert("ci_pipeline_size".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("ci_registered_group_runners") {
-        body.insert("ci_registered_group_runners".to_string(), val.clone().into());
+        body.insert(
+            "ci_registered_group_runners".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("nuget_max_file_size") {
         body.insert("nuget_max_file_size".to_string(), val.clone().into());
@@ -1512,20 +1802,28 @@ pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /application/plan_limits failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /application/plan_limits failed: {}", e).into()),
+            );
         }
     }
 
@@ -1541,7 +1839,9 @@ pub async fn gitlab_update_api_v4_application_plan_limits(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_applications(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_applications(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1578,20 +1878,28 @@ pub async fn gitlab_create_api_v4_applications(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /applications failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /applications failed: {}", e).into()),
+            );
         }
     }
 
@@ -1607,7 +1915,9 @@ pub async fn gitlab_create_api_v4_applications(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_applications(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_applications(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1627,20 +1937,28 @@ pub async fn gitlab_read_api_v4_applications(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /applications failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /applications failed: {}", e).into()),
+            );
         }
     }
 
@@ -1656,7 +1974,9 @@ pub async fn gitlab_read_api_v4_applications(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_applications_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_applications_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1679,20 +1999,28 @@ pub async fn gitlab_delete_api_v4_applications_id(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /applications/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /applications/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1708,7 +2036,9 @@ pub async fn gitlab_delete_api_v4_applications_id(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_avatar(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_avatar(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1739,20 +2069,28 @@ pub async fn gitlab_read_api_v4_avatar(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /avatar failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /avatar failed: {}", e).into()),
+            );
         }
     }
 
@@ -1768,7 +2106,9 @@ pub async fn gitlab_read_api_v4_avatar(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_broadcast_messages(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_broadcast_messages(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1820,20 +2160,28 @@ pub async fn gitlab_create_api_v4_broadcast_messages(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /broadcast_messages failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /broadcast_messages failed: {}", e).into()),
+            );
         }
     }
 
@@ -1849,7 +2197,9 @@ pub async fn gitlab_create_api_v4_broadcast_messages(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_broadcast_messages(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_broadcast_messages(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1880,20 +2230,28 @@ pub async fn gitlab_read_api_v4_broadcast_messages(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /broadcast_messages failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /broadcast_messages failed: {}", e).into()),
+            );
         }
     }
 
@@ -1909,7 +2267,9 @@ pub async fn gitlab_read_api_v4_broadcast_messages(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_broadcast_messages_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_broadcast_messages_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1932,20 +2292,28 @@ pub async fn gitlab_read_api_v4_broadcast_messages_id(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /broadcast_messages/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /broadcast_messages/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -1961,7 +2329,9 @@ pub async fn gitlab_read_api_v4_broadcast_messages_id(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_broadcast_messages_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_broadcast_messages_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1984,20 +2354,28 @@ pub async fn gitlab_delete_api_v4_broadcast_messages_id(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /broadcast_messages/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /broadcast_messages/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2013,7 +2391,9 @@ pub async fn gitlab_delete_api_v4_broadcast_messages_id(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_broadcast_messages_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_broadcast_messages_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2068,20 +2448,28 @@ pub async fn gitlab_update_api_v4_broadcast_messages_id(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /broadcast_messages/{{id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /broadcast_messages/{{id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2097,7 +2485,9 @@ pub async fn gitlab_update_api_v4_broadcast_messages_id(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_bulk_imports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_bulk_imports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2134,20 +2524,28 @@ pub async fn gitlab_read_api_v4_bulk_imports(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /bulk_imports failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /bulk_imports failed: {}", e).into()),
+            );
         }
     }
 
@@ -2163,7 +2561,9 @@ pub async fn gitlab_read_api_v4_bulk_imports(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_bulk_imports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_bulk_imports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2187,7 +2587,10 @@ pub async fn gitlab_create_api_v4_bulk_imports(context: ActorContext) -> Result<
         body.insert("entities[source_full_path]".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("configuration_access_token") {
-        body.insert("configuration[access_token]".to_string(), val.clone().into());
+        body.insert(
+            "configuration[access_token]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("entities_destination_name") {
         body.insert("entities[destination_name]".to_string(), val.clone().into());
@@ -2196,7 +2599,10 @@ pub async fn gitlab_create_api_v4_bulk_imports(context: ActorContext) -> Result<
         body.insert("entities[destination_slug]".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("entities_destination_namespace") {
-        body.insert("entities[destination_namespace]".to_string(), val.clone().into());
+        body.insert(
+            "entities[destination_namespace]".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("entities_source_type") {
         body.insert("entities[source_type]".to_string(), val.clone().into());
@@ -2212,20 +2618,28 @@ pub async fn gitlab_create_api_v4_bulk_imports(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /bulk_imports failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /bulk_imports failed: {}", e).into()),
+            );
         }
     }
 
@@ -2241,7 +2655,9 @@ pub async fn gitlab_create_api_v4_bulk_imports(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_bulk_imports_entities(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_bulk_imports_entities(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2278,20 +2694,28 @@ pub async fn gitlab_read_api_v4_bulk_imports_entities(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /bulk_imports/entities failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /bulk_imports/entities failed: {}", e).into()),
+            );
         }
     }
 
@@ -2307,7 +2731,9 @@ pub async fn gitlab_read_api_v4_bulk_imports_entities(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_bulk_imports_import_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_bulk_imports_import_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2330,20 +2756,28 @@ pub async fn gitlab_read_api_v4_bulk_imports_import_id(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /bulk_imports/{{import_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /bulk_imports/{{import_id}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -2359,7 +2793,9 @@ pub async fn gitlab_read_api_v4_bulk_imports_import_id(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2396,20 +2832,30 @@ pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities(context: ActorCo
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /bulk_imports/{{import_id}}/entities failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /bulk_imports/{{import_id}}/entities failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2425,7 +2871,9 @@ pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities(context: ActorCo
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities_entity_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities_entity_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2451,20 +2899,34 @@ pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities_entity_id(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /bulk_imports/{{import_id}}/entities/{{entity_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /bulk_imports/{{import_id}}/entities/{{entity_id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2480,7 +2942,9 @@ pub async fn gitlab_read_api_v4_bulk_imports_import_id_entities_entity_id(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_groups_id_access_requests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_groups_id_access_requests(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2503,20 +2967,28 @@ pub async fn gitlab_create_api_v4_groups_id_access_requests(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /groups/{{id}}/access_requests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /groups/{{id}}/access_requests failed: {}", e).into()),
+            );
         }
     }
 
@@ -2532,7 +3004,9 @@ pub async fn gitlab_create_api_v4_groups_id_access_requests(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_groups_id_access_requests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_groups_id_access_requests(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2566,20 +3040,28 @@ pub async fn gitlab_read_api_v4_groups_id_access_requests(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups/{{id}}/access_requests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /groups/{{id}}/access_requests failed: {}", e).into()),
+            );
         }
     }
 
@@ -2595,7 +3077,9 @@ pub async fn gitlab_read_api_v4_groups_id_access_requests(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_groups_id_access_requests_user_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_groups_id_access_requests_user_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2621,20 +3105,34 @@ pub async fn gitlab_delete_api_v4_groups_id_access_requests_user_id(context: Act
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /groups/{{id}}/access_requests/{{user_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /groups/{{id}}/access_requests/{{user_id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2650,7 +3148,9 @@ pub async fn gitlab_delete_api_v4_groups_id_access_requests_user_id(context: Act
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_groups_id_access_requests_user_id_approve(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_groups_id_access_requests_user_id_approve(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2684,20 +3184,34 @@ pub async fn gitlab_update_api_v4_groups_id_access_requests_user_id_approve(cont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /groups/{{id}}/access_requests/{{user_id}}/approve failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /groups/{{id}}/access_requests/{{user_id}}/approve failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2713,7 +3227,9 @@ pub async fn gitlab_update_api_v4_groups_id_access_requests_user_id_approve(cont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_groups_id_badges(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_groups_id_badges(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2750,20 +3266,28 @@ pub async fn gitlab_read_api_v4_groups_id_badges(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups/{{id}}/badges failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /groups/{{id}}/badges failed: {}", e).into()),
+            );
         }
     }
 
@@ -2779,7 +3303,9 @@ pub async fn gitlab_read_api_v4_groups_id_badges(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_groups_id_badges(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_groups_id_badges(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2816,20 +3342,28 @@ pub async fn gitlab_create_api_v4_groups_id_badges(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /groups/{{id}}/badges failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /groups/{{id}}/badges failed: {}", e).into()),
+            );
         }
     }
 
@@ -2845,7 +3379,9 @@ pub async fn gitlab_create_api_v4_groups_id_badges(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_groups_id_badges_render(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_groups_id_badges_render(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2879,20 +3415,28 @@ pub async fn gitlab_read_api_v4_groups_id_badges_render(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups/{{id}}/badges/render failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /groups/{{id}}/badges/render failed: {}", e).into()),
+            );
         }
     }
 
@@ -2908,7 +3452,9 @@ pub async fn gitlab_read_api_v4_groups_id_badges_render(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_groups_id_badges_badge_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_groups_id_badges_badge_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2934,20 +3480,30 @@ pub async fn gitlab_delete_api_v4_groups_id_badges_badge_id(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /groups/{{id}}/badges/{{badge_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /groups/{{id}}/badges/{{badge_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -2963,7 +3519,9 @@ pub async fn gitlab_delete_api_v4_groups_id_badges_badge_id(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_groups_id_badges_badge_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_groups_id_badges_badge_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2989,20 +3547,30 @@ pub async fn gitlab_read_api_v4_groups_id_badges_badge_id(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /groups/{{id}}/badges/{{badge_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /groups/{{id}}/badges/{{badge_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -3018,7 +3586,9 @@ pub async fn gitlab_read_api_v4_groups_id_badges_badge_id(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_groups_id_badges_badge_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_groups_id_badges_badge_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3058,20 +3628,30 @@ pub async fn gitlab_update_api_v4_groups_id_badges_badge_id(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /groups/{{id}}/badges/{{badge_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /groups/{{id}}/badges/{{badge_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -3087,7 +3667,9 @@ pub async fn gitlab_update_api_v4_groups_id_badges_badge_id(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_metadata(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_metadata(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3107,20 +3689,28 @@ pub async fn gitlab_read_api_v4_metadata(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /metadata failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /metadata failed: {}", e).into()),
+            );
         }
     }
 
@@ -3136,7 +3726,9 @@ pub async fn gitlab_read_api_v4_metadata(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_access_requests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_access_requests(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3167,20 +3759,30 @@ pub async fn gitlab_read_api_v4_projects_id_access_requests(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/access_requests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /projects/{{id}}/access_requests failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -3196,7 +3798,9 @@ pub async fn gitlab_read_api_v4_projects_id_access_requests(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_projects_id_access_requests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_projects_id_access_requests(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3216,20 +3820,30 @@ pub async fn gitlab_create_api_v4_projects_id_access_requests(context: ActorCont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/access_requests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /projects/{{id}}/access_requests failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -3245,7 +3859,9 @@ pub async fn gitlab_create_api_v4_projects_id_access_requests(context: ActorCont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_projects_id_access_requests_user_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_projects_id_access_requests_user_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3268,20 +3884,34 @@ pub async fn gitlab_delete_api_v4_projects_id_access_requests_user_id(context: A
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /projects/{{id}}/access_requests/{{user_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /projects/{{id}}/access_requests/{{user_id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3297,7 +3927,9 @@ pub async fn gitlab_delete_api_v4_projects_id_access_requests_user_id(context: A
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_projects_id_access_requests_user_id_approve(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_projects_id_access_requests_user_id_approve(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3328,20 +3960,34 @@ pub async fn gitlab_update_api_v4_projects_id_access_requests_user_id_approve(co
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /projects/{{id}}/access_requests/{{user_id}}/approve failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /projects/{{id}}/access_requests/{{user_id}}/approve failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3357,11 +4003,14 @@ pub async fn gitlab_update_api_v4_projects_id_access_requests_user_id_approve(co
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images".to_string();
+    let mut endpoint =
+        "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images".to_string();
     if let Some(val) = inputs.get("alert_iid") {
         endpoint = endpoint.replace("{{alert_iid}}", &super::message_to_str(val));
     }
@@ -3380,17 +4029,22 @@ pub async fn gitlab_read_api_v4_projects_id_alert_management_alerts_alert_iid_me
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/alert_management_alerts/{{alert_iid}}/metric_images failed: {}", e).into()));
@@ -3409,11 +4063,14 @@ pub async fn gitlab_read_api_v4_projects_id_alert_management_alerts_alert_iid_me
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images".to_string();
+    let mut endpoint =
+        "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images".to_string();
     if let Some(val) = inputs.get("alert_iid") {
         endpoint = endpoint.replace("{{alert_iid}}", &super::message_to_str(val));
     }
@@ -3446,17 +4103,22 @@ pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/alert_management_alerts/{{alert_iid}}/metric_images failed: {}", e).into()));
@@ -3475,11 +4137,14 @@ pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images_authorize(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images_authorize(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images/authorize".to_string();
+    let mut endpoint =
+        "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images/authorize".to_string();
     if let Some(val) = inputs.get("alert_iid") {
         endpoint = endpoint.replace("{{alert_iid}}", &super::message_to_str(val));
     }
@@ -3498,17 +4163,22 @@ pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/alert_management_alerts/{{alert_iid}}/metric_images/authorize failed: {}", e).into()));
@@ -3527,11 +4197,15 @@ pub async fn gitlab_create_api_v4_projects_id_alert_management_alerts_alert_iid_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images_metric_image_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images_metric_image_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images/{metric_image_id}".to_string();
+    let mut endpoint =
+        "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images/{metric_image_id}"
+            .to_string();
     if let Some(val) = inputs.get("alert_iid") {
         endpoint = endpoint.replace("{{alert_iid}}", &super::message_to_str(val));
     }
@@ -3564,17 +4238,22 @@ pub async fn gitlab_update_api_v4_projects_id_alert_management_alerts_alert_iid_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /projects/{{id}}/alert_management_alerts/{{alert_iid}}/metric_images/{{metric_image_id}} failed: {}", e).into()));
@@ -3593,11 +4272,15 @@ pub async fn gitlab_update_api_v4_projects_id_alert_management_alerts_alert_iid_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images_metric_image_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_projects_id_alert_management_alerts_alert_iid_metric_images_metric_image_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images/{metric_image_id}".to_string();
+    let mut endpoint =
+        "/projects/{id}/alert_management_alerts/{alert_iid}/metric_images/{metric_image_id}"
+            .to_string();
     if let Some(val) = inputs.get("alert_iid") {
         endpoint = endpoint.replace("{{alert_iid}}", &super::message_to_str(val));
     }
@@ -3619,17 +4302,22 @@ pub async fn gitlab_delete_api_v4_projects_id_alert_management_alerts_alert_iid_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /projects/{{id}}/alert_management_alerts/{{alert_iid}}/metric_images/{{metric_image_id}} failed: {}", e).into()));
@@ -3648,7 +4336,9 @@ pub async fn gitlab_delete_api_v4_projects_id_alert_management_alerts_alert_iid_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_projects_id_badges(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_projects_id_badges(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3682,20 +4372,28 @@ pub async fn gitlab_create_api_v4_projects_id_badges(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/badges failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /projects/{{id}}/badges failed: {}", e).into()),
+            );
         }
     }
 
@@ -3711,7 +4409,9 @@ pub async fn gitlab_create_api_v4_projects_id_badges(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_badges(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_badges(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3745,20 +4445,28 @@ pub async fn gitlab_read_api_v4_projects_id_badges(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/badges failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /projects/{{id}}/badges failed: {}", e).into()),
+            );
         }
     }
 
@@ -3774,7 +4482,9 @@ pub async fn gitlab_read_api_v4_projects_id_badges(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_badges_render(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_badges_render(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3805,20 +4515,28 @@ pub async fn gitlab_read_api_v4_projects_id_badges_render(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/badges/render failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /projects/{{id}}/badges/render failed: {}", e).into()),
+            );
         }
     }
 
@@ -3834,7 +4552,9 @@ pub async fn gitlab_read_api_v4_projects_id_badges_render(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_projects_id_badges_badge_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_projects_id_badges_badge_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3871,20 +4591,30 @@ pub async fn gitlab_update_api_v4_projects_id_badges_badge_id(context: ActorCont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /projects/{{id}}/badges/{{badge_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /projects/{{id}}/badges/{{badge_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -3900,7 +4630,9 @@ pub async fn gitlab_update_api_v4_projects_id_badges_badge_id(context: ActorCont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_projects_id_badges_badge_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_projects_id_badges_badge_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3923,20 +4655,30 @@ pub async fn gitlab_delete_api_v4_projects_id_badges_badge_id(context: ActorCont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /projects/{{id}}/badges/{{badge_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /projects/{{id}}/badges/{{badge_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -3952,7 +4694,9 @@ pub async fn gitlab_delete_api_v4_projects_id_badges_badge_id(context: ActorCont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_badges_badge_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_badges_badge_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3975,20 +4719,30 @@ pub async fn gitlab_read_api_v4_projects_id_badges_badge_id(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/badges/{{badge_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /projects/{{id}}/badges/{{badge_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -4004,7 +4758,9 @@ pub async fn gitlab_read_api_v4_projects_id_badges_badge_id(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_list_project_jobs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_list_project_jobs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4032,20 +4788,28 @@ pub async fn gitlab_list_project_jobs(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/jobs failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /projects/{{id}}/jobs failed: {}", e).into()),
+            );
         }
     }
 
@@ -4061,7 +4825,9 @@ pub async fn gitlab_list_project_jobs(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_single_job(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_single_job(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4084,20 +4850,30 @@ pub async fn gitlab_read_single_job(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/jobs/{{job_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /projects/{{id}}/jobs/{{job_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -4144,20 +4920,30 @@ pub async fn gitlab_create_jobs(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/jobs/{{job_id}}/play failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /projects/{{id}}/jobs/{{job_id}}/play failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -4173,7 +4959,9 @@ pub async fn gitlab_create_jobs(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_repository_branches(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_repository_branches(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4216,20 +5004,30 @@ pub async fn gitlab_read_api_v4_projects_id_repository_branches(context: ActorCo
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/repository/branches failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /projects/{{id}}/repository/branches failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -4245,7 +5043,9 @@ pub async fn gitlab_read_api_v4_projects_id_repository_branches(context: ActorCo
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_create_api_v4_projects_id_repository_branches(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_create_api_v4_projects_id_repository_branches(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4276,20 +5076,30 @@ pub async fn gitlab_create_api_v4_projects_id_repository_branches(context: Actor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /projects/{{id}}/repository/branches failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /projects/{{id}}/repository/branches failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -4305,7 +5115,9 @@ pub async fn gitlab_create_api_v4_projects_id_repository_branches(context: Actor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_projects_id_repository_branches_branch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_projects_id_repository_branches_branch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4328,20 +5140,34 @@ pub async fn gitlab_read_api_v4_projects_id_repository_branches_branch(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{id}}/repository/branches/{{branch}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /projects/{{id}}/repository/branches/{{branch}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4357,7 +5183,9 @@ pub async fn gitlab_read_api_v4_projects_id_repository_branches_branch(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_projects_id_repository_branches_branch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_projects_id_repository_branches_branch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4380,20 +5208,34 @@ pub async fn gitlab_delete_api_v4_projects_id_repository_branches_branch(context
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /projects/{{id}}/repository/branches/{{branch}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /projects/{{id}}/repository/branches/{{branch}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4409,7 +5251,9 @@ pub async fn gitlab_delete_api_v4_projects_id_repository_branches_branch(context
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_branches(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_branches(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4432,20 +5276,34 @@ pub async fn gitlab_read_branches(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("HEAD /projects/{{id}}/repository/branches/{{branch}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "HEAD /projects/{{id}}/repository/branches/{{branch}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4461,7 +5319,9 @@ pub async fn gitlab_read_branches(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_protect(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_protect(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4495,20 +5355,34 @@ pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_protect
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /projects/{{id}}/repository/branches/{{branch}}/protect failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /projects/{{id}}/repository/branches/{{branch}}/protect failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4524,7 +5398,9 @@ pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_protect
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_unprotect(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_unprotect(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4547,20 +5423,34 @@ pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_unprote
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /projects/{{id}}/repository/branches/{{branch}}/unprotect failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /projects/{{id}}/repository/branches/{{branch}}/unprotect failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4576,7 +5466,9 @@ pub async fn gitlab_update_api_v4_projects_id_repository_branches_branch_unprote
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_delete_api_v4_projects_id_repository_merged_branches(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_delete_api_v4_projects_id_repository_merged_branches(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4596,20 +5488,34 @@ pub async fn gitlab_delete_api_v4_projects_id_repository_merged_branches(context
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /projects/{{id}}/repository/merged_branches failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /projects/{{id}}/repository/merged_branches failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4625,7 +5531,9 @@ pub async fn gitlab_delete_api_v4_projects_id_repository_merged_branches(context
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn gitlab_read_api_v4_version(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn gitlab_read_api_v4_version(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4645,23 +5553,30 @@ pub async fn gitlab_read_api_v4_version(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /version failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /version failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

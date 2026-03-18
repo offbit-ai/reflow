@@ -125,12 +125,19 @@ fn tween_drives_dom_transform() {
             }
 
             let duration = tween["duration"].as_f64().unwrap_or(1.0);
-            let easing_fn = tween.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
+            let easing_fn = tween
+                .get("easing")
+                .and_then(|v| v.as_str())
+                .unwrap_or("linear");
             let mut elapsed = tween["elapsed"].as_f64().unwrap_or(0.0);
             elapsed += dt;
 
             let progress = (elapsed / duration).min(1.0);
-            let new_state = if progress >= 1.0 { "completed" } else { "playing" };
+            let new_state = if progress >= 1.0 {
+                "completed"
+            } else {
+                "playing"
+            };
 
             // Interpolate
             let from = &tween["from"];
@@ -293,7 +300,8 @@ fn state_machine_transitions() {
     let mut updated = v.clone();
     updated["current"] = json!("hover");
     updated["previousState"] = json!("idle");
-    db.put_json("button:state_machine", updated, json!({})).unwrap();
+    db.put_json("button:state_machine", updated, json!({}))
+        .unwrap();
 
     // Simulate: pointerDown → should transition to "pressed"
     let sm = db.get("button:state_machine").unwrap();
@@ -319,8 +327,15 @@ fn timeline_multi_track() {
     let db = get_or_create_db(db_path).unwrap();
 
     // Logo entity
-    db.set_component_json("logo", "transform", json!({ "scale": [0, 0, 0] }), json!({})).unwrap();
-    db.set_component_json("logo", "style", json!({ "opacity": 0.0 }), json!({})).unwrap();
+    db.set_component_json(
+        "logo",
+        "transform",
+        json!({ "scale": [0, 0, 0] }),
+        json!({}),
+    )
+    .unwrap();
+    db.set_component_json("logo", "style", json!({ "opacity": 0.0 }), json!({}))
+        .unwrap();
 
     // Timeline with two tracks
     db.put_json(
@@ -375,7 +390,11 @@ fn timeline_multi_track() {
     let opacity_val = eval_keyframes(kf, elapsed);
     assert!(opacity_val.is_some());
     let opacity = opacity_val.unwrap().as_f64().unwrap();
-    assert!(opacity > 0.5, "Opacity should be > 0.5 at 75%, got {}", opacity);
+    assert!(
+        opacity > 0.5,
+        "Opacity should be > 0.5 at 75%, got {}",
+        opacity
+    );
 
     let _ = std::fs::remove_dir_all(db_path);
 }
@@ -388,9 +407,22 @@ fn full_layout_tween_cycle() {
     let db = get_or_create_db(db_path).unwrap();
 
     // Set up a card element
-    db.set_component_json("card", "dom", json!({ "tag": "div", "width": 300, "height": 200 }), json!({})).unwrap();
-    db.set_component_json("card", "transform", json!({ "position": [0, 50, 0] }), json!({})).unwrap();
-    db.set_component_json("card", "style", json!({ "opacity": 1.0 }), json!({})).unwrap();
+    db.set_component_json(
+        "card",
+        "dom",
+        json!({ "tag": "div", "width": 300, "height": 200 }),
+        json!({}),
+    )
+    .unwrap();
+    db.set_component_json(
+        "card",
+        "transform",
+        json!({ "position": [0, 50, 0] }),
+        json!({}),
+    )
+    .unwrap();
+    db.set_component_json("card", "style", json!({ "opacity": 1.0 }), json!({}))
+        .unwrap();
 
     // Headless backend
     let backend = Arc::new(HeadlessLayoutBackend::new());
@@ -413,7 +445,13 @@ fn full_layout_tween_cycle() {
         let eased_t = reflow_assets_eval_easing("easeOutCubic", t);
         let y = from_y + (to_y - from_y) * eased_t;
 
-        db.set_component_json("card", "transform", json!({ "position": [0, y, 0] }), json!({})).unwrap();
+        db.set_component_json(
+            "card",
+            "transform",
+            json!({ "position": [0, y, 0] }),
+            json!({}),
+        )
+        .unwrap();
 
         // 3. Sync: AssetDB → Layout
         backend.sync(&db).unwrap();
@@ -421,16 +459,16 @@ fn full_layout_tween_cycle() {
 
     // 4. Verify final state
     let final_y = backend.query("card", "y").unwrap();
-    assert!(
-        final_y.abs() < 1.0,
-        "Expected y ≈ 0, got {}",
-        final_y
-    );
+    assert!(final_y.abs() < 1.0, "Expected y ≈ 0, got {}", final_y);
 
     let final_tf = db.get_component("card", "transform").unwrap();
     let v: serde_json::Value = serde_json::from_slice(&final_tf.data).unwrap();
     let db_y = v["position"][1].as_f64().unwrap();
-    assert!(db_y.abs() < 1.0, "AssetDB position.y should be ≈ 0, got {}", db_y);
+    assert!(
+        db_y.abs() < 1.0,
+        "AssetDB position.y should be ≈ 0, got {}",
+        db_y
+    );
 
     let _ = std::fs::remove_dir_all(db_path);
 }
@@ -448,45 +486,61 @@ fn bind_component_enables_auto_sync() {
         "dom",
         json!({ "tag": "input", "type": "range", "width": 200, "height": 20 }),
         json!({}),
-    ).unwrap();
+    )
+    .unwrap();
 
     db.set_component_json(
         "slider",
         "transform",
         json!({ "position": [100.0, 50.0, 0.0] }),
         json!({}),
-    ).unwrap();
+    )
+    .unwrap();
 
     // Enable full bind
-    db.set_component_json("slider", "bind", json!(true), json!({})).unwrap();
+    db.set_component_json("slider", "bind", json!(true), json!({}))
+        .unwrap();
 
     // Also test selective bind on another entity
-    db.set_component_json("scroller", "dom", json!({ "tag": "div" }), json!({})).unwrap();
-    db.set_component_json("scroller", "bind", json!({ "scroll": true, "transform": false }), json!({})).unwrap();
+    db.set_component_json("scroller", "dom", json!({ "tag": "div" }), json!({}))
+        .unwrap();
+    db.set_component_json(
+        "scroller",
+        "bind",
+        json!({ "scroll": true, "transform": false }),
+        json!({}),
+    )
+    .unwrap();
 
     // Set up headless backend with layout data
     let backend = Arc::new(layout::HeadlessLayoutBackend::new());
     layout::set_layout_backend(db_path, backend.clone());
 
     // Simulate: layout has different position (user dragged the slider)
-    backend.set_node("slider", layout::LayoutNode {
-        tag: "input".to_string(),
-        x: 150.0,   // layout says x=150 (was 100 in AssetDB)
-        y: 50.0,
-        width: 200.0,
-        height: 20.0,
-        opacity: 1.0,
-        ..Default::default()
-    });
+    backend.set_node(
+        "slider",
+        layout::LayoutNode {
+            tag: "input".to_string(),
+            x: 150.0, // layout says x=150 (was 100 in AssetDB)
+            y: 50.0,
+            width: 200.0,
+            height: 20.0,
+            opacity: 1.0,
+            ..Default::default()
+        },
+    );
 
     // Simulate: scroller has scroll data
-    backend.set_node("scroller", layout::LayoutNode {
-        tag: "div".to_string(),
-        height: 600.0,
-        scroll_y: 300.0,
-        scroll_height: 3000.0,
-        ..Default::default()
-    });
+    backend.set_node(
+        "scroller",
+        layout::LayoutNode {
+            tag: "div".to_string(),
+            height: 600.0,
+            scroll_y: 300.0,
+            scroll_height: 3000.0,
+            ..Default::default()
+        },
+    );
 
     // Verify bind entities are discoverable
     let bound = db.entities_with(&["bind"]).unwrap();
@@ -500,16 +554,25 @@ fn bind_component_enables_auto_sync() {
 
         let bind_all = bind_config.as_bool().unwrap_or(false);
         let bind_transform = bind_all
-            || bind_config.get("transform").and_then(|v| v.as_bool()).unwrap_or(false);
+            || bind_config
+                .get("transform")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
         let bind_scroll = bind_all
-            || bind_config.get("scroll").and_then(|v| v.as_bool()).unwrap_or(false);
+            || bind_config
+                .get("scroll")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
 
         if bind_transform {
             if let (Some(x), Some(y)) = (backend.query(entity, "x"), backend.query(entity, "y")) {
-                db.set_component_json(entity, "transform",
+                db.set_component_json(
+                    entity,
+                    "transform",
                     json!({ "position": [x, y, 0.0] }),
                     json!({"source": "layout_pull"}),
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
 
@@ -518,10 +581,13 @@ fn bind_component_enables_auto_sync() {
                 backend.query(entity, "scrollY"),
                 backend.query(entity, "scrollProgress"),
             ) {
-                db.set_component_json(entity, "scroll",
+                db.set_component_json(
+                    entity,
+                    "scroll",
                     json!({ "y": sy, "progress": progress }),
                     json!({"source": "layout_pull"}),
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
     }
@@ -551,7 +617,12 @@ fn bind_component_enables_auto_sync() {
 // Helpers (minimal reimplementations for test isolation)
 // ═══════════════════════════════════════════════════════════════════════════
 
-fn interpolate(from: &serde_json::Value, to: &serde_json::Value, t: f64, easing: &str) -> serde_json::Value {
+fn interpolate(
+    from: &serde_json::Value,
+    to: &serde_json::Value,
+    t: f64,
+    easing: &str,
+) -> serde_json::Value {
     let e = reflow_assets_eval_easing(easing, t);
     match (from, to) {
         (serde_json::Value::Number(a), serde_json::Value::Number(b)) => {
@@ -560,11 +631,15 @@ fn interpolate(from: &serde_json::Value, to: &serde_json::Value, t: f64, easing:
             json!(a + (b - a) * e)
         }
         (serde_json::Value::Array(a), serde_json::Value::Array(b)) if a.len() == b.len() => {
-            let r: Vec<f64> = a.iter().zip(b.iter()).map(|(av, bv)| {
-                let a = av.as_f64().unwrap_or(0.0);
-                let b = bv.as_f64().unwrap_or(0.0);
-                a + (b - a) * e
-            }).collect();
+            let r: Vec<f64> = a
+                .iter()
+                .zip(b.iter())
+                .map(|(av, bv)| {
+                    let a = av.as_f64().unwrap_or(0.0);
+                    let b = bv.as_f64().unwrap_or(0.0);
+                    a + (b - a) * e
+                })
+                .collect();
             json!(r)
         }
         _ => to.clone(),
@@ -574,7 +649,10 @@ fn interpolate(from: &serde_json::Value, to: &serde_json::Value, t: f64, easing:
 fn reflow_assets_eval_easing(name: &str, t: f64) -> f64 {
     // Minimal easing for tests
     match name {
-        "easeOutCubic" => { let u = t - 1.0; u * u * u + 1.0 }
+        "easeOutCubic" => {
+            let u = t - 1.0;
+            u * u * u + 1.0
+        }
         "easeOutBack" => {
             let s = 1.70158;
             let u = t - 1.0;
@@ -584,12 +662,21 @@ fn reflow_assets_eval_easing(name: &str, t: f64) -> f64 {
     }
 }
 
-fn reflow_assets_eval_expr(expr: &str, vars: &std::collections::HashMap<String, f64>) -> Option<f64> {
+fn reflow_assets_eval_expr(
+    expr: &str,
+    vars: &std::collections::HashMap<String, f64>,
+) -> Option<f64> {
     // Minimal: "time * 90" with single multiply
     let parts: Vec<&str> = expr.split('*').map(|s| s.trim()).collect();
     if parts.len() == 2 {
-        let a = vars.get(parts[0]).copied().or_else(|| parts[0].parse().ok())?;
-        let b = vars.get(parts[1]).copied().or_else(|| parts[1].parse().ok())?;
+        let a = vars
+            .get(parts[0])
+            .copied()
+            .or_else(|| parts[0].parse().ok())?;
+        let b = vars
+            .get(parts[1])
+            .copied()
+            .or_else(|| parts[1].parse().ok())?;
         Some(a * b)
     } else {
         expr.parse().ok()
@@ -624,7 +711,10 @@ fn set_json_path(obj: &mut serde_json::Value, path: &str, value: serde_json::Val
         if i == keys.len() - 1 {
             if let Ok(idx) = key.parse::<usize>() {
                 if let serde_json::Value::Array(ref mut arr) = current {
-                    if idx < arr.len() { arr[idx] = value; return; }
+                    if idx < arr.len() {
+                        arr[idx] = value;
+                        return;
+                    }
                 }
             }
             current[key] = value;
@@ -633,7 +723,11 @@ fn set_json_path(obj: &mut serde_json::Value, path: &str, value: serde_json::Val
         if let Ok(idx) = key.parse::<usize>() {
             current = &mut current[idx];
         } else {
-            if !current.get(key).map(|v| v.is_object() || v.is_array()).unwrap_or(false) {
+            if !current
+                .get(key)
+                .map(|v| v.is_object() || v.is_array())
+                .unwrap_or(false)
+            {
                 current[key] = json!({});
             }
             current = &mut current[key];
@@ -641,7 +735,11 @@ fn set_json_path(obj: &mut serde_json::Value, path: &str, value: serde_json::Val
     }
 }
 
-fn find_transition<'a>(transitions: &'a [serde_json::Value], current: &str, trigger: &str) -> Option<&'a str> {
+fn find_transition<'a>(
+    transitions: &'a [serde_json::Value],
+    current: &str,
+    trigger: &str,
+) -> Option<&'a str> {
     for t in transitions {
         let from = t.get("from").and_then(|v| v.as_str()).unwrap_or("");
         let to = t.get("to").and_then(|v| v.as_str()).unwrap_or("");
@@ -654,16 +752,25 @@ fn find_transition<'a>(transitions: &'a [serde_json::Value], current: &str, trig
 }
 
 fn eval_keyframes(keyframes: &[serde_json::Value], time: f64) -> Option<serde_json::Value> {
-    if keyframes.is_empty() { return None; }
-    if keyframes.len() == 1 { return keyframes[0].get("value").cloned(); }
+    if keyframes.is_empty() {
+        return None;
+    }
+    if keyframes.len() == 1 {
+        return keyframes[0].get("value").cloned();
+    }
 
     let mut prev_idx = 0;
     let mut next_idx = keyframes.len() - 1;
 
     for (i, kf) in keyframes.iter().enumerate() {
         let kt = kf["time"].as_f64().unwrap_or(0.0);
-        if kt <= time { prev_idx = i; }
-        if kt >= time { next_idx = i; break; }
+        if kt <= time {
+            prev_idx = i;
+        }
+        if kt >= time {
+            next_idx = i;
+            break;
+        }
     }
 
     if prev_idx == next_idx {
@@ -676,10 +783,17 @@ fn eval_keyframes(keyframes: &[serde_json::Value], time: f64) -> Option<serde_js
     let nt = next["time"].as_f64().unwrap_or(1.0);
     let pv = prev.get("value")?;
     let nv = next.get("value")?;
-    let easing = prev.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
+    let easing = prev
+        .get("easing")
+        .and_then(|v| v.as_str())
+        .unwrap_or("linear");
 
     let seg = nt - pt;
-    let t = if seg > 0.0 { ((time - pt) / seg).clamp(0.0, 1.0) } else { 1.0 };
+    let t = if seg > 0.0 {
+        ((time - pt) / seg).clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
 
     Some(interpolate(pv, nv, t, easing))
 }

@@ -35,7 +35,10 @@ pub fn resolve_entities(
 
     // 3. Explicit list from config
     if let Some(arr) = config.get("entities").and_then(|v| v.as_array()) {
-        return arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+        return arr
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect();
     }
 
     // 4. Query selector from config

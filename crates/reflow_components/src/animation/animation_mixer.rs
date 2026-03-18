@@ -16,9 +16,7 @@ use std::collections::HashMap;
     state(MemoryState),
     await_all_inports
 )]
-pub async fn animation_mixer_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn animation_mixer_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 

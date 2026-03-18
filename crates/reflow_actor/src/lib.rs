@@ -24,7 +24,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     message::Message,
-    stream::{StreamFrame, StreamHandle, STREAM_REGISTRY},
+    stream::{STREAM_REGISTRY, StreamFrame, StreamHandle},
     types::GraphNode,
 };
 
@@ -496,9 +496,7 @@ impl ActorContext {
         let mut state_lock = self.state.lock();
         if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
-            let pool = memory
-                .get_mut(&key)
-                .and_then(|v| v.as_object_mut());
+            let pool = memory.get_mut(&key).and_then(|v| v.as_object_mut());
             if let Some(pool) = pool {
                 pool.insert(id.to_string(), value);
             } else {
@@ -527,10 +525,7 @@ impl ActorContext {
         if let Some(memory) = state_lock.as_any().downcast_ref::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
             if let Some(pool) = memory.get(&key).and_then(|v| v.as_object()) {
-                return pool
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .collect();
+                return pool.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
             }
         }
         Vec::new()
@@ -592,10 +587,7 @@ impl ActorContext {
     /// extracts the bounded channel receiver from the global registry.
     /// Returns `None` if the port doesn't contain a `StreamHandle` or
     /// the receiver has already been taken.
-    pub fn take_stream_receiver(
-        &self,
-        port_name: &str,
-    ) -> Option<flume::Receiver<StreamFrame>> {
+    pub fn take_stream_receiver(&self, port_name: &str) -> Option<flume::Receiver<StreamFrame>> {
         if let Some(Message::StreamHandle(handle)) = self.payload.get(port_name) {
             STREAM_REGISTRY.take_receiver(handle.stream_id)
         } else {

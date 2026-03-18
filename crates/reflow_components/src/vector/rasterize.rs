@@ -40,7 +40,10 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
 
     let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
-    let anti_alias = config.get("antiAlias").and_then(|v| v.as_bool()).unwrap_or(true);
+    let anti_alias = config
+        .get("antiAlias")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     // Cache path in pool — it arrives once, transform arrives every tick
     if let Some(Message::String(s)) = payload.get("path") {
@@ -61,14 +64,17 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     }
 
     // Get cached path
-    let svg_d = ctx.get_pool("_raster")
+    let svg_d = ctx
+        .get_pool("_raster")
         .into_iter()
         .find(|(k, _)| k == "path")
         .and_then(|(_, v)| v.as_str().map(|s| s.to_string()))
-        .or_else(|| payload.get("path").and_then(|m| match m {
-            Message::String(s) => Some(s.to_string()),
-            _ => None,
-        }))
+        .or_else(|| {
+            payload.get("path").and_then(|m| match m {
+                Message::String(s) => Some(s.to_string()),
+                _ => None,
+            })
+        })
         .unwrap_or_default();
 
     if svg_d.is_empty() {
@@ -94,14 +100,18 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     };
 
     // Background color
-    let bg = config.get("background").and_then(|v| v.as_array()).map(|a| {
-        [
-            a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-            a.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-            a.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-            a.get(3).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
-        ]
-    }).unwrap_or([0, 0, 0, 0]);
+    let bg = config
+        .get("background")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            [
+                a.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+                a.get(3).and_then(|v| v.as_u64()).unwrap_or(0) as u8,
+            ]
+        })
+        .unwrap_or([0, 0, 0, 0]);
 
     // Create pixmap
     let mut pixmap = tsk::Pixmap::new(width, height)
@@ -118,7 +128,12 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
         .ok_or_else(|| anyhow::anyhow!("Failed to build tiny-skia path"))?;
 
     // Cache individual transform fields from inports
-    for (port, key) in [("x", "x"), ("y", "y"), ("scale", "scale"), ("rotation", "rotation")] {
+    for (port, key) in [
+        ("x", "x"),
+        ("y", "y"),
+        ("scale", "scale"),
+        ("rotation", "rotation"),
+    ] {
         if let Some(msg) = payload.get(port) {
             let val = match msg {
                 Message::Float(f) => *f,
@@ -156,7 +171,9 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let tf_pool: HashMap<String, Value> = ctx.get_pool("_tf").into_iter().collect();
 
     let get_tf = |key: &str, default: f64| -> f32 {
-        tf_pool.get(key).and_then(|v| v.as_f64())
+        tf_pool
+            .get(key)
+            .and_then(|v| v.as_f64())
             .or_else(|| tf_config.get(key).and_then(|v| v.as_f64()))
             .unwrap_or(default) as f32
     };
@@ -164,7 +181,9 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     // Re-read pool AFTER transform inport processing
     let tf_pool: HashMap<String, Value> = ctx.get_pool("_tf").into_iter().collect();
     let get_tf = |key: &str, default: f64| -> f32 {
-        tf_pool.get(key).and_then(|v| v.as_f64())
+        tf_pool
+            .get(key)
+            .and_then(|v| v.as_f64())
             .or_else(|| tf_config.get(key).and_then(|v| v.as_f64()))
             .unwrap_or(default) as f32
     };
@@ -173,7 +192,6 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
     let ty = get_tf("y", 0.0);
     let rot = get_tf("rotation", 0.0);
     let scale = get_tf("scale", 1.0);
-
 
     let transform = tsk::Transform::from_translate(tx, ty)
         .post_rotate(rot)
@@ -218,11 +236,15 @@ pub async fn vector_rasterize_actor(ctx: ActorContext) -> Result<HashMap<String,
             };
         }
         if let Some(dash) = stroke.get("dashArray").and_then(|v| v.as_array()) {
-            let intervals: Vec<f32> = dash.iter()
+            let intervals: Vec<f32> = dash
+                .iter()
                 .filter_map(|v| v.as_f64().map(|f| f as f32))
                 .collect();
             if !intervals.is_empty() {
-                let offset = stroke.get("dashOffset").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                let offset = stroke
+                    .get("dashOffset")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0) as f32;
                 ts_stroke.dash = tsk::StrokeDash::new(intervals, offset);
             }
         }
@@ -258,9 +280,12 @@ fn path2d_to_tiny_skia(path: &reflow_vector::Path2D) -> Option<tsk::Path> {
             PathCmd::LineTo(p) => pb.line_to(p.x as f32, p.y as f32),
             PathCmd::QuadTo(c, p) => pb.quad_to(c.x as f32, c.y as f32, p.x as f32, p.y as f32),
             PathCmd::CubicTo(c1, c2, p) => pb.cubic_to(
-                c1.x as f32, c1.y as f32,
-                c2.x as f32, c2.y as f32,
-                p.x as f32, p.y as f32,
+                c1.x as f32,
+                c1.y as f32,
+                c2.x as f32,
+                c2.y as f32,
+                p.x as f32,
+                p.y as f32,
             ),
             PathCmd::ArcTo { end, .. } => {
                 // Simplified: line to endpoint (proper arc conversion is complex)
@@ -285,7 +310,8 @@ fn parse_color(val: Option<&Value>) -> tsk::Color {
             let g = arr.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0);
             let b = arr.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0);
             let a = arr.get(3).and_then(|v| v.as_f64()).unwrap_or(1.0);
-            tsk::Color::from_rgba(r as f32, g as f32, b as f32, a as f32).unwrap_or(tsk::Color::BLACK)
+            tsk::Color::from_rgba(r as f32, g as f32, b as f32, a as f32)
+                .unwrap_or(tsk::Color::BLACK)
         }
         _ => tsk::Color::BLACK,
     }

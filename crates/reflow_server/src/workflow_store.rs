@@ -77,8 +77,11 @@ impl WorkflowStore {
             let mut conn = conn.clone();
             let key = Self::redis_key(workflow_id);
             let json = serde_json::to_string(&graph).unwrap_or_default();
-            let result: Result<(), redis::RedisError> =
-                redis::cmd("SET").arg(&key).arg(&json).query_async(&mut conn).await;
+            let result: Result<(), redis::RedisError> = redis::cmd("SET")
+                .arg(&key)
+                .arg(&json)
+                .query_async(&mut conn)
+                .await;
             if let Err(e) = result {
                 warn!("Redis SET failed for '{}': {}", workflow_id, e);
             }
@@ -132,11 +135,16 @@ impl WorkflowStore {
 
         if let Some(conn) = self.redis_conn().await {
             let mut conn = conn.clone();
-            let result: Result<Vec<String>, redis::RedisError> =
-                redis::cmd("KEYS").arg("reflow:workflow:*").query_async(&mut conn).await;
+            let result: Result<Vec<String>, redis::RedisError> = redis::cmd("KEYS")
+                .arg("reflow:workflow:*")
+                .query_async(&mut conn)
+                .await;
             if let Ok(keys) = result {
                 for key in keys {
-                    let id = key.strip_prefix("reflow:workflow:").unwrap_or(&key).to_string();
+                    let id = key
+                        .strip_prefix("reflow:workflow:")
+                        .unwrap_or(&key)
+                        .to_string();
                     if !ids.contains(&id) {
                         ids.push(id);
                     }

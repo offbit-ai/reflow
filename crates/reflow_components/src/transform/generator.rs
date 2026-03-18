@@ -74,15 +74,9 @@ pub async fn generator_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
 }
 
 fn generate_range(params: &HashMap<String, Value>) -> Vec<Value> {
-    let start = params
-        .get("start")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0);
+    let start = params.get("start").and_then(|v| v.as_f64()).unwrap_or(0.0);
     let end = params.get("end").and_then(|v| v.as_f64()).unwrap_or(10.0);
-    let step = params
-        .get("step")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(1.0);
+    let step = params.get("step").and_then(|v| v.as_f64()).unwrap_or(1.0);
 
     if step == 0.0 {
         return vec![];
@@ -105,15 +99,9 @@ fn generate_range(params: &HashMap<String, Value>) -> Vec<Value> {
 }
 
 fn generate_linspace(params: &HashMap<String, Value>) -> Vec<Value> {
-    let start = params
-        .get("start")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0);
+    let start = params.get("start").and_then(|v| v.as_f64()).unwrap_or(0.0);
     let end = params.get("end").and_then(|v| v.as_f64()).unwrap_or(1.0);
-    let count = params
-        .get("count")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(10) as usize;
+    let count = params.get("count").and_then(|v| v.as_u64()).unwrap_or(10) as usize;
 
     if count == 0 {
         return vec![];
@@ -131,21 +119,18 @@ fn generate_linspace(params: &HashMap<String, Value>) -> Vec<Value> {
 }
 
 fn generate_repeat(params: &HashMap<String, Value>) -> Vec<Value> {
-    let count = params
-        .get("count")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(1) as usize;
+    let count = params.get("count").and_then(|v| v.as_u64()).unwrap_or(1) as usize;
     let value = params.get("value").cloned().unwrap_or(Value::Null);
 
     vec![value; count]
 }
 
 fn generate_index(params: &HashMap<String, Value>) -> Vec<Value> {
-    let count = params
-        .get("count")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(1) as usize;
-    let template = params.get("template").cloned().unwrap_or(json!({"index": 0}));
+    let count = params.get("count").and_then(|v| v.as_u64()).unwrap_or(1) as usize;
+    let template = params
+        .get("template")
+        .cloned()
+        .unwrap_or(json!({"index": 0}));
 
     (0..count)
         .map(|i| expand_template(&template, i, count))
@@ -153,18 +138,9 @@ fn generate_index(params: &HashMap<String, Value>) -> Vec<Value> {
 }
 
 fn generate_grid(params: &HashMap<String, Value>) -> Vec<Value> {
-    let width = params
-        .get("width")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(4) as usize;
-    let height = params
-        .get("height")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(4) as usize;
-    let depth = params
-        .get("depth")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(1) as usize;
+    let width = params.get("width").and_then(|v| v.as_u64()).unwrap_or(4) as usize;
+    let height = params.get("height").and_then(|v| v.as_u64()).unwrap_or(4) as usize;
+    let depth = params.get("depth").and_then(|v| v.as_u64()).unwrap_or(1) as usize;
     let spacing = params
         .get("spacing")
         .and_then(|v| v.as_f64())
@@ -216,9 +192,17 @@ fn expand_template(template: &Value, index: usize, count: usize) -> Value {
                 };
                 json!(t)
             } else {
-                let replaced = s
-                    .replace("$i", &index.to_string())
-                    .replace("$t", &format!("{:.6}", if count > 1 { index as f64 / (count - 1) as f64 } else { 0.0 }));
+                let replaced = s.replace("$i", &index.to_string()).replace(
+                    "$t",
+                    &format!(
+                        "{:.6}",
+                        if count > 1 {
+                            index as f64 / (count - 1) as f64
+                        } else {
+                            0.0
+                        }
+                    ),
+                );
                 json!(replaced)
             }
         }
@@ -226,9 +210,11 @@ fn expand_template(template: &Value, index: usize, count: usize) -> Value {
             // Pass through numbers
             Value::Number(n.clone())
         }
-        Value::Array(arr) => {
-            Value::Array(arr.iter().map(|v| expand_template(v, index, count)).collect())
-        }
+        Value::Array(arr) => Value::Array(
+            arr.iter()
+                .map(|v| expand_template(v, index, count))
+                .collect(),
+        ),
         Value::Object(map) => {
             let mut out = serde_json::Map::new();
             for (k, v) in map {

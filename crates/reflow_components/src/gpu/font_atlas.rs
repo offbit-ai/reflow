@@ -124,8 +124,15 @@ pub fn get_or_build_atlas(
     }
 
     // Pack glyphs into atlas (row packing)
-    let max_glyph_h = glyph_bitmaps.iter().map(|(_, _, _, h, _)| *h).max().unwrap_or(0);
-    let total_area: usize = glyph_bitmaps.iter().map(|(_, _, w, h, _)| (w + 2) * (h + 2)).sum();
+    let max_glyph_h = glyph_bitmaps
+        .iter()
+        .map(|(_, _, _, h, _)| *h)
+        .max()
+        .unwrap_or(0);
+    let total_area: usize = glyph_bitmaps
+        .iter()
+        .map(|(_, _, w, h, _)| (w + 2) * (h + 2))
+        .sum();
     let atlas_width = ((total_area as f64).sqrt() * 1.2) as u32;
     let atlas_width = atlas_width.max(512).min(4096).next_power_of_two();
 
@@ -266,17 +273,18 @@ fn edt_8ssedt(mask: &[bool], w: usize, h: usize, invert: bool) -> Vec<f32> {
             // Check if this is a boundary pixel (neighbor is target)
             let x = (i % w) as i32;
             let y = (i / w) as i32;
-            let has_target_neighbor = [(-1i32, 0i32), (1, 0), (0, -1), (0, 1)]
-                .iter()
-                .any(|&(dx, dy)| {
-                    let nx = x + dx;
-                    let ny = y + dy;
-                    if nx >= 0 && nx < w as i32 && ny >= 0 && ny < h as i32 {
-                        mask[ny as usize * w + nx as usize] ^ invert
-                    } else {
-                        false
-                    }
-                });
+            let has_target_neighbor =
+                [(-1i32, 0i32), (1, 0), (0, -1), (0, 1)]
+                    .iter()
+                    .any(|&(dx, dy)| {
+                        let nx = x + dx;
+                        let ny = y + dy;
+                        if nx >= 0 && nx < w as i32 && ny >= 0 && ny < h as i32 {
+                            mask[ny as usize * w + nx as usize] ^ invert
+                        } else {
+                            false
+                        }
+                    });
             if has_target_neighbor {
                 dist[i] = 0.5; // half-pixel from boundary
                 ox[i] = 0;

@@ -24,10 +24,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let stride = config
-        .get("stride")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(24) as usize;
+    let stride = config.get("stride").and_then(|v| v.as_u64()).unwrap_or(24) as usize;
 
     // Cache static inputs on first receipt
     if let Some(Message::Bytes(b)) = payload.get("mesh") {
@@ -58,7 +55,10 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         Some(s) => b64_decode(s),
         None => return Ok(HashMap::new()), // Not arrived yet
     };
-    let skin_info = cache.get("skin").cloned().unwrap_or(json!({"maxInfluences": 4}));
+    let skin_info = cache
+        .get("skin")
+        .cloned()
+        .unwrap_or(json!({"maxInfluences": 4}));
 
     let vertex_count = mesh_bytes.len() / stride;
     let max_influences = skin_info
@@ -101,12 +101,19 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         let mut total_weight = 0.0f32;
         for j in 0..max_influences {
             let w_off = skin_off + j * entry_size;
-            if w_off + entry_size > skin_bytes.len() { break; }
-            let bone_idx = u16::from_le_bytes(skin_bytes[w_off..w_off + 2].try_into().unwrap()) as usize;
+            if w_off + entry_size > skin_bytes.len() {
+                break;
+            }
+            let bone_idx =
+                u16::from_le_bytes(skin_bytes[w_off..w_off + 2].try_into().unwrap()) as usize;
             let weight = f32::from_le_bytes(skin_bytes[w_off + 2..w_off + 6].try_into().unwrap());
-            if weight < 1e-6 || bone_idx >= bone_count { continue; }
+            if weight < 1e-6 || bone_idx >= bone_count {
+                continue;
+            }
             let m = &bone_matrices[bone_idx];
-            for k in 0..16 { blended[k] += m[k] * weight; }
+            for k in 0..16 {
+                blended[k] += m[k] * weight;
+            }
             total_weight += weight;
         }
 
@@ -152,5 +159,7 @@ fn b64_encode(data: &[u8]) -> String {
 
 fn b64_decode(s: &str) -> Vec<u8> {
     use base64::Engine;
-    base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+    base64::engine::general_purpose::STANDARD
+        .decode(s)
+        .unwrap_or_default()
 }

@@ -64,14 +64,21 @@ pub async fn scene_state_machine_system_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
 
     let global_triggers: Vec<String> = match payload.get("trigger") {
         Some(Message::String(s)) => vec![s.to_string()],
         Some(Message::Object(obj)) => {
             let v: Value = obj.as_ref().clone().into();
             v.as_array()
-                .map(|a| a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default()
         }
         _ => Vec::new(),
@@ -83,9 +90,10 @@ pub async fn scene_state_machine_system_actor(
     let sm_entries = if selected.is_empty() {
         db.query(&reflow_assets::AssetQuery::new().asset_type("state_machine"))?
     } else {
-        selected.iter().filter_map(|e| {
-            db.get_entry(&format!("{}:state_machine", e)).ok()
-        }).collect()
+        selected
+            .iter()
+            .filter_map(|e| db.get_entry(&format!("{}:state_machine", e)).ok())
+            .collect()
     };
 
     let mut state_changes = Vec::new();
@@ -242,11 +250,7 @@ fn check_guard(
 
 /// Fire an action from onEnter/onExit.
 /// Actions can create/modify components: { "tween": "scale_up" } starts a tween.
-fn fire_action(
-    db: &std::sync::Arc<reflow_assets::AssetDB>,
-    entity: &str,
-    action: &Value,
-) {
+fn fire_action(db: &std::sync::Arc<reflow_assets::AssetDB>, entity: &str, action: &Value) {
     if let Some(tween_name) = action.get("tween").and_then(|v| v.as_str()) {
         // Set a tween to "playing" state
         let tween_id = format!("{}:{}", tween_name, "tween");

@@ -325,11 +325,15 @@ impl ExecutionEngine {
         mut graph_json: serde_json::Value,
         payload: &serde_json::Value,
     ) -> serde_json::Value {
-        if let Some(processes) = graph_json.get_mut("processes").and_then(|p| p.as_object_mut()) {
+        if let Some(processes) = graph_json
+            .get_mut("processes")
+            .and_then(|p| p.as_object_mut())
+        {
             for (_id, node) in processes.iter_mut() {
                 let component = node.get("component").and_then(|c| c.as_str()).unwrap_or("");
                 if component == "tpl_server_request" || component == "ServerRequestActor" {
-                    if let Some(metadata) = node.get_mut("metadata").and_then(|m| m.as_object_mut()) {
+                    if let Some(metadata) = node.get_mut("metadata").and_then(|m| m.as_object_mut())
+                    {
                         if let Some(obj) = payload.as_object() {
                             for (k, v) in obj {
                                 metadata.insert(k.clone(), v.clone());

@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://api.bitbucket.org/2.0";
 const ENV_KEY: &str = "BITBUCKET_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -37,7 +41,9 @@ fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestB
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_list_repositories(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_list_repositories(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -60,20 +66,28 @@ pub async fn bitbucket_list_repositories(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /repositories/{{workspace}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -89,7 +103,9 @@ pub async fn bitbucket_list_repositories(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_issue(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_issue(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -123,27 +139,41 @@ pub async fn bitbucket_create_issue(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/issues failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{workspace}}/{{repo_slug}}/issues failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: PUT /addon
 #[actor(
@@ -152,7 +182,9 @@ pub async fn bitbucket_create_issue(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_addon(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_addon(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -172,27 +204,35 @@ pub async fn bitbucket_update_addon(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /addon failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /addon failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /addon
 #[actor(
@@ -201,7 +241,9 @@ pub async fn bitbucket_update_addon(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_addon(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_addon(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -221,27 +263,35 @@ pub async fn bitbucket_delete_addon(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /addon failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /addon failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /addon/linkers
 #[actor(
@@ -250,7 +300,9 @@ pub async fn bitbucket_delete_addon(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_addon_linkers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_addon_linkers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -270,27 +322,35 @@ pub async fn bitbucket_read_addon_linkers(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /addon/linkers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /addon/linkers failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /addon/linkers/{linker_key}
 #[actor(
@@ -299,7 +359,9 @@ pub async fn bitbucket_read_addon_linkers(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_addon_linkers_by_linker_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_addon_linkers_by_linker_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -319,27 +381,35 @@ pub async fn bitbucket_read_addon_linkers_by_linker_key(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /addon/linkers/{{linker_key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /addon/linkers/{{linker_key}} failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /addon/linkers/{linker_key}/values
 #[actor(
@@ -348,7 +418,9 @@ pub async fn bitbucket_read_addon_linkers_by_linker_key(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_addon_linkers_by_linker_key_values(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_addon_linkers_by_linker_key_values(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -368,27 +440,37 @@ pub async fn bitbucket_read_addon_linkers_by_linker_key_values(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /addon/linkers/{{linker_key}}/values failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /addon/linkers/{{linker_key}}/values failed: {}", e).into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /addon/linkers/{linker_key}/values
 #[actor(
@@ -397,7 +479,9 @@ pub async fn bitbucket_read_addon_linkers_by_linker_key_values(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_addon_linkers_by_linker_key_values(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_addon_linkers_by_linker_key_values(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -417,27 +501,37 @@ pub async fn bitbucket_delete_addon_linkers_by_linker_key_values(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /addon/linkers/{{linker_key}}/values failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /addon/linkers/{{linker_key}}/values failed: {}", e).into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: POST /addon/linkers/{linker_key}/values
 #[actor(
@@ -446,7 +540,9 @@ pub async fn bitbucket_delete_addon_linkers_by_linker_key_values(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_addon_linkers_by_linker_key_values(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_addon_linkers_by_linker_key_values(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -466,27 +562,37 @@ pub async fn bitbucket_create_addon_linkers_by_linker_key_values(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /addon/linkers/{{linker_key}}/values failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /addon/linkers/{{linker_key}}/values failed: {}", e).into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: PUT /addon/linkers/{linker_key}/values
 #[actor(
@@ -495,7 +601,9 @@ pub async fn bitbucket_create_addon_linkers_by_linker_key_values(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_addon_linkers_by_linker_key_values(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_addon_linkers_by_linker_key_values(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -515,20 +623,30 @@ pub async fn bitbucket_update_addon_linkers_by_linker_key_values(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /addon/linkers/{{linker_key}}/values failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /addon/linkers/{{linker_key}}/values failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -544,7 +662,9 @@ pub async fn bitbucket_update_addon_linkers_by_linker_key_values(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_addon_users_by_target_user_events_by_event_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_addon_users_by_target_user_events_by_event_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -564,20 +684,34 @@ pub async fn bitbucket_create_addon_users_by_target_user_events_by_event_key(con
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /addon/users/{{target_user}}/events/{{event_key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /addon/users/{{target_user}}/events/{{event_key}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -593,7 +727,9 @@ pub async fn bitbucket_create_addon_users_by_target_user_events_by_event_key(con
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_hook_events(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_hook_events(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -613,20 +749,28 @@ pub async fn bitbucket_read_hook_events(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /hook_events failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /hook_events failed: {}", e).into()),
+            );
         }
     }
 
@@ -642,7 +786,9 @@ pub async fn bitbucket_read_hook_events(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_hook_events_by_subject_type(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_hook_events_by_subject_type(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -665,20 +811,28 @@ pub async fn bitbucket_read_hook_events_by_subject_type(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /hook_events/{{subject_type}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /hook_events/{{subject_type}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -694,7 +848,9 @@ pub async fn bitbucket_read_hook_events_by_subject_type(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pullrequests_by_target_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pullrequests_by_target_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -725,20 +881,28 @@ pub async fn bitbucket_read_pullrequests_by_target_user(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /pullrequests/{{target_user}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /pullrequests/{{target_user}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -754,7 +918,9 @@ pub async fn bitbucket_read_pullrequests_by_target_user(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -782,20 +948,28 @@ pub async fn bitbucket_read_repositories(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /repositories failed: {}", e).into()),
+            );
         }
     }
 
@@ -811,7 +985,9 @@ pub async fn bitbucket_read_repositories(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -839,20 +1015,28 @@ pub async fn bitbucket_read_repositories_by_username(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /repositories/{{username}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -868,7 +1052,9 @@ pub async fn bitbucket_read_repositories_by_username(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -888,20 +1074,30 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug(context: Act
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /repositories/{{username}}/{{repo_slug}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -917,7 +1113,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug(context: Act
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -937,20 +1135,30 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug(context: Actor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /repositories/{{username}}/{{repo_slug}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -966,7 +1174,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug(context: Actor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -994,20 +1204,34 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug(context: Act
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /repositories/{{username}}/{{repo_slug}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -1023,7 +1247,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug(context: Act
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1043,20 +1269,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug(context: Act
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -1072,7 +1312,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug(context: Act
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_branchrestrictions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_branchrestrictions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1092,17 +1334,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_branchrestri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/branch-restrictions failed: {}", e).into()));
@@ -1121,7 +1368,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_branchrestri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrictions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrictions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1152,17 +1401,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrict
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/branch-restrictions failed: {}", e).into()));
@@ -1181,7 +1435,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrict
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrictions_by_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrictions_by_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1201,17 +1457,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrict
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/branch-restrictions/{{id}} failed: {}", e).into()));
@@ -1230,7 +1491,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchrestrict
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_branchrestrictions_by_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_branchrestrictions_by_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1250,17 +1513,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_branchrestri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/branch-restrictions/{{id}} failed: {}", e).into()));
@@ -1279,7 +1547,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_branchrestri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchrestrictions_by_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchrestrictions_by_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1299,17 +1569,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchrestri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/branch-restrictions/{{id}} failed: {}", e).into()));
@@ -1328,7 +1603,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchrestri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1348,20 +1625,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/branching-model failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/branching-model failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -1377,7 +1668,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchingmodel_settings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchingmodel_settings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1397,17 +1690,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchingmod
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/branching-model/settings failed: {}", e).into()));
@@ -1426,7 +1724,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_branchingmod
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel_settings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel_settings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1446,17 +1746,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/branching-model/settings failed: {}", e).into()));
@@ -1475,7 +1780,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_branchingmodel
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1495,20 +1802,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commit/{{node}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/commit/{{node}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -1524,7 +1845,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_node_approve(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_node_approve(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1544,17 +1867,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/approve failed: {}", e).into()));
@@ -1573,7 +1901,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_commit_by_node_approve(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_commit_by_node_approve(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1593,17 +1923,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_commit_by_no
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/approve failed: {}", e).into()));
@@ -1622,7 +1957,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_commit_by_no
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1642,17 +1979,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/comments failed: {}", e).into()));
@@ -1671,7 +2013,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_node_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_node_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1697,17 +2041,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/comments failed: {}", e).into()));
@@ -1726,11 +2075,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/comments/{comment_id}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/commit/{node}/comments/{comment_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1746,17 +2098,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -1775,7 +2132,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_statuses(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_statuses(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1795,17 +2154,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/statuses failed: {}", e).into()));
@@ -1824,7 +2188,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_node_statuses_build(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_node_statuses_build(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1844,17 +2210,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/statuses/build failed: {}", e).into()));
@@ -1873,11 +2244,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commit_by_no
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_statuses_build_by_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node_statuses_build_by_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1893,17 +2267,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/statuses/build/{{key}} failed: {}", e).into()));
@@ -1922,11 +2301,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commit_by_node
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_commit_by_node_statuses_build_by_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_commit_by_node_statuses_build_by_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/commit/{node}/statuses/build/{key}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -1942,17 +2324,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_commit_by_no
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/commit/{{node}}/statuses/build/{{key}} failed: {}", e).into()));
@@ -1971,7 +2358,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_commit_by_no
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1991,20 +2380,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits(cont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/commits failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/commits failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2020,7 +2423,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits(cont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2040,20 +2445,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commits failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/commits failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2069,7 +2488,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits_by_revision(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits_by_revision(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2089,17 +2510,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits_by_r
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/commits/{{revision}} failed: {}", e).into()));
@@ -2118,7 +2544,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_commits_by_r
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits_by_revision(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits_by_revision(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2138,17 +2566,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits_by_rev
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/commits/{{revision}} failed: {}", e).into()));
@@ -2167,7 +2600,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_commits_by_rev
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2187,20 +2622,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components(con
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/components failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/components failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2216,7 +2665,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components(con
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components_by_component_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components_by_component_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2236,17 +2687,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/components/{{component_id}} failed: {}", e).into()));
@@ -2265,7 +2721,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_components_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2285,20 +2743,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewe
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/default-reviewers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/default-reviewers failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2314,11 +2786,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewe
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_defaultreviewers_by_target_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_defaultreviewers_by_target_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2334,17 +2809,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_defaultrevie
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/default-reviewers/{{target_username}} failed: {}", e).into()));
@@ -2363,11 +2843,14 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_defaultrevie
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewers_by_target_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewers_by_target_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2383,17 +2866,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewe
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/default-reviewers/{{target_username}} failed: {}", e).into()));
@@ -2412,11 +2900,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_defaultreviewe
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_defaultreviewers_by_target_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_defaultreviewers_by_target_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/default-reviewers/{target_username}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -2432,17 +2923,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_defaultrevie
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/default-reviewers/{{target_username}} failed: {}", e).into()));
@@ -2461,7 +2957,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_defaultrevie
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2481,20 +2979,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys(con
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/deploy-keys failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/deploy-keys failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2510,7 +3022,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys(con
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_deploykeys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_deploykeys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2530,20 +3044,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_deploykeys(c
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/deploy-keys failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/deploy-keys failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2559,7 +3087,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_deploykeys(c
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_deploykeys_by_key_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_deploykeys_by_key_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2579,17 +3109,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_deploykeys_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/deploy-keys/{{key_id}} failed: {}", e).into()));
@@ -2608,7 +3143,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_deploykeys_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_deploykeys_by_key_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_deploykeys_by_key_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2628,17 +3165,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_deploykeys_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/deploy-keys/{{key_id}} failed: {}", e).into()));
@@ -2657,7 +3199,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_deploykeys_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys_by_key_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys_by_key_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2677,17 +3221,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/deploy-keys/{{key_id}} failed: {}", e).into()));
@@ -2706,7 +3255,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_deploykeys_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diff_by_spec(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diff_by_spec(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2743,20 +3294,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diff_by_spec(c
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/diff/{{spec}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/diff/{{spec}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2772,7 +3337,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diff_by_spec(c
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diffstat_by_spec(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diffstat_by_spec(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2792,20 +3359,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diffstat_by_sp
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/diffstat/{{spec}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/diffstat/{{spec}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2821,7 +3402,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_diffstat_by_sp
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2841,20 +3424,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads(cont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/downloads failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/downloads failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2870,7 +3467,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads(cont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_downloads(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_downloads(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2890,20 +3489,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_downloads(co
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/downloads failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/downloads failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2919,7 +3532,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_downloads(co
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_downloads_by_filename(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_downloads_by_filename(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2939,17 +3554,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_downloads_by
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/downloads/{{filename}} failed: {}", e).into()));
@@ -2968,7 +3588,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_downloads_by
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads_by_filename(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads_by_filename(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2988,17 +3610,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads_by_f
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/downloads/{{filename}} failed: {}", e).into()));
@@ -3017,7 +3644,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_downloads_by_f
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_filehistory_by_node_by_path(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_filehistory_by_node_by_path(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3051,17 +3680,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_filehistory_by
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/filehistory/{{node}}/{{path}} failed: {}", e).into()));
@@ -3080,7 +3714,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_filehistory_by
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_forks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_forks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3106,20 +3742,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_forks(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/forks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/forks failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3135,7 +3785,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_forks(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_forks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_forks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3155,20 +3807,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_forks(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/forks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/forks failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3184,7 +3850,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_forks(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3204,20 +3872,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/hooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/hooks failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3233,7 +3915,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3253,20 +3937,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_hooks(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/hooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/hooks failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3282,7 +3980,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_hooks(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3305,20 +4005,34 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_hooks_by_uid
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /repositories/{{username}}/{{repo_slug}}/hooks/{{uid}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3334,7 +4048,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_hooks_by_uid
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3357,20 +4073,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks_by_uid(c
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/hooks/{{uid}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3386,7 +4116,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_hooks_by_uid(c
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3409,20 +4141,34 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_hooks_by_uid
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /repositories/{{username}}/{{repo_slug}}/hooks/{{uid}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3438,7 +4184,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_hooks_by_uid
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3458,20 +4206,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues(conte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/issues failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/issues failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3487,7 +4249,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues(conte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3507,20 +4271,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues(context
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/issues failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3536,7 +4314,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues(context
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_export(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_export(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3562,20 +4342,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_expor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/issues/export failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/issues/export failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3591,11 +4385,15 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_expor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_export_by_repo_nameissuesby_task_id_zip(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_export_by_repo_nameissuesby_task_id_zip(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/export/{repo_name}-issues-{task_id}.zip".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/export/{repo_name}-issues-{task_id}.zip"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -3623,17 +4421,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_export_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/export/{{repo_name}}-issues-{{task_id}}.zip failed: {}", e).into()));
@@ -3652,7 +4455,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_export_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_import(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_import(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3678,20 +4483,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_import(
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/import failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/issues/import failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3707,7 +4526,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_import(
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_import(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_import(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3733,20 +4554,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_impor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/issues/import failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/issues/import failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3762,7 +4597,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_impor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3782,17 +4619,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}} failed: {}", e).into()));
@@ -3811,7 +4653,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3831,17 +4675,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}} failed: {}", e).into()));
@@ -3860,7 +4709,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3880,17 +4731,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}} failed: {}", e).into()));
@@ -3909,11 +4765,14 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments".to_string();
     if let Some(val) = inputs.get("issue_id") {
         endpoint = endpoint.replace("{{issue_id}}", &super::message_to_str(val));
     }
@@ -3932,17 +4791,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/attachments failed: {}", e).into()));
@@ -3961,11 +4825,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments".to_string();
     if let Some(val) = inputs.get("issue_id") {
         endpoint = endpoint.replace("{{issue_id}}", &super::message_to_str(val));
     }
@@ -3984,17 +4851,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/attachments failed: {}", e).into()));
@@ -4013,11 +4885,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments_by_path(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments_by_path(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4033,17 +4908,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/attachments/{{path}} failed: {}", e).into()));
@@ -4062,11 +4942,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments_by_path(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_attachments_by_path(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/attachments/{path}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4082,17 +4965,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/attachments/{{path}} failed: {}", e).into()));
@@ -4111,7 +4999,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_issue_id_changes(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_issue_id_changes(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4160,17 +5050,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/changes failed: {}", e).into()));
@@ -4189,7 +5084,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_changes(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_changes(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4220,17 +5117,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/changes failed: {}", e).into()));
@@ -4249,11 +5151,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_changes_by_change_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_changes_by_change_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes/{change_id}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/changes/{change_id}".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -4269,17 +5174,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/changes/{{change_id}} failed: {}", e).into()));
@@ -4298,11 +5208,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_issue_id_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_issue_id_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -4324,17 +5237,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/comments failed: {}", e).into()));
@@ -4353,11 +5271,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -4387,17 +5308,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/comments failed: {}", e).into()));
@@ -4416,11 +5342,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments/{comment_id}".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments/{comment_id}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -4445,17 +5374,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -4474,11 +5408,14 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments/{comment_id}".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments/{comment_id}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -4503,17 +5440,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -4532,11 +5474,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments/{comment_id}".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/issues/{issue_id}/comments/{comment_id}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -4561,17 +5506,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -4590,7 +5540,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_vote(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_vote(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4610,17 +5562,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/vote failed: {}", e).into()));
@@ -4639,7 +5596,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id_vote(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id_vote(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4659,17 +5618,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/vote failed: {}", e).into()));
@@ -4688,7 +5652,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_vote(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_vote(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4708,17 +5674,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/vote failed: {}", e).into()));
@@ -4737,7 +5708,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_watch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issue_id_watch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4757,17 +5730,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/watch failed: {}", e).into()));
@@ -4786,7 +5764,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_issues_by_issu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id_watch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_issue_id_watch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4806,17 +5786,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/watch failed: {}", e).into()));
@@ -4835,7 +5820,9 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_watch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_issue_id_watch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4855,17 +5842,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/issues/{{issue_id}}/watch failed: {}", e).into()));
@@ -4884,7 +5876,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_issues_by_is
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4904,20 +5898,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones(con
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/milestones failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/milestones failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4933,7 +5941,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones(con
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones_by_milestone_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones_by_milestone_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4953,17 +5963,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/milestones/{{milestone_id}} failed: {}", e).into()));
@@ -4982,7 +5997,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_milestones_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_patch_by_spec(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_patch_by_spec(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -5002,20 +6019,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_patch_by_spec(
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/patch/{{spec}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/patch/{{spec}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5031,7 +6062,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_patch_by_spec(
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -5065,20 +6098,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests(c
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/pullrequests failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5094,7 +6141,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests(c
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -5120,20 +6169,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/pullrequests failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/pullrequests failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5149,7 +6212,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_activity(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_activity(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -5178,17 +6243,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_a
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/activity failed: {}", e).into()));
@@ -5207,11 +6277,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_a
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -5236,17 +6309,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}} failed: {}", e).into()));
@@ -5265,11 +6343,14 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -5294,17 +6375,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}} failed: {}", e).into()));
@@ -5323,11 +6409,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_activity(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_activity(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/activity".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/activity".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -5352,17 +6441,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/activity failed: {}", e).into()));
@@ -5381,11 +6475,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_approve(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_approve(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5401,17 +6498,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/approve failed: {}", e).into()));
@@ -5430,11 +6532,14 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_approve(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_approve(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/approve".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5450,17 +6555,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/approve failed: {}", e).into()));
@@ -5479,11 +6589,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -5508,17 +6621,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/comments failed: {}", e).into()));
@@ -5537,11 +6655,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments".to_string();
+    let mut endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -5566,17 +6687,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/comments failed: {}", e).into()));
@@ -5595,11 +6721,15 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}"
+            .to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5615,17 +6745,22 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -5644,11 +6779,15 @@ pub async fn bitbucket_update_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}"
+            .to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5664,17 +6803,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -5693,11 +6837,15 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}"
+            .to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5713,17 +6861,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -5742,11 +6895,14 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_commits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_commits(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/commits".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/commits".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5762,17 +6918,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/commits failed: {}", e).into()));
@@ -5791,11 +6952,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_decline(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_decline(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/decline".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/decline".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5811,17 +6975,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/decline failed: {}", e).into()));
@@ -5840,11 +7009,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_diff(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_diff(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diff".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diff".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5860,17 +7032,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/diff failed: {}", e).into()));
@@ -5889,11 +7066,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_diffstat(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_diffstat(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diffstat".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/diffstat".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5909,17 +7089,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/diffstat failed: {}", e).into()));
@@ -5938,11 +7123,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_merge(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_merge(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/merge".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/merge".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -5975,17 +7163,22 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/merge failed: {}", e).into()));
@@ -5995,7 +7188,7 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/patch
 #[actor(
@@ -6004,11 +7197,14 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_pullrequests
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_patch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_patch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/patch".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/patch".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6024,17 +7220,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/patch failed: {}", e).into()));
@@ -6053,11 +7254,14 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_statuses(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_by_pull_request_id_statuses(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let endpoint = "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/statuses".to_string();
+    let endpoint =
+        "/repositories/{username}/{repo_slug}/pullrequests/{pull_request_id}/statuses".to_string();
 
     let url = format!("{}{}", BASE_URL.trim_end_matches('/'), endpoint);
 
@@ -6073,17 +7277,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/pullrequests/{{pull_request_id}}/statuses failed: {}", e).into()));
@@ -6102,7 +7311,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_pullrequests_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6139,20 +7350,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/refs failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/refs failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6168,7 +7393,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6205,20 +7432,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches(
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/refs/branches failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/refs/branches failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6234,7 +7475,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches(
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_branches(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_branches(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6254,20 +7497,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_branche
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/refs/branches failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/refs/branches failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6283,7 +7540,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_branche
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_branches_by_name(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_branches_by_name(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6303,17 +7562,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_branche
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/refs/branches/{{name}} failed: {}", e).into()));
@@ -6332,7 +7596,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_branche
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches_by_name(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches_by_name(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6352,17 +7618,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/refs/branches/{{name}} failed: {}", e).into()));
@@ -6381,7 +7652,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_branches_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6418,20 +7691,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags(cont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/refs/tags failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/refs/tags failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6447,7 +7734,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags(cont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_tags(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_tags(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6467,20 +7756,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_tags(co
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/refs/tags failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/refs/tags failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6496,7 +7799,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_refs_tags(co
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_tags_by_name(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_tags_by_name(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6516,17 +7821,22 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_tags_by
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{username}}/{{repo_slug}}/refs/tags/{{name}} failed: {}", e).into()));
@@ -6545,7 +7855,9 @@ pub async fn bitbucket_delete_repositories_by_username_by_repo_slug_refs_tags_by
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags_by_name(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags_by_name(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6565,17 +7877,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags_by_n
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/refs/tags/{{name}} failed: {}", e).into()));
@@ -6594,7 +7911,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_refs_tags_by_n
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6622,20 +7941,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src(context: A
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/src failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/src failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6651,7 +7984,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src(context: A
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repositories_by_username_by_repo_slug_src(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repositories_by_username_by_repo_slug_src(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6694,20 +8029,34 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_src(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{username}}/{{repo_slug}}/src failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{username}}/{{repo_slug}}/src failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6723,7 +8072,9 @@ pub async fn bitbucket_create_repositories_by_username_by_repo_slug_src(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src_by_node_by_path(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src_by_node_by_path(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6760,17 +8111,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src_by_node_by
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/src/{{node}}/{{path}} failed: {}", e).into()));
@@ -6789,7 +8145,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_src_by_node_by
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6809,20 +8167,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions(conte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/versions failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/versions failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6838,7 +8210,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions(conte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions_by_version_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions_by_version_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6858,17 +8232,22 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions_by_ve
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/versions/{{version_id}} failed: {}", e).into()));
@@ -6887,7 +8266,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_versions_by_ve
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_username_by_repo_slug_watchers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_username_by_repo_slug_watchers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6907,20 +8288,34 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_watchers(conte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{username}}/{{repo_slug}}/watchers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{username}}/{{repo_slug}}/watchers failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6936,7 +8331,9 @@ pub async fn bitbucket_read_repositories_by_username_by_repo_slug_watchers(conte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_commit_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_commit_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6971,17 +8368,22 @@ pub async fn bitbucket_read_commit_hosted_property_value(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/commit/{{commit}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -7000,7 +8402,9 @@ pub async fn bitbucket_read_commit_hosted_property_value(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_commit_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_commit_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7035,17 +8439,22 @@ pub async fn bitbucket_delete_commit_hosted_property_value(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/commit/{{commit}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -7064,7 +8473,9 @@ pub async fn bitbucket_delete_commit_hosted_property_value(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_commit_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_commit_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7099,17 +8510,22 @@ pub async fn bitbucket_update_commit_hosted_property_value(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/commit/{{commit}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -7128,11 +8544,14 @@ pub async fn bitbucket_update_commit_hosted_property_value(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pullrequests_for_commit(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pullrequests_for_commit(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/commit/{commit}/pullrequests".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/commit/{commit}/pullrequests".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7168,17 +8587,22 @@ pub async fn bitbucket_read_pullrequests_for_commit(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/commit/{{commit}}/pullrequests failed: {}", e).into()));
@@ -7197,7 +8621,9 @@ pub async fn bitbucket_read_pullrequests_for_commit(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_deployments_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_deployments_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7223,20 +8649,34 @@ pub async fn bitbucket_read_deployments_for_repository(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/deployments/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{workspace}}/{{repo_slug}}/deployments/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7252,11 +8692,14 @@ pub async fn bitbucket_read_deployments_for_repository(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_deployment_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_deployment_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/deployments/{deployment_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/deployments/{deployment_uuid}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7281,17 +8724,22 @@ pub async fn bitbucket_read_deployment_for_repository(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/deployments/{{deployment_uuid}} failed: {}", e).into()));
@@ -7310,7 +8758,9 @@ pub async fn bitbucket_read_deployment_for_repository(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_environments_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_environments_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7336,20 +8786,34 @@ pub async fn bitbucket_read_environments_for_repository(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/environments/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{workspace}}/{{repo_slug}}/environments/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7365,7 +8829,9 @@ pub async fn bitbucket_read_environments_for_repository(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_environment(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_environment(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7391,20 +8857,34 @@ pub async fn bitbucket_create_environment(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/environments/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{workspace}}/{{repo_slug}}/environments/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7420,11 +8900,14 @@ pub async fn bitbucket_create_environment(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_environment_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_environment_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/environments/{environment_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/environments/{environment_uuid}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7449,17 +8932,22 @@ pub async fn bitbucket_delete_environment_for_repository(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/environments/{{environment_uuid}} failed: {}", e).into()));
@@ -7478,11 +8966,14 @@ pub async fn bitbucket_delete_environment_for_repository(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_environment_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_environment_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/environments/{environment_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/environments/{environment_uuid}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7507,17 +8998,22 @@ pub async fn bitbucket_read_environment_for_repository(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/environments/{{environment_uuid}} failed: {}", e).into()));
@@ -7536,11 +9032,15 @@ pub async fn bitbucket_read_environment_for_repository(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_environment_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_environment_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/environments/{environment_uuid}/changes/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/environments/{environment_uuid}/changes/"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7565,17 +9065,22 @@ pub async fn bitbucket_update_environment_for_repository(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/environments/{{environment_uuid}}/changes/ failed: {}", e).into()));
@@ -7594,7 +9099,9 @@ pub async fn bitbucket_update_environment_for_repository(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_pipeline_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_pipeline_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7620,20 +9127,34 @@ pub async fn bitbucket_create_pipeline_for_repository(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/pipelines/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /repositories/{{workspace}}/{{repo_slug}}/pipelines/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7649,7 +9170,9 @@ pub async fn bitbucket_create_pipeline_for_repository(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipelines_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipelines_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7675,20 +9198,34 @@ pub async fn bitbucket_read_pipelines_for_repository(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7704,11 +9241,14 @@ pub async fn bitbucket_read_pipelines_for_repository(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7733,17 +9273,22 @@ pub async fn bitbucket_read_pipeline_for_repository(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}} failed: {}", e).into()));
@@ -7762,7 +9307,9 @@ pub async fn bitbucket_read_pipeline_for_repository(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_remotetriggers_by_trigger_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_remotetriggers_by_trigger_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7782,17 +9329,22 @@ pub async fn bitbucket_update_repositories_by_workspace_by_repo_slug_pipelines_b
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/remote-triggers/{{trigger_key}} failed: {}", e).into()));
@@ -7811,11 +9363,14 @@ pub async fn bitbucket_update_repositories_by_workspace_by_repo_slug_pipelines_b
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_steps_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_steps_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7840,17 +9395,22 @@ pub async fn bitbucket_read_pipeline_steps_for_repository(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/ failed: {}", e).into()));
@@ -7869,11 +9429,15 @@ pub async fn bitbucket_read_pipeline_steps_for_repository(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_step_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_step_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7901,17 +9465,22 @@ pub async fn bitbucket_read_pipeline_step_for_repository(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/{{step_uuid}} failed: {}", e).into()));
@@ -7930,11 +9499,15 @@ pub async fn bitbucket_read_pipeline_step_for_repository(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_step_log_for_repository(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_step_log_for_repository(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/log".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps/{step_uuid}/log"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -7962,17 +9535,22 @@ pub async fn bitbucket_read_pipeline_step_log_for_repository(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/{{step_uuid}}/log failed: {}", e).into()));
@@ -7991,7 +9569,9 @@ pub async fn bitbucket_read_pipeline_step_log_for_repository(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_logs_by_log_uuid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_logs_by_log_uuid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8011,17 +9591,22 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/{{step_uuid}}/logs/{{log_uuid}} failed: {}", e).into()));
@@ -8040,7 +9625,9 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_test_reports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_test_reports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8060,17 +9647,22 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/{{step_uuid}}/test_reports failed: {}", e).into()));
@@ -8089,7 +9681,9 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_test_reports_test_cases(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_test_reports_test_cases(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8109,17 +9703,22 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/{{step_uuid}}/test_reports/test_cases failed: {}", e).into()));
@@ -8138,7 +9737,9 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_test_reports_test_cases_by_test_case_uuid_test_case_reasons(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_pipeline_uuid_steps_by_step_uuid_test_reports_test_cases_by_test_case_uuid_test_case_reasons(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8158,17 +9759,22 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/steps/{{step_uuid}}/test_reports/test_cases/{{test_case_uuid}}/test_case_reasons failed: {}", e).into()));
@@ -8187,11 +9793,14 @@ pub async fn bitbucket_read_repositories_by_workspace_by_repo_slug_pipelines_by_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_stop_pipeline(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_stop_pipeline(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/stopPipeline".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/stopPipeline".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8216,17 +9825,22 @@ pub async fn bitbucket_stop_pipeline(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/pipelines/{{pipeline_uuid}}/stopPipeline failed: {}", e).into()));
@@ -8245,7 +9859,9 @@ pub async fn bitbucket_stop_pipeline(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_config(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_config(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8271,20 +9887,34 @@ pub async fn bitbucket_read_repository_pipeline_config(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8300,7 +9930,9 @@ pub async fn bitbucket_read_repository_pipeline_config(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_pipeline_config(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_pipeline_config(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8326,20 +9958,34 @@ pub async fn bitbucket_update_repository_pipeline_config(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8355,11 +10001,14 @@ pub async fn bitbucket_update_repository_pipeline_config(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_build_number(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_build_number(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/build_number".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/build_number".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8381,17 +10030,22 @@ pub async fn bitbucket_update_repository_build_number(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/build_number failed: {}", e).into()));
@@ -8410,11 +10064,14 @@ pub async fn bitbucket_update_repository_build_number(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repository_pipeline_schedule(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repository_pipeline_schedule(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8436,17 +10093,22 @@ pub async fn bitbucket_create_repository_pipeline_schedule(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/schedules/ failed: {}", e).into()));
@@ -8465,11 +10127,14 @@ pub async fn bitbucket_create_repository_pipeline_schedule(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_schedules(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_schedules(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8491,17 +10156,22 @@ pub async fn bitbucket_read_repository_pipeline_schedules(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/schedules/ failed: {}", e).into()));
@@ -8520,11 +10190,15 @@ pub async fn bitbucket_read_repository_pipeline_schedules(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_schedule(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_schedule(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/{schedule_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/{schedule_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8549,17 +10223,22 @@ pub async fn bitbucket_read_repository_pipeline_schedule(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/schedules/{{schedule_uuid}} failed: {}", e).into()));
@@ -8578,11 +10257,15 @@ pub async fn bitbucket_read_repository_pipeline_schedule(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_pipeline_schedule(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_pipeline_schedule(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/{schedule_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/{schedule_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8607,17 +10290,22 @@ pub async fn bitbucket_update_repository_pipeline_schedule(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/schedules/{{schedule_uuid}} failed: {}", e).into()));
@@ -8636,11 +10324,15 @@ pub async fn bitbucket_update_repository_pipeline_schedule(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repository_pipeline_schedule(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repository_pipeline_schedule(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/{schedule_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/schedules/{schedule_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8665,17 +10357,22 @@ pub async fn bitbucket_delete_repository_pipeline_schedule(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/schedules/{{schedule_uuid}} failed: {}", e).into()));
@@ -8694,7 +10391,9 @@ pub async fn bitbucket_delete_repository_pipeline_schedule(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_schedule_executions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_schedule_executions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8720,17 +10419,22 @@ pub async fn bitbucket_read_repository_pipeline_schedule_executions(context: Act
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/schedules/{{schedule_uuid}}/executions/ failed: {}", e).into()));
@@ -8749,11 +10453,14 @@ pub async fn bitbucket_read_repository_pipeline_schedule_executions(context: Act
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_pipeline_key_pair(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_pipeline_key_pair(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/key_pair".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/key_pair".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8775,17 +10482,22 @@ pub async fn bitbucket_update_repository_pipeline_key_pair(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/key_pair failed: {}", e).into()));
@@ -8804,11 +10516,14 @@ pub async fn bitbucket_update_repository_pipeline_key_pair(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repository_pipeline_key_pair(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repository_pipeline_key_pair(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/key_pair".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/key_pair".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8830,17 +10545,22 @@ pub async fn bitbucket_delete_repository_pipeline_key_pair(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/key_pair failed: {}", e).into()));
@@ -8859,11 +10579,14 @@ pub async fn bitbucket_delete_repository_pipeline_key_pair(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_ssh_key_pair(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_ssh_key_pair(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/key_pair".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/key_pair".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8885,17 +10608,22 @@ pub async fn bitbucket_read_repository_pipeline_ssh_key_pair(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/key_pair failed: {}", e).into()));
@@ -8914,11 +10642,14 @@ pub async fn bitbucket_read_repository_pipeline_ssh_key_pair(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_known_hosts(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_known_hosts(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8940,17 +10671,22 @@ pub async fn bitbucket_read_repository_pipeline_known_hosts(context: ActorContex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/known_hosts/ failed: {}", e).into()));
@@ -8969,11 +10705,14 @@ pub async fn bitbucket_read_repository_pipeline_known_hosts(context: ActorContex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repository_pipeline_known_host(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repository_pipeline_known_host(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -8995,17 +10734,22 @@ pub async fn bitbucket_create_repository_pipeline_known_host(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/known_hosts/ failed: {}", e).into()));
@@ -9024,11 +10768,15 @@ pub async fn bitbucket_create_repository_pipeline_known_host(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_known_host(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_known_host(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/{known_host_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/{known_host_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9053,17 +10801,22 @@ pub async fn bitbucket_read_repository_pipeline_known_host(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/known_hosts/{{known_host_uuid}} failed: {}", e).into()));
@@ -9082,11 +10835,15 @@ pub async fn bitbucket_read_repository_pipeline_known_host(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_pipeline_known_host(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_pipeline_known_host(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/{known_host_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/{known_host_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9111,17 +10868,22 @@ pub async fn bitbucket_update_repository_pipeline_known_host(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/known_hosts/{{known_host_uuid}} failed: {}", e).into()));
@@ -9140,11 +10902,15 @@ pub async fn bitbucket_update_repository_pipeline_known_host(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repository_pipeline_known_host(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repository_pipeline_known_host(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/{known_host_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/ssh/known_hosts/{known_host_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9169,17 +10935,22 @@ pub async fn bitbucket_delete_repository_pipeline_known_host(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/ssh/known_hosts/{{known_host_uuid}} failed: {}", e).into()));
@@ -9198,11 +10969,14 @@ pub async fn bitbucket_delete_repository_pipeline_known_host(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9224,17 +10998,22 @@ pub async fn bitbucket_read_repository_pipeline_variables(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/variables/ failed: {}", e).into()));
@@ -9253,11 +11032,14 @@ pub async fn bitbucket_read_repository_pipeline_variables(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_repository_pipeline_variable(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_repository_pipeline_variable(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9279,17 +11061,22 @@ pub async fn bitbucket_create_repository_pipeline_variable(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/variables/ failed: {}", e).into()));
@@ -9308,11 +11095,15 @@ pub async fn bitbucket_create_repository_pipeline_variable(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_pipeline_variable(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_pipeline_variable(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/{variable_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/{variable_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9337,17 +11128,22 @@ pub async fn bitbucket_update_repository_pipeline_variable(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -9366,11 +11162,15 @@ pub async fn bitbucket_update_repository_pipeline_variable(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repository_pipeline_variable(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repository_pipeline_variable(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/{variable_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/{variable_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9395,17 +11195,22 @@ pub async fn bitbucket_delete_repository_pipeline_variable(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -9424,11 +11229,15 @@ pub async fn bitbucket_delete_repository_pipeline_variable(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_pipeline_variable(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_pipeline_variable(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/{variable_uuid}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/pipelines_config/variables/{variable_uuid}"
+            .to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9453,17 +11262,22 @@ pub async fn bitbucket_read_repository_pipeline_variable(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -9482,11 +11296,14 @@ pub async fn bitbucket_read_repository_pipeline_variable(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_repository_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_repository_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/properties/{app_key}/{property_name}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/properties/{app_key}/{property_name}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9514,17 +11331,22 @@ pub async fn bitbucket_delete_repository_hosted_property_value(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -9543,11 +11365,14 @@ pub async fn bitbucket_delete_repository_hosted_property_value(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_repository_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_repository_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/properties/{app_key}/{property_name}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/properties/{app_key}/{property_name}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9575,17 +11400,22 @@ pub async fn bitbucket_read_repository_hosted_property_value(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -9604,11 +11434,14 @@ pub async fn bitbucket_read_repository_hosted_property_value(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_repository_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_repository_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/repositories/{workspace}/{repo_slug}/properties/{app_key}/{property_name}".to_string();
+    let mut endpoint =
+        "/repositories/{workspace}/{repo_slug}/properties/{app_key}/{property_name}".to_string();
     if let Some(val) = inputs.get("username") {
         endpoint = endpoint.replace("{{username}}", &super::message_to_str(val));
     }
@@ -9636,17 +11469,22 @@ pub async fn bitbucket_update_repository_hosted_property_value(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -9665,7 +11503,9 @@ pub async fn bitbucket_update_repository_hosted_property_value(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pull_request_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pull_request_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9700,17 +11540,22 @@ pub async fn bitbucket_read_pull_request_hosted_property_value(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /repositories/{{workspace}}/{{repo_slug}}/pullrequests/{{pullrequest_id}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -9729,7 +11574,9 @@ pub async fn bitbucket_read_pull_request_hosted_property_value(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_pull_request_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_pull_request_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9764,17 +11611,22 @@ pub async fn bitbucket_update_pull_request_hosted_property_value(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /repositories/{{workspace}}/{{repo_slug}}/pullrequests/{{pullrequest_id}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -9793,7 +11645,9 @@ pub async fn bitbucket_update_pull_request_hosted_property_value(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_pull_request_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_pull_request_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9828,17 +11682,22 @@ pub async fn bitbucket_delete_pull_request_hosted_property_value(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /repositories/{{workspace}}/{{repo_slug}}/pullrequests/{{pullrequest_id}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -9857,7 +11716,9 @@ pub async fn bitbucket_delete_pull_request_hosted_property_value(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9885,20 +11746,28 @@ pub async fn bitbucket_read_snippets(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /snippets failed: {}", e).into()),
+            );
         }
     }
 
@@ -9914,7 +11783,9 @@ pub async fn bitbucket_read_snippets(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_snippets(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_snippets(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9934,20 +11805,28 @@ pub async fn bitbucket_create_snippets(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /snippets failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /snippets failed: {}", e).into()),
+            );
         }
     }
 
@@ -9963,7 +11842,9 @@ pub async fn bitbucket_create_snippets(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9994,20 +11875,28 @@ pub async fn bitbucket_read_snippets_by_username(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /snippets/{{username}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -10023,7 +11912,9 @@ pub async fn bitbucket_read_snippets_by_username(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_snippets_by_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_snippets_by_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10043,20 +11934,28 @@ pub async fn bitbucket_create_snippets_by_username(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /snippets/{{username}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /snippets/{{username}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -10072,7 +11971,9 @@ pub async fn bitbucket_create_snippets_by_username(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_snippets_by_username_by_encoded_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_snippets_by_username_by_encoded_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10095,20 +11996,30 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /snippets/{{username}}/{{encoded_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /snippets/{{username}}/{{encoded_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -10124,7 +12035,9 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_snippets_by_username_by_encoded_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_snippets_by_username_by_encoded_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10147,20 +12060,30 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /snippets/{{username}}/{{encoded_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /snippets/{{username}}/{{encoded_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -10176,7 +12099,9 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10199,20 +12124,30 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /snippets/{{username}}/{{encoded_id}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -10228,7 +12163,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10248,20 +12185,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/comments failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/comments failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10277,7 +12228,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_snippets_by_username_by_encoded_id_comments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_snippets_by_username_by_encoded_id_comments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10297,20 +12250,34 @@ pub async fn bitbucket_create_snippets_by_username_by_encoded_id_comments(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /snippets/{{username}}/{{encoded_id}}/comments failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /snippets/{{username}}/{{encoded_id}}/comments failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10326,7 +12293,9 @@ pub async fn bitbucket_create_snippets_by_username_by_encoded_id_comments(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10346,17 +12315,22 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_comments_by_com
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /snippets/{{username}}/{{encoded_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -10375,7 +12349,9 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_comments_by_com
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_snippets_by_username_by_encoded_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_snippets_by_username_by_encoded_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10395,17 +12371,22 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_comments_by_com
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /snippets/{{username}}/{{encoded_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -10424,7 +12405,9 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_comments_by_com
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments_by_comment_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments_by_comment_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10444,17 +12427,22 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments_by_comme
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/comments/{{comment_id}} failed: {}", e).into()));
@@ -10473,7 +12461,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_comments_by_comme
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10493,27 +12483,41 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/commits failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/commits failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /snippets/{username}/{encoded_id}/commits/{revision}
 #[actor(
@@ -10522,7 +12526,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits_by_revision(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits_by_revision(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10542,20 +12548,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits_by_revisi
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/commits/{{revision}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/commits/{{revision}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10571,7 +12591,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_commits_by_revisi
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_files_by_path(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_files_by_path(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10591,20 +12613,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_files_by_path(con
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/files/{{path}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/files/{{path}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10620,7 +12656,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_files_by_path(con
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_watch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_watch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10643,20 +12681,34 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_watch(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /snippets/{{username}}/{{encoded_id}}/watch failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /snippets/{{username}}/{{encoded_id}}/watch failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10672,7 +12724,9 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_watch(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_snippets_by_username_by_encoded_id_watch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_snippets_by_username_by_encoded_id_watch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10695,20 +12749,34 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_watch(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /snippets/{{username}}/{{encoded_id}}/watch failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /snippets/{{username}}/{{encoded_id}}/watch failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10724,7 +12792,9 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_watch(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_watch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_watch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10747,20 +12817,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_watch(context: Ac
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/watch failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/watch failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10776,7 +12860,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_watch(context: Ac
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_by_node_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_by_node_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10799,20 +12885,34 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_by_node_id(cont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /snippets/{{username}}/{{encoded_id}}/{{node_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /snippets/{{username}}/{{encoded_id}}/{{node_id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10828,7 +12928,9 @@ pub async fn bitbucket_delete_snippets_by_username_by_encoded_id_by_node_id(cont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10854,20 +12956,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id(contex
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/{{node_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/{{node_id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10883,7 +12999,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id(contex
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_snippets_by_username_by_encoded_id_by_node_id(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_snippets_by_username_by_encoded_id_by_node_id(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10909,20 +13027,34 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_by_node_id(cont
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /snippets/{{username}}/{{encoded_id}}/{{node_id}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /snippets/{{username}}/{{encoded_id}}/{{node_id}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10938,7 +13070,9 @@ pub async fn bitbucket_update_snippets_by_username_by_encoded_id_by_node_id(cont
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id_files_by_path(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id_files_by_path(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10958,17 +13092,22 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id_files_
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/{{node_id}}/files/{{path}} failed: {}", e).into()));
@@ -10987,7 +13126,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_node_id_files_
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_diff(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_diff(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11021,20 +13162,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_diff(
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/{{revision}}/diff failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/{{revision}}/diff failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11050,7 +13205,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_diff(
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_patch(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_patch(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11076,20 +13233,34 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_patch
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /snippets/{{username}}/{{encoded_id}}/{{revision}}/patch failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /snippets/{{username}}/{{encoded_id}}/{{revision}}/patch failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11105,7 +13276,9 @@ pub async fn bitbucket_read_snippets_by_username_by_encoded_id_by_revision_patch
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11133,20 +13306,28 @@ pub async fn bitbucket_read_teams(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams failed: {}", e).into()),
+            );
         }
     }
 
@@ -11162,7 +13343,9 @@ pub async fn bitbucket_read_teams(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11185,20 +13368,28 @@ pub async fn bitbucket_read_teams_by_username(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -11214,7 +13405,9 @@ pub async fn bitbucket_read_teams_by_username(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_followers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_followers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11237,20 +13430,28 @@ pub async fn bitbucket_read_teams_by_username_followers(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/followers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/followers failed: {}", e).into()),
+            );
         }
     }
 
@@ -11266,7 +13467,9 @@ pub async fn bitbucket_read_teams_by_username_followers(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_following(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_following(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11289,20 +13492,28 @@ pub async fn bitbucket_read_teams_by_username_following(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/following failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/following failed: {}", e).into()),
+            );
         }
     }
 
@@ -11318,7 +13529,9 @@ pub async fn bitbucket_read_teams_by_username_following(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11338,20 +13551,28 @@ pub async fn bitbucket_read_teams_by_username_hooks(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/hooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/hooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -11367,7 +13588,9 @@ pub async fn bitbucket_read_teams_by_username_hooks(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_teams_by_username_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_teams_by_username_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11387,20 +13610,28 @@ pub async fn bitbucket_create_teams_by_username_hooks(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /teams/{{username}}/hooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /teams/{{username}}/hooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -11416,7 +13647,9 @@ pub async fn bitbucket_create_teams_by_username_hooks(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_teams_by_username_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_teams_by_username_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11439,20 +13672,30 @@ pub async fn bitbucket_update_teams_by_username_hooks_by_uid(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /teams/{{username}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /teams/{{username}}/hooks/{{uid}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -11468,7 +13711,9 @@ pub async fn bitbucket_update_teams_by_username_hooks_by_uid(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_teams_by_username_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_teams_by_username_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11491,20 +13736,30 @@ pub async fn bitbucket_delete_teams_by_username_hooks_by_uid(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /teams/{{username}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /teams/{{username}}/hooks/{{uid}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -11520,7 +13775,9 @@ pub async fn bitbucket_delete_teams_by_username_hooks_by_uid(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11543,20 +13800,30 @@ pub async fn bitbucket_read_teams_by_username_hooks_by_uid(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /teams/{{username}}/hooks/{{uid}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -11572,7 +13839,9 @@ pub async fn bitbucket_read_teams_by_username_hooks_by_uid(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_members(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_members(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11592,20 +13861,28 @@ pub async fn bitbucket_read_teams_by_username_members(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/members failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/members failed: {}", e).into()),
+            );
         }
     }
 
@@ -11621,7 +13898,9 @@ pub async fn bitbucket_read_teams_by_username_members(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_permissions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_permissions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11655,20 +13934,28 @@ pub async fn bitbucket_read_teams_by_username_permissions(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/permissions failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/permissions failed: {}", e).into()),
+            );
         }
     }
 
@@ -11684,7 +13971,9 @@ pub async fn bitbucket_read_teams_by_username_permissions(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_permissions_repositories(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_permissions_repositories(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11718,20 +14007,34 @@ pub async fn bitbucket_read_teams_by_username_permissions_repositories(context: 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/permissions/repositories failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /teams/{{username}}/permissions/repositories failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11747,7 +14050,9 @@ pub async fn bitbucket_read_teams_by_username_permissions_repositories(context: 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_permissions_repositories_by_repo_slug(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_permissions_repositories_by_repo_slug(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11784,20 +14089,34 @@ pub async fn bitbucket_read_teams_by_username_permissions_repositories_by_repo_s
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/permissions/repositories/{{repo_slug}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /teams/{{username}}/permissions/repositories/{{repo_slug}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11813,7 +14132,9 @@ pub async fn bitbucket_read_teams_by_username_permissions_repositories_by_repo_s
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_variables_for_team(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_variables_for_team(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11836,20 +14157,34 @@ pub async fn bitbucket_read_pipeline_variables_for_team(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/pipelines_config/variables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /teams/{{username}}/pipelines_config/variables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11865,7 +14200,9 @@ pub async fn bitbucket_read_pipeline_variables_for_team(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_pipeline_variable_for_team(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_pipeline_variable_for_team(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11888,20 +14225,34 @@ pub async fn bitbucket_create_pipeline_variable_for_team(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /teams/{{username}}/pipelines_config/variables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /teams/{{username}}/pipelines_config/variables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11917,7 +14268,9 @@ pub async fn bitbucket_create_pipeline_variable_for_team(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_pipeline_variable_for_team(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_pipeline_variable_for_team(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11943,17 +14296,22 @@ pub async fn bitbucket_update_pipeline_variable_for_team(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /teams/{{username}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -11972,7 +14330,9 @@ pub async fn bitbucket_update_pipeline_variable_for_team(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_pipeline_variable_for_team(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_pipeline_variable_for_team(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11998,17 +14358,22 @@ pub async fn bitbucket_delete_pipeline_variable_for_team(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /teams/{{username}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -12027,7 +14392,9 @@ pub async fn bitbucket_delete_pipeline_variable_for_team(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_variable_for_team(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_variable_for_team(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12053,17 +14420,22 @@ pub async fn bitbucket_read_pipeline_variable_for_team(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -12082,7 +14454,9 @@ pub async fn bitbucket_read_pipeline_variable_for_team(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_teams_by_username_projects(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_teams_by_username_projects(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12102,27 +14476,35 @@ pub async fn bitbucket_create_teams_by_username_projects(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /teams/{{username}}/projects/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /teams/{{username}}/projects/ failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /teams/{username}/projects/
 #[actor(
@@ -12131,7 +14513,9 @@ pub async fn bitbucket_create_teams_by_username_projects(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_projects(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_projects(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12151,27 +14535,35 @@ pub async fn bitbucket_read_teams_by_username_projects(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/projects/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/projects/ failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: GET /teams/{username}/projects/{project_key}
 #[actor(
@@ -12180,7 +14572,9 @@ pub async fn bitbucket_read_teams_by_username_projects(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_projects_by_project_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_projects_by_project_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12200,27 +14594,41 @@ pub async fn bitbucket_read_teams_by_username_projects_by_project_key(context: A
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/projects/{{project_key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /teams/{{username}}/projects/{{project_key}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
     Ok(output)
 }
 
-/// 
+///
 ///
 /// Method: DELETE /teams/{username}/projects/{project_key}
 #[actor(
@@ -12229,7 +14637,9 @@ pub async fn bitbucket_read_teams_by_username_projects_by_project_key(context: A
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_teams_by_username_projects_by_project_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_teams_by_username_projects_by_project_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12249,20 +14659,34 @@ pub async fn bitbucket_delete_teams_by_username_projects_by_project_key(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /teams/{{username}}/projects/{{project_key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /teams/{{username}}/projects/{{project_key}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12278,7 +14702,9 @@ pub async fn bitbucket_delete_teams_by_username_projects_by_project_key(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_teams_by_username_projects_by_project_key(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_teams_by_username_projects_by_project_key(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12298,20 +14724,34 @@ pub async fn bitbucket_update_teams_by_username_projects_by_project_key(context:
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /teams/{{username}}/projects/{{project_key}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /teams/{{username}}/projects/{{project_key}} failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12327,7 +14767,9 @@ pub async fn bitbucket_update_teams_by_username_projects_by_project_key(context:
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_teams_by_username_repositories(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_teams_by_username_repositories(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12347,20 +14789,30 @@ pub async fn bitbucket_read_teams_by_username_repositories(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/repositories failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /teams/{{username}}/repositories failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -12376,7 +14828,9 @@ pub async fn bitbucket_read_teams_by_username_repositories(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_search_account(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_search_account(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12413,20 +14867,28 @@ pub async fn bitbucket_search_account(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /teams/{{username}}/search/code failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /teams/{{username}}/search/code failed: {}", e).into()),
+            );
         }
     }
 
@@ -12462,20 +14924,28 @@ pub async fn bitbucket_read_user(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /user failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /user failed: {}", e).into()),
+            );
         }
     }
 
@@ -12491,7 +14961,9 @@ pub async fn bitbucket_read_user(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_user_emails(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_user_emails(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12511,20 +14983,28 @@ pub async fn bitbucket_read_user_emails(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /user/emails failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /user/emails failed: {}", e).into()),
+            );
         }
     }
 
@@ -12540,7 +15020,9 @@ pub async fn bitbucket_read_user_emails(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_user_emails_by_email(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_user_emails_by_email(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12560,20 +15042,28 @@ pub async fn bitbucket_read_user_emails_by_email(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /user/emails/{{email}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /user/emails/{{email}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -12589,7 +15079,9 @@ pub async fn bitbucket_read_user_emails_by_email(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_user_permissions_repositories(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_user_permissions_repositories(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12620,20 +15112,28 @@ pub async fn bitbucket_read_user_permissions_repositories(context: ActorContext)
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /user/permissions/repositories failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /user/permissions/repositories failed: {}", e).into()),
+            );
         }
     }
 
@@ -12649,7 +15149,9 @@ pub async fn bitbucket_read_user_permissions_repositories(context: ActorContext)
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_user_permissions_teams(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_user_permissions_teams(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12680,20 +15182,28 @@ pub async fn bitbucket_read_user_permissions_teams(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /user/permissions/teams failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /user/permissions/teams failed: {}", e).into()),
+            );
         }
     }
 
@@ -12709,7 +15219,9 @@ pub async fn bitbucket_read_user_permissions_teams(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12732,20 +15244,28 @@ pub async fn bitbucket_read_users_by_username(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}} failed: {}", e).into()),
+            );
         }
     }
 
@@ -12761,7 +15281,9 @@ pub async fn bitbucket_read_users_by_username(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_followers(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_followers(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12784,20 +15306,28 @@ pub async fn bitbucket_read_users_by_username_followers(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/followers failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/followers failed: {}", e).into()),
+            );
         }
     }
 
@@ -12813,7 +15343,9 @@ pub async fn bitbucket_read_users_by_username_followers(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_following(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_following(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12836,20 +15368,28 @@ pub async fn bitbucket_read_users_by_username_following(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/following failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/following failed: {}", e).into()),
+            );
         }
     }
 
@@ -12865,7 +15405,9 @@ pub async fn bitbucket_read_users_by_username_following(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_users_by_username_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_users_by_username_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12885,20 +15427,28 @@ pub async fn bitbucket_create_users_by_username_hooks(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{username}}/hooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /users/{{username}}/hooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -12914,7 +15464,9 @@ pub async fn bitbucket_create_users_by_username_hooks(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_hooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_hooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12934,20 +15486,28 @@ pub async fn bitbucket_read_users_by_username_hooks(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/hooks failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/hooks failed: {}", e).into()),
+            );
         }
     }
 
@@ -12963,7 +15523,9 @@ pub async fn bitbucket_read_users_by_username_hooks(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_users_by_username_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_users_by_username_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12986,20 +15548,30 @@ pub async fn bitbucket_delete_users_by_username_hooks_by_uid(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /users/{{username}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /users/{{username}}/hooks/{{uid}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -13015,7 +15587,9 @@ pub async fn bitbucket_delete_users_by_username_hooks_by_uid(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13038,20 +15612,30 @@ pub async fn bitbucket_read_users_by_username_hooks_by_uid(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /users/{{username}}/hooks/{{uid}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -13067,7 +15651,9 @@ pub async fn bitbucket_read_users_by_username_hooks_by_uid(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_users_by_username_hooks_by_uid(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_users_by_username_hooks_by_uid(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13090,20 +15676,30 @@ pub async fn bitbucket_update_users_by_username_hooks_by_uid(context: ActorConte
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /users/{{username}}/hooks/{{uid}} failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PUT /users/{{username}}/hooks/{{uid}} failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -13119,7 +15715,9 @@ pub async fn bitbucket_update_users_by_username_hooks_by_uid(context: ActorConte
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_members(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_members(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13139,20 +15737,28 @@ pub async fn bitbucket_read_users_by_username_members(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/members failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/members failed: {}", e).into()),
+            );
         }
     }
 
@@ -13168,7 +15774,9 @@ pub async fn bitbucket_read_users_by_username_members(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_variables_for_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_variables_for_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13191,20 +15799,34 @@ pub async fn bitbucket_read_pipeline_variables_for_user(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/pipelines_config/variables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /users/{{username}}/pipelines_config/variables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13220,7 +15842,9 @@ pub async fn bitbucket_read_pipeline_variables_for_user(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_pipeline_variable_for_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_pipeline_variable_for_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13243,20 +15867,34 @@ pub async fn bitbucket_create_pipeline_variable_for_user(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{username}}/pipelines_config/variables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /users/{{username}}/pipelines_config/variables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13272,7 +15910,9 @@ pub async fn bitbucket_create_pipeline_variable_for_user(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_pipeline_variable_for_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_pipeline_variable_for_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13298,17 +15938,22 @@ pub async fn bitbucket_delete_pipeline_variable_for_user(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /users/{{username}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -13327,7 +15972,9 @@ pub async fn bitbucket_delete_pipeline_variable_for_user(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_pipeline_variable_for_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_pipeline_variable_for_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13353,17 +16000,22 @@ pub async fn bitbucket_read_pipeline_variable_for_user(context: ActorContext) ->
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -13382,7 +16034,9 @@ pub async fn bitbucket_read_pipeline_variable_for_user(context: ActorContext) ->
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_pipeline_variable_for_user(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_pipeline_variable_for_user(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13408,17 +16062,22 @@ pub async fn bitbucket_update_pipeline_variable_for_user(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /users/{{username}}/pipelines_config/variables/{{variable_uuid}} failed: {}", e).into()));
@@ -13437,7 +16096,9 @@ pub async fn bitbucket_update_pipeline_variable_for_user(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_properties(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_properties(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13466,17 +16127,22 @@ pub async fn bitbucket_read_properties(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -13495,7 +16161,9 @@ pub async fn bitbucket_read_properties(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_user_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_user_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13524,17 +16192,22 @@ pub async fn bitbucket_delete_user_hosted_property_value(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /users/{{username}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -13553,7 +16226,9 @@ pub async fn bitbucket_delete_user_hosted_property_value(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_user_hosted_property_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_user_hosted_property_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13582,17 +16257,22 @@ pub async fn bitbucket_update_user_hosted_property_value(context: ActorContext) 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /users/{{username}}/properties/{{app_key}}/{{property_name}} failed: {}", e).into()));
@@ -13611,7 +16291,9 @@ pub async fn bitbucket_update_user_hosted_property_value(context: ActorContext) 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_repositories(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_repositories(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13631,20 +16313,30 @@ pub async fn bitbucket_read_users_by_username_repositories(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/repositories failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /users/{{username}}/repositories failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -13660,7 +16352,9 @@ pub async fn bitbucket_read_users_by_username_repositories(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_create_users_by_username_sshkeys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_create_users_by_username_sshkeys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13683,20 +16377,28 @@ pub async fn bitbucket_create_users_by_username_sshkeys(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /users/{{username}}/ssh-keys failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /users/{{username}}/ssh-keys failed: {}", e).into()),
+            );
         }
     }
 
@@ -13712,7 +16414,9 @@ pub async fn bitbucket_create_users_by_username_sshkeys(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_read_users_by_username_sshkeys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_read_users_by_username_sshkeys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13735,20 +16439,28 @@ pub async fn bitbucket_read_users_by_username_sshkeys(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /users/{{username}}/ssh-keys failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /users/{{username}}/ssh-keys failed: {}", e).into()),
+            );
         }
     }
 
@@ -13764,7 +16476,9 @@ pub async fn bitbucket_read_users_by_username_sshkeys(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_delete_users_by_username_sshkeys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_delete_users_by_username_sshkeys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13790,20 +16504,30 @@ pub async fn bitbucket_delete_users_by_username_sshkeys(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /users/{{username}}/ssh-keys/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("DELETE /users/{{username}}/ssh-keys/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -13819,7 +16543,9 @@ pub async fn bitbucket_delete_users_by_username_sshkeys(context: ActorContext) -
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn bitbucket_update_users_by_username_sshkeys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bitbucket_update_users_by_username_sshkeys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13845,23 +16571,30 @@ pub async fn bitbucket_update_users_by_username_sshkeys(context: ActorContext) -
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /users/{{username}}/ssh-keys/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /users/{{username}}/ssh-keys/ failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

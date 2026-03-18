@@ -95,13 +95,12 @@ impl CodegenContext {
                 let r = self.emit_node(right, pos);
                 self.emit_op(op, &l, &r)
             }
-            SdfNode::Transform { transform, child } => {
-                self.emit_transform(transform, child, pos)
-            }
+            SdfNode::Transform { transform, child } => self.emit_transform(transform, child, pos),
             SdfNode::Material { child, .. } => self.emit_node(child, pos),
             SdfNode::Ref { name } => {
                 let var = self.next_dist();
-                self.lines.push(format!("  let {} = sdf_{}({});", var, name, pos));
+                self.lines
+                    .push(format!("  let {} = sdf_{}({});", var, name, pos));
                 var
             }
             SdfNode::Scene { root, .. } => self.emit_node(root, pos),
@@ -251,27 +250,39 @@ impl CodegenContext {
                 let new_pos = self.next_pos();
                 self.lines.push(format!(
                     "  let {} = rot_xyz({}, vec3f({:.6}, {:.6}, {:.6}));",
-                    new_pos, pos, angles[0].to_radians(), angles[1].to_radians(), angles[2].to_radians()
+                    new_pos,
+                    pos,
+                    angles[0].to_radians(),
+                    angles[1].to_radians(),
+                    angles[2].to_radians()
                 ));
                 self.emit_node(child, &new_pos)
             }
             SdfTransform::Scale { factor } => {
                 let s = factor[0]; // uniform scale
                 let new_pos = self.next_pos();
-                self.lines.push(format!("  let {} = {} / {:.6};", new_pos, pos, s));
+                self.lines
+                    .push(format!("  let {} = {} / {:.6};", new_pos, pos, s));
                 let inner = self.emit_node(child, &new_pos);
                 let var = self.next_dist();
-                self.lines.push(format!("  let {} = {} * {:.6};", var, inner, s));
+                self.lines
+                    .push(format!("  let {} = {} * {:.6};", var, inner, s));
                 var
             }
             SdfTransform::Twist { strength } => {
                 let new_pos = self.next_pos();
-                self.lines.push(format!("  let {} = twist({}, {:.6});", new_pos, pos, strength));
+                self.lines.push(format!(
+                    "  let {} = twist({}, {:.6});",
+                    new_pos, pos, strength
+                ));
                 self.emit_node(child, &new_pos)
             }
             SdfTransform::Bend { strength } => {
                 let new_pos = self.next_pos();
-                self.lines.push(format!("  let {} = bend({}, {:.6});", new_pos, pos, strength));
+                self.lines.push(format!(
+                    "  let {} = bend({}, {:.6});",
+                    new_pos, pos, strength
+                ));
                 self.emit_node(child, &new_pos)
             }
             SdfTransform::Elongate { amount } => {
@@ -287,13 +298,17 @@ impl CodegenContext {
             SdfTransform::Round { radius } => {
                 let inner = self.emit_node(child, pos);
                 let var = self.next_dist();
-                self.lines.push(format!("  let {} = {} - {:.6};", var, inner, radius));
+                self.lines
+                    .push(format!("  let {} = {} - {:.6};", var, inner, radius));
                 var
             }
             SdfTransform::Shell { thickness } => {
                 let inner = self.emit_node(child, pos);
                 let var = self.next_dist();
-                self.lines.push(format!("  let {} = abs({}) - {:.6};", var, inner, thickness));
+                self.lines.push(format!(
+                    "  let {} = abs({}) - {:.6};",
+                    var, inner, thickness
+                ));
                 var
             }
             SdfTransform::Repeat { spacing, count } => {
@@ -326,7 +341,11 @@ impl CodegenContext {
                 ));
                 self.emit_node(child, &new_pos)
             }
-            SdfTransform::Displace { frequency, amplitude, octaves } => {
+            SdfTransform::Displace {
+                frequency,
+                amplitude,
+                octaves,
+            } => {
                 self.uses_noise = true;
                 let inner = self.emit_node(child, pos);
                 let var = self.next_dist();
@@ -356,17 +375,29 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     shader.push_str("  fov: f32,\n");
     shader.push_str("};\n\n");
     shader.push_str("@group(0) @binding(0) var<uniform> u: Uniforms;\n");
-    shader.push_str("@group(0) @binding(1) var output_texture: texture_storage_2d<rgba8unorm, write>;\n\n");
+    shader.push_str(
+        "@group(0) @binding(1) var output_texture: texture_storage_2d<rgba8unorm, write>;\n\n",
+    );
 
     // Constants
-    shader.push_str(&format!("const MAX_STEPS: u32 = {}u;\n", settings.max_steps));
-    shader.push_str(&format!("const MAX_DIST: f32 = {:.1};\n", settings.max_dist));
+    shader.push_str(&format!(
+        "const MAX_STEPS: u32 = {}u;\n",
+        settings.max_steps
+    ));
+    shader.push_str(&format!(
+        "const MAX_DIST: f32 = {:.1};\n",
+        settings.max_dist
+    ));
     shader.push_str(&format!("const EPSILON: f32 = {:.6};\n", settings.epsilon));
     shader.push_str(&format!("const AMBIENT: f32 = {:.4};\n", settings.ambient));
     // Pre-normalize the light direction (normalize() not available in const)
     let ld = settings.light_dir;
     let ld_len = (ld[0] * ld[0] + ld[1] * ld[1] + ld[2] * ld[2]).sqrt();
-    let ld_n = if ld_len > 0.0 { [ld[0] / ld_len, ld[1] / ld_len, ld[2] / ld_len] } else { ld };
+    let ld_n = if ld_len > 0.0 {
+        [ld[0] / ld_len, ld[1] / ld_len, ld[2] / ld_len]
+    } else {
+        ld
+    };
     shader.push_str(&format!(
         "const LIGHT_DIR: vec3f = vec3f({:.6}, {:.6}, {:.6});\n",
         ld_n[0], ld_n[1], ld_n[2]
@@ -413,7 +444,11 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     if settings.ao {
         shader.push_str(AO_FUNCTION);
     }
-    shader.push_str(if settings.ao { SHADE_WITH_AO } else { SHADE_NO_AO });
+    shader.push_str(if settings.ao {
+        SHADE_WITH_AO
+    } else {
+        SHADE_NO_AO
+    });
     shader.push_str(CAMERA_FUNCTION);
     shader.push_str(COMPUTE_ENTRY);
 
@@ -669,7 +704,7 @@ mod tests {
         let result = compile(
             &SdfNode::sphere(1.0)
                 .translate([1.0, 0.0, 0.0])
-                .rotate([0.0, 45.0, 0.0])
+                .rotate([0.0, 45.0, 0.0]),
         );
         // Should create p0 for rotate, p1 for translate, each with unique names
         assert!(result.wgsl.contains("let p0 = rot_xyz(p,"));
@@ -713,18 +748,24 @@ mod tests {
     #[test]
     fn test_no_variable_shadowing() {
         // Ensure no `let p = ...` appears (only p0, p1, etc.)
-        let result = compile(
-            &SdfNode::smooth_union(
-                SdfNode::sphere(0.5).translate([1.0, 0.0, 0.0]).twist(0.3),
-                SdfNode::torus(1.0, 0.3).rotate([90.0, 0.0, 0.0]),
-                0.2,
-            )
-        );
+        let result = compile(&SdfNode::smooth_union(
+            SdfNode::sphere(0.5).translate([1.0, 0.0, 0.0]).twist(0.3),
+            SdfNode::torus(1.0, 0.3).rotate([90.0, 0.0, 0.0]),
+            0.2,
+        ));
         // The function parameter is `p`, all derived positions are p0, p1, ...
         // We should NOT see `let p =` (which would shadow the parameter)
-        let sdf_fn_body = result.wgsl.split("fn sdf_scene(p: vec3f) -> f32 {").nth(1).unwrap();
+        let sdf_fn_body = result
+            .wgsl
+            .split("fn sdf_scene(p: vec3f) -> f32 {")
+            .nth(1)
+            .unwrap();
         let sdf_fn_body = sdf_fn_body.split('}').next().unwrap();
-        assert!(!sdf_fn_body.contains("let p ="), "Should not shadow p: {}", sdf_fn_body);
+        assert!(
+            !sdf_fn_body.contains("let p ="),
+            "Should not shadow p: {}",
+            sdf_fn_body
+        );
     }
 
     #[test]

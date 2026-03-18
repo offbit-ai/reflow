@@ -9,12 +9,18 @@ fn hash3(x: f64, y: f64, z: f64) -> f64 {
     let mut qy = (y * 0.1031).fract();
     let mut qz = (z * 0.1031).fract();
     let dot = qx * (qy + 19.19) + qy * (qz + 19.19) + qz * (qx + 19.19);
-    qx += dot; qy += dot; qz += dot;
+    qx += dot;
+    qy += dot;
+    qz += dot;
     ((qx + qy) * qz).fract()
 }
 
-fn lerp(a: f64, b: f64, t: f64) -> f64 { a + (b - a) * t }
-fn smoothstep(t: f64) -> f64 { t * t * (3.0 - 2.0 * t) }
+fn lerp(a: f64, b: f64, t: f64) -> f64 {
+    a + (b - a) * t
+}
+fn smoothstep(t: f64) -> f64 {
+    t * t * (3.0 - 2.0 * t)
+}
 
 /// Value noise (3D). Returns 0.0–1.0.
 pub fn value_noise(x: f64, y: f64, z: f64) -> f64 {
@@ -33,7 +39,11 @@ pub fn value_noise(x: f64, y: f64, z: f64) -> f64 {
         ),
         lerp(
             lerp(hash3(ix, iy, iz + 1.0), hash3(ix + 1.0, iy, iz + 1.0), fx),
-            lerp(hash3(ix, iy + 1.0, iz + 1.0), hash3(ix + 1.0, iy + 1.0, iz + 1.0), fx),
+            lerp(
+                hash3(ix, iy + 1.0, iz + 1.0),
+                hash3(ix + 1.0, iy + 1.0, iz + 1.0),
+                fx,
+            ),
             fy,
         ),
         fz,
@@ -96,13 +106,23 @@ pub fn simplex_2d(x: f64, y: f64) -> f64 {
     };
 
     const GRAD: [[f64; 2]; 8] = [
-        [1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0],
-        [0.707, 0.707], [-0.707, 0.707], [0.707, -0.707], [-0.707, -0.707],
+        [1.0, 0.0],
+        [-1.0, 0.0],
+        [0.0, 1.0],
+        [0.0, -1.0],
+        [0.707, 0.707],
+        [-0.707, 0.707],
+        [0.707, -0.707],
+        [-0.707, -0.707],
     ];
 
     let contrib = |t_val: f64, gx: f64, gy: f64, dx: f64, dy: f64| -> f64 {
         let t = t_val - dx * dx - dy * dy;
-        if t < 0.0 { 0.0 } else { t * t * t * t * (gx * dx + gy * dy) }
+        if t < 0.0 {
+            0.0
+        } else {
+            t * t * t * t * (gx * dx + gy * dy)
+        }
     };
 
     let g0 = &GRAD[gi(i, j)];
@@ -133,7 +153,9 @@ pub fn worley_2d(x: f64, y: f64) -> f64 {
             let px = dx as f64 + hash3(nx, ny, 0.0);
             let py = dy as f64 + hash3(nx, ny, 1.0);
             let d = (fx - px).powi(2) + (fy - py).powi(2);
-            if d < min_dist { min_dist = d; }
+            if d < min_dist {
+                min_dist = d;
+            }
         }
     }
 
@@ -142,7 +164,8 @@ pub fn worley_2d(x: f64, y: f64) -> f64 {
 
 /// Fractal Brownian Motion (FBM). Layers octaves of a base noise function.
 pub fn fbm_2d<F: Fn(f64, f64) -> f64>(
-    x: f64, y: f64,
+    x: f64,
+    y: f64,
     octaves: u32,
     lacunarity: f64,
     persistence: f64,
@@ -165,7 +188,8 @@ pub fn fbm_2d<F: Fn(f64, f64) -> f64>(
 
 /// Ridged multi-fractal noise. Like FBM but with abs() for ridge lines.
 pub fn ridged_2d<F: Fn(f64, f64) -> f64>(
-    x: f64, y: f64,
+    x: f64,
+    y: f64,
     octaves: u32,
     lacunarity: f64,
     persistence: f64,
@@ -224,7 +248,12 @@ mod tests {
     fn test_perlin_continuity() {
         let a = perlin_2d(1.0, 1.0);
         let b = perlin_2d(1.001, 1.0);
-        assert!((a - b).abs() < 0.1, "Perlin should be continuous: {} vs {}", a, b);
+        assert!(
+            (a - b).abs() < 0.1,
+            "Perlin should be continuous: {} vs {}",
+            a,
+            b
+        );
     }
 
     #[test]

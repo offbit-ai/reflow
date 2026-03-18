@@ -21,8 +21,12 @@ const BASE_URL: &str = "https://app.posthog.com/api";
 const ENV_KEY: &str = "POSTHOG_API_KEY";
 
 /// Apply authentication to the request builder.
-fn apply_auth(config: &reflow_actor::ActorConfig, mut builder: reqwest::RequestBuilder) -> Result<reqwest::RequestBuilder> {
-    let credential = config.get_config_or_env(ENV_KEY)
+fn apply_auth(
+    config: &reflow_actor::ActorConfig,
+    mut builder: reqwest::RequestBuilder,
+) -> Result<reqwest::RequestBuilder> {
+    let credential = config
+        .get_config_or_env(ENV_KEY)
         .ok_or_else(|| anyhow::anyhow!("Missing env var: {}", ENV_KEY))?;
     builder = builder.header("Authorization", format!("Bearer {}", credential));
     Ok(builder)
@@ -71,20 +75,28 @@ pub async fn posthog_send_event(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /capture/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /capture/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -123,20 +135,30 @@ pub async fn posthog_read_events(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /projects/{{project_id}}/events/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /projects/{{project_id}}/events/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -152,7 +174,9 @@ pub async fn posthog_read_events(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_list_code_invites(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_list_code_invites(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -172,20 +196,28 @@ pub async fn posthog_list_code_invites(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/code/invites/check-access/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /api/code/invites/check-access/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -201,7 +233,9 @@ pub async fn posthog_list_code_invites(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_code_invites(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_code_invites(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -229,20 +263,28 @@ pub async fn posthog_create_code_invites(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/code/invites/redeem/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /api/code/invites/redeem/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -316,20 +358,34 @@ pub async fn posthog_create_max(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/conversations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/conversations/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -379,20 +435,34 @@ pub async fn posthog_read_max(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/conversations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/conversations/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -412,7 +482,8 @@ pub async fn posthog_cancel_max(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/conversations/{conversation}/cancel/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/conversations/{conversation}/cancel/".to_string();
     if let Some(val) = inputs.get("conversation") {
         endpoint = endpoint.replace("{{conversation}}", &super::message_to_str(val));
     }
@@ -484,17 +555,22 @@ pub async fn posthog_cancel_max(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/conversations/{{conversation}}/cancel/ failed: {}", e).into()));
@@ -517,7 +593,8 @@ pub async fn posthog_update_max(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/conversations/{conversation}/queue/{queue_id}/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/conversations/{conversation}/queue/{queue_id}/".to_string();
     if let Some(val) = inputs.get("conversation") {
         endpoint = endpoint.replace("{{conversation}}", &super::message_to_str(val));
     }
@@ -592,17 +669,22 @@ pub async fn posthog_update_max(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/conversations/{{conversation}}/queue/{{queue_id}}/ failed: {}", e).into()));
@@ -625,7 +707,8 @@ pub async fn posthog_delete_max(context: ActorContext) -> Result<HashMap<String,
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/conversations/{conversation}/queue/{queue_id}/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/conversations/{conversation}/queue/{queue_id}/".to_string();
     if let Some(val) = inputs.get("conversation") {
         endpoint = endpoint.replace("{{conversation}}", &super::message_to_str(val));
     }
@@ -650,17 +733,22 @@ pub async fn posthog_delete_max(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/conversations/{{conversation}}/queue/{{queue_id}}/ failed: {}", e).into()));
@@ -679,7 +767,9 @@ pub async fn posthog_delete_max(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_customer_profile_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_customer_profile_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -713,20 +803,34 @@ pub async fn posthog_read_customer_profile_configs(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/customer_profile_configs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/customer_profile_configs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -742,7 +846,9 @@ pub async fn posthog_read_customer_profile_configs(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_customer_profile_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_customer_profile_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -788,17 +894,22 @@ pub async fn posthog_create_customer_profile_configs(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/customer_profile_configs/ failed: {}", e).into()));
@@ -817,7 +928,9 @@ pub async fn posthog_create_customer_profile_configs(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_customer_profile_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_customer_profile_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -843,17 +956,22 @@ pub async fn posthog_delete_customer_profile_configs(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/customer_profile_configs/{{id}}/ failed: {}", e).into()));
@@ -872,7 +990,9 @@ pub async fn posthog_delete_customer_profile_configs(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_customer_profile_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_customer_profile_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -921,17 +1041,22 @@ pub async fn posthog_update_customer_profile_configs(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/environments/{{project_id}}/customer_profile_configs/{{id}}/ failed: {}", e).into()));
@@ -950,11 +1075,14 @@ pub async fn posthog_update_customer_profile_configs(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_dashboards(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_dashboards(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/dashboards/{dashboard_id}/collaborators/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/dashboards/{dashboard_id}/collaborators/".to_string();
     if let Some(val) = inputs.get("dashboard_id") {
         endpoint = endpoint.replace("{{dashboard_id}}", &super::message_to_str(val));
     }
@@ -976,17 +1104,22 @@ pub async fn posthog_read_dashboards(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/dashboards/{{dashboard_id}}/collaborators/ failed: {}", e).into()));
@@ -1005,11 +1138,14 @@ pub async fn posthog_read_dashboards(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_dashboards(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_dashboards(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/dashboards/{dashboard_id}/collaborators/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/dashboards/{dashboard_id}/collaborators/".to_string();
     if let Some(val) = inputs.get("dashboard_id") {
         endpoint = endpoint.replace("{{dashboard_id}}", &super::message_to_str(val));
     }
@@ -1057,17 +1193,22 @@ pub async fn posthog_create_dashboards(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/dashboards/{{dashboard_id}}/collaborators/ failed: {}", e).into()));
@@ -1086,11 +1227,15 @@ pub async fn posthog_create_dashboards(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_dashboards(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_dashboards(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/dashboards/{dashboard_id}/collaborators/{user__uuid}/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/dashboards/{dashboard_id}/collaborators/{user__uuid}/"
+            .to_string();
     if let Some(val) = inputs.get("dashboard_id") {
         endpoint = endpoint.replace("{{dashboard_id}}", &super::message_to_str(val));
     }
@@ -1115,17 +1260,22 @@ pub async fn posthog_delete_dashboards(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/dashboards/{{dashboard_id}}/collaborators/{{user__uuid}}/ failed: {}", e).into()));
@@ -1144,7 +1294,9 @@ pub async fn posthog_delete_dashboards(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_desktop_recordings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_desktop_recordings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1178,20 +1330,34 @@ pub async fn posthog_read_desktop_recordings(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/desktop_recordings/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/desktop_recordings/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -1207,7 +1373,9 @@ pub async fn posthog_read_desktop_recordings(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_desktop_recordings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_desktop_recordings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1238,20 +1406,34 @@ pub async fn posthog_create_desktop_recordings(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/desktop_recordings/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/desktop_recordings/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -1267,7 +1449,9 @@ pub async fn posthog_create_desktop_recordings(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_desktop_recordings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_desktop_recordings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1373,17 +1557,22 @@ pub async fn posthog_update_desktop_recordings(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/environments/{{project_id}}/desktop_recordings/{{id}}/ failed: {}", e).into()));
@@ -1402,7 +1591,9 @@ pub async fn posthog_update_desktop_recordings(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_desktop_recordings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_desktop_recordings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1428,17 +1619,22 @@ pub async fn posthog_delete_desktop_recordings(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/desktop_recordings/{{id}}/ failed: {}", e).into()));
@@ -1457,11 +1653,14 @@ pub async fn posthog_delete_desktop_recordings(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/assignment_rules/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/assignment_rules/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -1500,17 +1699,22 @@ pub async fn posthog_create_error_tracking(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/error_tracking/assignment_rules/ failed: {}", e).into()));
@@ -1529,11 +1733,14 @@ pub async fn posthog_create_error_tracking(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/assignment_rules/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/assignment_rules/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -1563,17 +1770,22 @@ pub async fn posthog_read_error_tracking(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/error_tracking/assignment_rules/ failed: {}", e).into()));
@@ -1592,11 +1804,14 @@ pub async fn posthog_read_error_tracking(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/assignment_rules/reorder/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/assignment_rules/reorder/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -1635,17 +1850,22 @@ pub async fn posthog_update_error_tracking(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/error_tracking/assignment_rules/reorder/ failed: {}", e).into()));
@@ -1664,11 +1884,14 @@ pub async fn posthog_update_error_tracking(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/assignment_rules/{id}/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/assignment_rules/{id}/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -1690,17 +1913,22 @@ pub async fn posthog_delete_error_tracking(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/error_tracking/assignment_rules/{{id}}/ failed: {}", e).into()));
@@ -1719,11 +1947,14 @@ pub async fn posthog_delete_error_tracking(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_assign_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_assign_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/issues/{id}/assign/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/issues/{id}/assign/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -1774,17 +2005,22 @@ pub async fn posthog_assign_error_tracking(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/error_tracking/issues/{{id}}/assign/ failed: {}", e).into()));
@@ -1803,11 +2039,14 @@ pub async fn posthog_assign_error_tracking(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_merge_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_merge_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/issues/{id}/merge/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/issues/{id}/merge/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -1858,17 +2097,22 @@ pub async fn posthog_merge_error_tracking(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/error_tracking/issues/{{id}}/merge/ failed: {}", e).into()));
@@ -1887,11 +2131,14 @@ pub async fn posthog_merge_error_tracking(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_split_error_tracking(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_split_error_tracking(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/error_tracking/issues/{id}/split/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/error_tracking/issues/{id}/split/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -1942,17 +2189,22 @@ pub async fn posthog_split_error_tracking(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/error_tracking/issues/{{id}}/split/ failed: {}", e).into()));
@@ -1971,7 +2223,9 @@ pub async fn posthog_split_error_tracking(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_evaluation_runs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_evaluation_runs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -1994,20 +2248,34 @@ pub async fn posthog_create_evaluation_runs(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/evaluation_runs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/evaluation_runs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2023,7 +2291,9 @@ pub async fn posthog_create_evaluation_runs(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_evaluations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_evaluations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2069,20 +2339,34 @@ pub async fn posthog_read_evaluations(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/evaluations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/evaluations/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2098,7 +2382,9 @@ pub async fn posthog_read_evaluations(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_evaluations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_evaluations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2168,20 +2454,34 @@ pub async fn posthog_create_evaluations(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/evaluations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/evaluations/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2197,7 +2497,9 @@ pub async fn posthog_create_evaluations(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_evaluations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_evaluations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2223,20 +2525,34 @@ pub async fn posthog_delete_evaluations(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/evaluations/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/environments/{{project_id}}/evaluations/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2252,7 +2568,9 @@ pub async fn posthog_delete_evaluations(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_evaluations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_evaluations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2325,20 +2643,34 @@ pub async fn posthog_update_evaluations(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/evaluations/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/environments/{{project_id}}/evaluations/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2354,7 +2686,9 @@ pub async fn posthog_update_evaluations(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_health_issues(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_health_issues(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2388,20 +2722,34 @@ pub async fn posthog_read_health_issues(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/health_issues/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/health_issues/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2417,7 +2765,9 @@ pub async fn posthog_read_health_issues(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_health_issues(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_health_issues(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2475,20 +2825,34 @@ pub async fn posthog_update_health_issues(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/health_issues/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/environments/{{project_id}}/health_issues/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2504,7 +2868,9 @@ pub async fn posthog_update_health_issues(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_health_issues(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_health_issues(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2562,17 +2928,22 @@ pub async fn posthog_create_health_issues(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/health_issues/{{id}}/resolve/ failed: {}", e).into()));
@@ -2591,11 +2962,14 @@ pub async fn posthog_create_health_issues(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/llm_analytics/evaluation_config/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/llm_analytics/evaluation_config/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -2614,17 +2988,22 @@ pub async fn posthog_read_llm_analytics(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/llm_analytics/evaluation_config/ failed: {}", e).into()));
@@ -2643,11 +3022,15 @@ pub async fn posthog_read_llm_analytics(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/llm_analytics/evaluation_config/set_active_key/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/llm_analytics/evaluation_config/set_active_key/"
+            .to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -2666,17 +3049,22 @@ pub async fn posthog_create_llm_analytics(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/llm_analytics/evaluation_config/set_active_key/ failed: {}", e).into()));
@@ -2695,11 +3083,14 @@ pub async fn posthog_create_llm_analytics(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/llm_analytics/provider_keys/{id}/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/llm_analytics/provider_keys/{id}/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -2759,17 +3150,22 @@ pub async fn posthog_update_llm_analytics(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/llm_analytics/provider_keys/{{id}}/ failed: {}", e).into()));
@@ -2788,11 +3184,14 @@ pub async fn posthog_update_llm_analytics(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/llm_analytics/provider_keys/{id}/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/llm_analytics/provider_keys/{id}/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -2814,17 +3213,22 @@ pub async fn posthog_delete_llm_analytics(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/llm_analytics/provider_keys/{{id}}/ failed: {}", e).into()));
@@ -2843,11 +3247,14 @@ pub async fn posthog_delete_llm_analytics(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_validate_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_validate_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/llm_analytics/provider_keys/{id}/validate/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/llm_analytics/provider_keys/{id}/validate/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -2907,17 +3314,22 @@ pub async fn posthog_validate_llm_analytics(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/llm_analytics/provider_keys/{{id}}/validate/ failed: {}", e).into()));
@@ -2936,7 +3348,9 @@ pub async fn posthog_validate_llm_analytics(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_translate_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_translate_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -2959,20 +3373,34 @@ pub async fn posthog_translate_llm_analytics(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/llm_analytics/translate/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/llm_analytics/translate/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -2988,11 +3416,14 @@ pub async fn posthog_translate_llm_analytics(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_archive_llm_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_archive_llm_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/llm_prompts/name/{prompt_name}/archive/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/llm_prompts/name/{prompt_name}/archive/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -3055,17 +3486,22 @@ pub async fn posthog_archive_llm_analytics(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/llm_prompts/name/{{prompt_name}}/archive/ failed: {}", e).into()));
@@ -3121,20 +3557,34 @@ pub async fn posthog_create_logs(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/logs/explainLogWithAI/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/logs/explainLogWithAI/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3150,11 +3600,14 @@ pub async fn posthog_create_logs(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_max_tools(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_max_tools(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/max_tools/create_and_query_insight/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/max_tools/create_and_query_insight/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -3173,17 +3626,22 @@ pub async fn posthog_create_max_tools(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/max_tools/create_and_query_insight/ failed: {}", e).into()));
@@ -3202,7 +3660,9 @@ pub async fn posthog_create_max_tools(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_mcp_store(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_mcp_store(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3236,20 +3696,34 @@ pub async fn posthog_read_mcp_store(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/mcp_server_installations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/mcp_server_installations/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3265,7 +3739,9 @@ pub async fn posthog_read_mcp_store(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_mcp_store(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_mcp_store(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3332,17 +3808,22 @@ pub async fn posthog_create_mcp_store(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/mcp_server_installations/ failed: {}", e).into()));
@@ -3361,7 +3842,9 @@ pub async fn posthog_create_mcp_store(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_mcp_store(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_mcp_store(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3431,17 +3914,22 @@ pub async fn posthog_update_mcp_store(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/environments/{{project_id}}/mcp_server_installations/{{id}}/ failed: {}", e).into()));
@@ -3460,7 +3948,9 @@ pub async fn posthog_update_mcp_store(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_mcp_store(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_mcp_store(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3486,17 +3976,22 @@ pub async fn posthog_delete_mcp_store(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/mcp_server_installations/{{id}}/ failed: {}", e).into()));
@@ -3515,7 +4010,9 @@ pub async fn posthog_delete_mcp_store(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_mcp_tools(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_mcp_tools(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3541,20 +4038,34 @@ pub async fn posthog_create_mcp_tools(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/mcp_tools/{{tool_name}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/mcp_tools/{{tool_name}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3570,11 +4081,14 @@ pub async fn posthog_create_mcp_tools(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_session_summaries(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_session_summaries(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/session_summaries/create_session_summaries/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/session_summaries/create_session_summaries/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -3604,17 +4118,22 @@ pub async fn posthog_create_session_summaries(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/session_summaries/create_session_summaries/ failed: {}", e).into()));
@@ -3633,11 +4152,15 @@ pub async fn posthog_create_session_summaries(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_session_summaries_individually(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_session_summaries_individually(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/environments/{project_id}/session_summaries/create_session_summaries_individually/".to_string();
+    let mut endpoint =
+        "/api/environments/{project_id}/session_summaries/create_session_summaries_individually/"
+            .to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -3667,17 +4190,22 @@ pub async fn posthog_create_session_summaries_individually(context: ActorContext
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/session_summaries/create_session_summaries_individually/ failed: {}", e).into()));
@@ -3696,7 +4224,9 @@ pub async fn posthog_create_session_summaries_individually(context: ActorContext
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_user_interviews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_user_interviews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3745,20 +4275,34 @@ pub async fn posthog_create_user_interviews(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/environments/{{project_id}}/user_interviews/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/environments/{{project_id}}/user_interviews/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3774,7 +4318,9 @@ pub async fn posthog_create_user_interviews(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_user_interviews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_user_interviews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3808,20 +4354,34 @@ pub async fn posthog_read_user_interviews(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/user_interviews/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/user_interviews/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3837,7 +4397,9 @@ pub async fn posthog_read_user_interviews(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_user_interviews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_user_interviews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3889,20 +4451,34 @@ pub async fn posthog_update_user_interviews(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/environments/{{project_id}}/user_interviews/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/environments/{{project_id}}/user_interviews/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -3918,7 +4494,9 @@ pub async fn posthog_update_user_interviews(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_user_interviews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_user_interviews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -3944,17 +4522,22 @@ pub async fn posthog_delete_user_interviews(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/environments/{{project_id}}/user_interviews/{{id}}/ failed: {}", e).into()));
@@ -3973,7 +4556,9 @@ pub async fn posthog_delete_user_interviews(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_web_vitals(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_web_vitals(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4004,20 +4589,34 @@ pub async fn posthog_read_web_vitals(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/environments/{{project_id}}/web_vitals/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/environments/{{project_id}}/web_vitals/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4033,7 +4632,9 @@ pub async fn posthog_read_web_vitals(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_organizations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4066,10 +4667,16 @@ pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashM
         body.insert("is_active".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("is_ai_data_processing_approved") {
-        body.insert("is_ai_data_processing_approved".to_string(), val.clone().into());
+        body.insert(
+            "is_ai_data_processing_approved".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_experiment_stats_method") {
-        body.insert("default_experiment_stats_method".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_stats_method".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
@@ -4078,7 +4685,10 @@ pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashM
         body.insert("slug".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("is_member_join_email_enabled") {
-        body.insert("is_member_join_email_enabled".to_string(), val.clone().into());
+        body.insert(
+            "is_member_join_email_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_role_id") {
         body.insert("default_role_id".to_string(), val.clone().into());
@@ -4096,13 +4706,19 @@ pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashM
         body.insert("customer_id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("allow_publicly_shared_resources") {
-        body.insert("allow_publicly_shared_resources".to_string(), val.clone().into());
+        body.insert(
+            "allow_publicly_shared_resources".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("members_can_invite") {
         body.insert("members_can_invite".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("members_can_use_personal_api_keys") {
-        body.insert("members_can_use_personal_api_keys".to_string(), val.clone().into());
+        body.insert(
+            "members_can_use_personal_api_keys".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("id") {
         body.insert("id".to_string(), val.clone().into());
@@ -4133,20 +4749,28 @@ pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("POST /api/organizations/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -4162,7 +4786,9 @@ pub async fn posthog_create_organizations(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_list_organizations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_list_organizations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4193,20 +4819,28 @@ pub async fn posthog_list_organizations(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/organizations/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /api/organizations/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -4222,7 +4856,9 @@ pub async fn posthog_list_organizations(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_organizations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_organizations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4245,20 +4881,28 @@ pub async fn posthog_delete_organizations(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/organizations/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("DELETE /api/organizations/{{id}}/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -4274,7 +4918,9 @@ pub async fn posthog_delete_organizations(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_organizations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4295,7 +4941,10 @@ pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashM
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("is_member_join_email_enabled") {
-        body.insert("is_member_join_email_enabled".to_string(), val.clone().into());
+        body.insert(
+            "is_member_join_email_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
@@ -4316,7 +4965,10 @@ pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashM
         body.insert("available_product_features".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_stats_method") {
-        body.insert("default_experiment_stats_method".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_stats_method".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("id") {
         body.insert("id".to_string(), val.clone().into());
@@ -4328,10 +4980,16 @@ pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashM
         body.insert("member_count".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("allow_publicly_shared_resources") {
-        body.insert("allow_publicly_shared_resources".to_string(), val.clone().into());
+        body.insert(
+            "allow_publicly_shared_resources".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("is_ai_data_processing_approved") {
-        body.insert("is_ai_data_processing_approved".to_string(), val.clone().into());
+        body.insert(
+            "is_ai_data_processing_approved".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("created_at") {
         body.insert("created_at".to_string(), val.clone().into());
@@ -4340,7 +4998,10 @@ pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashM
         body.insert("is_not_active_reason".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("members_can_use_personal_api_keys") {
-        body.insert("members_can_use_personal_api_keys".to_string(), val.clone().into());
+        body.insert(
+            "members_can_use_personal_api_keys".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("slug") {
         body.insert("slug".to_string(), val.clone().into());
@@ -4377,20 +5038,28 @@ pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/organizations/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("PUT /api/organizations/{{id}}/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -4406,7 +5075,9 @@ pub async fn posthog_update_organizations(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_organizations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_organizations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4429,20 +5100,28 @@ pub async fn posthog_read_organizations(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/organizations/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /api/organizations/{{id}}/ failed: {}", e).into()),
+            );
         }
     }
 
@@ -4458,7 +5137,9 @@ pub async fn posthog_read_organizations(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4543,20 +5224,34 @@ pub async fn posthog_create_batch_exports(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/batch_exports/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/organizations/{{organization_id}}/batch_exports/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4572,7 +5267,9 @@ pub async fn posthog_create_batch_exports(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4606,20 +5303,34 @@ pub async fn posthog_read_batch_exports(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/organizations/{{organization_id}}/batch_exports/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/organizations/{{organization_id}}/batch_exports/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -4635,7 +5346,9 @@ pub async fn posthog_read_batch_exports(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4723,17 +5436,22 @@ pub async fn posthog_update_batch_exports(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/organizations/{{organization_id}}/batch_exports/{{id}}/ failed: {}", e).into()));
@@ -4752,7 +5470,9 @@ pub async fn posthog_update_batch_exports(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4778,17 +5498,22 @@ pub async fn posthog_delete_batch_exports(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/organizations/{{organization_id}}/batch_exports/{{id}}/ failed: {}", e).into()));
@@ -4807,7 +5532,9 @@ pub async fn posthog_delete_batch_exports(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_pause_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_pause_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -4895,17 +5622,22 @@ pub async fn posthog_pause_batch_exports(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/batch_exports/{{id}}/pause/ failed: {}", e).into()));
@@ -4997,20 +5729,34 @@ pub async fn posthog_create_core(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/domains/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/organizations/{{organization_id}}/domains/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5060,20 +5806,34 @@ pub async fn posthog_read_core(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/organizations/{{organization_id}}/domains/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/organizations/{{organization_id}}/domains/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5165,20 +5925,34 @@ pub async fn posthog_update_core(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/organizations/{{organization_id}}/domains/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/organizations/{{organization_id}}/domains/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5220,20 +5994,34 @@ pub async fn posthog_delete_core(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/organizations/{{organization_id}}/domains/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/organizations/{{organization_id}}/domains/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5325,17 +6113,22 @@ pub async fn posthog_verify_core(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/domains/{{id}}/verify/ failed: {}", e).into()));
@@ -5390,16 +6183,25 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("app_urls".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("api_token") {
         body.insert("api_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("heatmaps_opt_in") {
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
@@ -5426,7 +6228,10 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("week_start_day".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("business_model") {
         body.insert("business_model".to_string(), val.clone().into());
@@ -5450,7 +6255,10 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("secret_api_token_backup".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ingested_event") {
         body.insert("ingested_event".to_string(), val.clone().into());
@@ -5465,22 +6273,34 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("anonymize_ips".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("product_description") {
         body.insert("product_description".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("uuid") {
         body.insert("uuid".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("extra_settings") {
         body.insert("extra_settings".to_string(), val.clone().into());
@@ -5501,7 +6321,10 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("session_replay_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("has_group_types") {
         body.insert("has_group_types".to_string(), val.clone().into());
@@ -5510,10 +6333,16 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("proactive_tasks_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("updated_at") {
         body.insert("updated_at".to_string(), val.clone().into());
@@ -5522,7 +6351,10 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("conversations_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("primary_dashboard") {
         body.insert("primary_dashboard".to_string(), val.clone().into());
@@ -5552,10 +6384,16 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("organization".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("slack_incoming_webhook") {
         body.insert("slack_incoming_webhook".to_string(), val.clone().into());
@@ -5574,20 +6412,34 @@ pub async fn posthog_create_2(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/projects/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/organizations/{{organization_id}}/projects/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5640,20 +6492,34 @@ pub async fn posthog_list_2(context: ActorContext) -> Result<HashMap<String, Mes
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/organizations/{{organization_id}}/projects/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/organizations/{{organization_id}}/projects/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5696,10 +6562,16 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("api_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_columns") {
         body.insert("live_events_columns".to_string(), val.clone().into());
@@ -5711,7 +6583,10 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("anonymize_ips".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("capture_console_log_opt_in") {
         body.insert("capture_console_log_opt_in".to_string(), val.clone().into());
@@ -5729,7 +6604,10 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("test_account_filters".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("path_cleaning_filters") {
         body.insert("path_cleaning_filters".to_string(), val.clone().into());
@@ -5756,7 +6634,10 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("extra_settings") {
         body.insert("extra_settings".to_string(), val.clone().into());
@@ -5774,7 +6655,10 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("capture_performance_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("secret_api_token_backup") {
         body.insert("secret_api_token_backup".to_string(), val.clone().into());
@@ -5804,16 +6688,25 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("correlation_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("access_control") {
         body.insert("access_control".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("slack_incoming_webhook") {
         body.insert("slack_incoming_webhook".to_string(), val.clone().into());
@@ -5831,13 +6724,19 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("primary_dashboard".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("week_start_day") {
         body.insert("week_start_day".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("group_types") {
         body.insert("group_types".to_string(), val.clone().into());
@@ -5846,7 +6745,10 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("session_replay_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_token") {
         body.insert("live_events_token".to_string(), val.clone().into());
@@ -5858,7 +6760,10 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("flags_persistence_default".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("has_group_types") {
         body.insert("has_group_types".to_string(), val.clone().into());
@@ -5873,10 +6778,16 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
         body.insert("timezone".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("heatmaps_opt_in") {
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
@@ -5892,20 +6803,34 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/organizations/{{organization_id}}/projects/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/organizations/{{organization_id}}/projects/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -5921,11 +6846,15 @@ pub async fn posthog_update_2(context: ActorContext) -> Result<HashMap<String, M
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_secret_token_backup_partial_update(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/organizations/{organization_id}/projects/{id}/delete_secret_token_backup/".to_string();
+    let mut endpoint =
+        "/api/organizations/{organization_id}/projects/{id}/delete_secret_token_backup/"
+            .to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -5948,7 +6877,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("inject_web_apps".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("available_setup_task_ids") {
         body.insert("available_setup_task_ids".to_string(), val.clone().into());
@@ -5975,7 +6907,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("business_model".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_modifiers") {
         body.insert("default_modifiers".to_string(), val.clone().into());
@@ -5990,19 +6925,28 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("week_start_day".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("heatmaps_opt_in") {
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("conversations_enabled") {
         body.insert("conversations_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("created_at") {
         body.insert("created_at".to_string(), val.clone().into());
@@ -6032,13 +6976,19 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("updated_at".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_token") {
         body.insert("live_events_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("group_types") {
         body.insert("group_types".to_string(), val.clone().into());
@@ -6047,13 +6997,19 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("test_account_filters") {
         body.insert("test_account_filters".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("is_demo") {
         body.insert("is_demo".to_string(), val.clone().into());
@@ -6062,13 +7018,22 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("correlation_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("access_control") {
         body.insert("access_control".to_string(), val.clone().into());
@@ -6080,7 +7045,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("recording_domains".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("organization") {
         body.insert("organization".to_string(), val.clone().into());
@@ -6104,7 +7072,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("anonymize_ips".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("path_cleaning_filters") {
         body.insert("path_cleaning_filters".to_string(), val.clone().into());
@@ -6131,7 +7102,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
         body.insert("has_group_types".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("api_token") {
         body.insert("api_token".to_string(), val.clone().into());
@@ -6144,17 +7118,22 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/organizations/{{organization_id}}/projects/{{id}}/delete_secret_token_backup/ failed: {}", e).into()));
@@ -6173,11 +7152,15 @@ pub async fn posthog_delete_secret_token_backup_partial_update(context: ActorCon
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_generate_conversations_public_token_create(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_generate_conversations_public_token_create(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/organizations/{organization_id}/projects/{id}/generate_conversations_public_token/".to_string();
+    let mut endpoint =
+        "/api/organizations/{organization_id}/projects/{id}/generate_conversations_public_token/"
+            .to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -6212,7 +7195,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("live_events_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("app_urls") {
         body.insert("app_urls".to_string(), val.clone().into());
@@ -6224,10 +7210,16 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("anonymize_ips".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("data_attributes") {
         body.insert("data_attributes".to_string(), val.clone().into());
@@ -6245,7 +7237,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("is_demo".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("conversations_settings") {
         body.insert("conversations_settings".to_string(), val.clone().into());
@@ -6263,7 +7258,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("surveys_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("created_at") {
         body.insert("created_at".to_string(), val.clone().into());
@@ -6287,7 +7285,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("slack_incoming_webhook".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_modifiers") {
         body.insert("default_modifiers".to_string(), val.clone().into());
@@ -6305,7 +7306,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("session_replay_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_columns") {
         body.insert("live_events_columns".to_string(), val.clone().into());
@@ -6314,7 +7318,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("secret_api_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("logs_settings") {
         body.insert("logs_settings".to_string(), val.clone().into());
@@ -6335,10 +7342,16 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("proactive_tasks_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("timezone") {
         body.insert("timezone".to_string(), val.clone().into());
@@ -6353,16 +7366,25 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("product_intents".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("available_setup_task_ids") {
         body.insert("available_setup_task_ids".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
@@ -6371,7 +7393,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("group_types".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("heatmaps_opt_in") {
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
@@ -6383,7 +7408,10 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
         body.insert("flags_persistence_default".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("business_model") {
         body.insert("business_model".to_string(), val.clone().into());
@@ -6396,17 +7424,22 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/projects/{{id}}/generate_conversations_public_token/ failed: {}", e).into()));
@@ -6425,7 +7458,9 @@ pub async fn posthog_generate_conversations_public_token_create(context: ActorCo
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_retry_organizations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_retry_organizations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6480,17 +7515,22 @@ pub async fn posthog_retry_organizations(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/organizations/{{organization_id}}/proxy_records/{{id}}/retry/ failed: {}", e).into()));
@@ -6509,7 +7549,9 @@ pub async fn posthog_retry_organizations(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_actions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_actions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6602,20 +7644,30 @@ pub async fn posthog_create_actions(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/actions/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/actions/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -6631,7 +7683,9 @@ pub async fn posthog_create_actions(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_actions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_actions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6668,20 +7722,30 @@ pub async fn posthog_read_actions(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/actions/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/actions/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -6697,7 +7761,9 @@ pub async fn posthog_read_actions(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_actions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_actions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6731,20 +7797,34 @@ pub async fn posthog_delete_actions(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/actions/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/actions/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6760,7 +7840,9 @@ pub async fn posthog_delete_actions(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_actions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_actions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6856,20 +7938,34 @@ pub async fn posthog_update_actions(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/actions/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/actions/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6885,7 +7981,9 @@ pub async fn posthog_update_actions(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_activity_log(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_activity_log(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6908,20 +8006,34 @@ pub async fn posthog_read_activity_log(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/activity_log/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/activity_log/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6937,7 +8049,9 @@ pub async fn posthog_read_activity_log(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_advanced_activity_logs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_advanced_activity_logs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -6960,20 +8074,34 @@ pub async fn posthog_read_advanced_activity_logs(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/advanced_activity_logs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/advanced_activity_logs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -6989,7 +8117,9 @@ pub async fn posthog_read_advanced_activity_logs(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_export_advanced_activity_logs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_export_advanced_activity_logs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7050,17 +8180,22 @@ pub async fn posthog_export_advanced_activity_logs(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/advanced_activity_logs/export/ failed: {}", e).into()));
@@ -7079,7 +8214,9 @@ pub async fn posthog_export_advanced_activity_logs(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_alerts(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_alerts(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7164,20 +8301,30 @@ pub async fn posthog_create_alerts(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/alerts/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/alerts/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -7227,20 +8374,30 @@ pub async fn posthog_read_alerts(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/alerts/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/alerts/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -7256,7 +8413,9 @@ pub async fn posthog_read_alerts(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_alerts(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_alerts(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7282,20 +8441,34 @@ pub async fn posthog_delete_alerts(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/alerts/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/alerts/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7311,7 +8484,9 @@ pub async fn posthog_delete_alerts(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_alerts(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_alerts(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7399,20 +8574,34 @@ pub async fn posthog_update_alerts(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/alerts/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/alerts/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7428,7 +8617,9 @@ pub async fn posthog_update_alerts(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_app_metrics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_app_metrics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7454,20 +8645,34 @@ pub async fn posthog_read_app_metrics(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/app_metrics/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/app_metrics/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7483,11 +8688,15 @@ pub async fn posthog_read_app_metrics(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_cancel_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_cancel_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/batch_exports/{batch_export_id}/backfills/{id}/cancel/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/batch_exports/{batch_export_id}/backfills/{id}/cancel/"
+            .to_string();
     if let Some(val) = inputs.get("batch_export_id") {
         endpoint = endpoint.replace("{{batch_export_id}}", &super::message_to_str(val));
     }
@@ -7553,17 +8762,22 @@ pub async fn posthog_cancel_batch_exports(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/batch_exports/{{batch_export_id}}/backfills/{{id}}/cancel/ failed: {}", e).into()));
@@ -7582,11 +8796,14 @@ pub async fn posthog_cancel_batch_exports(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_retry_batch_exports(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_retry_batch_exports(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/batch_exports/{batch_export_id}/runs/{id}/retry/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/batch_exports/{batch_export_id}/runs/{id}/retry/".to_string();
     if let Some(val) = inputs.get("batch_export_id") {
         endpoint = endpoint.replace("{{batch_export_id}}", &super::message_to_str(val));
     }
@@ -7658,17 +8875,22 @@ pub async fn posthog_retry_batch_exports(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/batch_exports/{{batch_export_id}}/runs/{{id}}/retry/ failed: {}", e).into()));
@@ -7687,7 +8909,9 @@ pub async fn posthog_retry_batch_exports(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_conversations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_conversations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7790,20 +9014,34 @@ pub async fn posthog_create_conversations(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/conversations/tickets/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/conversations/tickets/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7819,7 +9057,9 @@ pub async fn posthog_create_conversations(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_conversations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_conversations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7853,20 +9093,34 @@ pub async fn posthog_read_conversations(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/conversations/tickets/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/conversations/tickets/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -7882,7 +9136,9 @@ pub async fn posthog_read_conversations(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_conversations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_conversations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -7988,17 +9244,22 @@ pub async fn posthog_update_conversations(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/conversations/tickets/{{id}}/ failed: {}", e).into()));
@@ -8017,7 +9278,9 @@ pub async fn posthog_update_conversations(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_conversations(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_conversations(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8043,17 +9306,22 @@ pub async fn posthog_delete_conversations(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/conversations/tickets/{{id}}/ failed: {}", e).into()));
@@ -8072,11 +9340,14 @@ pub async fn posthog_delete_conversations(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_refresh_core(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_refresh_core(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/dashboards/{dashboard_id}/sharing/refresh/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/dashboards/{dashboard_id}/sharing/refresh/".to_string();
     if let Some(val) = inputs.get("dashboard_id") {
         endpoint = endpoint.replace("{{dashboard_id}}", &super::message_to_str(val));
     }
@@ -8121,17 +9392,22 @@ pub async fn posthog_refresh_core(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/dashboards/{{dashboard_id}}/sharing/refresh/ failed: {}", e).into()));
@@ -8150,7 +9426,9 @@ pub async fn posthog_refresh_core(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_dashboards(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_dashboards(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8199,20 +9477,34 @@ pub async fn posthog_update_dashboards(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/data_color_themes/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/data_color_themes/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8228,7 +9520,9 @@ pub async fn posthog_update_dashboards(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_early_access_features(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_early_access_features(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8262,20 +9556,34 @@ pub async fn posthog_read_early_access_features(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/early_access_feature/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/early_access_feature/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8291,7 +9599,9 @@ pub async fn posthog_read_early_access_features(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_early_access_features(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_early_access_features(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8349,20 +9659,34 @@ pub async fn posthog_create_early_access_features(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/early_access_feature/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/early_access_feature/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8378,7 +9702,9 @@ pub async fn posthog_create_early_access_features(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_early_access_features(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_early_access_features(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8433,17 +9759,22 @@ pub async fn posthog_update_early_access_features(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/early_access_feature/{{id}}/ failed: {}", e).into()));
@@ -8462,7 +9793,9 @@ pub async fn posthog_update_early_access_features(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_early_access_features(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_early_access_features(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8488,17 +9821,22 @@ pub async fn posthog_delete_early_access_features(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/early_access_feature/{{id}}/ failed: {}", e).into()));
@@ -8517,7 +9855,9 @@ pub async fn posthog_delete_early_access_features(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_product_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_product_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8572,20 +9912,30 @@ pub async fn posthog_create_product_analytics(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/elements/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/elements/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -8601,7 +9951,9 @@ pub async fn posthog_create_product_analytics(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_product_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_product_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8635,20 +9987,30 @@ pub async fn posthog_read_product_analytics(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/elements/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/elements/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -8664,7 +10026,9 @@ pub async fn posthog_read_product_analytics(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_product_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_product_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8722,20 +10086,34 @@ pub async fn posthog_update_product_analytics(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/elements/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/elements/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8751,7 +10129,9 @@ pub async fn posthog_update_product_analytics(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_product_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_product_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8777,20 +10157,34 @@ pub async fn posthog_delete_product_analytics(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/elements/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/elements/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -8806,7 +10200,9 @@ pub async fn posthog_delete_product_analytics(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_endpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_endpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8829,20 +10225,30 @@ pub async fn posthog_read_endpoints(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/endpoints/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/endpoints/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -8858,7 +10264,9 @@ pub async fn posthog_read_endpoints(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_endpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_endpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -8916,20 +10324,30 @@ pub async fn posthog_create_endpoints(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/endpoints/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/endpoints/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -8945,7 +10363,9 @@ pub async fn posthog_create_endpoints(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_endpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_endpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9006,20 +10426,34 @@ pub async fn posthog_update_endpoints(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/endpoints/{{name}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/endpoints/{{name}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9035,7 +10469,9 @@ pub async fn posthog_update_endpoints(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_endpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_endpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9061,20 +10497,34 @@ pub async fn posthog_delete_endpoints(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/endpoints/{{name}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/endpoints/{{name}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9090,7 +10540,9 @@ pub async fn posthog_delete_endpoints(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_environments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_environments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -9116,20 +10568,34 @@ pub async fn posthog_read_environments(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/environments/{{id}}/activity/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/environments/{{id}}/activity/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -9145,11 +10611,14 @@ pub async fn posthog_read_environments(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_environments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/environments/{id}/add_product_intent/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/environments/{id}/add_product_intent/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -9169,7 +10638,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("flags_persistence_default") {
         body.insert("flags_persistence_default".to_string(), val.clone().into());
@@ -9178,7 +10650,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_message") {
-        body.insert("feature_flag_confirmation_message".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_message".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("group_types") {
         body.insert("group_types".to_string(), val.clone().into());
@@ -9190,7 +10665,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("capture_performance_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_confidence_level") {
-        body.insert("default_experiment_confidence_level".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_confidence_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("marketing_analytics_config") {
         body.insert("marketing_analytics_config".to_string(), val.clone().into());
@@ -9202,7 +10680,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("effective_membership_level".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
@@ -9214,7 +10695,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("recording_domains".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("conversations_settings") {
         body.insert("conversations_settings".to_string(), val.clone().into());
@@ -9223,7 +10707,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("default_data_theme".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_replay_config") {
         body.insert("session_replay_config".to_string(), val.clone().into());
@@ -9238,19 +10725,28 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("user_access_level".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("cookieless_server_hash_mode") {
-        body.insert("cookieless_server_hash_mode".to_string(), val.clone().into());
+        body.insert(
+            "cookieless_server_hash_mode".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("product_intents") {
         body.insert("product_intents".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_event_trigger_config") {
-        body.insert("session_recording_event_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_event_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("logs_settings") {
         body.insert("logs_settings".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("business_model") {
         body.insert("business_model".to_string(), val.clone().into());
@@ -9262,10 +10758,16 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("modifiers".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_url_trigger_config") {
-        body.insert("session_recording_url_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("secret_api_token") {
         body.insert("secret_api_token".to_string(), val.clone().into());
@@ -9274,7 +10776,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("slack_incoming_webhook".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("timezone") {
         body.insert("timezone".to_string(), val.clone().into());
@@ -9283,7 +10788,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("week_start_day".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("app_urls") {
         body.insert("app_urls".to_string(), val.clone().into());
@@ -9295,13 +10803,19 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("available_setup_task_ids".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("require_evaluation_contexts") {
-        body.insert("require_evaluation_contexts".to_string(), val.clone().into());
+        body.insert(
+            "require_evaluation_contexts".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("proactive_tasks_enabled") {
         body.insert("proactive_tasks_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("customer_analytics_config") {
         body.insert("customer_analytics_config".to_string(), val.clone().into());
@@ -9316,22 +10830,34 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("is_demo".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_retention_period") {
-        body.insert("session_recording_retention_period".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_retention_period".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("correlation_config") {
         body.insert("correlation_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_evaluation_contexts_enabled") {
-        body.insert("default_evaluation_contexts_enabled".to_string(), val.clone().into());
+        body.insert(
+            "default_evaluation_contexts_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("revenue_analytics_config") {
         body.insert("revenue_analytics_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_url_blocklist_config") {
-        body.insert("session_recording_url_blocklist_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_blocklist_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("test_account_filters") {
         body.insert("test_account_filters".to_string(), val.clone().into());
@@ -9340,7 +10866,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("managed_viewsets".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_trigger_match_type_config") {
-        body.insert("session_recording_trigger_match_type_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_trigger_match_type_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("updated_at") {
         body.insert("updated_at".to_string(), val.clone().into());
@@ -9349,13 +10878,22 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("primary_dashboard".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_stats_method") {
-        body.insert("default_experiment_stats_method".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_stats_method".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("web_analytics_pre_aggregated_tables_enabled") {
-        body.insert("web_analytics_pre_aggregated_tables_enabled".to_string(), val.clone().into());
+        body.insert(
+            "web_analytics_pre_aggregated_tables_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("human_friendly_comparison_periods") {
-        body.insert("human_friendly_comparison_periods".to_string(), val.clone().into());
+        body.insert(
+            "human_friendly_comparison_periods".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("path_cleaning_filters") {
         body.insert("path_cleaning_filters".to_string(), val.clone().into());
@@ -9370,13 +10908,19 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("anonymize_ips".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_token") {
         body.insert("live_events_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_enabled") {
-        body.insert("feature_flag_confirmation_enabled".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_columns") {
         body.insert("live_events_columns".to_string(), val.clone().into());
@@ -9385,10 +10929,16 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("access_control".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("experiment_recalculation_time") {
-        body.insert("experiment_recalculation_time".to_string(), val.clone().into());
+        body.insert(
+            "experiment_recalculation_time".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("onboarding_tasks") {
         body.insert("onboarding_tasks".to_string(), val.clone().into());
@@ -9397,7 +10947,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("uuid".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("secret_api_token_backup") {
         body.insert("secret_api_token_backup".to_string(), val.clone().into());
@@ -9418,7 +10971,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("created_at") {
         body.insert("created_at".to_string(), val.clone().into());
@@ -9427,7 +10983,10 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
         body.insert("capture_console_log_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("api_token") {
         body.insert("api_token".to_string(), val.clone().into());
@@ -9440,17 +10999,22 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/environments/{{id}}/add_product_intent/ failed: {}", e).into()));
@@ -9469,11 +11033,14 @@ pub async fn posthog_update_environments(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_environments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_environments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/environments/{id}/default_evaluation_contexts/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/environments/{id}/default_evaluation_contexts/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -9495,17 +11062,22 @@ pub async fn posthog_delete_environments(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/environments/{{id}}/default_evaluation_contexts/ failed: {}", e).into()));
@@ -9524,11 +11096,14 @@ pub async fn posthog_delete_environments(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_environments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/environments/{id}/default_evaluation_contexts/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/environments/{id}/default_evaluation_contexts/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -9554,10 +11129,16 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("managed_viewsets".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("app_urls") {
         body.insert("app_urls".to_string(), val.clone().into());
@@ -9575,7 +11156,10 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("web_analytics_pre_aggregated_tables_enabled") {
-        body.insert("web_analytics_pre_aggregated_tables_enabled".to_string(), val.clone().into());
+        body.insert(
+            "web_analytics_pre_aggregated_tables_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("week_start_day") {
         body.insert("week_start_day".to_string(), val.clone().into());
@@ -9584,13 +11168,19 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("extra_settings".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("available_setup_task_ids") {
         body.insert("available_setup_task_ids".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_message") {
-        body.insert("feature_flag_confirmation_message".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_message".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("logs_settings") {
         body.insert("logs_settings".to_string(), val.clone().into());
@@ -9602,10 +11192,16 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("autocapture_opt_out".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_modifiers") {
         body.insert("default_modifiers".to_string(), val.clone().into());
@@ -9614,19 +11210,31 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("ingested_event".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_event_trigger_config") {
-        body.insert("session_recording_event_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_event_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("base_currency") {
         body.insert("base_currency".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("experiment_recalculation_time") {
-        body.insert("experiment_recalculation_time".to_string(), val.clone().into());
+        body.insert(
+            "experiment_recalculation_time".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_url_blocklist_config") {
-        body.insert("session_recording_url_blocklist_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_blocklist_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("conversations_enabled") {
         body.insert("conversations_enabled".to_string(), val.clone().into());
@@ -9641,7 +11249,10 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("business_model".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_confidence_level") {
-        body.insert("default_experiment_confidence_level".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_confidence_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("inject_web_apps") {
         body.insert("inject_web_apps".to_string(), val.clone().into());
@@ -9656,19 +11267,31 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("product_intents".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("heatmaps_opt_in") {
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_evaluation_contexts_enabled") {
-        body.insert("default_evaluation_contexts_enabled".to_string(), val.clone().into());
+        body.insert(
+            "default_evaluation_contexts_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_url_trigger_config") {
-        body.insert("session_recording_url_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_replay_config") {
         body.insert("session_replay_config".to_string(), val.clone().into());
@@ -9686,13 +11309,19 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("correlation_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("test_account_filters") {
         body.insert("test_account_filters".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("require_evaluation_contexts") {
-        body.insert("require_evaluation_contexts".to_string(), val.clone().into());
+        body.insert(
+            "require_evaluation_contexts".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("customer_analytics_config") {
         body.insert("customer_analytics_config".to_string(), val.clone().into());
@@ -9707,10 +11336,16 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("modifiers".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("timezone") {
         body.insert("timezone".to_string(), val.clone().into());
@@ -9728,13 +11363,22 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("survey_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("cookieless_server_hash_mode") {
-        body.insert("cookieless_server_hash_mode".to_string(), val.clone().into());
+        body.insert(
+            "cookieless_server_hash_mode".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_trigger_match_type_config") {
-        body.insert("session_recording_trigger_match_type_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_trigger_match_type_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("revenue_analytics_config") {
         body.insert("revenue_analytics_config".to_string(), val.clone().into());
@@ -9743,7 +11387,10 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("data_attributes".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("anonymize_ips") {
         body.insert("anonymize_ips".to_string(), val.clone().into());
@@ -9758,19 +11405,31 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("user_access_level".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("access_control") {
         body.insert("access_control".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_enabled") {
-        body.insert("feature_flag_confirmation_enabled".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("human_friendly_comparison_periods") {
-        body.insert("human_friendly_comparison_periods".to_string(), val.clone().into());
+        body.insert(
+            "human_friendly_comparison_periods".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("organization") {
         body.insert("organization".to_string(), val.clone().into());
@@ -9779,7 +11438,10 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("surveys_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_retention_period") {
-        body.insert("session_recording_retention_period".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_retention_period".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_data_theme") {
         body.insert("default_data_theme".to_string(), val.clone().into());
@@ -9800,7 +11462,10 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
         body.insert("session_recording_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_stats_method") {
-        body.insert("default_experiment_stats_method".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_stats_method".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("capture_console_log_opt_in") {
         body.insert("capture_console_log_opt_in".to_string(), val.clone().into());
@@ -9819,17 +11484,22 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/environments/{{id}}/default_evaluation_contexts/ failed: {}", e).into()));
@@ -9848,11 +11518,14 @@ pub async fn posthog_create_environments(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_secret_token_backup_partial_update_2(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/environments/{id}/delete_secret_token_backup/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/environments/{id}/delete_secret_token_backup/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -9884,37 +11557,61 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("flags_persistence_default".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("web_analytics_pre_aggregated_tables_enabled") {
-        body.insert("web_analytics_pre_aggregated_tables_enabled".to_string(), val.clone().into());
+        body.insert(
+            "web_analytics_pre_aggregated_tables_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("onboarding_tasks") {
         body.insert("onboarding_tasks".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_event_trigger_config") {
-        body.insert("session_recording_event_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_event_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("anonymize_ips") {
         body.insert("anonymize_ips".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_confidence_level") {
-        body.insert("default_experiment_confidence_level".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_confidence_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("updated_at") {
         body.insert("updated_at".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("capture_performance_opt_in") {
         body.insert("capture_performance_opt_in".to_string(), val.clone().into());
@@ -9938,7 +11635,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("extra_settings".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("group_types") {
         body.insert("group_types".to_string(), val.clone().into());
@@ -9953,7 +11653,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("uuid".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("cookieless_server_hash_mode") {
-        body.insert("cookieless_server_hash_mode".to_string(), val.clone().into());
+        body.insert(
+            "cookieless_server_hash_mode".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("inject_web_apps") {
         body.insert("inject_web_apps".to_string(), val.clone().into());
@@ -9998,7 +11701,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("capture_console_log_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("human_friendly_comparison_periods") {
-        body.insert("human_friendly_comparison_periods".to_string(), val.clone().into());
+        body.insert(
+            "human_friendly_comparison_periods".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("is_demo") {
         body.insert("is_demo".to_string(), val.clone().into());
@@ -10007,16 +11713,28 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("proactive_tasks_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_evaluation_contexts_enabled") {
-        body.insert("default_evaluation_contexts_enabled".to_string(), val.clone().into());
+        body.insert(
+            "default_evaluation_contexts_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_trigger_match_type_config") {
-        body.insert("session_recording_trigger_match_type_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_trigger_match_type_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_message") {
-        body.insert("feature_flag_confirmation_message".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_message".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("organization") {
         body.insert("organization".to_string(), val.clone().into());
@@ -10034,34 +11752,55 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("capture_dead_clicks".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("heatmaps_opt_in") {
         body.insert("heatmaps_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_url_trigger_config") {
-        body.insert("session_recording_url_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("secret_api_token") {
         body.insert("secret_api_token".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("require_evaluation_contexts") {
-        body.insert("require_evaluation_contexts".to_string(), val.clone().into());
+        body.insert(
+            "require_evaluation_contexts".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("business_model") {
         body.insert("business_model".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_modifiers") {
         body.insert("default_modifiers".to_string(), val.clone().into());
@@ -10073,7 +11812,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("timezone".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_enabled") {
-        body.insert("feature_flag_confirmation_enabled".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ingested_event") {
         body.insert("ingested_event".to_string(), val.clone().into());
@@ -10082,10 +11824,16 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("path_cleaning_filters".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("experiment_recalculation_time") {
-        body.insert("experiment_recalculation_time".to_string(), val.clone().into());
+        body.insert(
+            "experiment_recalculation_time".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("slack_incoming_webhook") {
         body.insert("slack_incoming_webhook".to_string(), val.clone().into());
@@ -10106,19 +11854,31 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("created_at".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_opt_out") {
         body.insert("autocapture_opt_out".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_url_blocklist_config") {
-        body.insert("session_recording_url_blocklist_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_blocklist_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_retention_period") {
-        body.insert("session_recording_retention_period".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_retention_period".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_replay_config") {
         body.insert("session_replay_config".to_string(), val.clone().into());
@@ -10130,7 +11890,10 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
         body.insert("test_account_filters".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_stats_method") {
-        body.insert("default_experiment_stats_method".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_stats_method".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("survey_config") {
         body.insert("survey_config".to_string(), val.clone().into());
@@ -10143,17 +11906,22 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/environments/{{id}}/delete_secret_token_backup/ failed: {}", e).into()));
@@ -10172,11 +11940,15 @@ pub async fn posthog_delete_secret_token_backup_partial_update_2(context: ActorC
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_generate_conversations_public_token_create_2(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_generate_conversations_public_token_create_2(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/environments/{id}/generate_conversations_public_token/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/environments/{id}/generate_conversations_public_token/"
+            .to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -10196,22 +11968,34 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("session_recording_trigger_match_type_config") {
-        body.insert("session_recording_trigger_match_type_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_trigger_match_type_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_opt_in") {
         body.insert("session_recording_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_allowed_metrics") {
-        body.insert("autocapture_web_vitals_allowed_metrics".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_allowed_metrics".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("surveys_opt_in") {
         body.insert("surveys_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_evaluation_contexts_enabled") {
-        body.insert("default_evaluation_contexts_enabled".to_string(), val.clone().into());
+        body.insert(
+            "default_evaluation_contexts_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("human_friendly_comparison_periods") {
-        body.insert("human_friendly_comparison_periods".to_string(), val.clone().into());
+        body.insert(
+            "human_friendly_comparison_periods".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("onboarding_tasks") {
         body.insert("onboarding_tasks".to_string(), val.clone().into());
@@ -10220,7 +12004,10 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("autocapture_opt_out".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("receive_org_level_activity_logs") {
-        body.insert("receive_org_level_activity_logs".to_string(), val.clone().into());
+        body.insert(
+            "receive_org_level_activity_logs".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("slack_incoming_webhook") {
         body.insert("slack_incoming_webhook".to_string(), val.clone().into());
@@ -10241,10 +12028,16 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("proactive_tasks_enabled".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_confidence_level") {
-        body.insert("default_experiment_confidence_level".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_confidence_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_network_payload_capture_config") {
-        body.insert("session_recording_network_payload_capture_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_network_payload_capture_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("capture_console_log_opt_in") {
         body.insert("capture_console_log_opt_in".to_string(), val.clone().into());
@@ -10253,13 +12046,22 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("recording_domains".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_opt_in") {
-        body.insert("autocapture_exceptions_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("test_account_filters_default_checked") {
-        body.insert("test_account_filters_default_checked".to_string(), val.clone().into());
+        body.insert(
+            "test_account_filters_default_checked".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("autocapture_web_vitals_opt_in") {
-        body.insert("autocapture_web_vitals_opt_in".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_web_vitals_opt_in".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("name") {
         body.insert("name".to_string(), val.clone().into());
@@ -10277,10 +12079,16 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("session_replay_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("default_experiment_stats_method") {
-        body.insert("default_experiment_stats_method".to_string(), val.clone().into());
+        body.insert(
+            "default_experiment_stats_method".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_sample_rate") {
-        body.insert("session_recording_sample_rate".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_sample_rate".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("ingested_event") {
         body.insert("ingested_event".to_string(), val.clone().into());
@@ -10298,7 +12106,10 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("timezone".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("completed_snippet_onboarding") {
-        body.insert("completed_snippet_onboarding".to_string(), val.clone().into());
+        body.insert(
+            "completed_snippet_onboarding".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_token") {
         body.insert("live_events_token".to_string(), val.clone().into());
@@ -10319,10 +12130,16 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("app_urls".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_linked_flag") {
-        body.insert("session_recording_linked_flag".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_linked_flag".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_enabled") {
-        body.insert("feature_flag_confirmation_enabled".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("has_group_types") {
         body.insert("has_group_types".to_string(), val.clone().into());
@@ -10334,16 +12151,25 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("secret_api_token_backup".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_url_trigger_config") {
-        body.insert("session_recording_url_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("available_setup_task_ids") {
         body.insert("available_setup_task_ids".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("person_display_name_properties") {
-        body.insert("person_display_name_properties".to_string(), val.clone().into());
+        body.insert(
+            "person_display_name_properties".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_retention_period") {
-        body.insert("session_recording_retention_period".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_retention_period".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("project_id") {
         body.insert("project_id".to_string(), val.clone().into());
@@ -10361,7 +12187,10 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("capture_performance_opt_in".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_event_trigger_config") {
-        body.insert("session_recording_event_trigger_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_event_trigger_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("default_modifiers") {
         body.insert("default_modifiers".to_string(), val.clone().into());
@@ -10373,7 +12202,10 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("week_start_day".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_url_blocklist_config") {
-        body.insert("session_recording_url_blocklist_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_url_blocklist_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("conversations_settings") {
         body.insert("conversations_settings".to_string(), val.clone().into());
@@ -10391,25 +12223,40 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("primary_dashboard".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("require_evaluation_contexts") {
-        body.insert("require_evaluation_contexts".to_string(), val.clone().into());
+        body.insert(
+            "require_evaluation_contexts".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("uuid") {
         body.insert("uuid".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("experiment_recalculation_time") {
-        body.insert("experiment_recalculation_time".to_string(), val.clone().into());
+        body.insert(
+            "experiment_recalculation_time".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("has_completed_onboarding_for") {
-        body.insert("has_completed_onboarding_for".to_string(), val.clone().into());
+        body.insert(
+            "has_completed_onboarding_for".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("session_recording_masking_config") {
-        body.insert("session_recording_masking_config".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_masking_config".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("id") {
         body.insert("id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("web_analytics_pre_aggregated_tables_enabled") {
-        body.insert("web_analytics_pre_aggregated_tables_enabled".to_string(), val.clone().into());
+        body.insert(
+            "web_analytics_pre_aggregated_tables_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("managed_viewsets") {
         body.insert("managed_viewsets".to_string(), val.clone().into());
@@ -10418,10 +12265,16 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("updated_at".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("cookieless_server_hash_mode") {
-        body.insert("cookieless_server_hash_mode".to_string(), val.clone().into());
+        body.insert(
+            "cookieless_server_hash_mode".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("person_on_events_querying_enabled") {
-        body.insert("person_on_events_querying_enabled".to_string(), val.clone().into());
+        body.insert(
+            "person_on_events_querying_enabled".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("access_control") {
         body.insert("access_control".to_string(), val.clone().into());
@@ -10433,7 +12286,10 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("default_data_theme".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("session_recording_minimum_duration_milliseconds") {
-        body.insert("session_recording_minimum_duration_milliseconds".to_string(), val.clone().into());
+        body.insert(
+            "session_recording_minimum_duration_milliseconds".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("organization") {
         body.insert("organization".to_string(), val.clone().into());
@@ -10442,13 +12298,19 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
         body.insert("survey_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("autocapture_exceptions_errors_to_ignore") {
-        body.insert("autocapture_exceptions_errors_to_ignore".to_string(), val.clone().into());
+        body.insert(
+            "autocapture_exceptions_errors_to_ignore".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("customer_analytics_config") {
         body.insert("customer_analytics_config".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("feature_flag_confirmation_message") {
-        body.insert("feature_flag_confirmation_message".to_string(), val.clone().into());
+        body.insert(
+            "feature_flag_confirmation_message".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("live_events_columns") {
         body.insert("live_events_columns".to_string(), val.clone().into());
@@ -10467,17 +12329,22 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/environments/{{id}}/generate_conversations_public_token/ failed: {}", e).into()));
@@ -10496,7 +12363,9 @@ pub async fn posthog_generate_conversations_public_token_create_2(context: Actor
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_event_schemas(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_event_schemas(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10530,20 +12399,34 @@ pub async fn posthog_read_event_schemas(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/event_schemas/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/event_schemas/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10559,7 +12442,9 @@ pub async fn posthog_read_event_schemas(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_event_schemas(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_event_schemas(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10605,20 +12490,34 @@ pub async fn posthog_create_event_schemas(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/event_schemas/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/event_schemas/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10634,7 +12533,9 @@ pub async fn posthog_create_event_schemas(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_event_schemas(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_event_schemas(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10683,20 +12584,34 @@ pub async fn posthog_update_event_schemas(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/event_schemas/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/event_schemas/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10712,7 +12627,9 @@ pub async fn posthog_update_event_schemas(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_event_schemas(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_event_schemas(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10738,20 +12655,34 @@ pub async fn posthog_delete_event_schemas(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/event_schemas/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/event_schemas/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10767,7 +12698,9 @@ pub async fn posthog_delete_event_schemas(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10816,20 +12749,34 @@ pub async fn posthog_create_experiments(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/experiment_holdouts/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/experiment_holdouts/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10845,7 +12792,9 @@ pub async fn posthog_create_experiments(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10879,20 +12828,34 @@ pub async fn posthog_read_experiments(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/experiment_holdouts/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/experiment_holdouts/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10908,7 +12871,9 @@ pub async fn posthog_read_experiments(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -10960,20 +12925,34 @@ pub async fn posthog_update_experiments(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/experiment_holdouts/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/experiment_holdouts/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -10989,7 +12968,9 @@ pub async fn posthog_update_experiments(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11015,17 +12996,22 @@ pub async fn posthog_delete_experiments(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/experiment_holdouts/{{id}}/ failed: {}", e).into()));
@@ -11044,7 +13030,9 @@ pub async fn posthog_delete_experiments(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_experiment_saved_metrics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_experiment_saved_metrics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11078,20 +13066,34 @@ pub async fn posthog_read_experiment_saved_metrics(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/experiment_saved_metrics/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/experiment_saved_metrics/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11107,7 +13109,9 @@ pub async fn posthog_read_experiment_saved_metrics(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_experiment_saved_metrics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_experiment_saved_metrics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11162,20 +13166,34 @@ pub async fn posthog_create_experiment_saved_metrics(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/experiment_saved_metrics/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/experiment_saved_metrics/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11191,7 +13209,9 @@ pub async fn posthog_create_experiment_saved_metrics(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_experiment_saved_metrics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_experiment_saved_metrics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11249,17 +13269,22 @@ pub async fn posthog_update_experiment_saved_metrics(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/experiment_saved_metrics/{{id}}/ failed: {}", e).into()));
@@ -11278,7 +13303,9 @@ pub async fn posthog_update_experiment_saved_metrics(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_experiment_saved_metrics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_experiment_saved_metrics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11304,17 +13331,22 @@ pub async fn posthog_delete_experiment_saved_metrics(context: ActorContext) -> R
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/experiment_saved_metrics/{{id}}/ failed: {}", e).into()));
@@ -11333,7 +13365,9 @@ pub async fn posthog_delete_experiment_saved_metrics(context: ActorContext) -> R
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_data_warehouse(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_data_warehouse(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11409,20 +13443,34 @@ pub async fn posthog_create_data_warehouse(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/external_data_sources/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/external_data_sources/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11438,7 +13486,9 @@ pub async fn posthog_create_data_warehouse(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_data_warehouse(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_data_warehouse(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11475,20 +13525,34 @@ pub async fn posthog_read_data_warehouse(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/external_data_sources/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/external_data_sources/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11504,7 +13568,9 @@ pub async fn posthog_read_data_warehouse(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_data_warehouse(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_data_warehouse(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11583,17 +13649,22 @@ pub async fn posthog_update_data_warehouse(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/external_data_sources/{{id}}/ failed: {}", e).into()));
@@ -11612,7 +13683,9 @@ pub async fn posthog_update_data_warehouse(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_data_warehouse(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_data_warehouse(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11638,17 +13711,22 @@ pub async fn posthog_delete_data_warehouse(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/external_data_sources/{{id}}/ failed: {}", e).into()));
@@ -11667,7 +13745,9 @@ pub async fn posthog_delete_data_warehouse(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_feature_flags(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_feature_flags(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11725,20 +13805,34 @@ pub async fn posthog_read_feature_flags(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/feature_flags/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/feature_flags/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11754,7 +13848,9 @@ pub async fn posthog_read_feature_flags(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_feature_flags(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_feature_flags(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11800,20 +13896,34 @@ pub async fn posthog_create_feature_flags(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/feature_flags/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/feature_flags/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11829,7 +13939,9 @@ pub async fn posthog_create_feature_flags(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_feature_flags(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_feature_flags(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11855,20 +13967,34 @@ pub async fn posthog_delete_feature_flags(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/feature_flags/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/feature_flags/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -11884,7 +14010,9 @@ pub async fn posthog_delete_feature_flags(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_feature_flags(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_feature_flags(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -11908,7 +14036,10 @@ pub async fn posthog_update_feature_flags(context: ActorContext) -> Result<HashM
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("ensure_experience_continuity") {
-        body.insert("ensure_experience_continuity".to_string(), val.clone().into());
+        body.insert(
+            "ensure_experience_continuity".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("id") {
         body.insert("id".to_string(), val.clone().into());
@@ -11929,7 +14060,10 @@ pub async fn posthog_update_feature_flags(context: ActorContext) -> Result<HashM
         body.insert("filters".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("should_create_usage_dashboard") {
-        body.insert("_should_create_usage_dashboard".to_string(), val.clone().into());
+        body.insert(
+            "_should_create_usage_dashboard".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("rollback_conditions") {
         body.insert("rollback_conditions".to_string(), val.clone().into());
@@ -12017,20 +14151,34 @@ pub async fn posthog_update_feature_flags(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/feature_flags/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/feature_flags/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12107,20 +14255,34 @@ pub async fn posthog_move_core(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/file_system/{{id}}/move/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/file_system/{{id}}/move/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12136,7 +14298,9 @@ pub async fn posthog_move_core(context: ActorContext) -> Result<HashMap<String, 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_file_system_shortcut(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_file_system_shortcut(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12170,20 +14334,34 @@ pub async fn posthog_read_file_system_shortcut(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/file_system_shortcut/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/file_system_shortcut/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12199,7 +14377,9 @@ pub async fn posthog_read_file_system_shortcut(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_file_system_shortcut(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_file_system_shortcut(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12245,20 +14425,34 @@ pub async fn posthog_create_file_system_shortcut(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/file_system_shortcut/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/file_system_shortcut/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12274,7 +14468,9 @@ pub async fn posthog_create_file_system_shortcut(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_file_system_shortcut(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_file_system_shortcut(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12323,20 +14519,34 @@ pub async fn posthog_update_file_system_shortcut(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/file_system_shortcut/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/file_system_shortcut/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12352,7 +14562,9 @@ pub async fn posthog_update_file_system_shortcut(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_file_system_shortcut(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_file_system_shortcut(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12378,17 +14590,22 @@ pub async fn posthog_delete_file_system_shortcut(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/file_system_shortcut/{{id}}/ failed: {}", e).into()));
@@ -12407,7 +14624,9 @@ pub async fn posthog_delete_file_system_shortcut(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_flag_value(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_flag_value(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12438,20 +14657,34 @@ pub async fn posthog_read_flag_value(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/flag_value/values/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/flag_value/values/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12467,7 +14700,9 @@ pub async fn posthog_read_flag_value(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_groups_types(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_groups_types(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12490,20 +14725,34 @@ pub async fn posthog_read_groups_types(context: ActorContext) -> Result<HashMap<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/groups_types/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/groups_types/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -12519,11 +14768,14 @@ pub async fn posthog_read_groups_types(context: ActorContext) -> Result<HashMap<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_groups_types(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_groups_types(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/groups_types/create_detail_dashboard/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/groups_types/create_detail_dashboard/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -12568,17 +14820,22 @@ pub async fn posthog_update_groups_types(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/groups_types/create_detail_dashboard/ failed: {}", e).into()));
@@ -12597,7 +14854,9 @@ pub async fn posthog_update_groups_types(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_groups_types(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_groups_types(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12623,17 +14882,22 @@ pub async fn posthog_delete_groups_types(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/groups_types/{{group_type_index}}/ failed: {}", e).into()));
@@ -12652,11 +14916,14 @@ pub async fn posthog_delete_groups_types(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_groups_types(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_groups_types(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/groups_types/{group_type_index}/metrics/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/groups_types/{group_type_index}/metrics/".to_string();
     if let Some(val) = inputs.get("group_type_index") {
         endpoint = endpoint.replace("{{group_type_index}}", &super::message_to_str(val));
     }
@@ -12701,17 +14968,22 @@ pub async fn posthog_create_groups_types(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/groups_types/{{group_type_index}}/metrics/ failed: {}", e).into()));
@@ -12730,7 +15002,9 @@ pub async fn posthog_create_groups_types(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_heatmap_screenshots(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_heatmap_screenshots(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12756,17 +15030,22 @@ pub async fn posthog_read_heatmap_screenshots(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/heatmap_screenshots/{{id}}/content/ failed: {}", e).into()));
@@ -12785,7 +15064,9 @@ pub async fn posthog_read_heatmap_screenshots(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_heatmaps(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_heatmaps(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12819,20 +15100,30 @@ pub async fn posthog_read_heatmaps(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/heatmaps/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/heatmaps/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -12848,7 +15139,9 @@ pub async fn posthog_read_heatmaps(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_workflows(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_workflows(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -12894,20 +15187,30 @@ pub async fn posthog_read_workflows(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/hog_flows/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/hog_flows/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -12923,7 +15226,9 @@ pub async fn posthog_read_workflows(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_workflows(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_workflows(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13002,20 +15307,30 @@ pub async fn posthog_create_workflows(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/hog_flows/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/hog_flows/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -13031,7 +15346,9 @@ pub async fn posthog_create_workflows(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_workflows(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_workflows(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13057,20 +15374,34 @@ pub async fn posthog_delete_workflows(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/hog_flows/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/hog_flows/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13086,7 +15417,9 @@ pub async fn posthog_delete_workflows(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_workflows(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_workflows(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13168,20 +15501,34 @@ pub async fn posthog_update_workflows(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/hog_flows/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/hog_flows/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13197,7 +15544,9 @@ pub async fn posthog_update_workflows(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_hog_function_templates(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_hog_function_templates(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13240,20 +15589,34 @@ pub async fn posthog_read_hog_function_templates(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/hog_function_templates/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/hog_function_templates/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13269,7 +15632,9 @@ pub async fn posthog_read_hog_function_templates(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_hog_functions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_hog_functions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13324,20 +15689,34 @@ pub async fn posthog_read_hog_functions(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/hog_functions/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/hog_functions/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13353,7 +15732,9 @@ pub async fn posthog_read_hog_functions(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_hog_functions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_hog_functions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13453,20 +15834,34 @@ pub async fn posthog_create_hog_functions(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/hog_functions/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/hog_functions/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13482,7 +15877,9 @@ pub async fn posthog_create_hog_functions(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_hog_functions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_hog_functions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13513,20 +15910,34 @@ pub async fn posthog_update_hog_functions(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/hog_functions/rearrange/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/hog_functions/rearrange/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13542,7 +15953,9 @@ pub async fn posthog_update_hog_functions(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_hog_functions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_hog_functions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13568,20 +15981,34 @@ pub async fn posthog_delete_hog_functions(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/hog_functions/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/hog_functions/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13597,7 +16024,9 @@ pub async fn posthog_delete_hog_functions(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_insight_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_insight_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13649,20 +16078,34 @@ pub async fn posthog_create_insight_variables(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/insight_variables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/insight_variables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13678,7 +16121,9 @@ pub async fn posthog_create_insight_variables(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_insight_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_insight_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13709,20 +16154,34 @@ pub async fn posthog_read_insight_variables(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/insight_variables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/insight_variables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13738,7 +16197,9 @@ pub async fn posthog_read_insight_variables(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_insight_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_insight_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13793,20 +16254,34 @@ pub async fn posthog_update_insight_variables(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/insight_variables/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/insight_variables/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13822,7 +16297,9 @@ pub async fn posthog_update_insight_variables(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_insight_variables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_insight_variables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13848,20 +16325,34 @@ pub async fn posthog_delete_insight_variables(context: ActorContext) -> Result<H
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/insight_variables/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/insight_variables/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -13877,7 +16368,9 @@ pub async fn posthog_delete_insight_variables(context: ActorContext) -> Result<H
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_insights(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_insights(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -13906,7 +16399,10 @@ pub async fn posthog_create_insights(context: ActorContext) -> Result<HashMap<St
 
     let mut body = serde_json::Map::new();
     if let Some(val) = inputs.get("next_allowed_client_refresh") {
-        body.insert("next_allowed_client_refresh".to_string(), val.clone().into());
+        body.insert(
+            "next_allowed_client_refresh".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("updated_at") {
         body.insert("updated_at".to_string(), val.clone().into());
@@ -13990,7 +16486,10 @@ pub async fn posthog_create_insights(context: ActorContext) -> Result<HashMap<St
         body.insert("is_sample".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("effective_restriction_level") {
-        body.insert("effective_restriction_level".to_string(), val.clone().into());
+        body.insert(
+            "effective_restriction_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("cache_target_age") {
         body.insert("cache_target_age".to_string(), val.clone().into());
@@ -14021,20 +16520,30 @@ pub async fn posthog_create_insights(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/insights/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/insights/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -14050,7 +16559,9 @@ pub async fn posthog_create_insights(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_insights(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_insights(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14096,20 +16607,30 @@ pub async fn posthog_read_insights(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/insights/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/insights/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -14125,7 +16646,9 @@ pub async fn posthog_read_insights(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_cancel_insights(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_cancel_insights(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14202,7 +16725,10 @@ pub async fn posthog_cancel_insights(context: ActorContext) -> Result<HashMap<St
         body.insert("columns".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("next_allowed_client_refresh") {
-        body.insert("next_allowed_client_refresh".to_string(), val.clone().into());
+        body.insert(
+            "next_allowed_client_refresh".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("last_modified_by") {
         body.insert("last_modified_by".to_string(), val.clone().into());
@@ -14253,7 +16779,10 @@ pub async fn posthog_cancel_insights(context: ActorContext) -> Result<HashMap<St
         body.insert("is_cached".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("effective_restriction_level") {
-        body.insert("effective_restriction_level".to_string(), val.clone().into());
+        body.insert(
+            "effective_restriction_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("result") {
         body.insert("result".to_string(), val.clone().into());
@@ -14269,20 +16798,34 @@ pub async fn posthog_cancel_insights(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/insights/cancel/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/insights/cancel/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14298,7 +16841,9 @@ pub async fn posthog_cancel_insights(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_insights(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_insights(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14378,7 +16923,10 @@ pub async fn posthog_update_insights(context: ActorContext) -> Result<HashMap<St
         body.insert("hasMore".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("next_allowed_client_refresh") {
-        body.insert("next_allowed_client_refresh".to_string(), val.clone().into());
+        body.insert(
+            "next_allowed_client_refresh".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("created_by") {
         body.insert("created_by".to_string(), val.clone().into());
@@ -14426,7 +16974,10 @@ pub async fn posthog_update_insights(context: ActorContext) -> Result<HashMap<St
         body.insert("timezone".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("effective_restriction_level") {
-        body.insert("effective_restriction_level".to_string(), val.clone().into());
+        body.insert(
+            "effective_restriction_level".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("dashboards") {
         body.insert("dashboards".to_string(), val.clone().into());
@@ -14445,20 +16996,34 @@ pub async fn posthog_update_insights(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/insights/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/insights/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14474,7 +17039,9 @@ pub async fn posthog_update_insights(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_insights(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_insights(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14508,20 +17075,34 @@ pub async fn posthog_delete_insights(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/insights/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/insights/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14537,7 +17118,9 @@ pub async fn posthog_delete_insights(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_analyze_insights(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_analyze_insights(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14571,20 +17154,34 @@ pub async fn posthog_analyze_insights(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/insights/{{id}}/analyze/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/insights/{{id}}/analyze/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14600,7 +17197,9 @@ pub async fn posthog_analyze_insights(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_live_debugger_breakpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_live_debugger_breakpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14652,20 +17251,34 @@ pub async fn posthog_create_live_debugger_breakpoints(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/live_debugger_breakpoints/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/live_debugger_breakpoints/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14681,7 +17294,9 @@ pub async fn posthog_create_live_debugger_breakpoints(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_live_debugger_breakpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_live_debugger_breakpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14721,20 +17336,34 @@ pub async fn posthog_read_live_debugger_breakpoints(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/live_debugger_breakpoints/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/live_debugger_breakpoints/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -14750,7 +17379,9 @@ pub async fn posthog_read_live_debugger_breakpoints(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_live_debugger_breakpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_live_debugger_breakpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14805,17 +17436,22 @@ pub async fn posthog_update_live_debugger_breakpoints(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/live_debugger_breakpoints/{{id}}/ failed: {}", e).into()));
@@ -14834,7 +17470,9 @@ pub async fn posthog_update_live_debugger_breakpoints(context: ActorContext) -> 
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_live_debugger_breakpoints(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_live_debugger_breakpoints(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -14860,17 +17498,22 @@ pub async fn posthog_delete_live_debugger_breakpoints(context: ActorContext) -> 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/live_debugger_breakpoints/{{id}}/ failed: {}", e).into()));
@@ -14923,20 +17566,34 @@ pub async fn posthog_read_logs(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/logs/alerts/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/logs/alerts/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15043,20 +17700,34 @@ pub async fn posthog_update_logs(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/logs/alerts/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/logs/alerts/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15098,20 +17769,34 @@ pub async fn posthog_delete_logs(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/logs/alerts/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/logs/alerts/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15150,20 +17835,34 @@ pub async fn posthog_export_logs(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/logs/export/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/logs/export/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15179,7 +17878,9 @@ pub async fn posthog_export_logs(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_notebooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_notebooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15246,20 +17947,30 @@ pub async fn posthog_create_notebooks(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/notebooks/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/notebooks/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -15275,7 +17986,9 @@ pub async fn posthog_create_notebooks(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_notebooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_notebooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15324,20 +18037,30 @@ pub async fn posthog_read_notebooks(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/notebooks/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/notebooks/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -15353,7 +18076,9 @@ pub async fn posthog_read_notebooks(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_notebooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_notebooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15379,20 +18104,34 @@ pub async fn posthog_delete_notebooks(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/notebooks/{{short_id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/notebooks/{{short_id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15408,7 +18147,9 @@ pub async fn posthog_delete_notebooks(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_notebooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_notebooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15478,20 +18219,34 @@ pub async fn posthog_update_notebooks(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/notebooks/{{short_id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/notebooks/{{short_id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15507,7 +18262,9 @@ pub async fn posthog_update_notebooks(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_start_notebooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_start_notebooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15577,17 +18334,22 @@ pub async fn posthog_start_notebooks(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/notebooks/{{short_id}}/kernel/start/ failed: {}", e).into()));
@@ -15606,7 +18368,9 @@ pub async fn posthog_start_notebooks(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_stop_notebooks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_stop_notebooks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15676,17 +18440,22 @@ pub async fn posthog_stop_notebooks(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/notebooks/{{short_id}}/kernel/stop/ failed: {}", e).into()));
@@ -15705,7 +18474,9 @@ pub async fn posthog_stop_notebooks(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_object_media_previews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_object_media_previews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15760,20 +18531,34 @@ pub async fn posthog_create_object_media_previews(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/object_media_previews/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/object_media_previews/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15789,7 +18574,9 @@ pub async fn posthog_create_object_media_previews(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_object_media_previews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_object_media_previews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15823,20 +18610,34 @@ pub async fn posthog_read_object_media_previews(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/object_media_previews/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/object_media_previews/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -15852,7 +18653,9 @@ pub async fn posthog_read_object_media_previews(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_object_media_previews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_object_media_previews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15910,17 +18713,22 @@ pub async fn posthog_update_object_media_previews(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/object_media_previews/{{id}}/ failed: {}", e).into()));
@@ -15939,7 +18747,9 @@ pub async fn posthog_update_object_media_previews(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_object_media_previews(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_object_media_previews(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -15965,17 +18775,22 @@ pub async fn posthog_delete_object_media_previews(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/object_media_previews/{{id}}/ failed: {}", e).into()));
@@ -15994,7 +18809,9 @@ pub async fn posthog_delete_object_media_previews(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_persisted_folder(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_persisted_folder(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16040,20 +18857,34 @@ pub async fn posthog_create_persisted_folder(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/persisted_folder/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/persisted_folder/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16069,7 +18900,9 @@ pub async fn posthog_create_persisted_folder(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_persisted_folder(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_persisted_folder(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16103,20 +18936,34 @@ pub async fn posthog_read_persisted_folder(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/persisted_folder/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/persisted_folder/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16132,7 +18979,9 @@ pub async fn posthog_read_persisted_folder(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_persisted_folder(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_persisted_folder(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16181,20 +19030,34 @@ pub async fn posthog_update_persisted_folder(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/persisted_folder/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/persisted_folder/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16210,7 +19073,9 @@ pub async fn posthog_update_persisted_folder(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_persisted_folder(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_persisted_folder(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16236,20 +19101,34 @@ pub async fn posthog_delete_persisted_folder(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/persisted_folder/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/persisted_folder/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16265,7 +19144,9 @@ pub async fn posthog_delete_persisted_folder(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_persons(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_persons(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16314,20 +19195,30 @@ pub async fn posthog_read_persons(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/persons/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/persons/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -16343,7 +19234,9 @@ pub async fn posthog_read_persons(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_persons(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_persons(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16400,17 +19293,22 @@ pub async fn posthog_create_persons(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/persons/batch_by_distinct_ids/ failed: {}", e).into()));
@@ -16429,7 +19327,9 @@ pub async fn posthog_create_persons(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_persons(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_persons(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16489,20 +19389,34 @@ pub async fn posthog_update_persons(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/persons/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/persons/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16518,7 +19432,9 @@ pub async fn posthog_update_persons(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_split_persons(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_split_persons(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16578,20 +19494,34 @@ pub async fn posthog_split_persons(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/persons/{{id}}/split/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/persons/{{id}}/split/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16607,11 +19537,14 @@ pub async fn posthog_split_persons(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_plugin_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_plugin_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/plugin_configs/{plugin_config_id}/logs/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/plugin_configs/{plugin_config_id}/logs/".to_string();
     if let Some(val) = inputs.get("plugin_config_id") {
         endpoint = endpoint.replace("{{plugin_config_id}}", &super::message_to_str(val));
     }
@@ -16644,17 +19577,22 @@ pub async fn posthog_read_plugin_configs(context: ActorContext) -> Result<HashMa
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/plugin_configs/{{plugin_config_id}}/logs/ failed: {}", e).into()));
@@ -16673,7 +19611,9 @@ pub async fn posthog_read_plugin_configs(context: ActorContext) -> Result<HashMa
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_product_tours(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_product_tours(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16710,20 +19650,34 @@ pub async fn posthog_read_product_tours(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/product_tours/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/product_tours/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16739,7 +19693,9 @@ pub async fn posthog_read_product_tours(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_product_tours(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_product_tours(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16815,20 +19771,34 @@ pub async fn posthog_create_product_tours(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/product_tours/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/product_tours/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16844,7 +19814,9 @@ pub async fn posthog_create_product_tours(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_product_tours(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_product_tours(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16870,20 +19842,34 @@ pub async fn posthog_delete_product_tours(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/product_tours/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/product_tours/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -16899,7 +19885,9 @@ pub async fn posthog_delete_product_tours(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_product_tours(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_product_tours(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -16978,20 +19966,34 @@ pub async fn posthog_update_product_tours(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/product_tours/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/product_tours/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17007,7 +20009,9 @@ pub async fn posthog_update_product_tours(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_generate_product_tours(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_generate_product_tours(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17047,17 +20051,22 @@ pub async fn posthog_generate_product_tours(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/product_tours/{{id}}/generate/ failed: {}", e).into()));
@@ -17076,7 +20085,9 @@ pub async fn posthog_generate_product_tours(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_query(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_query(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17128,20 +20139,30 @@ pub async fn posthog_create_query(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/query/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/query/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -17180,20 +20201,34 @@ pub async fn posthog_read_query(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/query/draft_sql/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/query/draft_sql/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17209,7 +20244,9 @@ pub async fn posthog_read_query(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_query(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_query(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17235,20 +20272,34 @@ pub async fn posthog_delete_query(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/query/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/query/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17264,7 +20315,9 @@ pub async fn posthog_delete_query(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_saved(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_saved(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17337,20 +20390,30 @@ pub async fn posthog_create_saved(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/saved/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/saved/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -17400,20 +20463,30 @@ pub async fn posthog_read_saved(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/saved/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/saved/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -17429,7 +20502,9 @@ pub async fn posthog_read_saved(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_saved(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_saved(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17455,20 +20530,34 @@ pub async fn posthog_delete_saved(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/saved/{{short_id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/saved/{{short_id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17484,7 +20573,9 @@ pub async fn posthog_delete_saved(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_saved(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_saved(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17560,20 +20651,34 @@ pub async fn posthog_update_saved(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/saved/{{short_id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/saved/{{short_id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17589,7 +20694,9 @@ pub async fn posthog_update_saved(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_schema_property_groups(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_schema_property_groups(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17623,20 +20730,34 @@ pub async fn posthog_read_schema_property_groups(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/schema_property_groups/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/schema_property_groups/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17652,7 +20773,9 @@ pub async fn posthog_read_schema_property_groups(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_schema_property_groups(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_schema_property_groups(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17704,20 +20827,34 @@ pub async fn posthog_create_schema_property_groups(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/schema_property_groups/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/schema_property_groups/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17733,7 +20870,9 @@ pub async fn posthog_create_schema_property_groups(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_schema_property_groups(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_schema_property_groups(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17788,17 +20927,22 @@ pub async fn posthog_update_schema_property_groups(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/schema_property_groups/{{id}}/ failed: {}", e).into()));
@@ -17817,7 +20961,9 @@ pub async fn posthog_update_schema_property_groups(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_schema_property_groups(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_schema_property_groups(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17843,17 +20989,22 @@ pub async fn posthog_delete_schema_property_groups(context: ActorContext) -> Res
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/schema_property_groups/{{id}}/ failed: {}", e).into()));
@@ -17872,7 +21023,9 @@ pub async fn posthog_delete_schema_property_groups(context: ActorContext) -> Res
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_session_group_summaries(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_session_group_summaries(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17927,20 +21080,34 @@ pub async fn posthog_create_session_group_summaries(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/session_group_summaries/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/session_group_summaries/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -17956,7 +21123,9 @@ pub async fn posthog_create_session_group_summaries(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_session_group_summaries(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_session_group_summaries(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -17990,20 +21159,34 @@ pub async fn posthog_read_session_group_summaries(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/session_group_summaries/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/session_group_summaries/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -18019,7 +21202,9 @@ pub async fn posthog_read_session_group_summaries(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_session_group_summaries(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_session_group_summaries(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18077,17 +21262,22 @@ pub async fn posthog_update_session_group_summaries(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/session_group_summaries/{{id}}/ failed: {}", e).into()));
@@ -18106,7 +21296,9 @@ pub async fn posthog_update_session_group_summaries(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_session_group_summaries(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_session_group_summaries(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18132,17 +21324,22 @@ pub async fn posthog_delete_session_group_summaries(context: ActorContext) -> Re
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/session_group_summaries/{{id}}/ failed: {}", e).into()));
@@ -18161,7 +21358,9 @@ pub async fn posthog_delete_session_group_summaries(context: ActorContext) -> Re
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_replay(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_replay(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18237,20 +21436,34 @@ pub async fn posthog_create_replay(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/session_recording_playlists/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/session_recording_playlists/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -18306,20 +21519,34 @@ pub async fn posthog_read_replay(context: ActorContext) -> Result<HashMap<String
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/session_recording_playlists/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/session_recording_playlists/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -18335,11 +21562,14 @@ pub async fn posthog_read_replay(context: ActorContext) -> Result<HashMap<String
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_replay(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_replay(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/session_recording_playlists/{short_id}/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/session_recording_playlists/{short_id}/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -18361,17 +21591,22 @@ pub async fn posthog_delete_replay(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/session_recording_playlists/{{short_id}}/ failed: {}", e).into()));
@@ -18390,11 +21625,14 @@ pub async fn posthog_delete_replay(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_replay(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_replay(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/session_recording_playlists/{short_id}/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/session_recording_playlists/{short_id}/".to_string();
     if let Some(val) = inputs.get("project_id") {
         endpoint = endpoint.replace("{{project_id}}", &super::message_to_str(val));
     }
@@ -18469,17 +21707,22 @@ pub async fn posthog_update_replay(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/session_recording_playlists/{{short_id}}/ failed: {}", e).into()));
@@ -18498,7 +21741,9 @@ pub async fn posthog_update_replay(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_sessions(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_sessions(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18521,17 +21766,22 @@ pub async fn posthog_read_sessions(context: ActorContext) -> Result<HashMap<Stri
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/sessions/property_definitions/ failed: {}", e).into()));
@@ -18550,7 +21800,9 @@ pub async fn posthog_read_sessions(context: ActorContext) -> Result<HashMap<Stri
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_signal_source_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_signal_source_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18584,20 +21836,34 @@ pub async fn posthog_read_signal_source_configs(context: ActorContext) -> Result
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/signal_source_configs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/signal_source_configs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -18613,7 +21879,9 @@ pub async fn posthog_read_signal_source_configs(context: ActorContext) -> Result
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_signal_source_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_signal_source_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18665,20 +21933,34 @@ pub async fn posthog_create_signal_source_configs(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/signal_source_configs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/signal_source_configs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -18694,7 +21976,9 @@ pub async fn posthog_create_signal_source_configs(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_signal_source_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_signal_source_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18749,20 +22033,34 @@ pub async fn posthog_update_signal_source_configs(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/signal_source_configs/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/signal_source_configs/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -18778,7 +22076,9 @@ pub async fn posthog_update_signal_source_configs(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_signal_source_configs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_signal_source_configs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18804,17 +22104,22 @@ pub async fn posthog_delete_signal_source_configs(context: ActorContext) -> Resu
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/signal_source_configs/{{id}}/ failed: {}", e).into()));
@@ -18833,7 +22138,9 @@ pub async fn posthog_delete_signal_source_configs(context: ActorContext) -> Resu
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_surveys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_surveys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18873,20 +22180,30 @@ pub async fn posthog_read_surveys(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/surveys/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/surveys/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -18902,7 +22219,9 @@ pub async fn posthog_read_surveys(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_surveys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_surveys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -18929,7 +22248,10 @@ pub async fn posthog_create_surveys(context: ActorContext) -> Result<HashMap<Str
         body.insert("remove_targeting_flag".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_daily_limits") {
-        body.insert("response_sampling_daily_limits".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_daily_limits".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("schedule") {
         body.insert("schedule".to_string(), val.clone().into());
@@ -18947,7 +22269,10 @@ pub async fn posthog_create_surveys(context: ActorContext) -> Result<HashMap<Str
         body.insert("questions".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("current_iteration_start_date") {
-        body.insert("current_iteration_start_date".to_string(), val.clone().into());
+        body.insert(
+            "current_iteration_start_date".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("response_sampling_limit") {
         body.insert("response_sampling_limit".to_string(), val.clone().into());
@@ -19019,13 +22344,19 @@ pub async fn posthog_create_surveys(context: ActorContext) -> Result<HashMap<Str
         body.insert("name".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_interval_type") {
-        body.insert("response_sampling_interval_type".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_interval_type".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("targeting_flag_id") {
         body.insert("targeting_flag_id".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_start_date") {
-        body.insert("response_sampling_start_date".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_start_date".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("conditions") {
         body.insert("conditions".to_string(), val.clone().into());
@@ -19041,20 +22372,30 @@ pub async fn posthog_create_surveys(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/surveys/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/surveys/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -19070,7 +22411,9 @@ pub async fn posthog_create_surveys(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_surveys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_surveys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19096,20 +22439,34 @@ pub async fn posthog_delete_surveys(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/surveys/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/surveys/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19125,7 +22482,9 @@ pub async fn posthog_delete_surveys(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_surveys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_surveys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19173,13 +22532,19 @@ pub async fn posthog_update_surveys(context: ActorContext) -> Result<HashMap<Str
         body.insert("type".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("current_iteration_start_date") {
-        body.insert("current_iteration_start_date".to_string(), val.clone().into());
+        body.insert(
+            "current_iteration_start_date".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("enable_partial_responses") {
         body.insert("enable_partial_responses".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_start_date") {
-        body.insert("response_sampling_start_date".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_start_date".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("responses_limit") {
         body.insert("responses_limit".to_string(), val.clone().into());
@@ -19236,10 +22601,16 @@ pub async fn posthog_update_surveys(context: ActorContext) -> Result<HashMap<Str
         body.insert("end_date".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_daily_limits") {
-        body.insert("response_sampling_daily_limits".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_daily_limits".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("response_sampling_interval_type") {
-        body.insert("response_sampling_interval_type".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_interval_type".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("schedule") {
         body.insert("schedule".to_string(), val.clone().into());
@@ -19261,20 +22632,34 @@ pub async fn posthog_update_surveys(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/surveys/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/surveys/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19290,11 +22675,14 @@ pub async fn posthog_update_surveys(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_archive_surveys(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/surveys/{id}/responses/{response_uuid}/archive/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/surveys/{id}/responses/{response_uuid}/archive/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -19344,7 +22732,10 @@ pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<St
         body.insert("response_sampling_interval".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_interval_type") {
-        body.insert("response_sampling_interval_type".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_interval_type".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("create_in_folder") {
         body.insert("_create_in_folder".to_string(), val.clone().into());
@@ -19383,7 +22774,10 @@ pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<St
         body.insert("linked_flag".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("current_iteration_start_date") {
-        body.insert("current_iteration_start_date".to_string(), val.clone().into());
+        body.insert(
+            "current_iteration_start_date".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("internal_targeting_flag") {
         body.insert("internal_targeting_flag".to_string(), val.clone().into());
@@ -19416,7 +22810,10 @@ pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<St
         body.insert("enable_iframe_embedding".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_start_date") {
-        body.insert("response_sampling_start_date".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_start_date".to_string(),
+            val.clone().into(),
+        );
     }
     if let Some(val) = inputs.get("targeting_flag") {
         body.insert("targeting_flag".to_string(), val.clone().into());
@@ -19425,7 +22822,10 @@ pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<St
         body.insert("description".to_string(), val.clone().into());
     }
     if let Some(val) = inputs.get("response_sampling_daily_limits") {
-        body.insert("response_sampling_daily_limits".to_string(), val.clone().into());
+        body.insert(
+            "response_sampling_daily_limits".to_string(),
+            val.clone().into(),
+        );
     }
     if !body.is_empty() {
         builder = builder.json(&serde_json::Value::Object(body));
@@ -19435,17 +22835,22 @@ pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<St
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/surveys/{{id}}/responses/{{response_uuid}}/archive/ failed: {}", e).into()));
@@ -19464,7 +22869,9 @@ pub async fn posthog_archive_surveys(context: ActorContext) -> Result<HashMap<St
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_tasks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_tasks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19501,20 +22908,30 @@ pub async fn posthog_create_tasks(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/tasks/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("POST /api/projects/{{project_id}}/tasks/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -19579,20 +22996,30 @@ pub async fn posthog_read_tasks(context: ActorContext) -> Result<HashMap<String,
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/tasks/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/projects/{{project_id}}/tasks/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -19608,7 +23035,9 @@ pub async fn posthog_read_tasks(context: ActorContext) -> Result<HashMap<String,
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_tasks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_tasks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19648,20 +23077,34 @@ pub async fn posthog_update_tasks(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/tasks/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/tasks/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19677,7 +23120,9 @@ pub async fn posthog_update_tasks(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_tasks(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_tasks(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19703,20 +23148,34 @@ pub async fn posthog_delete_tasks(context: ActorContext) -> Result<HashMap<Strin
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/tasks/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/tasks/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19732,7 +23191,9 @@ pub async fn posthog_delete_tasks(context: ActorContext) -> Result<HashMap<Strin
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_task_runs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_task_runs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19769,20 +23230,34 @@ pub async fn posthog_read_task_runs(context: ActorContext) -> Result<HashMap<Str
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/tasks/{{task_id}}/runs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/tasks/{{task_id}}/runs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19798,7 +23273,9 @@ pub async fn posthog_read_task_runs(context: ActorContext) -> Result<HashMap<Str
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_task_runs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_task_runs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19824,20 +23301,34 @@ pub async fn posthog_create_task_runs(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/tasks/{{task_id}}/runs/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/tasks/{{task_id}}/runs/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19853,7 +23344,9 @@ pub async fn posthog_create_task_runs(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_task_runs(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_task_runs(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19905,17 +23398,22 @@ pub async fn posthog_update_task_runs(context: ActorContext) -> Result<HashMap<S
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/tasks/{{task_id}}/runs/{{id}}/ failed: {}", e).into()));
@@ -19934,7 +23432,9 @@ pub async fn posthog_update_task_runs(context: ActorContext) -> Result<HashMap<S
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_upload_ed_media_create(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_upload_ed_media_create(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -19957,20 +23457,34 @@ pub async fn posthog_upload_ed_media_create(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/uploaded_media/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/uploaded_media/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -19986,7 +23500,9 @@ pub async fn posthog_upload_ed_media_create(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_visual_review(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_visual_review(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20020,20 +23536,34 @@ pub async fn posthog_read_visual_review(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/visual_review/repos/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/visual_review/repos/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20049,7 +23579,9 @@ pub async fn posthog_read_visual_review(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_visual_review(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_visual_review(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20083,20 +23615,34 @@ pub async fn posthog_create_visual_review(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/visual_review/repos/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/visual_review/repos/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20112,7 +23658,9 @@ pub async fn posthog_create_visual_review(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_visual_review(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_visual_review(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20146,20 +23694,34 @@ pub async fn posthog_update_visual_review(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/visual_review/repos/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/visual_review/repos/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20175,7 +23737,9 @@ pub async fn posthog_update_visual_review(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_approve_visual_review(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_approve_visual_review(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20212,17 +23776,22 @@ pub async fn posthog_approve_visual_review(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/visual_review/runs/{{id}}/approve/ failed: {}", e).into()));
@@ -20241,11 +23810,14 @@ pub async fn posthog_approve_visual_review(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_cancel_data_warehouse(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_cancel_data_warehouse(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
-    let mut endpoint = "/api/projects/{project_id}/warehouse_saved_queries/{id}/cancel/".to_string();
+    let mut endpoint =
+        "/api/projects/{project_id}/warehouse_saved_queries/{id}/cancel/".to_string();
     if let Some(val) = inputs.get("id") {
         endpoint = endpoint.replace("{{id}}", &super::message_to_str(val));
     }
@@ -20323,17 +23895,22 @@ pub async fn posthog_cancel_data_warehouse(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
             output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/warehouse_saved_queries/{{id}}/cancel/ failed: {}", e).into()));
@@ -20352,7 +23929,9 @@ pub async fn posthog_cancel_data_warehouse(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_warehouse_tables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_warehouse_tables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20416,20 +23995,34 @@ pub async fn posthog_create_warehouse_tables(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/warehouse_tables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/warehouse_tables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20445,7 +24038,9 @@ pub async fn posthog_create_warehouse_tables(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_warehouse_tables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_warehouse_tables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20482,20 +24077,34 @@ pub async fn posthog_read_warehouse_tables(context: ActorContext) -> Result<Hash
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/warehouse_tables/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/warehouse_tables/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20511,7 +24120,9 @@ pub async fn posthog_read_warehouse_tables(context: ActorContext) -> Result<Hash
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_warehouse_tables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_warehouse_tables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20578,20 +24189,34 @@ pub async fn posthog_update_warehouse_tables(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/projects/{{project_id}}/warehouse_tables/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PATCH /api/projects/{{project_id}}/warehouse_tables/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20607,7 +24232,9 @@ pub async fn posthog_update_warehouse_tables(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_warehouse_tables(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_warehouse_tables(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20633,20 +24260,34 @@ pub async fn posthog_delete_warehouse_tables(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/warehouse_tables/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/warehouse_tables/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20662,7 +24303,9 @@ pub async fn posthog_delete_warehouse_tables(context: ActorContext) -> Result<Ha
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_web_analytics(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_web_analytics(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20714,20 +24357,34 @@ pub async fn posthog_read_web_analytics(context: ActorContext) -> Result<HashMap
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/web_analytics/breakdown/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/web_analytics/breakdown/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20743,7 +24400,9 @@ pub async fn posthog_read_web_analytics(context: ActorContext) -> Result<HashMap
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_create_web_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_create_web_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20786,20 +24445,34 @@ pub async fn posthog_create_web_experiments(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("POST /api/projects/{{project_id}}/web_experiments/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "POST /api/projects/{{project_id}}/web_experiments/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20815,7 +24488,9 @@ pub async fn posthog_create_web_experiments(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_web_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_web_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20849,20 +24524,34 @@ pub async fn posthog_read_web_experiments(context: ActorContext) -> Result<HashM
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/projects/{{project_id}}/web_experiments/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "GET /api/projects/{{project_id}}/web_experiments/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20878,7 +24567,9 @@ pub async fn posthog_read_web_experiments(context: ActorContext) -> Result<HashM
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_delete_web_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_delete_web_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20904,20 +24595,34 @@ pub async fn posthog_delete_web_experiments(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("DELETE /api/projects/{{project_id}}/web_experiments/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "DELETE /api/projects/{{project_id}}/web_experiments/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -20933,7 +24638,9 @@ pub async fn posthog_delete_web_experiments(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_web_experiments(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_web_experiments(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -20979,20 +24686,34 @@ pub async fn posthog_update_web_experiments(context: ActorContext) -> Result<Has
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PUT /api/projects/{{project_id}}/web_experiments/{{id}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!(
+                        "PUT /api/projects/{{project_id}}/web_experiments/{{id}}/ failed: {}",
+                        e
+                    )
+                    .into(),
+                ),
+            );
         }
     }
 
@@ -21008,7 +24729,9 @@ pub async fn posthog_update_web_experiments(context: ActorContext) -> Result<Has
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_list_hog_function_templates(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_list_hog_function_templates(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -21048,20 +24771,30 @@ pub async fn posthog_list_hog_function_templates(context: ActorContext) -> Resul
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/public_hog_function_templates/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/public_hog_function_templates/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -21077,7 +24810,9 @@ pub async fn posthog_list_hog_function_templates(context: ActorContext) -> Resul
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_update_user_home_settings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_update_user_home_settings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -21111,20 +24846,30 @@ pub async fn posthog_update_user_home_settings(context: ActorContext) -> Result<
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("PATCH /api/user_home_settings/{{uuid}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("PATCH /api/user_home_settings/{{uuid}}/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -21140,7 +24885,9 @@ pub async fn posthog_update_user_home_settings(context: ActorContext) -> Result<
     outports::<50>(response, error),
     state(MemoryState)
 )]
-pub async fn posthog_read_user_home_settings(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn posthog_read_user_home_settings(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let inputs = context.get_payload();
     let actor_config = context.get_config();
 
@@ -21163,20 +24910,30 @@ pub async fn posthog_read_user_home_settings(context: ActorContext) -> Result<Ha
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/user_home_settings/{{uuid}}/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(
+                    format!("GET /api/user_home_settings/{{uuid}}/ failed: {}", e).into(),
+                ),
+            );
         }
     }
 
@@ -21229,23 +24986,30 @@ pub async fn posthog_list_core(context: ActorContext) -> Result<HashMap<String, 
     match builder.send().await {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let headers: HashMap<String, String> = resp.headers()
+            let headers: HashMap<String, String> = resp
+                .headers()
                 .iter()
                 .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
                 .collect();
             let body_text = resp.text().await.unwrap_or_default();
-            let body_value: Value = serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
-            output.insert("response".to_string(), Message::object(EncodableValue::from(json!({
-                "status": status,
-                "headers": headers,
-                "body": body_value,
-            }))));
+            let body_value: Value =
+                serde_json::from_str(&body_text).unwrap_or(Value::String(body_text));
+            output.insert(
+                "response".to_string(),
+                Message::object(EncodableValue::from(json!({
+                    "status": status,
+                    "headers": headers,
+                    "body": body_value,
+                }))),
+            );
         }
         Err(e) => {
-            output.insert("error".to_string(), Message::Error(format!("GET /api/users/ failed: {}", e).into()));
+            output.insert(
+                "error".to_string(),
+                Message::Error(format!("GET /api/users/ failed: {}", e).into()),
+            );
         }
     }
 
     Ok(output)
 }
-

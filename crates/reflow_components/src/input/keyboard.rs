@@ -17,9 +17,7 @@ use std::collections::HashMap;
     outports::<50>(event, key, code, modifiers),
     state(MemoryState)
 )]
-pub async fn keyboard_input_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn keyboard_input_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let event_data = super::extract_event_data(&ctx);
 
     let key = event_data
@@ -37,11 +35,26 @@ pub async fn keyboard_input_actor(
         .and_then(|v| v.as_str())
         .unwrap_or("keydown")
         .to_string();
-    let alt = event_data.get("altKey").and_then(|v| v.as_bool()).unwrap_or(false);
-    let ctrl = event_data.get("ctrlKey").and_then(|v| v.as_bool()).unwrap_or(false);
-    let shift = event_data.get("shiftKey").and_then(|v| v.as_bool()).unwrap_or(false);
-    let meta = event_data.get("metaKey").and_then(|v| v.as_bool()).unwrap_or(false);
-    let repeat = event_data.get("repeat").and_then(|v| v.as_bool()).unwrap_or(false);
+    let alt = event_data
+        .get("altKey")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let ctrl = event_data
+        .get("ctrlKey")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let shift = event_data
+        .get("shiftKey")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let meta = event_data
+        .get("metaKey")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let repeat = event_data
+        .get("repeat")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let mut out = HashMap::new();
     out.insert(
@@ -62,4 +75,3 @@ pub async fn keyboard_input_actor(
     );
     Ok(out)
 }
-

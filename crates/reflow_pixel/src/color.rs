@@ -211,7 +211,11 @@ pub fn rgb_to_hsl(r: u8, g: u8, b: u8) -> Hsl {
         return Hsl { h: 0.0, s: 0.0, l };
     }
 
-    let s = if l > 0.5 { delta / (2.0 - max - min) } else { delta / (max + min) };
+    let s = if l > 0.5 {
+        delta / (2.0 - max - min)
+    } else {
+        delta / (max + min)
+    };
     let h = if (max - rf).abs() < 1e-6 {
         ((gf - bf) / delta) % 6.0
     } else if (max - gf).abs() < 1e-6 {
@@ -220,7 +224,11 @@ pub fn rgb_to_hsl(r: u8, g: u8, b: u8) -> Hsl {
         (rf - gf) / delta + 4.0
     } * 60.0;
 
-    Hsl { h: if h < 0.0 { h + 360.0 } else { h }, s, l }
+    Hsl {
+        h: if h < 0.0 { h + 360.0 } else { h },
+        s,
+        l,
+    }
 }
 
 pub fn hsl_to_rgb(hsl: Hsl) -> (u8, u8, u8) {
@@ -232,12 +240,19 @@ pub fn hsl_to_rgb(hsl: Hsl) -> (u8, u8, u8) {
     let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
     let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
     let m = l - c / 2.0;
-    let (r1, g1, b1) = if h < 60.0 { (c, x, 0.0) }
-        else if h < 120.0 { (x, c, 0.0) }
-        else if h < 180.0 { (0.0, c, x) }
-        else if h < 240.0 { (0.0, x, c) }
-        else if h < 300.0 { (x, 0.0, c) }
-        else { (c, 0.0, x) };
+    let (r1, g1, b1) = if h < 60.0 {
+        (c, x, 0.0)
+    } else if h < 120.0 {
+        (x, c, 0.0)
+    } else if h < 180.0 {
+        (0.0, c, x)
+    } else if h < 240.0 {
+        (0.0, x, c)
+    } else if h < 300.0 {
+        (x, 0.0, c)
+    } else {
+        (c, 0.0, x)
+    };
     let to_u8 = |v: f32| ((v + m) * 255.0).round().clamp(0.0, 255.0) as u8;
     (to_u8(r1), to_u8(g1), to_u8(b1))
 }
@@ -310,11 +325,19 @@ pub fn lerp_oklab(r1: u8, g1: u8, b1: u8, r2: u8, g2: u8, b2: u8, t: f32) -> (u8
 }
 
 fn srgb_to_linear(v: f32) -> f32 {
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 fn linear_to_srgb(v: f32) -> f32 {
-    if v <= 0.0031308 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.0031308 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// Apply hue shift to an RGBA row in-place.
@@ -322,7 +345,9 @@ pub fn row_hue_shift(row: &mut [u8], degrees: f32) {
     for pixel in row.chunks_exact_mut(4) {
         let mut hsl = rgb_to_hsl(pixel[0], pixel[1], pixel[2]);
         hsl.h = (hsl.h + degrees) % 360.0;
-        if hsl.h < 0.0 { hsl.h += 360.0; }
+        if hsl.h < 0.0 {
+            hsl.h += 360.0;
+        }
         let (r, g, b) = hsl_to_rgb(hsl);
         pixel[0] = r;
         pixel[1] = g;
@@ -348,7 +373,11 @@ mod tests {
     fn test_gray_red() {
         // 0.299 * 255 ≈ 76
         let g = rgba_to_gray(255, 0, 0);
-        assert!((g as i32 - 76).abs() <= 1, "Red gray should be ~76, got {}", g);
+        assert!(
+            (g as i32 - 76).abs() <= 1,
+            "Red gray should be ~76, got {}",
+            g
+        );
     }
 
     #[test]
@@ -377,7 +406,13 @@ mod tests {
                     && (g as i32 - g2 as i32).abs() <= 1
                     && (b as i32 - b2 as i32).abs() <= 1,
                 "Roundtrip failed for ({},{},{}) → {:?} → ({},{},{})",
-                r, g, b, hsv, r2, g2, b2
+                r,
+                g,
+                b,
+                hsv,
+                r2,
+                g2,
+                b2
             );
         }
     }
@@ -414,21 +449,39 @@ mod tests {
                 (r as i32 - r2 as i32).abs() <= 1
                     && (g as i32 - g2 as i32).abs() <= 1
                     && (b as i32 - b2 as i32).abs() <= 1,
-                "HSL roundtrip failed for ({},{},{}) → ({},{},{})", r, g, b, r2, g2, b2
+                "HSL roundtrip failed for ({},{},{}) → ({},{},{})",
+                r,
+                g,
+                b,
+                r2,
+                g2,
+                b2
             );
         }
     }
 
     #[test]
     fn test_oklab_roundtrip() {
-        for &(r, g, b) in &[(255u8, 0, 0), (0, 255, 0), (0, 0, 255), (128, 128, 128), (255, 255, 0)] {
+        for &(r, g, b) in &[
+            (255u8, 0, 0),
+            (0, 255, 0),
+            (0, 0, 255),
+            (128, 128, 128),
+            (255, 255, 0),
+        ] {
             let lab = rgb_to_oklab(r, g, b);
             let (r2, g2, b2) = oklab_to_rgb(lab);
             assert!(
                 (r as i32 - r2 as i32).abs() <= 2
                     && (g as i32 - g2 as i32).abs() <= 2
                     && (b as i32 - b2 as i32).abs() <= 2,
-                "OKLAB roundtrip failed for ({},{},{}) → ({},{},{})", r, g, b, r2, g2, b2
+                "OKLAB roundtrip failed for ({},{},{}) → ({},{},{})",
+                r,
+                g,
+                b,
+                r2,
+                g2,
+                b2
             );
         }
     }
@@ -438,16 +491,33 @@ mod tests {
         let (r, g, b) = lerp_oklab(0, 0, 0, 255, 255, 255, 0.5);
         // OKLAB perceptual midpoint is lighter than linear midpoint (128)
         // Should be roughly equal across channels (gray)
-        assert!((r as i32 - g as i32).abs() <= 2, "r={} g={} should be close", r, g);
-        assert!((g as i32 - b as i32).abs() <= 2, "g={} b={} should be close", g, b);
-        assert!(r > 50 && r < 250, "OKLAB midpoint r={} should be reasonable", r);
+        assert!(
+            (r as i32 - g as i32).abs() <= 2,
+            "r={} g={} should be close",
+            r,
+            g
+        );
+        assert!(
+            (g as i32 - b as i32).abs() <= 2,
+            "g={} b={} should be close",
+            g,
+            b
+        );
+        assert!(
+            r > 50 && r < 250,
+            "OKLAB midpoint r={} should be reasonable",
+            r
+        );
     }
 
     #[test]
     fn test_hue_shift() {
         let mut row = [255, 0, 0, 255]; // red
         row_hue_shift(&mut row, 120.0); // shift to green
-        // Should be roughly green
-        assert!(row[1] > row[0], "Hue shift 120° from red should increase green");
+                                        // Should be roughly green
+        assert!(
+            row[1] > row[0],
+            "Hue shift 120° from red should increase green"
+        );
     }
 }

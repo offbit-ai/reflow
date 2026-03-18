@@ -75,11 +75,11 @@
 //! - `dt` — delta time this tick
 //! - `frame` — tick counter
 
+use crate::math::expression as expr_eval;
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
-use crate::math::expression as expr_eval;
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -95,22 +95,29 @@ static FRAME_COUNTER: AtomicU64 = AtomicU64::new(0);
     outports::<1>(metadata),
     state(MemoryState)
 )]
-pub async fn behavior_system_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn behavior_system_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let dt = match payload.get("dt") {
         Some(Message::Float(f)) => *f,
-        _ => config.get("dt").and_then(|v| v.as_f64()).unwrap_or(1.0 / 60.0),
+        _ => config
+            .get("dt")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0 / 60.0),
     };
 
     // Optional: target a specific entity (from inport or config)
     let target_entity = match payload.get("entity_id") {
         Some(Message::String(s)) => Some(s.to_string()),
-        _ => config.get("entity").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        _ => config
+            .get("entity")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
     };
 
     let start = START_TIME.get_or_init(Instant::now);
@@ -148,7 +155,10 @@ pub async fn behavior_system_actor(
         entities_processed += 1;
 
         for rule in rules {
-            let enabled = rule.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+            let enabled = rule
+                .get("enabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
             if !enabled {
                 rules_skipped += 1;
                 continue;
@@ -173,9 +183,14 @@ pub async fn behavior_system_actor(
             if let Some(var_map) = rule.get("vars").and_then(|v| v.as_object()) {
                 for (name, val) in var_map {
                     if let Some(path) = val.as_str() {
-                        if let Some(query) = path.strip_prefix("@layout(").and_then(|s| s.strip_suffix(')')) {
+                        if let Some(query) = path
+                            .strip_prefix("@layout(")
+                            .and_then(|s| s.strip_suffix(')'))
+                        {
                             // Layout query: @layout(entity:property)
-                            if let Some(v) = reflow_assets::layout::resolve_layout_query(db_path, query) {
+                            if let Some(v) =
+                                reflow_assets::layout::resolve_layout_query(db_path, query)
+                            {
                                 vars.insert(name.clone(), v);
                             }
                         } else {
@@ -342,7 +357,11 @@ fn set_json_path(obj: &mut Value, path: &str, value: Value) {
         if let Ok(idx) = key.parse::<usize>() {
             current = &mut current[idx];
         } else {
-            if !current.get(key).map(|v| v.is_object() || v.is_array()).unwrap_or(false) {
+            if !current
+                .get(key)
+                .map(|v| v.is_object() || v.is_array())
+                .unwrap_or(false)
+            {
                 current[key] = json!({});
             }
             current = &mut current[key];

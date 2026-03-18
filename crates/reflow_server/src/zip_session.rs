@@ -234,10 +234,7 @@ impl ZipSession {
     ///
     /// Zeal sends JSON commands for workflow execution, publish, and control.
     /// Binary frames are currently not expected inbound.
-    async fn handle_inbound_messages(
-        reader: &mut WsStream,
-        engine: &Arc<ExecutionEngine>,
-    ) {
+    async fn handle_inbound_messages(reader: &mut WsStream, engine: &Arc<ExecutionEngine>) {
         use futures_util::StreamExt;
 
         while let Some(msg) = reader.next().await {
@@ -246,7 +243,10 @@ impl ZipSession {
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
                         Self::dispatch_command(json, engine).await;
                     } else {
-                        warn!("[ZipWS] Received non-JSON text: {}...", &text[..text.len().min(100)]);
+                        warn!(
+                            "[ZipWS] Received non-JSON text: {}...",
+                            &text[..text.len().min(100)]
+                        );
                     }
                 }
                 Ok(tokio_tungstenite::tungstenite::Message::Binary(data)) => {
@@ -269,20 +269,19 @@ impl ZipSession {
     }
 
     /// Dispatch a JSON command from Zeal to the appropriate handler.
-    async fn dispatch_command(
-        cmd: serde_json::Value,
-        engine: &Arc<ExecutionEngine>,
-    ) {
+    async fn dispatch_command(cmd: serde_json::Value, engine: &Arc<ExecutionEngine>) {
         let cmd_type = cmd.get("type").and_then(|t| t.as_str()).unwrap_or("");
 
         match cmd_type {
             // Zeal requests workflow execution
             "execution.start" | "workflow.execute" => {
-                let workflow_id = cmd.get("workflowId")
+                let workflow_id = cmd
+                    .get("workflowId")
                     .or(cmd.get("workflow_id"))
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown");
-                let input = cmd.get("input")
+                let input = cmd
+                    .get("input")
                     .or(cmd.get("data"))
                     .cloned()
                     .unwrap_or(serde_json::json!({}));
@@ -301,7 +300,8 @@ impl ZipSession {
 
             // Zeal publishes a workflow graph
             "workflow.publish" | "workflow.deploy" => {
-                let workflow_id = cmd.get("workflowId")
+                let workflow_id = cmd
+                    .get("workflowId")
                     .or(cmd.get("workflow_id"))
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown");
@@ -309,9 +309,12 @@ impl ZipSession {
                 if let Some(graph) = cmd.get("graph").or(cmd.get("workflow")) {
                     // Try to convert from Zeal format if it has graphs[]
                     let graph_json = if graph.get("graphs").is_some() {
-                        match serde_json::from_value::<crate::zeal_converter::ZealWorkflow>(graph.clone()) {
+                        match serde_json::from_value::<crate::zeal_converter::ZealWorkflow>(
+                            graph.clone(),
+                        ) {
                             Ok(zeal_wf) => {
-                                match crate::zeal_converter::convert_zeal_to_graph_export(&zeal_wf) {
+                                match crate::zeal_converter::convert_zeal_to_graph_export(&zeal_wf)
+                                {
                                     Ok(export) => serde_json::to_value(export).unwrap_or_default(),
                                     Err(e) => {
                                         error!("[ZipWS] Graph conversion failed: {}", e);
@@ -326,19 +329,26 @@ impl ZipSession {
                     };
 
                     engine.store_workflow(workflow_id, graph_json);
-                    info!("[ZipWS] Published workflow '{}' — webhook: /webhook/{}", workflow_id, workflow_id);
+                    info!(
+                        "[ZipWS] Published workflow '{}' — webhook: /webhook/{}",
+                        workflow_id, workflow_id
+                    );
                 }
             }
 
             // Zeal unpublishes a workflow — remove from store
             "workflow.unpublish" | "workflow.undeploy" | "workflow.delete" => {
-                let workflow_id = cmd.get("workflowId")
+                let workflow_id = cmd
+                    .get("workflowId")
                     .or(cmd.get("workflow_id"))
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown");
 
                 engine.remove_workflow(workflow_id);
-                info!("[ZipWS] Unpublished workflow '{}' — webhook removed", workflow_id);
+                info!(
+                    "[ZipWS] Unpublished workflow '{}' — webhook removed",
+                    workflow_id
+                );
             }
 
             // Ping/pong for keepalive
@@ -367,10 +377,7 @@ impl ZipSession {
         // Build our webhook URL — Zeal will POST execution events here
         // In Zeal-mode, commands come via WebSocket, not HTTP.
         // The webhook registration tells Zeal we're an active executor.
-        let webhook_url = format!(
-            "{}/webhook",
-            self.config.server_url.trim_end_matches('/')
-        );
+        let webhook_url = format!("{}/webhook", self.config.server_url.trim_end_matches('/'));
 
         let config = WebhookConfig {
             namespace: self.config.namespace.clone(),
@@ -383,7 +390,10 @@ impl ZipSession {
             headers: None,
             metadata: Some({
                 let mut m = std::collections::HashMap::new();
-                m.insert("node_id".to_string(), serde_json::json!(self.config.node_id));
+                m.insert(
+                    "node_id".to_string(),
+                    serde_json::json!(self.config.node_id),
+                );
                 m.insert("executor".to_string(), serde_json::json!("reflow"));
                 m
             }),
@@ -423,9 +433,7 @@ impl ZipSession {
                 display_name: "Stream".to_string(),
                 description: Some("Stream plumbing and conversion actors".to_string()),
                 icon: Some("activity".to_string()),
-                subcategories: Some(vec![
-                    sub("plumbing", "Plumbing"),
-                ]),
+                subcategories: Some(vec![sub("plumbing", "Plumbing")]),
             },
             // "media" already exists with display/images/audio/video subcategories.
             // We add our new subcategories — the API merges them.
@@ -682,9 +690,10 @@ impl ZipSession {
         metadata: serde_json::Value,
     ) -> Result<()> {
         let properties = match metadata {
-            serde_json::Value::Object(map) => {
-                Some(map.into_iter().collect::<std::collections::HashMap<String, serde_json::Value>>())
-            }
+            serde_json::Value::Object(map) => Some(
+                map.into_iter()
+                    .collect::<std::collections::HashMap<String, serde_json::Value>>(),
+            ),
             _ => None,
         };
 

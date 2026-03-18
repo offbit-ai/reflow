@@ -23,7 +23,14 @@ pub fn rect(x: f64, y: f64, w: f64, h: f64, corner_radius: f64) -> Path2D {
         p.line_to(x + w - r, y);
         p.cubic_to(x + w - r + kr, y, x + w, y + r - kr, x + w, y + r);
         p.line_to(x + w, y + h - r);
-        p.cubic_to(x + w, y + h - r + kr, x + w - r + kr, y + h, x + w - r, y + h);
+        p.cubic_to(
+            x + w,
+            y + h - r + kr,
+            x + w - r + kr,
+            y + h,
+            x + w - r,
+            y + h,
+        );
         p.line_to(x + r, y + h);
         p.cubic_to(x + r - kr, y + h, x, y + h - r + kr, x, y + h - r);
         p.line_to(x, y + r);
@@ -57,13 +64,19 @@ pub fn circle(cx: f64, cy: f64, r: f64) -> Path2D {
 /// Regular polygon with N sides.
 pub fn polygon(cx: f64, cy: f64, radius: f64, sides: usize) -> Path2D {
     let mut p = Path2D::new();
-    if sides < 3 { return p; }
+    if sides < 3 {
+        return p;
+    }
 
     for i in 0..sides {
         let angle = (i as f64 / sides as f64) * PI * 2.0 - PI / 2.0;
         let x = cx + radius * angle.cos();
         let y = cy + radius * angle.sin();
-        if i == 0 { p.move_to(x, y); } else { p.line_to(x, y); }
+        if i == 0 {
+            p.move_to(x, y);
+        } else {
+            p.line_to(x, y);
+        }
     }
     p.close();
     p
@@ -72,7 +85,9 @@ pub fn polygon(cx: f64, cy: f64, radius: f64, sides: usize) -> Path2D {
 /// Star with outer and inner radius.
 pub fn star(cx: f64, cy: f64, outer_r: f64, inner_r: f64, points: usize) -> Path2D {
     let mut p = Path2D::new();
-    if points < 2 { return p; }
+    if points < 2 {
+        return p;
+    }
 
     let total = points * 2;
     for i in 0..total {
@@ -80,7 +95,11 @@ pub fn star(cx: f64, cy: f64, outer_r: f64, inner_r: f64, points: usize) -> Path
         let r = if i % 2 == 0 { outer_r } else { inner_r };
         let x = cx + r * angle.cos();
         let y = cy + r * angle.sin();
-        if i == 0 { p.move_to(x, y); } else { p.line_to(x, y); }
+        if i == 0 {
+            p.move_to(x, y);
+        } else {
+            p.line_to(x, y);
+        }
     }
     p.close();
     p
@@ -100,7 +119,9 @@ pub fn arrow(x1: f64, y1: f64, x2: f64, y2: f64, head_size: f64) -> Path2D {
     let dx = x2 - x1;
     let dy = y2 - y1;
     let len = (dx * dx + dy * dy).sqrt();
-    if len < 1e-6 { return p; }
+    if len < 1e-6 {
+        return p;
+    }
 
     let ux = dx / len;
     let uy = dy / len;

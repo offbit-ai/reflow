@@ -136,9 +136,20 @@ impl LayoutBackend for HeadlessLayoutBackend {
                 };
 
                 let mut node = LayoutNode::default();
-                node.tag = v.get("tag").and_then(|v| v.as_str()).unwrap_or("div").to_string();
-                node.text = v.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                node.parent = v.get("parent").and_then(|v| v.as_str()).map(|s| s.to_string());
+                node.tag = v
+                    .get("tag")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("div")
+                    .to_string();
+                node.text = v
+                    .get("text")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                node.parent = v
+                    .get("parent")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
                 node.width = v.get("width").and_then(|v| v.as_f64()).unwrap_or(0.0);
                 node.height = v.get("height").and_then(|v| v.as_f64()).unwrap_or(0.0);
                 node.opacity = 1.0;
@@ -247,9 +258,7 @@ impl LayoutBackend for HeadlessLayoutBackend {
         // Simple AABB hit test, last match wins (top of stack)
         let mut hit = None;
         for (entity, node) in nodes.iter() {
-            if x >= node.x && x <= node.x + node.width
-                && y >= node.y && y <= node.y + node.height
-            {
+            if x >= node.x && x <= node.x + node.width && y >= node.y && y <= node.y + node.height {
                 hit = Some(entity.clone());
             }
         }
@@ -275,8 +284,9 @@ impl LayoutBackend for HeadlessLayoutBackend {
 // Global layout backend registry
 // ═══════════════════════════════════════════════════════════════════════════
 
-static LAYOUT_REGISTRY: std::sync::OnceLock<Mutex<std::collections::HashMap<String, Arc<dyn LayoutBackend>>>> =
-    std::sync::OnceLock::new();
+static LAYOUT_REGISTRY: std::sync::OnceLock<
+    Mutex<std::collections::HashMap<String, Arc<dyn LayoutBackend>>>,
+> = std::sync::OnceLock::new();
 
 fn layout_registry() -> &'static Mutex<std::collections::HashMap<String, Arc<dyn LayoutBackend>>> {
     LAYOUT_REGISTRY.get_or_init(|| Mutex::new(std::collections::HashMap::new()))

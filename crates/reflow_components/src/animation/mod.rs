@@ -12,24 +12,24 @@
 
 pub mod math_helpers;
 
-mod skeleton;
 mod animation_clip;
-mod skin_bind;
-mod animation_sampler;
-mod skinning;
-mod animation_time;
 mod animation_mixer;
+mod animation_sampler;
+mod animation_time;
 mod animation_timeline;
 mod keyframe;
+mod skeleton;
+mod skin_bind;
+mod skinning;
 mod sprite_animation;
 
-pub use skeleton::SkeletonActor;
 pub use animation_clip::AnimationClipActor;
-pub use skin_bind::SkinBindActor;
-pub use animation_sampler::AnimationSamplerActor;
-pub use skinning::SkinningActor;
-pub use animation_time::AnimationTimeActor;
 pub use animation_mixer::AnimationMixerActor;
+pub use animation_sampler::AnimationSamplerActor;
+pub use animation_time::AnimationTimeActor;
 pub use animation_timeline::AnimationTimelineActor;
 pub use keyframe::KeyframeActor;
+pub use skeleton::SkeletonActor;
+pub use skin_bind::SkinBindActor;
+pub use skinning::SkinningActor;
 pub use sprite_animation::SpriteAnimationActor;

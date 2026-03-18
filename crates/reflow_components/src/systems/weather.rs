@@ -66,10 +66,16 @@ pub async fn scene_weather_system_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let dt = match payload.get("dt") {
         Some(Message::Float(f)) => *f as f32,
-        _ => config.get("dt").and_then(|v| v.as_f64()).unwrap_or(1.0 / 60.0) as f32,
+        _ => config
+            .get("dt")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0 / 60.0) as f32,
     };
 
     let db = get_or_create_db(db_path)?;
@@ -78,7 +84,10 @@ pub async fn scene_weather_system_actor(
     let weather_entities = if selected.is_empty() {
         db.entities_with(&["weather"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "weather")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "weather"))
+            .collect()
     };
 
     let mut fog_data = json!(null);
@@ -90,35 +99,80 @@ pub async fn scene_weather_system_actor(
             Ok(a) => a,
             Err(_) => continue,
         };
-        let w: Value = w_asset.entry.inline_data.unwrap_or_else(|| {
-            serde_json::from_slice(&w_asset.data).unwrap_or(json!({}))
-        });
+        let w: Value = w_asset
+            .entry
+            .inline_data
+            .unwrap_or_else(|| serde_json::from_slice(&w_asset.data).unwrap_or(json!({})));
 
         let weather_type = w.get("type").and_then(|v| v.as_str()).unwrap_or("rain");
         let intensity = w.get("intensity").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
-        let wind_dir = w.get("windDirection").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0, 0.0) as f32, fv(a, 1, 0.0) as f32, fv(a, 2, 0.0) as f32]
-        }).unwrap_or([0.0, 0.0, 0.0]);
-        let wind_str = w.get("windStrength").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let particle_count = w.get("particleCount").and_then(|v| v.as_u64()).unwrap_or(1000) as u32;
-        let area = w.get("area").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0, 50.0) as f32, fv(a, 1, 30.0) as f32, fv(a, 2, 50.0) as f32]
-        }).unwrap_or([50.0, 30.0, 50.0]);
-        let particle_speed = w.get("particleSpeed").and_then(|v| v.as_f64()).unwrap_or(5.0) as f32;
-        let particle_size = w.get("particleSize").and_then(|v| v.as_f64()).unwrap_or(0.02) as f32;
-        let particle_color = w.get("particleColor").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0, 1.0), fv(a, 1, 1.0), fv(a, 2, 1.0), fv(a, 3, 0.5)]
-        }).unwrap_or([1.0, 1.0, 1.0, 0.5]);
+        let wind_dir = w
+            .get("windDirection")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                [
+                    fv(a, 0, 0.0) as f32,
+                    fv(a, 1, 0.0) as f32,
+                    fv(a, 2, 0.0) as f32,
+                ]
+            })
+            .unwrap_or([0.0, 0.0, 0.0]);
+        let wind_str = w
+            .get("windStrength")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32;
+        let particle_count = w
+            .get("particleCount")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(1000) as u32;
+        let area = w
+            .get("area")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                [
+                    fv(a, 0, 50.0) as f32,
+                    fv(a, 1, 30.0) as f32,
+                    fv(a, 2, 50.0) as f32,
+                ]
+            })
+            .unwrap_or([50.0, 30.0, 50.0]);
+        let particle_speed = w
+            .get("particleSpeed")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(5.0) as f32;
+        let particle_size = w
+            .get("particleSize")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.02) as f32;
+        let particle_color = w
+            .get("particleColor")
+            .and_then(|v| v.as_array())
+            .map(|a| [fv(a, 0, 1.0), fv(a, 1, 1.0), fv(a, 2, 1.0), fv(a, 3, 0.5)])
+            .unwrap_or([1.0, 1.0, 1.0, 0.5]);
 
         // Camera position for followCamera
-        let cam_pos = if w.get("followCamera").and_then(|v| v.as_bool()).unwrap_or(true) {
-            let cam_entity = config.get("camera").and_then(|v| v.as_str()).unwrap_or("main");
+        let cam_pos = if w
+            .get("followCamera")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true)
+        {
+            let cam_entity = config
+                .get("camera")
+                .and_then(|v| v.as_str())
+                .unwrap_or("main");
             match db.get_component(cam_entity, "camera_matrices") {
                 Ok(a) => {
                     let v: Value = a.entry.inline_data.unwrap_or(json!({}));
-                    v.get("eye").and_then(|e| e.as_array()).map(|a| {
-                        [fv(a, 0, 0.0) as f32, fv(a, 1, 0.0) as f32, fv(a, 2, 0.0) as f32]
-                    }).unwrap_or([0.0, 0.0, 0.0])
+                    v.get("eye")
+                        .and_then(|e| e.as_array())
+                        .map(|a| {
+                            [
+                                fv(a, 0, 0.0) as f32,
+                                fv(a, 1, 0.0) as f32,
+                                fv(a, 2, 0.0) as f32,
+                            ]
+                        })
+                        .unwrap_or([0.0, 0.0, 0.0])
                 }
                 Err(_) => [0.0, 0.0, 0.0],
             }
@@ -136,13 +190,29 @@ pub async fn scene_weather_system_actor(
 
         // Weather type parameters
         let (gravity, wobble, stretch) = match weather_type {
-            "rain" => ([-0.1 * wind[0], -particle_speed, -0.1 * wind[2]], 0.0f32, 3.0f32),
-            "snow" => ([-0.3 * wind[0], -particle_speed * 0.2, -0.3 * wind[2]], 0.5, 1.0),
-            "hail" => ([wind[0] * 0.05, -particle_speed * 1.5, wind[2] * 0.05], 0.0, 2.0),
+            "rain" => (
+                [-0.1 * wind[0], -particle_speed, -0.1 * wind[2]],
+                0.0f32,
+                3.0f32,
+            ),
+            "snow" => (
+                [-0.3 * wind[0], -particle_speed * 0.2, -0.3 * wind[2]],
+                0.5,
+                1.0,
+            ),
+            "hail" => (
+                [wind[0] * 0.05, -particle_speed * 1.5, wind[2] * 0.05],
+                0.0,
+                2.0,
+            ),
             "dust" => ([wind[0], -0.2, wind[2]], 0.3, 1.0),
             "sandstorm" => ([wind[0] * 2.0, -0.5, wind[2] * 2.0], 0.2, 1.5),
             "fireflies" => ([0.0, 0.1, 0.0], 2.0, 1.0),
-            "leaves" => ([wind[0] * 0.5, -particle_speed * 0.3, wind[2] * 0.5], 1.5, 1.0),
+            "leaves" => (
+                [wind[0] * 0.5, -particle_speed * 0.3, wind[2] * 0.5],
+                1.5,
+                1.0,
+            ),
             _ => ([0.0, -particle_speed, 0.0], 0.0, 1.0),
         };
 
@@ -156,9 +226,11 @@ pub async fn scene_weather_system_actor(
 
         for i in 0..active_count {
             let seed = i as f32 * 1.618033988;
-            let hash = ((seed * 43758.5453).fract() * 2.0 - 1.0,
-                        (seed * 22578.1459).fract() * 2.0 - 1.0,
-                        (seed * 31415.9265).fract() * 2.0 - 1.0);
+            let hash = (
+                (seed * 43758.5453).fract() * 2.0 - 1.0,
+                (seed * 22578.1459).fract() * 2.0 - 1.0,
+                (seed * 31415.9265).fract() * 2.0 - 1.0,
+            );
 
             // Base position in area around camera
             let base_x = cam_pos[0] + hash.0 * area[0] * 0.5;
@@ -192,28 +264,42 @@ pub async fn scene_weather_system_actor(
         }
 
         // Write weather state component
-        let _ = db.set_component_json(entity, "weather_state", json!({
-            "type": weather_type,
-            "intensity": intensity,
-            "activeParticles": active_count,
-            "particleSize": particle_size,
-            "particleColor": particle_color,
-            "stretch": stretch,
-            "wind": [wind[0], wind[1], wind[2]],
-            "elapsed": elapsed,
-        }), json!({}));
+        let _ = db.set_component_json(
+            entity,
+            "weather_state",
+            json!({
+                "type": weather_type,
+                "intensity": intensity,
+                "activeParticles": active_count,
+                "particleSize": particle_size,
+                "particleColor": particle_color,
+                "stretch": stretch,
+                "wind": [wind[0], wind[1], wind[2]],
+                "elapsed": elapsed,
+            }),
+            json!({}),
+        );
 
         // Store particle buffer as binary component
-        let _ = db.set_component(entity, "weather_particles", &particle_bytes, json!({
-            "count": active_count,
-            "stride": 16,
-        }));
+        let _ = db.set_component(
+            entity,
+            "weather_particles",
+            &particle_bytes,
+            json!({
+                "count": active_count,
+                "stride": 16,
+            }),
+        );
 
         total_particles += active_count as u64;
 
         // Fog
         if let Some(fog) = w.get("fog") {
-            if fog.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+            if fog
+                .get("enabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+            {
                 fog_data = json!({
                     "density": fog.get("density").and_then(|v| v.as_f64()).unwrap_or(0.02),
                     "color": fog.get("color").unwrap_or(&json!([0.5, 0.55, 0.6])),

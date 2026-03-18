@@ -93,7 +93,11 @@ impl ActorProcess {
                 // Wait for ALL connected inports (uses graph topology)
                 accumulated.extend(packet);
                 tick_message_count += 1;
-                let needed = if total_connections > 0 { total_connections } else { inports_count };
+                let needed = if total_connections > 0 {
+                    total_connections
+                } else {
+                    inports_count
+                };
                 if tick_message_count < needed {
                     continue;
                 }
@@ -105,12 +109,21 @@ impl ActorProcess {
                 tick_message_count += 1;
 
                 // Count how many connections feed the required ports
-                let required_connections: usize = self.required_inports.iter()
-                    .map(|req| self.config.inport_connection_counts
-                        .get(req).copied().unwrap_or(1))
+                let required_connections: usize = self
+                    .required_inports
+                    .iter()
+                    .map(|req| {
+                        self.config
+                            .inport_connection_counts
+                            .get(req)
+                            .copied()
+                            .unwrap_or(1)
+                    })
                     .sum();
 
-                let has_all_required = self.required_inports.iter()
+                let has_all_required = self
+                    .required_inports
+                    .iter()
                     .all(|req| accumulated.contains_key(req));
                 if !has_all_required {
                     continue;

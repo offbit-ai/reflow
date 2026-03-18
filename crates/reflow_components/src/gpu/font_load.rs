@@ -53,7 +53,8 @@ pub async fn font_load_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     }
 
     // Check if already loaded (pool flag)
-    let is_loaded = ctx.get_pool("_font")
+    let is_loaded = ctx
+        .get_pool("_font")
         .into_iter()
         .any(|(k, v)| k == "loaded" && v == json!(true));
 
@@ -65,16 +66,21 @@ pub async fn font_load_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         ctx.pool_upsert("_font", "loaded", json!(true));
         ctx.pool_upsert("_font", "size", json!(size));
 
-        let source = config.get("path").and_then(|v| v.as_str())
+        let source = config
+            .get("path")
+            .and_then(|v| v.as_str())
             .or_else(|| config.get("font").and_then(|v| v.as_str()))
             .unwrap_or("unknown");
 
         let mut out = HashMap::new();
         out.insert("font_data".to_string(), Message::bytes(font_bytes));
-        out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-            "source": source,
-            "size": size,
-        }))));
+        out.insert(
+            "metadata".to_string(),
+            Message::object(EncodableValue::from(json!({
+                "source": source,
+                "size": size,
+            }))),
+        );
         return Ok(out);
     }
 
@@ -100,5 +106,7 @@ fn load_font_bytes(config: &HashMap<String, Value>) -> Result<Vec<u8>> {
         }
     }
 
-    Err(anyhow::anyhow!("No font source configured. Set 'path' or 'font' + '$db' in config."))
+    Err(anyhow::anyhow!(
+        "No font source configured. Set 'path' or 'font' + '$db' in config."
+    ))
 }

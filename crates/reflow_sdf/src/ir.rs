@@ -13,24 +13,57 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "primitive", rename_all = "camelCase")]
 pub enum SdfPrimitive {
-    Sphere { radius: f32 },
-    Box { size: [f32; 3] },
-    RoundBox { size: [f32; 3], radius: f32 },
-    Cylinder { radius: f32, height: f32 },
-    Capsule { radius: f32, height: f32 },
-    Torus { major_radius: f32, minor_radius: f32 },
-    Cone { angle: f32, height: f32 },
-    Plane { normal: [f32; 3], offset: f32 },
+    Sphere {
+        radius: f32,
+    },
+    Box {
+        size: [f32; 3],
+    },
+    RoundBox {
+        size: [f32; 3],
+        radius: f32,
+    },
+    Cylinder {
+        radius: f32,
+        height: f32,
+    },
+    Capsule {
+        radius: f32,
+        height: f32,
+    },
+    Torus {
+        major_radius: f32,
+        minor_radius: f32,
+    },
+    Cone {
+        angle: f32,
+        height: f32,
+    },
+    Plane {
+        normal: [f32; 3],
+        offset: f32,
+    },
     /// Line segment with linearly varying radius (conical frustum with rounded ends).
     /// `a` and `b` are endpoints, `radius_a` and `radius_b` are the radii at each end.
-    TaperedCapsule { a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32 },
+    TaperedCapsule {
+        a: [f32; 3],
+        b: [f32; 3],
+        radius_a: f32,
+        radius_b: f32,
+    },
     /// Complete tubular path — evaluates smooth minimum distance across all
     /// segments in a single SDF call. No union artifacts between segments.
     /// Points are 3D positions, radii are per-point cross-section radii.
     /// `k` is the smooth min blending factor (0 = hard min).
-    TubePath { points: Vec<[f32; 3]>, radii: Vec<f32>, k: f32 },
+    TubePath {
+        points: Vec<[f32; 3]>,
+        radii: Vec<f32>,
+        k: f32,
+    },
     /// Infinite repetition — creates `child` at every grid cell.
-    InfRepeat { spacing: [f32; 3] },
+    InfRepeat {
+        spacing: [f32; 3],
+    },
 }
 
 // ─── Operations ──────────────────────────────────────────────────────
@@ -80,7 +113,11 @@ pub enum SdfTransform {
     /// Mirror across a plane.
     Mirror { axis: [f32; 3] },
     /// Displacement — add noise or function to the SDF value.
-    Displace { frequency: f32, amplitude: f32, octaves: u32 },
+    Displace {
+        frequency: f32,
+        amplitude: f32,
+        octaves: u32,
+    },
 }
 
 // ─── Materials ───────────────────────────────────────────────────────
@@ -106,9 +143,15 @@ pub struct SdfMaterial {
     pub ior: f32,
 }
 
-fn default_color() -> [f32; 3] { [0.8, 0.8, 0.8] }
-fn default_roughness() -> f32 { 0.5 }
-fn default_ior() -> f32 { 1.5 }
+fn default_color() -> [f32; 3] {
+    [0.8, 0.8, 0.8]
+}
+fn default_roughness() -> f32 {
+    0.5
+}
+fn default_ior() -> f32 {
+    1.5
+}
 
 impl Default for SdfMaterial {
     fn default() -> Self {
@@ -177,19 +220,45 @@ pub struct SceneSettings {
     pub time: f32,
 }
 
-fn default_camera_pos() -> [f32; 3] { [3.0, 2.0, 4.0] }
-fn default_fov() -> f32 { 45.0 }
-fn default_max_steps() -> u32 { 128 }
-fn default_max_dist() -> f32 { 100.0 }
-fn default_epsilon() -> f32 { 0.001 }
-fn default_bg() -> [f32; 3] { [0.05, 0.05, 0.08] }
-fn default_ambient() -> f32 { 0.15 }
-fn default_light_dir() -> [f32; 3] { [0.577, 0.577, -0.577] }
-fn default_light_color() -> [f32; 3] { [1.0, 0.95, 0.9] }
-fn default_shadow_k() -> f32 { 16.0 }
-fn default_true() -> bool { true }
-fn default_width() -> u32 { 512 }
-fn default_height() -> u32 { 512 }
+fn default_camera_pos() -> [f32; 3] {
+    [3.0, 2.0, 4.0]
+}
+fn default_fov() -> f32 {
+    45.0
+}
+fn default_max_steps() -> u32 {
+    128
+}
+fn default_max_dist() -> f32 {
+    100.0
+}
+fn default_epsilon() -> f32 {
+    0.001
+}
+fn default_bg() -> [f32; 3] {
+    [0.05, 0.05, 0.08]
+}
+fn default_ambient() -> f32 {
+    0.15
+}
+fn default_light_dir() -> [f32; 3] {
+    [0.577, 0.577, -0.577]
+}
+fn default_light_color() -> [f32; 3] {
+    [1.0, 0.95, 0.9]
+}
+fn default_shadow_k() -> f32 {
+    16.0
+}
+fn default_true() -> bool {
+    true
+}
+fn default_width() -> u32 {
+    512
+}
+fn default_height() -> u32 {
+    512
+}
 
 impl Default for SceneSettings {
     fn default() -> Self {
@@ -253,9 +322,7 @@ pub enum SdfNode {
     /// Named reference — resolved during graph composition.
     /// Actors output their SDF as a named node; downstream actors
     /// reference it by name.
-    Ref {
-        name: String,
-    },
+    Ref { name: String },
 
     /// The complete scene: root SDF + render settings.
     Scene {
@@ -268,35 +335,62 @@ impl SdfNode {
     // ── Primitive constructors ────────────────────────────────────
 
     pub fn sphere(radius: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Sphere { radius }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Sphere { radius },
+            material: None,
+        }
     }
 
     pub fn cube(size: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Box { size: [size; 3] }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Box { size: [size; 3] },
+            material: None,
+        }
     }
 
     pub fn box3(size: [f32; 3]) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Box { size }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Box { size },
+            material: None,
+        }
     }
 
     pub fn cylinder(radius: f32, height: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Cylinder { radius, height }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Cylinder { radius, height },
+            material: None,
+        }
     }
 
     pub fn torus(major: f32, minor: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Torus { major_radius: major, minor_radius: minor }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Torus {
+                major_radius: major,
+                minor_radius: minor,
+            },
+            material: None,
+        }
     }
 
     pub fn capsule(radius: f32, height: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Capsule { radius, height }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Capsule { radius, height },
+            material: None,
+        }
     }
 
     pub fn plane(normal: [f32; 3], offset: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Plane { normal, offset }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Plane { normal, offset },
+            material: None,
+        }
     }
 
     pub fn cone(angle: f32, height: f32) -> Self {
-        SdfNode::Primitive { shape: SdfPrimitive::Cone { angle, height }, material: None }
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Cone { angle, height },
+            material: None,
+        }
     }
 
     pub fn tube_path(points: Vec<[f32; 3]>, radii: Vec<f32>, k: f32) -> Self {
@@ -308,7 +402,12 @@ impl SdfNode {
 
     pub fn tapered_capsule(a: [f32; 3], b: [f32; 3], radius_a: f32, radius_b: f32) -> Self {
         SdfNode::Primitive {
-            shape: SdfPrimitive::TaperedCapsule { a, b, radius_a, radius_b },
+            shape: SdfPrimitive::TaperedCapsule {
+                a,
+                b,
+                radius_a,
+                radius_b,
+            },
             material: None,
         }
     }
@@ -316,41 +415,74 @@ impl SdfNode {
     // ── Operation constructors ───────────────────────────────────
 
     pub fn union(a: SdfNode, b: SdfNode) -> Self {
-        SdfNode::Operation { op: SdfOp::Union, left: Box::new(a), right: Box::new(b) }
+        SdfNode::Operation {
+            op: SdfOp::Union,
+            left: Box::new(a),
+            right: Box::new(b),
+        }
     }
 
     pub fn intersection(a: SdfNode, b: SdfNode) -> Self {
-        SdfNode::Operation { op: SdfOp::Intersection, left: Box::new(a), right: Box::new(b) }
+        SdfNode::Operation {
+            op: SdfOp::Intersection,
+            left: Box::new(a),
+            right: Box::new(b),
+        }
     }
 
     pub fn difference(a: SdfNode, b: SdfNode) -> Self {
-        SdfNode::Operation { op: SdfOp::Difference, left: Box::new(a), right: Box::new(b) }
+        SdfNode::Operation {
+            op: SdfOp::Difference,
+            left: Box::new(a),
+            right: Box::new(b),
+        }
     }
 
     pub fn smooth_union(a: SdfNode, b: SdfNode, k: f32) -> Self {
-        SdfNode::Operation { op: SdfOp::SmoothUnion { k }, left: Box::new(a), right: Box::new(b) }
+        SdfNode::Operation {
+            op: SdfOp::SmoothUnion { k },
+            left: Box::new(a),
+            right: Box::new(b),
+        }
     }
 
     pub fn smooth_intersection(a: SdfNode, b: SdfNode, k: f32) -> Self {
-        SdfNode::Operation { op: SdfOp::SmoothIntersection { k }, left: Box::new(a), right: Box::new(b) }
+        SdfNode::Operation {
+            op: SdfOp::SmoothIntersection { k },
+            left: Box::new(a),
+            right: Box::new(b),
+        }
     }
 
     pub fn smooth_difference(a: SdfNode, b: SdfNode, k: f32) -> Self {
-        SdfNode::Operation { op: SdfOp::SmoothDifference { k }, left: Box::new(a), right: Box::new(b) }
+        SdfNode::Operation {
+            op: SdfOp::SmoothDifference { k },
+            left: Box::new(a),
+            right: Box::new(b),
+        }
     }
 
     // ── Transform constructors ───────────────────────────────────
 
     pub fn translate(self, offset: [f32; 3]) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Translate { offset }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Translate { offset },
+            child: Box::new(self),
+        }
     }
 
     pub fn rotate(self, angles: [f32; 3]) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Rotate { angles }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Rotate { angles },
+            child: Box::new(self),
+        }
     }
 
     pub fn scale(self, factor: [f32; 3]) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Scale { factor }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Scale { factor },
+            child: Box::new(self),
+        }
     }
 
     pub fn scale_uniform(self, s: f32) -> Self {
@@ -358,51 +490,88 @@ impl SdfNode {
     }
 
     pub fn twist(self, strength: f32) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Twist { strength }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Twist { strength },
+            child: Box::new(self),
+        }
     }
 
     pub fn bend(self, strength: f32) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Bend { strength }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Bend { strength },
+            child: Box::new(self),
+        }
     }
 
     pub fn round(self, radius: f32) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Round { radius }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Round { radius },
+            child: Box::new(self),
+        }
     }
 
     pub fn shell(self, thickness: f32) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Shell { thickness }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Shell { thickness },
+            child: Box::new(self),
+        }
     }
 
     pub fn repeat(self, spacing: [f32; 3], count: [u32; 3]) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Repeat { spacing, count }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Repeat { spacing, count },
+            child: Box::new(self),
+        }
     }
 
     pub fn mirror(self, axis: [f32; 3]) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Mirror { axis }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Mirror { axis },
+            child: Box::new(self),
+        }
     }
 
     pub fn displace(self, frequency: f32, amplitude: f32, octaves: u32) -> Self {
-        SdfNode::Transform { transform: SdfTransform::Displace { frequency, amplitude, octaves }, child: Box::new(self) }
+        SdfNode::Transform {
+            transform: SdfTransform::Displace {
+                frequency,
+                amplitude,
+                octaves,
+            },
+            child: Box::new(self),
+        }
     }
 
     // ── Material ─────────────────────────────────────────────────
 
     pub fn with_material(self, material: SdfMaterial) -> Self {
-        SdfNode::Material { material, child: Box::new(self) }
+        SdfNode::Material {
+            material,
+            child: Box::new(self),
+        }
     }
 
     pub fn with_color(self, r: f32, g: f32, b: f32) -> Self {
-        self.with_material(SdfMaterial { color: [r, g, b], ..Default::default() })
+        self.with_material(SdfMaterial {
+            color: [r, g, b],
+            ..Default::default()
+        })
     }
 
     // ── Scene ────────────────────────────────────────────────────
 
     pub fn into_scene(self) -> Self {
-        SdfNode::Scene { root: Box::new(self), settings: SceneSettings::default() }
+        SdfNode::Scene {
+            root: Box::new(self),
+            settings: SceneSettings::default(),
+        }
     }
 
     pub fn into_scene_with(self, settings: SceneSettings) -> Self {
-        SdfNode::Scene { root: Box::new(self), settings }
+        SdfNode::Scene {
+            root: Box::new(self),
+            settings,
+        }
     }
 }
 
@@ -416,10 +585,10 @@ mod tests {
             SdfNode::sphere(1.0)
                 .translate([0.0, 0.5, 0.0])
                 .with_color(1.0, 0.2, 0.1),
-            SdfNode::cube(1.0)
-                .twist(0.5),
+            SdfNode::cube(1.0).twist(0.5),
             0.3,
-        ).into_scene();
+        )
+        .into_scene();
 
         let json = serde_json::to_string_pretty(&scene).unwrap();
         assert!(json.contains("smoothUnion"));

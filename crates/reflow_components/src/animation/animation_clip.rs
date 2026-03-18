@@ -50,10 +50,7 @@ pub async fn animation_clip_actor(ctx: ActorContext) -> Result<HashMap<String, M
         .and_then(|v| v.as_f64())
         .unwrap_or(1.0);
 
-    let fps = config
-        .get("fps")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(30) as u32;
+    let fps = config.get("fps").and_then(|v| v.as_u64()).unwrap_or(30) as u32;
 
     // High-level generator config OR explicit channels (backward compatible)
     let validated: Vec<Value> = if let Some(gen_type) = config.get("type").and_then(|v| v.as_str())
@@ -168,7 +165,10 @@ impl<'a> GenContext<'a> {
     }
 
     fn f(&self, key: &str, default: f64) -> f64 {
-        self.config.get(key).and_then(|v| v.as_f64()).unwrap_or(default)
+        self.config
+            .get(key)
+            .and_then(|v| v.as_f64())
+            .unwrap_or(default)
     }
 
     fn s<'b>(&'b self, key: &str, default: &'b str) -> &'b str
@@ -261,14 +261,8 @@ fn append_locomotion(
     fps: u32,
 ) {
     if let Some(loco) = config.get("locomotion") {
-        let axis = loco
-            .get("axis")
-            .and_then(|v| v.as_str())
-            .unwrap_or("x");
-        let speed = loco
-            .get("speed")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.3);
+        let axis = loco.get("axis").and_then(|v| v.as_str()).unwrap_or("x");
+        let speed = loco.get("speed").and_then(|v| v.as_f64()).unwrap_or(0.3);
         let start = loco
             .get("startPosition")
             .and_then(|v| {
@@ -304,7 +298,8 @@ fn append_locomotion(
 /// Simple deterministic hash-based pseudo-random for sway/tremble.
 /// Returns value in [-1, 1].
 fn noise_1d(seed: u64, t: f64) -> f64 {
-    let bits = (seed.wrapping_mul(2654435761) ^ (t * 10000.0) as u64).wrapping_mul(0x517cc1b727220a95);
+    let bits =
+        (seed.wrapping_mul(2654435761) ^ (t * 10000.0) as u64).wrapping_mul(0x517cc1b727220a95);
     let frac = (bits & 0x00FF_FFFF) as f64 / 0x00FF_FFFF as f64;
     frac * 2.0 - 1.0
 }
@@ -608,7 +603,8 @@ fn generate_spring(ctx: &GenContext) -> Vec<Value> {
                 .iter()
                 .map(|&t| {
                     let t_local = (t - delay).max(0.0);
-                    let val = bone_amp * (-zeta * omega * t_local).exp() * (omega_d * t_local).cos();
+                    let val =
+                        bone_amp * (-zeta * omega * t_local).exp() * (omega_d * t_local).cos();
                     match axis {
                         "x" | "X" => [val, 0.0, 0.0],
                         "z" | "Z" => [0.0, 0.0, val],
@@ -735,7 +731,8 @@ fn generate_sway(ctx: &GenContext) -> Vec<Value> {
                 let turb = noise_1d(seed, t * 3.0) * turbulence;
 
                 let angle_primary = bone_amp * (primary + gust + turb);
-                let angle_secondary = bone_amp * sec_str
+                let angle_secondary = bone_amp
+                    * sec_str
                     * ((t * wind_freq * 0.7 * PI * 2.0 + bone_idx as f64 * 1.1).sin()
                         + noise_1d(seed + 1000, t * 2.5) * turbulence * 0.5);
 
@@ -1027,4 +1024,3 @@ fn generate_tremble(ctx: &GenContext) -> Vec<Value> {
 
     channels
 }
-

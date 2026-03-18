@@ -46,11 +46,11 @@ pub struct GpuPrimitive {
     pub color2: [f32; 4],        // gradient end color
     pub border: [f32; 4],        // border width, 0, 0, 0
     pub border_color: [f32; 4],
-    pub shadow: [f32; 4],        // offset_x, offset_y, blur, spread
+    pub shadow: [f32; 4], // offset_x, offset_y, blur, spread
     pub shadow_color: [f32; 4],
-    pub rotation: [f32; 4],      // sin_rz, cos_rz, 0, 0
+    pub rotation: [f32; 4],        // sin_rz, cos_rz, 0, 0
     pub gradient_params: [f32; 4], // segment endpoints (x1, y1, x2, y2)
-    pub type_info: [u32; 4],     // prim_type, fill_type, 0, 0
+    pub type_info: [u32; 4],       // prim_type, fill_type, 0, 0
 }
 
 impl GpuPrimitive {
@@ -508,8 +508,14 @@ pub fn render_2d(
         label: Some("SDF 2D Bind Group"),
         layout: &cached.bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: uniform_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: prim_buf.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: prim_buf.as_entire_binding(),
+            },
         ],
     });
 
@@ -522,7 +528,11 @@ pub fn render_2d(
         queue,
         &wgpu::TextureDescriptor {
             label: Some("Glyph Atlas"),
-            size: wgpu::Extent3d { width: atlas_w, height: atlas_h, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: atlas_w,
+                height: atlas_h,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -544,15 +554,25 @@ pub fn render_2d(
         label: Some("Atlas Bind Group"),
         layout: &cached.atlas_bind_group_layout,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&atlas_view) },
-            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&atlas_sampler) },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&atlas_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(&atlas_sampler),
+            },
         ],
     });
 
     // Resolve texture (always 1x) — readback target
     let resolve_tex = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("SDF 2D Resolve"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -566,7 +586,11 @@ pub fn render_2d(
     let msaa_tex = if sample_count > 1 {
         Some(device.create_texture(&wgpu::TextureDescriptor {
             label: Some("SDF 2D MSAA"),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
@@ -578,7 +602,9 @@ pub fn render_2d(
         None
     };
 
-    let msaa_view = msaa_tex.as_ref().map(|t| t.create_view(&Default::default()));
+    let msaa_view = msaa_tex
+        .as_ref()
+        .map(|t| t.create_view(&Default::default()));
     let (color_view, resolve_target) = match &msaa_view {
         Some(mv) => (mv, Some(&resolve_view)),
         None => (&resolve_view, None),
@@ -601,8 +627,10 @@ pub fn render_2d(
                 resolve_target,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: bg_color[0] as f64, g: bg_color[1] as f64,
-                        b: bg_color[2] as f64, a: bg_color[3] as f64,
+                        r: bg_color[0] as f64,
+                        g: bg_color[1] as f64,
+                        b: bg_color[2] as f64,
+                        a: bg_color[3] as f64,
                     }),
                     store: wgpu::StoreOp::Store,
                 },
@@ -619,16 +647,24 @@ pub fn render_2d(
     // Copy resolved (1x) texture to readback buffer
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
-            texture: &resolve_tex, mip_level: 0,
-            origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All,
+            texture: &resolve_tex,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
         },
         wgpu::TexelCopyBufferInfo {
             buffer: &readback_buf,
             layout: wgpu::TexelCopyBufferLayout {
-                offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: Some(height),
+                offset: 0,
+                bytes_per_row: Some(bytes_per_row),
+                rows_per_image: Some(height),
             },
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
 
     GPU_CONTEXT.submit_and_poll(encoder.finish());
@@ -658,60 +694,206 @@ pub fn render_2d(
 
 fn glyph_strokes(ch: char) -> &'static [[f32; 4]] {
     match ch.to_ascii_uppercase() {
-        'A' => &[[0.0,1.0, 0.3,0.0], [0.3,0.0, 0.6,1.0], [0.1,0.6, 0.5,0.6]],
-        'B' => &[[0.0,0.0, 0.0,1.0], [0.0,0.0, 0.5,0.0], [0.5,0.0, 0.55,0.12],
-                  [0.55,0.12, 0.55,0.38], [0.55,0.38, 0.5,0.5], [0.0,0.5, 0.5,0.5],
-                  [0.5,0.5, 0.6,0.62], [0.6,0.62, 0.6,0.88], [0.6,0.88, 0.5,1.0],
-                  [0.0,1.0, 0.5,1.0]],
-        'C' => &[[0.6,0.0, 0.0,0.0], [0.0,0.0, 0.0,1.0], [0.0,1.0, 0.6,1.0]],
-        'D' => &[[0.0,0.0, 0.0,1.0], [0.0,0.0, 0.4,0.0], [0.4,0.0, 0.6,0.2],
-                  [0.6,0.2, 0.6,0.8], [0.6,0.8, 0.4,1.0], [0.0,1.0, 0.4,1.0]],
-        'E' => &[[0.0,0.0, 0.0,1.0], [0.0,0.0, 0.6,0.0], [0.0,0.5, 0.45,0.5], [0.0,1.0, 0.6,1.0]],
-        'F' => &[[0.0,0.0, 0.0,1.0], [0.0,0.0, 0.6,0.0], [0.0,0.5, 0.45,0.5]],
-        'G' => &[[0.6,0.0, 0.0,0.0], [0.0,0.0, 0.0,1.0], [0.0,1.0, 0.6,1.0],
-                  [0.6,1.0, 0.6,0.5], [0.6,0.5, 0.3,0.5]],
-        'H' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.6,1.0], [0.0,0.5, 0.6,0.5]],
-        'I' => &[[0.3,0.0, 0.3,1.0], [0.1,0.0, 0.5,0.0], [0.1,1.0, 0.5,1.0]],
-        'J' => &[[0.6,0.0, 0.6,0.85], [0.6,0.85, 0.45,1.0], [0.45,1.0, 0.15,1.0],
-                  [0.15,1.0, 0.0,0.85]],
-        'K' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.0,0.5], [0.0,0.5, 0.6,1.0]],
-        'L' => &[[0.0,0.0, 0.0,1.0], [0.0,1.0, 0.6,1.0]],
-        'M' => &[[0.0,1.0, 0.0,0.0], [0.0,0.0, 0.3,0.45], [0.3,0.45, 0.6,0.0], [0.6,0.0, 0.6,1.0]],
-        'N' => &[[0.0,1.0, 0.0,0.0], [0.0,0.0, 0.6,1.0], [0.6,1.0, 0.6,0.0]],
-        'O' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.6,1.0], [0.0,0.0, 0.6,0.0], [0.0,1.0, 0.6,1.0]],
-        'P' => &[[0.0,0.0, 0.0,1.0], [0.0,0.0, 0.55,0.0], [0.55,0.0, 0.55,0.5], [0.55,0.5, 0.0,0.5]],
-        'Q' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.6,1.0], [0.0,0.0, 0.6,0.0],
-                  [0.0,1.0, 0.6,1.0], [0.4,0.75, 0.7,1.05]],
-        'R' => &[[0.0,0.0, 0.0,1.0], [0.0,0.0, 0.55,0.0], [0.55,0.0, 0.55,0.5],
-                  [0.55,0.5, 0.0,0.5], [0.2,0.5, 0.6,1.0]],
-        'S' => &[[0.6,0.0, 0.0,0.0], [0.0,0.0, 0.0,0.5], [0.0,0.5, 0.6,0.5],
-                  [0.6,0.5, 0.6,1.0], [0.6,1.0, 0.0,1.0]],
-        'T' => &[[0.0,0.0, 0.6,0.0], [0.3,0.0, 0.3,1.0]],
-        'U' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.6,1.0], [0.0,1.0, 0.6,1.0]],
-        'V' => &[[0.0,0.0, 0.3,1.0], [0.3,1.0, 0.6,0.0]],
-        'W' => &[[0.0,0.0, 0.15,1.0], [0.15,1.0, 0.3,0.45], [0.3,0.45, 0.45,1.0], [0.45,1.0, 0.6,0.0]],
-        'X' => &[[0.0,0.0, 0.6,1.0], [0.6,0.0, 0.0,1.0]],
-        'Y' => &[[0.0,0.0, 0.3,0.5], [0.6,0.0, 0.3,0.5], [0.3,0.5, 0.3,1.0]],
-        'Z' => &[[0.0,0.0, 0.6,0.0], [0.6,0.0, 0.0,1.0], [0.0,1.0, 0.6,1.0]],
-        '0' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.6,1.0], [0.0,0.0, 0.6,0.0],
-                  [0.0,1.0, 0.6,1.0], [0.0,1.0, 0.6,0.0]],
-        '1' => &[[0.15,0.15, 0.3,0.0], [0.3,0.0, 0.3,1.0], [0.1,1.0, 0.5,1.0]],
-        '2' => &[[0.0,0.0, 0.6,0.0], [0.6,0.0, 0.6,0.5], [0.6,0.5, 0.0,0.5],
-                  [0.0,0.5, 0.0,1.0], [0.0,1.0, 0.6,1.0]],
-        '3' => &[[0.0,0.0, 0.6,0.0], [0.6,0.0, 0.6,1.0], [0.0,1.0, 0.6,1.0], [0.15,0.5, 0.6,0.5]],
-        '4' => &[[0.0,0.0, 0.0,0.5], [0.0,0.5, 0.6,0.5], [0.6,0.0, 0.6,1.0]],
-        '5' => &[[0.6,0.0, 0.0,0.0], [0.0,0.0, 0.0,0.5], [0.0,0.5, 0.6,0.5],
-                  [0.6,0.5, 0.6,1.0], [0.6,1.0, 0.0,1.0]],
-        '6' => &[[0.6,0.0, 0.0,0.0], [0.0,0.0, 0.0,1.0], [0.0,1.0, 0.6,1.0],
-                  [0.6,1.0, 0.6,0.5], [0.6,0.5, 0.0,0.5]],
-        '7' => &[[0.0,0.0, 0.6,0.0], [0.6,0.0, 0.3,1.0]],
-        '8' => &[[0.0,0.0, 0.0,1.0], [0.6,0.0, 0.6,1.0], [0.0,0.0, 0.6,0.0],
-                  [0.0,1.0, 0.6,1.0], [0.0,0.5, 0.6,0.5]],
-        '9' => &[[0.0,0.5, 0.6,0.5], [0.6,0.0, 0.6,1.0], [0.0,0.0, 0.6,0.0],
-                  [0.0,0.0, 0.0,0.5], [0.6,1.0, 0.0,1.0]],
-        '.' => &[[0.25,0.9, 0.35,1.0]],
-        '!' => &[[0.3,0.0, 0.3,0.7], [0.27,0.88, 0.33,0.95]],
-        '-' => &[[0.1,0.5, 0.5,0.5]],
+        'A' => &[
+            [0.0, 1.0, 0.3, 0.0],
+            [0.3, 0.0, 0.6, 1.0],
+            [0.1, 0.6, 0.5, 0.6],
+        ],
+        'B' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.5, 0.0],
+            [0.5, 0.0, 0.55, 0.12],
+            [0.55, 0.12, 0.55, 0.38],
+            [0.55, 0.38, 0.5, 0.5],
+            [0.0, 0.5, 0.5, 0.5],
+            [0.5, 0.5, 0.6, 0.62],
+            [0.6, 0.62, 0.6, 0.88],
+            [0.6, 0.88, 0.5, 1.0],
+            [0.0, 1.0, 0.5, 1.0],
+        ],
+        'C' => &[
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+        ],
+        'D' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.4, 0.0],
+            [0.4, 0.0, 0.6, 0.2],
+            [0.6, 0.2, 0.6, 0.8],
+            [0.6, 0.8, 0.4, 1.0],
+            [0.0, 1.0, 0.4, 1.0],
+        ],
+        'E' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 0.5, 0.45, 0.5],
+            [0.0, 1.0, 0.6, 1.0],
+        ],
+        'F' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 0.5, 0.45, 0.5],
+        ],
+        'G' => &[
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+            [0.6, 1.0, 0.6, 0.5],
+            [0.6, 0.5, 0.3, 0.5],
+        ],
+        'H' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 0.5, 0.6, 0.5],
+        ],
+        'I' => &[
+            [0.3, 0.0, 0.3, 1.0],
+            [0.1, 0.0, 0.5, 0.0],
+            [0.1, 1.0, 0.5, 1.0],
+        ],
+        'J' => &[
+            [0.6, 0.0, 0.6, 0.85],
+            [0.6, 0.85, 0.45, 1.0],
+            [0.45, 1.0, 0.15, 1.0],
+            [0.15, 1.0, 0.0, 0.85],
+        ],
+        'K' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.0, 0.5],
+            [0.0, 0.5, 0.6, 1.0],
+        ],
+        'L' => &[[0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.6, 1.0]],
+        'M' => &[
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.3, 0.45],
+            [0.3, 0.45, 0.6, 0.0],
+            [0.6, 0.0, 0.6, 1.0],
+        ],
+        'N' => &[
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.6, 1.0],
+            [0.6, 1.0, 0.6, 0.0],
+        ],
+        'O' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 1.0, 0.6, 1.0],
+        ],
+        'P' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.55, 0.0],
+            [0.55, 0.0, 0.55, 0.5],
+            [0.55, 0.5, 0.0, 0.5],
+        ],
+        'Q' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 1.0, 0.6, 1.0],
+            [0.4, 0.75, 0.7, 1.05],
+        ],
+        'R' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.55, 0.0],
+            [0.55, 0.0, 0.55, 0.5],
+            [0.55, 0.5, 0.0, 0.5],
+            [0.2, 0.5, 0.6, 1.0],
+        ],
+        'S' => &[
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.5],
+            [0.0, 0.5, 0.6, 0.5],
+            [0.6, 0.5, 0.6, 1.0],
+            [0.6, 1.0, 0.0, 1.0],
+        ],
+        'T' => &[[0.0, 0.0, 0.6, 0.0], [0.3, 0.0, 0.3, 1.0]],
+        'U' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+        ],
+        'V' => &[[0.0, 0.0, 0.3, 1.0], [0.3, 1.0, 0.6, 0.0]],
+        'W' => &[
+            [0.0, 0.0, 0.15, 1.0],
+            [0.15, 1.0, 0.3, 0.45],
+            [0.3, 0.45, 0.45, 1.0],
+            [0.45, 1.0, 0.6, 0.0],
+        ],
+        'X' => &[[0.0, 0.0, 0.6, 1.0], [0.6, 0.0, 0.0, 1.0]],
+        'Y' => &[
+            [0.0, 0.0, 0.3, 0.5],
+            [0.6, 0.0, 0.3, 0.5],
+            [0.3, 0.5, 0.3, 1.0],
+        ],
+        'Z' => &[
+            [0.0, 0.0, 0.6, 0.0],
+            [0.6, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+        ],
+        '0' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 1.0, 0.6, 1.0],
+            [0.0, 1.0, 0.6, 0.0],
+        ],
+        '1' => &[
+            [0.15, 0.15, 0.3, 0.0],
+            [0.3, 0.0, 0.3, 1.0],
+            [0.1, 1.0, 0.5, 1.0],
+        ],
+        '2' => &[
+            [0.0, 0.0, 0.6, 0.0],
+            [0.6, 0.0, 0.6, 0.5],
+            [0.6, 0.5, 0.0, 0.5],
+            [0.0, 0.5, 0.0, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+        ],
+        '3' => &[
+            [0.0, 0.0, 0.6, 0.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+            [0.15, 0.5, 0.6, 0.5],
+        ],
+        '4' => &[
+            [0.0, 0.0, 0.0, 0.5],
+            [0.0, 0.5, 0.6, 0.5],
+            [0.6, 0.0, 0.6, 1.0],
+        ],
+        '5' => &[
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.5],
+            [0.0, 0.5, 0.6, 0.5],
+            [0.6, 0.5, 0.6, 1.0],
+            [0.6, 1.0, 0.0, 1.0],
+        ],
+        '6' => &[
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.6, 1.0],
+            [0.6, 1.0, 0.6, 0.5],
+            [0.6, 0.5, 0.0, 0.5],
+        ],
+        '7' => &[[0.0, 0.0, 0.6, 0.0], [0.6, 0.0, 0.3, 1.0]],
+        '8' => &[
+            [0.0, 0.0, 0.0, 1.0],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 1.0, 0.6, 1.0],
+            [0.0, 0.5, 0.6, 0.5],
+        ],
+        '9' => &[
+            [0.0, 0.5, 0.6, 0.5],
+            [0.6, 0.0, 0.6, 1.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 0.0, 0.0, 0.5],
+            [0.6, 1.0, 0.0, 1.0],
+        ],
+        '.' => &[[0.25, 0.9, 0.35, 1.0]],
+        '!' => &[[0.3, 0.0, 0.3, 0.7], [0.27, 0.88, 0.33, 0.95]],
+        '-' => &[[0.1, 0.5, 0.5, 0.5]],
         _ => &[], // space and unsupported
     }
 }
@@ -732,9 +914,11 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(800) as u32;
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(450) as u32;
-    let bg = config.get("background").and_then(|v| v.as_array()).map(|a| {
-        [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
-    }).unwrap_or([0.02, 0.01, 0.07, 1.0]);
+    let bg = config
+        .get("background")
+        .and_then(|v| v.as_array())
+        .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
+        .unwrap_or([0.02, 0.01, 0.07, 1.0]);
 
     // Cache primitives from inport
     if let Some(Message::Object(obj)) = payload.get("primitives") {
@@ -762,14 +946,18 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         let v: Value = obj.as_ref().clone().into();
         if let Some(map) = v.as_object() {
             for (k, val) in map {
-                if let Some(f) = val.as_f64() { vals.insert(k.clone(), f); }
+                if let Some(f) = val.as_f64() {
+                    vals.insert(k.clone(), f);
+                }
             }
         }
         ctx.pool_upsert("_vals", "map", v);
-    } else if let Some((_, stored)) = ctx.get_pool("_vals").into_iter().find(|(k,_)| k == "map") {
+    } else if let Some((_, stored)) = ctx.get_pool("_vals").into_iter().find(|(k, _)| k == "map") {
         if let Some(map) = stored.as_object() {
             for (k, val) in map {
-                if let Some(f) = val.as_f64() { vals.insert(k.clone(), f); }
+                if let Some(f) = val.as_f64() {
+                    vals.insert(k.clone(), f);
+                }
             }
         }
     }
@@ -783,8 +971,16 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         vals.get(&format!("{}_{}", prefix, prop)).copied()
     };
 
-    let shapes = config.get("shapes").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-    let text_configs = config.get("text").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+    let shapes = config
+        .get("shapes")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let text_configs = config
+        .get("text")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
 
     let mut gpu_prims: Vec<GpuPrimitive> = Vec::new();
 
@@ -797,46 +993,64 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         let anim_rotation = get_val(&pfx, "rotation").unwrap_or(0.0);
         let anim_opacity = get_val(&pfx, "opacity").unwrap_or(1.0);
 
-        if anim_scale.abs() < 0.001 || anim_opacity < 0.01 { continue; }
+        if anim_scale.abs() < 0.001 || anim_opacity < 0.01 {
+            continue;
+        }
 
-        let ptype = prim_json.get("type").and_then(|v| v.as_str()).unwrap_or("rect");
-        let base_bounds = prim_json.get("bounds").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
-        }).unwrap_or([0.0, 0.0, 100.0, 100.0]);
+        let ptype = prim_json
+            .get("type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("rect");
+        let base_bounds = prim_json
+            .get("bounds")
+            .and_then(|v| v.as_array())
+            .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
+            .unwrap_or([0.0, 0.0, 100.0, 100.0]);
 
         let w = base_bounds[2] * anim_scale as f32;
         let h = base_bounds[3] * anim_scale as f32;
         let x = anim_x.map(|v| v as f32 - w / 2.0).unwrap_or(base_bounds[0]);
         let y = anim_y.map(|v| v as f32 - h / 2.0).unwrap_or(base_bounds[1]);
 
-        let mut color = prim_json.get("color").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
-        }).unwrap_or([1.0, 1.0, 1.0, 1.0]);
+        let mut color = prim_json
+            .get("color")
+            .and_then(|v| v.as_array())
+            .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
+            .unwrap_or([1.0, 1.0, 1.0, 1.0]);
         color[3] *= anim_opacity as f32;
 
         let mut p = match ptype {
             "circle" => GpuPrimitive::circle(x + w / 2.0, y + h / 2.0, w.min(h) / 2.0, color),
             _ => {
-                let r = prim_json.get("cornerRadius").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                let r = prim_json
+                    .get("cornerRadius")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0) as f32;
                 GpuPrimitive::rect(x, y, w, h, color, r)
             }
         };
 
-        if anim_rotation.abs() > 0.001 { p = p.with_rotation(anim_rotation as f32); }
+        if anim_rotation.abs() > 0.001 {
+            p = p.with_rotation(anim_rotation as f32);
+        }
         if let Some(shadow) = prim_json.get("shadow") {
             let sx = shadow.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
             let sy = shadow.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
             let blur = shadow.get("blur").and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
-            let sc = shadow.get("color").and_then(|v| v.as_array()).map(|a| {
-                [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
-            }).unwrap_or([0.0, 0.0, 0.0, 0.5]);
+            let sc = shadow
+                .get("color")
+                .and_then(|v| v.as_array())
+                .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
+                .unwrap_or([0.0, 0.0, 0.0, 0.5]);
             p = p.with_shadow(sx, sy, blur, sc);
         }
         if let Some(border) = prim_json.get("border") {
             let bw = border.get("width").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-            let bc = border.get("color").and_then(|v| v.as_array()).map(|a| {
-                [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
-            }).unwrap_or([1.0, 1.0, 1.0, 1.0]);
+            let bc = border
+                .get("color")
+                .and_then(|v| v.as_array())
+                .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
+                .unwrap_or([1.0, 1.0, 1.0, 1.0]);
             p = p.with_border(bw, bc);
         }
 
@@ -854,23 +1068,39 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     // ── Text (cN_ prefix per character) ──
     for text_cfg in &text_configs {
-        let content = text_cfg.get("content").and_then(|v| v.as_str()).unwrap_or("");
+        let content = text_cfg
+            .get("content")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let tx = text_cfg.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
         let ty = text_cfg.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let size = text_cfg.get("size").and_then(|v| v.as_f64()).unwrap_or(48.0) as f32;
-        let base_color = text_cfg.get("color").and_then(|v| v.as_array()).map(|a| {
-            [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)]
-        }).unwrap_or([1.0, 1.0, 1.0, 1.0]);
-        let tracking = text_cfg.get("tracking").and_then(|v| v.as_f64()).unwrap_or(6.0) as f32;
-        let centered = text_cfg.get("center").and_then(|v| v.as_bool()).unwrap_or(false);
+        let size = text_cfg
+            .get("size")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(48.0) as f32;
+        let base_color = text_cfg
+            .get("color")
+            .and_then(|v| v.as_array())
+            .map(|a| [fv(a, 0), fv(a, 1), fv(a, 2), fv(a, 3)])
+            .unwrap_or([1.0, 1.0, 1.0, 1.0]);
+        let tracking = text_cfg
+            .get("tracking")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(6.0) as f32;
+        let centered = text_cfg
+            .get("center")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         // Compute character advance using atlas metrics or fallback
         let font_scale = if has_atlas {
             // Atlas was rasterized at a specific size; scale to requested size
-            let atlas_font_size = glyph_metrics.and_then(|m| {
-                // Estimate atlas font size from a known glyph (e.g., 'H')
-                m.get("H").and_then(|g| g.get("h")).and_then(|v| v.as_f64())
-            }).unwrap_or(size as f64) as f32;
+            let atlas_font_size = glyph_metrics
+                .and_then(|m| {
+                    // Estimate atlas font size from a known glyph (e.g., 'H')
+                    m.get("H").and_then(|g| g.get("h")).and_then(|v| v.as_f64())
+                })
+                .unwrap_or(size as f64) as f32;
             size / atlas_font_size.max(1.0)
         } else {
             1.0
@@ -886,7 +1116,8 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     .and_then(|m| m.get(&ch.to_string()))
                     .and_then(|g| g.get("advance"))
                     .and_then(|v| v.as_f64())
-                    .unwrap_or(size as f64 * 0.6) as f32 * font_scale
+                    .unwrap_or(size as f64 * 0.6) as f32
+                    * font_scale
             } else {
                 size * 0.6
             };
@@ -896,13 +1127,17 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         let start_x = if centered { tx - total_w / 2.0 } else { tx };
 
         for &(ci, ch, cx) in &char_positions {
-            if ch == ' ' { continue; }
+            if ch == ' ' {
+                continue;
+            }
             let pfx = format!("c{}", ci);
             let char_scale = get_val(&pfx, "scale").unwrap_or(1.0);
             let char_opacity = get_val(&pfx, "opacity").unwrap_or(1.0);
             let char_y_off = get_val(&pfx, "y").unwrap_or(0.0) as f32;
 
-            if char_scale < 0.01 || char_opacity < 0.01 { continue; }
+            if char_scale < 0.01 || char_opacity < 0.01 {
+                continue;
+            }
 
             let mut color = base_color;
             color[3] *= char_opacity as f32;
@@ -915,8 +1150,14 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let gy = glyph.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
                     let gw = glyph.get("w").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
                     let gh = glyph.get("h").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-                    let bearing_x = glyph.get("bearing_x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-                    let bearing_y = glyph.get("bearing_y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let bearing_x = glyph
+                        .get("bearing_x")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0) as f32;
+                    let bearing_y = glyph
+                        .get("bearing_y")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0) as f32;
 
                     let s = char_scale as f32;
                     let qw = gw * font_scale * s;
@@ -952,7 +1193,14 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let sy1 = ccy + (seg[1] * size - hs) * s;
                     let sx2 = ccx + (seg[2] * size - hw) * s;
                     let sy2 = ccy + (seg[3] * size - hs) * s;
-                    gpu_prims.push(GpuPrimitive::segment(sx1, sy1, sx2, sy2, thickness * s, color));
+                    gpu_prims.push(GpuPrimitive::segment(
+                        sx1,
+                        sy1,
+                        sx2,
+                        sy2,
+                        thickness * s,
+                        color,
+                    ));
                 }
             }
         }
@@ -966,7 +1214,11 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let atlas_gpu: Option<GlyphAtlasGpu> = atlas_pool.get("bitmap").and_then(|v| {
         let data = base64_decode(v.as_str()?)?;
         let (w, h) = atlas_size?;
-        Some(GlyphAtlasGpu { data, width: w, height: h })
+        Some(GlyphAtlasGpu {
+            data,
+            width: w,
+            height: h,
+        })
     });
 
     let msaa = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
@@ -1027,8 +1279,12 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
         let c = b64val(bytes[i + 2])?;
         let d = b64val(bytes[i + 3])?;
         out.push((a << 2) | (b >> 4));
-        if bytes[i + 2] != b'=' { out.push((b << 4) | (c >> 2)); }
-        if bytes[i + 3] != b'=' { out.push((c << 6) | d); }
+        if bytes[i + 2] != b'=' {
+            out.push((b << 4) | (c >> 2));
+        }
+        if bytes[i + 3] != b'=' {
+            out.push((c << 6) | d);
+        }
         i += 4;
     }
     Some(out)

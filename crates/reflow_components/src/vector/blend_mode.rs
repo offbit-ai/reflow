@@ -56,8 +56,14 @@ pub async fn blend_mode_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     let mut base_data = base64::engine::general_purpose::STANDARD.decode(base_b64)?;
     let overlay_data = base64::engine::general_purpose::STANDARD.decode(overlay_b64)?;
 
-    let mode_str = config.get("mode").and_then(|v| v.as_str()).unwrap_or("normal");
-    let opacity = config.get("opacity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+    let mode_str = config
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("normal");
+    let opacity = config
+        .get("opacity")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(1.0) as f32;
 
     let mode = <reflow_pixel::blend::BlendMode>::from_str(mode_str);
 

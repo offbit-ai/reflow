@@ -54,10 +54,7 @@ pub async fn scene_graph_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     }
 
     // Build scene descriptor
-    let objects_list: Vec<serde_json::Value> = all_objects
-        .iter()
-        .map(|(_, v)| v.clone())
-        .collect();
+    let objects_list: Vec<serde_json::Value> = all_objects.iter().map(|(_, v)| v.clone()).collect();
 
     let scene = json!({
         "name": scene_name,

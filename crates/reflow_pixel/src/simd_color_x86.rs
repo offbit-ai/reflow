@@ -36,16 +36,10 @@ pub unsafe fn row_rgba_to_gray_sse2(input: &[u8], output: &mut [u8]) {
         // Shuffle to get R bytes at positions 0,2,4,6 with zeros at 1,3,5,7
         let r_shuf = _mm_set_epi8(
             -1, -1, -1, -1, -1, -1, -1, -1, // upper 8 bytes = 0
-            -1, 12, -1, 8, -1, 4, -1, 0,     // R0, R1, R2, R3 zero-extended
+            -1, 12, -1, 8, -1, 4, -1, 0, // R0, R1, R2, R3 zero-extended
         );
-        let g_shuf = _mm_set_epi8(
-            -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, 13, -1, 9, -1, 5, -1, 1,
-        );
-        let b_shuf = _mm_set_epi8(
-            -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, 14, -1, 10, -1, 6, -1, 2,
-        );
+        let g_shuf = _mm_set_epi8(-1, -1, -1, -1, -1, -1, -1, -1, -1, 13, -1, 9, -1, 5, -1, 1);
+        let b_shuf = _mm_set_epi8(-1, -1, -1, -1, -1, -1, -1, -1, -1, 14, -1, 10, -1, 6, -1, 2);
 
         // _mm_shuffle_epi8 requires SSSE3, use unpack instead for SSE2
         // Extract bytes manually via shifts and masks
@@ -157,29 +151,41 @@ mod tests {
             input[i * 4 + 3] = 255;
         }
 
-        unsafe { row_rgba_to_gray_sse2(&input, &mut output_simd); }
+        unsafe {
+            row_rgba_to_gray_sse2(&input, &mut output_simd);
+        }
         super::super::color::row_rgba_to_gray_scalar(&input, &mut output_scalar);
 
         for i in 0..16 {
             assert!(
                 (output_simd[i] as i32 - output_scalar[i] as i32).abs() <= 1,
-                "Pixel {}: SSE2={} Scalar={}", i, output_simd[i], output_scalar[i]
+                "Pixel {}: SSE2={} Scalar={}",
+                i,
+                output_simd[i],
+                output_scalar[i]
             );
         }
     }
 
     #[test]
     fn test_sse2_brightness() {
-        let mut row_simd = vec![100u8, 150, 200, 255, 50, 100, 200, 255, 0, 0, 0, 255, 255, 255, 255, 255];
+        let mut row_simd = vec![
+            100u8, 150, 200, 255, 50, 100, 200, 255, 0, 0, 0, 255, 255, 255, 255, 255,
+        ];
         let mut row_scalar = row_simd.clone();
 
-        unsafe { row_brightness_sse2(&mut row_simd, 1.5); }
+        unsafe {
+            row_brightness_sse2(&mut row_simd, 1.5);
+        }
         super::super::color::row_brightness(&mut row_scalar, 1.5);
 
         for i in 0..row_simd.len() {
             assert!(
                 (row_simd[i] as i32 - row_scalar[i] as i32).abs() <= 1,
-                "Byte {}: SSE2={} Scalar={}", i, row_simd[i], row_scalar[i]
+                "Byte {}: SSE2={} Scalar={}",
+                i,
+                row_simd[i],
+                row_scalar[i]
             );
         }
     }

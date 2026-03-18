@@ -8,34 +8,24 @@ use crate::Actor;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
-use crate::systems::{
-    BehaviorSystemActor, LayoutSyncSystemActor, SceneBillboardSystemActor,
-    SceneCameraSystemActor, SceneLightCollectorActor, SceneMaterialSystemActor,
-    ScenePhysicsSystemActor, SceneSkyboxSystemActor, SceneWeatherSystemActor,
-    StateMachineSystemActor, TextRenderSystemActor, TextSdfSystemActor,
-    TimelineSystemActor, TweenSystemActor,
-};
 use crate::animation::{
     AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
-    AnimationTimelineActor, KeyframeActor, SkinBindActor, SkeletonActor, SkinningActor,
+    AnimationTimelineActor, KeyframeActor, SkeletonActor, SkinBindActor, SkinningActor,
     SpriteAnimationActor,
 };
-use crate::scene::{ComponentNodeActor, InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
+use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
 use crate::flow_control::{
     CollectActor, ConditionalBranchActor, CronTriggerActor, DelayActor, FilterActor, GateActor,
     IntervalTriggerActor, LoopActor, MapActor, MergeActor, PassthroughActor, ReduceActor,
     ServerRequestActor, ServerResponseActor, SplitActor, SwitchCaseActor,
 };
+use crate::gpu::font_load::FontLoadActor;
+use crate::gpu::glyph_atlas::GlyphAtlasActor;
 #[cfg(feature = "gpu")]
 use crate::gpu::scene_render::SceneRenderActor;
 use crate::gpu::sdf::SdfPathActor;
 #[cfg(feature = "gpu")]
 use crate::gpu::sdf::{MeshToSdfActor, SdfLiveRenderActor, SdfMarchingCubesActor, SdfRenderActor};
-#[cfg(feature = "gpu")]
-use crate::gpu::sdf_2d::Gpu2DRenderActor;
-use crate::gpu::font_load::FontLoadActor;
-use crate::gpu::glyph_atlas::GlyphAtlasActor;
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
     SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor,
@@ -43,6 +33,8 @@ use crate::gpu::sdf::{
     SdfSmoothDifferenceActor, SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor,
     SdfTorusActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
 };
+#[cfg(feature = "gpu")]
+use crate::gpu::sdf_2d::Gpu2DRenderActor;
 #[cfg(feature = "window-events")]
 use crate::input::{
     GamepadInputActor, KeyboardInputActor, MouseInputActor, TouchInputActor, WindowEventActor,
@@ -105,10 +97,12 @@ use crate::media::{
 };
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor, LSystemActor,
-    MeshCombineActor, NoiseGeneratorActor, ParticleEmitterActor, TriplanarTextureActor, TubeMeshActor,
-    VertexColorActor,
-    UVTextureActor, VoronoiActor,
+    MeshCombineActor, NoiseGeneratorActor, ParticleEmitterActor, TriplanarTextureActor,
+    TubeMeshActor, UVTextureActor, VertexColorActor, VoronoiActor,
 };
+use crate::scene::{ComponentNodeActor, InstanceActor, PrefabActor, SceneGraphActor, TerrainActor};
+#[cfg(feature = "video-encode")]
+use crate::stream_ops::VideoEncoderActor;
 use crate::stream_ops::{
     AudioGainActor, AudioNormalizeActor, AudioSpectrumActor, BiquadFilterActor,
     BrightnessContrastActor, BytesToStreamActor, ChromaKeyActor, CompressorActor, ConvolveActor,
@@ -118,8 +112,12 @@ use crate::stream_ops::{
     PitchShiftActor, RenderFrameCollectorActor, SilenceDetectActor, StreamBufferActor,
     StreamStatsActor, StreamTeeActor, StreamThrottleActor, StreamToBytesActor, TimeStretchActor,
 };
-#[cfg(feature = "video-encode")]
-use crate::stream_ops::VideoEncoderActor;
+use crate::systems::{
+    BehaviorSystemActor, LayoutSyncSystemActor, SceneBillboardSystemActor, SceneCameraSystemActor,
+    SceneLightCollectorActor, SceneMaterialSystemActor, ScenePhysicsSystemActor,
+    SceneSkyboxSystemActor, SceneWeatherSystemActor, StateMachineSystemActor,
+    TextRenderSystemActor, TextSdfSystemActor, TimelineSystemActor, TweenSystemActor,
+};
 use crate::text::{DateTimeActor, JsonParserActor, RegexMatcherActor};
 use crate::transform::{DataOperationsActor, DataTransformActor, GeneratorActor};
 use crate::vector::{
@@ -435,21 +433,60 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_asset_query".to_string(), "AssetQueryActor".to_string());
 
     // Scene Systems
-    mapping.insert("tpl_scene_physics".to_string(), "ScenePhysicsSystemActor".to_string());
-    mapping.insert("tpl_scene_camera".to_string(), "SceneCameraSystemActor".to_string());
-    mapping.insert("tpl_scene_light_collector".to_string(), "SceneLightCollectorActor".to_string());
-    mapping.insert("tpl_scene_material".to_string(), "SceneMaterialSystemActor".to_string());
-    mapping.insert("tpl_scene_billboard".to_string(), "SceneBillboardSystemActor".to_string());
-    mapping.insert("tpl_scene_skybox".to_string(), "SceneSkyboxSystemActor".to_string());
-    mapping.insert("tpl_scene_weather".to_string(), "SceneWeatherSystemActor".to_string());
+    mapping.insert(
+        "tpl_scene_physics".to_string(),
+        "ScenePhysicsSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_scene_camera".to_string(),
+        "SceneCameraSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_scene_light_collector".to_string(),
+        "SceneLightCollectorActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_scene_material".to_string(),
+        "SceneMaterialSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_scene_billboard".to_string(),
+        "SceneBillboardSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_scene_skybox".to_string(),
+        "SceneSkyboxSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_scene_weather".to_string(),
+        "SceneWeatherSystemActor".to_string(),
+    );
 
     // Universal Systems
-    mapping.insert("tpl_tween_system".to_string(), "TweenSystemActor".to_string());
-    mapping.insert("tpl_timeline_system".to_string(), "TimelineSystemActor".to_string());
-    mapping.insert("tpl_state_machine_system".to_string(), "StateMachineSystemActor".to_string());
-    mapping.insert("tpl_behavior_system".to_string(), "BehaviorSystemActor".to_string());
-    mapping.insert("tpl_layout_sync".to_string(), "LayoutSyncSystemActor".to_string());
-    mapping.insert("tpl_text_render".to_string(), "TextRenderSystemActor".to_string());
+    mapping.insert(
+        "tpl_tween_system".to_string(),
+        "TweenSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_timeline_system".to_string(),
+        "TimelineSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_state_machine_system".to_string(),
+        "StateMachineSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_behavior_system".to_string(),
+        "BehaviorSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_layout_sync".to_string(),
+        "LayoutSyncSystemActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_text_render".to_string(),
+        "TextRenderSystemActor".to_string(),
+    );
     mapping.insert("tpl_text_sdf".to_string(), "TextSdfSystemActor".to_string());
 
     mapping.insert(
@@ -684,9 +721,15 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_triplanar_texture".to_string(),
         "TriplanarTextureActor".to_string(),
     );
-    mapping.insert("tpl_mesh_combine".to_string(), "MeshCombineActor".to_string());
+    mapping.insert(
+        "tpl_mesh_combine".to_string(),
+        "MeshCombineActor".to_string(),
+    );
     mapping.insert("tpl_tube_mesh".to_string(), "TubeMeshActor".to_string());
-    mapping.insert("tpl_vertex_color".to_string(), "VertexColorActor".to_string());
+    mapping.insert(
+        "tpl_vertex_color".to_string(),
+        "VertexColorActor".to_string(),
+    );
     mapping.insert("tpl_uv_texture".to_string(), "UVTextureActor".to_string());
 
     // Text / Utilities
@@ -747,8 +790,14 @@ pub fn get_template_mapping() -> HashMap<String, String> {
             "SdfMarchingCubesActor".to_string(),
         );
         mapping.insert("tpl_mesh_to_sdf".to_string(), "MeshToSdfActor".to_string());
-        mapping.insert("tpl_scene_render".to_string(), "SceneRenderActor".to_string());
-        mapping.insert("tpl_gpu_2d_render".to_string(), "Gpu2DRenderActor".to_string());
+        mapping.insert(
+            "tpl_scene_render".to_string(),
+            "SceneRenderActor".to_string(),
+        );
+        mapping.insert(
+            "tpl_gpu_2d_render".to_string(),
+            "Gpu2DRenderActor".to_string(),
+        );
     }
     mapping.insert("tpl_font_load".to_string(), "FontLoadActor".to_string());
     mapping.insert("tpl_glyph_atlas".to_string(), "GlyphAtlasActor".to_string());
@@ -784,9 +833,15 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     }
 
     // Video
-    mapping.insert("tpl_render_frame_collector".to_string(), "RenderFrameCollectorActor".to_string());
+    mapping.insert(
+        "tpl_render_frame_collector".to_string(),
+        "RenderFrameCollectorActor".to_string(),
+    );
     #[cfg(feature = "video-encode")]
-    mapping.insert("tpl_video_encoder".to_string(), "VideoEncoderActor".to_string());
+    mapping.insert(
+        "tpl_video_encoder".to_string(),
+        "VideoEncoderActor".to_string(),
+    );
 
     // Audio DSP (continued)
     mapping.insert("tpl_equalizer".to_string(), "EqualizerActor".to_string());
@@ -813,8 +868,14 @@ pub fn get_template_mapping() -> HashMap<String, String> {
 
     // 2D Vector Graphics
     mapping.insert("tpl_shape_2d".to_string(), "Shape2DActor".to_string());
-    mapping.insert("tpl_vector_rasterize".to_string(), "VectorRasterizeActor".to_string());
-    mapping.insert("tpl_gaussian_blur".to_string(), "GaussianBlurActor".to_string());
+    mapping.insert(
+        "tpl_vector_rasterize".to_string(),
+        "VectorRasterizeActor".to_string(),
+    );
+    mapping.insert(
+        "tpl_gaussian_blur".to_string(),
+        "GaussianBlurActor".to_string(),
+    );
     mapping.insert("tpl_blend_mode".to_string(), "BlendModeActor".to_string());
     mapping.insert("tpl_canvas_2d".to_string(), "Canvas2DActor".to_string());
     mapping.insert("tpl_background".to_string(), "BackgroundActor".to_string());

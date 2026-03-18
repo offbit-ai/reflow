@@ -98,11 +98,13 @@ fn get_or_create_pipeline(device: &wgpu::Device, wgsl: &str) -> Arc<CachedSdfPip
 
     let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("SDF Live Pipeline"),
-        layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[&bgl],
-            push_constant_ranges: &[],
-        })),
+        layout: Some(
+            &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&bgl],
+                push_constant_ranges: &[],
+            }),
+        ),
         module: &shader_module,
         entry_point: Some("main"),
         compilation_options: Default::default(),
@@ -110,7 +112,10 @@ fn get_or_create_pipeline(device: &wgpu::Device, wgsl: &str) -> Arc<CachedSdfPip
     });
 
     let cached = Arc::new(CachedSdfPipeline { pipeline, bgl });
-    SDF_PIPELINE_CACHE.write().unwrap().insert(hash, cached.clone());
+    SDF_PIPELINE_CACHE
+        .write()
+        .unwrap()
+        .insert(hash, cached.clone());
     cached
 }
 
@@ -123,7 +128,11 @@ fn get_or_create_targets(device: &wgpu::Device, width: u32, height: u32) -> Arc<
 
     let output_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("SDF Live Output"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -149,7 +158,12 @@ fn get_or_create_targets(device: &wgpu::Device, width: u32, height: u32) -> Arc<
     });
 
     let cached = Arc::new(CachedTargets {
-        width, height, output_texture, output_view, readback_buffer, uniform_buffer,
+        width,
+        height,
+        output_texture,
+        output_view,
+        readback_buffer,
+        uniform_buffer,
     });
     TARGET_CACHE.write().unwrap().insert(key, cached.clone());
     cached
@@ -183,9 +197,7 @@ fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
     outports::<50>(stream, metadata, error),
     state(MemoryState)
 )]
-pub async fn sdf_live_render_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn sdf_live_render_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -196,16 +208,32 @@ pub async fn sdf_live_render_actor(
     if let Some(sdf_msg) = payload.get("sdf").or(payload.get("scene")) {
         if let Some(root) = parse_sdf(Some(sdf_msg)) {
             let settings = SceneSettings {
-                width, height,
-                max_steps: config.get("maxSteps").and_then(|v| v.as_u64()).unwrap_or(128) as u32,
+                width,
+                height,
+                max_steps: config
+                    .get("maxSteps")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(128) as u32,
                 fov: config.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0) as f32,
                 camera_pos: [
-                    config.get("cameraPosX").and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
-                    config.get("cameraPosY").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
-                    config.get("cameraPosZ").and_then(|v| v.as_f64()).unwrap_or(4.0) as f32,
+                    config
+                        .get("cameraPosX")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(3.0) as f32,
+                    config
+                        .get("cameraPosY")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(2.0) as f32,
+                    config
+                        .get("cameraPosZ")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(4.0) as f32,
                 ],
                 camera_target: [0.0; 3],
-                soft_shadows: config.get("softShadows").and_then(|v| v.as_bool()).unwrap_or(false),
+                soft_shadows: config
+                    .get("softShadows")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
                 ao: config.get("ao").and_then(|v| v.as_bool()).unwrap_or(true),
                 ..Default::default()
             };
@@ -237,27 +265,43 @@ pub async fn sdf_live_render_actor(
     let time = cache.get("time").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
     let cam = cache.get("camera");
     let camera_pos = cam
-        .and_then(|c| c.get("pos")).and_then(|p| p.as_array())
-        .map(|a| [
-            a.get(0).and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
-            a.get(1).and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
-            a.get(2).and_then(|v| v.as_f64()).unwrap_or(4.0) as f32,
-        ])
+        .and_then(|c| c.get("pos"))
+        .and_then(|p| p.as_array())
+        .map(|a| {
+            [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(4.0) as f32,
+            ]
+        })
         .unwrap_or([
-            config.get("cameraPosX").and_then(|v| v.as_f64()).unwrap_or(3.0) as f32,
-            config.get("cameraPosY").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32,
-            config.get("cameraPosZ").and_then(|v| v.as_f64()).unwrap_or(4.0) as f32,
+            config
+                .get("cameraPosX")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(3.0) as f32,
+            config
+                .get("cameraPosY")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(2.0) as f32,
+            config
+                .get("cameraPosZ")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(4.0) as f32,
         ]);
     let camera_target = cam
-        .and_then(|c| c.get("target")).and_then(|p| p.as_array())
-        .map(|a| [
-            a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-        ])
+        .and_then(|c| c.get("target"))
+        .and_then(|p| p.as_array())
+        .map(|a| {
+            [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+            ]
+        })
         .unwrap_or([0.0; 3]);
     let fov = cam
-        .and_then(|c| c.get("fov")).and_then(|v| v.as_f64())
+        .and_then(|c| c.get("fov"))
+        .and_then(|v| v.as_f64())
         .unwrap_or(config.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0)) as f32;
 
     let mut results = HashMap::new();
@@ -296,18 +340,33 @@ pub async fn sdf_live_render_actor(
     let wgsl_clone = wgsl.clone();
     if let Some(tx) = stream_sender {
         tokio::task::spawn_blocking(move || {
-            match render_frame(&wgsl_clone, width, height, time, camera_pos, camera_target, fov) {
-                Ok(pixels) => { let _ = tx.send(StreamFrame::Data(Arc::new(pixels))); }
-                Err(e) => { let _ = tx.send(StreamFrame::Error(e)); }
+            match render_frame(
+                &wgsl_clone,
+                width,
+                height,
+                time,
+                camera_pos,
+                camera_target,
+                fov,
+            ) {
+                Ok(pixels) => {
+                    let _ = tx.send(StreamFrame::Data(Arc::new(pixels)));
+                }
+                Err(e) => {
+                    let _ = tx.send(StreamFrame::Error(e));
+                }
             }
         });
     }
 
-    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "width": width,
-        "height": height,
-        "format": "RGBA8",
-    }))));
+    results.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "width": width,
+            "height": height,
+            "format": "RGBA8",
+        }))),
+    );
     Ok(results)
 }
 
@@ -331,15 +390,19 @@ fn render_frame(
     let targets = get_or_create_targets(device, width, height);
 
     // Write uniforms — the ONLY per-frame GPU operation
-    queue.write_buffer(&targets.uniform_buffer, 0, bytemuck::bytes_of(&Uniforms {
-        resolution: [width as f32, height as f32],
-        time,
-        _pad0: 0.0,
-        camera_pos,
-        _pad1: 0.0,
-        camera_target,
-        fov,
-    }));
+    queue.write_buffer(
+        &targets.uniform_buffer,
+        0,
+        bytemuck::bytes_of(&Uniforms {
+            resolution: [width as f32, height as f32],
+            time,
+            _pad0: 0.0,
+            camera_pos,
+            _pad1: 0.0,
+            camera_target,
+            fov,
+        }),
+    );
 
     // Create bind group (references cached uniform buffer + texture)
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -358,7 +421,8 @@ fn render_frame(
     });
 
     // Dispatch compute
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: None,
@@ -386,7 +450,11 @@ fn render_frame(
                 rows_per_image: Some(height),
             },
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
 
     queue.submit(std::iter::once(encoder.finish()));
@@ -394,9 +462,12 @@ fn render_frame(
     // Readback
     let slice = targets.readback_buffer.slice(..);
     let (tx, rx) = flume::bounded(1);
-    slice.map_async(wgpu::MapMode::Read, move |r| { let _ = tx.send(r); });
+    slice.map_async(wgpu::MapMode::Read, move |r| {
+        let _ = tx.send(r);
+    });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|_| "Map failed".to_string())?
+    rx.recv()
+        .map_err(|_| "Map failed".to_string())?
         .map_err(|e| format!("Map: {:?}", e))?;
 
     let data = slice.get_mapped_range();

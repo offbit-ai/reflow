@@ -65,7 +65,10 @@ pub async fn scene_billboard_system_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let db = get_or_create_db(db_path)?;
 
     // Camera position (from CameraSystem output or config)
@@ -76,7 +79,10 @@ pub async fn scene_billboard_system_actor(
         }
         _ => {
             // Try reading from active camera component
-            let cam_entity = config.get("camera").and_then(|v| v.as_str()).unwrap_or("main");
+            let cam_entity = config
+                .get("camera")
+                .and_then(|v| v.as_str())
+                .unwrap_or("main");
             match db.get_component(cam_entity, "camera_matrices") {
                 Ok(a) => {
                     let v: Value = a.entry.inline_data.unwrap_or(json!({}));
@@ -92,7 +98,10 @@ pub async fn scene_billboard_system_actor(
     let billboard_entities = if selected.is_empty() {
         db.entities_with(&["billboard"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "billboard")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "billboard"))
+            .collect()
     };
 
     let mut quad_data: Vec<Value> = Vec::new();
@@ -103,27 +112,36 @@ pub async fn scene_billboard_system_actor(
             Ok(a) => a,
             Err(_) => continue,
         };
-        let bb: Value = bb_asset.entry.inline_data.unwrap_or_else(|| {
-            serde_json::from_slice(&bb_asset.data).unwrap_or(json!({}))
-        });
+        let bb: Value = bb_asset
+            .entry
+            .inline_data
+            .unwrap_or_else(|| serde_json::from_slice(&bb_asset.data).unwrap_or(json!({})));
 
         let mode = bb.get("mode").and_then(|v| v.as_str()).unwrap_or("world");
         let width = bb.get("width").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
         let height = bb.get("height").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let anchor = bb.get("anchor").and_then(|v| v.as_array()).map(|a| {
-            [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
-            ]
-        }).unwrap_or([0.5, 0.5]);
+        let anchor = bb
+            .get("anchor")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                [
+                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.5) as f32,
+                ]
+            })
+            .unwrap_or([0.5, 0.5]);
         let opacity = bb.get("opacity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let tint = bb.get("tint").and_then(|v| v.as_array()).map(|a| {
-            [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-            ]
-        }).unwrap_or([1.0, 1.0, 1.0]);
+        let tint = bb
+            .get("tint")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                [
+                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                ]
+            })
+            .unwrap_or([1.0, 1.0, 1.0]);
         let offset = read_vec3_field(&bb, "offset", [0.0, 0.0, 0.0]);
 
         // Entity world position (from transform or target entity)
@@ -150,10 +168,31 @@ pub async fn scene_billboard_system_actor(
 
         let corners = [
             // bottom-left, bottom-right, top-right, top-left
-            vadd(pos, vadd(vscale(right, -hw - ax * width), vscale(up, -hh - ay * height))),
-            vadd(pos, vadd(vscale(right, hw - ax * width), vscale(up, -hh - ay * height))),
-            vadd(pos, vadd(vscale(right, hw - ax * width), vscale(up, hh - ay * height))),
-            vadd(pos, vadd(vscale(right, -hw - ax * width), vscale(up, hh - ay * height))),
+            vadd(
+                pos,
+                vadd(
+                    vscale(right, -hw - ax * width),
+                    vscale(up, -hh - ay * height),
+                ),
+            ),
+            vadd(
+                pos,
+                vadd(
+                    vscale(right, hw - ax * width),
+                    vscale(up, -hh - ay * height),
+                ),
+            ),
+            vadd(
+                pos,
+                vadd(vscale(right, hw - ax * width), vscale(up, hh - ay * height)),
+            ),
+            vadd(
+                pos,
+                vadd(
+                    vscale(right, -hw - ax * width),
+                    vscale(up, hh - ay * height),
+                ),
+            ),
         ];
 
         // Sprite atlas UVs
@@ -274,9 +313,10 @@ fn compute_billboard_axes(
 fn read_entity_position(db: &std::sync::Arc<reflow_assets::AssetDB>, entity: &str) -> [f32; 3] {
     match db.get_component(entity, "transform") {
         Ok(a) => {
-            let v: Value = a.entry.inline_data.unwrap_or_else(|| {
-                serde_json::from_slice(&a.data).unwrap_or(json!({}))
-            });
+            let v: Value = a
+                .entry
+                .inline_data
+                .unwrap_or_else(|| serde_json::from_slice(&a.data).unwrap_or(json!({})));
             read_vec3_field(&v, "position", [0.0, 0.0, 0.0])
         }
         Err(_) => [0.0, 0.0, 0.0],
@@ -284,28 +324,54 @@ fn read_entity_position(db: &std::sync::Arc<reflow_assets::AssetDB>, entity: &st
 }
 
 fn read_vec3(v: &Value, default: [f32; 3]) -> [f32; 3] {
-    v.as_array().map(|a| {
-        [
-            a.get(0).and_then(|v| v.as_f64()).unwrap_or(default[0] as f64) as f32,
-            a.get(1).and_then(|v| v.as_f64()).unwrap_or(default[1] as f64) as f32,
-            a.get(2).and_then(|v| v.as_f64()).unwrap_or(default[2] as f64) as f32,
-        ]
-    }).unwrap_or(default)
+    v.as_array()
+        .map(|a| {
+            [
+                a.get(0)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[0] as f64) as f32,
+                a.get(1)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[1] as f64) as f32,
+                a.get(2)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[2] as f64) as f32,
+            ]
+        })
+        .unwrap_or(default)
 }
 
 fn read_vec3_field(v: &Value, key: &str, default: [f32; 3]) -> [f32; 3] {
     v.get(key).map(|v| read_vec3(v, default)).unwrap_or(default)
 }
 
-fn vsub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] { [a[0]-b[0], a[1]-b[1], a[2]-b[2]] }
-fn vadd(a: [f32; 3], b: [f32; 3]) -> [f32; 3] { [a[0]+b[0], a[1]+b[1], a[2]+b[2]] }
-fn vscale(a: [f32; 3], s: f32) -> [f32; 3] { [a[0]*s, a[1]*s, a[2]*s] }
-fn vdot(a: [f32; 3], b: [f32; 3]) -> f32 { a[0]*b[0]+a[1]*b[1]+a[2]*b[2] }
-fn vlen(a: [f32; 3]) -> f32 { vdot(a, a).sqrt() }
+fn vsub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+fn vadd(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+fn vscale(a: [f32; 3], s: f32) -> [f32; 3] {
+    [a[0] * s, a[1] * s, a[2] * s]
+}
+fn vdot(a: [f32; 3], b: [f32; 3]) -> f32 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+fn vlen(a: [f32; 3]) -> f32 {
+    vdot(a, a).sqrt()
+}
 fn vcross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 fn vnorm(v: [f32; 3]) -> [f32; 3] {
     let l = vlen(v);
-    if l > 1e-6 { [v[0]/l, v[1]/l, v[2]/l] } else { [0.0, 0.0, 1.0] }
+    if l > 1e-6 {
+        [v[0] / l, v[1] / l, v[2] / l]
+    } else {
+        [0.0, 0.0, 1.0]
+    }
 }

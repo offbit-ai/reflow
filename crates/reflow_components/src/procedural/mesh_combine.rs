@@ -36,10 +36,13 @@ pub async fn mesh_combine_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
 
     let mut out = HashMap::new();
     out.insert("mesh".to_string(), Message::bytes(combined));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "vertexCount": vertex_count,
-        "stride": stride,
-        "format": "pos3_normal3_f32",
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "vertexCount": vertex_count,
+            "stride": stride,
+            "format": "pos3_normal3_f32",
+        }))),
+    );
     Ok(out)
 }

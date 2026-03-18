@@ -24,20 +24,32 @@ pub async fn gamepad_input_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         .unwrap_or_default();
 
     let mut out = HashMap::new();
-    out.insert("event".to_string(), Message::object(EncodableValue::from(e.clone())));
+    out.insert(
+        "event".to_string(),
+        Message::object(EncodableValue::from(e.clone())),
+    );
 
-    let axes_enc: Vec<EncodableValue> = axes.iter().map(|&v| EncodableValue::from(json!(v))).collect();
+    let axes_enc: Vec<EncodableValue> = axes
+        .iter()
+        .map(|&v| EncodableValue::from(json!(v)))
+        .collect();
     out.insert("axes".to_string(), Message::Array(Arc::new(axes_enc)));
-    out.insert("buttons".to_string(), Message::object(EncodableValue::from(
-        e.get("buttons").cloned().unwrap_or(json!([])),
-    )));
+    out.insert(
+        "buttons".to_string(),
+        Message::object(EncodableValue::from(
+            e.get("buttons").cloned().unwrap_or(json!([])),
+        )),
+    );
 
     let lx = axes.first().copied().unwrap_or(0.0);
     let ly = axes.get(1).copied().unwrap_or(0.0);
     let rx = axes.get(2).copied().unwrap_or(0.0);
     let ry = axes.get(3).copied().unwrap_or(0.0);
-    out.insert("sticks".to_string(), Message::object(EncodableValue::from(
-        json!({ "left": { "x": lx, "y": ly }, "right": { "x": rx, "y": ry } }),
-    )));
+    out.insert(
+        "sticks".to_string(),
+        Message::object(EncodableValue::from(
+            json!({ "left": { "x": lx, "y": ly }, "right": { "x": rx, "y": ry } }),
+        )),
+    );
     Ok(out)
 }

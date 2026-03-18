@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use bitcode::{Decode, Encode};
 use once_cell::sync::Lazy;
@@ -476,12 +476,14 @@ mod tests {
 
     #[test]
     fn test_stream_frame_is_terminal() {
-        assert!(!StreamFrame::Begin {
-            content_type: None,
-            size_hint: None,
-            metadata: None,
-        }
-        .is_terminal());
+        assert!(
+            !StreamFrame::Begin {
+                content_type: None,
+                size_hint: None,
+                metadata: None,
+            }
+            .is_terminal()
+        );
         assert!(!StreamFrame::Data(Arc::new(vec![])).is_terminal());
         assert!(StreamFrame::End.is_terminal());
         assert!(StreamFrame::Error("fail".into()).is_terminal());
@@ -544,10 +546,7 @@ mod tests {
             .send_async(StreamFrame::Data(Arc::new(b"hello".to_vec())))
             .await
             .unwrap();
-        source_tx
-            .send_async(StreamFrame::End)
-            .await
-            .unwrap();
+        source_tx.send_async(StreamFrame::End).await.unwrap();
 
         // Both downstreams should receive all frames
         for rx in [&down1_rx, &down2_rx] {
@@ -571,7 +570,9 @@ mod tests {
         let (id, tx) = registry.create_stream(Some(8));
 
         // Register an observer BEFORE the consumer takes the receiver
-        let obs_rx = registry.add_observer(id, 8).expect("observer should attach");
+        let obs_rx = registry
+            .add_observer(id, 8)
+            .expect("observer should attach");
 
         // Consumer takes the receiver — broadcaster should be spawned
         let consumer_rx = registry.take_receiver(id).expect("take should succeed");
@@ -630,7 +631,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_actor_to_actor_stream_via_context() {
-        use crate::{ActorConfig, ActorContext, ActorLoad, MemoryState, ActorState, message::Message};
+        use crate::{
+            ActorConfig, ActorContext, ActorLoad, ActorState, MemoryState, message::Message,
+        };
         use parking_lot::Mutex;
 
         // --- Producer side ---
@@ -690,7 +693,8 @@ mod tests {
         );
 
         // Consumer takes the stream receiver
-        let stream_rx = consumer_ctx.take_stream_receiver("data_in")
+        let stream_rx = consumer_ctx
+            .take_stream_receiver("data_in")
             .expect("Should get stream receiver");
 
         // --- Simulate streaming data ---
@@ -701,20 +705,28 @@ mod tests {
         ];
 
         // Producer sends frames
-        stream_tx.send(StreamFrame::Begin {
-            content_type: Some("application/octet-stream".into()),
-            size_hint: Some(300),
-            metadata: None,
-        }).unwrap();
+        stream_tx
+            .send(StreamFrame::Begin {
+                content_type: Some("application/octet-stream".into()),
+                size_hint: Some(300),
+                metadata: None,
+            })
+            .unwrap();
 
         for chunk in &chunks {
-            stream_tx.send(StreamFrame::Data(Arc::new(chunk.clone()))).unwrap();
+            stream_tx
+                .send(StreamFrame::Data(Arc::new(chunk.clone())))
+                .unwrap();
         }
         stream_tx.send(StreamFrame::End).unwrap();
 
         // Consumer reads frames
         match stream_rx.recv().unwrap() {
-            StreamFrame::Begin { content_type, size_hint, .. } => {
+            StreamFrame::Begin {
+                content_type,
+                size_hint,
+                ..
+            } => {
                 assert_eq!(content_type.as_deref(), Some("application/octet-stream"));
                 assert_eq!(size_hint, Some(300));
             }
@@ -750,12 +762,18 @@ mod tests {
         });
 
         // Send frames
-        in_tx.send_async(StreamFrame::Begin {
-            content_type: Some("test".into()),
-            size_hint: None,
-            metadata: None,
-        }).await.unwrap();
-        in_tx.send_async(StreamFrame::Data(Arc::new(vec![1, 2, 3]))).await.unwrap();
+        in_tx
+            .send_async(StreamFrame::Begin {
+                content_type: Some("test".into()),
+                size_hint: None,
+                metadata: None,
+            })
+            .await
+            .unwrap();
+        in_tx
+            .send_async(StreamFrame::Data(Arc::new(vec![1, 2, 3])))
+            .await
+            .unwrap();
         in_tx.send_async(StreamFrame::End).await.unwrap();
 
         // Verify: Begin passes through unchanged
@@ -783,9 +801,15 @@ mod tests {
             content_type: Some("application/octet-stream".into()),
             size_hint: Some(6),
             metadata: None,
-        }).await.unwrap();
-        tx.send_async(StreamFrame::Data(Arc::new(vec![1, 2, 3]))).await.unwrap();
-        tx.send_async(StreamFrame::Data(Arc::new(vec![4, 5, 6]))).await.unwrap();
+        })
+        .await
+        .unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![1, 2, 3])))
+            .await
+            .unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![4, 5, 6])))
+            .await
+            .unwrap();
         tx.send_async(StreamFrame::End).await.unwrap();
 
         let (ct, _md, bytes) = stream_collect(rx).await.unwrap();
@@ -801,9 +825,15 @@ mod tests {
             content_type: None,
             size_hint: None,
             metadata: None,
-        }).await.unwrap();
-        tx.send_async(StreamFrame::Data(Arc::new(vec![1]))).await.unwrap();
-        tx.send_async(StreamFrame::Error("broken".into())).await.unwrap();
+        })
+        .await
+        .unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![1])))
+            .await
+            .unwrap();
+        tx.send_async(StreamFrame::Error("broken".into()))
+            .await
+            .unwrap();
 
         let result = stream_collect(rx).await;
         assert!(result.is_err());
@@ -820,11 +850,17 @@ mod tests {
             2, // chunk size
             Some("test/bytes".into()),
             None,
-        ).await.unwrap();
+        )
+        .await
+        .unwrap();
 
         // Begin
         match rx.recv_async().await.unwrap() {
-            StreamFrame::Begin { content_type, size_hint, .. } => {
+            StreamFrame::Begin {
+                content_type,
+                size_hint,
+                ..
+            } => {
                 assert_eq!(content_type.as_deref(), Some("test/bytes"));
                 assert_eq!(size_hint, Some(5));
             }

@@ -139,7 +139,8 @@ impl GraphProjection {
             params: json!({}),
         });
         self.push(CypherDelta {
-            statement: "CREATE REL TABLE IF NOT EXISTS INSTANCE_OF (FROM Actor TO ActorTemplate)".into(),
+            statement: "CREATE REL TABLE IF NOT EXISTS INSTANCE_OF (FROM Actor TO ActorTemplate)"
+                .into(),
             params: json!({}),
         });
 
@@ -148,7 +149,8 @@ impl GraphProjection {
                 statement: concat!(
                     "MERGE (t:ActorTemplate {id: $id}) ",
                     "SET t.name = $name, t.inports = $inports, t.outports = $outports"
-                ).into(),
+                )
+                .into(),
                 params: json!({
                     "id": template_id,
                     "name": actor_name,
@@ -168,7 +170,9 @@ impl GraphProjection {
     /// Project a Reflow Network topology change into Cypher.
     pub fn project_actor_added(&self, name: &str, template: &str, config: &Value) {
         self.push(CypherDelta {
-            statement: "MERGE (a:Actor {name: $name}) SET a.template = $template, a.config = $config".into(),
+            statement:
+                "MERGE (a:Actor {name: $name}) SET a.template = $template, a.config = $config"
+                    .into(),
             params: json!({"name": name, "template": template, "config": config}),
         });
         // Link to template catalog
@@ -176,7 +180,8 @@ impl GraphProjection {
             statement: concat!(
                 "MATCH (a:Actor {name: $name}), (t:ActorTemplate {id: $template}) ",
                 "MERGE (a)-[:INSTANCE_OF]->(t)"
-            ).into(),
+            )
+            .into(),
             params: json!({"name": name, "template": template}),
         });
     }
@@ -199,7 +204,8 @@ impl GraphProjection {
             statement: concat!(
                 "MATCH (a:Actor {name: $from}), (b:Actor {name: $to}) ",
                 "MERGE (a)-[:CONNECTS_TO {from_port: $fp, to_port: $tp}]->(b)"
-            ).into(),
+            )
+            .into(),
             params: json!({
                 "from": from_actor, "fp": from_port,
                 "to": to_actor, "tp": to_port,
@@ -230,13 +236,7 @@ impl GraphProjection {
 
     /// Record a render result — the visual feedback loop.
     /// VLM agents read these to evaluate quality.
-    pub fn project_render_result(
-        &self,
-        entity: &str,
-        image_path: &str,
-        width: u32,
-        height: u32,
-    ) {
+    pub fn project_render_result(&self, entity: &str, image_path: &str, width: u32, height: u32) {
         let id = format!("render_{}_{}", entity, now_iso_compact());
         self.push(CypherDelta {
             statement: concat!(
@@ -244,7 +244,8 @@ impl GraphProjection {
                 "image_path: $path, width: $w, height: $h}) ",
                 "WITH r MATCH (e:Entity {name: $entity}) ",
                 "CREATE (r)-[:RENDERED_BY]->(e)"
-            ).into(),
+            )
+            .into(),
             params: json!({
                 "id": id,
                 "entity": entity,
@@ -257,12 +258,7 @@ impl GraphProjection {
     }
 
     /// Record a VLM quality assessment of a render.
-    pub fn project_quality_score(
-        &self,
-        render_id: &str,
-        score: f64,
-        analysis: &str,
-    ) {
+    pub fn project_quality_score(&self, render_id: &str, score: f64, analysis: &str) {
         let id = format!("score_{}", now_iso_compact());
         self.push(CypherDelta {
             statement: concat!(
@@ -270,7 +266,8 @@ impl GraphProjection {
                 "analysis: $analysis, timestamp: $ts}) ",
                 "WITH q MATCH (r:RenderResult {id: $rid}) ",
                 "CREATE (q)-[:SCORED]->(r)"
-            ).into(),
+            )
+            .into(),
             params: json!({
                 "id": id,
                 "rid": render_id,
@@ -298,7 +295,8 @@ impl GraphProjection {
                 "duration_ms: $dur, input_keys: $ik, output_keys: $ok}) ",
                 "WITH t MATCH (a:Actor {name: $actor}) ",
                 "CREATE (t)-[:TRACED_BY]->(a)"
-            ).into(),
+            )
+            .into(),
             params: json!({
                 "id": id,
                 "actor": actor,
@@ -311,12 +309,7 @@ impl GraphProjection {
     }
 
     /// Record a diagnostic warning.
-    pub fn project_warning(
-        &self,
-        entity: &str,
-        warning_type: &str,
-        message: &str,
-    ) {
+    pub fn project_warning(&self, entity: &str, warning_type: &str, message: &str) {
         let id = format!("warn_{}_{}", entity, now_iso_compact());
         self.push(CypherDelta {
             statement: concat!(
@@ -324,7 +317,8 @@ impl GraphProjection {
                 "message: $msg, timestamp: $ts}) ",
                 "WITH w MATCH (e:Entity {name: $entity}) ",
                 "CREATE (w)-[:WARNS_ABOUT]->(e)"
-            ).into(),
+            )
+            .into(),
             params: json!({
                 "id": id,
                 "entity": entity,
@@ -344,7 +338,7 @@ impl GraphProjection {
         id: &str,
         name: &str,
         description: &str,
-        actors: &[(&str, &str)], // (name, template)
+        actors: &[(&str, &str)],                  // (name, template)
         connections: &[(&str, &str, &str, &str)], // (from_actor, from_port, to_actor, to_port)
     ) {
         self.push(CypherDelta {
@@ -352,7 +346,8 @@ impl GraphProjection {
                 "MERGE (p:WiringPattern {id: $id}) ",
                 "SET p.name = $name, p.description = $desc, ",
                 "p.actors = $actors, p.connections = $conns"
-            ).into(),
+            )
+            .into(),
             params: json!({
                 "id": id,
                 "name": name,
@@ -368,7 +363,8 @@ impl GraphProjection {
                 statement: concat!(
                     "MATCH (p:WiringPattern {id: $pid}), (t:ActorTemplate {id: $tid}) ",
                     "MERGE (p)-[:USES_TEMPLATE]->(t)"
-                ).into(),
+                )
+                .into(),
                 params: json!({"pid": id, "tid": template}),
             });
         }
@@ -431,7 +427,8 @@ impl DeltaListener for GraphProjection {
                             "MATCH (e:Entity {name: $name}) ",
                             "OPTIONAL MATCH (e)-[:HAS_COMPONENT]->(c:Component) ",
                             "DETACH DELETE e, c"
-                        ).into(),
+                        )
+                        .into(),
                         params: json!({"name": &delta.entity}),
                     });
                 }
@@ -440,10 +437,7 @@ impl DeltaListener for GraphProjection {
             DeltaOp::Tag => {
                 if let Some(ref tags) = delta.data {
                     self.push(CypherDelta {
-                        statement: concat!(
-                            "MATCH (n {id: $id}) ",
-                            "SET n.tags = $tags"
-                        ).into(),
+                        statement: concat!("MATCH (n {id: $id}) ", "SET n.tags = $tags").into(),
                         params: json!({"id": &delta.id, "tags": tags}),
                     });
                 }
@@ -457,7 +451,8 @@ impl DeltaListener for GraphProjection {
                             "MATCH (tpl:Entity {name: $template}) ",
                             "MERGE (e:Entity {name: $entity}) ",
                             "MERGE (e)-[:SPAWNED_FROM]->(tpl)"
-                        ).into(),
+                        )
+                        .into(),
                         params: json!({"template": template, "entity": &delta.entity}),
                     });
                 }
@@ -469,7 +464,8 @@ impl DeltaListener for GraphProjection {
                         "MATCH (e:Entity {name: $name}) ",
                         "OPTIONAL MATCH (e)-[:HAS_COMPONENT]->(c:Component) ",
                         "DETACH DELETE e, c"
-                    ).into(),
+                    )
+                    .into(),
                     params: json!({"name": &delta.entity}),
                 });
             }
@@ -490,12 +486,7 @@ fn now_iso_compact() -> String {
     chrono::Utc::now().format("%Y%m%d%H%M%S%3f").to_string()
 }
 
-fn extract_references(
-    entity: &str,
-    component: &str,
-    data: &Value,
-    projection: &GraphProjection,
-) {
+fn extract_references(entity: &str, component: &str, data: &Value, projection: &GraphProjection) {
     if let Value::Object(map) = data {
         for (field, val) in map {
             extract_refs_recursive(entity, component, field, val, projection);
@@ -522,8 +513,10 @@ fn extract_refs_recursive(
                 && !s.starts_with('@')
                 && !s.starts_with('$')
                 && !s.contains('(')
-                && s.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == ':' || c == '/')
-                && s != entity // don't self-reference
+                && s.chars()
+                    .all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == ':' || c == '/')
+                && s != entity
+            // don't self-reference
             {
                 // Extract the entity name (before ':' if present)
                 let target_entity = if let Some(colon) = s.rfind(':') {
@@ -536,7 +529,8 @@ fn extract_refs_recursive(
                     statement: concat!(
                         "MATCH (src:Entity {name: $src}), (dst:Entity {name: $dst}) ",
                         "MERGE (src)-[:REFERENCES {component: $comp, field: $field}]->(dst)"
-                    ).into(),
+                    )
+                    .into(),
                     params: json!({
                         "src": entity,
                         "dst": target_entity,
@@ -548,12 +542,24 @@ fn extract_refs_recursive(
         }
         Value::Object(map) => {
             for (k, v) in map {
-                extract_refs_recursive(entity, component, &format!("{}.{}", field, k), v, projection);
+                extract_refs_recursive(
+                    entity,
+                    component,
+                    &format!("{}.{}", field, k),
+                    v,
+                    projection,
+                );
             }
         }
         Value::Array(arr) => {
             for (i, v) in arr.iter().enumerate() {
-                extract_refs_recursive(entity, component, &format!("{}[{}]", field, i), v, projection);
+                extract_refs_recursive(
+                    entity,
+                    component,
+                    &format!("{}[{}]", field, i),
+                    v,
+                    projection,
+                );
             }
         }
         _ => {}

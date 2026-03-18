@@ -193,7 +193,11 @@ pub fn blend_rows(base: &mut [u8], overlay: &[u8], mode: BlendMode, opacity: f32
                 for i in 0..3 {
                     let b = bg_px[i] as f32 / 255.0;
                     let f = fg_px[i] as f32 / 255.0;
-                    let v = if f >= 1.0 { 1.0 } else { (b / (1.0 - f)).min(1.0) };
+                    let v = if f >= 1.0 {
+                        1.0
+                    } else {
+                        (b / (1.0 - f)).min(1.0)
+                    };
                     out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
                 }
                 out
@@ -203,7 +207,11 @@ pub fn blend_rows(base: &mut [u8], overlay: &[u8], mode: BlendMode, opacity: f32
                 for i in 0..3 {
                     let b = bg_px[i] as f32 / 255.0;
                     let f = fg_px[i] as f32 / 255.0;
-                    let v = if f <= 0.0 { 0.0 } else { 1.0 - ((1.0 - b) / f).min(1.0) };
+                    let v = if f <= 0.0 {
+                        0.0
+                    } else {
+                        1.0 - ((1.0 - b) / f).min(1.0)
+                    };
                     out[i] = (v * 255.0).round().clamp(0.0, 255.0) as u8;
                 }
                 out
@@ -303,8 +311,18 @@ pub fn composite_at(
             let fg_offset = fg_row_start + col * 4;
             let bg_offset = bg_row_start + bg_x * 4;
 
-            let mut bg_px = [bg[bg_offset], bg[bg_offset + 1], bg[bg_offset + 2], bg[bg_offset + 3]];
-            let fg_px = [fg[fg_offset], fg[fg_offset + 1], fg[fg_offset + 2], fg[fg_offset + 3]];
+            let mut bg_px = [
+                bg[bg_offset],
+                bg[bg_offset + 1],
+                bg[bg_offset + 2],
+                bg[bg_offset + 3],
+            ];
+            let fg_px = [
+                fg[fg_offset],
+                fg[fg_offset + 1],
+                fg[fg_offset + 2],
+                fg[fg_offset + 3],
+            ];
 
             alpha_over(&mut bg_px, &fg_px);
 

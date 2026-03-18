@@ -472,7 +472,11 @@ async fn stream_producer_actor(
     .await
     .unwrap();
 
-    for chunk in [b"chunk-1".to_vec(), b"chunk-2".to_vec(), b"chunk-3".to_vec()] {
+    for chunk in [
+        b"chunk-1".to_vec(),
+        b"chunk-2".to_vec(),
+        b"chunk-3".to_vec(),
+    ] {
         tx.send_async(StreamFrame::Data(Arc::new(chunk)))
             .await
             .unwrap();
@@ -521,11 +525,7 @@ async fn stream_consumer_actor(
     assert!(got_begin, "consumer should have received Begin frame");
     assert!(got_end, "consumer should have received End frame");
 
-    Ok([(
-        "ByteCount".to_owned(),
-        Message::Integer(total_bytes as i64),
-    )]
-    .into())
+    Ok([("ByteCount".to_owned(), Message::Integer(total_bytes as i64))].into())
 }
 
 /// Full network integration: producer → connector → consumer, with
@@ -618,11 +618,7 @@ async fn stream_consumer_graceful_actor(
                     _ => {}
                 }
             }
-            Ok([(
-                "ByteCount".to_owned(),
-                Message::Integer(total_bytes as i64),
-            )]
-            .into())
+            Ok([("ByteCount".to_owned(), Message::Integer(total_bytes as i64))].into())
         }
         None => {
             // No receiver available — another consumer took it

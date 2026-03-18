@@ -24,11 +24,11 @@
 //! Multiple tweens per entity: use `entity:tween`, `entity:tween_2`, etc.
 //! Or different entities targeting the same property.
 
+use crate::math::easing;
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
-use crate::math::easing;
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -39,14 +39,22 @@ use std::collections::HashMap;
     outports::<1>(completed, metadata),
     state(MemoryState)
 )]
-pub async fn scene_tween_system_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn scene_tween_system_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let dt = match payload.get("dt") {
         Some(Message::Float(f)) => *f,
-        _ => config.get("dt").and_then(|v| v.as_f64()).unwrap_or(1.0 / 60.0),
+        _ => config
+            .get("dt")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0 / 60.0),
     };
 
     let db = get_or_create_db(db_path)?;
@@ -55,9 +63,10 @@ pub async fn scene_tween_system_actor(ctx: ActorContext) -> Result<HashMap<Strin
     let cache = if selected.is_empty() {
         db.query(&reflow_assets::AssetQuery::new().asset_type("tween"))?
     } else {
-        selected.iter().filter_map(|e| {
-            db.get_entry(&format!("{}:tween", e)).ok()
-        }).collect()
+        selected
+            .iter()
+            .filter_map(|e| db.get_entry(&format!("{}:tween", e)).ok())
+            .collect()
     };
 
     let mut completed = Vec::new();
@@ -70,17 +79,38 @@ pub async fn scene_tween_system_actor(ctx: ActorContext) -> Result<HashMap<Strin
             continue;
         };
 
-        let state = tween_data.get("state").and_then(|v| v.as_str()).unwrap_or("playing");
+        let state = tween_data
+            .get("state")
+            .and_then(|v| v.as_str())
+            .unwrap_or("playing");
         if state != "playing" {
             continue;
         }
 
-        let duration = tween_data.get("duration").and_then(|v| v.as_f64()).unwrap_or(1.0);
-        let delay = tween_data.get("delay").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let easing_fn = tween_data.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
-        let do_loop = tween_data.get("loop").and_then(|v| v.as_bool()).unwrap_or(false);
-        let yoyo = tween_data.get("yoyo").and_then(|v| v.as_bool()).unwrap_or(false);
-        let mut elapsed = tween_data.get("elapsed").and_then(|v| v.as_f64()).unwrap_or(0.0);
+        let duration = tween_data
+            .get("duration")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0);
+        let delay = tween_data
+            .get("delay")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        let easing_fn = tween_data
+            .get("easing")
+            .and_then(|v| v.as_str())
+            .unwrap_or("linear");
+        let do_loop = tween_data
+            .get("loop")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let yoyo = tween_data
+            .get("yoyo")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let mut elapsed = tween_data
+            .get("elapsed")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
 
         elapsed += dt;
 
@@ -93,7 +123,11 @@ pub async fn scene_tween_system_actor(ctx: ActorContext) -> Result<HashMap<Strin
             continue;
         }
 
-        let mut progress = if duration > 0.0 { active_time / duration } else { 1.0 };
+        let mut progress = if duration > 0.0 {
+            active_time / duration
+        } else {
+            1.0
+        };
         let mut new_state = "playing";
 
         if progress >= 1.0 {
@@ -116,7 +150,10 @@ pub async fn scene_tween_system_actor(ctx: ActorContext) -> Result<HashMap<Strin
         // Evaluate easing
         let from = tween_data.get("from");
         let to = tween_data.get("to");
-        let target_path = tween_data.get("target").and_then(|v| v.as_str()).unwrap_or("");
+        let target_path = tween_data
+            .get("target")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
 
         if let (Some(from), Some(to)) = (from, to) {
             let interpolated = interpolate_value(from, to, progress, easing_fn);
@@ -160,11 +197,15 @@ fn interpolate_value(from: &Value, to: &Value, t: f64, easing_fn: &str) -> Value
         }
         // Vec (2/3/4)
         (Value::Array(a), Value::Array(b)) if a.len() == b.len() => {
-            let result: Vec<f64> = a.iter().zip(b.iter()).map(|(av, bv)| {
-                let a = av.as_f64().unwrap_or(0.0);
-                let b = bv.as_f64().unwrap_or(0.0);
-                easing::lerp_eased(a, b, t, easing_fn)
-            }).collect();
+            let result: Vec<f64> = a
+                .iter()
+                .zip(b.iter())
+                .map(|(av, bv)| {
+                    let a = av.as_f64().unwrap_or(0.0);
+                    let b = bv.as_f64().unwrap_or(0.0);
+                    easing::lerp_eased(a, b, t, easing_fn)
+                })
+                .collect();
             json!(result)
         }
         // Color (object with r,g,b)

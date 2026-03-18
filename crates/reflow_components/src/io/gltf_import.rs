@@ -38,7 +38,6 @@ pub async fn gltf_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     import_gltf(&data, &config)
 }
 
-
 pub(crate) fn import_gltf(
     data: &[u8],
     config: &HashMap<String, Value>,
@@ -65,8 +64,8 @@ pub(crate) fn import_gltf(
         .unwrap_or("imported");
 
     // Parse glTF
-    let gltf = gltf::Gltf::from_slice(data)
-        .map_err(|e| anyhow::anyhow!("Failed to parse glTF: {}", e))?;
+    let gltf =
+        gltf::Gltf::from_slice(data).map_err(|e| anyhow::anyhow!("Failed to parse glTF: {}", e))?;
 
     // Resolve binary buffers
     let buffers = load_buffers(&gltf, data)?;
@@ -165,7 +164,6 @@ pub(crate) fn import_gltf(
 // Buffer resolution
 // ═══════════════════════════════════════════════════════════════════════════
 
-
 fn load_buffers(gltf: &gltf::Gltf, data: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
     let mut buffers = Vec::new();
     for buffer in gltf.buffers() {
@@ -207,7 +205,6 @@ fn load_buffers(gltf: &gltf::Gltf, data: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
 // Accessor reading
 // ═══════════════════════════════════════════════════════════════════════════
 
-
 fn read_accessor_raw(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u8> {
     let view = match accessor.view() {
         Some(v) => v,
@@ -235,14 +232,12 @@ fn read_accessor_raw(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u8> 
     result
 }
 
-
 fn read_accessor_f32(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<f32> {
     let raw = read_accessor_raw(accessor, buffers);
     raw.chunks_exact(4)
         .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
         .collect()
 }
-
 
 fn read_accessor_u16(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u16> {
     let raw = read_accessor_raw(accessor, buffers);
@@ -259,7 +254,6 @@ fn read_accessor_u16(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u16>
         _ => Vec::new(),
     }
 }
-
 
 fn read_indices(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u32> {
     let raw = read_accessor_raw(accessor, buffers);
@@ -281,11 +275,7 @@ fn read_indices(accessor: &gltf::Accessor, buffers: &[Vec<u8>]) -> Vec<u32> {
 // Mesh extraction
 // ═══════════════════════════════════════════════════════════════════════════
 
-
-fn extract_mesh(
-    mesh: &gltf::Mesh,
-    buffers: &[Vec<u8>],
-) -> Result<(Vec<u8>, usize, bool), Error> {
+fn extract_mesh(mesh: &gltf::Mesh, buffers: &[Vec<u8>]) -> Result<(Vec<u8>, usize, bool), Error> {
     let mut all_bytes: Vec<u8> = Vec::new();
     let mut total_verts = 0usize;
     let mut has_colors = false;
@@ -312,9 +302,7 @@ fn extract_mesh(
         let vert_count = pos_data.len() / 3;
 
         // Build de-indexed vertices
-        let indices: Option<Vec<u32>> = primitive
-            .indices()
-            .map(|acc| read_indices(&acc, buffers));
+        let indices: Option<Vec<u32>> = primitive.indices().map(|acc| read_indices(&acc, buffers));
 
         let emit_vertex = |vi: usize, out: &mut Vec<u8>| {
             // Position (12 bytes)
@@ -373,7 +361,6 @@ fn extract_mesh(
     Ok((all_bytes, total_verts, has_colors))
 }
 
-
 fn compute_face_normals_if_missing(mesh: &mut [u8], stride: usize) {
     let vertex_count = mesh.len() / stride;
     let tri_count = vertex_count / 3;
@@ -387,9 +374,8 @@ fn compute_face_normals_if_missing(mesh: &mut [u8], stride: usize) {
         let b1 = b0 + stride;
         let b2 = b0 + 2 * stride;
 
-        let n_sq = rf(mesh, b0 + 12).powi(2)
-            + rf(mesh, b0 + 16).powi(2)
-            + rf(mesh, b0 + 20).powi(2);
+        let n_sq =
+            rf(mesh, b0 + 12).powi(2) + rf(mesh, b0 + 16).powi(2) + rf(mesh, b0 + 20).powi(2);
 
         if n_sq < 1e-10 {
             let p0 = [rf(mesh, b0), rf(mesh, b0 + 4), rf(mesh, b0 + 8)];
@@ -420,7 +406,6 @@ fn compute_face_normals_if_missing(mesh: &mut [u8], stride: usize) {
 // ═══════════════════════════════════════════════════════════════════════════
 // Skeleton extraction
 // ═══════════════════════════════════════════════════════════════════════════
-
 
 fn extract_skeleton(skin: &gltf::Skin, gltf: &gltf::Gltf) -> Result<Value, Error> {
     let joints: Vec<_> = skin.joints().collect();
@@ -470,7 +455,6 @@ fn extract_skeleton(skin: &gltf::Skin, gltf: &gltf::Gltf) -> Result<Value, Error
     }))
 }
 
-
 fn trs_to_mat4_f32(t: [f32; 3], r: [f32; 4], s: [f32; 3]) -> [f32; 16] {
     // Quaternion [x, y, z, w] to rotation matrix
     let (x, y, z, w) = (r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
@@ -515,7 +499,6 @@ fn trs_to_mat4_f32(t: [f32; 3], r: [f32; 4], s: [f32; 3]) -> [f32; 16] {
 // Skin weights extraction
 // ═══════════════════════════════════════════════════════════════════════════
 
-
 fn extract_skin_weights(
     mesh: &gltf::Mesh,
     joints: &[gltf::Node],
@@ -535,12 +518,13 @@ fn extract_skin_weights(
             .ok_or_else(|| anyhow::anyhow!("Missing POSITION"))?;
 
         let vert_count = positions.count();
-        let indices: Option<Vec<u32>> = primitive
-            .indices()
-            .map(|acc| read_indices(&acc, buffers));
+        let indices: Option<Vec<u32>> = primitive.indices().map(|acc| read_indices(&acc, buffers));
 
         let (j_data, w_data) = match (joints_acc, weights_acc) {
-            (Some(j), Some(w)) => (read_accessor_u16(&j, buffers), read_accessor_f32(&w, buffers)),
+            (Some(j), Some(w)) => (
+                read_accessor_u16(&j, buffers),
+                read_accessor_f32(&w, buffers),
+            ),
             _ => {
                 // No skin weights — fill with zeros
                 let count = if let Some(ref idx) = indices {
@@ -620,7 +604,6 @@ fn extract_skin_weights(
 // ═══════════════════════════════════════════════════════════════════════════
 // Animation extraction
 // ═══════════════════════════════════════════════════════════════════════════
-
 
 fn extract_animation(
     anim: &gltf::Animation,

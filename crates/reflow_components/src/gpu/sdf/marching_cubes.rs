@@ -389,7 +389,9 @@ fn smooth_normals(data: &[u8]) -> Vec<u8> {
     // Smooth normals: average across shared vertices to eliminate MC banding
     let mut smoothed = normals.clone();
     for indices in buckets.values() {
-        if indices.len() <= 1 { continue; }
+        if indices.len() <= 1 {
+            continue;
+        }
         let mut avg = [0.0f32; 3];
         for &idx in indices {
             avg[0] += normals[idx][0];
@@ -398,7 +400,9 @@ fn smooth_normals(data: &[u8]) -> Vec<u8> {
         }
         let len = (avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]).sqrt();
         if len > 1e-8 {
-            avg[0] /= len; avg[1] /= len; avg[2] /= len;
+            avg[0] /= len;
+            avg[1] /= len;
+            avg[2] /= len;
         }
         for &idx in indices {
             smoothed[idx] = avg;

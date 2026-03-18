@@ -28,10 +28,9 @@ pub async fn obj_import_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     parse_obj(&data)
 }
 
-
 pub(crate) fn parse_obj(data: &[u8]) -> Result<HashMap<String, Message>, Error> {
-    let text = std::str::from_utf8(data)
-        .map_err(|e| anyhow::anyhow!("OBJ is not valid UTF-8: {}", e))?;
+    let text =
+        std::str::from_utf8(data).map_err(|e| anyhow::anyhow!("OBJ is not valid UTF-8: {}", e))?;
 
     let mut cursor = std::io::Cursor::new(text.as_bytes());
     let load_options = tobj::LoadOptions {
@@ -40,10 +39,9 @@ pub(crate) fn parse_obj(data: &[u8]) -> Result<HashMap<String, Message>, Error> 
         ..Default::default()
     };
 
-    let (models, _materials) =
-        tobj::load_obj_buf(&mut cursor, &load_options, |_| {
-            Err(tobj::LoadError::GenericFailure)
-        })?;
+    let (models, _materials) = tobj::load_obj_buf(&mut cursor, &load_options, |_| {
+        Err(tobj::LoadError::GenericFailure)
+    })?;
 
     if models.is_empty() {
         return Ok(error_output("OBJ file contains no models"));
@@ -93,7 +91,10 @@ pub(crate) fn parse_obj(data: &[u8]) -> Result<HashMap<String, Message>, Error> 
                 // Normal
                 if has_normals {
                     let ni = if !m.normal_indices.is_empty() {
-                        m.normal_indices.get(total_vertices + i).copied().unwrap_or(idx) as usize
+                        m.normal_indices
+                            .get(total_vertices + i)
+                            .copied()
+                            .unwrap_or(idx) as usize
                     } else {
                         i
                     };
@@ -147,9 +148,8 @@ fn compute_missing_normals(mesh: &mut Vec<u8>) {
         let b1 = b0 + 24;
         let b2 = b0 + 48;
 
-        let n0_len_sq = rf(mesh, b0 + 12).powi(2)
-            + rf(mesh, b0 + 16).powi(2)
-            + rf(mesh, b0 + 20).powi(2);
+        let n0_len_sq =
+            rf(mesh, b0 + 12).powi(2) + rf(mesh, b0 + 16).powi(2) + rf(mesh, b0 + 20).powi(2);
 
         if n0_len_sq < 1e-10 {
             let p0 = [rf(mesh, b0), rf(mesh, b0 + 4), rf(mesh, b0 + 8)];

@@ -58,7 +58,10 @@ pub async fn material_system_actor(ctx: ActorContext) -> Result<HashMap<String, 
     let material_entities = if selected.is_empty() {
         db.entities_with(&["material"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "material")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "material"))
+            .collect()
     };
 
     let mut material_buffer = Vec::new();
@@ -82,15 +85,32 @@ pub async fn material_system_actor(ctx: ActorContext) -> Result<HashMap<String, 
         let roughness = mat.get("roughness").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
         let ao = mat.get("ao").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
         let emissive = read_vec3(&mat, "emissive", [0.0, 0.0, 0.0]);
-        let emissive_str = mat.get("emissiveStrength").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-        let normal_scale = mat.get("normalScale").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let alpha_mode = match mat.get("alphaMode").and_then(|v| v.as_str()).unwrap_or("opaque") {
+        let emissive_str = mat
+            .get("emissiveStrength")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32;
+        let normal_scale = mat
+            .get("normalScale")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0) as f32;
+        let alpha_mode = match mat
+            .get("alphaMode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("opaque")
+        {
             "mask" => 1.0f32,
             "blend" => 2.0,
             _ => 0.0, // opaque
         };
-        let alpha_cutoff = mat.get("alphaCutoff").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
-        let double_sided = if mat.get("doubleSided").and_then(|v| v.as_bool()).unwrap_or(false) {
+        let alpha_cutoff = mat
+            .get("alphaCutoff")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.5) as f32;
+        let double_sided = if mat
+            .get("doubleSided")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
             1.0f32
         } else {
             0.0
@@ -102,11 +122,15 @@ pub async fn material_system_actor(ctx: ActorContext) -> Result<HashMap<String, 
             packed[off..off + 4].copy_from_slice(&val.to_le_bytes());
         };
 
-        w(0, albedo[0]); w(4, albedo[1]); w(8, albedo[2]);
+        w(0, albedo[0]);
+        w(4, albedo[1]);
+        w(8, albedo[2]);
         w(12, metallic);
         w(16, roughness);
         w(20, ao);
-        w(24, emissive[0]); w(28, emissive[1]); w(32, emissive[2]);
+        w(24, emissive[0]);
+        w(28, emissive[1]);
+        w(32, emissive[2]);
         w(36, emissive_str);
         w(40, normal_scale);
         w(44, alpha_mode);
@@ -153,9 +177,15 @@ fn read_vec3(v: &Value, key: &str, default: [f32; 3]) -> [f32; 3] {
         .and_then(|a| a.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(default[0] as f64) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(default[1] as f64) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(default[2] as f64) as f32,
+                a.get(0)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[0] as f64) as f32,
+                a.get(1)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[1] as f64) as f32,
+                a.get(2)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[2] as f64) as f32,
             ]
         })
         .unwrap_or(default)

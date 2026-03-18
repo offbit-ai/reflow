@@ -53,9 +53,7 @@ use std::collections::HashMap;
     outports::<1>(frame, progress, metadata),
     state(MemoryState)
 )]
-pub async fn sprite_animation_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn sprite_animation_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -67,7 +65,8 @@ pub async fn sprite_animation_actor(
 
     // Merge: inport sprite overrides config
     let sprite_desc: HashMap<String, Value> = {
-        let cached = ctx.get_pool("_sprite")
+        let cached = ctx
+            .get_pool("_sprite")
             .into_iter()
             .find(|(k, _)| k == "desc")
             .map(|(_, v)| v);

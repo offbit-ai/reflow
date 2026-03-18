@@ -3,7 +3,10 @@
 //! Converts Zeal workflow format to Reflow's Graph format using the Graph API.
 
 use anyhow::{Result, anyhow};
-use reflow_graph::{Graph, types::{GraphExport, PortType}};
+use reflow_graph::{
+    Graph,
+    types::{GraphExport, PortType},
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -119,13 +122,10 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
     // Identify input nodes that should become IIPs instead of graph nodes.
     // These are Zeal's user-input widgets — they produce static values, not
     // actor computations. Their output connections become initial packets.
-    let input_node_templates: std::collections::HashSet<&str> = [
-        "tpl_text_input",
-        "tpl_number_input",
-        "tpl_range_input",
-    ]
-    .into_iter()
-    .collect();
+    let input_node_templates: std::collections::HashSet<&str> =
+        ["tpl_text_input", "tpl_number_input", "tpl_range_input"]
+            .into_iter()
+            .collect();
 
     // Graph I/O and proxy nodes are resolved at conversion time.
     // - graph_input/graph_output: skip as graph nodes (SubgraphActor handles
@@ -200,18 +200,21 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
         let mut node_metadata = HashMap::new();
 
         // Nest Zeal visual/layout properties to avoid collisions with actor config
-        node_metadata.insert("zeal".to_string(), json!({
-            "x": zeal_node.position.x,
-            "y": zeal_node.position.y,
-            "title": zeal_node.title,
-            "subtitle": zeal_node.subtitle,
-            "icon": zeal_node.icon,
-            "variant": zeal_node.variant,
-            "shape": zeal_node.shape,
-            "size": zeal_node.size,
-            "ports": zeal_node.ports,
-            "required_env_vars": zeal_node.required_env_vars,
-        }));
+        node_metadata.insert(
+            "zeal".to_string(),
+            json!({
+                "x": zeal_node.position.x,
+                "y": zeal_node.position.y,
+                "title": zeal_node.title,
+                "subtitle": zeal_node.subtitle,
+                "icon": zeal_node.icon,
+                "variant": zeal_node.variant,
+                "shape": zeal_node.shape,
+                "size": zeal_node.size,
+                "ports": zeal_node.ports,
+                "required_env_vars": zeal_node.required_env_vars,
+            }),
+        );
 
         // Merge property defaults + user overrides into flat config.
         // properties: Record<string, { defaultValue, type, ... }> → extract defaults
@@ -268,14 +271,13 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
     for zeal_conn in &main_graph.connections {
         if input_node_ids.contains(&zeal_conn.from.node_id) {
             // Find the input node to extract its value
-            if let Some(input_node) = main_graph.nodes.iter().find(|n| n.id == zeal_conn.from.node_id) {
+            if let Some(input_node) = main_graph
+                .nodes
+                .iter()
+                .find(|n| n.id == zeal_conn.from.node_id)
+            {
                 let value = extract_input_node_value(input_node);
-                graph.add_initial(
-                    value,
-                    &zeal_conn.to.node_id,
-                    &zeal_conn.to.port_id,
-                    None,
-                );
+                graph.add_initial(value, &zeal_conn.to.node_id, &zeal_conn.to.port_id, None);
             }
             continue;
         }
@@ -283,9 +285,7 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
         // Skip connections TO input/proxy nodes
         if input_node_ids.contains(&zeal_conn.to.node_id) {
             // If target is a proxy_input, rewrite to the proxy's target
-            if let Some((target_node, target_port)) =
-                proxy_rewrites.get(&zeal_conn.to.node_id)
-            {
+            if let Some((target_node, target_port)) = proxy_rewrites.get(&zeal_conn.to.node_id) {
                 if !target_node.is_empty() {
                     graph.add_connection(
                         &zeal_conn.from.node_id,
@@ -301,9 +301,7 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
 
         // Rewrite source if it's a proxy_output
         let (from_node, from_port) =
-            if let Some((source_node, source_port)) =
-                proxy_rewrites.get(&zeal_conn.from.node_id)
-            {
+            if let Some((source_node, source_port)) = proxy_rewrites.get(&zeal_conn.from.node_id) {
                 if source_node.is_empty() {
                     continue;
                 }
@@ -331,10 +329,9 @@ pub fn convert_zeal_to_graph(zeal_workflow: &ZealWorkflow) -> Result<Graph> {
             continue;
         }
 
-        let has_incoming = main_graph
-            .connections
-            .iter()
-            .any(|conn| conn.to.node_id == zeal_node.id && !input_node_ids.contains(&conn.from.node_id));
+        let has_incoming = main_graph.connections.iter().any(|conn| {
+            conn.to.node_id == zeal_node.id && !input_node_ids.contains(&conn.from.node_id)
+        });
 
         if !has_incoming {
             if let Some(property_values) = &zeal_node.property_values
@@ -374,19 +371,15 @@ pub fn convert_zeal_to_graph_export(zeal_workflow: &ZealWorkflow) -> Result<Grap
 /// - `tpl_number_input` → number
 /// - `tpl_range_input` → number (clamped to min/max)
 fn extract_input_node_value(node: &ZealNode) -> Value {
-    let tpl = node
-        .template_id
-        .as_deref()
-        .unwrap_or(&node.node_type);
+    let tpl = node.template_id.as_deref().unwrap_or(&node.node_type);
 
     let pv = node.property_values.as_ref();
 
     match tpl {
-        "tpl_text_input" => {
-            pv.and_then(|pv| pv.get("defaultValue"))
-                .cloned()
-                .unwrap_or(json!(""))
-        }
+        "tpl_text_input" => pv
+            .and_then(|pv| pv.get("defaultValue"))
+            .cloned()
+            .unwrap_or(json!("")),
         "tpl_number_input" => {
             let val = pv
                 .and_then(|pv| pv.get("defaultValue"))
@@ -399,8 +392,16 @@ fn extract_input_node_value(node: &ZealNode) -> Value {
                 .and_then(|pv| pv.get("value").or(pv.get("defaultValue")))
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
-            let min = node.properties.get("min").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let max = node.properties.get("max").and_then(|v| v.as_f64()).unwrap_or(1.0);
+            let min = node
+                .properties
+                .get("min")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let max = node
+                .properties
+                .get("max")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(1.0);
             json!(val.clamp(min, max))
         }
         _ => {

@@ -27,10 +27,7 @@ pub async fn skin_bind_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         .get("maxInfluences")
         .and_then(|v| v.as_u64())
         .unwrap_or(4) as usize;
-    let stride = config
-        .get("stride")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(24) as usize;
+    let stride = config.get("stride").and_then(|v| v.as_u64()).unwrap_or(24) as usize;
 
     // Cache inputs as they arrive
     if let Some(Message::Bytes(b)) = payload.get("mesh") {
@@ -57,7 +54,9 @@ pub async fn skin_bind_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let mesh_bytes = {
         use base64::Engine;
         let s = cache.get("mesh_b64").and_then(|v| v.as_str()).unwrap();
-        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+        base64::engine::general_purpose::STANDARD
+            .decode(s)
+            .unwrap_or_default()
     };
     let skeleton: Value = cache.get("skeleton").cloned().unwrap();
 
@@ -72,7 +71,9 @@ pub async fn skin_bind_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let weights_data = match cache.get("weights_b64").and_then(|v| v.as_str()) {
         Some(s) => {
             use base64::Engine;
-            base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+            base64::engine::general_purpose::STANDARD
+                .decode(s)
+                .unwrap_or_default()
         }
         None => {
             // Auto-assign: for each vertex, find closest bones
@@ -229,11 +230,7 @@ fn point_to_segment_distance(p: [f32; 3], a: [f32; 3], b: [f32; 3]) -> f32 {
     // Project p onto the line, clamped to [0, 1]
     let t = ((ap[0] * ab[0] + ap[1] * ab[1] + ap[2] * ab[2]) / ab_len_sq).clamp(0.0, 1.0);
 
-    let closest = [
-        a[0] + t * ab[0],
-        a[1] + t * ab[1],
-        a[2] + t * ab[2],
-    ];
+    let closest = [a[0] + t * ab[0], a[1] + t * ab[1], a[2] + t * ab[2]];
 
     let dx = p[0] - closest[0];
     let dy = p[1] - closest[1];

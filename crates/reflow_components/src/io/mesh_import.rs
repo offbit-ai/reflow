@@ -38,7 +38,6 @@ pub async fn mesh_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     };
 
     match detected.as_str() {
-
         "glb" | "gltf" => {
             // Use glTF import, extract mesh only
             let full = super::gltf_import::import_gltf(&data, &config)?;
@@ -54,13 +53,9 @@ pub async fn mesh_import_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
             }
             Ok(out)
         }
-        "stl" => {
-            super::stl_import::parse_stl(&data, false)
-        }
+        "stl" => super::stl_import::parse_stl(&data, false),
 
-        "obj" => {
-            super::obj_import::parse_obj(&data)
-        }
+        "obj" => super::obj_import::parse_obj(&data),
         _ => Ok(error_output(&format!("Unknown format: {}", detected))),
     }
 }
@@ -83,8 +78,7 @@ pub(crate) fn detect_format(data: &[u8]) -> String {
         }
     }
     if data.len() >= 84 {
-        let tri_count =
-            u32::from_le_bytes([data[80], data[81], data[82], data[83]]) as usize;
+        let tri_count = u32::from_le_bytes([data[80], data[81], data[82], data[83]]) as usize;
         let expected = 84 + tri_count * 50;
         if data.len() >= expected && tri_count > 0 && tri_count < 50_000_000 {
             return "stl".to_string();

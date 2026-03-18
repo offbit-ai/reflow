@@ -80,14 +80,20 @@ pub async fn scene_skybox_system_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let db = get_or_create_db(db_path)?;
 
     let selected = super::selector::resolve_entities(&payload, &config, &db);
     let skybox_entities = if selected.is_empty() {
         db.entities_with(&["skybox"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "skybox")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "skybox"))
+            .collect()
     };
 
     // Use the first active skybox
@@ -98,11 +104,15 @@ pub async fn scene_skybox_system_actor(
             Ok(a) => a,
             Err(_) => continue,
         };
-        let sky: Value = sky_asset.entry.inline_data.unwrap_or_else(|| {
-            serde_json::from_slice(&sky_asset.data).unwrap_or(json!({}))
-        });
+        let sky: Value = sky_asset
+            .entry
+            .inline_data
+            .unwrap_or_else(|| serde_json::from_slice(&sky_asset.data).unwrap_or(json!({})));
 
-        let mode = sky.get("mode").and_then(|v| v.as_str()).unwrap_or("gradient");
+        let mode = sky
+            .get("mode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("gradient");
         let exposure = sky.get("exposure").and_then(|v| v.as_f64()).unwrap_or(1.0);
         let rotation = sky.get("rotation").and_then(|v| v.as_f64()).unwrap_or(0.0);
 
@@ -125,17 +135,27 @@ pub async fn scene_skybox_system_actor(
                 })
             }
             "procedural" => {
-                let sun_dir = sky.get("sunDirection").and_then(|v| v.as_array()).map(|a| {
-                    [
-                        a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.3),
-                        a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.8),
-                        a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.5),
-                    ]
-                }).unwrap_or([0.3, 0.8, 0.5]);
+                let sun_dir = sky
+                    .get("sunDirection")
+                    .and_then(|v| v.as_array())
+                    .map(|a| {
+                        [
+                            a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.3),
+                            a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.8),
+                            a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.5),
+                        ]
+                    })
+                    .unwrap_or([0.3, 0.8, 0.5]);
                 let turbidity = sky.get("turbidity").and_then(|v| v.as_f64()).unwrap_or(2.0);
                 let rayleigh = sky.get("rayleigh").and_then(|v| v.as_f64()).unwrap_or(1.0);
-                let mie_coeff = sky.get("mieCoefficient").and_then(|v| v.as_f64()).unwrap_or(0.005);
-                let mie_g = sky.get("mieDirectionalG").and_then(|v| v.as_f64()).unwrap_or(0.8);
+                let mie_coeff = sky
+                    .get("mieCoefficient")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.005);
+                let mie_g = sky
+                    .get("mieDirectionalG")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.8);
 
                 // Compute sky colors from sun position (simplified Preetham)
                 let sun_y = sun_dir[1].max(0.0).min(1.0);
@@ -169,15 +189,21 @@ pub async fn scene_skybox_system_actor(
             }
             _ => {
                 // Gradient (default)
-                let top = sky.get("topColor").and_then(|v| v.as_array()).map(|a| {
-                    [fv(a, 0, 0.1), fv(a, 1, 0.15), fv(a, 2, 0.4)]
-                }).unwrap_or([0.1, 0.15, 0.4]);
-                let horizon = sky.get("horizonColor").and_then(|v| v.as_array()).map(|a| {
-                    [fv(a, 0, 0.5), fv(a, 1, 0.6), fv(a, 2, 0.8)]
-                }).unwrap_or([0.5, 0.6, 0.8]);
-                let bottom = sky.get("bottomColor").and_then(|v| v.as_array()).map(|a| {
-                    [fv(a, 0, 0.2), fv(a, 1, 0.2), fv(a, 2, 0.2)]
-                }).unwrap_or([0.2, 0.2, 0.2]);
+                let top = sky
+                    .get("topColor")
+                    .and_then(|v| v.as_array())
+                    .map(|a| [fv(a, 0, 0.1), fv(a, 1, 0.15), fv(a, 2, 0.4)])
+                    .unwrap_or([0.1, 0.15, 0.4]);
+                let horizon = sky
+                    .get("horizonColor")
+                    .and_then(|v| v.as_array())
+                    .map(|a| [fv(a, 0, 0.5), fv(a, 1, 0.6), fv(a, 2, 0.8)])
+                    .unwrap_or([0.5, 0.6, 0.8]);
+                let bottom = sky
+                    .get("bottomColor")
+                    .and_then(|v| v.as_array())
+                    .map(|a| [fv(a, 0, 0.2), fv(a, 1, 0.2), fv(a, 2, 0.2)])
+                    .unwrap_or([0.2, 0.2, 0.2]);
                 let exponent = sky.get("exponent").and_then(|v| v.as_f64()).unwrap_or(2.0);
                 let offset = sky.get("offset").and_then(|v| v.as_f64()).unwrap_or(0.0);
 

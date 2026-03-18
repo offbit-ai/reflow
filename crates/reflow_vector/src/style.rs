@@ -121,7 +121,11 @@ impl Fill {
         for i in 1..stops.len() {
             if t <= stops[i].offset {
                 let seg = stops[i].offset - stops[i - 1].offset;
-                let local_t = if seg > 0.0 { (t - stops[i - 1].offset) / seg } else { 0.0 };
+                let local_t = if seg > 0.0 {
+                    (t - stops[i - 1].offset) / seg
+                } else {
+                    0.0
+                };
                 return stops[i - 1].color.lerp(stops[i].color, local_t);
             }
         }

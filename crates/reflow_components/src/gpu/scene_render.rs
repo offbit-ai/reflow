@@ -36,9 +36,7 @@ struct SceneUniforms {
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
-pub async fn scene_render_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -46,14 +44,32 @@ pub async fn scene_render_actor(
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let fov = config.get("fov").and_then(|v| v.as_f64()).unwrap_or(45.0) as f32;
     let cam_pos = [
-        config.get("cameraPosX").and_then(|v| v.as_f64()).unwrap_or(8.0) as f32,
-        config.get("cameraPosY").and_then(|v| v.as_f64()).unwrap_or(6.0) as f32,
-        config.get("cameraPosZ").and_then(|v| v.as_f64()).unwrap_or(10.0) as f32,
+        config
+            .get("cameraPosX")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(8.0) as f32,
+        config
+            .get("cameraPosY")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(6.0) as f32,
+        config
+            .get("cameraPosZ")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(10.0) as f32,
     ];
     let cam_target = [
-        config.get("cameraTargetX").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-        config.get("cameraTargetY").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-        config.get("cameraTargetZ").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+        config
+            .get("cameraTargetX")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32,
+        config
+            .get("cameraTargetY")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32,
+        config
+            .get("cameraTargetZ")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as f32,
     ];
     let msaa_samples = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
     let clear_color = [
@@ -65,13 +81,19 @@ pub async fn scene_render_actor(
     // Cache meshes in state (they arrive once, scene arrives per-frame)
     if let Some(Message::Bytes(b)) = payload.get("meshes") {
         use base64::Engine;
-        ctx.pool_upsert("_cache", "meshes_b64",
-            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)));
+        ctx.pool_upsert(
+            "_cache",
+            "meshes_b64",
+            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)),
+        );
     }
     if let Some(Message::Bytes(b)) = payload.get("terrain_mesh") {
         use base64::Engine;
-        ctx.pool_upsert("_cache", "terrain_b64",
-            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)));
+        ctx.pool_upsert(
+            "_cache",
+            "terrain_b64",
+            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)),
+        );
     }
 
     // Scene is the per-frame trigger — if missing, just cache and return
@@ -87,12 +109,17 @@ pub async fn scene_render_actor(
     let cache: HashMap<String, serde_json::Value> = ctx.get_pool("_cache").into_iter().collect();
     let prefab_mesh: Option<Vec<u8>> = cache.get("meshes_b64").and_then(|v| v.as_str()).map(|s| {
         use base64::Engine;
-        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+        base64::engine::general_purpose::STANDARD
+            .decode(s)
+            .unwrap_or_default()
     });
-    let terrain_mesh: Option<Vec<u8>> = cache.get("terrain_b64").and_then(|v| v.as_str()).map(|s| {
-        use base64::Engine;
-        base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
-    });
+    let terrain_mesh: Option<Vec<u8>> =
+        cache.get("terrain_b64").and_then(|v| v.as_str()).map(|s| {
+            use base64::Engine;
+            base64::engine::general_purpose::STANDARD
+                .decode(s)
+                .unwrap_or_default()
+        });
 
     let objects = scene_data
         .get("objects")
@@ -104,9 +131,16 @@ pub async fn scene_render_actor(
 
     let pixels = tokio::task::spawn_blocking(move || {
         render_scene(
-            width, height, fov, cam_pos, cam_target,
-            msaa_samples, clear_color,
-            &objects_clone, prefab_mesh.as_deref(), terrain_mesh.as_deref(),
+            width,
+            height,
+            fov,
+            cam_pos,
+            cam_target,
+            msaa_samples,
+            clear_color,
+            &objects_clone,
+            prefab_mesh.as_deref(),
+            terrain_mesh.as_deref(),
         )
     })
     .await
@@ -115,12 +149,15 @@ pub async fn scene_render_actor(
 
     let mut results = HashMap::new();
     results.insert("output".to_string(), Message::bytes(pixels));
-    results.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "width": width,
-        "height": height,
-        "format": "RGBA8",
-        "objectCount": objects.len(),
-    }))));
+    results.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "width": width,
+            "height": height,
+            "format": "RGBA8",
+            "objectCount": objects.len(),
+        }))),
+    );
     Ok(results)
 }
 
@@ -133,13 +170,15 @@ fn parse_prefab_mesh(data: &[u8]) -> Vec<([f32; 3], [f32; 3])> {
 
     for i in 0..vertex_count {
         let off = i * stride;
-        if off + stride > data.len() { break; }
-        let px = f32::from_le_bytes(data[off..off+4].try_into().unwrap());
-        let py = f32::from_le_bytes(data[off+4..off+8].try_into().unwrap());
-        let pz = f32::from_le_bytes(data[off+8..off+12].try_into().unwrap());
-        let nx = f32::from_le_bytes(data[off+12..off+16].try_into().unwrap());
-        let ny = f32::from_le_bytes(data[off+16..off+20].try_into().unwrap());
-        let nz = f32::from_le_bytes(data[off+20..off+24].try_into().unwrap());
+        if off + stride > data.len() {
+            break;
+        }
+        let px = f32::from_le_bytes(data[off..off + 4].try_into().unwrap());
+        let py = f32::from_le_bytes(data[off + 4..off + 8].try_into().unwrap());
+        let pz = f32::from_le_bytes(data[off + 8..off + 12].try_into().unwrap());
+        let nx = f32::from_le_bytes(data[off + 12..off + 16].try_into().unwrap());
+        let ny = f32::from_le_bytes(data[off + 16..off + 20].try_into().unwrap());
+        let nz = f32::from_le_bytes(data[off + 20..off + 24].try_into().unwrap());
         verts.push(([px, py, pz], [nx, ny, nz]));
     }
     verts
@@ -191,13 +230,15 @@ fn parse_terrain_mesh(data: &[u8]) -> (Vec<([f32; 3], [f32; 3])>, Vec<u32>) {
 
     for i in 0..vertex_count {
         let off = i * stride;
-        if off + stride > vertex_bytes { break; }
-        let px = f32::from_le_bytes(data[off..off+4].try_into().unwrap());
-        let py = f32::from_le_bytes(data[off+4..off+8].try_into().unwrap());
-        let pz = f32::from_le_bytes(data[off+8..off+12].try_into().unwrap());
-        let nx = f32::from_le_bytes(data[off+12..off+16].try_into().unwrap());
-        let ny = f32::from_le_bytes(data[off+16..off+20].try_into().unwrap());
-        let nz = f32::from_le_bytes(data[off+20..off+24].try_into().unwrap());
+        if off + stride > vertex_bytes {
+            break;
+        }
+        let px = f32::from_le_bytes(data[off..off + 4].try_into().unwrap());
+        let py = f32::from_le_bytes(data[off + 4..off + 8].try_into().unwrap());
+        let pz = f32::from_le_bytes(data[off + 8..off + 12].try_into().unwrap());
+        let nx = f32::from_le_bytes(data[off + 12..off + 16].try_into().unwrap());
+        let ny = f32::from_le_bytes(data[off + 16..off + 20].try_into().unwrap());
+        let nz = f32::from_le_bytes(data[off + 20..off + 24].try_into().unwrap());
         // uv at off+24..off+32 — we skip UV for now
         verts.push(([px, py, pz], [nx, ny, nz]));
     }
@@ -206,8 +247,10 @@ fn parse_terrain_mesh(data: &[u8]) -> (Vec<([f32; 3], [f32; 3])>, Vec<u32>) {
     let mut indices = Vec::with_capacity(index_count);
     for i in 0..index_count {
         let off = vertex_bytes + i * 4;
-        if off + 4 > total { break; }
-        let idx = u32::from_le_bytes(data[off..off+4].try_into().unwrap());
+        if off + 4 > total {
+            break;
+        }
+        let idx = u32::from_le_bytes(data[off..off + 4].try_into().unwrap());
         indices.push(idx);
     }
 
@@ -232,12 +275,17 @@ fn build_vertex_buffer(
     let mut all_vertices: Vec<f32> = Vec::new();
 
     // Determine mesh stride from scene objects (36 = pre-colored, 24 = standard)
-    let mesh_stride = objects.first()
+    let mesh_stride = objects
+        .first()
         .and_then(|o| o.get("meshStride"))
         .and_then(|v| v.as_u64())
         .unwrap_or(24) as usize;
     let prefab_is_colored = mesh_stride >= 36;
-    let prefab_verts = if prefab_is_colored { None } else { prefab_mesh.as_ref().map(|m| parse_prefab_mesh(m)) };
+    let prefab_verts = if prefab_is_colored {
+        None
+    } else {
+        prefab_mesh.as_ref().map(|m| parse_prefab_mesh(m))
+    };
     let terrain_parsed = terrain_mesh_data.map(parse_terrain_mesh);
 
     // Fallback colors for objects without material
@@ -253,23 +301,34 @@ fn build_vertex_buffer(
 
     for obj in objects {
         let transform = obj.get("transform").cloned().unwrap_or(json!({}));
-        let pos = transform.get("position").and_then(|p| p.as_array())
-            .map(|a| [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            ])
+        let pos = transform
+            .get("position")
+            .and_then(|p| p.as_array())
+            .map(|a| {
+                [
+                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                ]
+            })
             .unwrap_or([0.0; 3]);
 
-        let scl = transform.get("scale").and_then(|s| s.as_array())
-            .map(|a| [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-            ])
+        let scl = transform
+            .get("scale")
+            .and_then(|s| s.as_array())
+            .map(|a| {
+                [
+                    a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                ]
+            })
             .unwrap_or([1.0; 3]);
 
-        let obj_type = obj.get("type").and_then(|v| v.as_str()).unwrap_or("instance");
+        let obj_type = obj
+            .get("type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("instance");
 
         match obj_type {
             "terrain" => {
@@ -310,8 +369,16 @@ fn build_vertex_buffer(
                     }
                 } else {
                     // Fallback: flat grid placeholder
-                    let tw = obj.get("terrain").and_then(|t| t.get("width")).and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
-                    let td = obj.get("terrain").and_then(|t| t.get("depth")).and_then(|v| v.as_f64()).unwrap_or(10.0) as f32;
+                    let tw = obj
+                        .get("terrain")
+                        .and_then(|t| t.get("width"))
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(10.0) as f32;
+                    let td = obj
+                        .get("terrain")
+                        .and_then(|t| t.get("depth"))
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(10.0) as f32;
                     let segs = 8;
                     for gz in 0..segs {
                         for gx in 0..segs {
@@ -323,8 +390,12 @@ fn build_vertex_buffer(
                             let n = [0.0f32, 1.0, 0.0];
                             let c = [0.3f32, 0.6, 0.2];
                             for v in &[
-                                [x0, y, z0], [x1, y, z0], [x1, y, z1],
-                                [x0, y, z0], [x1, y, z1], [x0, y, z1],
+                                [x0, y, z0],
+                                [x1, y, z0],
+                                [x1, y, z1],
+                                [x0, y, z0],
+                                [x1, y, z1],
+                                [x0, y, z1],
                             ] {
                                 all_vertices.extend_from_slice(v);
                                 all_vertices.extend_from_slice(&n);
@@ -340,11 +411,13 @@ fn build_vertex_buffer(
                 let base_color = mat
                     .and_then(|m| m.get("color"))
                     .and_then(|c| c.as_array())
-                    .map(|a| [
-                        a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
-                        a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
-                        a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
-                    ])
+                    .map(|a| {
+                        [
+                            a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
+                            a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
+                            a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.8) as f32,
+                        ]
+                    })
                     .unwrap_or_else(|| {
                         let c = fallback_colors[color_idx % fallback_colors.len()];
                         color_idx += 1;
@@ -358,20 +431,27 @@ fn build_vertex_buffer(
                         let vc = mesh.len() / stride;
                         for vi in 0..vc {
                             let off = vi * stride;
-                            if off + stride > mesh.len() { break; }
-                            let px = f32::from_le_bytes(mesh[off..off+4].try_into().unwrap());
-                            let py = f32::from_le_bytes(mesh[off+4..off+8].try_into().unwrap());
-                            let pz = f32::from_le_bytes(mesh[off+8..off+12].try_into().unwrap());
+                            if off + stride > mesh.len() {
+                                break;
+                            }
+                            let px = f32::from_le_bytes(mesh[off..off + 4].try_into().unwrap());
+                            let py = f32::from_le_bytes(mesh[off + 4..off + 8].try_into().unwrap());
+                            let pz =
+                                f32::from_le_bytes(mesh[off + 8..off + 12].try_into().unwrap());
                             let tp = transform_pos([px, py, pz], pos, scl);
                             all_vertices.extend_from_slice(&tp);
                             // normal (3 floats)
                             for k in 0..3 {
-                                let f = f32::from_le_bytes(mesh[off+12+k*4..off+16+k*4].try_into().unwrap());
+                                let f = f32::from_le_bytes(
+                                    mesh[off + 12 + k * 4..off + 16 + k * 4].try_into().unwrap(),
+                                );
                                 all_vertices.push(f);
                             }
                             // color (3 floats) — from the mesh, not material
                             for k in 0..3 {
-                                let f = f32::from_le_bytes(mesh[off+24+k*4..off+28+k*4].try_into().unwrap());
+                                let f = f32::from_le_bytes(
+                                    mesh[off + 24 + k * 4..off + 28 + k * 4].try_into().unwrap(),
+                                );
                                 all_vertices.push(f);
                             }
                         }
@@ -407,8 +487,15 @@ use std::sync::OnceLock;
 static SCENE_PIPELINE_4X: OnceLock<CachedScenePipeline> = OnceLock::new();
 static SCENE_PIPELINE_1X: OnceLock<CachedScenePipeline> = OnceLock::new();
 
-fn get_or_create_pipeline(device: &wgpu::Device, sample_count: u32) -> &'static CachedScenePipeline {
-    let lock = if sample_count > 1 { &SCENE_PIPELINE_4X } else { &SCENE_PIPELINE_1X };
+fn get_or_create_pipeline(
+    device: &wgpu::Device,
+    sample_count: u32,
+) -> &'static CachedScenePipeline {
+    let lock = if sample_count > 1 {
+        &SCENE_PIPELINE_4X
+    } else {
+        &SCENE_PIPELINE_1X
+    };
     lock.get_or_init(|| {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Scene Shader"),
@@ -429,11 +516,13 @@ fn get_or_create_pipeline(device: &wgpu::Device, sample_count: u32) -> &'static 
         });
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Scene Pipeline"),
-            layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: &[&bgl],
-                push_constant_ranges: &[],
-            })),
+            layout: Some(
+                &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: None,
+                    bind_group_layouts: &[&bgl],
+                    push_constant_ranges: &[],
+                }),
+            ),
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
@@ -442,9 +531,21 @@ fn get_or_create_pipeline(device: &wgpu::Device, sample_count: u32) -> &'static 
                     array_stride: 36,
                     step_mode: wgpu::VertexStepMode::Vertex,
                     attributes: &[
-                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
-                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
-                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 24, shader_location: 2 },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: 0,
+                            shader_location: 0,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: 12,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: 24,
+                            shader_location: 2,
+                        },
                     ],
                 }],
             },
@@ -470,11 +571,19 @@ fn get_or_create_pipeline(device: &wgpu::Device, sample_count: u32) -> &'static 
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
-            multisample: wgpu::MultisampleState { count: sample_count, mask: !0, alpha_to_coverage_enabled: false },
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview: None,
             cache: None,
         });
-        CachedScenePipeline { pipeline, bgl, sample_count }
+        CachedScenePipeline {
+            pipeline,
+            bgl,
+            sample_count,
+        }
     })
 }
 
@@ -502,7 +611,11 @@ fn render_scene(
     }
 
     let vertex_count = all_vertices.len() / 9;
-    let sample_count = match msaa_samples { 1 => 1, 2 => 2, _ => 4 };
+    let sample_count = match msaa_samples {
+        1 => 1,
+        2 => 2,
+        _ => 4,
+    };
 
     // Cached pipeline + BGL (created once, reused every frame)
     let cached = get_or_create_pipeline(device, sample_count);
@@ -517,7 +630,12 @@ fn render_scene(
     let uniforms = SceneUniforms {
         view_proj,
         light_dir: [0.577, 0.577, -0.577],
-        _pad0: 0.0, ambient: 0.2, _pad1: 0.0, _pad2: 0.0, _pad3: 0.0, _pad4: [0.0; 4],
+        _pad0: 0.0,
+        ambient: 0.2,
+        _pad1: 0.0,
+        _pad2: 0.0,
+        _pad3: 0.0,
+        _pad4: [0.0; 4],
     };
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Uniforms"),
@@ -527,26 +645,50 @@ fn render_scene(
 
     // Textures (per-frame — size may differ between calls)
     let resolve_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Resolve"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-        mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2,
+        label: Some("Resolve"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC, view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
     });
     let resolve_view = resolve_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     let color_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("MSAA Color"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-        mip_level_count: 1, sample_count, dimension: wgpu::TextureDimension::D2,
+        label: Some("MSAA Color"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count,
+        dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT, view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
     });
     let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Depth"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-        mip_level_count: 1, sample_count, dimension: wgpu::TextureDimension::D2,
+        label: Some("Depth"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count,
+        dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT, view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
     });
     let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -559,16 +701,24 @@ fn render_scene(
         }],
     });
 
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Scene Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &color_view,
-                resolve_target: if sample_count > 1 { Some(&resolve_view) } else { None },
+                resolve_target: if sample_count > 1 {
+                    Some(&resolve_view)
+                } else {
+                    None
+                },
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: clear_color[0], g: clear_color[1], b: clear_color[2], a: 1.0,
+                        r: clear_color[0],
+                        g: clear_color[1],
+                        b: clear_color[2],
+                        a: 1.0,
                     }),
                     store: wgpu::StoreOp::Store,
                 },
@@ -599,7 +749,11 @@ fn render_scene(
         mapped_at_creation: false,
     });
 
-    let readback_src = if sample_count > 1 { &resolve_texture } else { &color_texture };
+    let readback_src = if sample_count > 1 {
+        &resolve_texture
+    } else {
+        &color_texture
+    };
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
             texture: readback_src,
@@ -615,16 +769,23 @@ fn render_scene(
                 rows_per_image: Some(height),
             },
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
 
     queue.submit(std::iter::once(encoder.finish()));
 
     let slice = readback.slice(..);
     let (tx, rx) = flume::bounded(1);
-    slice.map_async(wgpu::MapMode::Read, move |r| { let _ = tx.send(r); });
+    slice.map_async(wgpu::MapMode::Read, move |r| {
+        let _ = tx.send(r);
+    });
     device.poll(wgpu::Maintain::Wait);
-    rx.recv().map_err(|_| "Map failed".to_string())?
+    rx.recv()
+        .map_err(|_| "Map failed".to_string())?
         .map_err(|e| format!("Map: {:?}", e))?;
 
     let data = slice.get_mapped_range();
@@ -645,16 +806,64 @@ fn generate_cube(center: [f32; 3], half: f32, color: [f32; 3]) -> Vec<f32> {
     let mut verts = Vec::new();
 
     let faces: [([f32; 3], [[f32; 3]; 4]); 6] = [
-        ([0.0, 0.0, -1.0], [[cx-half,cy-half,cz-half],[cx+half,cy-half,cz-half],[cx+half,cy+half,cz-half],[cx-half,cy+half,cz-half]]),
-        ([0.0, 0.0, 1.0],  [[cx+half,cy-half,cz+half],[cx-half,cy-half,cz+half],[cx-half,cy+half,cz+half],[cx+half,cy+half,cz+half]]),
-        ([0.0, 1.0, 0.0],  [[cx-half,cy+half,cz-half],[cx+half,cy+half,cz-half],[cx+half,cy+half,cz+half],[cx-half,cy+half,cz+half]]),
-        ([0.0,-1.0, 0.0],  [[cx-half,cy-half,cz+half],[cx+half,cy-half,cz+half],[cx+half,cy-half,cz-half],[cx-half,cy-half,cz-half]]),
-        ([1.0, 0.0, 0.0],  [[cx+half,cy-half,cz-half],[cx+half,cy-half,cz+half],[cx+half,cy+half,cz+half],[cx+half,cy+half,cz-half]]),
-        ([-1.0,0.0, 0.0],  [[cx-half,cy-half,cz+half],[cx-half,cy-half,cz-half],[cx-half,cy+half,cz-half],[cx-half,cy+half,cz+half]]),
+        (
+            [0.0, 0.0, -1.0],
+            [
+                [cx - half, cy - half, cz - half],
+                [cx + half, cy - half, cz - half],
+                [cx + half, cy + half, cz - half],
+                [cx - half, cy + half, cz - half],
+            ],
+        ),
+        (
+            [0.0, 0.0, 1.0],
+            [
+                [cx + half, cy - half, cz + half],
+                [cx - half, cy - half, cz + half],
+                [cx - half, cy + half, cz + half],
+                [cx + half, cy + half, cz + half],
+            ],
+        ),
+        (
+            [0.0, 1.0, 0.0],
+            [
+                [cx - half, cy + half, cz - half],
+                [cx + half, cy + half, cz - half],
+                [cx + half, cy + half, cz + half],
+                [cx - half, cy + half, cz + half],
+            ],
+        ),
+        (
+            [0.0, -1.0, 0.0],
+            [
+                [cx - half, cy - half, cz + half],
+                [cx + half, cy - half, cz + half],
+                [cx + half, cy - half, cz - half],
+                [cx - half, cy - half, cz - half],
+            ],
+        ),
+        (
+            [1.0, 0.0, 0.0],
+            [
+                [cx + half, cy - half, cz - half],
+                [cx + half, cy - half, cz + half],
+                [cx + half, cy + half, cz + half],
+                [cx + half, cy + half, cz - half],
+            ],
+        ),
+        (
+            [-1.0, 0.0, 0.0],
+            [
+                [cx - half, cy - half, cz + half],
+                [cx - half, cy - half, cz - half],
+                [cx - half, cy + half, cz - half],
+                [cx - half, cy + half, cz + half],
+            ],
+        ),
     ];
 
     for (normal, quad) in &faces {
-        for idx in &[0,1,2, 0,2,3] {
+        for idx in &[0, 1, 2, 0, 2, 3] {
             verts.extend_from_slice(&quad[*idx]);
             verts.extend_from_slice(normal);
             verts.extend_from_slice(&color);
@@ -665,7 +874,7 @@ fn generate_cube(center: [f32; 3], half: f32, color: [f32; 3]) -> Vec<f32> {
 }
 
 fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32) -> [[f32; 4]; 4] {
-    let fwd = normalize([target[0]-eye[0], target[1]-eye[1], target[2]-eye[2]]);
+    let fwd = normalize([target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]]);
     let right = normalize(cross([0.0, 1.0, 0.0], fwd));
     let up = cross(fwd, right);
 
@@ -693,23 +902,34 @@ fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32) -
 }
 
 fn normalize(v: [f32; 3]) -> [f32; 3] {
-    let l = (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]).sqrt();
-    if l > 1e-6 { [v[0]/l, v[1]/l, v[2]/l] } else { [0.0, 0.0, -1.0] }
+    let l = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
+    if l > 1e-6 {
+        [v[0] / l, v[1] / l, v[2] / l]
+    } else {
+        [0.0, 0.0, -1.0]
+    }
 }
 
 fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
-    a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
 fn mat4_mul(a: [[f32; 4]; 4], b: [[f32; 4]; 4]) -> [[f32; 4]; 4] {
     let mut r = [[0.0f32; 4]; 4];
     for col in 0..4 {
         for row in 0..4 {
-            r[col][row] = a[0][row]*b[col][0] + a[1][row]*b[col][1] + a[2][row]*b[col][2] + a[3][row]*b[col][3];
+            r[col][row] = a[0][row] * b[col][0]
+                + a[1][row] * b[col][1]
+                + a[2][row] * b[col][2]
+                + a[3][row] * b[col][3];
         }
     }
     r

@@ -18,7 +18,7 @@ use serde_json::json;
 use std::collections::HashMap;
 
 // Reuse the path parsing from SdfPathActor
-use crate::gpu::sdf::path::{parse_path, sample_path, interpolate_profile, PathCmd};
+use crate::gpu::sdf::path::{interpolate_profile, parse_path, sample_path, PathCmd};
 
 #[actor(
     TubeMeshActor,
@@ -29,17 +29,35 @@ use crate::gpu::sdf::path::{parse_path, sample_path, interpolate_profile, PathCm
 pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
 
-    let path_str = config.get("path").and_then(|v| v.as_str()).unwrap_or("M 0,0 L 5,0");
-    let profile: Vec<f32> = config.get("profile").and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect())
+    let path_str = config
+        .get("path")
+        .and_then(|v| v.as_str())
+        .unwrap_or("M 0,0 L 5,0");
+    let profile: Vec<f32> = config
+        .get("profile")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_f64().map(|f| f as f32))
+                .collect()
+        })
         .unwrap_or_else(|| vec![0.1]);
-    let segments = config.get("segments").and_then(|v| v.as_u64()).unwrap_or(32) as usize;
+    let segments = config
+        .get("segments")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(32) as usize;
     let rings = config.get("rings").and_then(|v| v.as_u64()).unwrap_or(16) as usize;
     let plane = config.get("plane").and_then(|v| v.as_str()).unwrap_or("xz");
     // Head shaping: headLength = fraction of tube that's the "head" (0-1),
     // headFlatten = vertical squash factor in head region (0=flat, 1=round)
-    let head_length = config.get("headLength").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-    let head_flatten = config.get("headFlatten").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+    let head_length = config
+        .get("headLength")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0) as f32;
+    let head_flatten = config
+        .get("headFlatten")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(1.0) as f32;
 
     // Parse and sample path
     let commands = parse_path(path_str);
@@ -51,13 +69,16 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let radii = interpolate_profile(&profile, points_2d.len());
 
     // Convert 2D points to 3D
-    let points: Vec<[f32; 3]> = points_2d.iter().map(|(x, y)| {
-        match plane {
-            "xy" => [*x, *y, 0.0],
-            "yz" => [0.0, *x, *y],
-            _ => [*x, 0.0, *y], // xz
-        }
-    }).collect();
+    let points: Vec<[f32; 3]> = points_2d
+        .iter()
+        .map(|(x, y)| {
+            match plane {
+                "xy" => [*x, *y, 0.0],
+                "yz" => [0.0, *x, *y],
+                _ => [*x, 0.0, *y], // xz
+            }
+        })
+        .collect();
 
     // Generate tube mesh
     let n = points.len();
@@ -87,7 +108,11 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
 
     // Initial frame: find a vector not parallel to the first tangent
     let t0 = tangents[0];
-    let up = if t0[1].abs() < 0.9 { [0.0, 1.0, 0.0] } else { [1.0, 0.0, 0.0] };
+    let up = if t0[1].abs() < 0.9 {
+        [0.0, 1.0, 0.0]
+    } else {
+        [1.0, 0.0, 0.0]
+    };
     let b0 = normalize3(cross3(t0, up));
     let n0 = cross3(b0, t0);
     normals.push(n0);
@@ -114,7 +139,10 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         let r_l = sub3(n_prev, scale3(v1, 2.0 * dot3(v1, n_prev) / c1));
         let r_b = sub3(b_prev, scale3(v1, 2.0 * dot3(v1, b_prev) / c1));
 
-        let v2 = sub3(t_curr, sub3(t_prev, scale3(v1, 2.0 * dot3(v1, t_prev) / c1)));
+        let v2 = sub3(
+            t_curr,
+            sub3(t_prev, scale3(v1, 2.0 * dot3(v1, t_prev) / c1)),
+        );
         let c2 = dot3(v2, v2);
         if c2 < 1e-10 {
             normals.push(normalize3(r_l));
@@ -140,7 +168,7 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         let t = i as f32 / (n - 1).max(1) as f32; // 0 = head, 1 = tail
         let flatten = if head_length > 0.0 && t < head_length {
             let head_t = t / head_length; // 0 at tip, 1 at neck
-            // Smooth transition from flattened to round
+                                          // Smooth transition from flattened to round
             head_flatten + (1.0 - head_flatten) * head_t * head_t
         } else {
             1.0
@@ -153,17 +181,11 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
             let sin_a = angle.sin();
 
             // Position on ellipse (flatten normal axis for head)
-            let offset = add3(
-                scale3(nor, cos_a * r * flatten),
-                scale3(bin, sin_a * r),
-            );
+            let offset = add3(scale3(nor, cos_a * r * flatten), scale3(bin, sin_a * r));
             let pos = add3(center, offset);
 
             // Normal accounts for flattening
-            let nor_scaled = add3(
-                scale3(nor, cos_a * flatten),
-                scale3(bin, sin_a),
-            );
+            let nor_scaled = add3(scale3(nor, cos_a * flatten), scale3(bin, sin_a));
             let normal = normalize3(nor_scaled);
 
             // UV: u = position along curve, v = position around ring
@@ -253,13 +275,19 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
                 let (pc, nc, uc, vc) = curr_ring[j_next];
                 let (pd, nd, ud, vd) = prev_ring[j_next];
 
-                emit_vertex(&mut mesh_data, pa, na); emit_uv(&mut uv_data, ua, va);
-                emit_vertex(&mut mesh_data, pb, nb); emit_uv(&mut uv_data, ub, vb);
-                emit_vertex(&mut mesh_data, pc, nc); emit_uv(&mut uv_data, uc, vc);
+                emit_vertex(&mut mesh_data, pa, na);
+                emit_uv(&mut uv_data, ua, va);
+                emit_vertex(&mut mesh_data, pb, nb);
+                emit_uv(&mut uv_data, ub, vb);
+                emit_vertex(&mut mesh_data, pc, nc);
+                emit_uv(&mut uv_data, uc, vc);
 
-                emit_vertex(&mut mesh_data, pa, na); emit_uv(&mut uv_data, ua, va);
-                emit_vertex(&mut mesh_data, pc, nc); emit_uv(&mut uv_data, uc, vc);
-                emit_vertex(&mut mesh_data, pd, nd); emit_uv(&mut uv_data, ud, vd);
+                emit_vertex(&mut mesh_data, pa, na);
+                emit_uv(&mut uv_data, ua, va);
+                emit_vertex(&mut mesh_data, pc, nc);
+                emit_uv(&mut uv_data, uc, vc);
+                emit_vertex(&mut mesh_data, pd, nd);
+                emit_uv(&mut uv_data, ud, vd);
             }
 
             prev_ring = curr_ring;
@@ -270,7 +298,8 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         let tip_nor = head_dir;
         for j in 0..rings {
             let j_next = (j + 1) % rings;
-            emit_vertex(&mut mesh_data, tip, tip_nor); emit_uv(&mut uv_data, -0.1, 0.5);
+            emit_vertex(&mut mesh_data, tip, tip_nor);
+            emit_uv(&mut uv_data, -0.1, 0.5);
             emit_vertex(&mut mesh_data, prev_ring[j_next].0, prev_ring[j_next].1);
             emit_uv(&mut uv_data, prev_ring[j_next].2, prev_ring[j_next].3);
             emit_vertex(&mut mesh_data, prev_ring[j].0, prev_ring[j].1);
@@ -283,11 +312,20 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         let nor = tangents[n - 1];
         for j in 0..rings {
             let j_next = (j + 1) % rings;
-            emit_vertex(&mut mesh_data, center, nor); emit_uv(&mut uv_data, 1.0, 0.5);
+            emit_vertex(&mut mesh_data, center, nor);
+            emit_uv(&mut uv_data, 1.0, 0.5);
             emit_vertex(&mut mesh_data, circle_verts[n - 1][j].0, nor);
-            emit_uv(&mut uv_data, circle_verts[n - 1][j].2, circle_verts[n - 1][j].3);
+            emit_uv(
+                &mut uv_data,
+                circle_verts[n - 1][j].2,
+                circle_verts[n - 1][j].3,
+            );
             emit_vertex(&mut mesh_data, circle_verts[n - 1][j_next].0, nor);
-            emit_uv(&mut uv_data, circle_verts[n - 1][j_next].2, circle_verts[n - 1][j_next].3);
+            emit_uv(
+                &mut uv_data,
+                circle_verts[n - 1][j_next].2,
+                circle_verts[n - 1][j_next].3,
+            );
         }
     }
 
@@ -296,14 +334,17 @@ pub async fn tube_mesh_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let mut out = HashMap::new();
     out.insert("mesh".to_string(), Message::bytes(mesh_data));
     out.insert("uv".to_string(), Message::bytes(uv_data));
-    out.insert("metadata".to_string(), Message::object(EncodableValue::from(json!({
-        "vertexCount": total_verts,
-        "triangleCount": total_verts / 3,
-        "segments": n,
-        "rings": rings,
-        "stride": stride,
-        "format": "pos3_normal3_f32",
-    }))));
+    out.insert(
+        "metadata".to_string(),
+        Message::object(EncodableValue::from(json!({
+            "vertexCount": total_verts,
+            "triangleCount": total_verts / 3,
+            "segments": n,
+            "rings": rings,
+            "stride": stride,
+            "format": "pos3_normal3_f32",
+        }))),
+    );
     Ok(out)
 }
 
@@ -313,8 +354,12 @@ fn emit_uv(buf: &mut Vec<u8>, u: f32, v: f32) {
 }
 
 fn emit_vertex(buf: &mut Vec<u8>, pos: [f32; 3], nor: [f32; 3]) {
-    for f in &pos { buf.extend_from_slice(&f.to_le_bytes()); }
-    for f in &nor { buf.extend_from_slice(&f.to_le_bytes()); }
+    for f in &pos {
+        buf.extend_from_slice(&f.to_le_bytes());
+    }
+    for f in &nor {
+        buf.extend_from_slice(&f.to_le_bytes());
+    }
 }
 
 fn add3(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
@@ -330,9 +375,17 @@ fn dot3(a: [f32; 3], b: [f32; 3]) -> f32 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 fn cross3(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 fn normalize3(v: [f32; 3]) -> [f32; 3] {
-    let l = (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]).sqrt();
-    if l > 1e-8 { [v[0]/l, v[1]/l, v[2]/l] } else { [0.0, 1.0, 0.0] }
+    let l = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
+    if l > 1e-8 {
+        [v[0] / l, v[1] / l, v[2] / l]
+    } else {
+        [0.0, 1.0, 0.0]
+    }
 }

@@ -125,14 +125,16 @@ mod tests {
 
         // Fill with test pattern
         for i in 0..16 {
-            input[i * 4] = (i * 16) as u8;       // R
+            input[i * 4] = (i * 16) as u8; // R
             input[i * 4 + 1] = (255 - i * 16) as u8; // G
-            input[i * 4 + 2] = (i * 8) as u8;    // B
-            input[i * 4 + 3] = 255;               // A
+            input[i * 4 + 2] = (i * 8) as u8; // B
+            input[i * 4 + 3] = 255; // A
         }
 
         // NEON path
-        unsafe { row_rgba_to_gray_neon(&input, &mut output_neon); }
+        unsafe {
+            row_rgba_to_gray_neon(&input, &mut output_neon);
+        }
 
         // Scalar path
         super::super::color::row_rgba_to_gray(&input, &mut output_scalar);
@@ -152,21 +154,37 @@ mod tests {
     #[test]
     fn test_neon_gray_pure_colors() {
         // Pure red
-        let input = [255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255,
-                     255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255];
+        let input = [
+            255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0,
+            0, 255, 255, 0, 0, 255, 255, 0, 0, 255,
+        ];
         let mut output = [0u8; 8];
-        unsafe { row_rgba_to_gray_neon(&input, &mut output); }
+        unsafe {
+            row_rgba_to_gray_neon(&input, &mut output);
+        }
         for &v in &output {
-            assert!((v as i32 - 76).abs() <= 1, "Red gray should be ~76, got {}", v);
+            assert!(
+                (v as i32 - 76).abs() <= 1,
+                "Red gray should be ~76, got {}",
+                v
+            );
         }
 
         // Pure green
-        let input = [0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
-                     0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255];
+        let input = [
+            0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
+            0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
+        ];
         let mut output = [0u8; 8];
-        unsafe { row_rgba_to_gray_neon(&input, &mut output); }
+        unsafe {
+            row_rgba_to_gray_neon(&input, &mut output);
+        }
         for &v in &output {
-            assert!((v as i32 - 150).abs() <= 1, "Green gray should be ~150, got {}", v);
+            assert!(
+                (v as i32 - 150).abs() <= 1,
+                "Green gray should be ~150, got {}",
+                v
+            );
         }
     }
 }

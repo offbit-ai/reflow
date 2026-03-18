@@ -226,11 +226,18 @@ impl MemoryBackend {
 
 impl StorageBackend for MemoryBackend {
     fn read_manifest(&self) -> Result<Vec<AssetEntry>> {
-        Ok(self.manifest.read().map_err(|e| anyhow::anyhow!("{}", e))?.clone())
+        Ok(self
+            .manifest
+            .read()
+            .map_err(|e| anyhow::anyhow!("{}", e))?
+            .clone())
     }
 
     fn write_manifest(&self, entries: &[AssetEntry]) -> Result<()> {
-        let mut m = self.manifest.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+        let mut m = self
+            .manifest
+            .write()
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
         *m = entries.to_vec();
         Ok(())
     }
@@ -295,7 +302,7 @@ impl IndexedDbBackend {
         use js_sys::{Array, Uint8Array};
         use wasm_bindgen::prelude::*;
         use wasm_bindgen_futures::JsFuture;
-        use web_sys::{IdbTransactionMode, IdbObjectStoreParameters};
+        use web_sys::{IdbObjectStoreParameters, IdbTransactionMode};
 
         let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("No window"))?;
         let idb_factory = window
@@ -340,8 +347,12 @@ impl IndexedDbBackend {
         let tx = db
             .transaction_with_str_and_mode("manifest", IdbTransactionMode::Readonly)
             .map_err(|_| anyhow::anyhow!("Failed to create transaction"))?;
-        let store = tx.object_store("manifest").map_err(|_| anyhow::anyhow!("No manifest store"))?;
-        let get_req = store.get(&"entries".into()).map_err(|_| anyhow::anyhow!("get failed"))?;
+        let store = tx
+            .object_store("manifest")
+            .map_err(|_| anyhow::anyhow!("No manifest store"))?;
+        let get_req = store
+            .get(&"entries".into())
+            .map_err(|_| anyhow::anyhow!("get failed"))?;
         let result = JsFuture::from(get_req).await;
 
         let memory = MemoryBackend::new();
@@ -350,7 +361,10 @@ impl IndexedDbBackend {
             if !val.is_undefined() && !val.is_null() {
                 if let Some(s) = val.as_string() {
                     if let Ok(entries) = serde_json::from_str::<Vec<AssetEntry>>(&s) {
-                        let mut m = memory.manifest.write().map_err(|e| anyhow::anyhow!("{}", e))?;
+                        let mut m = memory
+                            .manifest
+                            .write()
+                            .map_err(|e| anyhow::anyhow!("{}", e))?;
                         *m = entries;
                     }
                 }
@@ -361,8 +375,12 @@ impl IndexedDbBackend {
         let tx = db
             .transaction_with_str_and_mode("blobs", IdbTransactionMode::Readonly)
             .map_err(|_| anyhow::anyhow!("Failed to create blob transaction"))?;
-        let store = tx.object_store("blobs").map_err(|_| anyhow::anyhow!("No blobs store"))?;
-        let keys_req = store.get_all_keys().map_err(|_| anyhow::anyhow!("getAllKeys failed"))?;
+        let store = tx
+            .object_store("blobs")
+            .map_err(|_| anyhow::anyhow!("No blobs store"))?;
+        let keys_req = store
+            .get_all_keys()
+            .map_err(|_| anyhow::anyhow!("getAllKeys failed"))?;
         let keys_result = JsFuture::from(keys_req).await;
 
         if let Ok(keys_val) = keys_result {
@@ -417,19 +435,30 @@ impl IndexedDbBackend {
         use web_sys::IdbTransactionMode;
 
         let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("No window"))?;
-        let factory = window.indexed_db().ok().flatten().ok_or_else(|| anyhow::anyhow!("No IDB"))?;
-        let open_req = factory.open(db_name).map_err(|_| anyhow::anyhow!("open failed"))?;
+        let factory = window
+            .indexed_db()
+            .ok()
+            .flatten()
+            .ok_or_else(|| anyhow::anyhow!("No IDB"))?;
+        let open_req = factory
+            .open(db_name)
+            .map_err(|_| anyhow::anyhow!("open failed"))?;
         let db: web_sys::IdbDatabase = JsFuture::from(open_req)
             .await
             .map_err(|_| anyhow::anyhow!("open await failed"))?
             .dyn_into()
             .map_err(|_| anyhow::anyhow!("cast failed"))?;
 
-        let tx = db.transaction_with_str_and_mode("blobs", IdbTransactionMode::Readwrite)
+        let tx = db
+            .transaction_with_str_and_mode("blobs", IdbTransactionMode::Readwrite)
             .map_err(|_| anyhow::anyhow!("tx failed"))?;
-        let store = tx.object_store("blobs").map_err(|_| anyhow::anyhow!("store failed"))?;
+        let store = tx
+            .object_store("blobs")
+            .map_err(|_| anyhow::anyhow!("store failed"))?;
         let arr = Uint8Array::from(data);
-        store.put_with_key(&arr, &hash.into()).map_err(|_| anyhow::anyhow!("put failed"))?;
+        store
+            .put_with_key(&arr, &hash.into())
+            .map_err(|_| anyhow::anyhow!("put failed"))?;
 
         db.close();
         Ok(())
@@ -441,18 +470,29 @@ impl IndexedDbBackend {
         use web_sys::IdbTransactionMode;
 
         let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("No window"))?;
-        let factory = window.indexed_db().ok().flatten().ok_or_else(|| anyhow::anyhow!("No IDB"))?;
-        let open_req = factory.open(db_name).map_err(|_| anyhow::anyhow!("open failed"))?;
+        let factory = window
+            .indexed_db()
+            .ok()
+            .flatten()
+            .ok_or_else(|| anyhow::anyhow!("No IDB"))?;
+        let open_req = factory
+            .open(db_name)
+            .map_err(|_| anyhow::anyhow!("open failed"))?;
         let db: web_sys::IdbDatabase = JsFuture::from(open_req)
             .await
             .map_err(|_| anyhow::anyhow!("open await failed"))?
             .dyn_into()
             .map_err(|_| anyhow::anyhow!("cast failed"))?;
 
-        let tx = db.transaction_with_str_and_mode("manifest", IdbTransactionMode::Readwrite)
+        let tx = db
+            .transaction_with_str_and_mode("manifest", IdbTransactionMode::Readwrite)
             .map_err(|_| anyhow::anyhow!("tx failed"))?;
-        let store = tx.object_store("manifest").map_err(|_| anyhow::anyhow!("store failed"))?;
-        store.put_with_key(&json.into(), &"entries".into()).map_err(|_| anyhow::anyhow!("put failed"))?;
+        let store = tx
+            .object_store("manifest")
+            .map_err(|_| anyhow::anyhow!("store failed"))?;
+        store
+            .put_with_key(&json.into(), &"entries".into())
+            .map_err(|_| anyhow::anyhow!("put failed"))?;
 
         db.close();
         Ok(())
@@ -622,12 +662,7 @@ impl AssetDB {
     /// Put (upsert) an asset by ID. If the ID already exists, the data
     /// and metadata are replaced. The blob is content-addressed, so
     /// re-storing identical data is free.
-    pub fn put(
-        &self,
-        id: &str,
-        data: &[u8],
-        metadata: Value,
-    ) -> Result<()> {
+    pub fn put(&self, id: &str, data: &[u8], metadata: Value) -> Result<()> {
         let hash = content_hash(data);
         let (asset_type, name) = parse_entity_id(id);
 
@@ -679,12 +714,7 @@ impl AssetDB {
     }
 
     /// Put JSON inline (materials, skeletons, configs). Upsert by ID.
-    pub fn put_json(
-        &self,
-        id: &str,
-        json_data: Value,
-        metadata: Value,
-    ) -> Result<()> {
+    pub fn put_json(&self, id: &str, json_data: Value, metadata: Value) -> Result<()> {
         let serialized = serde_json::to_vec(&json_data)?;
         let hash = content_hash(&serialized);
         let (asset_type, name) = parse_entity_id(id);
@@ -1039,7 +1069,12 @@ impl AssetDB {
                 self.tag(&new_id, &tag_refs)?;
             }
         }
-        self.emit_delta(DeltaOp::Spawn, new_entity, Some(json!({"template": template_entity})), None);
+        self.emit_delta(
+            DeltaOp::Spawn,
+            new_entity,
+            Some(json!({"template": template_entity})),
+            None,
+        );
         Ok(())
     }
 
@@ -1153,7 +1188,9 @@ impl AssetDB {
         let mut total_bytes: u64 = 0;
 
         for a in cache.iter() {
-            *type_counts.entry(a.asset_type.as_str().to_string()).or_default() += 1;
+            *type_counts
+                .entry(a.asset_type.as_str().to_string())
+                .or_default() += 1;
             total_bytes += a.blob_size;
         }
 
@@ -1294,7 +1331,10 @@ impl AssetQuery {
         };
 
         // Control keys
-        q.limit = map.get("$limit").and_then(|v| v.as_u64()).map(|n| n as usize);
+        q.limit = map
+            .get("$limit")
+            .and_then(|v| v.as_u64())
+            .map(|n| n as usize);
         if let Some(s) = map.get("$sort").and_then(|v| v.as_str()) {
             q.sort = match s {
                 "newest" => SortOrder::Newest,
@@ -1424,9 +1464,27 @@ fn parse_field_filter(filters: &mut Vec<Filter>, field: &str, val: &Value) {
 fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
     match filter.field.as_str() {
         "type" => match filter.op {
-            FilterOp::Eq => filter.value.as_str().map(|s| AssetType::from_str(s) == entry.asset_type).unwrap_or(false),
-            FilterOp::Neq => filter.value.as_str().map(|s| AssetType::from_str(s) != entry.asset_type).unwrap_or(false),
-            FilterOp::In => filter.value.as_array().map(|arr| arr.iter().any(|v| v.as_str().map(|s| AssetType::from_str(s) == entry.asset_type).unwrap_or(false))).unwrap_or(false),
+            FilterOp::Eq => filter
+                .value
+                .as_str()
+                .map(|s| AssetType::from_str(s) == entry.asset_type)
+                .unwrap_or(false),
+            FilterOp::Neq => filter
+                .value
+                .as_str()
+                .map(|s| AssetType::from_str(s) != entry.asset_type)
+                .unwrap_or(false),
+            FilterOp::In => filter
+                .value
+                .as_array()
+                .map(|arr| {
+                    arr.iter().any(|v| {
+                        v.as_str()
+                            .map(|s| AssetType::from_str(s) == entry.asset_type)
+                            .unwrap_or(false)
+                    })
+                })
+                .unwrap_or(false),
             _ => true,
         },
         "name" => {
@@ -1434,18 +1492,34 @@ fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
             match filter.op {
                 FilterOp::Eq => filter.value.as_str().map(|s| name == s).unwrap_or(false),
                 FilterOp::Neq => filter.value.as_str().map(|s| name != s).unwrap_or(false),
-                FilterOp::Contains => filter.value.as_str().map(|s| name.to_lowercase().contains(&s.to_lowercase())).unwrap_or(false),
-                FilterOp::StartsWith => filter.value.as_str().map(|s| name.to_lowercase().starts_with(&s.to_lowercase())).unwrap_or(false),
-                FilterOp::In => filter.value.as_array().map(|arr| arr.iter().any(|v| v.as_str() == Some(name.as_str()))).unwrap_or(false),
+                FilterOp::Contains => filter
+                    .value
+                    .as_str()
+                    .map(|s| name.to_lowercase().contains(&s.to_lowercase()))
+                    .unwrap_or(false),
+                FilterOp::StartsWith => filter
+                    .value
+                    .as_str()
+                    .map(|s| name.to_lowercase().starts_with(&s.to_lowercase()))
+                    .unwrap_or(false),
+                FilterOp::In => filter
+                    .value
+                    .as_array()
+                    .map(|arr| arr.iter().any(|v| v.as_str() == Some(name.as_str())))
+                    .unwrap_or(false),
                 _ => true,
             }
-        },
+        }
         "tags" => {
             let tags = &entry.tags;
             match filter.op {
                 FilterOp::HasAny | FilterOp::Contains => {
                     if let Some(arr) = filter.value.as_array() {
-                        arr.iter().any(|v| v.as_str().map(|s| tags.contains(&s.to_string())).unwrap_or(false))
+                        arr.iter().any(|v| {
+                            v.as_str()
+                                .map(|s| tags.contains(&s.to_string()))
+                                .unwrap_or(false)
+                        })
                     } else if let Some(s) = filter.value.as_str() {
                         tags.contains(&s.to_string())
                     } else {
@@ -1454,22 +1528,38 @@ fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
                 }
                 FilterOp::HasAll => {
                     if let Some(arr) = filter.value.as_array() {
-                        arr.iter().all(|v| v.as_str().map(|s| tags.contains(&s.to_string())).unwrap_or(false))
+                        arr.iter().all(|v| {
+                            v.as_str()
+                                .map(|s| tags.contains(&s.to_string()))
+                                .unwrap_or(false)
+                        })
                     } else {
                         false
                     }
                 }
-                FilterOp::Eq => filter.value.as_str().map(|s| tags.contains(&s.to_string())).unwrap_or(false),
+                FilterOp::Eq => filter
+                    .value
+                    .as_str()
+                    .map(|s| tags.contains(&s.to_string()))
+                    .unwrap_or(false),
                 _ => true,
             }
-        },
+        }
         "size" => {
             let size = entry.blob_size as f64;
             match_numeric(&filter.op, size, &filter.value)
-        },
+        }
         "id" => match filter.op {
-            FilterOp::Eq => filter.value.as_str().map(|s| entry.id == s).unwrap_or(false),
-            FilterOp::In => filter.value.as_array().map(|arr| arr.iter().any(|v| v.as_str() == Some(entry.id.as_str()))).unwrap_or(false),
+            FilterOp::Eq => filter
+                .value
+                .as_str()
+                .map(|s| entry.id == s)
+                .unwrap_or(false),
+            FilterOp::In => filter
+                .value
+                .as_array()
+                .map(|arr| arr.iter().any(|v| v.as_str() == Some(entry.id.as_str())))
+                .unwrap_or(false),
             _ => true,
         },
         field if field.starts_with("metadata.") => {
@@ -1480,16 +1570,23 @@ fn matches_filter(entry: &AssetEntry, filter: &Filter) -> bool {
                 FilterOp::Neq => val.map(|v| v != &filter.value).unwrap_or(true),
                 FilterOp::Exists => val.is_some(),
                 FilterOp::Gt | FilterOp::Gte | FilterOp::Lt | FilterOp::Lte | FilterOp::Between => {
-                    val.and_then(|v| v.as_f64()).map(|n| match_numeric(&filter.op, n, &filter.value)).unwrap_or(false)
+                    val.and_then(|v| v.as_f64())
+                        .map(|n| match_numeric(&filter.op, n, &filter.value))
+                        .unwrap_or(false)
                 }
-                FilterOp::Contains => {
-                    val.and_then(|v| v.as_str()).map(|s| {
-                        filter.value.as_str().map(|q| s.to_lowercase().contains(&q.to_lowercase())).unwrap_or(false)
-                    }).unwrap_or(false)
-                }
+                FilterOp::Contains => val
+                    .and_then(|v| v.as_str())
+                    .map(|s| {
+                        filter
+                            .value
+                            .as_str()
+                            .map(|q| s.to_lowercase().contains(&q.to_lowercase()))
+                            .unwrap_or(false)
+                    })
+                    .unwrap_or(false),
                 _ => true,
             }
-        },
+        }
         _ => true, // unknown field = no filter
     }
 }
@@ -1500,7 +1597,10 @@ fn match_numeric(op: &FilterOp, actual: f64, value: &Value) -> bool {
         FilterOp::Gte => value.as_f64().map(|v| actual >= v).unwrap_or(false),
         FilterOp::Lt => value.as_f64().map(|v| actual < v).unwrap_or(false),
         FilterOp::Lte => value.as_f64().map(|v| actual <= v).unwrap_or(false),
-        FilterOp::Eq => value.as_f64().map(|v| (actual - v).abs() < f64::EPSILON).unwrap_or(false),
+        FilterOp::Eq => value
+            .as_f64()
+            .map(|v| (actual - v).abs() < f64::EPSILON)
+            .unwrap_or(false),
         FilterOp::Between => {
             if let Some(arr) = value.as_array() {
                 let lo = arr.first().and_then(|v| v.as_f64()).unwrap_or(f64::MIN);
@@ -1591,7 +1691,10 @@ const COMPRESS_THRESHOLD: usize = 256;
 
 /// Asset types that are already compressed (PNG, JPEG, H.264, etc.) — skip LZ4.
 fn is_precompressed(asset_type: &AssetType) -> bool {
-    matches!(asset_type, AssetType::Texture | AssetType::Audio | AssetType::Video)
+    matches!(
+        asset_type,
+        AssetType::Texture | AssetType::Audio | AssetType::Video
+    )
 }
 
 /// Compress data with LZ4 if it's worth it. Returns (compressed_data, is_compressed).

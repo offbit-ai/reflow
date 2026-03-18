@@ -245,8 +245,8 @@ async fn publish_workflow(
     let graph_json = if let Some(workflow) = request.get("workflow") {
         let zeal_workflow: ZealWorkflow =
             serde_json::from_value(workflow.clone()).map_err(|_| StatusCode::BAD_REQUEST)?;
-        let graph_export = convert_zeal_to_graph_export(&zeal_workflow)
-            .map_err(|_| StatusCode::BAD_REQUEST)?;
+        let graph_export =
+            convert_zeal_to_graph_export(&zeal_workflow).map_err(|_| StatusCode::BAD_REQUEST)?;
         serde_json::to_value(graph_export).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     } else if let Some(graph) = request.get("graph") {
         graph.clone()
@@ -260,7 +260,10 @@ async fn publish_workflow(
     // The webhook URL for this workflow
     let webhook_path = format!("/webhook/{}", workflow_id);
 
-    info!("Workflow '{}' published — webhook: {}", workflow_id, webhook_path);
+    info!(
+        "Workflow '{}' published — webhook: {}",
+        workflow_id, webhook_path
+    );
 
     Ok(Json(ApiResponse::success(serde_json::json!({
         "workflow_id": workflow_id,
@@ -293,7 +296,9 @@ async fn handle_webhook(
     let headers_json: serde_json::Map<String, serde_json::Value> = headers
         .iter()
         .filter_map(|(k, v)| {
-            v.to_str().ok().map(|val| (k.to_string(), serde_json::json!(val)))
+            v.to_str()
+                .ok()
+                .map(|val| (k.to_string(), serde_json::json!(val)))
         })
         .collect();
 

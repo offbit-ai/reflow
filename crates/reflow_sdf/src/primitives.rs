@@ -15,8 +15,7 @@ pub fn box_sdf(p: [f32; 3], size: [f32; 3]) -> f32 {
         p[1].abs() - size[1],
         p[2].abs() - size[2],
     ];
-    length([q[0].max(0.0), q[1].max(0.0), q[2].max(0.0)])
-        + q[0].max(q[1].max(q[2])).min(0.0)
+    length([q[0].max(0.0), q[1].max(0.0), q[2].max(0.0)]) + q[0].max(q[1].max(q[2])).min(0.0)
 }
 
 /// Signed distance to a torus on the XZ plane.
@@ -27,7 +26,10 @@ pub fn torus(p: [f32; 3], major: f32, minor: f32) -> f32 {
 
 /// Signed distance to a cylinder along Y axis.
 pub fn cylinder(p: [f32; 3], radius: f32, height: f32) -> f32 {
-    let d = [(p[0] * p[0] + p[2] * p[2]).sqrt() - radius, p[1].abs() - height];
+    let d = [
+        (p[0] * p[0] + p[2] * p[2]).sqrt() - radius,
+        p[1].abs() - height,
+    ];
     d[0].max(d[1]).min(0.0) + length2([d[0].max(0.0), d[1].max(0.0)])
 }
 

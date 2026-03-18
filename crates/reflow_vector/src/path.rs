@@ -54,7 +54,9 @@ pub struct Path2D {
 
 impl Path2D {
     pub fn new() -> Self {
-        Self { commands: Vec::new() }
+        Self {
+            commands: Vec::new(),
+        }
     }
 
     pub fn move_to(&mut self, x: f64, y: f64) -> &mut Self {
@@ -68,11 +70,20 @@ impl Path2D {
     }
 
     pub fn quad_to(&mut self, cx: f64, cy: f64, x: f64, y: f64) -> &mut Self {
-        self.commands.push(PathCmd::QuadTo(Point::new(cx, cy), Point::new(x, y)));
+        self.commands
+            .push(PathCmd::QuadTo(Point::new(cx, cy), Point::new(x, y)));
         self
     }
 
-    pub fn cubic_to(&mut self, c1x: f64, c1y: f64, c2x: f64, c2y: f64, x: f64, y: f64) -> &mut Self {
+    pub fn cubic_to(
+        &mut self,
+        c1x: f64,
+        c1y: f64,
+        c2x: f64,
+        c2y: f64,
+        x: f64,
+        y: f64,
+    ) -> &mut Self {
         self.commands.push(PathCmd::CubicTo(
             Point::new(c1x, c1y),
             Point::new(c2x, c2y),
@@ -159,7 +170,9 @@ impl Path2D {
                             } else {
                                 Point::new(x, y)
                             };
-                            if path.commands.is_empty() || matches!(path.commands.last(), Some(PathCmd::Close)) {
+                            if path.commands.is_empty()
+                                || matches!(path.commands.last(), Some(PathCmd::Close))
+                            {
                                 path.move_to(p.x, p.y);
                                 start = p;
                             } else {
@@ -306,18 +319,34 @@ impl Path2D {
     pub fn to_svg(&self) -> String {
         let mut s = String::new();
         for cmd in &self.commands {
-            if !s.is_empty() { s.push(' '); }
+            if !s.is_empty() {
+                s.push(' ');
+            }
             match cmd {
                 PathCmd::MoveTo(p) => s.push_str(&format!("M{},{}", p.x, p.y)),
                 PathCmd::LineTo(p) => s.push_str(&format!("L{},{}", p.x, p.y)),
                 PathCmd::QuadTo(c, p) => s.push_str(&format!("Q{},{} {},{}", c.x, c.y, p.x, p.y)),
-                PathCmd::CubicTo(c1, c2, p) => s.push_str(&format!("C{},{} {},{} {},{}", c1.x, c1.y, c2.x, c2.y, p.x, p.y)),
-                PathCmd::ArcTo { rx, ry, rotation, large_arc, sweep, end } => {
-                    s.push_str(&format!("A{},{} {} {} {} {},{}",
-                        rx, ry, rotation,
+                PathCmd::CubicTo(c1, c2, p) => s.push_str(&format!(
+                    "C{},{} {},{} {},{}",
+                    c1.x, c1.y, c2.x, c2.y, p.x, p.y
+                )),
+                PathCmd::ArcTo {
+                    rx,
+                    ry,
+                    rotation,
+                    large_arc,
+                    sweep,
+                    end,
+                } => {
+                    s.push_str(&format!(
+                        "A{},{} {} {} {} {},{}",
+                        rx,
+                        ry,
+                        rotation,
                         if *large_arc { 1 } else { 0 },
                         if *sweep { 1 } else { 0 },
-                        end.x, end.y,
+                        end.x,
+                        end.y,
                     ));
                 }
                 PathCmd::Close => s.push('Z'),
@@ -334,10 +363,22 @@ impl Path2D {
 
         for cmd in &self.commands {
             let pts: Vec<Point> = match cmd {
-                PathCmd::MoveTo(p) | PathCmd::LineTo(p) => { current = *p; vec![*p] }
-                PathCmd::QuadTo(c, p) => { current = *p; vec![*c, *p] }
-                PathCmd::CubicTo(c1, c2, p) => { current = *p; vec![*c1, *c2, *p] }
-                PathCmd::ArcTo { end, .. } => { current = *end; vec![*end] }
+                PathCmd::MoveTo(p) | PathCmd::LineTo(p) => {
+                    current = *p;
+                    vec![*p]
+                }
+                PathCmd::QuadTo(c, p) => {
+                    current = *p;
+                    vec![*c, *p]
+                }
+                PathCmd::CubicTo(c1, c2, p) => {
+                    current = *p;
+                    vec![*c1, *c2, *p]
+                }
+                PathCmd::ArcTo { end, .. } => {
+                    current = *end;
+                    vec![*end]
+                }
                 PathCmd::Close => vec![current],
             };
             for p in pts {
@@ -419,10 +460,17 @@ impl Path2D {
         let target = t.clamp(0.0, 1.0) * total;
 
         // Binary search for segment
-        let idx = lengths.partition_point(|&l| l < target).min(flat.len() - 1).max(1);
+        let idx = lengths
+            .partition_point(|&l| l < target)
+            .min(flat.len() - 1)
+            .max(1);
         let seg_start = lengths[idx - 1];
         let seg_len = lengths[idx] - seg_start;
-        let local_t = if seg_len > 0.0 { (target - seg_start) / seg_len } else { 0.0 };
+        let local_t = if seg_len > 0.0 {
+            (target - seg_start) / seg_len
+        } else {
+            0.0
+        };
 
         let p = flat[idx - 1].lerp(flat[idx], local_t);
 

@@ -42,7 +42,9 @@ use std::collections::HashMap;
     outports::<1>(active_camera, metadata),
     state(MemoryState)
 )]
-pub async fn scene_camera_system_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn scene_camera_system_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
@@ -50,15 +52,15 @@ pub async fn scene_camera_system_actor(ctx: ActorContext) -> Result<HashMap<Stri
         .get("$db")
         .and_then(|v| v.as_str())
         .unwrap_or("./assets.db");
-    let aspect = config
-        .get("aspect")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(1.0) as f32;
+    let aspect = config.get("aspect").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
 
     // Camera tag selects which camera to activate — from inport or config
     let camera_tag = match payload.get("camera_tag") {
         Some(Message::String(s)) => Some(s.to_string()),
-        _ => config.get("cameraTag").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        _ => config
+            .get("cameraTag")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
     };
 
     let db = get_or_create_db(db_path)?;
@@ -164,11 +166,17 @@ fn compute_camera(
 ) -> ([f32; 3], [f32; 3]) {
     match mode {
         "thirdPerson" => {
-            let target_entity = cam.get("target").and_then(|v| v.as_str()).unwrap_or("player");
+            let target_entity = cam
+                .get("target")
+                .and_then(|v| v.as_str())
+                .unwrap_or("player");
             let distance = cam.get("distance").and_then(|v| v.as_f64()).unwrap_or(5.0) as f32;
             let height = cam.get("height").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32;
             let yaw = cam.get("orbitYaw").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-            let pitch = cam.get("orbitPitch").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
+            let pitch = cam
+                .get("orbitPitch")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.3) as f32;
             let target_pos = read_entity_position(db, target_entity);
             let eye = [
                 target_pos[0] + distance * yaw.cos() * pitch.cos(),
@@ -178,19 +186,33 @@ fn compute_camera(
             (eye, target_pos)
         }
         "firstPerson" => {
-            let target_entity = cam.get("target").and_then(|v| v.as_str()).unwrap_or("player");
+            let target_entity = cam
+                .get("target")
+                .and_then(|v| v.as_str())
+                .unwrap_or("player");
             let eye_offset = read_vec3(cam, "eyeOffset", [0.0, 1.6, 0.0]);
             let look_dir = read_vec3(cam, "lookDirection", [0.0, 0.0, -1.0]);
             let pos = read_entity_position(db, target_entity);
-            let eye = [pos[0] + eye_offset[0], pos[1] + eye_offset[1], pos[2] + eye_offset[2]];
-            let target = [eye[0] + look_dir[0], eye[1] + look_dir[1], eye[2] + look_dir[2]];
+            let eye = [
+                pos[0] + eye_offset[0],
+                pos[1] + eye_offset[1],
+                pos[2] + eye_offset[2],
+            ];
+            let target = [
+                eye[0] + look_dir[0],
+                eye[1] + look_dir[1],
+                eye[2] + look_dir[2],
+            ];
             (eye, target)
         }
         "orbit" => {
             let center = read_vec3(cam, "center", [0.0, 0.0, 0.0]);
             let distance = cam.get("distance").and_then(|v| v.as_f64()).unwrap_or(5.0) as f32;
             let yaw = cam.get("orbitYaw").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-            let pitch = cam.get("orbitPitch").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
+            let pitch = cam
+                .get("orbitPitch")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.3) as f32;
             let eye = [
                 center[0] + distance * yaw.cos() * pitch.cos(),
                 center[1] + distance * pitch.sin(),
@@ -225,9 +247,15 @@ fn read_vec3(v: &Value, key: &str, default: [f32; 3]) -> [f32; 3] {
         .and_then(|a| a.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(default[0] as f64) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(default[1] as f64) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(default[2] as f64) as f32,
+                a.get(0)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[0] as f64) as f32,
+                a.get(1)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[1] as f64) as f32,
+                a.get(2)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[2] as f64) as f32,
             ]
         })
         .unwrap_or(default)
@@ -238,10 +266,22 @@ fn look_at(eye: [f32; 3], target: [f32; 3], up: [f32; 3]) -> [f32; 16] {
     let s = normalize(cross(f, up));
     let u = cross(s, f);
     [
-        s[0], u[0], -f[0], 0.0,
-        s[1], u[1], -f[1], 0.0,
-        s[2], u[2], -f[2], 0.0,
-        -dot(s, eye), -dot(u, eye), dot(f, eye), 1.0,
+        s[0],
+        u[0],
+        -f[0],
+        0.0,
+        s[1],
+        u[1],
+        -f[1],
+        0.0,
+        s[2],
+        u[2],
+        -f[2],
+        0.0,
+        -dot(s, eye),
+        -dot(u, eye),
+        dot(f, eye),
+        1.0,
     ]
 }
 
@@ -249,10 +289,22 @@ fn perspective(fov_rad: f32, aspect: f32, near: f32, far: f32) -> [f32; 16] {
     let f = 1.0 / (fov_rad / 2.0).tan();
     let nf = 1.0 / (near - far);
     [
-        f / aspect, 0.0, 0.0, 0.0,
-        0.0, f, 0.0, 0.0,
-        0.0, 0.0, (far + near) * nf, -1.0,
-        0.0, 0.0, 2.0 * far * near * nf, 0.0,
+        f / aspect,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        f,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        (far + near) * nf,
+        -1.0,
+        0.0,
+        0.0,
+        2.0 * far * near * nf,
+        0.0,
     ]
 }
 
@@ -268,12 +320,24 @@ fn mat4_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
     out
 }
 
-fn sub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] { [a[0]-b[0], a[1]-b[1], a[2]-b[2]] }
-fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+fn sub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
-fn dot(a: [f32; 3], b: [f32; 3]) -> f32 { a[0]*b[0]+a[1]*b[1]+a[2]*b[2] }
+fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
 fn normalize(v: [f32; 3]) -> [f32; 3] {
     let l = dot(v, v).sqrt();
-    if l > 1e-6 { [v[0]/l, v[1]/l, v[2]/l] } else { [0.0, 0.0, 1.0] }
+    if l > 1e-6 {
+        [v[0] / l, v[1] / l, v[2] / l]
+    } else {
+        [0.0, 0.0, 1.0]
+    }
 }

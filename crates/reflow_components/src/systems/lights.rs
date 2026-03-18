@@ -56,7 +56,10 @@ pub async fn light_collector_actor(ctx: ActorContext) -> Result<HashMap<String, 
     let light_entities = if selected.is_empty() {
         db.entities_with(&["light"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "light")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "light"))
+            .collect()
     };
 
     let mut light_buffer = vec![0u8; MAX_LIGHTS * LIGHT_STRIDE];
@@ -79,10 +82,19 @@ pub async fn light_collector_actor(ctx: ActorContext) -> Result<HashMap<String, 
             serde_json::from_slice(&light_asset.data).unwrap_or(json!({}))
         };
 
-        let light_type = light.get("type").and_then(|v| v.as_str()).unwrap_or("point");
+        let light_type = light
+            .get("type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("point");
         let color = read_vec3(&light, "color", [1.0, 1.0, 1.0]);
-        let intensity = light.get("intensity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let cast_shadow = light.get("castShadow").and_then(|v| v.as_bool()).unwrap_or(false);
+        let intensity = light
+            .get("intensity")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0) as f32;
+        let cast_shadow = light
+            .get("castShadow")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         let type_id: f32 = match light_type {
             "directional" => 0.0,
@@ -102,14 +114,19 @@ pub async fn light_collector_actor(ctx: ActorContext) -> Result<HashMap<String, 
         // Direction (for directional/spot)
         let direction = read_vec3(&light, "direction", [0.0, -1.0, 0.0]);
         let range = light.get("range").and_then(|v| v.as_f64()).unwrap_or(20.0) as f32;
-        let inner_angle = light.get("innerAngle").and_then(|v| v.as_f64()).unwrap_or(30.0) as f32;
-        let outer_angle = light.get("outerAngle").and_then(|v| v.as_f64()).unwrap_or(45.0) as f32;
+        let inner_angle = light
+            .get("innerAngle")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(30.0) as f32;
+        let outer_angle = light
+            .get("outerAngle")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(45.0) as f32;
 
         // Pack into buffer
         let offset = light_count * LIGHT_STRIDE;
         let mut write = |off: usize, val: f32| {
-            light_buffer[offset + off..offset + off + 4]
-                .copy_from_slice(&val.to_le_bytes());
+            light_buffer[offset + off..offset + off + 4].copy_from_slice(&val.to_le_bytes());
         };
 
         // position (0..12)
@@ -154,7 +171,10 @@ pub async fn light_collector_actor(ctx: ActorContext) -> Result<HashMap<String, 
 
     let mut out = HashMap::new();
     out.insert("lights".to_string(), Message::bytes(light_buffer));
-    out.insert("light_count".to_string(), Message::Integer(light_count as i64));
+    out.insert(
+        "light_count".to_string(),
+        Message::Integer(light_count as i64),
+    );
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
@@ -184,9 +204,15 @@ fn read_vec3(v: &Value, key: &str, default: [f32; 3]) -> [f32; 3] {
         .and_then(|a| a.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(default[0] as f64) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(default[1] as f64) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(default[2] as f64) as f32,
+                a.get(0)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[0] as f64) as f32,
+                a.get(1)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[1] as f64) as f32,
+                a.get(2)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[2] as f64) as f32,
             ]
         })
         .unwrap_or(default)

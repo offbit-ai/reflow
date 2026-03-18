@@ -87,9 +87,18 @@ fn tokenize(s: &str) -> Vec<Token> {
                     i += 1;
                 }
             }
-            '(' => { tokens.push(Token::LParen); i += 1; }
-            ')' => { tokens.push(Token::RParen); i += 1; }
-            ',' => { tokens.push(Token::Comma); i += 1; }
+            '(' => {
+                tokens.push(Token::LParen);
+                i += 1;
+            }
+            ')' => {
+                tokens.push(Token::RParen);
+                i += 1;
+            }
+            ',' => {
+                tokens.push(Token::Comma);
+                i += 1;
+            }
             c if c.is_ascii_digit() || c == '.' => {
                 let start = i;
                 while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
@@ -128,8 +137,14 @@ fn parse_additive(tokens: &[Token], pos: &mut usize, vars: &HashMap<String, f64>
     let mut left = parse_multiplicative(tokens, pos, vars)?;
     while *pos < tokens.len() {
         match tokens.get(*pos) {
-            Some(Token::Op('+')) => { *pos += 1; left += parse_multiplicative(tokens, pos, vars)?; }
-            Some(Token::Op('-')) => { *pos += 1; left -= parse_multiplicative(tokens, pos, vars)?; }
+            Some(Token::Op('+')) => {
+                *pos += 1;
+                left += parse_multiplicative(tokens, pos, vars)?;
+            }
+            Some(Token::Op('-')) => {
+                *pos += 1;
+                left -= parse_multiplicative(tokens, pos, vars)?;
+            }
             _ => break,
         }
     }
@@ -144,7 +159,10 @@ fn parse_multiplicative(
     let mut left = parse_power(tokens, pos, vars)?;
     while *pos < tokens.len() {
         match tokens.get(*pos) {
-            Some(Token::Op('*')) => { *pos += 1; left *= parse_power(tokens, pos, vars)?; }
+            Some(Token::Op('*')) => {
+                *pos += 1;
+                left *= parse_power(tokens, pos, vars)?;
+            }
             Some(Token::Op('/')) => {
                 *pos += 1;
                 let r = parse_power(tokens, pos, vars)?;
@@ -246,7 +264,13 @@ fn eval_function(name: &str, args: &[f64]) -> Option<f64> {
         "tan" => a.tan(),
         "asin" => a.asin(),
         "acos" => a.acos(),
-        "atan" => if args.len() >= 2 { a.atan2(b) } else { a.atan() },
+        "atan" => {
+            if args.len() >= 2 {
+                a.atan2(b)
+            } else {
+                a.atan()
+            }
+        }
         "abs" => a.abs(),
         "floor" => a.floor(),
         "ceil" => a.ceil(),
@@ -259,9 +283,21 @@ fn eval_function(name: &str, args: &[f64]) -> Option<f64> {
         "lerp" => a + (b - a) * c,
         "mod" => a % if b == 0.0 { 1.0 } else { b },
         "sign" => {
-            if a > 0.0 { 1.0 } else if a < 0.0 { -1.0 } else { 0.0 }
+            if a > 0.0 {
+                1.0
+            } else if a < 0.0 {
+                -1.0
+            } else {
+                0.0
+            }
         }
-        "step" => if b >= a { 1.0 } else { 0.0 },
+        "step" => {
+            if b >= a {
+                1.0
+            } else {
+                0.0
+            }
+        }
         "smoothstep" => {
             let t = ((c - a) / (b - a)).clamp(0.0, 1.0);
             t * t * (3.0 - 2.0 * t)

@@ -47,15 +47,27 @@ pub async fn shape_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         }
     }
 
-    let shape = params.get("shape").and_then(|v| v.as_str()).unwrap_or("rect");
+    let shape = params
+        .get("shape")
+        .and_then(|v| v.as_str())
+        .unwrap_or("rect");
     let cx = params.get("cx").and_then(|v| v.as_f64()).unwrap_or(0.0);
     let cy = params.get("cy").and_then(|v| v.as_f64()).unwrap_or(0.0);
 
     let path = match shape {
         "rect" => {
-            let w = params.get("width").and_then(|v| v.as_f64()).unwrap_or(100.0);
-            let h = params.get("height").and_then(|v| v.as_f64()).unwrap_or(100.0);
-            let r = params.get("cornerRadius").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let w = params
+                .get("width")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(100.0);
+            let h = params
+                .get("height")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(100.0);
+            let r = params
+                .get("cornerRadius")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             let x = cx - w / 2.0;
             let y = cy - h / 2.0;
             reflow_vector::shapes::rect(x, y, w, h, r)
@@ -66,17 +78,29 @@ pub async fn shape_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Message
             reflow_vector::shapes::ellipse(cx, cy, rx, ry)
         }
         "circle" => {
-            let r = params.get("radius").and_then(|v| v.as_f64()).unwrap_or(50.0);
+            let r = params
+                .get("radius")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(50.0);
             reflow_vector::shapes::circle(cx, cy, r)
         }
         "polygon" => {
-            let r = params.get("radius").and_then(|v| v.as_f64()).unwrap_or(50.0);
+            let r = params
+                .get("radius")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(50.0);
             let sides = params.get("sides").and_then(|v| v.as_u64()).unwrap_or(6) as usize;
             reflow_vector::shapes::polygon(cx, cy, r, sides)
         }
         "star" => {
-            let outer = params.get("outerRadius").and_then(|v| v.as_f64()).unwrap_or(50.0);
-            let inner = params.get("innerRadius").and_then(|v| v.as_f64()).unwrap_or(25.0);
+            let outer = params
+                .get("outerRadius")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(50.0);
+            let inner = params
+                .get("innerRadius")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(25.0);
             let points = params.get("points").and_then(|v| v.as_u64()).unwrap_or(5) as usize;
             reflow_vector::shapes::star(cx, cy, outer, inner, points)
         }

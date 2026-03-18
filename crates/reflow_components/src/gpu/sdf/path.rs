@@ -50,7 +50,11 @@ pub async fn sdf_path_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let profile: Vec<f32> = config
         .get("profile")
         .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_f64().map(|f| f as f32))
+                .collect()
+        })
         .unwrap_or_else(|| vec![0.1]);
     let segments = config
         .get("segments")
@@ -60,10 +64,7 @@ pub async fn sdf_path_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         .get("smoothness")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.1) as f32;
-    let plane = config
-        .get("plane")
-        .and_then(|v| v.as_str())
-        .unwrap_or("xz");
+    let plane = config.get("plane").and_then(|v| v.as_str()).unwrap_or("xz");
 
     // Parse path into 2D points
     let commands = parse_path(path_str);
@@ -112,7 +113,7 @@ pub enum PathCmd {
     MoveTo(f32, f32),
     LineTo(f32, f32),
     CubicBezier(f32, f32, f32, f32, f32, f32), // cx1,cy1, cx2,cy2, x,y
-    QuadBezier(f32, f32, f32, f32),             // cx,cy, x,y
+    QuadBezier(f32, f32, f32, f32),            // cx,cy, x,y
 }
 
 pub fn parse_path(s: &str) -> Vec<PathCmd> {
@@ -239,8 +240,7 @@ pub fn sample_path(cmds: &[PathCmd], n: usize) -> Vec<(f32, f32)> {
                 let steps = 20;
                 for i in 1..=steps {
                     let t = i as f32 / steps as f32;
-                    let (px, py) =
-                        cubic_bezier(cx, cy, *cx1, *cy1, *cx2, *cy2, *x, *y, t);
+                    let (px, py) = cubic_bezier(cx, cy, *cx1, *cy1, *cx2, *cy2, *x, *y, t);
                     polyline.push((px, py));
                 }
                 cx = *x;
@@ -296,7 +296,15 @@ pub fn sample_path(cmds: &[PathCmd], n: usize) -> Vec<(f32, f32)> {
 }
 
 fn cubic_bezier(
-    x0: f32, y0: f32, cx1: f32, cy1: f32, cx2: f32, cy2: f32, x1: f32, y1: f32, t: f32,
+    x0: f32,
+    y0: f32,
+    cx1: f32,
+    cy1: f32,
+    cx2: f32,
+    cy2: f32,
+    x1: f32,
+    y1: f32,
+    t: f32,
 ) -> (f32, f32) {
     let u = 1.0 - t;
     let u2 = u * u;
@@ -347,9 +355,6 @@ pub fn interpolate_profile(profile: &[f32], n: usize) -> Vec<f32> {
 
 fn error_out(msg: &str) -> HashMap<String, Message> {
     let mut out = HashMap::new();
-    out.insert(
-        "error".to_string(),
-        Message::Error(msg.to_string().into()),
-    );
+    out.insert("error".to_string(), Message::Error(msg.to_string().into()));
     out
 }

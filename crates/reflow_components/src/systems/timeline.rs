@@ -34,11 +34,11 @@
 //! }
 //! ```
 
+use crate::math::easing;
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
-use crate::math::easing;
 use reflow_assets::get_or_create_db;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -55,10 +55,16 @@ pub async fn scene_timeline_system_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let dt = match payload.get("dt") {
         Some(Message::Float(f)) => *f,
-        _ => config.get("dt").and_then(|v| v.as_f64()).unwrap_or(1.0 / 60.0),
+        _ => config
+            .get("dt")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0 / 60.0),
     };
 
     let db = get_or_create_db(db_path)?;
@@ -67,9 +73,10 @@ pub async fn scene_timeline_system_actor(
     let timelines = if selected.is_empty() {
         db.query(&reflow_assets::AssetQuery::new().asset_type("timeline"))?
     } else {
-        selected.iter().filter_map(|e| {
-            db.get_entry(&format!("{}:timeline", e)).ok()
-        }).collect()
+        selected
+            .iter()
+            .filter_map(|e| db.get_entry(&format!("{}:timeline", e)).ok())
+            .collect()
     };
 
     let mut events = Vec::new();
@@ -81,7 +88,10 @@ pub async fn scene_timeline_system_actor(
             None => continue,
         };
 
-        let playback = tl.get("playback").and_then(|v| v.as_str()).unwrap_or("stopped");
+        let playback = tl
+            .get("playback")
+            .and_then(|v| v.as_str())
+            .unwrap_or("stopped");
         if playback != "playing" {
             continue;
         }
@@ -198,7 +208,10 @@ fn evaluate_keyframes(keyframes: &[Value], time: f64) -> Option<Value> {
     };
 
     // Easing from the starting keyframe
-    let easing_fn = prev.get("easing").and_then(|v| v.as_str()).unwrap_or("linear");
+    let easing_fn = prev
+        .get("easing")
+        .and_then(|v| v.as_str())
+        .unwrap_or("linear");
 
     Some(interpolate_value(prev_val, next_val, t, easing_fn))
 }
@@ -222,7 +235,13 @@ fn interpolate_value(from: &Value, to: &Value, t: f64, easing_fn: &str) -> Value
                 .collect();
             json!(result)
         }
-        _ => if easing::eval(easing_fn, t) >= 0.5 { to.clone() } else { from.clone() },
+        _ => {
+            if easing::eval(easing_fn, t) >= 0.5 {
+                to.clone()
+            } else {
+                from.clone()
+            }
+        }
     }
 }
 

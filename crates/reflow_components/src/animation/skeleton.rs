@@ -32,10 +32,7 @@ pub async fn skeleton_actor(ctx: ActorContext) -> Result<HashMap<String, Message
             .get("spacing")
             .and_then(|v| v.as_f64())
             .unwrap_or(1.0);
-        let axis = config
-            .get("axis")
-            .and_then(|v| v.as_str())
-            .unwrap_or("x");
+        let axis = config.get("axis").and_then(|v| v.as_str()).unwrap_or("x");
         let start = parse_vec3(config.get("startPosition"), [0.0; 3]);
 
         let dir: [f64; 3] = match axis {
@@ -62,10 +59,7 @@ pub async fn skeleton_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         }
         json!(bones)
     } else {
-        config
-            .get("bones")
-            .cloned()
-            .unwrap_or_else(|| json!([]))
+        config.get("bones").cloned().unwrap_or_else(|| json!([]))
     };
 
     let bones = bones_json
@@ -80,7 +74,11 @@ pub async fn skeleton_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let mut bone_names: Vec<String> = Vec::with_capacity(bone_count);
 
     for bone in bones {
-        let bname = bone.get("name").and_then(|v| v.as_str()).unwrap_or("bone").to_string();
+        let bname = bone
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("bone")
+            .to_string();
         let parent = bone.get("parent").and_then(|v| v.as_i64()).unwrap_or(-1) as i32;
 
         let pos = parse_vec3(bone.get("bindPosition"), [0.0; 3]);
@@ -141,7 +139,10 @@ pub async fn skeleton_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         Message::object(EncodableValue::from(skeleton)),
     );
     // Also output IBM bytes for efficient downstream use
-    out.insert("inverse_bind_matrices".to_string(), Message::bytes(ibm_bytes));
+    out.insert(
+        "inverse_bind_matrices".to_string(),
+        Message::bytes(ibm_bytes),
+    );
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({

@@ -43,7 +43,11 @@ pub async fn asset_load_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
 
     let id = match id {
         Some(id) => id,
-        None => return Ok(error_output("Provide entity ID via config.id or asset_id inport")),
+        None => {
+            return Ok(error_output(
+                "Provide entity ID via config.id or asset_id inport",
+            ))
+        }
     };
 
     let db = get_or_create_db(db_path)?;

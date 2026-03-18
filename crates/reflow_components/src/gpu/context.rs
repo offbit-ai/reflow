@@ -9,9 +9,8 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 
 /// Process-global GPU context. Initialized lazily on first access.
-pub static GPU_CONTEXT: Lazy<GpuContext> = Lazy::new(|| {
-    pollster::block_on(GpuContext::init()).expect("Failed to initialize GPU context")
-});
+pub static GPU_CONTEXT: Lazy<GpuContext> =
+    Lazy::new(|| pollster::block_on(GpuContext::init()).expect("Failed to initialize GPU context"));
 
 pub struct GpuContext {
     device: Arc<wgpu::Device>,

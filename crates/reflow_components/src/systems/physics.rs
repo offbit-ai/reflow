@@ -55,8 +55,8 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use rapier3d::na::{Quaternion, UnitQuaternion};
 use rapier3d::prelude::*;
-use rapier3d::na::{UnitQuaternion, Quaternion};
 
 /// Persistent physics world state shared across ticks.
 struct PhysicsWorld {
@@ -171,9 +171,10 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
         db.entities_with(&["rigidbody", "transform"])?
     } else {
         // Filter selected to only those that actually have rigidbody+transform
-        selected.into_iter().filter(|e| {
-            db.has_component(e, "rigidbody") && db.has_component(e, "transform")
-        }).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "rigidbody") && db.has_component(e, "transform"))
+            .collect()
     };
 
     for entity in &physics_entities {
@@ -196,15 +197,18 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
 
         if world.entity_to_body.contains_key(entity.as_str()) {
             // Entity already in physics world — update kinematic targets if needed
-            let body_type = rb.get("bodyType").and_then(|v| v.as_str()).unwrap_or("dynamic");
+            let body_type = rb
+                .get("bodyType")
+                .and_then(|v| v.as_str())
+                .unwrap_or("dynamic");
             if body_type == "kinematic" {
                 if let Some(&handle) = world.entity_to_body.get(entity.as_str()) {
                     if let Some(body) = world.rigid_body_set.get_mut(handle) {
                         body.set_next_kinematic_position(Isometry::from_parts(
                             Translation::new(pos[0], pos[1], pos[2]),
-                            UnitQuaternion::new_normalize(
-                                Quaternion::new(rot[3], rot[0], rot[1], rot[2]),
-                            ),
+                            UnitQuaternion::new_normalize(Quaternion::new(
+                                rot[3], rot[0], rot[1], rot[2],
+                            )),
                         ));
                     }
                 }
@@ -213,11 +217,23 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
         }
 
         // New entity — create rigid body
-        let body_type = rb.get("bodyType").and_then(|v| v.as_str()).unwrap_or("dynamic");
+        let body_type = rb
+            .get("bodyType")
+            .and_then(|v| v.as_str())
+            .unwrap_or("dynamic");
         let mass = rb.get("mass").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-        let lin_damp = rb.get("linearDamping").and_then(|v| v.as_f64()).unwrap_or(0.1) as f32;
-        let ang_damp = rb.get("angularDamping").and_then(|v| v.as_f64()).unwrap_or(0.1) as f32;
-        let grav_scale = rb.get("gravityScale").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+        let lin_damp = rb
+            .get("linearDamping")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.1) as f32;
+        let ang_damp = rb
+            .get("angularDamping")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.1) as f32;
+        let grav_scale = rb
+            .get("gravityScale")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(1.0) as f32;
         let ccd = rb.get("ccd").and_then(|v| v.as_bool()).unwrap_or(false);
 
         let mut builder = match body_type {
@@ -236,9 +252,7 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
             .additional_mass(mass);
 
         let body_handle = world.rigid_body_set.insert(builder.build());
-        world
-            .entity_to_body
-            .insert(entity.clone(), body_handle);
+        world.entity_to_body.insert(entity.clone(), body_handle);
 
         // Attach collider if entity has one
         if let Ok(col_asset) = db.get_component(entity, "collider") {
@@ -250,8 +264,14 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
 
             let shape = col.get("shape").and_then(|v| v.as_str()).unwrap_or("box");
             let friction = col.get("friction").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
-            let restitution = col.get("restitution").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
-            let is_sensor = col.get("isSensor").and_then(|v| v.as_bool()).unwrap_or(false);
+            let restitution = col
+                .get("restitution")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.3) as f32;
+            let is_sensor = col
+                .get("isSensor")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
 
             let collider_shape: SharedShape = match shape {
                 "sphere" => {
@@ -282,12 +302,14 @@ pub async fn physics_system_actor(ctx: ActorContext) -> Result<HashMap<String, M
                 .build();
 
             // Split borrow: destructure world to borrow collider_set and rigid_body_set simultaneously
-            let PhysicsWorld { ref mut collider_set, ref mut rigid_body_set, ref mut entity_to_collider, .. } = *world;
-            let collider_handle = collider_set.insert_with_parent(
-                collider,
-                body_handle,
-                rigid_body_set,
-            );
+            let PhysicsWorld {
+                ref mut collider_set,
+                ref mut rigid_body_set,
+                ref mut entity_to_collider,
+                ..
+            } = *world;
+            let collider_handle =
+                collider_set.insert_with_parent(collider, body_handle, rigid_body_set);
             entity_to_collider.insert(entity.clone(), collider_handle);
         }
     }
@@ -379,9 +401,15 @@ fn read_vec3(v: &Value, key: &str, default: [f32; 3]) -> [f32; 3] {
         .and_then(|a| a.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(default[0] as f64) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(default[1] as f64) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(default[2] as f64) as f32,
+                a.get(0)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[0] as f64) as f32,
+                a.get(1)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[1] as f64) as f32,
+                a.get(2)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[2] as f64) as f32,
             ]
         })
         .unwrap_or(default)
@@ -392,10 +420,18 @@ fn read_vec4(v: &Value, key: &str, default: [f32; 4]) -> [f32; 4] {
         .and_then(|a| a.as_array())
         .map(|a| {
             [
-                a.get(0).and_then(|v| v.as_f64()).unwrap_or(default[0] as f64) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(default[1] as f64) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(default[2] as f64) as f32,
-                a.get(3).and_then(|v| v.as_f64()).unwrap_or(default[3] as f64) as f32,
+                a.get(0)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[0] as f64) as f32,
+                a.get(1)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[1] as f64) as f32,
+                a.get(2)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[2] as f64) as f32,
+                a.get(3)
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(default[3] as f64) as f32,
             ]
         })
         .unwrap_or(default)

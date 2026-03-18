@@ -47,20 +47,24 @@ use std::collections::HashMap;
     outports::<1>(sdf_ir, metadata),
     state(MemoryState)
 )]
-pub async fn text_sdf_system_actor(
-    ctx: ActorContext,
-) -> Result<HashMap<String, Message>, Error> {
+pub async fn text_sdf_system_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let db_path = config.get("$db").and_then(|v| v.as_str()).unwrap_or("./assets.db");
+    let db_path = config
+        .get("$db")
+        .and_then(|v| v.as_str())
+        .unwrap_or("./assets.db");
     let db = get_or_create_db(db_path)?;
 
     let selected = super::selector::resolve_entities(&payload, &config, &db);
     let text_entities = if selected.is_empty() {
         db.entities_with(&["text_sdf"])?
     } else {
-        selected.into_iter().filter(|e| db.has_component(e, "text_sdf")).collect()
+        selected
+            .into_iter()
+            .filter(|e| db.has_component(e, "text_sdf"))
+            .collect()
     };
 
     let mut processed = 0;
@@ -71,19 +75,31 @@ pub async fn text_sdf_system_actor(
             Ok(a) => a,
             Err(_) => continue,
         };
-        let data: Value = text_asset.entry.inline_data.unwrap_or_else(|| {
-            serde_json::from_slice(&text_asset.data).unwrap_or(json!({}))
-        });
+        let data: Value = text_asset
+            .entry
+            .inline_data
+            .unwrap_or_else(|| serde_json::from_slice(&text_asset.data).unwrap_or(json!({})));
 
         let content = data.get("content").and_then(|v| v.as_str()).unwrap_or("");
-        if content.is_empty() { continue; }
+        if content.is_empty() {
+            continue;
+        }
 
-        let font_id = data.get("font").and_then(|v| v.as_str()).unwrap_or("default:font");
+        let font_id = data
+            .get("font")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default:font");
         let font_size = data.get("fontSize").and_then(|v| v.as_f64()).unwrap_or(1.0);
         let depth = data.get("depth").and_then(|v| v.as_f64()).unwrap_or(0.3);
         let bevel = data.get("bevel").and_then(|v| v.as_f64()).unwrap_or(0.02);
-        let letter_spacing = data.get("letterSpacing").and_then(|v| v.as_f64()).unwrap_or(0.05);
-        let align = data.get("align").and_then(|v| v.as_str()).unwrap_or("center");
+        let letter_spacing = data
+            .get("letterSpacing")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.05);
+        let align = data
+            .get("align")
+            .and_then(|v| v.as_str())
+            .unwrap_or("center");
         let material = data.get("material").cloned().unwrap_or(json!({}));
 
         // Load font
@@ -92,7 +108,10 @@ pub async fn text_sdf_system_actor(
             Err(_) => continue,
         };
 
-        let font = match fontdue::Font::from_bytes(font_bytes.as_slice(), fontdue::FontSettings::default()) {
+        let font = match fontdue::Font::from_bytes(
+            font_bytes.as_slice(),
+            fontdue::FontSettings::default(),
+        ) {
             Ok(f) => f,
             Err(_) => continue,
         };

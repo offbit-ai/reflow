@@ -34,9 +34,15 @@ pub unsafe fn row_rgba_to_gray_wasm(input: &[u8], output: &mut [u8]) {
         // Extract R, G, B channels using shuffle
         // RGBA layout: [R0,G0,B0,A0, R1,G1,B1,A1, R2,G2,B2,A2, R3,G3,B3,A3]
         // We need: R = [R0,0, R1,0, R2,0, R3,0, 0,0,0,0,0,0,0,0] as i16x8
-        let r_bytes = i8x16_shuffle::<0, 16, 4, 16, 8, 16, 12, 16, 16, 16, 16, 16, 16, 16, 16, 16>(rgba, zero);
-        let g_bytes = i8x16_shuffle::<1, 16, 5, 16, 9, 16, 13, 16, 16, 16, 16, 16, 16, 16, 16, 16>(rgba, zero);
-        let b_bytes = i8x16_shuffle::<2, 16, 6, 16, 10, 16, 14, 16, 16, 16, 16, 16, 16, 16, 16, 16>(rgba, zero);
+        let r_bytes = i8x16_shuffle::<0, 16, 4, 16, 8, 16, 12, 16, 16, 16, 16, 16, 16, 16, 16, 16>(
+            rgba, zero,
+        );
+        let g_bytes = i8x16_shuffle::<1, 16, 5, 16, 9, 16, 13, 16, 16, 16, 16, 16, 16, 16, 16, 16>(
+            rgba, zero,
+        );
+        let b_bytes = i8x16_shuffle::<2, 16, 6, 16, 10, 16, 14, 16, 16, 16, 16, 16, 16, 16, 16, 16>(
+            rgba, zero,
+        );
 
         // Now r_bytes/g_bytes/b_bytes are i16x8 with values in low 4 lanes (zero-extended)
         // Multiply and sum

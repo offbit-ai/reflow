@@ -42,8 +42,7 @@ pub(crate) fn parse_stl(
     }
 
     // Binary STL: 80-byte header + u32 triangle count + N * 50 bytes
-    let tri_count =
-        u32::from_le_bytes([data[80], data[81], data[82], data[83]]) as usize;
+    let tri_count = u32::from_le_bytes([data[80], data[81], data[82], data[83]]) as usize;
     let expected = 84 + tri_count * 50;
     if data.len() < expected {
         return Ok(error_output(&format!(

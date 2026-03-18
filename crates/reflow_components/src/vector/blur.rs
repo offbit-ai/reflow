@@ -32,7 +32,9 @@ pub async fn gaussian_blur_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     };
 
     let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as usize;
-    let height = config.get("height").and_then(|v| v.as_u64())
+    let height = config
+        .get("height")
+        .and_then(|v| v.as_u64())
         .unwrap_or_else(|| (data.len() / (width * 4)) as u64) as usize;
     let radius = config.get("radius").and_then(|v| v.as_u64()).unwrap_or(3) as usize;
 
