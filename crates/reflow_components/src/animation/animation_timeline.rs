@@ -186,6 +186,7 @@ pub async fn animation_timeline_actor(
         playback_state = "playing".into();
     }
 
+
     // ─── Advance time ───
     if playback_state == "playing" && payload.contains_key("tick") {
         elapsed += dt * speed;

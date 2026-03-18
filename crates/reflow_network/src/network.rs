@@ -510,6 +510,11 @@ impl Network {
                 tokio::sync::broadcast::Sender<std::sync::Arc<StdHashMap<String, Message>>>,
             > = StdHashMap::new();
 
+            // Keep initial broadcast receivers alive until all connectors have
+            // subscribed. Without this, the forwarder's tx.send() returns Err
+            // (no receivers) and the forwarder exits, losing messages.
+            let mut _keepalive_receivers = Vec::new();
+
             for connector in &self.connectors {
                 let source_id = &connector.from.actor;
 
@@ -529,7 +534,8 @@ impl Network {
                     let out_ports = from_actor.get_outports();
                     let load_count = from_actor.load_count();
 
-                    let (tx, _) = tokio::sync::broadcast::channel(1024);
+                    let (tx, initial_rx) = tokio::sync::broadcast::channel(1024);
+                    _keepalive_receivers.push(initial_rx);
                     broadcast_senders.insert(source_id.clone(), tx.clone());
 
                     // Forwarder: flume outport receiver → Arc-wrapped broadcast
@@ -547,6 +553,9 @@ impl Network {
                 let broadcast_rx = broadcast_tx.subscribe();
                 connector.init_broadcast(self, broadcast_rx);
             }
+
+            // Drop keepalive receivers now that all connectors are subscribed
+            drop(_keepalive_receivers);
         }
 
         // On WASM, fall back to direct flume receiver (no broadcast available)

@@ -106,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
         config(json!({
             "interval": ms,
             "maxExecutions": frames,
-            "startImmediately": false,
+            "startImmediately": true,
         })),
     )?;
     net.add_node(

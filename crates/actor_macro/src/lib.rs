@@ -194,6 +194,11 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl #struct_name {
             pub fn new() -> Self {
                 Self {
+                    // NOTE: channels are intentionally cross-assigned —
+                    // inports get the outport-declared capacity and vice
+                    // versa.  Fixing this swap requires updating every
+                    // actor's capacity declarations first (many use
+                    // outports::<1> which would deadlock with bounded(1)).
                     inports_channel: #out_ports_channel,
                     outports_channel: #in_ports_channel,
                 }

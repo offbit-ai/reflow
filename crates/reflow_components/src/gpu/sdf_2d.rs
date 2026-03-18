@@ -992,12 +992,8 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         }
     }
 
-    // Only render when values arrive (from timeline or direct keyframes).
+    // Only render when values or tick arrives
     if !payload.contains_key("values") && !payload.contains_key("tick") {
-        return Ok(HashMap::new());
-    }
-    // Skip rendering until animation values have been received at least once
-    if vals.is_empty() {
         return Ok(HashMap::new());
     }
 
