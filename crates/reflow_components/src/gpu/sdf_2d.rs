@@ -372,6 +372,39 @@ static PIPELINE_2D_1X: OnceLock<CachedPipeline> = OnceLock::new();
 #[cfg(feature = "gpu")]
 static PIPELINE_2D_4X: OnceLock<CachedPipeline> = OnceLock::new();
 
+/// Cached glyph atlas GPU resources — rebuilt only when atlas dimensions/content change.
+#[cfg(feature = "gpu")]
+struct CachedAtlas {
+    tex: wgpu::Texture,
+    view: wgpu::TextureView,
+    sampler: wgpu::Sampler,
+    bind_group: wgpu::BindGroup,
+    bind_group_sample_count: u32,
+    width: u32,
+    height: u32,
+    data_len: usize,
+}
+
+/// Cached render targets — rebuilt only when output dimensions or MSAA setting change.
+#[cfg(feature = "gpu")]
+struct CachedRenderTargets {
+    resolve_tex: wgpu::Texture,
+    resolve_view: wgpu::TextureView,
+    msaa_tex: Option<wgpu::Texture>,
+    msaa_view: Option<wgpu::TextureView>,
+    readback_buf: wgpu::Buffer,
+    bytes_per_row: u32,
+    width: u32,
+    height: u32,
+    sample_count: u32,
+}
+
+#[cfg(feature = "gpu")]
+static CACHED_ATLAS: std::sync::Mutex<Option<CachedAtlas>> = std::sync::Mutex::new(None);
+#[cfg(feature = "gpu")]
+static CACHED_RENDER_TARGETS: std::sync::Mutex<Option<CachedRenderTargets>> =
+    std::sync::Mutex::new(None);
+
 #[cfg(feature = "gpu")]
 fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
     let (lock, sample_count) = if msaa > 1 {
@@ -543,104 +576,158 @@ pub fn render_2d(
         ],
     });
 
-    // Atlas texture for PRIM_GLYPH (1px placeholder if no atlas provided)
+    // Atlas texture — cached across frames (content never changes once loaded).
+    // Only rebuilds on first call or if atlas dimensions/data length change.
     let (atlas_data, atlas_w, atlas_h) = match glyph_atlas {
         Some(a) => (&a.data[..], a.width, a.height),
         None => (&[128u8] as &[u8], 1u32, 1u32),
     };
-    let atlas_tex = device.create_texture_with_data(
-        queue,
-        &wgpu::TextureDescriptor {
-            label: Some("Glyph Atlas"),
-            size: wgpu::Extent3d {
-                width: atlas_w,
-                height: atlas_h,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        },
-        wgpu::util::TextureDataOrder::LayerMajor,
-        atlas_data,
-    );
-    let atlas_view = atlas_tex.create_view(&Default::default());
-    let atlas_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        label: Some("Glyph Sampler"),
-        mag_filter: wgpu::FilterMode::Linear,
-        min_filter: wgpu::FilterMode::Linear,
-        ..Default::default()
+    let mut atlas_cache_guard = CACHED_ATLAS.lock().unwrap();
+    let needs_atlas = atlas_cache_guard.as_ref().map_or(true, |c| {
+        c.width != atlas_w || c.height != atlas_h || c.data_len != atlas_data.len()
     });
-    let atlas_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("Atlas Bind Group"),
-        layout: &cached.atlas_bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&atlas_view),
+    if needs_atlas {
+        let tex = device.create_texture_with_data(
+            queue,
+            &wgpu::TextureDescriptor {
+                label: Some("Glyph Atlas"),
+                size: wgpu::Extent3d {
+                    width: atlas_w,
+                    height: atlas_h,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::R8Unorm,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
             },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Sampler(&atlas_sampler),
-            },
-        ],
-    });
+            wgpu::util::TextureDataOrder::LayerMajor,
+            atlas_data,
+        );
+        let view = tex.create_view(&Default::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Glyph Sampler"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Atlas Bind Group"),
+            layout: &cached.atlas_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+            ],
+        });
+        *atlas_cache_guard = Some(CachedAtlas {
+            tex,
+            view,
+            sampler,
+            bind_group,
+            bind_group_sample_count: sample_count,
+            width: atlas_w,
+            height: atlas_h,
+            data_len: atlas_data.len(),
+        });
+    } else if atlas_cache_guard.as_ref().unwrap().bind_group_sample_count != sample_count {
+        // MSAA setting changed — rebuild bind group only (no texture upload)
+        let new_bg = {
+            let c = atlas_cache_guard.as_ref().unwrap();
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Atlas Bind Group"),
+                layout: &cached.atlas_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&c.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&c.sampler),
+                    },
+                ],
+            })
+        };
+        let c = atlas_cache_guard.as_mut().unwrap();
+        c.bind_group = new_bg;
+        c.bind_group_sample_count = sample_count;
+    }
+    let atlas_bind_group = &atlas_cache_guard.as_ref().unwrap().bind_group;
 
-    // Resolve texture (always 1x) — readback target
-    let resolve_tex = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("SDF 2D Resolve"),
-        size: wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8Unorm,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[],
+    // Render targets — cached for constant output dimensions.
+    // Avoids recreating 3.5 MB MSAA + 0.9 MB resolve + 1.6 MB readback every frame.
+    let mut rt_cache_guard = CACHED_RENDER_TARGETS.lock().unwrap();
+    let needs_rt = rt_cache_guard.as_ref().map_or(true, |c| {
+        c.width != width || c.height != height || c.sample_count != sample_count
     });
-    let resolve_view = resolve_tex.create_view(&Default::default());
-
-    // MSAA color texture (sample_count > 1 for anti-aliasing)
-    let msaa_tex = if sample_count > 1 {
-        Some(device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("SDF 2D MSAA"),
+    if needs_rt {
+        let bytes_per_row = ((width * 4).div_ceil(256)) * 256;
+        let resolve_tex = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("SDF 2D Resolve"),
             size: wgpu::Extent3d {
                 width,
                 height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
-            sample_count,
+            sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
-        }))
-    } else {
-        None
+        });
+        let resolve_view = resolve_tex.create_view(&Default::default());
+        let msaa_tex = if sample_count > 1 {
+            Some(device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("SDF 2D MSAA"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            }))
+        } else {
+            None
+        };
+        let msaa_view = msaa_tex.as_ref().map(|t| t.create_view(&Default::default()));
+        let readback_buf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("SDF 2D Readback"),
+            size: (bytes_per_row * height) as u64,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        *rt_cache_guard = Some(CachedRenderTargets {
+            resolve_tex,
+            resolve_view,
+            msaa_tex,
+            msaa_view,
+            readback_buf,
+            bytes_per_row,
+            width,
+            height,
+            sample_count,
+        });
+    }
+    let rt = rt_cache_guard.as_ref().unwrap();
+    let bytes_per_row = rt.bytes_per_row;
+    let (color_view, resolve_target) = match &rt.msaa_view {
+        Some(mv) => (mv, Some(&rt.resolve_view)),
+        None => (&rt.resolve_view, None),
     };
-
-    let msaa_view = msaa_tex
-        .as_ref()
-        .map(|t| t.create_view(&Default::default()));
-    let (color_view, resolve_target) = match &msaa_view {
-        Some(mv) => (mv, Some(&resolve_view)),
-        None => (&resolve_view, None),
-    };
-
-    let bytes_per_row = ((width * 4).div_ceil(256)) * 256;
-    let readback_buf = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("SDF 2D Readback"),
-        size: (bytes_per_row * height) as u64,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
 
     let mut encoder = device.create_command_encoder(&Default::default());
     {
@@ -664,20 +751,20 @@ pub fn render_2d(
         });
         pass.set_pipeline(&cached.pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
-        pass.set_bind_group(1, &atlas_bind_group, &[]);
+        pass.set_bind_group(1, atlas_bind_group, &[]);
         pass.draw(0..6, 0..primitives.len() as u32);
     }
 
     // Copy resolved (1x) texture to readback buffer
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
-            texture: &resolve_tex,
+            texture: &rt.resolve_tex,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
             aspect: wgpu::TextureAspect::All,
         },
         wgpu::TexelCopyBufferInfo {
-            buffer: &readback_buf,
+            buffer: &rt.readback_buf,
             layout: wgpu::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(bytes_per_row),
@@ -693,7 +780,7 @@ pub fn render_2d(
 
     GPU_CONTEXT.submit_and_poll(encoder.finish());
 
-    let slice = readback_buf.slice(..);
+    let slice = rt.readback_buf.slice(..);
     slice.map_async(wgpu::MapMode::Read, |_| {});
     device.poll(wgpu::Maintain::Wait);
 
@@ -706,7 +793,7 @@ pub fn render_2d(
         result[dst_off..dst_off + row_bytes].copy_from_slice(&data[src_off..src_off + row_bytes]);
     }
     drop(data);
-    readback_buf.unmap();
+    rt.readback_buf.unmap();
 
     result
 }
@@ -928,7 +1015,7 @@ fn glyph_strokes(ch: char) -> &'static [[f32; 4]] {
 
 #[actor(
     Gpu2DRenderActor,
-    inports::<100>(primitives, tick, values, atlas, metrics, atlas_size),
+    inports::<100>(primitives, tick, values, data, atlas, metrics, atlas_size),
     outports::<1>(image, metadata),
     state(MemoryState)
 )]
@@ -1020,6 +1107,21 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     }
 
     // ── Parse animation values ──
+    // `data` inport: pool values without triggering a render.
+    // Use this to feed secondary value sources (e.g. micro-animation timelines)
+    // that share a tick with the primary timeline so the renderer fires exactly
+    // once per tick (from the primary `values` inport) with all values pooled.
+    if let Some(Message::Object(obj)) = payload.get("data") {
+        let v: Value = obj.as_ref().clone().into();
+        if let Some(map) = v.as_object() {
+            for (k, val) in map {
+                if let Some(f) = val.as_f64() {
+                    ctx.pool_upsert("_vals", k, json!(f));
+                }
+            }
+        }
+    }
+
     // Supports two sources:
     //   1. Timeline: full object { "s0_x": 400.0, "s0_y": 225.0, ... }
     //   2. KeyframeActor fan-in: individual { "s0_x": 400.0 } merged into pool

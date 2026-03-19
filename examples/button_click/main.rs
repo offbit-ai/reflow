@@ -106,15 +106,13 @@ async fn main() -> anyhow::Result<()> {
     tracks.insert("s1_x".into(), kf(json!([
         {"time": 0.0,  "value": 90.0,           "easing": "easeInOutQuart"},
         {"time": 2.5,  "value": btn_x + 10.0},
-        {"time": 3.5,  "value": btn_x + 10.0},
-        {"time": 4.2,  "value": btn_x + 20.0,   "easing": "easeInOutCubic"},
+        {"time": 3.5,  "value": btn_x + 10.0,  "easing": "easeOutExpo"},
         {"time": 6.0,  "value": 560.0}
     ])));
     tracks.insert("s1_y".into(), kf(json!([
-        {"time": 0.0,  "value": 290.0,           "easing": "easeInOutQuart"},
+        {"time": 0.0,  "value": 290.0,          "easing": "easeInOutQuart"},
         {"time": 2.5,  "value": btn_y + 6.0},
-        {"time": 3.5,  "value": btn_y + 6.0},
-        {"time": 4.2,  "value": btn_y + 24.0,   "easing": "easeInOutCubic"},
+        {"time": 3.5,  "value": btn_y + 6.0,   "easing": "easeOutExpo"},
         {"time": 6.0,  "value": 70.0}
     ])));
     tracks.insert("s1_scale".into(), kf(json!([
@@ -232,8 +230,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("sub_hover", "data", "btn_anim", "control"));
     net.add_connection(wire("sub_idle",  "data", "btn_anim", "control"));
 
-    // btn_anim values → renderer (single source of s0_scale)
-    net.add_connection(wire("btn_anim", "values", "render", "values"));
+    net.add_connection(wire("btn_anim", "values", "render", "data"));
 
     // Video pipeline
     net.add_connection(wire("render", "image", "collector", "frame"));
@@ -249,11 +246,35 @@ async fn main() -> anyhow::Result<()> {
     println!("  hover: play  1.0→1.08 ({:.2}s easeOutCubic)", anim_dur);
     println!("  idle:  reverse 1.08→1.0 ({:.2}s easeOutCubic)\n", anim_dur);
 
+    // Subscribe to network events BEFORE start so no events are missed.
+    let event_rx = net.get_event_receiver();
+    tokio::spawn(async move {
+        let mut last_actor = String::new();
+        let mut actor_count: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+        while let Ok(evt) = event_rx.recv_async().await {
+            use reflow_network::network::NetworkEvent;
+            match &evt {
+                NetworkEvent::ActorCompleted { actor_id, .. } => {
+                    *actor_count.entry(actor_id.clone()).or_insert(0) += 1;
+                    last_actor = format!("{}({})", actor_id, actor_count[actor_id]);
+                }
+                NetworkEvent::ActorFailed { actor_id, error, .. } => {
+                    eprintln!("[FAIL] actor={} err={}", actor_id, error);
+                }
+                NetworkEvent::NetworkIdle { .. } => {
+                    eprintln!("[IDLE] last actor fired: {}", last_actor);
+                    eprintln!("[IDLE] counts: {:?}", actor_count);
+                }
+                _ => {}
+            }
+        }
+    });
+
     let start = std::time::Instant::now();
     net.start()?;
 
     let mp4_path = std::path::Path::new("button_click.mp4");
-    let timeout = std::time::Duration::from_secs(60);
+    let timeout = std::time::Duration::from_secs(20);
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
         if mp4_path.exists() && mp4_path.metadata().map(|m| m.len() > 100).unwrap_or(false) {
