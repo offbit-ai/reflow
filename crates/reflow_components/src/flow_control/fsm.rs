@@ -128,35 +128,9 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
             initial.clone()
         });
 
-    // ─── Emit initial state data on first run ───
-    if first_run {
-        if let Some(entry_action) = states
-            .get(&current_state)
-            .and_then(|s| s.get("entry"))
-        {
-            let mut emit_values = serde_json::Map::new();
-            apply_action(entry_action, &ctx, &mut emit_values);
-            if !emit_values.is_empty() {
-                let mut out = HashMap::new();
-                out.insert(
-                    "state".to_string(),
-                    Message::String(current_state.clone().into()),
-                );
-                out.insert(
-                    "emit".to_string(),
-                    Message::object(EncodableValue::from(json!({
-                        "id": current_state,
-                        "data": Value::Object(emit_values.clone()),
-                    }))),
-                );
-                out.insert(
-                    "data".to_string(),
-                    Message::object(EncodableValue::from(Value::Object(emit_values))),
-                );
-                return Ok(out);
-            }
-        }
-    }
+    // Entry actions fire only on transitions, not on construction.
+    // The _ suppresses unused variable warning; first_run remains available for guards if needed.
+    let _ = first_run;
 
     // ─── Handle control messages ───
     if let Some(msg) = payload.get("control") {

@@ -966,6 +966,35 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         ctx.pool_upsert("_atlas", "size", v);
     }
 
+    // ── Inline font loading: build atlas from text config font path ──
+    // If no atlas cached yet and any text entry carries a "font" path,
+    // build the atlas immediately without an external font/atlas pipeline.
+    let atlas_empty = ctx.get_pool("_atlas").into_iter()
+        .find(|(k, _)| k == "bitmap")
+        .is_none();
+    if atlas_empty {
+        let text_cfgs = config.get("text").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+        if let Some(font_path) = text_cfgs.iter().find_map(|t| t.get("font").and_then(|v| v.as_str()).map(|s| s.to_string())) {
+            let font_size = text_cfgs.iter().find_map(|t| t.get("size").and_then(|v| v.as_f64())).unwrap_or(48.0) as f32;
+            if let Ok(font_bytes) = std::fs::read(&font_path) {
+                if let Ok(atlas) = super::font_atlas::get_or_build_atlas(&font_path, &font_bytes, font_size, true, "") {
+                    ctx.pool_upsert("_atlas", "bitmap", json!(base64_encode(&atlas.bitmap)));
+                    let mut metrics_map = serde_json::Map::new();
+                    for (ch, info) in &atlas.glyphs {
+                        metrics_map.insert(ch.to_string(), json!({
+                            "x": info.atlas_x, "y": info.atlas_y,
+                            "w": info.width, "h": info.height,
+                            "advance": info.advance,
+                            "bearing_x": info.bearing_x, "bearing_y": info.bearing_y,
+                        }));
+                    }
+                    ctx.pool_upsert("_atlas", "metrics", Value::Object(metrics_map));
+                    ctx.pool_upsert("_atlas", "size", json!([atlas.width, atlas.height]));
+                }
+            }
+        }
+    }
+
     // ── Parse animation values ──
     // Supports two sources:
     //   1. Timeline: full object { "s0_x": 400.0, "s0_y": 225.0, ... }

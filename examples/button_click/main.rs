@@ -1,28 +1,21 @@
-//! # Button Click — HitTest + FSM + Signal/Subscriber + Animation
+//! # Button Click — HitTest + FSM + Animated State Transitions
 //!
-//! A cursor glides to a "Reflow Run" button. The HitTestActor detects
-//! when the cursor enters the button bounds (HOVER), a click signal fires
-//! (PRESS), and the cursor leaves (LEAVE). The FSM tracks button state
-//! and emits signals. Subscribers route per-state data to the renderer.
-//!
-//! ## DAG topology
+//! Cursor glides to a "Reflow Run" button. HitTest detects overlap.
+//! FSM tracks state. Each FSM state triggers a micro-timeline for
+//! smooth eased transitions (not instant jumps).
 //!
 //! ```text
-//! tick ──→ timeline (cursor path only)
-//!          timeline:values ──┬──→ renderer:values
-//!                            └──→ hit_test:values
+//! timeline(cursor) ──→ renderer:values
+//!                  ──→ hit_test:values
 //!
-//! hit_test:enter ──→ fsm:event  (HOVER)
-//! hit_test:leave ──→ fsm:event  (LEAVE)
-//! hit_test:click ──→ fsm:event  (PRESS)
-//! signal_click ──→ hit_test:click  (flow-triggered click gesture)
+//! hit_test:enter ──→ fsm:event (HOVER)
+//! hit_test:leave ──→ fsm:event (LEAVE)
 //!
-//! fsm:emit ──→ sub_hover:signal   → data → renderer:values
-//! fsm:emit ──→ sub_pressed:signal → data → renderer:values
-//! fsm:emit ──→ sub_idle:signal    → data → renderer:values
+//! fsm:emit ──→ sub_hover:signal → trigger → hover_anim:control (play)
+//! fsm:emit ──→ sub_idle:signal  → trigger → idle_anim:control  (play)
 //!
-//! font → atlas → renderer
-//! renderer → collector → encoder → save
+//! hover_anim:values ──→ renderer:values (s0_scale 1.0→1.08, 0.15s)
+//! idle_anim:values  ──→ renderer:values (s0_scale 1.08→1.0, 0.15s)
 //! ```
 
 use reflow_network::{
@@ -62,7 +55,7 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("=== Button Click — HitTest + FSM + Signals ===\n");
+    println!("=== Button Click — FSM + Animated Transitions ===\n");
 
     let w = 640u32;
     let h = 360u32;
@@ -70,11 +63,13 @@ async fn main() -> anyhow::Result<()> {
     let dur = 6.0f64;
     let frames = (dur * fps as f64) as usize;
     let ms = 1000 / fps as u64;
+    let dt = 1.0 / fps as f64;
 
     let btn_x = 320.0f64;
     let btn_y = 170.0f64;
     let btn_w = 200.0f64;
     let btn_h = 52.0f64;
+    let label = "Reflow Run";
 
     let mut net = Network::new(NetworkConfig::default());
 
@@ -84,6 +79,7 @@ async fn main() -> anyhow::Result<()> {
         "tpl_animation_timeline",
         "tpl_hit_test",
         "tpl_fsm",
+        "tpl_subscriber",
         "tpl_font_load",
         "tpl_glyph_atlas",
         "tpl_gpu_2d_render",
@@ -95,194 +91,116 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // ═══ TIMING ═══
-    net.add_node(
-        "tick",
-        "tpl_interval_trigger",
-        config(json!({
-            "interval": ms,
-            "maxExecutions": frames,
-            "startImmediately": false,
-        })),
-    )?;
-    net.add_node(
-        "time",
-        "tpl_animation_time",
-        config(json!({ "fps": fps, "speed": 1.0 })),
-    )?;
+    net.add_node("tick", "tpl_interval_trigger", config(json!({
+        "interval": ms, "maxExecutions": frames, "startImmediately": false,
+    })))?;
+    net.add_node("time", "tpl_animation_time", config(json!({
+        "fps": fps, "speed": 1.0,
+    })))?;
 
-    // ═══ FONT ═══
-    net.add_node(
-        "font",
-        "tpl_font_load",
-        config(json!({
-            "path": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-        })),
-    )?;
-    net.add_node(
-        "atlas",
-        "tpl_glyph_atlas",
-        config(json!({ "fontSize": 48, "sdf": true })),
-    )?;
 
-    // ═══ TIMELINE — cursor path ONLY ═══
-    // The timeline drives cursor motion. Button appearance is driven
-    // entirely by the FSM via signals. No button tracks here.
+    // ═══ CURSOR TIMELINE — path only ═══
     let mut tracks = serde_json::Map::new();
-    let kf = |frames: Value| -> Value {
-        json!({ "keyframes": frames })
-    };
+    let kf = |f: Value| -> Value { json!({ "keyframes": f }) };
 
-    // Cursor path (shape 2)
-    tracks.insert(
-        "s1_x".into(),
-        kf(json!([
-            {"time": 0.0, "value": 90.0},
-            {"time": 0.5, "value": 90.0, "easing": "easeInOutCubic"},
-            {"time": 2.0, "value": btn_x + 25.0},
-            {"time": 3.0, "value": btn_x + 25.0},
-            {"time": 3.2, "value": btn_x + 25.0},
-            {"time": 3.8, "value": btn_x + 25.0},
-            {"time": 4.5, "value": btn_x + 35.0, "easing": "easeInOutCubic"},
-            {"time": 6.0, "value": 560.0}
-        ])),
-    );
-    tracks.insert(
-        "s1_y".into(),
-        kf(json!([
-            {"time": 0.0, "value": 290.0},
-            {"time": 0.5, "value": 290.0, "easing": "easeInOutCubic"},
-            {"time": 2.0, "value": btn_y + 10.0},
-            {"time": 3.0, "value": btn_y + 10.0, "easing": "easeOutCubic"},
-            {"time": 3.15, "value": btn_y + 15.0},
-            {"time": 3.3, "value": btn_y + 10.0},
-            {"time": 3.8, "value": btn_y + 10.0},
-            {"time": 4.5, "value": btn_y + 30.0, "easing": "easeInOutCubic"},
-            {"time": 6.0, "value": 70.0}
-        ])),
-    );
-    tracks.insert(
-        "s1_scale".into(),
-        kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])),
-    );
-
-    // Button + shadow position (static, driven by FSM for scale/opacity)
-    tracks.insert("s0_x".into(), kf(json!([{"time": 0.0, "value": btn_x}, {"time": 6.0, "value": btn_x}])));
-    tracks.insert("s0_y".into(), kf(json!([{"time": 0.0, "value": btn_y}, {"time": 6.0, "value": btn_y}])));
-
-    // s0_scale, s0_opacity, s1_scale, s1_y owned by FSM — not in timeline
-
-    // Text visibility (always on)
-    let label = "Reflow Run";
-    for (i, _ch) in label.chars().enumerate() {
-        tracks.insert(format!("c{}_scale", i), kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])));
-        tracks.insert(format!("c{}_opacity", i), kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])));
-        tracks.insert(format!("c{}_y", i), kf(json!([{"time": 0.0, "value": 0.0}, {"time": 6.0, "value": 0.0}])));
+    tracks.insert("s1_x".into(), kf(json!([
+        {"time": 0.0,  "value": 90.0,           "easing": "easeInOutQuart"},
+        {"time": 2.5,  "value": btn_x + 10.0},
+        {"time": 3.5,  "value": btn_x + 10.0},
+        {"time": 4.2,  "value": btn_x + 20.0,   "easing": "easeInOutCubic"},
+        {"time": 6.0,  "value": 560.0}
+    ])));
+    tracks.insert("s1_y".into(), kf(json!([
+        {"time": 0.0,  "value": 290.0,           "easing": "easeInOutQuart"},
+        {"time": 2.5,  "value": btn_y + 6.0},
+        {"time": 3.5,  "value": btn_y + 6.0},
+        {"time": 4.2,  "value": btn_y + 24.0,   "easing": "easeInOutCubic"},
+        {"time": 6.0,  "value": 70.0}
+    ])));
+    tracks.insert("s1_scale".into(), kf(json!([
+        {"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}
+    ])));
+    // Button position (static)
+    tracks.insert("s0_x".into(), kf(json!([
+        {"time": 0.0, "value": btn_x}, {"time": 6.0, "value": btn_x}
+    ])));
+    tracks.insert("s0_y".into(), kf(json!([
+        {"time": 0.0, "value": btn_y}, {"time": 6.0, "value": btn_y}
+    ])));
+    // Text always visible
+    for (i, _) in label.chars().enumerate() {
+        tracks.insert(format!("c{}_scale", i), kf(json!([
+            {"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}
+        ])));
+        tracks.insert(format!("c{}_opacity", i), kf(json!([
+            {"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}
+        ])));
+        tracks.insert(format!("c{}_y", i), kf(json!([
+            {"time": 0.0, "value": 0.0}, {"time": 6.0, "value": 0.0}
+        ])));
     }
 
-    net.add_node(
-        "tl",
-        "tpl_animation_timeline",
-        config(json!({
-            "duration": dur,
-            "autoplay": true,
-            "dt": 1.0 / fps as f64,
-            "tracks": Value::Object(tracks),
-        })),
-    )?;
+    net.add_node("tl", "tpl_animation_timeline", config(json!({
+        "duration": dur, "autoplay": true, "dt": dt,
+        "tracks": Value::Object(tracks),
+    })))?;
 
-    // ═══ HIT TEST — cursor vs button ═══
-    net.add_node(
-        "hit_test",
-        "tpl_hit_test",
-        config(json!({
-            "source": "s1",
-            "target": "s0",
-            "target_width": btn_w,
-            "target_height": btn_h,
-        })),
-    )?;
+    // ═══ HIT TEST ═══
+    net.add_node("hit_test", "tpl_hit_test", config(json!({
+        "source": "s1", "target": "s0",
+        "target_width": btn_w, "target_height": btn_h,
+    })))?;
 
-    // ═══ CLICK SIGNAL — triggered by timeline cursor dip ═══
-    // In a real app this would come from user input. Here we script it:
-    // the cursor y dips at t=3.0-3.15 (the click gesture in the timeline).
-    // We use a Signal that fires when triggered by an IIP at a delay.
-    // For now: use a second timeline that fires a click at t=3.0.
-    // Actually, simplest: the hit_test detects the cursor is inside,
-    // and we send a click IIP at the right moment via a Signal actor.
-    // Since IIPs fire at start, we need a delayed trigger.
-    //
-    // Pragmatic: use a separate small timeline with one track that
-    // goes 0→1 at t=3.0, and threshold that into a click trigger.
-    // But we don't have a threshold actor...
-    //
-    // ═══ FSM — button state machine ═══
-    // Event-driven: HOVER, LEAVE from hit_test
-    // Click (PRESS) left for real input actors (MouseInput, etc.)
-    // Each state emits signal data for button appearance
-    net.add_node(
-        "fsm",
-        "tpl_fsm",
-        config(json!({
-            "initial": "idle",
-            "dt": 1.0 / fps as f64,
-            "states": {
-                "idle": {
-                    "on": { "HOVER": { "target": "hover" } },
-                    "entry": {
-                        "emit": {
-                            "s0_x": btn_x,
-                            "s0_y": btn_y,
-                            "s0_scale": 1.0,
-                            "s0_opacity": 1.0,
-                        }
-                    }
-                },
-                "hover": {
-                    "on": {
-                        "LEAVE": { "target": "idle" }
-                    },
-                    "entry": {
-                        "emit": {
-                            "s0_scale": 1.05,
-                            "s0_opacity": 1.0,
-                        }
-                    }
-                },
-                // pressed/released states left for real input integration
-                // (MouseInput → Signal("PRESS") → FSM:event)
-            }
-        })),
-    )?;
+    // ═══ FSM — button state ═══
+    // hover entry emits { cmd:"play" }  → btn_anim plays forward  1.0→1.08
+    // idle  entry emits { cmd:"reverse" } → btn_anim plays backward 1.08→1.0
+    net.add_node("fsm", "tpl_fsm", config(json!({
+        "initial": "idle",
+        "dt": dt,
+        "states": {
+            "idle":  { "on": { "HOVER": { "target": "hover" } }, "entry": { "emit": { "cmd": "reverse" } } },
+            "hover": { "on": { "LEAVE": { "target": "idle"  } }, "entry": { "emit": { "cmd": "play"    } } }
+        }
+    })))?;
 
+    // ═══ SUBSCRIBERS — filter FSM signals by state ═══
+    net.add_node("sub_hover", "tpl_subscriber", config(json!({ "event": "hover" })))?;
+    net.add_node("sub_idle",  "tpl_subscriber", config(json!({ "event": "idle"  })))?;
+
+    // ═══ SINGLE BUTTON ANIMATION TIMELINE ═══
+    // Plays forward (hover-in) or reverse (hover-out). One source of s0_scale truth.
+    let anim_dur = 0.15;
+    let mut btn_tracks = serde_json::Map::new();
+    btn_tracks.insert("s0_scale".into(), kf(json!([
+        {"time": 0.0, "value": 1.0, "easing": "easeOutCubic"},
+        {"time": anim_dur, "value": 1.08}
+    ])));
+    net.add_node("btn_anim", "tpl_animation_timeline", config(json!({
+        "duration": anim_dur, "autoplay": false, "loop": false, "dt": dt,
+        "tracks": Value::Object(btn_tracks),
+    })))?;
 
     // ═══ RENDERER ═══
-    net.add_node(
-        "render",
-        "tpl_gpu_2d_render",
-        config(json!({
-            "width": w, "height": h,
-            "background": [0.95, 0.95, 0.97, 1.0],
-            "shapes": [
-                // 0: Button (single entity: body + shadow)
-                { "type": "rect", "bounds": [0, 0, btn_w, btn_h],
-                  "color": [0.20, 0.56, 0.98, 1.0], "cornerRadius": 14.0,
-                  "shadow": { "x": 0, "y": 4, "blur": 12, "color": [0.10, 0.28, 0.58, 0.35] } },
-                // 1: Cursor
-                { "type": "circle", "bounds": [0, 0, 14, 14],
-                  "color": [0.18, 0.18, 0.18, 0.9],
-                  "shadow": { "x": 0, "y": 2, "blur": 8, "color": [0.0, 0.0, 0.0, 0.2] } },
-            ],
-            "text": [{
-                "content": label,
-                "x": btn_x, "y": btn_y - 3.0,
-                "size": 20.0,
-                "color": [1.0, 1.0, 1.0, 1.0],
-                "tracking": 1.0, "center": true,
-            }],
-        })),
-    )?;
+    net.add_node("render", "tpl_gpu_2d_render", config(json!({
+        "width": w, "height": h,
+        "background": [0.95, 0.95, 0.97, 1.0],
+        "shapes": [
+            { "type": "rect", "bounds": [0, 0, btn_w, btn_h],
+              "color": [0.20, 0.56, 0.98, 1.0], "cornerRadius": 14.0,
+              "shadow": { "x": 0, "y": 4, "blur": 12, "color": [0.10, 0.28, 0.58, 0.35] } },
+            { "type": "circle", "bounds": [0, 0, 14, 14],
+              "color": [0.18, 0.18, 0.18, 0.9],
+              "shadow": { "x": 0, "y": 2, "blur": 8, "color": [0.0, 0.0, 0.0, 0.2] } },
+        ],
+        "text": [{
+            "content": label, "x": btn_x, "y": btn_y - 3.0,
+            "size": 20.0, "color": [1.0, 1.0, 1.0, 1.0],
+            "tracking": 1.0, "center": true,
+            "font": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        }],
+    })))?;
 
-    // ═══ VIDEO PIPELINE ═══
+    // ═══ VIDEO ═══
     net.add_node("collector", "tpl_render_frame_collector",
         config(json!({ "totalFrames": frames, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
@@ -292,18 +210,15 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
 
-    // Timing
+    // Timing: tick drives cursor timeline + btn_anim + FSM
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
     net.add_connection(wire("tick", "trigger", "tl", "tick"));
     net.add_connection(wire("tick", "trigger", "fsm", "tick"));
+    net.add_connection(wire("tick", "trigger", "btn_anim", "tick"));
 
-    // Font pipeline
-    net.add_connection(wire("font", "font_data", "atlas", "font_data"));
-    net.add_connection(wire("atlas", "atlas", "render", "atlas"));
-    net.add_connection(wire("atlas", "metrics", "render", "metrics"));
-    net.add_connection(wire("atlas", "atlas_size", "render", "atlas_size"));
+    // Font is embedded in text config — no external font pipeline needed
 
-    // Timeline values → renderer + hit_test
+    // Cursor timeline → renderer + hit_test
     net.add_connection(wire("tl", "values", "render", "values"));
     net.add_connection(wire("tl", "values", "hit_test", "values"));
 
@@ -311,8 +226,14 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("hit_test", "enter", "fsm", "event"));
     net.add_connection(wire("hit_test", "leave", "fsm", "event"));
 
-    // FSM data → renderer (flat values, no subscriber hop)
-    net.add_connection(wire("fsm", "data", "render", "values"));
+    // FSM emit → subscribers → btn_anim:control via data (carries { "cmd": "play"|"reverse" })
+    net.add_connection(wire("fsm", "emit", "sub_hover", "signal"));
+    net.add_connection(wire("fsm", "emit", "sub_idle",  "signal"));
+    net.add_connection(wire("sub_hover", "data", "btn_anim", "control"));
+    net.add_connection(wire("sub_idle",  "data", "btn_anim", "control"));
+
+    // btn_anim values → renderer (single source of s0_scale)
+    net.add_connection(wire("btn_anim", "values", "render", "values"));
 
     // Video pipeline
     net.add_connection(wire("render", "image", "collector", "frame"));
@@ -321,16 +242,12 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("encoder", "output", "save", "input"));
 
     // Bootstrap
-    net.add_initial(iip("font", "tick", Message::Flow));
     net.add_initial(iip("tick", "start", Message::Flow));
 
-    println!("{}x{}, {}fps, {:.0}s = {} frames\n", w, h, fps, dur, frames);
-    println!("DAG: timeline(cursor) → hit_test → FSM → subscribers → renderer");
-    println!("  HitTest: cursor(s2) vs button(s0) overlap detection");
-    println!("  FSM: idle ↔ hover (event-driven by hit_test enter/leave)");
-    println!("  FSM emit → Subscriber(idle/hover) → renderer:values");
-    println!("  Font: Arial Bold SDF\n");
-    println!("Running...\n");
+    println!("{}x{}, {}fps, {:.0}s = {} frames", w, h, fps, dur, frames);
+    println!("  cursor tl → hit_test → FSM → subscriber:data → btn_anim:control → renderer");
+    println!("  hover: play  1.0→1.08 ({:.2}s easeOutCubic)", anim_dur);
+    println!("  idle:  reverse 1.08→1.0 ({:.2}s easeOutCubic)\n", anim_dur);
 
     let start = std::time::Instant::now();
     net.start()?;
@@ -347,12 +264,10 @@ async fn main() -> anyhow::Result<()> {
     }
 
     net.shutdown();
-    let total = start.elapsed();
+    let t = start.elapsed();
     if mp4_path.exists() {
-        let size = std::fs::metadata(mp4_path)?.len();
-        println!("Saved: button_click.mp4 ({} bytes)", size);
-        println!("Total: {:.1}s ({:.1} fps)", total.as_secs_f64(), frames as f64 / total.as_secs_f64());
+        let sz = std::fs::metadata(mp4_path)?.len();
+        println!("Saved: button_click.mp4 ({} bytes, {:.1}s, {:.1} fps)", sz, t.as_secs_f64(), frames as f64 / t.as_secs_f64());
     }
-    println!("Done!");
     Ok(())
 }

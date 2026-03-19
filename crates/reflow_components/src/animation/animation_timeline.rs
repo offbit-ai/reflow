@@ -146,6 +146,15 @@ pub async fn animation_timeline_actor(
             }
         });
 
+    // Track whether the completed frame has already been emitted.
+    // Once emitted, the timeline goes silent until a new play/reverse resets this.
+    let mut completed_emitted: bool = ctx
+        .get_pool("_tl")
+        .into_iter()
+        .find(|(k, _)| k == "completed_emitted")
+        .and_then(|(_, v)| v.as_bool())
+        .unwrap_or(false);
+
     let mut elapsed: f64 = ctx
         .get_pool("_tl")
         .into_iter()
@@ -163,13 +172,25 @@ pub async fn animation_timeline_actor(
     if let Some(Message::String(cmd)) = payload.get("control") {
         let cmd = cmd.to_string();
         match cmd.as_str() {
-            "play" => playback_state = "playing".into(),
+            "play" => {
+                // If replaying a completed timeline, rewind first
+                if playback_state == "completed" {
+                    elapsed = 0.0;
+                }
+                completed_emitted = false;
+                playback_state = "playing".into();
+            }
             "pause" => playback_state = "paused".into(),
             "stop" => {
                 playback_state = "paused".into();
                 elapsed = 0.0;
             }
             "reverse" => {
+                // Start from end if at beginning (paused/never played) or completed backward
+                if elapsed == 0.0 {
+                    elapsed = duration;
+                }
+                completed_emitted = false;
                 speed = -speed.abs();
                 playback_state = "playing".into();
             }
@@ -181,8 +202,41 @@ pub async fn animation_timeline_actor(
             _ => {}
         }
     }
-    // Also accept Flow on play/control to start
+    // Accept Object { "cmd": "play"|"reverse"|"stop"|"pause"|"seek:N" } from subscriber:data
+    if let Some(Message::Object(obj)) = payload.get("control") {
+        let v: Value = obj.as_ref().clone().into();
+        if let Some(cmd_str) = v.get("cmd").and_then(|c| c.as_str()) {
+            match cmd_str {
+                "play" => {
+                    if playback_state == "completed" { elapsed = 0.0; }
+                    completed_emitted = false;
+                    speed = speed.abs();
+                    playback_state = "playing".into();
+                }
+                "reverse" => {
+                    if elapsed == 0.0 { elapsed = duration; }
+                    completed_emitted = false;
+                    speed = -speed.abs();
+                    playback_state = "playing".into();
+                }
+                "stop" => { playback_state = "paused".into(); elapsed = 0.0; }
+                "pause" => { playback_state = "paused".into(); }
+                _ if cmd_str.starts_with("seek:") => {
+                    if let Ok(t) = cmd_str[5..].trim().parse::<f64>() {
+                        elapsed = t.clamp(0.0, duration);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    // Also accept Flow on control to start (rewind if completed)
     if let Some(Message::Flow) = payload.get("control") {
+        if playback_state == "completed" {
+            elapsed = 0.0;
+        }
+        completed_emitted = false;
         playback_state = "playing".into();
     }
 
@@ -211,6 +265,7 @@ pub async fn animation_timeline_actor(
     ctx.pool_upsert("_tl", "state", json!(playback_state));
     ctx.pool_upsert("_tl", "elapsed", json!(elapsed));
     ctx.pool_upsert("_tl", "speed", json!(speed));
+    ctx.pool_upsert("_tl", "completed_emitted", json!(completed_emitted));
 
     let progress = if duration > 0.0 {
         elapsed / duration
@@ -262,6 +317,25 @@ pub async fn animation_timeline_actor(
                 out.insert(track_name.clone(), msg);
             }
         }
+    }
+
+    // Micro-timelines with autoplay:false should be silent until triggered.
+    // - "paused": never triggered → no output (avoids spurious downstream fires).
+    // - "playing": emit every tick.
+    // - "completed": emit the final frame exactly once, then go silent until
+    //   a new play/reverse resets completed_emitted. This prevents continuously
+    //   re-triggering downstream actors (e.g. renderer) with unchanged values.
+    let should_emit_values = autoplay
+        || playback_state == "playing"
+        || (playback_state == "completed" && !completed_emitted);
+
+    if !should_emit_values {
+        return Ok(HashMap::new()); // Completely silent — no Optional(None) to connectors.
+    }
+
+    // Mark completed frame as emitted so subsequent ticks go silent.
+    if playback_state == "completed" {
+        ctx.pool_upsert("_tl", "completed_emitted", json!(true));
     }
 
     // Output all track values as one object on `values` outport
