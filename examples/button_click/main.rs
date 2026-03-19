@@ -169,12 +169,9 @@ async fn main() -> anyhow::Result<()> {
     tracks.insert("s0_x".into(), kf(json!([{"time": 0.0, "value": btn_x}, {"time": 6.0, "value": btn_x}])));
     tracks.insert("s0_y".into(), kf(json!([{"time": 0.0, "value": btn_y}, {"time": 6.0, "value": btn_y}])));
     tracks.insert("s1_x".into(), kf(json!([{"time": 0.0, "value": btn_x}, {"time": 6.0, "value": btn_x}])));
-    tracks.insert("s1_y".into(), kf(json!([{"time": 0.0, "value": btn_y + 4.0}, {"time": 6.0, "value": btn_y + 4.0}])));
+    // s1_y owned by FSM (shadow offset changes per state)
 
-    // Default button scale/opacity (FSM overrides these via subscribers)
-    tracks.insert("s0_scale".into(), kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])));
-    tracks.insert("s0_opacity".into(), kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])));
-    tracks.insert("s1_scale".into(), kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])));
+    // s0_scale, s0_opacity, s1_scale, s1_y owned by FSM — not in timeline
 
     // Text visibility (always on)
     let label = "Reflow Run";

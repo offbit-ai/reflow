@@ -112,13 +112,19 @@ pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         && src_y >= tgt_y - hh
         && src_y <= tgt_y + hh;
 
-    // Previous state
-    let was_inside = ctx
-        .get_pool("_ht")
+    // Previous state (initialize on first run)
+    let pool: Vec<(String, Value)> = ctx.get_pool("_ht").into_iter().collect();
+    let initialized = pool.iter().any(|(k, _)| k == "inside");
+    let was_inside = pool
         .into_iter()
         .find(|(k, _)| k == "inside")
         .and_then(|(_, v)| v.as_bool())
         .unwrap_or(false);
+
+    if !initialized {
+        ctx.pool_upsert("_ht", "inside", json!(false));
+        return Ok(HashMap::new());
+    }
 
     // Only emit on state transitions — silent when unchanged
     if inside == was_inside {
