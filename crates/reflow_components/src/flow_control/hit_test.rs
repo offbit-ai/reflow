@@ -93,19 +93,6 @@ pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message
             .unwrap_or(0.0)
     };
 
-    let src_x = get_val(source, "x");
-    let src_y = get_val(source, "y");
-    let tgt_x = get_val(target, "x");
-    let tgt_y = get_val(target, "y");
-    // Static bounds — hit region doesn't change with visual scale.
-    // Visual scale is appearance-only; collision uses configured size.
-    let hw = target_w / 2.0;
-    let hh = target_h / 2.0;
-    let inside = src_x >= tgt_x - hw
-        && src_x <= tgt_x + hw
-        && src_y >= tgt_y - hh
-        && src_y <= tgt_y + hh;
-
     // Previous state (initialize on first run)
     let pool: Vec<(String, Value)> = ctx.get_pool("_ht").into_iter().collect();
     let initialized = pool.iter().any(|(k, _)| k == "inside");
@@ -119,6 +106,25 @@ pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         ctx.pool_upsert("_ht", "inside", json!(false));
         return Ok(HashMap::new());
     }
+
+    let src_x = get_val(source, "x");
+    let src_y = get_val(source, "y");
+    let tgt_x = get_val(target, "x");
+    let tgt_y = get_val(target, "y");
+
+    // Hysteresis: once inside, the leave threshold is padded outward.
+    // Prevents boundary flickering when cursor sits near the edge.
+    let padding = config
+        .get("padding")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(8.0);
+    let extra = if was_inside { padding } else { 0.0 };
+    let hw = target_w / 2.0 + extra;
+    let hh = target_h / 2.0 + extra;
+    let inside = src_x >= tgt_x - hw
+        && src_x <= tgt_x + hw
+        && src_y >= tgt_y - hh
+        && src_y <= tgt_y + hh;
 
     // Only emit on state transitions — silent when unchanged
     if inside == was_inside {
