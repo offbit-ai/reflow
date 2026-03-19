@@ -1075,12 +1075,17 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     // Two-phase primitive list: shadows before fills so no shadow ever
     // composites on top of a fill, regardless of shape declaration order.
-    let mut shadow_prims: Vec<GpuPrimitive> = Vec::new();
-    let mut fill_prims: Vec<GpuPrimitive> = Vec::new();
+    // z controls ordering within each phase: shapes default to idx*10,
+    // text defaults to 0.5 so it renders above s0 but below s1 by default.
+    let mut shadow_prims: Vec<(f32, GpuPrimitive)> = Vec::new();
+    let mut fill_prims:   Vec<(f32, GpuPrimitive)> = Vec::new();
 
     // ── Geometric shapes (sN_ prefix) ──
+    // z defaults to idx*10 so declaration order is the natural z-order.
+    // Set "z" in the shape config to override (e.g. cursor at z:20 floats above text at z:5).
     for (idx, prim_json) in shapes.iter().enumerate() {
         let pfx = format!("s{}", idx);
+        let z = prim_json.get("z").and_then(|v| v.as_f64()).unwrap_or(idx as f64 * 10.0) as f32;
         let anim_x = get_val(&pfx, "x");
         let anim_y = get_val(&pfx, "y");
         let anim_scale = get_val(&pfx, "scale").unwrap_or(1.0);
@@ -1148,12 +1153,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             p = p.with_border(bw, bc);
         }
 
-        // Shadow pre-pass: emit shadow-only primitive before the fill so that
-        // shadows from later shapes never composite on top of earlier fills.
         if p.shadow[2] > 0.001 || p.shadow[0].abs() > 0.001 || p.shadow[1].abs() > 0.001 {
-            shadow_prims.push(p.as_shadow_only());
+            shadow_prims.push((z, p.as_shadow_only()));
         }
-        fill_prims.push(p.clear_shadow());
+        fill_prims.push((z, p.clear_shadow()));
     }
 
     // ── Load cached glyph atlas from pool ──
@@ -1166,7 +1169,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let has_atlas = glyph_metrics.is_some() && atlas_size.is_some();
 
     // ── Text (cN_ prefix per character) ──
+    // Text z defaults to 0.5 — above the first shape (z=0) but below the second (z=10).
+    // Set "z" in the text config to place it anywhere in the stack.
     for text_cfg in &text_configs {
+        let text_z = text_cfg.get("z").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
         let content = text_cfg
             .get("content")
             .and_then(|v| v.as_str())
@@ -1275,7 +1281,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let u1 = (gx + gw) / aw as f32;
                     let v1 = (gy + gh) / ah as f32;
 
-                    fill_prims.push(GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color));
+                    fill_prims.push((text_z, GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color)));
                 }
             } else {
                 // ── Fallback: geometric segment font ──
@@ -1292,22 +1298,25 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let sy1 = ccy + (seg[1] * size - hs) * s;
                     let sx2 = ccx + (seg[2] * size - hw) * s;
                     let sy2 = ccy + (seg[3] * size - hs) * s;
-                    fill_prims.push(GpuPrimitive::segment(
+                    fill_prims.push((text_z, GpuPrimitive::segment(
                         sx1,
                         sy1,
                         sx2,
                         sy2,
                         thickness * s,
                         color,
-                    ));
+                    )));
                 }
             }
         }
     }
 
-    // Assemble: shadow-only pass first, then fills — correct layer ordering.
-    let mut gpu_prims: Vec<GpuPrimitive> = shadow_prims;
-    gpu_prims.extend(fill_prims);
+    // Sort each phase by z, then assemble: shadows first, then fills.
+    shadow_prims.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    fill_prims.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    let mut gpu_prims: Vec<GpuPrimitive> =
+        shadow_prims.into_iter().map(|(_, p)| p).collect();
+    gpu_prims.extend(fill_prims.into_iter().map(|(_, p)| p));
 
     if gpu_prims.is_empty() {
         return Ok(HashMap::new());

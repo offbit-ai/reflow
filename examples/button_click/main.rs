@@ -188,7 +188,7 @@ async fn main() -> anyhow::Result<()> {
             { "type": "rect", "bounds": [0, 0, btn_w, btn_h],
               "color": [0.20, 0.56, 0.98, 1.0], "cornerRadius": 14.0,
               "shadow": { "x": 0, "y": 4, "blur": 12, "color": [0.10, 0.28, 0.58, 0.35] } },
-            { "type": "circle", "bounds": [0, 0, 14, 14],
+            { "type": "circle", "bounds": [0, 0, 14, 14], "z": 20,
               "color": [0.18, 0.18, 0.18, 0.9],
               "shadow": { "x": 0, "y": 2, "blur": 8, "color": [0.0, 0.0, 0.0, 0.2] } },
         ],
