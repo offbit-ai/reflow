@@ -101,6 +101,20 @@ impl GpuPrimitive {
         p
     }
 
+    /// Mark this primitive as shadow-only (fill is skipped in the shader).
+    /// Used to emit a shadow pre-pass primitive before the fill primitive.
+    pub fn as_shadow_only(mut self) -> Self {
+        self.type_info[1] |= 1;
+        self
+    }
+
+    /// Zero out shadow params so this primitive renders fill only.
+    pub fn clear_shadow(mut self) -> Self {
+        self.shadow = [0.0; 4];
+        self.shadow_color = [0.0; 4];
+        self
+    }
+
     pub fn with_rotation(mut self, angle_deg: f32) -> Self {
         let rad = angle_deg.to_radians();
         self.rotation[0] = rad.sin();
@@ -157,6 +171,9 @@ const PRIM_RECT: u32 = 0u;
 const PRIM_CIRCLE: u32 = 1u;
 const PRIM_SEGMENT: u32 = 2u;
 const PRIM_GLYPH: u32 = 3u;
+
+// type_info.y flags
+const FLAG_SHADOW_ONLY: u32 = 1u; // skip fill; used for the shadow pre-pass
 
 struct Primitive {
     bounds: vec4<f32>,
@@ -307,6 +324,13 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         let shadow_dist = eval_sdf(sp, prim);
         let sa = shadow_alpha(shadow_dist, blur * 0.5) * prim.shadow_color.a;
         result = vec4<f32>(prim.shadow_color.rgb, sa);
+    }
+
+    // Shadow-only primitive: skip fill and return early.
+    // Used by the shadow pre-pass so every shadow renders before every fill.
+    if (prim.type_info.y & FLAG_SHADOW_ONLY) != 0u {
+        if result.a < 0.001 { discard; }
+        return result;
     }
 
     // Shape fill with anti-aliasing
@@ -1049,7 +1073,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         .cloned()
         .unwrap_or_default();
 
-    let mut gpu_prims: Vec<GpuPrimitive> = Vec::new();
+    // Two-phase primitive list: shadows before fills so no shadow ever
+    // composites on top of a fill, regardless of shape declaration order.
+    let mut shadow_prims: Vec<GpuPrimitive> = Vec::new();
+    let mut fill_prims: Vec<GpuPrimitive> = Vec::new();
 
     // ── Geometric shapes (sN_ prefix) ──
     for (idx, prim_json) in shapes.iter().enumerate() {
@@ -1121,7 +1148,12 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             p = p.with_border(bw, bc);
         }
 
-        gpu_prims.push(p);
+        // Shadow pre-pass: emit shadow-only primitive before the fill so that
+        // shadows from later shapes never composite on top of earlier fills.
+        if p.shadow[2] > 0.001 || p.shadow[0].abs() > 0.001 || p.shadow[1].abs() > 0.001 {
+            shadow_prims.push(p.as_shadow_only());
+        }
+        fill_prims.push(p.clear_shadow());
     }
 
     // ── Load cached glyph atlas from pool ──
@@ -1243,7 +1275,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let u1 = (gx + gw) / aw as f32;
                     let v1 = (gy + gh) / ah as f32;
 
-                    gpu_prims.push(GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color));
+                    fill_prims.push(GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color));
                 }
             } else {
                 // ── Fallback: geometric segment font ──
@@ -1260,7 +1292,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let sy1 = ccy + (seg[1] * size - hs) * s;
                     let sx2 = ccx + (seg[2] * size - hw) * s;
                     let sy2 = ccy + (seg[3] * size - hs) * s;
-                    gpu_prims.push(GpuPrimitive::segment(
+                    fill_prims.push(GpuPrimitive::segment(
                         sx1,
                         sy1,
                         sx2,
@@ -1272,6 +1304,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             }
         }
     }
+
+    // Assemble: shadow-only pass first, then fills — correct layer ordering.
+    let mut gpu_prims: Vec<GpuPrimitive> = shadow_prims;
+    gpu_prims.extend(fill_prims);
 
     if gpu_prims.is_empty() {
         return Ok(HashMap::new());
