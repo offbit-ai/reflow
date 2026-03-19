@@ -570,8 +570,13 @@ fn execute_transition(
             "emit".to_string(),
             Message::object(EncodableValue::from(json!({
                 "id": final_state,
-                "data": Value::Object(emit_values),
+                "data": Value::Object(emit_values.clone()),
             }))),
+        );
+        // data: flat values for direct wiring to renderer/downstream
+        out.insert(
+            "data".to_string(),
+            Message::object(EncodableValue::from(Value::Object(emit_values))),
         );
     }
 

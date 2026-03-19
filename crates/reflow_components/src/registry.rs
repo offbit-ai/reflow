@@ -16,9 +16,9 @@ use crate::animation::{
 use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
 use crate::flow_control::{
     CollectActor, ConditionalBranchActor, CronTriggerActor, DelayActor, FilterActor, FsmActor,
-    GateActor, IntervalTriggerActor, LoopActor, MapActor, MergeActor, PassthroughActor,
-    ReduceActor, ServerRequestActor, ServerResponseActor, SignalActor, SplitActor,
-    SubscriberActor, SwitchCaseActor,
+    GateActor, HitTestActor, IntervalTriggerActor, LoopActor, MapActor, MergeActor,
+    PassthroughActor, ReduceActor, ServerRequestActor, ServerResponseActor, SignalActor,
+    SplitActor, SubscriberActor, SwitchCaseActor,
 };
 use crate::gpu::font_load::FontLoadActor;
 use crate::gpu::glyph_atlas::GlyphAtlasActor;
@@ -157,6 +157,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
 
         // Flow Control
         "tpl_fsm" => Some(Arc::new(FsmActor::new())),
+        "tpl_hit_test" => Some(Arc::new(HitTestActor::new())),
         "tpl_signal" => Some(Arc::new(SignalActor::new())),
         "tpl_subscriber" => Some(Arc::new(SubscriberActor::new())),
         "tpl_if_branch" => Some(Arc::new(ConditionalBranchActor::new())),
@@ -499,6 +500,10 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "HttpRequestActor".to_string(),
     );
     mapping.insert("tpl_fsm".to_string(), "FsmActor".to_string());
+    mapping.insert(
+        "tpl_hit_test".to_string(),
+        "HitTestActor".to_string(),
+    );
     mapping.insert(
         "tpl_signal".to_string(),
         "SignalActor".to_string(),
