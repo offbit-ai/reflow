@@ -48,7 +48,7 @@ use std::collections::HashMap;
 #[actor(
     HitTestActor,
     inports::<100>(values),
-    outports::<50>(enter, leave, inside),
+    outports::<50>(enter, leave),
     state(MemoryState)
 )]
 pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
@@ -120,21 +120,20 @@ pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         .and_then(|(_, v)| v.as_bool())
         .unwrap_or(false);
 
+    // Only emit on state transitions — silent when unchanged
+    if inside == was_inside {
+        return Ok(HashMap::new());
+    }
+
     ctx.pool_upsert("_ht", "inside", json!(inside));
 
     let mut out = HashMap::new();
-    out.insert(
-        "inside".to_string(),
-        Message::Boolean(inside),
-    );
-
-    // State change detection
-    if inside && !was_inside {
+    if inside {
         out.insert(
             "enter".to_string(),
             Message::String("HOVER".to_string().into()),
         );
-    } else if !inside && was_inside {
+    } else {
         out.insert(
             "leave".to_string(),
             Message::String("LEAVE".to_string().into()),
