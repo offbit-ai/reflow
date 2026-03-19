@@ -117,8 +117,9 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
     }
 
     // ─── Current state ───
-    let current_state = ctx
-        .get_pool("_fsm")
+    let fsm_pool: Vec<(String, Value)> = ctx.get_pool("_fsm").into_iter().collect();
+    let first_run = !fsm_pool.iter().any(|(k, _)| k == "current");
+    let current_state = fsm_pool
         .into_iter()
         .find(|(k, _)| k == "current")
         .and_then(|(_, v)| v.as_str().map(|s| s.to_string()))
@@ -126,6 +127,36 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
             ctx.pool_upsert("_fsm", "current", json!(initial));
             initial.clone()
         });
+
+    // ─── Emit initial state data on first run ───
+    if first_run {
+        if let Some(entry_action) = states
+            .get(&current_state)
+            .and_then(|s| s.get("entry"))
+        {
+            let mut emit_values = serde_json::Map::new();
+            apply_action(entry_action, &ctx, &mut emit_values);
+            if !emit_values.is_empty() {
+                let mut out = HashMap::new();
+                out.insert(
+                    "state".to_string(),
+                    Message::String(current_state.clone().into()),
+                );
+                out.insert(
+                    "emit".to_string(),
+                    Message::object(EncodableValue::from(json!({
+                        "id": current_state,
+                        "data": Value::Object(emit_values.clone()),
+                    }))),
+                );
+                out.insert(
+                    "data".to_string(),
+                    Message::object(EncodableValue::from(Value::Object(emit_values))),
+                );
+                return Ok(out);
+            }
+        }
+    }
 
     // ─── Handle control messages ───
     if let Some(msg) = payload.get("control") {

@@ -232,10 +232,13 @@ async fn main() -> anyhow::Result<()> {
                     "on": { "HOVER": { "target": "hover" } },
                     "entry": {
                         "emit": {
+                            "s0_x": btn_x,
+                            "s0_y": btn_y,
                             "s0_scale": 1.0,
                             "s0_opacity": 1.0,
-                            "s1_scale": 1.0,
+                            "s1_x": btn_x,
                             "s1_y": btn_y + 4.0,
+                            "s1_scale": 1.0,
                         }
                     }
                 },

@@ -97,16 +97,10 @@ pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let src_y = get_val(source, "y");
     let tgt_x = get_val(target, "x");
     let tgt_y = get_val(target, "y");
-    let tgt_scale = ctx
-        .get_pool("_ht_vals")
-        .into_iter()
-        .find(|(k, _)| k == &format!("{}_scale", target))
-        .and_then(|(_, v)| v.as_f64())
-        .unwrap_or(1.0);
-
-    // Target bounds (centered at tgt_x, tgt_y, scaled)
-    let hw = (target_w * tgt_scale) / 2.0;
-    let hh = (target_h * tgt_scale) / 2.0;
+    // Static bounds — hit region doesn't change with visual scale.
+    // Visual scale is appearance-only; collision uses configured size.
+    let hw = target_w / 2.0;
+    let hh = target_h / 2.0;
     let inside = src_x >= tgt_x - hw
         && src_x <= tgt_x + hw
         && src_y >= tgt_y - hh
