@@ -134,7 +134,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Cursor path (shape 2)
     tracks.insert(
-        "s2_x".into(),
+        "s1_x".into(),
         kf(json!([
             {"time": 0.0, "value": 90.0},
             {"time": 0.5, "value": 90.0, "easing": "easeInOutCubic"},
@@ -147,7 +147,7 @@ async fn main() -> anyhow::Result<()> {
         ])),
     );
     tracks.insert(
-        "s2_y".into(),
+        "s1_y".into(),
         kf(json!([
             {"time": 0.0, "value": 290.0},
             {"time": 0.5, "value": 290.0, "easing": "easeInOutCubic"},
@@ -161,15 +161,13 @@ async fn main() -> anyhow::Result<()> {
         ])),
     );
     tracks.insert(
-        "s2_scale".into(),
+        "s1_scale".into(),
         kf(json!([{"time": 0.0, "value": 1.0}, {"time": 6.0, "value": 1.0}])),
     );
 
     // Button + shadow position (static, driven by FSM for scale/opacity)
     tracks.insert("s0_x".into(), kf(json!([{"time": 0.0, "value": btn_x}, {"time": 6.0, "value": btn_x}])));
     tracks.insert("s0_y".into(), kf(json!([{"time": 0.0, "value": btn_y}, {"time": 6.0, "value": btn_y}])));
-    tracks.insert("s1_x".into(), kf(json!([{"time": 0.0, "value": btn_x}, {"time": 6.0, "value": btn_x}])));
-    // s1_y owned by FSM (shadow offset changes per state)
 
     // s0_scale, s0_opacity, s1_scale, s1_y owned by FSM — not in timeline
 
@@ -197,7 +195,7 @@ async fn main() -> anyhow::Result<()> {
         "hit_test",
         "tpl_hit_test",
         config(json!({
-            "source": "s2",
+            "source": "s1",
             "target": "s0",
             "target_width": btn_w,
             "target_height": btn_h,
@@ -236,9 +234,6 @@ async fn main() -> anyhow::Result<()> {
                             "s0_y": btn_y,
                             "s0_scale": 1.0,
                             "s0_opacity": 1.0,
-                            "s1_x": btn_x,
-                            "s1_y": btn_y + 4.0,
-                            "s1_scale": 1.0,
                         }
                     }
                 },
@@ -248,10 +243,8 @@ async fn main() -> anyhow::Result<()> {
                     },
                     "entry": {
                         "emit": {
-                            "s0_scale": 1.04,
+                            "s0_scale": 1.05,
                             "s0_opacity": 1.0,
-                            "s1_scale": 1.04,
-                            "s1_y": btn_y + 5.0,
                         }
                     }
                 },
@@ -270,13 +263,11 @@ async fn main() -> anyhow::Result<()> {
             "width": w, "height": h,
             "background": [0.95, 0.95, 0.97, 1.0],
             "shapes": [
-                // 0: Button body
+                // 0: Button (single entity: body + shadow)
                 { "type": "rect", "bounds": [0, 0, btn_w, btn_h],
-                  "color": [0.20, 0.56, 0.98, 1.0], "cornerRadius": 14.0 },
-                // 1: Button shadow
-                { "type": "rect", "bounds": [0, 0, btn_w, btn_h],
-                  "color": [0.10, 0.28, 0.58, 0.22], "cornerRadius": 14.0 },
-                // 2: Cursor
+                  "color": [0.20, 0.56, 0.98, 1.0], "cornerRadius": 14.0,
+                  "shadow": { "x": 0, "y": 4, "blur": 12, "color": [0.10, 0.28, 0.58, 0.35] } },
+                // 1: Cursor
                 { "type": "circle", "bounds": [0, 0, 14, 14],
                   "color": [0.18, 0.18, 0.18, 0.9],
                   "shadow": { "x": 0, "y": 2, "blur": 8, "color": [0.0, 0.0, 0.0, 0.2] } },
