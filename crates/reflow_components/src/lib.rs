@@ -10,8 +10,7 @@
 
 pub mod animation;
 #[cfg(feature = "api")]
-#[allow(clippy::all, unused_variables)]
-pub mod api;
+pub use reflow_api::api;
 pub mod assets;
 pub mod flow_control;
 pub mod gpu;
@@ -45,7 +44,7 @@ pub use registry::{get_actor_for_template, get_template_mapping};
 
 // Re-export API template metadata for ZIP registration (only with api feature)
 #[cfg(feature = "api")]
-pub use api::api_registry::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};
+pub use reflow_api::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};
 
 // Stubs when api feature is disabled — lets dependents compile without the heavy API modules
 #[cfg(not(feature = "api"))]

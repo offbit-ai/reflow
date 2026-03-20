@@ -101,6 +101,17 @@ impl GpuPrimitive {
         p
     }
 
+    /// Image layer primitive — renders a texture mapped to the given bounds.
+    /// `opacity` controls the alpha multiplier (1.0 = fully opaque).
+    pub fn image(x: f32, y: f32, w: f32, h: f32, opacity: f32) -> Self {
+        let mut p = Self::zeroed();
+        p.bounds = [x, y, w, h];
+        p.color = [1.0, 1.0, 1.0, opacity];
+        p.rotation = [0.0, 1.0, 0.0, 1.0];
+        p.type_info = [4, 0, 0, 0]; // PRIM_IMAGE
+        p
+    }
+
     /// Mark this primitive as shadow-only (fill is skipped in the shader).
     /// Used to emit a shadow pre-pass primitive before the fill primitive.
     pub fn as_shadow_only(mut self) -> Self {
@@ -171,6 +182,7 @@ const PRIM_RECT: u32 = 0u;
 const PRIM_CIRCLE: u32 = 1u;
 const PRIM_SEGMENT: u32 = 2u;
 const PRIM_GLYPH: u32 = 3u;
+const PRIM_IMAGE: u32 = 4u;
 
 // type_info.y flags
 const FLAG_SHADOW_ONLY: u32 = 1u; // skip fill; used for the shadow pre-pass
@@ -194,6 +206,9 @@ struct Primitive {
 
 @group(1) @binding(0) var glyph_atlas: texture_2d<f32>;
 @group(1) @binding(1) var glyph_sampler: sampler;
+
+@group(2) @binding(0) var layer_texture: texture_2d<f32>;
+@group(2) @binding(1) var layer_sampler: sampler;
 
 @vertex
 fn vs_main(
@@ -306,6 +321,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(prim.color.rgb, alpha);
     }
 
+    // PRIM_IMAGE: sample layer texture — UV mapped from bounds within viewport
+    if prim_type == PRIM_IMAGE {
+        let frac = (p - prim.bounds.xy) / prim.bounds.zw;
+        let uv = clamp(frac, vec2<f32>(0.0), vec2<f32>(1.0));
+        let tex_color = textureSample(layer_texture, layer_sampler, uv);
+        let alpha = tex_color.a * prim.color.a;
+        if alpha < 0.001 { discard; }
+        return vec4<f32>(tex_color.rgb, alpha);
+    }
+
     // Apply rotation around bounds center
     let sin_r = prim.rotation.x;
     let cos_r = prim.rotation.y;
@@ -364,6 +389,7 @@ struct CachedPipeline {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
     atlas_bind_group_layout: wgpu::BindGroupLayout,
+    layer_bind_group_layout: wgpu::BindGroupLayout,
     sample_count: u32,
 }
 
@@ -469,9 +495,32 @@ fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
             ],
         });
 
+        // Group 2: layer image texture + sampler (for PRIM_IMAGE)
+        let layer_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("SDF 2D Layer BGL"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("SDF 2D Pipeline Layout"),
-            bind_group_layouts: &[&bgl, &atlas_bgl],
+            bind_group_layouts: &[&bgl, &atlas_bgl, &layer_bgl],
             push_constant_ranges: &[],
         });
 
@@ -523,6 +572,7 @@ fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
             pipeline,
             bind_group_layout: bgl,
             atlas_bind_group_layout: atlas_bgl,
+            layer_bind_group_layout: layer_bgl,
             sample_count,
         }
     })
@@ -540,6 +590,21 @@ pub fn render_2d(
     bg_color: [f32; 4],
     glyph_atlas: Option<&GlyphAtlasGpu>,
     msaa: u32,
+) -> Vec<u8> {
+    render_2d_with_layer(primitives, width, height, bg_color, glyph_atlas, msaa, None)
+}
+
+/// Render with an optional RGBA layer image (for PRIM_IMAGE primitives).
+/// `layer_rgba` is width*height*4 bytes in RGBA8 format.
+#[cfg(feature = "gpu")]
+pub fn render_2d_with_layer(
+    primitives: &[GpuPrimitive],
+    width: u32,
+    height: u32,
+    bg_color: [f32; 4],
+    glyph_atlas: Option<&GlyphAtlasGpu>,
+    msaa: u32,
+    layer_rgba: Option<(&[u8], u32, u32)>,
 ) -> Vec<u8> {
     use wgpu::util::DeviceExt;
 
@@ -662,6 +727,44 @@ pub fn render_2d(
     }
     let atlas_bind_group = &atlas_cache_guard.as_ref().unwrap().bind_group;
 
+    // Layer texture for PRIM_IMAGE — created per-frame from RGBA bytes.
+    // When no layer is provided, use a 1x1 transparent pixel as placeholder.
+    let placeholder_pixel = [0u8; 4];
+    let (layer_data, layer_w, layer_h) = match layer_rgba {
+        Some((data, w, h)) => (data, w, h),
+        None => (&placeholder_pixel[..], 1u32, 1u32),
+    };
+    let layer_tex = device.create_texture_with_data(
+        queue,
+        &wgpu::TextureDescriptor {
+            label: Some("Layer Image"),
+            size: wgpu::Extent3d { width: layer_w, height: layer_h, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        },
+        wgpu::util::TextureDataOrder::LayerMajor,
+        layer_data,
+    );
+    let layer_view = layer_tex.create_view(&Default::default());
+    let layer_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        label: Some("Layer Sampler"),
+        mag_filter: wgpu::FilterMode::Linear,
+        min_filter: wgpu::FilterMode::Linear,
+        ..Default::default()
+    });
+    let layer_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Layer Bind Group"),
+        layout: &cached.layer_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&layer_view) },
+            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&layer_sampler) },
+        ],
+    });
+
     // Render targets — cached for constant output dimensions.
     // Avoids recreating 3.5 MB MSAA + 0.9 MB resolve + 1.6 MB readback every frame.
     let mut rt_cache_guard = CACHED_RENDER_TARGETS.lock().unwrap_or_else(|e| { eprintln!("[MUTEX POISON] rt"); e.into_inner() });
@@ -752,6 +855,7 @@ pub fn render_2d(
         pass.set_pipeline(&cached.pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
         pass.set_bind_group(1, atlas_bind_group, &[]);
+        pass.set_bind_group(2, &layer_bind_group, &[]);
         pass.draw(0..6, 0..primitives.len() as u32);
     }
 
@@ -1137,6 +1241,18 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             }
         }
     }
+    // Cache layer image bytes (RGBA) for PRIM_IMAGE rendering.
+    // Arrives as Message::Bytes on the "data" port from upstream (e.g., browser screencast).
+    if let Some(Message::Bytes(bytes)) = payload.get("data") {
+        let expected = (width * height * 4) as usize;
+        if bytes.len() == expected {
+            let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &**bytes);
+            ctx.pool_upsert("_layer", "rgba", json!(b64));
+            ctx.pool_upsert("_layer", "width", json!(width));
+            ctx.pool_upsert("_layer", "height", json!(height));
+        }
+    }
+
     // Restore all pooled values (includes fan-in accumulation from prior messages)
     for (k, stored) in ctx.get_pool("_vals") {
         if !vals.contains_key(&k) {
@@ -1220,6 +1336,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
         let mut p = match ptype {
             "circle" => GpuPrimitive::circle(x + w / 2.0, y + h / 2.0, w.min(h) / 2.0, color),
+            "image" => GpuPrimitive::image(x, y, w, h, color[3]),
             _ => {
                 let r = prim_json
                     .get("cornerRadius")
@@ -1435,10 +1552,32 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     let msaa = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
 
+    // Extract layer image from pool (cached RGBA bytes for PRIM_IMAGE)
+    let layer_pool: Vec<(String, serde_json::Value)> = ctx.get_pool("_layer").into_iter().collect();
+    let layer_bytes: Option<Vec<u8>> = layer_pool.iter()
+        .find(|(k, _)| k == "rgba")
+        .and_then(|(_, v)| v.as_str())
+        .and_then(|b64| base64_decode(b64));
+    let layer_w: u32 = layer_pool.iter()
+        .find(|(k, _)| k == "width")
+        .and_then(|(_, v)| v.as_u64())
+        .unwrap_or(0) as u32;
+    let layer_h: u32 = layer_pool.iter()
+        .find(|(k, _)| k == "height")
+        .and_then(|(_, v)| v.as_u64())
+        .unwrap_or(0) as u32;
+    let layer_arg = layer_bytes.as_ref().and_then(|data| {
+        if layer_w > 0 && layer_h > 0 && data.len() == (layer_w * layer_h * 4) as usize {
+            Some((data.as_slice(), layer_w, layer_h))
+        } else {
+            None
+        }
+    });
+
     #[cfg(feature = "gpu")]
     let rgba = {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            render_2d(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa)
+            render_2d_with_layer(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa, layer_arg)
         }));
         match result {
             Ok(out) => out,

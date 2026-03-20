@@ -1,0 +1,17 @@
+[workspace]
+
+[package]
+name = "browser_screencast"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "browser_screencast"
+path = "main.rs"
+
+[dependencies]
+reflow_network = { path = "../../crates/reflow_network" }
+reflow_components = { path = "../../crates/reflow_components", default-features = false, features = ["gpu", "video-encode", "browser"] }
+anyhow = "1.0"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"

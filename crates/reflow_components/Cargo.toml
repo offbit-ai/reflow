@@ -40,6 +40,9 @@ base64 = "0.22"
 # SDF / Noise (pure Rust, Wasm-safe — always available)
 reflow_sdf = { path = "../reflow_sdf" }
 
+# API actors (optional — large, 88 services / ~6700 actors)
+reflow_api = { path = "../reflow_api", optional = true }
+
 # Asset database (pure Rust, Wasm-safe)
 reflow_assets = { path = "../reflow_assets" }
 
@@ -51,6 +54,9 @@ pollster = { version = "0.4", optional = true }
 
 # Video encoding (optional, native-only)
 openh264 = { version = "0.6", optional = true }
+
+# Headless browser automation (optional, native-only)
+chromiumoxide = { version = "0.7", features = ["tokio-runtime"], optional = true }
 
 # 3D model import (pure Rust, Wasm-safe)
 gltf = "1"
@@ -72,11 +78,12 @@ js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window"] }
 
 [features]
-default = ["api", "av-core", "gpu", "window-events"]
-api = []
+default = ["av-core", "gpu", "window-events"]
+api = ["dep:reflow_api"]
 av-core = ["dep:reflow_dsp"]
 gpu = ["dep:wgpu", "dep:bytemuck", "dep:pollster", "dep:once_cell"]
 video-encode = ["dep:openh264"]
+browser = ["dep:chromiumoxide"]
 window-events = []
 browser-events = ["window-events"]
 

@@ -41,6 +41,8 @@ use crate::input::{
     GamepadInputActor, KeyboardInputActor, MouseInputActor, TouchInputActor, WindowEventActor,
 };
 use crate::integration::HttpRequestActor;
+#[cfg(feature = "browser")]
+use crate::integration::BrowserScreencastActor;
 use crate::io::{
     FileLoadActor, FileSaveActor, GltfExportActor, GltfImportActor, MeshImportActor,
     ObjExportActor, ObjImportActor, SceneImportActor, StlExportActor, StlImportActor,
@@ -154,6 +156,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
 
         // Integration
         "tpl_http_request" => Some(Arc::new(HttpRequestActor::new())),
+        #[cfg(feature = "browser")]
+        "tpl_browser_screencast" => Some(Arc::new(BrowserScreencastActor::new())),
 
         // Flow Control
         "tpl_fsm" => Some(Arc::new(FsmActor::new())),
@@ -498,6 +502,11 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert(
         "tpl_http_request".to_string(),
         "HttpRequestActor".to_string(),
+    );
+    #[cfg(feature = "browser")]
+    mapping.insert(
+        "tpl_browser_screencast".to_string(),
+        "BrowserScreencastActor".to_string(),
     );
     mapping.insert("tpl_fsm".to_string(), "FsmActor".to_string());
     mapping.insert(
