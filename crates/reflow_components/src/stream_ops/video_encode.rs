@@ -26,7 +26,7 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     // Take stream receiver — only proceed if we actually got a StreamHandle
     let rx = match ctx.take_stream_receiver("stream") {
         Some(rx) => rx,
-        None => return Ok(HashMap::new()), // Not a StreamHandle, skip silently
+        None => return Ok(HashMap::new()),
     };
 
     // Collect all frames

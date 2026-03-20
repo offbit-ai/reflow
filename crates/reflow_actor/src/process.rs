@@ -86,7 +86,10 @@ impl ActorProcess {
         loop {
             let packet = match self.inport_rx.clone().stream().next().await {
                 Some(p) => p,
-                None => break,
+                None => {
+                    eprintln!("[INPORT CLOSED] {}", self.node_id);
+                    break;
+                }
             };
 
             self.load.inc();
@@ -157,7 +160,7 @@ impl ActorProcess {
             match (self.behavior)(context).await {
                 Ok(result) => {
                     if !result.is_empty() {
-                        let _ = self.outports.0.send(result);
+                        let _ = self.outports.0.send_async(result).await;
                     }
                     self.load.reset();
                     if let Some(ref tracing) = self.tracing {

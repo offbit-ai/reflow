@@ -438,23 +438,27 @@ impl Network {
                     }
                 }
 
+                // Create a fresh actor instance per node so that nodes sharing
+                // the same template each get independent inport/outport channels.
+                let instance = actor.create_instance();
+
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     let tracing_integration = self.tracing_integration.clone();
                     self.processes.insert(
                         id.clone(),
                         Arc::new(Self::init_process(
-                            actor.create_process(config, tracing_integration),
+                            instance.create_process(config, tracing_integration),
                         )),
                     );
                 }
                 #[cfg(target_arch = "wasm32")]
                 {
                     let tracing_integration = self.tracing_integration.clone();
-                    Self::init_process(actor.create_process(config, tracing_integration));
+                    Self::init_process(instance.create_process(config, tracing_integration));
                 }
 
-                self.initialized_actors.insert(id.clone(), actor.clone());
+                self.initialized_actors.insert(id.clone(), instance);
 
                 // Emit ActorStarted event
                 let timestamp = chrono::Utc::now().timestamp_millis() as u64;
@@ -603,8 +607,8 @@ impl Network {
     }
 
     pub fn send_to_actor(&self, id: &str, port: &str, data: Message) -> Result<(), anyhow::Error> {
-        if let Some(node) = self.nodes.get(id) {
-            let actor = self.actors.get(&node.component).unwrap();
+        if let Some(_node) = self.nodes.get(id) {
+            let actor = self.initialized_actors.get(id).unwrap();
 
             // Emit MessageReceived event for the target actor
             let timestamp = chrono::Utc::now().timestamp_millis() as u64;
@@ -663,8 +667,8 @@ impl Network {
         port: &str,
         data: EncodedMessage,
     ) -> Result<(), anyhow::Error> {
-        if let Some(node) = self.nodes.get(id) {
-            let actor = self.actors.get(&node.component).unwrap();
+        if let Some(_node) = self.nodes.get(id) {
+            let actor = self.initialized_actors.get(id).unwrap();
 
             // Emit MessageReceived event for encoded messages
             let timestamp = chrono::Utc::now().timestamp_millis() as u64;

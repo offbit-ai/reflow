@@ -59,9 +59,10 @@ impl GpuContext {
         &self.queue
     }
 
-    /// Submit command buffers and poll until complete (synchronous readback).
+    /// Submit command buffers. Do NOT poll here — the caller should call
+    /// device.poll() after map_async to flush both the render and the
+    /// readback in a single poll, avoiding double-poll deadlocks on Metal.
     pub fn submit_and_poll(&self, command_buffer: wgpu::CommandBuffer) {
         self.queue.submit(std::iter::once(command_buffer));
-        self.device.poll(wgpu::Maintain::Wait);
     }
 }

@@ -272,6 +272,19 @@ pub trait Actor: Send + Sync + 'static {
         Arc::new(ActorLoad::new(0))
     }
 
+    /// Create a fresh, isolated actor instance with its own channels.
+    ///
+    /// The runtime calls this once per node during network startup so that
+    /// nodes sharing the same template each get independent inport/outport
+    /// channels. Without this, all nodes using the same template would
+    /// compete on the same flume channels, corrupting message routing.
+    fn create_instance(&self) -> Arc<dyn Actor> {
+        panic!(
+            "create_instance() not implemented for this actor type. \
+             Override it to return Arc::new(Self::new())."
+        )
+    }
+
     /// The runtime dispatch loop. The **default implementation** builds an
     /// [`ActorProcess`](crate::process::ActorProcess) from the declarative
     /// methods above — most actors should not need to override this.

@@ -249,23 +249,10 @@ async fn main() -> anyhow::Result<()> {
     // Subscribe to network events BEFORE start so no events are missed.
     let event_rx = net.get_event_receiver();
     tokio::spawn(async move {
-        let mut last_actor = String::new();
-        let mut actor_count: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
         while let Ok(evt) = event_rx.recv_async().await {
             use reflow_network::network::NetworkEvent;
-            match &evt {
-                NetworkEvent::ActorCompleted { actor_id, .. } => {
-                    *actor_count.entry(actor_id.clone()).or_insert(0) += 1;
-                    last_actor = format!("{}({})", actor_id, actor_count[actor_id]);
-                }
-                NetworkEvent::ActorFailed { actor_id, error, .. } => {
-                    eprintln!("[FAIL] actor={} err={}", actor_id, error);
-                }
-                NetworkEvent::NetworkIdle { .. } => {
-                    eprintln!("[IDLE] last actor fired: {}", last_actor);
-                    eprintln!("[IDLE] counts: {:?}", actor_count);
-                }
-                _ => {}
+            if let NetworkEvent::ActorFailed { actor_id, error, .. } = &evt {
+                eprintln!("[FAIL] actor={} err={}", actor_id, error);
             }
         }
     });
@@ -274,7 +261,7 @@ async fn main() -> anyhow::Result<()> {
     net.start()?;
 
     let mp4_path = std::path::Path::new("button_click.mp4");
-    let timeout = std::time::Duration::from_secs(20);
+    let timeout = std::time::Duration::from_secs(300);
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
         if mp4_path.exists() && mp4_path.metadata().map(|m| m.len() > 100).unwrap_or(false) {
@@ -290,5 +277,5 @@ async fn main() -> anyhow::Result<()> {
         let sz = std::fs::metadata(mp4_path)?.len();
         println!("Saved: button_click.mp4 ({} bytes, {:.1}s, {:.1} fps)", sz, t.as_secs_f64(), frames as f64 / t.as_secs_f64());
     }
-    Ok(())
+    std::process::exit(0);
 }

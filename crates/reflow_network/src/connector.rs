@@ -230,9 +230,16 @@ impl Connector {
                         let message_size = std::mem::size_of_val(&msg);
                         let msg_discriminant = format!("{:?}", std::mem::discriminant(&msg));
 
-                        // Emit MessageSent event
-                        let value: serde_json::Value = msg.clone().into();
-                        let encodable = crate::message::EncodableValue::from(value);
+                        // Emit MessageSent event — skip expensive serialization for binary blobs
+                        let encodable = if let Message::Bytes(_) = &msg {
+                            crate::message::EncodableValue::from(serde_json::Value::String(
+                                "[binary]".to_string(),
+                            ))
+                        } else {
+                            crate::message::EncodableValue::from(serde_json::Value::from(
+                                msg.clone(),
+                            ))
+                        };
                         let timestamp = chrono::Utc::now().timestamp_millis() as u64;
                         let _ = network_event_emitter.0.send(NetworkEvent::MessageSent {
                             from_actor: from_actor_id.clone(),
@@ -285,8 +292,8 @@ impl Connector {
                         }
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                        tracing::warn!(
-                            "[CONNECTOR] Broadcast receiver lagged, missed {} messages ({}:{} → {}:{})",
+                        eprintln!(
+                            "[LAGGED] missed {} messages ({}:{} → {}:{})",
                             n,
                             from_actor_id,
                             from_port,

@@ -99,7 +99,7 @@ pub async fn render_frame_collector_actor(
             "stream",
             Some("video/raw-rgba".to_string()),
             Some((total_frames as u64) * (width as u64) * (height as u64) * 4),
-            Some(total_frames.max(64)),
+            None, // unbounded — avoid blocking tokio thread on bounded send
         );
 
         // Store stream ID for subsequent invocations

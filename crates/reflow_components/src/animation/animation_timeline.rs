@@ -186,8 +186,9 @@ pub async fn animation_timeline_actor(
                 elapsed = 0.0;
             }
             "reverse" => {
-                // Start from end if at beginning (paused/never played) or completed backward
-                if elapsed == 0.0 {
+                // Jump to end only if we've actually been played (completed or mid-play).
+                // Do NOT jump when paused/never-triggered (elapsed=0 from initial state).
+                if elapsed == 0.0 && (playback_state == "completed" || playback_state == "playing") {
                     elapsed = duration;
                 }
                 completed_emitted = false;
@@ -214,7 +215,9 @@ pub async fn animation_timeline_actor(
                     playback_state = "playing".into();
                 }
                 "reverse" => {
-                    if elapsed == 0.0 { elapsed = duration; }
+                    if elapsed == 0.0 && (playback_state == "completed" || playback_state == "playing") {
+                        elapsed = duration;
+                    }
                     completed_emitted = false;
                     speed = -speed.abs();
                     playback_state = "playing".into();

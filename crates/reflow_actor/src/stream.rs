@@ -89,7 +89,10 @@ impl StreamRegistry {
         }
     }
 
-    /// Allocate a new stream with a bounded channel.
+    /// Allocate a new stream.
+    ///
+    /// `buffer_size = None` creates an **unbounded** channel (no backpressure).
+    /// `buffer_size = Some(n)` creates a bounded channel with capacity n.
     ///
     /// Returns `(stream_id, sender)`. The receiver is stored in the registry
     /// and must be taken by the consumer via [`take_receiver`].
@@ -98,7 +101,10 @@ impl StreamRegistry {
         buffer_size: Option<usize>,
     ) -> (StreamId, flume::Sender<StreamFrame>) {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
-        let (tx, rx) = flume::bounded(buffer_size.unwrap_or(DEFAULT_STREAM_BUFFER));
+        let (tx, rx) = match buffer_size {
+            None => flume::unbounded(),
+            Some(n) => flume::bounded(n),
+        };
         self.senders.write().insert(id, tx.clone());
         self.receivers.write().insert(id, rx);
         (id, tx)

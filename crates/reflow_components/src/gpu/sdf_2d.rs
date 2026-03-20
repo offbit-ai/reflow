@@ -582,7 +582,7 @@ pub fn render_2d(
         Some(a) => (&a.data[..], a.width, a.height),
         None => (&[128u8] as &[u8], 1u32, 1u32),
     };
-    let mut atlas_cache_guard = CACHED_ATLAS.lock().unwrap();
+    let mut atlas_cache_guard = CACHED_ATLAS.lock().unwrap_or_else(|e| { eprintln!("[MUTEX POISON] atlas"); e.into_inner() });
     let needs_atlas = atlas_cache_guard.as_ref().map_or(true, |c| {
         c.width != atlas_w || c.height != atlas_h || c.data_len != atlas_data.len()
     });
@@ -664,7 +664,7 @@ pub fn render_2d(
 
     // Render targets — cached for constant output dimensions.
     // Avoids recreating 3.5 MB MSAA + 0.9 MB resolve + 1.6 MB readback every frame.
-    let mut rt_cache_guard = CACHED_RENDER_TARGETS.lock().unwrap();
+    let mut rt_cache_guard = CACHED_RENDER_TARGETS.lock().unwrap_or_else(|e| { eprintln!("[MUTEX POISON] rt"); e.into_inner() });
     let needs_rt = rt_cache_guard.as_ref().map_or(true, |c| {
         c.width != width || c.height != height || c.sample_count != sample_count
     });
@@ -779,7 +779,6 @@ pub fn render_2d(
     );
 
     GPU_CONTEXT.submit_and_poll(encoder.finish());
-
     let slice = rt.readback_buf.slice(..);
     slice.map_async(wgpu::MapMode::Read, |_| {});
     device.poll(wgpu::Maintain::Wait);
@@ -1016,7 +1015,7 @@ fn glyph_strokes(ch: char) -> &'static [[f32; 4]] {
 #[actor(
     Gpu2DRenderActor,
     inports::<100>(primitives, tick, values, data, atlas, metrics, atlas_size),
-    outports::<1>(image, metadata),
+    outports::<100>(image, metadata),
     state(MemoryState)
 )]
 pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
@@ -1088,7 +1087,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         if let Some(font_path) = text_cfgs.iter().find_map(|t| t.get("font").and_then(|v| v.as_str()).map(|s| s.to_string())) {
             let font_size = text_cfgs.iter().find_map(|t| t.get("size").and_then(|v| v.as_f64())).unwrap_or(48.0) as f32;
             if let Ok(font_bytes) = std::fs::read(&font_path) {
-                if let Ok(atlas) = super::font_atlas::get_or_build_atlas(&font_path, &font_bytes, font_size, true, "") {
+                if let Ok(atlas) = super::font_atlas::get_or_build_atlas(&font_path, &font_bytes, font_size, false, "") {
                     ctx.pool_upsert("_atlas", "bitmap", json!(base64_encode(&atlas.bitmap)));
                     let mut metrics_map = serde_json::Map::new();
                     for (ch, info) in &atlas.glyphs {
@@ -1151,7 +1150,6 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     if !payload.contains_key("values") && !payload.contains_key("tick") {
         return Ok(HashMap::new());
     }
-
     let get_val = |prefix: &str, prop: &str| -> Option<f64> {
         vals.get(&format!("{}_{}", prefix, prop)).copied()
     };
@@ -1438,7 +1436,19 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let msaa = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
 
     #[cfg(feature = "gpu")]
-    let rgba = render_2d(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa);
+    let rgba = {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            render_2d(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa)
+        }));
+        match result {
+            Ok(out) => out,
+            Err(e) => {
+                let msg = if let Some(s) = e.downcast_ref::<&str>() { (*s).to_string() } else if let Some(s) = e.downcast_ref::<String>() { s.clone() } else { "unknown".to_string() };
+                eprintln!("[render_2d panic] {msg}");
+                return Ok(HashMap::new());
+            }
+        }
+    };
 
     #[cfg(not(feature = "gpu"))]
     let rgba = vec![0u8; (width * height * 4) as usize];

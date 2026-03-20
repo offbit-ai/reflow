@@ -229,9 +229,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             fn get_behavior(&self) -> ActorBehavior {
                 Box::new(|context: ActorContext| {
                     Box::pin(async move {
-                        futures::executor::block_on(async move {
-                            #fn_name(context).await
-                        })
+                        #fn_name(context).await
                     })
                 })
             }
@@ -258,6 +256,10 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn required_inports(&self) -> Vec<String> {
                 vec![#(String::from(#await_inports_list)),*]
+            }
+
+            fn create_instance(&self) -> std::sync::Arc<dyn Actor> {
+                std::sync::Arc::new(Self::new())
             }
 
             // create_process() and create_state() use the trait defaults
