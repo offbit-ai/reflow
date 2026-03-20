@@ -169,6 +169,11 @@ pub async fn animation_timeline_actor(
         .and_then(|(_, v)| v.as_f64())
         .unwrap_or(config.get("speed").and_then(|v| v.as_f64()).unwrap_or(1.0));
 
+    // Track whether a control command changed playback this tick.
+    // When true, skip time advance so the first emitted frame shows
+    // the starting value — prevents a visible jump on easeOut curves.
+    let mut control_changed = false;
+
     if let Some(Message::String(cmd)) = payload.get("control") {
         let cmd = cmd.to_string();
         match cmd.as_str() {
@@ -179,6 +184,7 @@ pub async fn animation_timeline_actor(
                 }
                 completed_emitted = false;
                 playback_state = "playing".into();
+                control_changed = true;
             }
             "pause" => playback_state = "paused".into(),
             "stop" => {
@@ -194,6 +200,7 @@ pub async fn animation_timeline_actor(
                 completed_emitted = false;
                 speed = -speed.abs();
                 playback_state = "playing".into();
+                control_changed = true;
             }
             _ if cmd.starts_with("seek:") => {
                 if let Ok(t) = cmd[5..].trim().parse::<f64>() {
@@ -213,6 +220,7 @@ pub async fn animation_timeline_actor(
                     completed_emitted = false;
                     speed = speed.abs();
                     playback_state = "playing".into();
+                    control_changed = true;
                 }
                 "reverse" => {
                     if elapsed == 0.0 && (playback_state == "completed" || playback_state == "playing") {
@@ -221,6 +229,7 @@ pub async fn animation_timeline_actor(
                     completed_emitted = false;
                     speed = -speed.abs();
                     playback_state = "playing".into();
+                    control_changed = true;
                 }
                 "stop" => { playback_state = "paused".into(); elapsed = 0.0; }
                 "pause" => { playback_state = "paused".into(); }
@@ -245,7 +254,10 @@ pub async fn animation_timeline_actor(
 
 
     // ─── Advance time ───
-    if playback_state == "playing" && payload.contains_key("tick") {
+    // Skip advance on the tick that received a control command so the first
+    // emitted frame shows the starting value (prevents visible jump on steep
+    // easing curves like easeOutCubic).
+    if playback_state == "playing" && payload.contains_key("tick") && !control_changed {
         elapsed += dt * speed;
 
         if elapsed >= duration {

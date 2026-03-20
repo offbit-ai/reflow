@@ -167,10 +167,10 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ SINGLE BUTTON ANIMATION TIMELINE ═══
     // Plays forward (hover-in) or reverse (hover-out). One source of s0_scale truth.
-    let anim_dur = 0.15;
+    let anim_dur = 0.3;
     let mut btn_tracks = serde_json::Map::new();
     btn_tracks.insert("s0_scale".into(), kf(json!([
-        {"time": 0.0, "value": 1.0, "easing": "easeOutCubic"},
+        {"time": 0.0, "value": 1.0, "easing": "easeInOutCubic"},
         {"time": anim_dur, "value": 1.08}
     ])));
     net.add_node("btn_anim", "tpl_animation_timeline", config(json!({
