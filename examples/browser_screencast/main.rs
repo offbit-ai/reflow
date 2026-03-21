@@ -68,7 +68,7 @@ async fn main() -> anyhow::Result<()> {
     let w = 640u32;
     let h = 360u32;
     let fps = 10u32;
-    let dur = 12.0f64;
+    let dur = 10.0f64;
     let frames = (dur * fps as f64) as usize;
     let ms = 1000 / fps as u64;
 
@@ -132,7 +132,7 @@ async fn main() -> anyhow::Result<()> {
             },
             "click_accept": {
                 "on": {
-                    "_timeout": { "target": "focus_search", "delay": 1.5 }
+                    "_timeout": { "target": "focus_search", "delay": 2.5 }
                 },
                 "entry": {
                     "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" }
@@ -148,7 +148,7 @@ async fn main() -> anyhow::Result<()> {
             },
             "type_search": {
                 "on": {
-                    "_timeout": { "target": "browsing", "delay": 5.0 }
+                    "_timeout": { "target": "browsing", "delay": 3.0 }
                 },
                 "entry": {
                     "emit": { "type": "insertText", "text": "Reflow DAG engine" }
