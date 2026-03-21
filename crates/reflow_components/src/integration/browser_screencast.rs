@@ -546,7 +546,9 @@ async fn run_browser(
                         }
                     }
                     BrowserCommand::InsertText(text) => {
+                        // Insert entire string at once via CDP Input.insertText
                         if let Ok(params) = InsertTextParams::builder().text(&text).build() {
+                            eprintln!("[browser] insertText: {}", text);
                             let _ = page.execute(params).await;
                         }
                     }

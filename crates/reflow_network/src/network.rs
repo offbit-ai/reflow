@@ -518,7 +518,7 @@ impl Network {
             // First pass: create per-connector channels, grouped by source actor
             for connector in &self.connectors {
                 let source_id = &connector.from.actor;
-                let (tx, rx) = flume::bounded(32);
+                let (tx, rx) = flume::unbounded();
                 fanout_senders
                     .entry(source_id.clone())
                     .or_default()
