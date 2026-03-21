@@ -351,6 +351,34 @@ async fn run_browser(
         let _ = page.execute(viewport).await;
     }
 
+    // Listen for console output and JS exceptions
+    if let Ok(mut console_events) = page
+        .event_listener::<chromiumoxide::cdp::js_protocol::runtime::EventConsoleApiCalled>()
+        .await
+    {
+        tokio::spawn(async move {
+            while let Some(evt) = console_events.next().await {
+                let args: Vec<String> = evt.args.iter()
+                    .filter_map(|a| a.value.as_ref().map(|v| v.to_string()))
+                    .collect();
+                if !args.is_empty() {
+                    eprintln!("[browser:console] {:?} {}", evt.r#type, args.join(" "));
+                }
+            }
+        });
+    }
+    if let Ok(mut exception_events) = page
+        .event_listener::<chromiumoxide::cdp::js_protocol::runtime::EventExceptionThrown>()
+        .await
+    {
+        tokio::spawn(async move {
+            while let Some(evt) = exception_events.next().await {
+                let text = evt.exception_details.text.clone();
+                eprintln!("[browser:exception] {}", text);
+            }
+        });
+    }
+
     tokio::time::sleep(std::time::Duration::from_millis(wait_ms)).await;
 
     // Start screencast
@@ -421,12 +449,15 @@ async fn run_browser(
                         let _ = page.goto(&url).await;
                     }
                     BrowserCommand::ClickSelector(sel) => {
-                        if let Ok(Ok(el)) = tokio::time::timeout(
-                            std::time::Duration::from_secs(3),
-                            page.find_element(&sel),
-                        ).await {
-                            let _ = el.click().await;
-                        }
+                        let page_clone = page.clone();
+                        tokio::spawn(async move {
+                            if let Ok(Ok(el)) = tokio::time::timeout(
+                                std::time::Duration::from_secs(10),
+                                page_clone.find_element(&sel),
+                            ).await {
+                                let _ = el.click().await;
+                            }
+                        });
                     }
                     BrowserCommand::Mouse { event_type, x, y, button, delta_x, delta_y } => {
                         macro_rules! mouse_evt {
@@ -460,24 +491,32 @@ async fn run_browser(
                         }
                     }
                     BrowserCommand::Type { selector, text } => {
-                        if let Ok(Ok(el)) = tokio::time::timeout(
-                            std::time::Duration::from_secs(3),
-                            page.find_element(&selector),
-                        ).await {
-                            let _ = el.click().await;
-                            let _ = el.type_str(&text).await;
-                        }
+                        let page_clone = page.clone();
+                        tokio::spawn(async move {
+                            if let Ok(Ok(el)) = tokio::time::timeout(
+                                std::time::Duration::from_secs(10),
+                                page_clone.find_element(&selector),
+                            ).await {
+                                let _ = el.click().await;
+                                let _ = el.type_str(&text).await;
+                            }
+                        });
                     }
                     BrowserCommand::WaitForSelector(sel) => {
                         let _ = page.find_element(&sel).await;
                     }
                     BrowserCommand::Evaluate(expr) => {
+                        eprintln!("[browser] eval: {}...", &expr[..expr.len().min(60)]);
                         match page.evaluate(expr.as_str()).await {
                             Ok(val) => {
                                 let json_val: Value = val.into_value().unwrap_or(Value::Null);
+                                if !json_val.is_null() {
+                                    eprintln!("[browser] eval result: {}", json_val);
+                                }
                                 let _ = result_tx.send(json_val);
                             }
                             Err(e) => {
+                                eprintln!("[browser] eval error: {}", e);
                                 let _ = result_tx.send(json!({"error": e.to_string()}));
                             }
                         }
