@@ -182,6 +182,98 @@ impl Connector {
 /// ensuring every connector receives every message.
 #[cfg(not(target_arch = "wasm32"))]
 impl Connector {
+    /// Initialize this connector with a dedicated bounded channel (backpressure fan-out).
+    /// Each connector gets its own channel — no messages are ever dropped.
+    pub fn init_fanout(
+        &self,
+        network: &Network,
+        fanout_rx: flume::Receiver<std::sync::Arc<HashMap<String, Message>>>,
+    ) {
+        use crate::network::NetworkEvent;
+        let network_event_emitter = network.network_event_emitter.clone();
+
+        let to_process = network
+            .nodes
+            .get(&self.to.actor.to_owned())
+            .expect("Expected to get actor process from connected node");
+
+        let to_actor = network
+            .initialized_actors
+            .get(&to_process.id)
+            .unwrap_or_else(|| {
+                panic!("Expected to find initialized Actor for id {}", to_process.id)
+            });
+
+        let from_actor_id = self.from.actor.clone();
+        let to_actor_id = self.to.actor.clone();
+        let to_port = self.to.port.clone();
+        let from_port = self.from.port.clone();
+        let in_ports = to_actor.get_inports();
+        let tracing_integration = network.tracing_integration.clone();
+
+        tokio::spawn(async move {
+            while let Ok(outport_packet) = fanout_rx.recv_async().await {
+                let msg = outport_packet
+                    .get(&from_port)
+                    .cloned()
+                    .unwrap_or(Message::Optional(None));
+
+                let message_size = std::mem::size_of_val(&msg);
+                let msg_discriminant = format!("{:?}", std::mem::discriminant(&msg));
+
+                let encodable = if let Message::Bytes(_) = &msg {
+                    crate::message::EncodableValue::from(serde_json::Value::String(
+                        "[binary]".to_string(),
+                    ))
+                } else {
+                    crate::message::EncodableValue::from(serde_json::Value::from(msg.clone()))
+                };
+                let timestamp = chrono::Utc::now().timestamp_millis() as u64;
+                let _ = network_event_emitter.0.send(NetworkEvent::MessageSent {
+                    from_actor: from_actor_id.clone(),
+                    from_port: from_port.clone(),
+                    to_actor: to_actor_id.clone(),
+                    to_port: to_port.clone(),
+                    message: encodable,
+                    timestamp,
+                });
+
+                in_ports
+                    .clone()
+                    .0
+                    .send_async(HashMap::from([(to_port.clone(), msg)]))
+                    .await
+                    .unwrap_or_else(|_| {
+                        panic!(
+                            "Expected to send message from Actor '{}' to Actor '{}'",
+                            &from_actor_id, &to_actor_id
+                        )
+                    });
+
+                if let Some(ref tracing) = tracing_integration {
+                    let _ = tracing
+                        .trace_message_sent(
+                            from_actor_id.clone(),
+                            from_port.clone(),
+                            msg_discriminant.clone(),
+                            message_size,
+                        )
+                        .await;
+                    let _ = tracing
+                        .trace_data_flow(
+                            from_actor_id.clone(),
+                            from_port.clone(),
+                            to_actor_id.clone(),
+                            to_port.clone(),
+                            msg_discriminant,
+                            message_size,
+                        )
+                        .await;
+                }
+            }
+        });
+    }
+
     /// Initialize this connector using a broadcast receiver for fan-out support.
     /// All connectors sharing the same source actor receive every outport message.
     pub fn init_broadcast(

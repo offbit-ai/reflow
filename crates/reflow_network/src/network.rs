@@ -505,61 +505,65 @@ impl Network {
         {
             use std::collections::HashMap as StdHashMap;
 
-            // Group connectors by source actor node_id and set up one broadcast
-            // forwarder per source actor. Outport packets are wrapped in Arc so
-            // broadcast only bumps a ref count per subscriber instead of cloning
-            // the entire HashMap.
-            let mut broadcast_senders: StdHashMap<
+            // Fan-out with backpressure: one forwarder per source actor reads
+            // from the outport and sends Arc-cloned packets to each connector's
+            // dedicated bounded channel. When any connector is slow, the
+            // forwarder blocks — backpressure propagates to the source actor.
+            // No messages are ever dropped.
+            let mut fanout_senders: StdHashMap<
                 String,
-                tokio::sync::broadcast::Sender<std::sync::Arc<StdHashMap<String, Message>>>,
+                Vec<flume::Sender<std::sync::Arc<StdHashMap<String, Message>>>>,
             > = StdHashMap::new();
 
-            // Keep initial broadcast receivers alive until all connectors have
-            // subscribed. Without this, the forwarder's tx.send() returns Err
-            // (no receivers) and the forwarder exits, losing messages.
-            let mut _keepalive_receivers = Vec::new();
-
+            // First pass: create per-connector channels, grouped by source actor
             for connector in &self.connectors {
                 let source_id = &connector.from.actor;
-
-                if !broadcast_senders.contains_key(source_id) {
-                    let from_process = self
-                        .nodes
-                        .get(source_id)
-                        .unwrap_or_else(|| panic!("Expected node for actor {}", source_id));
-
-                    let from_actor = self
-                        .initialized_actors
-                        .get(&from_process.id)
-                        .unwrap_or_else(|| {
-                            panic!("Expected initialized actor for id {}", from_process.id)
-                        });
-
-                    let out_ports = from_actor.get_outports();
-                    let load_count = from_actor.load_count();
-
-                    let (tx, initial_rx) = tokio::sync::broadcast::channel(1024);
-                    _keepalive_receivers.push(initial_rx);
-                    broadcast_senders.insert(source_id.clone(), tx.clone());
-
-                    // Forwarder: flume outport receiver → Arc-wrapped broadcast
-                    tokio::spawn(async move {
-                        while let Some(packet) = out_ports.1.clone().stream().next().await {
-                            load_count.dec();
-                            if tx.send(std::sync::Arc::new(packet)).is_err() {
-                                break; // all receivers dropped
-                            }
-                        }
-                    });
-                }
-
-                let broadcast_tx = broadcast_senders.get(&connector.from.actor).unwrap();
-                let broadcast_rx = broadcast_tx.subscribe();
-                connector.init_broadcast(self, broadcast_rx);
+                let (tx, rx) = flume::bounded(32);
+                fanout_senders
+                    .entry(source_id.clone())
+                    .or_default()
+                    .push(tx);
+                connector.init_fanout(self, rx);
             }
 
-            // Drop keepalive receivers now that all connectors are subscribed
-            drop(_keepalive_receivers);
+            // Second pass: spawn one forwarder per source actor
+            for (source_id, senders) in fanout_senders {
+                let from_process = self
+                    .nodes
+                    .get(&source_id)
+                    .unwrap_or_else(|| panic!("Expected node for actor {}", source_id));
+
+                let from_actor = self
+                    .initialized_actors
+                    .get(&from_process.id)
+                    .unwrap_or_else(|| {
+                        panic!("Expected initialized actor for id {}", from_process.id)
+                    });
+
+                let out_ports = from_actor.get_outports();
+                let load_count = from_actor.load_count();
+
+                // Forwarder: read from outport, Arc-clone to each connector channel
+                tokio::spawn(async move {
+                    while let Some(packet) = out_ports.1.clone().stream().next().await {
+                        load_count.dec();
+                        let arc = std::sync::Arc::new(packet);
+                        let mut all_closed = true;
+                        for tx in &senders {
+                            if !tx.is_disconnected() {
+                                all_closed = false;
+                                // Blocks if channel full = backpressure
+                                if tx.send_async(arc.clone()).await.is_err() {
+                                    continue;
+                                }
+                            }
+                        }
+                        if all_closed {
+                            break;
+                        }
+                    }
+                });
+            }
         }
 
         // On WASM, fall back to direct flume receiver (no broadcast available)

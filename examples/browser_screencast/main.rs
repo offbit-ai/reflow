@@ -68,7 +68,7 @@ async fn main() -> anyhow::Result<()> {
     let w = 640u32;
     let h = 360u32;
     let fps = 10u32;
-    let dur = 12.0f64;
+    let dur = 8.0f64;
     let frames = (dur * fps as f64) as usize;
     let ms = 1000 / fps as u64;
 
@@ -119,12 +119,12 @@ async fn main() -> anyhow::Result<()> {
             },
             "viewing_consent": {
                 "on": {
-                    "_timeout": { "target": "scroll_to_accept", "delay": 1.5 }
+                    "_timeout": { "target": "scroll_to_accept", "delay": 1.0 }
                 }
             },
             "scroll_to_accept": {
                 "on": {
-                    "_timeout": { "target": "click_accept", "delay": 1.5 }
+                    "_timeout": { "target": "click_accept", "delay": 1.0 }
                 },
                 "entry": {
                     "emit": { "type": "scroll", "x": 0, "y": 500 }
@@ -138,20 +138,12 @@ async fn main() -> anyhow::Result<()> {
                     "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" }
                 }
             },
-            "click_search": {
-                "on": {
-                    "_timeout": { "target": "type_search", "delay": 0.5 }
-                },
-                "entry": {
-                    "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]') || document.querySelector('input[name=q]'))?.click()" }
-                }
-            },
             "type_search": {
                 "on": {
                     "_timeout": { "target": "browsing", "delay": 2.0 }
                 },
                 "entry": {
-                    "emit": { "type": "type", "selector": "textarea[name=q]", "text": "Reflow DAG engine" }
+                    "emit": { "type": "evaluate", "expression": "let q=document.querySelector('textarea[name=q]')||document.querySelector('input[name=q]');if(q){q.click();q.focus();q.value='Reflow DAG engine';q.dispatchEvent(new Event('input',{bubbles:true}))}" }
                 }
             },
             "browsing": {}
@@ -182,16 +174,24 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("save", "tpl_file_save",
         config(json!({ "path": "browser_screencast.mp4" })))?;
 
+    // ═══ FSM TICK — independent from render pipeline to avoid backpressure deadlock ═══
+    net.add_node("fsm_tick", "tpl_interval_trigger", config(json!({
+        "interval": ms, "maxExecutions": frames, "startImmediately": false,
+    })))?;
+
     // ═══ WIRING ═══
 
-    // Timing
+    // Timing — render pipeline
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
     net.add_connection(wire("tick", "trigger", "browser", "tick"));
     net.add_connection(wire("tick", "trigger", "render", "tick"));
-    net.add_connection(wire("tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start ticking + signal FSM
+    // FSM gets its own tick (not blocked by render backpressure)
+    net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
+
+    // Browser ready → start both tick sources + signal FSM
     net.add_connection(wire("browser", "ready", "tick", "start"));
+    net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
     // FSM data → browser action (choreographed interactions, no subscriber needed)
