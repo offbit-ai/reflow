@@ -57,6 +57,8 @@ pub enum BrowserCommand {
     WaitForSelector(String),
     Evaluate(String),
     Screenshot,
+    /// Insert text at cursor via CDP Input.insertText (no element finding needed)
+    InsertText(String),
     /// Stop screencast and close the browser. The session is removed from the registry.
     Stop,
 }
@@ -244,6 +246,9 @@ pub async fn browser_screencast_actor(
                     BrowserCommand::Evaluate(s.to_string())
                 }),
                 "screenshot" => Some(BrowserCommand::Screenshot),
+                "insertText" => v.get("text").and_then(|s| s.as_str()).map(|s| {
+                    BrowserCommand::InsertText(s.to_string())
+                }),
                 "stop" => Some(BrowserCommand::Stop),
                 _ => None,
             };
@@ -320,6 +325,7 @@ async fn run_browser(
     };
     use chromiumoxide::cdp::browser_protocol::input::{
         DispatchMouseEventParams, DispatchMouseEventType, MouseButton,
+        InsertTextParams,
     };
     use futures::StreamExt;
 
@@ -537,6 +543,11 @@ async fn run_browser(
                                     frame_number: frame_num,
                                 });
                             }
+                        }
+                    }
+                    BrowserCommand::InsertText(text) => {
+                        if let Ok(params) = InsertTextParams::builder().text(&text).build() {
+                            let _ = page.execute(params).await;
                         }
                     }
                     BrowserCommand::Stop => break,

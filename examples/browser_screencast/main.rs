@@ -119,12 +119,12 @@ async fn main() -> anyhow::Result<()> {
             },
             "viewing_consent": {
                 "on": {
-                    "_timeout": { "target": "scroll_to_accept", "delay": 1.0 }
+                    "_timeout": { "target": "scroll_to_accept", "delay": 0.5 }
                 }
             },
             "scroll_to_accept": {
                 "on": {
-                    "_timeout": { "target": "click_accept", "delay": 1.0 }
+                    "_timeout": { "target": "click_accept", "delay": 0.5 }
                 },
                 "entry": {
                     "emit": { "type": "scroll", "x": 0, "y": 500 }
@@ -132,26 +132,26 @@ async fn main() -> anyhow::Result<()> {
             },
             "click_accept": {
                 "on": {
-                    "_timeout": { "target": "click_search", "delay": 1.5 }
+                    "_timeout": { "target": "focus_search", "delay": 1.5 }
                 },
                 "entry": {
                     "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" }
                 }
             },
-            "click_search": {
+            "focus_search": {
                 "on": {
                     "_timeout": { "target": "type_search", "delay": 0.5 }
                 },
                 "entry": {
-                    "emit": { "type": "evaluate", "expression": "document.querySelector('textarea[title=Search]')?.click(); document.querySelector('textarea[title=Search]')?.focus()" }
+                    "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]')||document.querySelector('input[name=q]'))?.focus()" }
                 }
             },
             "type_search": {
                 "on": {
-                    "_timeout": { "target": "browsing", "delay": 4.0 }
+                    "_timeout": { "target": "browsing", "delay": 3.0 }
                 },
                 "entry": {
-                    "emit": { "type": "type", "selector": "textarea[title=Search]", "text": "Reflow DAG engine" }
+                    "emit": { "type": "insertText", "text": "Reflow DAG engine" }
                 }
             },
             "browsing": {}
