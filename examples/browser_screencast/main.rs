@@ -61,23 +61,26 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 async fn main() -> anyhow::Result<()> {
     let url = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "https://example.com".to_string());
+        .unwrap_or_else(|| "https://google.com".to_string());
 
     println!("=== Browser Screencast — Headless Chrome + GPU Overlay ===\n");
 
-    let w = 1280u32;
-    let h = 720u32;
-    let fps = 30u32;
-    let dur = 5.0f64;
+    let w = 640u32;
+    let h = 360u32;
+    let fps = 10u32;
+    let dur = 12.0f64;
     let frames = (dur * fps as f64) as usize;
     let ms = 1000 / fps as u64;
 
     let mut net = Network::new(NetworkConfig::default());
 
+    let dt = 1.0 / fps as f64;
+
     for tpl in [
         "tpl_interval_trigger",
         "tpl_animation_time",
         "tpl_browser_screencast",
+        "tpl_fsm",
         "tpl_gpu_2d_render",
         "tpl_render_frame_collector",
         "tpl_video_encoder",
@@ -101,18 +104,70 @@ async fn main() -> anyhow::Result<()> {
         "height": h,
         "quality": 80,
         "everyNthFrame": 1,
-        "waitBeforeCapture": 2000,
+        "waitBeforeCapture": 1500,
     })))?;
+
+    // ═══ JOURNEY FSM — choreographs browser interactions ═══
+    // States: waiting → consent_visible → accepted → browsing
+    // Each state entry emits an action Object routed to browser:action
+    net.add_node("journey", "tpl_fsm", config(json!({
+        "initial": "waiting",
+        "dt": dt,
+        "states": {
+            "waiting": {
+                "on": { "LOADED": { "target": "viewing_consent" } }
+            },
+            "viewing_consent": {
+                "on": {
+                    "_timeout": { "target": "scroll_to_accept", "delay": 1.5 }
+                }
+            },
+            "scroll_to_accept": {
+                "on": {
+                    "_timeout": { "target": "click_accept", "delay": 1.5 }
+                },
+                "entry": {
+                    "emit": { "type": "scroll", "x": 0, "y": 500 }
+                }
+            },
+            "click_accept": {
+                "on": {
+                    "_timeout": { "target": "focus_search", "delay": 2.0 }
+                },
+                "entry": {
+                    "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" }
+                }
+            },
+            "click_search": {
+                "on": {
+                    "_timeout": { "target": "type_search", "delay": 0.5 }
+                },
+                "entry": {
+                    "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]') || document.querySelector('input[name=q]'))?.click()" }
+                }
+            },
+            "type_search": {
+                "on": {
+                    "_timeout": { "target": "browsing", "delay": 2.0 }
+                },
+                "entry": {
+                    "emit": { "type": "type", "selector": "textarea[name=q]", "text": "Reflow DAG engine" }
+                }
+            },
+            "browsing": {}
+        }
+    })))?;
+
 
     // ═══ RENDERER — image layer at z=0, "Reflow" watermark text on top ═══
     net.add_node("render", "tpl_gpu_2d_render", config(json!({
-        "width": w, "height": h,
+        "width": w, "height": h, "msaa": 1,
         "background": [0.0, 0.0, 0.0, 0.0],
         "shapes": [
             { "type": "image", "bounds": [0, 0, w, h], "z": 0 },
         ],
         "text": [{
-            "content": "Reflow", "x": w as f64 - 100.0, "y": h as f64 - 30.0,
+            "content": "Reflow", "x": w as f64 - 150.0, "y": h as f64 - 30.0,
             "size": 24.0, "color": [1.0, 1.0, 1.0, 0.7],
             "tracking": 1.0, "center": false,
             "font": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
@@ -133,8 +188,17 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
     net.add_connection(wire("tick", "trigger", "browser", "tick"));
     net.add_connection(wire("tick", "trigger", "render", "tick"));
+    net.add_connection(wire("tick", "trigger", "journey", "tick"));
 
-    // Browser frame → render layer
+    // Browser ready → start ticking + signal FSM
+    net.add_connection(wire("browser", "ready", "tick", "start"));
+    net.add_connection(wire("browser", "ready", "journey", "event"));
+
+    // FSM data → browser action (choreographed interactions, no subscriber needed)
+    net.add_connection(wire("journey", "data", "browser", "action"));
+
+
+    // Browser frame → render layer (async: cached, render uses latest on each tick)
     net.add_connection(wire("browser", "frame", "render", "data"));
 
     // Video pipeline
@@ -143,8 +207,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
-    // Bootstrap
-    net.add_initial(iip("tick", "start", Message::Flow));
+    // Bootstrap: start browser (tick starts when browser:ready fires)
     net.add_initial(iip("browser", "url", Message::String(
         std::sync::Arc::new(url.clone()),
     )));

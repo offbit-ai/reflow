@@ -47,18 +47,18 @@ struct FrameBuffer {
     frame_number: u64,
 }
 
-/// Commands sent from tick handler → background browser task.
+/// Commands sent to a browser session (from actor ticks or external callers).
 #[derive(Debug)]
-enum BrowserCommand {
+pub enum BrowserCommand {
     Navigate(String),
-    /// Selector-based click (find element, then click)
     ClickSelector(String),
-    /// Raw CDP mouse event: move, press, release, wheel at (x, y)
     Mouse { event_type: String, x: f64, y: f64, button: String, delta_x: f64, delta_y: f64 },
     Type { selector: String, text: String },
     WaitForSelector(String),
     Evaluate(String),
     Screenshot,
+    /// Stop screencast and close the browser. The session is removed from the registry.
+    Stop,
 }
 
 struct BrowserSession {
@@ -76,6 +76,22 @@ fn session_registry() -> &'static ParkMutex<HashMap<u64, Arc<BrowserSession>>> {
 
 static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
+/// Send a command to a browser session by ID.
+/// Callable from anywhere (example main, other actors, etc.).
+pub fn send_browser_command(session_id: u64, cmd: BrowserCommand) -> bool {
+    if let Some(session) = session_registry().lock().get(&session_id) {
+        session.cmd_tx.send(cmd).is_ok()
+    } else {
+        false
+    }
+}
+
+/// Stop a browser session and remove it from the registry.
+pub fn stop_browser_session(session_id: u64) {
+    send_browser_command(session_id, BrowserCommand::Stop);
+    session_registry().lock().remove(&session_id);
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Actor
 // ═══════════════════════════════════════════════════════════════
@@ -83,7 +99,7 @@ static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64
 #[actor(
     BrowserScreencastActor,
     inports::<100>(url, tick, action),
-    outports::<100>(frame, metadata, result, done),
+    outports::<100>(frame, metadata, result, done, ready),
     state(MemoryState)
 )]
 pub async fn browser_screencast_actor(
@@ -96,7 +112,6 @@ pub async fn browser_screencast_actor(
     let vp_height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(720) as u32;
     let quality = config.get("quality").and_then(|v| v.as_u64()).unwrap_or(80) as i64;
     let every_nth = config.get("everyNthFrame").and_then(|v| v.as_u64()).unwrap_or(1) as i64;
-    let max_frames = config.get("maxFrames").and_then(|v| v.as_u64()).unwrap_or(0);
     let wait_ms = config.get("waitBeforeCapture").and_then(|v| v.as_u64()).unwrap_or(2000);
 
     // ── First invocation: launch browser ──
@@ -135,10 +150,11 @@ pub async fn browser_screencast_actor(
 
         let outport_tx = ctx.get_outports().0;
 
+        let outport_tx2 = outport_tx.clone();
         tokio::spawn(async move {
             if let Err(e) = run_browser(
                 url, vp_width, vp_height, quality, every_nth, wait_ms,
-                frame_buf, cmd_rx, result_tx,
+                frame_buf, cmd_rx, result_tx, outport_tx2,
             )
             .await
             {
@@ -164,8 +180,21 @@ pub async fn browser_screencast_actor(
 
     // ── Process action commands ──
 
+    // Flow signal on action = stop (natural "done" signal from upstream)
+    if let Some(Message::Flow) = payload.get("action") {
+        let _ = session.cmd_tx.send(BrowserCommand::Stop);
+        session_registry().lock().remove(&session_id);
+        let mut out = HashMap::new();
+        out.insert("done".to_string(), Message::Boolean(true));
+        return Ok(out);
+    }
+
+    if let Some(msg) = payload.get("action") {
+        eprintln!("[browser] action: {:?}", std::mem::discriminant(msg));
+    }
     if let Some(Message::Object(obj)) = payload.get("action") {
         let v: Value = obj.as_ref().clone().into();
+        eprintln!("[browser] action obj: {}", v);
         if let Some(action_type) = v.get("type").and_then(|t| t.as_str()) {
             let cmd = match action_type {
                 "navigate" => v.get("url").and_then(|u| u.as_str()).map(|u| {
@@ -215,6 +244,7 @@ pub async fn browser_screencast_actor(
                     BrowserCommand::Evaluate(s.to_string())
                 }),
                 "screenshot" => Some(BrowserCommand::Screenshot),
+                "stop" => Some(BrowserCommand::Stop),
                 _ => None,
             };
             if let Some(cmd) = cmd {
@@ -254,11 +284,6 @@ pub async fn browser_screencast_actor(
     frame_count += 1;
     ctx.pool_upsert("_browser", "frame_count", json!(frame_count));
 
-    if max_frames > 0 && frame_count > max_frames {
-        out.insert("done".to_string(), Message::Boolean(true));
-        return Ok(out);
-    }
-
     out.insert("frame".to_string(), Message::bytes(fb.rgba.clone()));
     out.insert(
         "metadata".to_string(),
@@ -287,6 +312,7 @@ async fn run_browser(
     frame_buf: Arc<ParkMutex<Option<FrameBuffer>>>,
     cmd_rx: flume::Receiver<BrowserCommand>,
     result_tx: flume::Sender<Value>,
+    outport_tx: flume::Sender<HashMap<String, Message>>,
 ) -> Result<()> {
     use chromiumoxide::browser::{Browser, BrowserConfig};
     use chromiumoxide::cdp::browser_protocol::page::{
@@ -312,6 +338,19 @@ async fn run_browser(
     });
 
     let page = browser.new_page(&url).await?;
+
+    // Set exact viewport dimensions via CDP (overrides window_size which is unreliable)
+    use chromiumoxide::cdp::browser_protocol::emulation::SetDeviceMetricsOverrideParams;
+    if let Ok(viewport) = SetDeviceMetricsOverrideParams::builder()
+        .width(width as i64)
+        .height(height as i64)
+        .device_scale_factor(2.0)
+        .mobile(false)
+        .build()
+    {
+        let _ = page.execute(viewport).await;
+    }
+
     tokio::time::sleep(std::time::Duration::from_millis(wait_ms)).await;
 
     // Start screencast
@@ -332,6 +371,8 @@ async fn run_browser(
     let mut frame_num: u64 = 0;
 
     loop {
+        // Exit when network shuts down (outport receivers dropped)
+        if outport_tx.is_disconnected() { break; }
         tokio::select! {
             // ── Screencast frame ──
             Some(event) = events.next() => {
@@ -357,18 +398,33 @@ async fn run_browser(
                     });
                 }
 
+                // Signal ready on first frame so downstream (e.g., tick) can start
+                if frame_num == 1 {
+                    eprintln!("[browser] first frame {}x{}, signaling ready", w, h);
+                    let mut ready_msg = HashMap::new();
+                    ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
+                    let _ = outport_tx.send(ready_msg);
+                }
+
                 let ack = ScreencastFrameAckParams::new(event.session_id);
                 let _ = page.execute(ack).await;
             }
 
-            // ── Interaction commands ──
-            Ok(cmd) = cmd_rx.recv_async() => {
+            // ── Interaction commands (Err = channel closed → shutdown) ──
+            result = cmd_rx.recv_async() => {
+                let cmd = match result {
+                    Ok(c) => c,
+                    Err(_) => break, // network shut down, all senders dropped
+                };
                 match cmd {
                     BrowserCommand::Navigate(url) => {
                         let _ = page.goto(&url).await;
                     }
                     BrowserCommand::ClickSelector(sel) => {
-                        if let Ok(el) = page.find_element(&sel).await {
+                        if let Ok(Ok(el)) = tokio::time::timeout(
+                            std::time::Duration::from_secs(3),
+                            page.find_element(&sel),
+                        ).await {
                             let _ = el.click().await;
                         }
                     }
@@ -404,7 +460,10 @@ async fn run_browser(
                         }
                     }
                     BrowserCommand::Type { selector, text } => {
-                        if let Ok(el) = page.find_element(&selector).await {
+                        if let Ok(Ok(el)) = tokio::time::timeout(
+                            std::time::Duration::from_secs(3),
+                            page.find_element(&selector),
+                        ).await {
                             let _ = el.click().await;
                             let _ = el.type_str(&text).await;
                         }
@@ -424,7 +483,6 @@ async fn run_browser(
                         }
                     }
                     BrowserCommand::Screenshot => {
-                        // Screenshot updates the frame buffer with a full-page capture
                         if let Ok(png_bytes) = page.screenshot(
                             chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
                         ).await {
@@ -442,10 +500,9 @@ async fn run_browser(
                             }
                         }
                     }
+                    BrowserCommand::Stop => break,
                 }
             }
-
-            else => break,
         }
     }
 

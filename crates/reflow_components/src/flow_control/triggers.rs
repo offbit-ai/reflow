@@ -53,7 +53,7 @@ async fn sleep_ms(ms: u64) {
 #[actor(
     IntervalTriggerActor,
     inports::<1>(start),
-    outports::<50>(trigger),
+    outports::<50>(trigger, done),
     state(MemoryState)
 )]
 pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
@@ -118,6 +118,9 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
             execution_count += 1;
 
             if max_executions > 0 && execution_count > max_executions {
+                let mut out = HashMap::new();
+                out.insert("done".to_string(), Message::Flow);
+                let _ = outport_tx.send(out);
                 break;
             }
 

@@ -34,6 +34,35 @@ use super::context::GPU_CONTEXT;
 use super::font_atlas::GlyphAtlasGpu;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Layer image registry — zero-copy shared buffer for PRIM_IMAGE textures
+// ═══════════════════════════════════════════════════════════════════════════
+
+use parking_lot::Mutex as ParkMutex;
+use std::sync::Arc;
+
+type LayerData = Arc<ParkMutex<(Vec<u8>, u32, u32)>>; // (rgba, width, height)
+
+static LAYER_REGISTRY: OnceLock<ParkMutex<HashMap<String, LayerData>>> = OnceLock::new();
+
+fn layer_registry() -> &'static ParkMutex<HashMap<String, LayerData>> {
+    LAYER_REGISTRY.get_or_init(|| ParkMutex::new(HashMap::new()))
+}
+
+fn set_layer_image(node_id: &str, rgba: Vec<u8>, w: u32, h: u32) {
+    let mut reg = layer_registry().lock();
+    if let Some(entry) = reg.get(node_id) {
+        let mut guard = entry.lock();
+        *guard = (rgba, w, h);
+    } else {
+        reg.insert(node_id.to_string(), Arc::new(ParkMutex::new((rgba, w, h))));
+    }
+}
+
+fn get_layer_image(node_id: &str) -> Option<LayerData> {
+    layer_registry().lock().get(node_id).cloned()
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GPU Primitive (matches WGSL struct layout)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -425,6 +454,20 @@ struct CachedRenderTargets {
     sample_count: u32,
 }
 
+/// Cached layer texture for PRIM_IMAGE — only rebuilt when dimensions change.
+#[cfg(feature = "gpu")]
+struct CachedLayer {
+    tex: wgpu::Texture,
+    view: wgpu::TextureView,
+    sampler: wgpu::Sampler,
+    bind_group: wgpu::BindGroup,
+    width: u32,
+    height: u32,
+}
+
+#[cfg(feature = "gpu")]
+static CACHED_LAYER: std::sync::Mutex<Option<CachedLayer>> = std::sync::Mutex::new(None);
+
 #[cfg(feature = "gpu")]
 static CACHED_ATLAS: std::sync::Mutex<Option<CachedAtlas>> = std::sync::Mutex::new(None);
 #[cfg(feature = "gpu")]
@@ -727,16 +770,18 @@ pub fn render_2d_with_layer(
     }
     let atlas_bind_group = &atlas_cache_guard.as_ref().unwrap().bind_group;
 
-    // Layer texture for PRIM_IMAGE — created per-frame from RGBA bytes.
-    // When no layer is provided, use a 1x1 transparent pixel as placeholder.
+    // Layer texture for PRIM_IMAGE — cached, updated via write_texture.
     let placeholder_pixel = [0u8; 4];
     let (layer_data, layer_w, layer_h) = match layer_rgba {
         Some((data, w, h)) => (data, w, h),
         None => (&placeholder_pixel[..], 1u32, 1u32),
     };
-    let layer_tex = device.create_texture_with_data(
-        queue,
-        &wgpu::TextureDescriptor {
+    let mut layer_cache_guard = CACHED_LAYER.lock().unwrap_or_else(|e| e.into_inner());
+    let needs_layer = layer_cache_guard.as_ref().map_or(true, |c| {
+        c.width != layer_w || c.height != layer_h
+    });
+    if needs_layer {
+        let tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Layer Image"),
             size: wgpu::Extent3d { width: layer_w, height: layer_h, depth_or_array_layers: 1 },
             mip_level_count: 1,
@@ -745,25 +790,34 @@ pub fn render_2d_with_layer(
             format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
-        },
-        wgpu::util::TextureDataOrder::LayerMajor,
-        layer_data,
-    );
-    let layer_view = layer_tex.create_view(&Default::default());
-    let layer_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        label: Some("Layer Sampler"),
-        mag_filter: wgpu::FilterMode::Linear,
-        min_filter: wgpu::FilterMode::Linear,
-        ..Default::default()
-    });
-    let layer_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("Layer Bind Group"),
-        layout: &cached.layer_bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&layer_view) },
-            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&layer_sampler) },
-        ],
-    });
+        });
+        let view = tex.create_view(&Default::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Layer Sampler"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Layer Bind Group"),
+            layout: &cached.layer_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&view) },
+                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&sampler) },
+            ],
+        });
+        *layer_cache_guard = Some(CachedLayer { tex, view, sampler, bind_group, width: layer_w, height: layer_h });
+    }
+    // Upload pixel data via write_texture (fast GPU-side copy, no allocation)
+    if let Some(ref cl) = *layer_cache_guard {
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo { texture: &cl.tex, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+            layer_data,
+            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(layer_w * 4), rows_per_image: Some(layer_h) },
+            wgpu::Extent3d { width: layer_w, height: layer_h, depth_or_array_layers: 1 },
+        );
+    }
+    let layer_bind_group = &layer_cache_guard.as_ref().unwrap().bind_group;
 
     // Render targets — cached for constant output dimensions.
     // Avoids recreating 3.5 MB MSAA + 0.9 MB resolve + 1.6 MB readback every frame.
@@ -855,7 +909,7 @@ pub fn render_2d_with_layer(
         pass.set_pipeline(&cached.pipeline);
         pass.set_bind_group(0, &bind_group, &[]);
         pass.set_bind_group(1, atlas_bind_group, &[]);
-        pass.set_bind_group(2, &layer_bind_group, &[]);
+        pass.set_bind_group(2, layer_bind_group, &[]);
         pass.draw(0..6, 0..primitives.len() as u32);
     }
 
@@ -1242,14 +1296,31 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         }
     }
     // Cache layer image bytes (RGBA) for PRIM_IMAGE rendering.
-    // Arrives as Message::Bytes on the "data" port from upstream (e.g., browser screencast).
+    // Static registry avoids base64-encoding multi-MB frames through pool.
+    // The layer texture size can differ from the viewport — the shader maps
+    // UVs from the image primitive's bounds so any resolution works.
     if let Some(Message::Bytes(bytes)) = payload.get("data") {
-        let expected = (width * height * 4) as usize;
-        if bytes.len() == expected {
-            let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &**bytes);
-            ctx.pool_upsert("_layer", "rgba", json!(b64));
-            ctx.pool_upsert("_layer", "width", json!(width));
-            ctx.pool_upsert("_layer", "height", json!(height));
+        let len = bytes.len();
+        if len >= 4 && len % 4 == 0 {
+            let pixels = (len / 4) as u32;
+            // Derive dimensions: check viewport match first, then common ratios
+            let (lw, lh) = if width * height == pixels {
+                (width, height)
+            } else {
+                // Try 16:9, 4:3, then square-ish fallback
+                let try_ratios: &[(u32, u32)] = &[(16, 9), (4, 3), (3, 2), (1, 1)];
+                try_ratios.iter()
+                    .find_map(|&(rw, rh)| {
+                        let h = ((pixels as f64 * rh as f64 / rw as f64).sqrt()) as u32;
+                        let w = pixels / h.max(1);
+                        if w * h == pixels { Some((w, h)) } else { None }
+                    })
+                    .unwrap_or_else(|| {
+                        let w = (pixels as f64).sqrt() as u32;
+                        (w, pixels / w.max(1))
+                    })
+            };
+            set_layer_image(ctx.get_config().get_node_id(), (**bytes).clone(), lw, lh);
         }
     }
 
@@ -1552,23 +1623,13 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     let msaa = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
 
-    // Extract layer image from pool (cached RGBA bytes for PRIM_IMAGE)
-    let layer_pool: Vec<(String, serde_json::Value)> = ctx.get_pool("_layer").into_iter().collect();
-    let layer_bytes: Option<Vec<u8>> = layer_pool.iter()
-        .find(|(k, _)| k == "rgba")
-        .and_then(|(_, v)| v.as_str())
-        .and_then(|b64| base64_decode(b64));
-    let layer_w: u32 = layer_pool.iter()
-        .find(|(k, _)| k == "width")
-        .and_then(|(_, v)| v.as_u64())
-        .unwrap_or(0) as u32;
-    let layer_h: u32 = layer_pool.iter()
-        .find(|(k, _)| k == "height")
-        .and_then(|(_, v)| v.as_u64())
-        .unwrap_or(0) as u32;
-    let layer_arg = layer_bytes.as_ref().and_then(|data| {
-        if layer_w > 0 && layer_h > 0 && data.len() == (layer_w * layer_h * 4) as usize {
-            Some((data.as_slice(), layer_w, layer_h))
+    // Extract layer image from static registry — hold lock during GPU upload (zero-copy)
+    let layer_image = get_layer_image(ctx.get_config().get_node_id());
+    let layer_guard = layer_image.as_ref().map(|li| li.lock());
+    let layer_ref = layer_guard.as_ref().and_then(|guard| {
+        let (ref rgba, lw, lh) = **guard;
+        if lw > 0 && lh > 0 && rgba.len() == (lw * lh * 4) as usize {
+            Some((rgba.as_slice(), lw, lh))
         } else {
             None
         }
@@ -1577,7 +1638,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     #[cfg(feature = "gpu")]
     let rgba = {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            render_2d_with_layer(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa, layer_arg)
+            render_2d_with_layer(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa, layer_ref)
         }));
         match result {
             Ok(out) => out,

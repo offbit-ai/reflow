@@ -29,30 +29,18 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         None => return Ok(HashMap::new()),
     };
 
-    // Collect all frames
-    let (frames, width, height, fps) = tokio::task::spawn_blocking(move || collect_frames(rx))
-        .await
-        .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
-
-    let fps = if fps > 0 { fps } else { target_fps };
-    let frame_count = frames.len();
-
-    if frame_count == 0 {
-        return Ok(error_out("No frames received"));
-    }
-
     // Bitrate in kbps from config (default 5000 = 5 Mbps for crisp output)
     let bitrate_kbps = config
         .get("bitrate")
         .and_then(|v| v.as_u64())
         .unwrap_or(5000) as u32;
 
-    // Encode in blocking thread
-    let w = width;
-    let h = height;
-    let mp4_bytes =
-        tokio::task::spawn_blocking(move || encode_h264_mp4(&frames, w, h, fps, bitrate_kbps))
+    let tfps = target_fps;
+
+    // Stream-encode: encode each frame as it arrives, keeping only compressed NALs.
+    // No raw RGBA frames are accumulated — memory stays constant.
+    let (mp4_bytes, width, height, fps, frame_count) =
+        tokio::task::spawn_blocking(move || stream_encode(rx, tfps, bitrate_kbps))
             .await
             .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
             .map_err(|e| anyhow::anyhow!("{}", e))?;
@@ -74,13 +62,20 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     Ok(out)
 }
 
-fn collect_frames(
+/// Stream-encode: process each RGBA frame as it arrives from the stream,
+/// encode to H.264 immediately, and keep only the compressed NALs.
+/// Raw RGBA frames are never accumulated — memory stays constant.
+fn stream_encode(
     rx: flume::Receiver<StreamFrame>,
-) -> Result<(Vec<Vec<u8>>, u32, u32, u32), String> {
-    let mut frames: Vec<Vec<u8>> = Vec::new();
+    target_fps: u32,
+    bitrate_kbps: u32,
+) -> Result<(Vec<u8>, u32, u32, u32, usize), String> {
     let mut width = 0u32;
     let mut height = 0u32;
-    let mut fps = 30u32;
+    let mut fps = target_fps;
+    let mut encoder: Option<Encoder> = None;
+    let mut nal_units: Vec<Vec<u8>> = Vec::new();
+    let mut avcc_sizes: Vec<u32> = Vec::new();
 
     loop {
         match rx.recv() {
@@ -88,11 +83,45 @@ fn collect_frames(
                 if let Some(md) = metadata {
                     width = md.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
                     height = md.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
-                    fps = md.get("fps").and_then(|v| v.as_u64()).unwrap_or(30) as u32;
+                    fps = md.get("fps").and_then(|v| v.as_u64()).unwrap_or(target_fps as u64) as u32;
                 }
             }
-            Ok(StreamFrame::Data(data)) => {
-                frames.push(data.to_vec());
+            Ok(StreamFrame::Data(rgba)) => {
+                // Lazily init encoder on first data frame (need width/height)
+                if encoder.is_none() && width > 0 && height > 0 {
+                    let config = EncoderConfig::new()
+                        .set_bitrate_bps(bitrate_kbps * 1000)
+                        .max_frame_rate(fps as f32)
+                        .rate_control_mode(openh264::encoder::RateControlMode::Bufferbased);
+                    let api = openh264::OpenH264API::from_source();
+                    encoder = Some(
+                        Encoder::with_api_config(api, config)
+                            .map_err(|e| format!("Encoder init: {}", e))?,
+                    );
+                }
+
+                if let Some(ref mut enc) = encoder {
+                    let rgb = rgba_to_rgb(&rgba, width, height);
+                    let rgb_source = RgbSliceU8::new(&rgb, (width as usize, height as usize));
+                    let yuv = YUVBuffer::from_rgb_source(rgb_source);
+                    let bitstream = enc.encode(&yuv).map_err(|e| format!("Encode: {}", e))?;
+
+                    let mut frame_data = Vec::new();
+                    for layer_idx in 0..bitstream.num_layers() {
+                        if let Some(layer) = bitstream.layer(layer_idx) {
+                            for nal_idx in 0..layer.nal_count() {
+                                if let Some(nal) = layer.nal_unit(nal_idx) {
+                                    frame_data.extend_from_slice(nal);
+                                }
+                            }
+                        }
+                    }
+
+                    let avcc = annex_b_to_avcc(&frame_data);
+                    avcc_sizes.push(avcc.len() as u32);
+                    nal_units.push(avcc);
+                }
+                // rgba is dropped here — no accumulation
             }
             Ok(StreamFrame::End) => break,
             Ok(StreamFrame::Error(e)) => return Err(e),
@@ -100,55 +129,13 @@ fn collect_frames(
         }
     }
 
-    Ok((frames, width, height, fps))
-}
-
-fn encode_h264_mp4(
-    frames: &[Vec<u8>],
-    width: u32,
-    height: u32,
-    fps: u32,
-    bitrate_kbps: u32,
-) -> Result<Vec<u8>, String> {
-    let config = EncoderConfig::new()
-        .set_bitrate_bps(bitrate_kbps * 1000)
-        .max_frame_rate(fps as f32)
-        .rate_control_mode(openh264::encoder::RateControlMode::Bufferbased);
-    let api = openh264::OpenH264API::from_source();
-    let mut encoder =
-        Encoder::with_api_config(api, config).map_err(|e| format!("Encoder init: {}", e))?;
-
-    let mut nal_units: Vec<Vec<u8>> = Vec::new();
-    let mut avcc_sizes: Vec<u32> = Vec::new();
-
-    for rgba in frames {
-        // Convert RGBA → RGB (openh264 accepts RGB via RgbSliceU8)
-        let rgb = rgba_to_rgb(rgba, width, height);
-        let rgb_source = RgbSliceU8::new(&rgb, (width as usize, height as usize));
-        let yuv = YUVBuffer::from_rgb_source(rgb_source);
-
-        let bitstream = encoder.encode(&yuv).map_err(|e| format!("Encode: {}", e))?;
-
-        let mut frame_data = Vec::new();
-        for layer_idx in 0..bitstream.num_layers() {
-            if let Some(layer) = bitstream.layer(layer_idx) {
-                for nal_idx in 0..layer.nal_count() {
-                    if let Some(nal) = layer.nal_unit(nal_idx) {
-                        frame_data.extend_from_slice(nal);
-                    }
-                }
-            }
-        }
-
-        // Convert Annex B → AVCC for MP4
-        let avcc = annex_b_to_avcc(&frame_data);
-        avcc_sizes.push(avcc.len() as u32);
-        nal_units.push(avcc);
+    let frame_count = nal_units.len();
+    if frame_count == 0 {
+        return Err("No frames received".to_string());
     }
 
-    // Mux into MP4
     let mp4 = mux_mp4(&nal_units, &avcc_sizes, width, height, fps);
-    Ok(mp4)
+    Ok((mp4, width, height, fps, frame_count))
 }
 
 fn rgba_to_rgb(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
