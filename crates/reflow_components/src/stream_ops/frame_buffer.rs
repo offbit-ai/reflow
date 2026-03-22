@@ -37,7 +37,7 @@ fn buf_registry() -> &'static ParkMutex<HashMap<String, Arc<ParkMutex<SharedBuff
 
 #[actor(
     FrameBufferActor,
-    inports::<100>(frame, tick),
+    inports::<100>(frame: latest, tick),
     outports::<100>(frame, metadata),
     state(MemoryState)
 )]

@@ -1172,7 +1172,7 @@ fn glyph_strokes(ch: char) -> &'static [[f32; 4]] {
 
 #[actor(
     Gpu2DRenderActor,
-    inports::<100>(primitives, tick, values, data, atlas, metrics, atlas_size),
+    inports::<100>(primitives, tick: latest, values: latest, data: latest, atlas, metrics, atlas_size),
     outports::<100>(image, metadata),
     state(MemoryState)
 )]

@@ -505,24 +505,68 @@ impl Network {
         {
             use std::collections::HashMap as StdHashMap;
 
-            // Fan-out with backpressure: one forwarder per source actor reads
-            // from the outport and sends Arc-cloned packets to each connector's
-            // dedicated bounded channel. When any connector is slow, the
-            // forwarder blocks — backpressure propagates to the source actor.
-            // No messages are ever dropped.
-            let mut fanout_senders: StdHashMap<
-                String,
-                Vec<flume::Sender<std::sync::Arc<StdHashMap<String, Message>>>>,
-            > = StdHashMap::new();
+            // Per-connector delivery strategy.
+            #[derive(Clone, Debug)]
+            enum Delivery {
+                Reliable, // send_async — block if full, never drop
+                Latest,   // try_send — drop if full, consumer gets latest
+            }
 
-            // First pass: create per-connector channels, grouped by source actor
+            // Fan-out: one forwarder per source actor. Each connector gets a
+            // dedicated bounded channel with a delivery strategy based on the
+            // target port's metadata. Channels carry Arc<HashMap> — for pool
+            // ports the HashMap contains an integer slot index, not frame data.
+            type FanoutEntry = (
+                flume::Sender<std::sync::Arc<StdHashMap<String, Message>>>,
+                Delivery,
+            );
+            let mut fanout_senders: StdHashMap<String, Vec<FanoutEntry>> = StdHashMap::new();
+
+            // First pass: create per-connector channels with delivery strategy
             for connector in &self.connectors {
                 let source_id = &connector.from.actor;
+                let target_id = &connector.to.actor;
+                let target_port = &connector.to.port;
+
+                // Look up target actor's port delivery metadata
+                let delivery = self
+                    .initialized_actors
+                    .get(target_id)
+                    .map(|actor| {
+                        let pd = actor.port_delivery();
+                        match pd.get(target_port).map(|s| s.as_str()) {
+                            Some("latest") => Delivery::Latest,
+                            Some(s) if s.starts_with("pool:") => Delivery::Latest, // pool data = small indices, ok to skip
+                            _ => Delivery::Reliable,
+                        }
+                    })
+                    .unwrap_or(Delivery::Reliable);
+
+                // Also check source port — if the source declares "latest", use it
+                let source_delivery = self
+                    .initialized_actors
+                    .get(source_id)
+                    .map(|actor| {
+                        let pd = actor.port_delivery();
+                        match pd.get(&connector.from.port).map(|s| s.as_str()) {
+                            Some("latest") => Delivery::Latest,
+                            Some(s) if s.starts_with("pool:") => Delivery::Latest,
+                            _ => Delivery::Reliable,
+                        }
+                    })
+                    .unwrap_or(Delivery::Reliable);
+
+                // Use Latest if either source or target port declares it
+                let final_delivery = match (&delivery, &source_delivery) {
+                    (Delivery::Latest, _) | (_, Delivery::Latest) => Delivery::Latest,
+                    _ => Delivery::Reliable,
+                };
+
                 let (tx, rx) = flume::bounded(64);
                 fanout_senders
                     .entry(source_id.clone())
                     .or_default()
-                    .push(tx);
+                    .push((tx, final_delivery));
                 connector.init_fanout(self, rx);
             }
 
@@ -543,16 +587,23 @@ impl Network {
                 let out_ports = from_actor.get_outports();
                 let load_count = from_actor.load_count();
 
-                // Forwarder: read from outport, Arc-clone to each connector channel
+                // Forwarder: per-connector delivery strategy
                 tokio::spawn(async move {
                     while let Some(packet) = out_ports.1.clone().stream().next().await {
                         load_count.dec();
                         let arc = std::sync::Arc::new(packet);
                         let mut all_closed = true;
-                        for tx in &senders {
+                        for (tx, delivery) in &senders {
                             if !tx.is_disconnected() {
                                 all_closed = false;
-                                let _ = tx.try_send(arc.clone());
+                                match delivery {
+                                    Delivery::Latest => {
+                                        let _ = tx.try_send(arc.clone());
+                                    }
+                                    Delivery::Reliable => {
+                                        let _ = tx.send_async(arc.clone()).await;
+                                    }
+                                }
                             }
                         }
                         if all_closed {

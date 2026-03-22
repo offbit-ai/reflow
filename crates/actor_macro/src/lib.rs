@@ -3,10 +3,66 @@ use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
 use syn::{ItemFn, LitInt, Token, parse::Parse, parse::ParseStream, parse_macro_input};
 
+/// Delivery semantics for a port connection.
+#[derive(Debug, Clone, PartialEq)]
+enum PortDelivery {
+    /// Block if channel full. Messages never dropped. (default)
+    Reliable,
+    /// try_send — drop if channel full. For ticks, signals.
+    Latest,
+    /// Write to shared FramePool, send slot index. For large binary data.
+    Pool(String),
+}
+
+impl Default for PortDelivery {
+    fn default() -> Self {
+        PortDelivery::Reliable
+    }
+}
+
+#[derive(Debug, Clone)]
+struct PortDef {
+    name: String,
+    delivery: PortDelivery,
+}
+
 #[derive(Debug, Default)]
 struct PortsDefinition {
     capacity: Option<usize>,
     ports: Vec<String>,
+    port_defs: Vec<PortDef>,
+}
+
+/// Parse a single port entry: `name` or `name: latest` or `name: pool("pool_name")`
+fn parse_port_entry(input: ParseStream) -> syn::Result<PortDef> {
+    let name = input.parse::<syn::Ident>()?.to_string();
+
+    // Check for `: delivery` annotation
+    let delivery = if input.peek(Token![:]) && !input.peek2(Token![:]) {
+        input.parse::<Token![:]>()?;
+        let kind = input.parse::<syn::Ident>()?;
+        match kind.to_string().as_str() {
+            "latest" => PortDelivery::Latest,
+            "reliable" => PortDelivery::Reliable,
+            "pool" => {
+                // Parse pool("name")
+                let content;
+                syn::parenthesized!(content in input);
+                let pool_name = content.parse::<syn::LitStr>()?;
+                PortDelivery::Pool(pool_name.value())
+            }
+            other => {
+                return Err(syn::Error::new(
+                    kind.span(),
+                    format!("Unknown port delivery kind '{}'. Expected 'latest', 'reliable', or 'pool(\"name\")'", other),
+                ));
+            }
+        }
+    } else {
+        PortDelivery::Reliable
+    };
+
+    Ok(PortDef { name, delivery })
 }
 
 impl Parse for PortsDefinition {
@@ -22,15 +78,25 @@ impl Parse for PortsDefinition {
             let _gt = input.parse::<Token![>]>()?;
         }
 
-        // Parse the port names in parentheses (A, B)
+        // Parse port entries in parentheses
         let content;
         syn::parenthesized!(content in input);
-        let ports = Punctuated::<syn::Ident, Token![,]>::parse_terminated(&content)?
-            .into_iter()
-            .map(|ident| ident.to_string())
-            .collect();
 
-        Ok(PortsDefinition { capacity, ports })
+        let mut port_defs = Vec::new();
+        while !content.is_empty() {
+            port_defs.push(parse_port_entry(&content)?);
+            if !content.is_empty() {
+                content.parse::<Token![,]>()?;
+            }
+        }
+
+        let ports = port_defs.iter().map(|p| p.name.clone()).collect();
+
+        Ok(PortsDefinition {
+            capacity,
+            ports,
+            port_defs,
+        })
     }
 }
 
@@ -181,6 +247,25 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
         quote! { String::from(#port) }
     });
 
+    // Generate port delivery metadata entries
+    let all_port_defs: Vec<&PortDef> = args.inports.port_defs.iter()
+        .chain(args.outports.port_defs.iter())
+        .collect();
+    let port_delivery_entries = all_port_defs.iter().filter_map(|pd| {
+        match &pd.delivery {
+            PortDelivery::Reliable => None, // default, no entry needed
+            PortDelivery::Latest => {
+                let name = &pd.name;
+                Some(quote! { m.insert(#name.to_string(), "latest".to_string()); })
+            }
+            PortDelivery::Pool(pool_name) => {
+                let name = &pd.name;
+                let pool = pool_name.as_str();
+                Some(quote! { m.insert(#name.to_string(), format!("pool:{}", #pool)); })
+            }
+        }
+    });
+
     let expanded = quote! {
 
         // Keep the original function
@@ -256,6 +341,12 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn required_inports(&self) -> Vec<String> {
                 vec![#(String::from(#await_inports_list)),*]
+            }
+
+            fn port_delivery(&self) -> std::collections::HashMap<String, String> {
+                let mut m = std::collections::HashMap::new();
+                #(#port_delivery_entries)*
+                m
             }
 
             fn create_instance(&self) -> std::sync::Arc<dyn Actor> {

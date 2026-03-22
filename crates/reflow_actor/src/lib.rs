@@ -273,6 +273,16 @@ pub trait Actor: Send + Sync + 'static {
         Arc::new(ActorLoad::new(0))
     }
 
+    /// Per-port delivery metadata.
+    ///
+    /// Returns a map of port_name → delivery_kind where delivery_kind is:
+    /// - "latest": try_send, drop if full (for ticks, signals)
+    /// - "pool:name": use SharedFramePool (for large binary data)
+    /// - absent: reliable (send_async, block if full) — the default
+    fn port_delivery(&self) -> HashMap<String, String> {
+        HashMap::new()
+    }
+
     /// Create a fresh, isolated actor instance with its own channels.
     ///
     /// The runtime calls this once per node during network startup so that
