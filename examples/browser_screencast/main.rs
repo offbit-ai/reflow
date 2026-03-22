@@ -41,14 +41,13 @@ async fn main() -> anyhow::Result<()> {
     let w = 640u32;
     let h = 360u32;
     let fps = 24u32;
-    let capture_frames = 200; // Chrome will push ~200 frames in ~10s at ~20fps screencast
+    let capture_frames = 50; // Conservative — Chrome screencast pushes ~5-10 fps
     let dt = 1.0 / fps as f64;
 
     let mut net = Network::new(NetworkConfig::default());
 
     for tpl in [
         "tpl_interval_trigger",
-        "tpl_animation_time",
         "tpl_browser_screencast",
         "tpl_fsm",
         "tpl_render_frame_collector",
@@ -70,14 +69,8 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ TICK — drives browser screencast + FSM timing ═══
     // Browser tick controls how often we poll the latest frame.
-    // FSM tick is independent for journey timing.
+    // FSM tick — drives journey timing. Browser pushes frames independently.
     let tick_ms = 1000 / fps as u64;
-    net.add_node("tick", "tpl_interval_trigger", config(json!({
-        "interval": tick_ms, "maxExecutions": capture_frames, "startImmediately": false,
-    })))?;
-    net.add_node("time", "tpl_animation_time", config(json!({
-        "fps": fps, "speed": 1.0,
-    })))?;
     net.add_node("fsm_tick", "tpl_interval_trigger", config(json!({
         "interval": tick_ms, "maxExecutions": capture_frames, "startImmediately": false,
     })))?;
@@ -118,9 +111,8 @@ async fn main() -> anyhow::Result<()> {
     })))?;
 
     // ═══ VIDEO — collector receives frames directly from browser ═══
-    // totalFrames: 0 = collect until "done" signal from tick
     net.add_node("collector", "tpl_render_frame_collector",
-        config(json!({ "totalFrames": 0, "width": w, "height": h, "fps": fps })))?;
+        config(json!({ "totalFrames": capture_frames, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
         config(json!({ "fps": fps, "bitrate": 8000 })))?;
     net.add_node("save", "tpl_file_save",
@@ -128,27 +120,18 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
 
-    // Browser tick + time (time generates frame_number for collector)
-    net.add_connection(wire("tick", "trigger", "browser", "tick"));
-    net.add_connection(wire("tick", "trigger", "time", "trigger"));
-
-    // FSM independent tick
+    // FSM tick (for journey timing only — browser pushes frames on its own)
     net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start everything
-    net.add_connection(wire("browser", "ready", "tick", "start"));
+    // Browser ready → start FSM tick + signal FSM
     net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
     // FSM → browser actions
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Browser frame + frame_number both driven by tick → arrive together
+    // Browser pushes frames directly — each is unique, no tick gating
     net.add_connection(wire("browser", "frame", "collector", "frame"));
-    net.add_connection(wire("time", "frame_number", "collector", "frame_number"));
-
-    // Tick done → collector done (end capture after all ticks)
-    net.add_connection(wire("tick", "done", "collector", "done"));
 
     // Collector → encoder → file
     net.add_connection(wire("collector", "stream", "encoder", "stream"));

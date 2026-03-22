@@ -446,7 +446,7 @@ async fn run_browser(
                 }
             }
 
-            // ── Screencast frame ──
+            // ── Screencast frame — push directly to outport ──
             Some(event) = events.next() => {
                 frame_num += 1;
 
@@ -459,15 +459,34 @@ async fn run_browser(
                 )?;
                 let rgba_img = img.to_rgba8();
                 let (w, h) = (rgba_img.width(), rgba_img.height());
+                let rgba_data = rgba_img.into_raw();
 
+                // Store in shared buffer (for tick-based polling if needed)
                 {
                     let mut guard = frame_buf.lock();
                     *guard = Some(FrameBuffer {
-                        rgba: rgba_img.into_raw(),
+                        rgba: rgba_data.clone(),
                         width: w,
                         height: h,
                         frame_number: frame_num,
                     });
+                }
+
+                // Push frame directly to outport — every Chrome frame is unique
+                eprintln!("[browser] pushed frame {frame_num} ({w}x{h})");
+                {
+                    let mut out = HashMap::new();
+                    out.insert("frame".to_string(), Message::bytes(rgba_data));
+                    out.insert(
+                        "metadata".to_string(),
+                        Message::object(EncodableValue::from(json!({
+                            "width": w,
+                            "height": h,
+                            "format": "rgba",
+                            "frameNumber": frame_num,
+                        }))),
+                    );
+                    let _ = outport_tx.send(out);
                 }
 
                 // Signal ready on first frame so downstream (e.g., tick) can start
