@@ -41,10 +41,10 @@ pub async fn render_frame_collector_actor(
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let fps = config.get("fps").and_then(|v| v.as_u64()).unwrap_or(30) as u32;
 
-    // frame guaranteed present via await_inports
+    // frame expected via await_inports — skip if not Bytes (e.g. Optional(None) on empty tick)
     let frame_bytes = match payload.get("frame") {
         Some(Message::Bytes(b)) => b.clone(),
-        _ => unreachable!("await_inports guarantees frame"),
+        _ => return Ok(HashMap::new()),
     };
 
     let _frame_number = match payload.get("frame_number") {

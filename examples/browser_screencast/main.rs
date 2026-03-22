@@ -1,26 +1,13 @@
-//! # Browser Screencast — Headless Chrome + GPU Overlay + Video
+//! # Browser Screencast — Capture-then-Encode
 //!
-//! Launches a headless browser, navigates to a URL, captures screencast
-//! frames, composites a "Reflow" watermark via the GPU 2D renderer's
-//! image layer primitive, and encodes to MP4.
+//! Phase 1 (CAPTURE): Browser runs in real-time. Chrome screencast pushes
+//! frames at its natural rate. FSM choreographs the journey. All frames
+//! go directly to the collector which streams them to the encoder.
 //!
-//! ```text
-//! tick ──→ time:trigger (frame counter)
-//!      ──→ browser:tick  (emit latest screencast frame)
-//!      ──→ render:tick   (render overlay)
+//! Phase 2 (ENCODE): Encoder processes frames as they arrive, writes MP4.
+//! The fps metadata determines playback speed, not capture speed.
 //!
-//! IIP(url) ──→ browser:url
-//!
-//! browser:frame ──→ render:data  (RGBA bytes → cached as layer texture)
-//!
-//! render config: shapes=[{ type: "image", bounds: [0,0,W,H], z: 0 }]
-//!                text=[{ content: "Reflow", ... }]  ← rendered on top
-//!
-//! render:image ──→ collector:frame
-//! time:frame_number ──→ collector:frame_number
-//! collector:stream ──→ encoder:stream
-//! encoder:output ──→ save:input
-//! ```
+//! No tick-driven frame release. No frame buffer. No dropped frames.
 
 use reflow_network::{
     connector::{ConnectionPoint, Connector, InitialPacket},
@@ -31,30 +18,16 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 
 fn config(cfg: Value) -> Option<HashMap<String, Value>> {
-    if let Value::Object(map) = cfg {
-        Some(map.into_iter().collect())
-    } else {
-        None
-    }
+    if let Value::Object(map) = cfg { Some(map.into_iter().collect()) } else { None }
 }
 fn wire(fa: &str, fp: &str, ta: &str, tp: &str) -> Connector {
     Connector {
-        from: ConnectionPoint {
-            actor: fa.to_owned(),
-            port: fp.to_owned(),
-            ..Default::default()
-        },
-        to: ConnectionPoint {
-            actor: ta.to_owned(),
-            port: tp.to_owned(),
-            ..Default::default()
-        },
+        from: ConnectionPoint { actor: fa.to_owned(), port: fp.to_owned(), ..Default::default() },
+        to: ConnectionPoint { actor: ta.to_owned(), port: tp.to_owned(), ..Default::default() },
     }
 }
 fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
-    InitialPacket {
-        to: ConnectionPoint::new(node, port, Some(msg)),
-    }
+    InitialPacket { to: ConnectionPoint::new(node, port, Some(msg)) }
 }
 
 #[tokio::main]
@@ -63,25 +36,21 @@ async fn main() -> anyhow::Result<()> {
         .nth(1)
         .unwrap_or_else(|| "https://google.com".to_string());
 
-    println!("=== Browser Screencast — Headless Chrome + GPU Overlay ===\n");
+    println!("=== Browser Screencast — Capture-then-Encode ===\n");
 
     let w = 640u32;
     let h = 360u32;
-    let fps = 10u32;
-    let dur = 12.0f64;
-    let frames = (dur * fps as f64) as usize;
-    let ms = 1000 / fps as u64;
+    let fps = 24u32;
+    let capture_frames = 200; // Chrome will push ~200 frames in ~10s at ~20fps screencast
+    let dt = 1.0 / fps as f64;
 
     let mut net = Network::new(NetworkConfig::default());
-
-    let dt = 1.0 / fps as f64;
 
     for tpl in [
         "tpl_interval_trigger",
         "tpl_animation_time",
         "tpl_browser_screencast",
         "tpl_fsm",
-        "tpl_frame_buffer",
         "tpl_render_frame_collector",
         "tpl_video_encoder",
         "tpl_file_save",
@@ -89,15 +58,7 @@ async fn main() -> anyhow::Result<()> {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
     }
 
-    // ═══ TIMING ═══
-    net.add_node("tick", "tpl_interval_trigger", config(json!({
-        "interval": ms, "maxExecutions": frames, "startImmediately": false,
-    })))?;
-    net.add_node("time", "tpl_animation_time", config(json!({
-        "fps": fps, "speed": 1.0,
-    })))?;
-
-    // ═══ BROWSER ═══
+    // ═══ BROWSER — pushes frames at Chrome's natural screencast rate ═══
     net.add_node("browser", "tpl_browser_screencast", config(json!({
         "url": url,
         "width": w,
@@ -105,12 +66,23 @@ async fn main() -> anyhow::Result<()> {
         "quality": 80,
         "everyNthFrame": 1,
         "waitBeforeCapture": 1500,
-        "framePool": "video_pipe",
     })))?;
 
-    // ═══ JOURNEY FSM — choreographs browser interactions ═══
-    // States: waiting → consent_visible → accepted → browsing
-    // Each state entry emits an action Object routed to browser:action
+    // ═══ TICK — drives browser screencast + FSM timing ═══
+    // Browser tick controls how often we poll the latest frame.
+    // FSM tick is independent for journey timing.
+    let tick_ms = 1000 / fps as u64;
+    net.add_node("tick", "tpl_interval_trigger", config(json!({
+        "interval": tick_ms, "maxExecutions": capture_frames, "startImmediately": false,
+    })))?;
+    net.add_node("time", "tpl_animation_time", config(json!({
+        "fps": fps, "speed": 1.0,
+    })))?;
+    net.add_node("fsm_tick", "tpl_interval_trigger", config(json!({
+        "interval": tick_ms, "maxExecutions": capture_frames, "startImmediately": false,
+    })))?;
+
+    // ═══ JOURNEY FSM ═══
     net.add_node("journey", "tpl_fsm", config(json!({
         "initial": "waiting",
         "dt": dt,
@@ -119,96 +91,66 @@ async fn main() -> anyhow::Result<()> {
                 "on": { "LOADED": { "target": "viewing_consent" } }
             },
             "viewing_consent": {
-                "on": {
-                    "_timeout": { "target": "scroll_to_accept", "delay": 0.5 }
-                }
+                "on": { "_timeout": { "target": "scroll_to_accept", "delay": 1.0 } }
             },
             "scroll_to_accept": {
-                "on": {
-                    "_timeout": { "target": "click_accept", "delay": 0.5 }
-                },
-                "entry": {
-                    "emit": { "type": "scroll", "x": 0, "y": 500 }
-                }
+                "on": { "_timeout": { "target": "click_accept", "delay": 1.0 } },
+                "entry": { "emit": { "type": "scroll", "x": 0, "y": 500 } }
             },
             "click_accept": {
-                "on": {
-                    "_timeout": { "target": "focus_search", "delay": 1.5 }
-                },
-                "entry": {
-                    "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" }
-                }
+                "on": { "_timeout": { "target": "focus_search", "delay": 2.0 } },
+                "entry": { "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" } }
             },
             "focus_search": {
-                "on": {
-                    "_timeout": { "target": "type_search", "delay": 0.5 }
-                },
-                "entry": {
-                    "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]')||document.querySelector('input[name=q]'))?.focus()" }
-                }
+                "on": { "_timeout": { "target": "type_search", "delay": 0.5 } },
+                "entry": { "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]')||document.querySelector('input[name=q]'))?.focus()" } }
             },
             "type_search": {
-                "on": {
-                    "_timeout": { "target": "submit_search", "delay": 1.5 }
-                },
-                "entry": {
-                    "emit": { "type": "insertText", "text": "Reflow DAG engine" }
-                }
+                "on": { "_timeout": { "target": "submit_search", "delay": 1.5 } },
+                "entry": { "emit": { "type": "insertText", "text": "Reflow DAG engine" } }
             },
             "submit_search": {
-                "on": {
-                    "_timeout": { "target": "browsing", "delay": 4.0 }
-                },
-                "entry": {
-                    "emit": { "type": "evaluate", "expression": "window.location.href='https://www.google.com/search?q=Reflow+DAG+engine'" }
-                }
+                "on": { "_timeout": { "target": "browsing", "delay": 3.0 } },
+                "entry": { "emit": { "type": "evaluate", "expression": "window.location.href='https://www.google.com/search?q=Reflow+DAG+engine'" } }
             },
             "browsing": {}
         }
     })))?;
 
-
-    // ═══ FRAME BUFFER — smooth frame delivery ═══
-    net.add_node("fbuf", "tpl_frame_buffer", config(json!({
-        "bufferSize": 30,
-        "framePool": "video_pipe",
-    })))?;
-
-    // ═══ VIDEO ═══
+    // ═══ VIDEO — collector receives frames directly from browser ═══
+    // totalFrames: 0 = collect until "done" signal from tick
     net.add_node("collector", "tpl_render_frame_collector",
-        config(json!({ "totalFrames": frames, "width": w, "height": h, "fps": fps })))?;
+        config(json!({ "totalFrames": 0, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
         config(json!({ "fps": fps, "bitrate": 8000 })))?;
     net.add_node("save", "tpl_file_save",
         config(json!({ "path": "browser_screencast.mp4" })))?;
 
-    // ═══ FSM TICK — independent from render pipeline to avoid backpressure deadlock ═══
-    net.add_node("fsm_tick", "tpl_interval_trigger", config(json!({
-        "interval": ms, "maxExecutions": frames, "startImmediately": false,
-    })))?;
-
     // ═══ WIRING ═══
 
-    // Timing
-    net.add_connection(wire("tick", "trigger", "time", "trigger"));
+    // Browser tick + time (time generates frame_number for collector)
     net.add_connection(wire("tick", "trigger", "browser", "tick"));
+    net.add_connection(wire("tick", "trigger", "time", "trigger"));
 
-    // FSM gets its own tick
+    // FSM independent tick
     net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start tick sources + signal FSM
+    // Browser ready → start everything
     net.add_connection(wire("browser", "ready", "tick", "start"));
     net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
-    // FSM data → browser action
+    // FSM → browser actions
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Browser frame → frame buffer (no GPU render, direct pass-through)
-    net.add_connection(wire("browser", "frame", "fbuf", "frame"));
-    net.add_connection(wire("tick", "trigger", "fbuf", "tick"));
-    net.add_connection(wire("fbuf", "frame", "collector", "frame"));
+    // Browser frame + frame_number both driven by tick → arrive together
+    net.add_connection(wire("browser", "frame", "collector", "frame"));
     net.add_connection(wire("time", "frame_number", "collector", "frame_number"));
+
+    // Tick done → collector done (end capture after all ticks)
+    net.add_connection(wire("tick", "done", "collector", "done"));
+
+    // Collector → encoder → file
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
@@ -217,9 +159,9 @@ async fn main() -> anyhow::Result<()> {
         std::sync::Arc::new(url.clone()),
     )));
 
-    println!("{}x{}, {}fps, {:.0}s = {} frames", w, h, fps, dur, frames);
-    println!("  browser:frame → render:data (layer) → collector → encoder → mp4");
-    println!("  Watermark: \"Reflow\" bottom-right\n");
+    println!("{}x{}, {}fps, {} capture frames", w, h, fps, capture_frames);
+    println!("  browser:frame → collector → encoder → mp4 (direct, no frame buffer)");
+    println!("  FSM journey: consent → scroll → accept → type → search\n");
 
     let event_rx = net.get_event_receiver();
     tokio::spawn(async move {
@@ -253,11 +195,8 @@ async fn main() -> anyhow::Result<()> {
         let sz = std::fs::metadata(mp4_path)?.len();
         println!(
             "Saved: browser_screencast.mp4 ({} bytes, {:.1}s, {:.1} fps)",
-            sz,
-            t.as_secs_f64(),
-            frames as f64 / t.as_secs_f64()
+            sz, t.as_secs_f64(), capture_frames as f64 / t.as_secs_f64()
         );
     }
-    // Force exit — net.shutdown() can hang waiting for Chrome browser task
     std::process::exit(0);
 }
