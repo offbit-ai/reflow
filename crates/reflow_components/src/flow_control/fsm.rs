@@ -184,7 +184,7 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
     if payload.contains_key("tick") && event_name.is_none() {
         static FSM_TICK_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let tc = FSM_TICK_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        if tc % 10 == 0 { eprintln!("[fsm] tick={tc} state={current_state}"); }
+        if tc % 100 == 0 { eprintln!("[fsm:{}] tick={tc} state={current_state}", ctx.get_config().get_node_id()); }
         let state_def = states.get(&current_state);
         if let Some(timeout_trans) = state_def
             .and_then(|s| s.get("on"))

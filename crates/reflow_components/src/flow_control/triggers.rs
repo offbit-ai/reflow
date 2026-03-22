@@ -93,6 +93,15 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
         .unwrap_or(r#"{"timestamp": "${timestamp}"}"#)
         .to_string();
 
+    // Guard: only spawn the background task once
+    let already_spawned = ctx.get_pool("_trigger")
+        .into_iter()
+        .any(|(k, _)| k == "spawned");
+    if already_spawned {
+        return Ok(HashMap::new());
+    }
+    ctx.pool_upsert("_trigger", "spawned", serde_json::json!(true));
+
     // Get the outport sender so we can emit from a background task
     let outport_tx = ctx.get_outports().0;
 
