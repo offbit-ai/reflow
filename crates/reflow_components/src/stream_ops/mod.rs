@@ -34,6 +34,7 @@ mod peak_detect;
 mod silence_detect;
 
 // Video
+mod frame_buffer;
 mod render_frame_collector;
 #[cfg(feature = "video-encode")]
 mod video_encode;
@@ -88,6 +89,7 @@ pub use silence_detect::SilenceDetectActor;
 pub use time_stretch::TimeStretchActor;
 
 // Video re-exports
+pub use frame_buffer::FrameBufferActor;
 pub use render_frame_collector::RenderFrameCollectorActor;
 #[cfg(feature = "video-encode")]
 pub use video_encode::VideoEncoderActor;

@@ -401,6 +401,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sprite_animation" => Some(Arc::new(SpriteAnimationActor::new())),
 
         // Video
+        "tpl_frame_buffer" => Some(Arc::new(crate::stream_ops::FrameBufferActor::new())),
         "tpl_render_frame_collector" => Some(Arc::new(RenderFrameCollectorActor::new())),
         #[cfg(feature = "video-encode")]
         "tpl_video_encoder" => Some(Arc::new(VideoEncoderActor::new())),

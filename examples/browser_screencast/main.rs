@@ -67,8 +67,8 @@ async fn main() -> anyhow::Result<()> {
 
     let w = 640u32;
     let h = 360u32;
-    let fps = 10u32;
-    let dur = 10.0f64;
+    let fps = 24u32;
+    let dur = 12.0f64;
     let frames = (dur * fps as f64) as usize;
     let ms = 1000 / fps as u64;
 
@@ -82,6 +82,7 @@ async fn main() -> anyhow::Result<()> {
         "tpl_browser_screencast",
         "tpl_fsm",
         "tpl_gpu_2d_render",
+        "tpl_frame_buffer",
         "tpl_render_frame_collector",
         "tpl_video_encoder",
         "tpl_file_save",
@@ -132,7 +133,7 @@ async fn main() -> anyhow::Result<()> {
             },
             "click_accept": {
                 "on": {
-                    "_timeout": { "target": "focus_search", "delay": 2.5 }
+                    "_timeout": { "target": "focus_search", "delay": 1.5 }
                 },
                 "entry": {
                     "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" }
@@ -148,10 +149,18 @@ async fn main() -> anyhow::Result<()> {
             },
             "type_search": {
                 "on": {
-                    "_timeout": { "target": "browsing", "delay": 3.0 }
+                    "_timeout": { "target": "submit_search", "delay": 1.5 }
                 },
                 "entry": {
                     "emit": { "type": "insertText", "text": "Reflow DAG engine" }
+                }
+            },
+            "submit_search": {
+                "on": {
+                    "_timeout": { "target": "browsing", "delay": 4.0 }
+                },
+                "entry": {
+                    "emit": { "type": "evaluate", "expression": "window.location.href='https://www.google.com/search?q=Reflow+DAG+engine'" }
                 }
             },
             "browsing": {}
@@ -172,6 +181,11 @@ async fn main() -> anyhow::Result<()> {
             "tracking": 1.0, "center": false,
             "font": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
         }],
+    })))?;
+
+    // ═══ FRAME BUFFER — smooth bursty render output to steady collector input ═══
+    net.add_node("fbuf", "tpl_frame_buffer", config(json!({
+        "bufferSize": 30,
     })))?;
 
     // ═══ VIDEO ═══
@@ -209,8 +223,10 @@ async fn main() -> anyhow::Result<()> {
     // Browser frame → render layer (async: cached, render uses latest on each tick)
     net.add_connection(wire("browser", "frame", "render", "data"));
 
-    // Video pipeline
-    net.add_connection(wire("render", "image", "collector", "frame"));
+    // Render → frame buffer → collector (smooth delivery)
+    net.add_connection(wire("render", "image", "fbuf", "frame"));
+    net.add_connection(wire("tick", "trigger", "fbuf", "tick"));
+    net.add_connection(wire("fbuf", "frame", "collector", "frame"));
     net.add_connection(wire("time", "frame_number", "collector", "frame_number"));
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
@@ -251,7 +267,6 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    net.shutdown();
     let t = start.elapsed();
     if mp4_path.exists() {
         let sz = std::fs::metadata(mp4_path)?.len();
@@ -262,5 +277,6 @@ async fn main() -> anyhow::Result<()> {
             frames as f64 / t.as_secs_f64()
         );
     }
+    // Force exit — net.shutdown() can hang waiting for Chrome browser task
     std::process::exit(0);
 }

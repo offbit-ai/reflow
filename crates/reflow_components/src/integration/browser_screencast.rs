@@ -387,19 +387,34 @@ async fn run_browser(
 
     tokio::time::sleep(std::time::Duration::from_millis(wait_ms)).await;
 
-    // Start screencast
-    let params = StartScreencastParams::builder()
-        .format(StartScreencastFormat::Jpeg)
-        .quality(quality)
-        .max_width(width as i64)
-        .max_height(height as i64)
-        .every_nth_frame(every_nth)
-        .build();
-    page.execute(params).await?;
+    // Start screencast — restartable after page navigation
+    async fn start_screencast(
+        page: &chromiumoxide::Page,
+        quality: i64,
+        width: u32,
+        height: u32,
+        every_nth: i64,
+    ) -> Result<()> {
+        let params = StartScreencastParams::builder()
+            .format(StartScreencastFormat::Jpeg)
+            .quality(quality)
+            .max_width(width as i64)
+            .max_height(height as i64)
+            .every_nth_frame(every_nth)
+            .build();
+        page.execute(params).await?;
+        Ok(())
+    }
 
-    // Listen for screencast frames
+    start_screencast(&page, quality, width, height, every_nth).await?;
+
     let mut events = page
         .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventScreencastFrame>()
+        .await?;
+
+    // Listen for navigations to restart screencast
+    let mut nav_events = page
+        .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventFrameNavigated>()
         .await?;
 
     let mut frame_num: u64 = 0;
@@ -408,6 +423,19 @@ async fn run_browser(
         // Exit when network shuts down (outport receivers dropped)
         if outport_tx.is_disconnected() { break; }
         tokio::select! {
+            // ── Page navigated — restart screencast ──
+            Some(_nav) = nav_events.next() => {
+                eprintln!("[browser] page navigated, restarting screencast");
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                let _ = start_screencast(&page, quality, width, height, every_nth).await;
+                if let Ok(new_events) = page
+                    .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventScreencastFrame>()
+                    .await
+                {
+                    events = new_events;
+                }
+            }
+
             // ── Screencast frame ──
             Some(event) = events.next() => {
                 frame_num += 1;
