@@ -587,12 +587,15 @@ impl Network {
                 let out_ports = from_actor.get_outports();
                 let load_count = from_actor.load_count();
 
-                // Forwarder: per-connector delivery strategy
+                // Forwarder: per-connector delivery strategy, concurrent sends.
+                // Each connector gets its own spawned send so a slow reliable
+                // connector doesn't block other connectors.
                 tokio::spawn(async move {
                     while let Some(packet) = out_ports.1.clone().stream().next().await {
                         load_count.dec();
                         let arc = std::sync::Arc::new(packet);
                         let mut all_closed = true;
+                        let mut futures = Vec::new();
                         for (tx, delivery) in &senders {
                             if !tx.is_disconnected() {
                                 all_closed = false;
@@ -601,10 +604,18 @@ impl Network {
                                         let _ = tx.try_send(arc.clone());
                                     }
                                     Delivery::Reliable => {
-                                        let _ = tx.send_async(arc.clone()).await;
+                                        let tx = tx.clone();
+                                        let arc = arc.clone();
+                                        futures.push(tokio::spawn(async move {
+                                            let _ = tx.send_async(arc).await;
+                                        }));
                                     }
                                 }
                             }
+                        }
+                        // Wait for all reliable sends to complete
+                        for f in futures {
+                            let _ = f.await;
                         }
                         if all_closed {
                             break;

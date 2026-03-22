@@ -230,14 +230,10 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     } else {
         quote! {flume::unbounded()}
     };
-    let in_ports_channel = if let Some(in_ports_cap) = in_ports_cap {
-        if in_ports_cap < 1 {
-            panic!("Inports capacity must be greater than 0");
-        }
-        quote! {flume::bounded(#in_ports_cap)}
-    } else {
-        quote! {flume::unbounded()}
-    };
+    // Actor inport channel is always unbounded — per-connector forwarder
+    // channels handle backpressure via bounded(64) + delivery semantics.
+    // The inport is just a merge point for all connectors, not a throttle.
+    let in_ports_channel = quote! {flume::unbounded()};
 
     // Re-generate port name iterators for trait methods
     let inport_names_iter = args.inports.ports.iter().map(|port| {
