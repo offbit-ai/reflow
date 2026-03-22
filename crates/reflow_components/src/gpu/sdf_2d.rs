@@ -1296,9 +1296,35 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         }
     }
     // Cache layer image bytes (RGBA) for PRIM_IMAGE rendering.
-    // Static registry avoids base64-encoding multi-MB frames through pool.
-    // The layer texture size can differ from the viewport — the shader maps
-    // UVs from the image primitive's bounds so any resolution works.
+    // Accepts either Message::Bytes (raw) or Message::Integer (frame pool slot index).
+    if let Some(Message::Integer(slot_idx)) = payload.get("data") {
+        // Frame pool mode: read from shared pool by slot index
+        let pool_name = config.get("framePool").and_then(|v| v.as_str()).unwrap_or("video_pipe");
+        if let Some(pool) = reflow_actor::frame_pool::FramePool::get(pool_name) {
+            pool.read(*slot_idx as usize, |data| {
+                let len = data.len();
+                if len >= 4 && len % 4 == 0 {
+                    let pixels = (len / 4) as u32;
+                    let (lw, lh) = if width * height == pixels {
+                        (width, height)
+                    } else {
+                        let try_ratios: &[(u32, u32)] = &[(16, 9), (4, 3), (3, 2), (1, 1)];
+                        try_ratios.iter()
+                            .find_map(|&(rw, rh)| {
+                                let h = ((pixels as f64 * rh as f64 / rw as f64).sqrt()) as u32;
+                                let w = pixels / h.max(1);
+                                if w * h == pixels { Some((w, h)) } else { None }
+                            })
+                            .unwrap_or_else(|| {
+                                let w = (pixels as f64).sqrt() as u32;
+                                (w, pixels / w.max(1))
+                            })
+                    };
+                    set_layer_image(ctx.get_config().get_node_id(), data.to_vec(), lw, lh);
+                }
+            });
+        }
+    }
     if let Some(Message::Bytes(bytes)) = payload.get("data") {
         let len = bytes.len();
         if len >= 4 && len % 4 == 0 {

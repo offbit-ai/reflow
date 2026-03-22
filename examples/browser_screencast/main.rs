@@ -106,6 +106,7 @@ async fn main() -> anyhow::Result<()> {
         "quality": 80,
         "everyNthFrame": 1,
         "waitBeforeCapture": 1500,
+        "framePool": "video_pipe",
     })))?;
 
     // ═══ JOURNEY FSM — choreographs browser interactions ═══

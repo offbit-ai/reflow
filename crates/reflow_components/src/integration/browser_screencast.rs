@@ -289,7 +289,17 @@ pub async fn browser_screencast_actor(
     frame_count += 1;
     ctx.pool_upsert("_browser", "frame_count", json!(frame_count));
 
-    out.insert("frame".to_string(), Message::bytes(fb.rgba.clone()));
+    // Use frame pool if configured (zero-copy: send slot index, not frame data)
+    let frame_pool_name = config.get("framePool").and_then(|v| v.as_str()).unwrap_or("");
+    if !frame_pool_name.is_empty() {
+        let pool = reflow_actor::frame_pool::FramePool::get_or_create(
+            frame_pool_name, 8, fb.rgba.len(),
+        );
+        let slot = pool.write_dynamic(&fb.rgba);
+        out.insert("frame".to_string(), Message::Integer(slot as i64));
+    } else {
+        out.insert("frame".to_string(), Message::bytes(fb.rgba.clone()));
+    }
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
