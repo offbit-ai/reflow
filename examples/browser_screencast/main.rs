@@ -221,8 +221,7 @@ async fn main() -> anyhow::Result<()> {
     // FSM data → browser action
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Tick drives render; browser frames cached as layer
-    net.add_connection(wire("tick", "trigger", "render", "tick"));
+    // Browser frame drives render directly (no tick needed — render on arrival)
     net.add_connection(wire("browser", "frame", "render", "data"));
 
     // Render → frame buffer (accumulates), tick → frame buffer (releases)

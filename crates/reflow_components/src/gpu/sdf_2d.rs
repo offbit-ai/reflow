@@ -1359,8 +1359,12 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
         }
     }
 
-    // Only render when values or tick arrives
-    if !payload.contains_key("values") && !payload.contains_key("tick") {
+    // Render when values, tick, or layer image data (Bytes/Integer) arrives
+    let has_layer_data = matches!(
+        payload.get("data"),
+        Some(Message::Bytes(_)) | Some(Message::Integer(_))
+    );
+    if !payload.contains_key("values") && !payload.contains_key("tick") && !has_layer_data {
         return Ok(HashMap::new());
     }
     let get_val = |prefix: &str, prop: &str| -> Option<f64> {
