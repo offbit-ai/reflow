@@ -203,27 +203,26 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
 
-    // Timing — render pipeline
+    // Timing
     net.add_connection(wire("tick", "trigger", "time", "trigger"));
     net.add_connection(wire("tick", "trigger", "browser", "tick"));
-    net.add_connection(wire("tick", "trigger", "render", "tick"));
 
-    // FSM gets its own tick (not blocked by render backpressure)
+    // FSM gets its own tick
     net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start both tick sources + signal FSM
+    // Browser ready → start tick sources + signal FSM
     net.add_connection(wire("browser", "ready", "tick", "start"));
     net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
-    // FSM data → browser action (choreographed interactions, no subscriber needed)
+    // FSM data → browser action
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-
-    // Browser frame → render layer (async: cached, render uses latest on each tick)
+    // Tick drives render; browser frames cached as layer
+    net.add_connection(wire("tick", "trigger", "render", "tick"));
     net.add_connection(wire("browser", "frame", "render", "data"));
 
-    // Render → frame buffer → collector (smooth delivery)
+    // Render → frame buffer (accumulates), tick → frame buffer (releases)
     net.add_connection(wire("render", "image", "fbuf", "frame"));
     net.add_connection(wire("tick", "trigger", "fbuf", "tick"));
     net.add_connection(wire("fbuf", "frame", "collector", "frame"));

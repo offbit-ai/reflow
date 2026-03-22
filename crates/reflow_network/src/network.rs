@@ -518,7 +518,7 @@ impl Network {
             // First pass: create per-connector channels, grouped by source actor
             for connector in &self.connectors {
                 let source_id = &connector.from.actor;
-                let (tx, rx) = flume::bounded(4);
+                let (tx, rx) = flume::bounded(64);
                 fanout_senders
                     .entry(source_id.clone())
                     .or_default()
@@ -552,9 +552,9 @@ impl Network {
                         for tx in &senders {
                             if !tx.is_disconnected() {
                                 all_closed = false;
-                                // Non-blocking send: if channel full, skip (no stall).
-                                // Frame buffer actors handle gaps via last-frame repeat.
-                                let _ = tx.try_send(arc.clone());
+                                if tx.send_async(arc.clone()).await.is_err() {
+                                    continue;
+                                }
                             }
                         }
                         if all_closed {
