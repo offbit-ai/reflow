@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
 
     let w = 640u32;
     let h = 360u32;
-    let fps = 24u32;
+    let fps = 10u32;
     let dur = 12.0f64;
     let frames = (dur * fps as f64) as usize;
     let ms = 1000 / fps as u64;
