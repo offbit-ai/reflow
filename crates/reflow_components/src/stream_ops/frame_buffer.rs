@@ -70,7 +70,6 @@ pub async fn frame_buffer_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     // Ingest: buffer incoming frames
     if let Some(msg) = payload.get("frame") {
         let frame_data = match msg {
-            // Pool mode: read frame from shared pool by slot index (zero-copy)
             Message::Integer(slot_idx) if !pool_name.is_empty() => {
                 if let Some(pool) = reflow_actor::frame_pool::FramePool::get(pool_name) {
                     pool.clone_slot(*slot_idx as usize)
@@ -78,7 +77,6 @@ pub async fn frame_buffer_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
                     return Ok(HashMap::new());
                 }
             }
-            // Raw bytes mode
             Message::Bytes(data) => (**data).clone(),
             _ => return Ok(HashMap::new()),
         };

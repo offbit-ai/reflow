@@ -1703,6 +1703,9 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     #[cfg(feature = "gpu")]
     let rgba = {
+        static RENDER_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let rc = RENDER_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if rc % 20 == 0 { eprintln!("[render] frame={rc} prims={} layer={}", gpu_prims.len(), layer_ref.is_some()); }
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_2d_with_layer(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa, layer_ref)
         }));

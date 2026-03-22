@@ -81,7 +81,6 @@ async fn main() -> anyhow::Result<()> {
         "tpl_animation_time",
         "tpl_browser_screencast",
         "tpl_fsm",
-        "tpl_gpu_2d_render",
         "tpl_frame_buffer",
         "tpl_render_frame_collector",
         "tpl_video_encoder",
@@ -169,23 +168,7 @@ async fn main() -> anyhow::Result<()> {
     })))?;
 
 
-    // ═══ RENDERER — image layer at z=0, "Reflow" watermark text on top ═══
-    net.add_node("render", "tpl_gpu_2d_render", config(json!({
-        "width": w, "height": h, "msaa": 1,
-        "framePool": "video_pipe",
-        "background": [0.0, 0.0, 0.0, 0.0],
-        "shapes": [
-            { "type": "image", "bounds": [0, 0, w, h], "z": 0 },
-        ],
-        "text": [{
-            "content": "Reflow", "x": w as f64 - 150.0, "y": h as f64 - 30.0,
-            "size": 24.0, "color": [1.0, 1.0, 1.0, 0.7],
-            "tracking": 1.0, "center": false,
-            "font": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-        }],
-    })))?;
-
-    // ═══ FRAME BUFFER — smooth bursty render output to steady collector input ═══
+    // ═══ FRAME BUFFER — smooth frame delivery ═══
     net.add_node("fbuf", "tpl_frame_buffer", config(json!({
         "bufferSize": 30,
         "framePool": "video_pipe",
@@ -221,18 +204,15 @@ async fn main() -> anyhow::Result<()> {
     // FSM data → browser action
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Browser frame drives render directly (no tick needed — render on arrival)
-    net.add_connection(wire("browser", "frame", "render", "data"));
-
-    // Render → frame buffer (accumulates), tick → frame buffer (releases)
-    net.add_connection(wire("render", "image", "fbuf", "frame"));
+    // Browser frame → frame buffer (no GPU render, direct pass-through)
+    net.add_connection(wire("browser", "frame", "fbuf", "frame"));
     net.add_connection(wire("tick", "trigger", "fbuf", "tick"));
     net.add_connection(wire("fbuf", "frame", "collector", "frame"));
     net.add_connection(wire("time", "frame_number", "collector", "frame_number"));
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
-    // Bootstrap: start browser (tick starts when browser:ready fires)
+    // Bootstrap
     net.add_initial(iip("browser", "url", Message::String(
         std::sync::Arc::new(url.clone()),
     )));
