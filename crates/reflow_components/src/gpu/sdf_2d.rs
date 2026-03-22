@@ -465,6 +465,21 @@ struct CachedLayer {
     height: u32,
 }
 
+/// Cached uniform + primitive buffers + bind group — only rebuilt when
+/// viewport changes or primitive count exceeds capacity.
+#[cfg(feature = "gpu")]
+struct CachedBuffers {
+    uniform_buf: wgpu::Buffer,
+    prim_buf: wgpu::Buffer,
+    bind_group: wgpu::BindGroup,
+    width: u32,
+    height: u32,
+    prim_capacity: usize,
+}
+
+#[cfg(feature = "gpu")]
+static CACHED_BUFFERS: std::sync::Mutex<Option<CachedBuffers>> = std::sync::Mutex::new(None);
+
 #[cfg(feature = "gpu")]
 static CACHED_LAYER: std::sync::Mutex<Option<CachedLayer>> = std::sync::Mutex::new(None);
 
@@ -656,34 +671,55 @@ pub fn render_2d_with_layer(
     let cached = get_pipeline(msaa);
     let sample_count = cached.sample_count;
 
-    let uniforms = [width as f32, height as f32, 0.0, 0.0];
-    let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("SDF 2D Uniforms"),
-        contents: bytemuck::cast_slice(&uniforms),
-        usage: wgpu::BufferUsages::UNIFORM,
+    // Uniform + primitive buffers — cached, updated via write_buffer.
+    // Only recreated when primitive count changes.
+    let prim_bytes = bytemuck::cast_slice(primitives);
+    let mut bufs_guard = CACHED_BUFFERS.lock().unwrap_or_else(|e| e.into_inner());
+    let needs_bufs = bufs_guard.as_ref().map_or(true, |c| {
+        c.width != width || c.height != height || c.prim_capacity < primitives.len()
     });
-
-    let prim_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("SDF 2D Primitives"),
-        contents: bytemuck::cast_slice(primitives),
-        usage: wgpu::BufferUsages::STORAGE,
-    });
-
-    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("SDF 2D Bind Group"),
-        layout: &cached.bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: uniform_buf.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: prim_buf.as_entire_binding(),
-            },
-        ],
-    });
-
+    if needs_bufs {
+        let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("SDF 2D Uniforms"),
+            contents: bytemuck::cast_slice(&[width as f32, height as f32, 0.0, 0.0]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+        // Allocate with 2x headroom to avoid frequent reallocations
+        let prim_capacity = (primitives.len() * 2).max(64);
+        let prim_buf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("SDF 2D Primitives"),
+            size: (prim_capacity * std::mem::size_of::<GpuPrimitive>()) as u64,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        queue.write_buffer(&prim_buf, 0, prim_bytes);
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("SDF 2D Bind Group"),
+            layout: &cached.bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: prim_buf.as_entire_binding(),
+                },
+            ],
+        });
+        *bufs_guard = Some(CachedBuffers {
+            uniform_buf, prim_buf, bind_group,
+            width, height, prim_capacity,
+        });
+    } else {
+        // Just update primitive data
+        let c = bufs_guard.as_ref().unwrap();
+        queue.write_buffer(&c.prim_buf, 0, prim_bytes);
+    }
+    let bufs = bufs_guard.as_ref().unwrap();
+    let bind_group = &bufs.bind_group;
+    // Bind group already contains uniform + prim buffers — skip recreation
+    // (was: create_bind_group every frame)
     // Atlas texture — cached across frames (content never changes once loaded).
     // Only rebuilds on first call or if atlas dimensions/data length change.
     let (atlas_data, atlas_w, atlas_h) = match glyph_atlas {
@@ -907,7 +943,7 @@ pub fn render_2d_with_layer(
             ..Default::default()
         });
         pass.set_pipeline(&cached.pipeline);
-        pass.set_bind_group(0, &bind_group, &[]);
+        pass.set_bind_group(0, bind_group, &[]);
         pass.set_bind_group(1, atlas_bind_group, &[]);
         pass.set_bind_group(2, layer_bind_group, &[]);
         pass.draw(0..6, 0..primitives.len() as u32);
