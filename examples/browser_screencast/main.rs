@@ -112,7 +112,7 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ VIDEO — collector receives frames directly from browser ═══
     net.add_node("collector", "tpl_render_frame_collector",
-        config(json!({ "totalFrames": capture_frames, "width": w, "height": h, "fps": fps })))?;
+        config(json!({ "totalFrames": 0, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
         config(json!({ "fps": fps, "bitrate": 8000 })))?;
     net.add_node("save", "tpl_file_save",
@@ -133,6 +133,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Browser frame → collector (tick-driven, screenshot-backed)
     net.add_connection(wire("browser", "frame", "collector", "frame"));
+
+    // End capture when ticks finish
+    net.add_connection(wire("fsm_tick", "done", "collector", "done"));
 
     // Collector → encoder → file
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
