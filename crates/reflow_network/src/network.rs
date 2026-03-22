@@ -552,9 +552,7 @@ impl Network {
                         for tx in &senders {
                             if !tx.is_disconnected() {
                                 all_closed = false;
-                                if tx.send_async(arc.clone()).await.is_err() {
-                                    continue;
-                                }
+                                let _ = tx.try_send(arc.clone());
                             }
                         }
                         if all_closed {

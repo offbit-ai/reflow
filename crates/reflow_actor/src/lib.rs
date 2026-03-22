@@ -1,3 +1,4 @@
+pub mod frame_pool;
 pub mod message;
 #[cfg(test)]
 mod message_test;

@@ -65,26 +65,46 @@ pub async fn frame_buffer_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             .clone()
     };
 
-    // Ingest: buffer incoming frames and cache the latest
-    if let Some(Message::Bytes(frame_data)) = payload.get("frame") {
+    let pool_name = config.get("framePool").and_then(|v| v.as_str()).unwrap_or("");
+
+    // Ingest: buffer incoming frames
+    if let Some(msg) = payload.get("frame") {
+        let frame_data = match msg {
+            // Pool mode: read frame from shared pool by slot index (zero-copy)
+            Message::Integer(slot_idx) if !pool_name.is_empty() => {
+                if let Some(pool) = reflow_actor::frame_pool::FramePool::get(pool_name) {
+                    pool.clone_slot(*slot_idx as usize)
+                } else {
+                    return Ok(HashMap::new());
+                }
+            }
+            // Raw bytes mode
+            Message::Bytes(data) => (**data).clone(),
+            _ => return Ok(HashMap::new()),
+        };
         let mut b = buf.lock();
         if b.frames.len() >= b.max_size {
             b.frames.pop_front();
         }
-        let cloned = (**frame_data).clone();
-        b.last_frame = Some(cloned.clone());
-        b.frames.push_back(cloned);
+        b.last_frame = Some(frame_data.clone());
+        b.frames.push_back(frame_data);
     }
 
     // On tick: release buffered frame, or repeat last frame if buffer empty
     if payload.contains_key("tick") {
+        static FBUF_TICK: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let t = FBUF_TICK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if t % 50 == 0 {
+            let b = buf.lock();
+            eprintln!("[fbuf] tick={t} buffered={} last={}", b.frames.len(), b.last_frame.is_some());
+        }
         let mut b = buf.lock();
         let frame = if let Some(f) = b.frames.pop_front() {
             f
         } else if let Some(ref last) = b.last_frame {
-            last.clone() // Repeat last frame to keep collector fed
+            last.clone()
         } else {
-            return Ok(HashMap::new()); // No frames at all yet
+            return Ok(HashMap::new());
         };
         let mut out = HashMap::new();
         out.insert("frame".to_string(), Message::bytes(frame));

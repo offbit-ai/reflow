@@ -171,6 +171,7 @@ async fn main() -> anyhow::Result<()> {
     // ═══ RENDERER — image layer at z=0, "Reflow" watermark text on top ═══
     net.add_node("render", "tpl_gpu_2d_render", config(json!({
         "width": w, "height": h, "msaa": 1,
+        "framePool": "video_pipe",
         "background": [0.0, 0.0, 0.0, 0.0],
         "shapes": [
             { "type": "image", "bounds": [0, 0, w, h], "z": 0 },
@@ -186,6 +187,7 @@ async fn main() -> anyhow::Result<()> {
     // ═══ FRAME BUFFER — smooth bursty render output to steady collector input ═══
     net.add_node("fbuf", "tpl_frame_buffer", config(json!({
         "bufferSize": 30,
+        "framePool": "video_pipe",
     })))?;
 
     // ═══ VIDEO ═══

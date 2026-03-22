@@ -1654,7 +1654,19 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let rgba = vec![0u8; (width * height * 4) as usize];
 
     let mut out = HashMap::new();
-    out.insert("image".to_string(), Message::bytes(rgba));
+    // If a frame pool is configured, write to pool and send slot index (zero-copy).
+    // Otherwise send raw bytes (backward compatible).
+    if let Some(pool_name) = config.get("framePool").and_then(|v| v.as_str()) {
+        let pool = reflow_actor::frame_pool::FramePool::get_or_create(
+            pool_name,
+            8,
+            (width * height * 4) as usize,
+        );
+        let slot = pool.write_dynamic(&rgba);
+        out.insert("image".to_string(), Message::Integer(slot as i64));
+    } else {
+        out.insert("image".to_string(), Message::bytes(rgba));
+    }
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
