@@ -352,7 +352,7 @@ async fn run_browser(
     if let Ok(viewport) = SetDeviceMetricsOverrideParams::builder()
         .width(width as i64)
         .height(height as i64)
-        .device_scale_factor(2.0)
+        .device_scale_factor(1.0)
         .mobile(false)
         .build()
     {
@@ -426,32 +426,37 @@ async fn run_browser(
         // Exit when network shuts down (outport receivers dropped)
         if outport_tx.is_disconnected() { break; }
         tokio::select! {
-            // ── Periodic screenshot — keeps buffer fresh even on static pages ──
+            // ── Periodic screenshot — spawned so it doesn't block the select loop ──
             _ = screenshot_interval.tick() => {
-                if let Ok(png_bytes) = page.screenshot(
-                    chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
-                ).await {
-                    if let Ok(img) = image::load_from_memory(&png_bytes) {
-                        let rgba_img = img.to_rgba8();
-                        let (w, h) = (rgba_img.width(), rgba_img.height());
-                        frame_num += 1;
-                        let mut guard = frame_buf.lock();
-                        *guard = Some(FrameBuffer {
-                            rgba: rgba_img.into_raw(),
-                            width: w,
-                            height: h,
-                            frame_number: frame_num,
-                        });
-                        drop(guard);
-                        // Signal ready on first screenshot
-                        if frame_num == 1 {
-                            eprintln!("[browser] first screenshot {}x{}, signaling ready", w, h);
-                            let mut ready_msg = HashMap::new();
-                            ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
-                            let _ = outport_tx.send(ready_msg);
+                let page_c = page.clone();
+                let buf_c = frame_buf.clone();
+                let tx_c = outport_tx.clone();
+                let fn_c = frame_num;
+                frame_num += 1;
+                tokio::spawn(async move {
+                    if let Ok(png_bytes) = page_c.screenshot(
+                        chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
+                    ).await {
+                        if let Ok(img) = image::load_from_memory(&png_bytes) {
+                            let rgba_img = img.to_rgba8();
+                            let (w, h) = (rgba_img.width(), rgba_img.height());
+                            let mut guard = buf_c.lock();
+                            *guard = Some(FrameBuffer {
+                                rgba: rgba_img.into_raw(),
+                                width: w,
+                                height: h,
+                                frame_number: fn_c + 1,
+                            });
+                            drop(guard);
+                            if fn_c == 0 {
+                                eprintln!("[browser] first screenshot {}x{}, signaling ready", w, h);
+                                let mut ready_msg = HashMap::new();
+                                ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
+                                let _ = tx_c.send(ready_msg);
+                            }
                         }
                     }
-                }
+                });
             }
             // ── Page navigated — restart screencast ──
             Some(_nav) = nav_events.next() => {
