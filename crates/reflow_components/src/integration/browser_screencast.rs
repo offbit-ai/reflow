@@ -268,7 +268,9 @@ pub async fn browser_screencast_actor(
         );
     }
 
-    // ── On tick: emit latest frame ──
+    // ── On tick: read latest frame from shared buffer ──
+    // The background screencast task and screenshot commands keep the
+    // buffer updated. Each tick emits whatever's current.
 
     if !payload.contains_key("tick") {
         return Ok(out);
@@ -289,17 +291,7 @@ pub async fn browser_screencast_actor(
     frame_count += 1;
     ctx.pool_upsert("_browser", "frame_count", json!(frame_count));
 
-    // Use frame pool if configured (zero-copy: send slot index, not frame data)
-    let frame_pool_name = config.get("framePool").and_then(|v| v.as_str()).unwrap_or("");
-    if !frame_pool_name.is_empty() {
-        let pool = reflow_actor::frame_pool::FramePool::get_or_create(
-            frame_pool_name, 8, fb.rgba.len(),
-        );
-        let slot = pool.write_dynamic(&fb.rgba);
-        out.insert("frame".to_string(), Message::Integer(slot as i64));
-    } else {
-        out.insert("frame".to_string(), Message::bytes(fb.rgba.clone()));
-    }
+    out.insert("frame".to_string(), Message::bytes(fb.rgba.clone()));
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
@@ -428,11 +420,39 @@ async fn run_browser(
         .await?;
 
     let mut frame_num: u64 = 0;
+    let mut screenshot_interval = tokio::time::interval(std::time::Duration::from_millis(33)); // ~30fps screenshots
 
     loop {
         // Exit when network shuts down (outport receivers dropped)
         if outport_tx.is_disconnected() { break; }
         tokio::select! {
+            // ── Periodic screenshot — keeps buffer fresh even on static pages ──
+            _ = screenshot_interval.tick() => {
+                if let Ok(png_bytes) = page.screenshot(
+                    chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
+                ).await {
+                    if let Ok(img) = image::load_from_memory(&png_bytes) {
+                        let rgba_img = img.to_rgba8();
+                        let (w, h) = (rgba_img.width(), rgba_img.height());
+                        frame_num += 1;
+                        let mut guard = frame_buf.lock();
+                        *guard = Some(FrameBuffer {
+                            rgba: rgba_img.into_raw(),
+                            width: w,
+                            height: h,
+                            frame_number: frame_num,
+                        });
+                        drop(guard);
+                        // Signal ready on first screenshot
+                        if frame_num == 1 {
+                            eprintln!("[browser] first screenshot {}x{}, signaling ready", w, h);
+                            let mut ready_msg = HashMap::new();
+                            ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
+                            let _ = outport_tx.send(ready_msg);
+                        }
+                    }
+                }
+            }
             // ── Page navigated — restart screencast ──
             Some(_nav) = nav_events.next() => {
                 eprintln!("[browser] page navigated, restarting screencast");

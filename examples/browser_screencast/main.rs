@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     let w = 640u32;
     let h = 360u32;
     let fps = 24u32;
-    let capture_frames = 50; // Conservative — Chrome screencast pushes ~5-10 fps
+    let capture_frames = 300; // 300 ticks at 24fps = 12.5s video
     let dt = 1.0 / fps as f64;
 
     let mut net = Network::new(NetworkConfig::default());
@@ -120,17 +120,18 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
 
-    // FSM tick (for journey timing only — browser pushes frames on its own)
+    // Single tick drives both browser + FSM (synchronized)
+    net.add_connection(wire("fsm_tick", "trigger", "browser", "tick"));
     net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start FSM tick + signal FSM
+    // Browser ready → start tick + signal FSM
     net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
     // FSM → browser actions
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Browser pushes frames directly — each is unique, no tick gating
+    // Browser frame → collector (tick-driven, screenshot-backed)
     net.add_connection(wire("browser", "frame", "collector", "frame"));
 
     // Collector → encoder → file
