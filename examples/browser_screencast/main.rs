@@ -59,6 +59,7 @@ async fn main() -> anyhow::Result<()> {
         "quality": 80,
         "everyNthFrame": 1,
         "waitBeforeCapture": 1500,
+        "captureTimeout": 15,
     })))?;
 
     // ═══ FSM TICK — drives FSM timeout transitions ═══

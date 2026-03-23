@@ -436,9 +436,11 @@ async fn run_browser(
 
     let mut frame_num: u64 = 0;
     let mut nav_count: u32 = 0;
-    // Settle timer: after page load, wait this long with no new navigation before emitting done
     let settle_duration = std::time::Duration::from_secs(3);
     let mut settle_deadline: Option<tokio::time::Instant> = None;
+    // Global capture timeout — fallback if settle never triggers
+    let capture_timeout = 20u64; // seconds
+    let global_deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(capture_timeout);
 
     // Take initial screenshot and signal ready BEFORE entering select loop.
     // This breaks the chicken-and-egg: tick needs ready, ready needs screenshot.
@@ -464,18 +466,25 @@ async fn run_browser(
         }
     }
 
-    // Dedicated screenshot task — runs independently from command loop.
-    // Uses page.clone() so screenshots never block command processing.
+    // Periodic screenshot task — pushes frames at a steady rate to fill gaps
+    // between sparse screencast events. Runs independently from command loop.
     {
         let page_ss = page.clone();
+        let tx = outport_tx.clone();
+        let screenshot_fps = 10; // ~10 screenshots/sec (100ms each is realistic)
         tokio::spawn(async move {
-            while let Ok(()) = ss_request_rx.recv_async().await {
+            let mut interval = tokio::time::interval(std::time::Duration::from_millis(1000 / screenshot_fps));
+            loop {
+                interval.tick().await;
+                if tx.is_disconnected() { break; }
                 if let Ok(png_bytes) = page_ss.screenshot(
                     chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
                 ).await {
                     if let Ok(img) = image::load_from_memory(&png_bytes) {
-                        let rgba_img = img.to_rgba8();
-                        let _ = ss_response_tx.send(rgba_img.into_raw());
+                        let rgba_data = img.to_rgba8().into_raw();
+                        let mut out = HashMap::new();
+                        out.insert("frame".to_string(), Message::bytes(rgba_data));
+                        if tx.send(out).is_err() { break; }
                     }
                 }
             }
@@ -494,6 +503,23 @@ async fn run_browser(
         };
 
         tokio::select! {
+            // ── Global capture timeout — fallback if second navigation never fires ──
+            _ = tokio::time::sleep_until(global_deadline) => {
+                eprintln!("[browser] capture timeout ({}s), taking final screenshot + done", capture_timeout);
+                if let Ok(png_bytes) = page.screenshot(
+                    chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
+                ).await {
+                    if let Ok(img) = image::load_from_memory(&png_bytes) {
+                        let rgba_data = img.to_rgba8().into_raw();
+                        let mut final_msg = HashMap::new();
+                        final_msg.insert("frame".to_string(), Message::bytes(rgba_data));
+                        final_msg.insert("done".to_string(), Message::Boolean(true));
+                        let _ = outport_tx.send(final_msg);
+                    }
+                }
+                break;
+            }
+
             // ── Settle timer expired — page is stable, take final screenshot + emit done ──
             _ = settle_sleep, if settle_deadline.is_some() => {
                 eprintln!("[browser] page settled, taking final screenshot + emitting done");
@@ -525,7 +551,7 @@ async fn run_browser(
                 ev_msg.insert("loaded".to_string(), Message::String(std::sync::Arc::new("PAGE_LOADED".to_string())));
                 let _ = outport_tx.send(ev_msg);
                 // Start settle countdown only after 2+ navigations (skip initial load)
-                if nav_count >= 2 {
+                if nav_count >= 1 {
                     eprintln!("[browser] starting {}s settle countdown", settle_duration.as_secs());
                     settle_deadline = Some(tokio::time::Instant::now() + settle_duration);
                 }
