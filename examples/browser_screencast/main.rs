@@ -84,26 +84,26 @@ async fn main() -> anyhow::Result<()> {
                 "on": { "LOADED": { "target": "viewing_consent" } }
             },
             "viewing_consent": {
-                "on": { "_timeout": { "target": "scroll_to_accept", "delay": 1.0 } }
+                "on": { "_timeout": { "target": "scroll_to_accept", "delay": 0.5 } }
             },
             "scroll_to_accept": {
-                "on": { "_timeout": { "target": "click_accept", "delay": 1.0 } },
+                "on": { "_timeout": { "target": "click_accept", "delay": 0.5 } },
                 "entry": { "emit": { "type": "scroll", "x": 0, "y": 500 } }
             },
             "click_accept": {
-                "on": { "_timeout": { "target": "focus_search", "delay": 2.0 } },
+                "on": { "_timeout": { "target": "focus_search", "delay": 1.5 } },
                 "entry": { "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" } }
             },
             "focus_search": {
-                "on": { "_timeout": { "target": "type_search", "delay": 0.5 } },
+                "on": { "_timeout": { "target": "type_search", "delay": 0.3 } },
                 "entry": { "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]')||document.querySelector('input[name=q]'))?.focus()" } }
             },
             "type_search": {
-                "on": { "_timeout": { "target": "submit_search", "delay": 1.5 } },
+                "on": { "_timeout": { "target": "submit_search", "delay": 0.5 } },
                 "entry": { "emit": { "type": "insertText", "text": "Reflow DAG engine" } }
             },
             "submit_search": {
-                "on": { "_timeout": { "target": "browsing", "delay": 3.0 } },
+                "on": { "_timeout": { "target": "browsing", "delay": 5.0 } },
                 "entry": { "emit": { "type": "evaluate", "expression": "window.location.href='https://www.google.com/search?q=Reflow+DAG+engine'" } }
             },
             "browsing": {}
@@ -112,7 +112,7 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ VIDEO — collector receives frames directly from browser ═══
     net.add_node("collector", "tpl_render_frame_collector",
-        config(json!({ "totalFrames": 0, "width": w, "height": h, "fps": fps })))?;
+        config(json!({ "totalFrames": capture_frames, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
         config(json!({ "fps": fps, "bitrate": 8000 })))?;
     net.add_node("save", "tpl_file_save",
@@ -134,8 +134,6 @@ async fn main() -> anyhow::Result<()> {
     // Browser frame → collector (tick-driven, screenshot-backed)
     net.add_connection(wire("browser", "frame", "collector", "frame"));
 
-    // End capture when ticks finish
-    net.add_connection(wire("fsm_tick", "done", "collector", "done"));
 
     // Collector → encoder → file
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
