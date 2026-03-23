@@ -34,8 +34,8 @@ async fn main() -> anyhow::Result<()> {
 
     println!("=== Browser Screencast — GPU Render + Watermark ===\n");
 
-    let w = 640u32;
-    let h = 360u32;
+    let w = 1280u32;
+    let h = 720u32;
     let fps = 24u32;
     let dt = 1.0 / fps as f64;
 
