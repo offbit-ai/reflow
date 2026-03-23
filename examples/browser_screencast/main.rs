@@ -1,8 +1,9 @@
-//! # Browser Screencast — Event-Driven Journey
+//! # Browser Screencast — GPU Render + AssetDB Watermark
 //!
-//! No ticks. FSM drives the journey via events. Screenshots flow
-//! continuously from the browser's background task. Collector accumulates
-//! all frames. fps is playback speed, not capture rate.
+//! Phase 1: GPU renders "Reflow" watermark text → stores in AssetDB
+//! Phase 2: Browser captures screenshots, GPU composites browser frame
+//!          (PRIM_IMAGE layer) + watermark text in one pass
+//! Phase 3: Collector → encoder → MP4
 
 use reflow_network::{
     connector::{ConnectionPoint, Connector, InitialPacket},
@@ -31,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
         .nth(1)
         .unwrap_or_else(|| "https://duckduckgo.com".to_string());
 
-    println!("=== Browser Screencast — Event-Driven Journey ===\n");
+    println!("=== Browser Screencast — GPU Render + Watermark ===\n");
 
     let w = 640u32;
     let h = 360u32;
@@ -44,6 +45,7 @@ async fn main() -> anyhow::Result<()> {
         "tpl_interval_trigger",
         "tpl_browser_screencast",
         "tpl_fsm",
+        "tpl_gpu_2d_render",
         "tpl_render_frame_collector",
         "tpl_video_encoder",
         "tpl_file_save",
@@ -59,11 +61,9 @@ async fn main() -> anyhow::Result<()> {
         "quality": 80,
         "everyNthFrame": 1,
         "waitBeforeCapture": 1500,
-        "captureTimeout": 15,
     })))?;
 
-    // ═══ FSM TICK — drives FSM timeout transitions ═══
-    // This only drives FSM timing, NOT frame capture.
+    // ═══ FSM TICK ═══
     net.add_node("fsm_tick", "tpl_interval_trigger", config(json!({
         "interval": 1000 / fps as u64,
         "maxExecutions": 500,
@@ -94,7 +94,22 @@ async fn main() -> anyhow::Result<()> {
         }
     })))?;
 
-    // ═══ VIDEO — collector receives ALL frames, fps is playback speed ═══
+    // ═══ GPU RENDERER — browser frame as layer + "Reflow" watermark text ═══
+    net.add_node("render", "tpl_gpu_2d_render", config(json!({
+        "width": w, "height": h, "msaa": 1,
+        "background": [0.0, 0.0, 0.0, 0.0],
+        "shapes": [
+            { "type": "image", "bounds": [0, 0, w, h], "z": 0 },
+        ],
+        "text": [{
+            "content": "Reflow", "x": w as f64 - 150.0, "y": h as f64 - 30.0,
+            "size": 24.0, "color": [1.0, 1.0, 1.0, 0.7],
+            "tracking": 1.0, "center": false,
+            "font": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        }],
+    })))?;
+
+    // ═══ VIDEO ═══
     net.add_node("collector", "tpl_render_frame_collector",
         config(json!({ "totalFrames": 0, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
@@ -104,23 +119,24 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
 
-    // FSM tick (only for FSM timeout transitions)
+    // FSM tick
     net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start FSM + signal LOADED
+    // Browser ready → start FSM + signal
     net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
-    // FSM → browser actions (journey choreography)
+    // FSM → browser actions
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Browser screenshots → collector (continuous, event-driven)
-    net.add_connection(wire("browser", "frame", "collector", "frame"));
+    // Browser frame → GPU render (layer texture via data port)
+    net.add_connection(wire("browser", "frame", "render", "data"));
 
-    // Browser settle done → collector done (page settled = stop capture)
+    // Browser done → collector done (page settled = end capture)
     net.add_connection(wire("browser", "done", "collector", "done"));
 
-    // Collector → encoder → file
+    // GPU render → collector → encoder → file
+    net.add_connection(wire("render", "image", "collector", "frame"));
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
@@ -130,8 +146,7 @@ async fn main() -> anyhow::Result<()> {
     )));
 
     println!("{}x{}, {}fps playback", w, h, fps);
-    println!("  Event-driven: browser:frame → collector → encoder → mp4");
-    println!("  FSM journey: consent → scroll → accept → type → search\n");
+    println!("  browser:frame → GPU render (layer + watermark) → collector → mp4\n");
 
     let event_rx = net.get_event_receiver();
     tokio::spawn(async move {
@@ -163,10 +178,7 @@ async fn main() -> anyhow::Result<()> {
     let t = start.elapsed();
     if mp4_path.exists() {
         let sz = std::fs::metadata(mp4_path)?.len();
-        println!(
-            "Saved: browser_screencast.mp4 ({} bytes, {:.1}s)",
-            sz, t.as_secs_f64()
-        );
+        println!("Saved: browser_screencast.mp4 ({} bytes, {:.1}s)", sz, t.as_secs_f64());
     }
     std::process::exit(0);
 }

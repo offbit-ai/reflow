@@ -33,9 +33,6 @@ mod envelope_follower;
 mod peak_detect;
 mod silence_detect;
 
-// Overlay
-mod image_overlay;
-
 // Video
 mod frame_buffer;
 mod render_frame_collector;
@@ -90,9 +87,6 @@ pub use peak_detect::PeakDetectActor;
 pub use pitch_shift::PitchShiftActor;
 pub use silence_detect::SilenceDetectActor;
 pub use time_stretch::TimeStretchActor;
-
-// Overlay re-exports
-pub use image_overlay::ImageOverlayActor;
 
 // Video re-exports
 pub use frame_buffer::FrameBufferActor;
