@@ -455,24 +455,28 @@ async fn run_browser(
         }
     }
 
-    loop {
-        if outport_tx.is_disconnected() { break; }
-        tokio::select! {
-            // ── On-demand screenshot (requested by tick handler) ──
-            Ok(_) = ss_request_rx.recv_async() => {
-                frame_num += 1;
-                if let Ok(png_bytes) = page.screenshot(
+    // Dedicated screenshot task — runs independently from command loop.
+    // Uses page.clone() so screenshots never block command processing.
+    {
+        let page_ss = page.clone();
+        tokio::spawn(async move {
+            while let Ok(()) = ss_request_rx.recv_async().await {
+                if let Ok(png_bytes) = page_ss.screenshot(
                     chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
                 ).await {
                     if let Ok(img) = image::load_from_memory(&png_bytes) {
                         let rgba_img = img.to_rgba8();
-                        let rgba_data = rgba_img.into_raw();
-                        let _ = ss_response_tx.send(rgba_data);
+                        let _ = ss_response_tx.send(rgba_img.into_raw());
                     }
                 }
             }
+        });
+    }
 
-            // ── Screencast frame (kept for navigation detection but not used for video) ──
+    loop {
+        if outport_tx.is_disconnected() { break; }
+        tokio::select! {
+            // ── Screencast frame (navigation detection) ──
             Some(event) = events.next() => {
                 frame_num += 1;
 

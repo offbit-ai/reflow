@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     let w = 640u32;
     let h = 360u32;
     let fps = 24u32;
-    let capture_frames = 300;
+    let capture_frames = 200;
     let dt = 1.0 / fps as f64;
 
     let mut net = Network::new(NetworkConfig::default());
