@@ -113,6 +113,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: node.metadata.clone().unwrap_or_default(),
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         let payload = HashMap::new();
@@ -186,6 +187,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: node.metadata.clone().unwrap_or_default(),
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         let payload = HashMap::new();

@@ -1,3 +1,4 @@
+mod fbx_import;
 mod file_load;
 mod file_save;
 mod gltf_export;
@@ -9,6 +10,7 @@ mod scene_import;
 mod stl_export;
 pub(crate) mod stl_import;
 
+pub use fbx_import::FbxImportActor;
 pub use file_load::FileLoadActor;
 pub use file_save::FileSaveActor;
 pub use gltf_export::GltfExportActor;

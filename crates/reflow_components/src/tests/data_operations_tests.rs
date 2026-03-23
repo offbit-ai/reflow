@@ -31,6 +31,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: metadata,
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         let outports = flume::unbounded();

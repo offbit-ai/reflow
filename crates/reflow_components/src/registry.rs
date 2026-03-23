@@ -44,8 +44,9 @@ use crate::integration::HttpRequestActor;
 #[cfg(feature = "browser")]
 use crate::integration::BrowserScreencastActor;
 use crate::io::{
-    FileLoadActor, FileSaveActor, GltfExportActor, GltfImportActor, MeshImportActor,
-    ObjExportActor, ObjImportActor, SceneImportActor, StlExportActor, StlImportActor,
+    FbxImportActor, FileLoadActor, FileSaveActor, GltfExportActor, GltfImportActor,
+    MeshImportActor, ObjExportActor, ObjImportActor, SceneImportActor, StlExportActor,
+    StlImportActor,
 };
 use crate::logic::RulesEngineActor;
 use crate::math::{
@@ -417,6 +418,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_gltf_import" => Some(Arc::new(GltfImportActor::new())),
         "tpl_mesh_import" => Some(Arc::new(MeshImportActor::new())),
         "tpl_scene_import" => Some(Arc::new(SceneImportActor::new())),
+        "tpl_fbx_import" => Some(Arc::new(FbxImportActor::new())),
 
         // 2D Vector Graphics
         "tpl_shape_2d" => Some(Arc::new(Shape2DActor::new())),
@@ -845,6 +847,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_gltf_import", "GltfImportActor"),
         ("tpl_mesh_import", "MeshImportActor"),
         ("tpl_scene_import", "SceneImportActor"),
+        ("tpl_fbx_import", "FbxImportActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }

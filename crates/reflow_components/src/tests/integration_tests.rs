@@ -28,6 +28,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: metadata,
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         let payload = HashMap::new();
