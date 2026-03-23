@@ -24,8 +24,7 @@ use std::sync::Arc;
     RenderFrameCollectorActor,
     inports::<100>(frame, frame_number, done),
     outports::<50>(stream, progress, error),
-    state(MemoryState),
-    await_inports(frame)
+    state(MemoryState)
 )]
 pub async fn render_frame_collector_actor(
     ctx: ActorContext,
@@ -52,7 +51,14 @@ pub async fn render_frame_collector_actor(
 
     // If done arrives without frame, end capture immediately
     let frame_bytes = match payload.get("frame") {
-        Some(Message::Bytes(b)) => Some(b.clone()),
+        Some(Message::Bytes(b)) => {
+            let expected = (width * height * 4) as usize;
+            if b.len() == expected {
+                Some(b.clone())
+            } else {
+                None // Wrong dimensions — skip (e.g., during page navigation)
+            }
+        }
         _ => None,
     };
     if frame_bytes.is_none() && !is_done {

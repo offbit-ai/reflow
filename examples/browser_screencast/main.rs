@@ -29,7 +29,7 @@ fn iip(node: &str, port: &str, msg: Message) -> InitialPacket {
 async fn main() -> anyhow::Result<()> {
     let url = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "https://google.com".to_string());
+        .unwrap_or_else(|| "https://duckduckgo.com".to_string());
 
     println!("=== Browser Screencast — Event-Driven Journey ===\n");
 
@@ -76,30 +76,19 @@ async fn main() -> anyhow::Result<()> {
         "dt": dt,
         "states": {
             "waiting": {
-                "on": { "LOADED": { "target": "viewing_consent" } }
-            },
-            "viewing_consent": {
-                "on": { "_timeout": { "target": "scroll_to_accept", "delay": 0.5 } }
-            },
-            "scroll_to_accept": {
-                "on": { "_timeout": { "target": "click_accept", "delay": 0.5 } },
-                "entry": { "emit": { "type": "scroll", "x": 0, "y": 500 } }
-            },
-            "click_accept": {
-                "on": { "_timeout": { "target": "focus_search", "delay": 1.5 } },
-                "entry": { "emit": { "type": "evaluate", "expression": "[...document.querySelectorAll('button')].find(b => b.textContent.includes('Accept all'))?.click()" } }
+                "on": { "LOADED": { "target": "focus_search" } }
             },
             "focus_search": {
-                "on": { "_timeout": { "target": "type_search", "delay": 0.3 } },
-                "entry": { "emit": { "type": "evaluate", "expression": "(document.querySelector('textarea[name=q]')||document.querySelector('input[name=q]'))?.focus()" } }
+                "on": { "_timeout": { "target": "type_search", "delay": 0.5 } },
+                "entry": { "emit": { "type": "evaluate", "expression": "document.querySelector('input[name=q]')?.focus()" } }
             },
             "type_search": {
-                "on": { "_timeout": { "target": "submit_search", "delay": 0.5 } },
+                "on": { "_timeout": { "target": "submit_search", "delay": 1.0 } },
                 "entry": { "emit": { "type": "insertText", "text": "Reflow DAG engine" } }
             },
             "submit_search": {
-                "on": { "_timeout": { "target": "browsing", "delay": 4.0 } },
-                "entry": { "emit": { "type": "evaluate", "expression": "window.location.href='https://www.google.com/search?q=Reflow+DAG+engine'" } }
+                "on": { "_timeout": { "target": "browsing", "delay": 5.0 } },
+                "entry": { "emit": { "type": "evaluate", "expression": "document.querySelector('form')?.submit()" } }
             },
             "browsing": {}
         }

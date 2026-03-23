@@ -346,6 +346,8 @@ async fn run_browser(
         .window_size(width, height)
         .arg("--hide-scrollbars")
         .arg("--mute-audio")
+        .arg("--disable-blink-features=AutomationControlled")
+        .arg("--disable-features=IsolateOrigins,site-per-process")
         .build()
         .map_err(|e| anyhow::anyhow!("browser config: {e}"))?;
 
@@ -439,7 +441,7 @@ async fn run_browser(
     let settle_duration = std::time::Duration::from_secs(3);
     let mut settle_deadline: Option<tokio::time::Instant> = None;
     // Global capture timeout — fallback if settle never triggers
-    let capture_timeout = 20u64; // seconds
+    let capture_timeout = 15u64; // seconds
     let global_deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(capture_timeout);
 
     // Take initial screenshot and signal ready BEFORE entering select loop.
