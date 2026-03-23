@@ -61,6 +61,7 @@ chromiumoxide = { version = "0.7", features = ["tokio-runtime"], optional = true
 # 3D model import (pure Rust, Wasm-safe)
 gltf = "1"
 tobj = "4"
+fbxcel = "0.9"
 
 # Physics (pure Rust, Wasm-safe)
 rapier3d = { version = "0.22", features = ["serde-serialize"] }
