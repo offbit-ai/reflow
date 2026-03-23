@@ -1,13 +1,8 @@
-//! # Browser Screencast — Capture-then-Encode
+//! # Browser Screencast — Event-Driven Journey
 //!
-//! Phase 1 (CAPTURE): Browser runs in real-time. Chrome screencast pushes
-//! frames at its natural rate. FSM choreographs the journey. All frames
-//! go directly to the collector which streams them to the encoder.
-//!
-//! Phase 2 (ENCODE): Encoder processes frames as they arrive, writes MP4.
-//! The fps metadata determines playback speed, not capture speed.
-//!
-//! No tick-driven frame release. No frame buffer. No dropped frames.
+//! No ticks. FSM drives the journey via events. Screenshots flow
+//! continuously from the browser's background task. Collector accumulates
+//! all frames. fps is playback speed, not capture rate.
 
 use reflow_network::{
     connector::{ConnectionPoint, Connector, InitialPacket},
@@ -36,12 +31,11 @@ async fn main() -> anyhow::Result<()> {
         .nth(1)
         .unwrap_or_else(|| "https://google.com".to_string());
 
-    println!("=== Browser Screencast — Capture-then-Encode ===\n");
+    println!("=== Browser Screencast — Event-Driven Journey ===\n");
 
     let w = 640u32;
     let h = 360u32;
     let fps = 24u32;
-    let capture_frames = 200;
     let dt = 1.0 / fps as f64;
 
     let mut net = Network::new(NetworkConfig::default());
@@ -57,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
         net.register_actor_arc(tpl, reflow_components::get_actor_for_template(tpl).unwrap())?;
     }
 
-    // ═══ BROWSER — pushes frames at Chrome's natural screencast rate ═══
+    // ═══ BROWSER ═══
     net.add_node("browser", "tpl_browser_screencast", config(json!({
         "url": url,
         "width": w,
@@ -67,12 +61,12 @@ async fn main() -> anyhow::Result<()> {
         "waitBeforeCapture": 1500,
     })))?;
 
-    // ═══ TICK — drives browser screencast + FSM timing ═══
-    // Browser tick controls how often we poll the latest frame.
-    // FSM tick — drives journey timing. Browser pushes frames independently.
-    let tick_ms = 1000 / fps as u64;
+    // ═══ FSM TICK — drives FSM timeout transitions ═══
+    // This only drives FSM timing, NOT frame capture.
     net.add_node("fsm_tick", "tpl_interval_trigger", config(json!({
-        "interval": tick_ms, "maxExecutions": capture_frames, "startImmediately": false,
+        "interval": 1000 / fps as u64,
+        "maxExecutions": 500,
+        "startImmediately": false,
     })))?;
 
     // ═══ JOURNEY FSM ═══
@@ -103,16 +97,16 @@ async fn main() -> anyhow::Result<()> {
                 "entry": { "emit": { "type": "insertText", "text": "Reflow DAG engine" } }
             },
             "submit_search": {
-                "on": { "_timeout": { "target": "browsing", "delay": 5.0 } },
+                "on": { "_timeout": { "target": "browsing", "delay": 4.0 } },
                 "entry": { "emit": { "type": "evaluate", "expression": "window.location.href='https://www.google.com/search?q=Reflow+DAG+engine'" } }
             },
             "browsing": {}
         }
     })))?;
 
-    // ═══ VIDEO — collector receives frames directly from browser ═══
+    // ═══ VIDEO — collector receives ALL frames, fps is playback speed ═══
     net.add_node("collector", "tpl_render_frame_collector",
-        config(json!({ "totalFrames": capture_frames, "width": w, "height": h, "fps": fps })))?;
+        config(json!({ "totalFrames": 0, "width": w, "height": h, "fps": fps })))?;
     net.add_node("encoder", "tpl_video_encoder",
         config(json!({ "fps": fps, "bitrate": 8000 })))?;
     net.add_node("save", "tpl_file_save",
@@ -120,20 +114,21 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ WIRING ═══
 
-    // Single tick drives both browser + FSM (synchronized)
-    net.add_connection(wire("fsm_tick", "trigger", "browser", "tick"));
+    // FSM tick (only for FSM timeout transitions)
     net.add_connection(wire("fsm_tick", "trigger", "journey", "tick"));
 
-    // Browser ready → start tick + signal FSM
+    // Browser ready → start FSM + signal LOADED
     net.add_connection(wire("browser", "ready", "fsm_tick", "start"));
     net.add_connection(wire("browser", "ready", "journey", "event"));
 
-    // FSM → browser actions
+    // FSM → browser actions (journey choreography)
     net.add_connection(wire("journey", "data", "browser", "action"));
 
-    // Browser frame → collector (tick-driven, screenshot-backed)
+    // Browser screenshots → collector (continuous, event-driven)
     net.add_connection(wire("browser", "frame", "collector", "frame"));
 
+    // FSM tick done → collector done (end capture when journey finishes)
+    net.add_connection(wire("fsm_tick", "done", "collector", "done"));
 
     // Collector → encoder → file
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
@@ -144,8 +139,8 @@ async fn main() -> anyhow::Result<()> {
         std::sync::Arc::new(url.clone()),
     )));
 
-    println!("{}x{}, {}fps, {} capture frames", w, h, fps, capture_frames);
-    println!("  browser:frame → collector → encoder → mp4 (direct, no frame buffer)");
+    println!("{}x{}, {}fps playback", w, h, fps);
+    println!("  Event-driven: browser:frame → collector → encoder → mp4");
     println!("  FSM journey: consent → scroll → accept → type → search\n");
 
     let event_rx = net.get_event_receiver();
@@ -179,8 +174,8 @@ async fn main() -> anyhow::Result<()> {
     if mp4_path.exists() {
         let sz = std::fs::metadata(mp4_path)?.len();
         println!(
-            "Saved: browser_screencast.mp4 ({} bytes, {:.1}s, {:.1} fps)",
-            sz, t.as_secs_f64(), capture_frames as f64 / t.as_secs_f64()
+            "Saved: browser_screencast.mp4 ({} bytes, {:.1}s)",
+            sz, t.as_secs_f64()
         );
     }
     std::process::exit(0);
