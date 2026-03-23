@@ -67,6 +67,9 @@ struct BrowserSession {
     frame_buf: Arc<ParkMutex<Option<FrameBuffer>>>,
     cmd_tx: flume::Sender<BrowserCommand>,
     result_rx: flume::Receiver<Value>,
+    /// Request a screenshot: send () → receive RGBA bytes
+    screenshot_tx: flume::Sender<()>,
+    screenshot_rx: flume::Receiver<Vec<u8>>,
 }
 
 static SESSIONS: std::sync::OnceLock<ParkMutex<HashMap<u64, Arc<BrowserSession>>>> =
@@ -138,12 +141,16 @@ pub async fn browser_screencast_actor(
         let frame_buf = Arc::new(ParkMutex::new(None));
         let (cmd_tx, cmd_rx) = flume::unbounded();
         let (result_tx, result_rx) = flume::unbounded();
+        let (ss_request_tx, ss_request_rx) = flume::bounded::<()>(1);
+        let (ss_response_tx, ss_response_rx) = flume::bounded::<Vec<u8>>(1);
 
         let sid = NEXT_SESSION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let session = Arc::new(BrowserSession {
             frame_buf: frame_buf.clone(),
             cmd_tx,
             result_rx,
+            screenshot_tx: ss_request_tx,
+            screenshot_rx: ss_response_rx,
         });
         session_registry().lock().insert(sid, session);
 
@@ -157,6 +164,7 @@ pub async fn browser_screencast_actor(
             if let Err(e) = run_browser(
                 url, vp_width, vp_height, quality, every_nth, wait_ms,
                 frame_buf, cmd_rx, result_tx, outport_tx2,
+                ss_request_rx, ss_response_tx,
             )
             .await
             {
@@ -268,18 +276,17 @@ pub async fn browser_screencast_actor(
         );
     }
 
-    // ── On tick: read latest frame from shared buffer ──
-    // The background screencast task and screenshot commands keep the
-    // buffer updated. Each tick emits whatever's current.
+    // ── On tick: request a fresh screenshot (synchronous, unique per tick) ──
 
     if !payload.contains_key("tick") {
         return Ok(out);
     }
 
-    let guard = session.frame_buf.lock();
-    let fb = match guard.as_ref() {
-        Some(fb) => fb,
-        None => return Ok(out),
+    // Request screenshot from background task and wait for response
+    let _ = session.screenshot_tx.send_async(()).await;
+    let rgba = match session.screenshot_rx.recv_async().await {
+        Ok(data) => data,
+        Err(_) => return Ok(out), // session closed
     };
 
     let mut frame_count: u64 = ctx
@@ -291,15 +298,17 @@ pub async fn browser_screencast_actor(
     frame_count += 1;
     ctx.pool_upsert("_browser", "frame_count", json!(frame_count));
 
-    out.insert("frame".to_string(), Message::bytes(fb.rgba.clone()));
+    let frame_pixels = rgba.len() / 4;
+    let fw = vp_width;
+    let fh = if fw > 0 { frame_pixels as u32 / fw } else { vp_height };
+    out.insert("frame".to_string(), Message::bytes(rgba));
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
-            "width": fb.width,
-            "height": fb.height,
+            "width": fw,
+            "height": fh,
             "format": "rgba",
             "frameNumber": frame_count,
-            "cdpFrame": fb.frame_number,
         }))),
     );
     Ok(out)
@@ -320,6 +329,8 @@ async fn run_browser(
     cmd_rx: flume::Receiver<BrowserCommand>,
     result_tx: flume::Sender<Value>,
     outport_tx: flume::Sender<HashMap<String, Message>>,
+    ss_request_rx: flume::Receiver<()>,
+    ss_response_tx: flume::Sender<Vec<u8>>,
 ) -> Result<()> {
     use chromiumoxide::browser::{Browser, BrowserConfig};
     use chromiumoxide::cdp::browser_protocol::page::{
@@ -414,64 +425,54 @@ async fn run_browser(
         .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventScreencastFrame>()
         .await?;
 
-    // Listen for navigations to restart screencast
     let mut nav_events = page
         .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventFrameNavigated>()
         .await?;
 
     let mut frame_num: u64 = 0;
-    let mut screenshot_interval = tokio::time::interval(std::time::Duration::from_millis(33)); // ~30fps screenshots
+
+    // Take initial screenshot and signal ready BEFORE entering select loop.
+    // This breaks the chicken-and-egg: tick needs ready, ready needs screenshot.
+    if let Ok(png_bytes) = page.screenshot(
+        chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
+    ).await {
+        if let Ok(img) = image::load_from_memory(&png_bytes) {
+            let rgba_img = img.to_rgba8();
+            let (w, h) = (rgba_img.width(), rgba_img.height());
+            frame_num = 1;
+            let mut guard = frame_buf.lock();
+            *guard = Some(FrameBuffer {
+                rgba: rgba_img.into_raw(),
+                width: w,
+                height: h,
+                frame_number: 1,
+            });
+            drop(guard);
+            eprintln!("[browser] initial screenshot {}x{}, signaling ready", w, h);
+            let mut ready_msg = HashMap::new();
+            ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
+            let _ = outport_tx.send(ready_msg);
+        }
+    }
 
     loop {
-        // Exit when network shuts down (outport receivers dropped)
         if outport_tx.is_disconnected() { break; }
         tokio::select! {
-            // ── Periodic screenshot — spawned so it doesn't block the select loop ──
-            _ = screenshot_interval.tick() => {
-                let page_c = page.clone();
-                let buf_c = frame_buf.clone();
-                let tx_c = outport_tx.clone();
-                let fn_c = frame_num;
+            // ── On-demand screenshot (requested by tick handler) ──
+            Ok(_) = ss_request_rx.recv_async() => {
                 frame_num += 1;
-                tokio::spawn(async move {
-                    if let Ok(png_bytes) = page_c.screenshot(
-                        chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
-                    ).await {
-                        if let Ok(img) = image::load_from_memory(&png_bytes) {
-                            let rgba_img = img.to_rgba8();
-                            let (w, h) = (rgba_img.width(), rgba_img.height());
-                            let mut guard = buf_c.lock();
-                            *guard = Some(FrameBuffer {
-                                rgba: rgba_img.into_raw(),
-                                width: w,
-                                height: h,
-                                frame_number: fn_c + 1,
-                            });
-                            drop(guard);
-                            if fn_c == 0 {
-                                eprintln!("[browser] first screenshot {}x{}, signaling ready", w, h);
-                                let mut ready_msg = HashMap::new();
-                                ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
-                                let _ = tx_c.send(ready_msg);
-                            }
-                        }
+                if let Ok(png_bytes) = page.screenshot(
+                    chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
+                ).await {
+                    if let Ok(img) = image::load_from_memory(&png_bytes) {
+                        let rgba_img = img.to_rgba8();
+                        let rgba_data = rgba_img.into_raw();
+                        let _ = ss_response_tx.send(rgba_data);
                     }
-                });
-            }
-            // ── Page navigated — restart screencast ──
-            Some(_nav) = nav_events.next() => {
-                eprintln!("[browser] page navigated, restarting screencast");
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                let _ = start_screencast(&page, quality, width, height, every_nth).await;
-                if let Ok(new_events) = page
-                    .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventScreencastFrame>()
-                    .await
-                {
-                    events = new_events;
                 }
             }
 
-            // ── Screencast frame — push directly to outport ──
+            // ── Screencast frame (kept for navigation detection but not used for video) ──
             Some(event) = events.next() => {
                 frame_num += 1;
 

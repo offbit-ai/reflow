@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     let w = 640u32;
     let h = 360u32;
     let fps = 24u32;
-    let capture_frames = 300; // 300 ticks at 24fps = 12.5s video
+    let capture_frames = 300;
     let dt = 1.0 / fps as f64;
 
     let mut net = Network::new(NetworkConfig::default());
@@ -162,7 +162,7 @@ async fn main() -> anyhow::Result<()> {
     net.start()?;
 
     let mp4_path = std::path::Path::new("browser_screencast.mp4");
-    let timeout = std::time::Duration::from_secs(120);
+    let timeout = std::time::Duration::from_secs(300);
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
         if mp4_path.exists() && mp4_path.metadata().map(|m| m.len() > 100).unwrap_or(false) {
