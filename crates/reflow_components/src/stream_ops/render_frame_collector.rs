@@ -41,17 +41,6 @@ pub async fn render_frame_collector_actor(
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let fps = config.get("fps").and_then(|v| v.as_u64()).unwrap_or(30) as u32;
 
-    // frame expected via await_inports — skip if not Bytes (e.g. Optional(None) on empty tick)
-    let frame_bytes = match payload.get("frame") {
-        Some(Message::Bytes(b)) => b.clone(),
-        _ => return Ok(HashMap::new()),
-    };
-
-    let _frame_number = match payload.get("frame_number") {
-        Some(Message::Integer(i)) => *i as usize,
-        _ => 0,
-    };
-
     let is_done = match payload.get("done") {
         Some(Message::Boolean(b)) => *b,
         Some(Message::Integer(i)) => *i != 0,
@@ -61,10 +50,29 @@ pub async fn render_frame_collector_actor(
         _ => false,
     };
 
-    // Check if we already have a stream
+    // If done arrives without frame, end capture immediately
+    let frame_bytes = match payload.get("frame") {
+        Some(Message::Bytes(b)) => Some(b.clone()),
+        _ => None,
+    };
+    if frame_bytes.is_none() && !is_done {
+        return Ok(HashMap::new()); // No frame, not done — skip
+    }
+
+    // Done without frame — just send End to existing stream
     let state: HashMap<String, serde_json::Value> =
         ctx.get_pool("_collector").into_iter().collect();
     let existing_stream_id = state.get("stream_id").and_then(|v| v.as_u64());
+
+    if frame_bytes.is_none() && is_done {
+        if let Some(stream_id) = existing_stream_id {
+            if let Some(tx) = STREAM_REGISTRY.clone_sender(stream_id) {
+                let _ = tx.send(StreamFrame::End);
+            }
+        }
+        return Ok(HashMap::new());
+    }
+    let frame_bytes = frame_bytes.unwrap();
 
     let mut results = HashMap::new();
 

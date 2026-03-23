@@ -127,8 +127,8 @@ async fn main() -> anyhow::Result<()> {
     // Browser screenshots → collector (continuous, event-driven)
     net.add_connection(wire("browser", "frame", "collector", "frame"));
 
-    // FSM tick done → collector done (end capture when journey finishes)
-    net.add_connection(wire("fsm_tick", "done", "collector", "done"));
+    // Browser settle done → collector done (page settled = stop capture)
+    net.add_connection(wire("browser", "done", "collector", "done"));
 
     // Collector → encoder → file
     net.add_connection(wire("collector", "stream", "encoder", "stream"));

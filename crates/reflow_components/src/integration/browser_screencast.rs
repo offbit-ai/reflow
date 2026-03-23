@@ -104,7 +104,7 @@ pub fn stop_browser_session(session_id: u64) {
 #[actor(
     BrowserScreencastActor,
     inports::<100>(url, tick, action),
-    outports::<100>(frame, metadata, result, done, ready),
+    outports::<100>(frame, metadata, result, done, ready, loaded),
     state(MemoryState)
 )]
 pub async fn browser_screencast_actor(
@@ -429,7 +429,16 @@ async fn run_browser(
         .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventFrameNavigated>()
         .await?;
 
+    // Page load detection — emits PAGE_LOADED event for FSM
+    let mut load_events = page
+        .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventLoadEventFired>()
+        .await?;
+
     let mut frame_num: u64 = 0;
+    let mut nav_count: u32 = 0;
+    // Settle timer: after page load, wait this long with no new navigation before emitting done
+    let settle_duration = std::time::Duration::from_secs(3);
+    let mut settle_deadline: Option<tokio::time::Instant> = None;
 
     // Take initial screenshot and signal ready BEFORE entering select loop.
     // This breaks the chicken-and-egg: tick needs ready, ready needs screenshot.
@@ -475,8 +484,68 @@ async fn run_browser(
 
     loop {
         if outport_tx.is_disconnected() { break; }
+
+        // Check settle timer
+        let settle_sleep = if let Some(deadline) = settle_deadline {
+            tokio::time::sleep_until(deadline)
+        } else {
+            // Far future — effectively disabled
+            tokio::time::sleep(std::time::Duration::from_secs(86400))
+        };
+
         tokio::select! {
-            // ── Screencast frame (navigation detection) ──
+            // ── Settle timer expired — page is stable, take final screenshot + emit done ──
+            _ = settle_sleep, if settle_deadline.is_some() => {
+                eprintln!("[browser] page settled, taking final screenshot + emitting done");
+                // Take one last screenshot so collector has a frame to pair with done
+                if let Ok(png_bytes) = page.screenshot(
+                    chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
+                ).await {
+                    if let Ok(img) = image::load_from_memory(&png_bytes) {
+                        let rgba_img = img.to_rgba8();
+                        let rgba_data = rgba_img.into_raw();
+                        let (w, h) = (img.width(), img.height());
+                        // Push final frame + done together
+                        let mut final_msg = HashMap::new();
+                        final_msg.insert("frame".to_string(), Message::bytes(rgba_data));
+                        final_msg.insert("done".to_string(), Message::Boolean(true));
+                        let _ = outport_tx.send(final_msg);
+                    }
+                }
+                settle_deadline = None;
+                break; // Capture complete
+            }
+
+            // ── Page load event — page finished loading ──
+            Some(_) = load_events.next() => {
+                nav_count += 1;
+                eprintln!("[browser] page loaded (nav #{})", nav_count);
+                // Emit PAGE_LOADED for FSM
+                let mut ev_msg = HashMap::new();
+                ev_msg.insert("loaded".to_string(), Message::String(std::sync::Arc::new("PAGE_LOADED".to_string())));
+                let _ = outport_tx.send(ev_msg);
+                // Start settle countdown only after 2+ navigations (skip initial load)
+                if nav_count >= 2 {
+                    eprintln!("[browser] starting {}s settle countdown", settle_duration.as_secs());
+                    settle_deadline = Some(tokio::time::Instant::now() + settle_duration);
+                }
+            }
+
+            // ── Page navigated — restart screencast, reset settle ──
+            Some(_nav) = nav_events.next() => {
+                eprintln!("[browser] page navigated, restarting screencast");
+                settle_deadline = None; // reset — page is changing
+                tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                let _ = start_screencast(&page, quality, width, height, every_nth).await;
+                if let Ok(new_events) = page
+                    .event_listener::<chromiumoxide::cdp::browser_protocol::page::EventScreencastFrame>()
+                    .await
+                {
+                    events = new_events;
+                }
+            }
+
+            // ── Screencast frame ──
             Some(event) = events.next() => {
                 frame_num += 1;
 
