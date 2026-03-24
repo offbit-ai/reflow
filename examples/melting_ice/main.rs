@@ -94,10 +94,10 @@ async fn main() -> anyhow::Result<()> {
     // Puddle: thin rounded boxes smooth-unioned = blobby water splat
     // Single puddle: 2D noise-modulated disc, perfectly flat in Y, blobby in XZ
     net.add_node("puddle_shape", "tpl_sdf_puddle", config(json!({
-        "radius": 1.2,
-        "height": 0.008,
-        "noiseFreq": 1.5,
-        "noiseAmp": 0.35,
+        "radius": 1.8,
+        "height": 0.006,
+        "noiseFreq": 1.2,
+        "noiseAmp": 0.6,
     })))?;
     net.add_node("puddle", "tpl_sdf_translate", config(json!({ "x": 0.0, "y": -0.52, "z": 0.0 })))?;
 

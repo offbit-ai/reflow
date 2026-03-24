@@ -209,11 +209,30 @@ impl CodegenContext {
                 format!("length({p} - round({p} / vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}))",
                     spacing[0], spacing[1], spacing[2], spacing[0], spacing[1], spacing[2], p = pos),
             SdfPrimitive::Puddle { radius, height, noise_freq, noise_amp } => {
-                // 2D noise on XZ modulates the radius, Y is clamped flat
+                // 2D noise on XZ modulates the radius. Smoothstep tapers the
+                // height at the edges so the puddle thins naturally like real water.
                 self.uses_noise = true;
+                let v = self.next_dist();
+                self.lines.push(format!(
+                    "  let {v}_n = noise3d(vec3f({p}.xz * {f}, 0.0)) * 2.0 - 1.0 + noise3d(vec3f({p}.xz * {f} * 2.3, 5.0)) * 0.5;",
+                    v = v, p = pos, f = noise_freq
+                ));
+                self.lines.push(format!(
+                    "  let {v}_r = {r} + {a} * {v}_n;",
+                    v = v, r = radius, a = noise_amp
+                ));
+                self.lines.push(format!(
+                    "  let {v}_d = length({p}.xz);",
+                    v = v, p = pos
+                ));
+                // Taper height at edges: full height at center, zero at rim
+                self.lines.push(format!(
+                    "  let {v}_taper = {h} * smoothstep({v}_r, {v}_r * 0.5, {v}_d);",
+                    v = v, h = height
+                ));
                 format!(
-                    "max(length({p}.xz) - ({r} + {a} * (noise3d(vec3f({p}.xz * {f}, 0.0)) * 2.0 - 1.0 + noise3d(vec3f({p}.xz * {f} * 2.3, 5.0)) * 0.5)), abs({p}.y) - {h})",
-                    p = pos, r = radius, h = height, f = noise_freq, a = noise_amp
+                    "max({v}_d - {v}_r, abs({p}.y) - max({v}_taper, 0.001))",
+                    v = v, p = pos
                 )
             }
         };
