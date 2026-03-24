@@ -64,9 +64,9 @@ impl Ctx {
 fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
     match node {
         // ═══ Constants ═══
-        ShaderNode::ConstFloat(v) => format!("{:.6}", v),
-        ShaderNode::ConstVec3(v) => format!("vec3f({:.6}, {:.6}, {:.6})", v[0], v[1], v[2]),
-        ShaderNode::ConstVec4(v) => {
+        ShaderNode::ConstFloat { c: v } => format!("{:.6}", v),
+        ShaderNode::ConstVec3 { c: v } => format!("vec3f({:.6}, {:.6}, {:.6})", v[0], v[1], v[2]),
+        ShaderNode::ConstVec4 { c: v } => {
             format!("vec4f({:.6}, {:.6}, {:.6}, {:.6})", v[0], v[1], v[2], v[3])
         }
 
@@ -508,15 +508,15 @@ fn extract_pbr_params(root: &ShaderNode) -> (String, f32, f32, String, f32, f32)
 
 fn extract_float(node: &ShaderNode) -> f32 {
     match node {
-        ShaderNode::ConstFloat(v) => *v,
+        ShaderNode::ConstFloat { c: v } => *v,
         _ => 0.5,
     }
 }
 
 fn extract_color_expr(node: &ShaderNode) -> String {
     match node {
-        ShaderNode::ConstVec3(v) => format!("vec3f({:.4}, {:.4}, {:.4})", v[0], v[1], v[2]),
-        ShaderNode::ConstFloat(v) => format!("vec3f({:.4})", v),
+        ShaderNode::ConstVec3 { c: v } => format!("vec3f({:.4}, {:.4}, {:.4})", v[0], v[1], v[2]),
+        ShaderNode::ConstFloat { c: v } => format!("vec3f({:.4})", v),
         ShaderNode::NoiseTexture { .. } => {
             // Generate inline noise expression using world position
             "vec3f(noise3d(p * 5.0) * 0.3 + 0.7)".to_string()
@@ -882,14 +882,14 @@ mod tests {
     fn test_compile_constant_pbr() {
         let tree = MaterialOutput {
             surface: Box::new(PrincipledBsdf {
-                base_color: Box::new(ConstVec3([0.8, 0.2, 0.1])),
-                metallic: Box::new(ConstFloat(0.0)),
-                roughness: Box::new(ConstFloat(0.5)),
+                base_color: Box::new(ConstVec3 { c: [0.8, 0.2, 0.1] }),
+                metallic: Box::new(ConstFloat { c: 0.0 }),
+                roughness: Box::new(ConstFloat { c: 0.5 }),
                 normal: None,
-                emission: Box::new(ConstVec3([0.0, 0.0, 0.0])),
-                emission_strength: Box::new(ConstFloat(0.0)),
+                emission: Box::new(ConstVec3 { c: [0.0, 0.0, 0.0] }),
+                emission_strength: Box::new(ConstFloat { c: 0.0 }),
                 ao: None,
-                alpha: Box::new(ConstFloat(1.0)),
+                alpha: Box::new(ConstFloat { c: 1.0 }),
                 subsurface: None,
                 subsurface_color: None,
                 clearcoat: None,
@@ -909,6 +909,39 @@ mod tests {
         assert!(mat.fragment_wgsl.contains("F_Schlick"));
         assert!(mat.vertex_wgsl.contains("vs_main"));
         println!("Fragment WGSL ({} bytes):\n{}", mat.fragment_wgsl.len(), &mat.fragment_wgsl[..500.min(mat.fragment_wgsl.len())]);
+
+        // Also test SDF shade compilation
+        let shade = compile_sdf_shade(&tree);
+        println!("SDF shade WGSL ({} bytes):\n{}", shade.len(), &shade[..200.min(shade.len())]);
+        assert!(shade.contains("fn shade("));
+        assert!(shade.contains("pbr_shade_sdf"));
+    }
+
+    #[test]
+    fn test_sdf_shade_from_actor_json() {
+        let json_str = r#"{
+            "type": "materialOutput",
+            "surface": {
+                "type": "principledBsdf",
+                "base_color": {
+                    "type": "colorMix",
+                    "mode": "mix",
+                    "fac": {"type": "noiseTexture", "scale": {"type": "constFloat", "c": 5.0}, "detail": {"type": "constFloat", "c": 2.0}, "roughness": {"type": "constFloat", "c": 0.5}},
+                    "a": {"type": "constVec3", "c": [0.75, 0.88, 0.95]},
+                    "b": {"type": "constVec3", "c": [0.4, 0.6, 0.8]}
+                },
+                "metallic": {"type": "constFloat", "c": 0.0},
+                "roughness": {"type": "constFloat", "c": 0.08},
+                "emission": {"type": "constVec3", "c": [0.1, 0.15, 0.2]},
+                "emission_strength": {"type": "constFloat", "c": 0.2},
+                "alpha": {"type": "constFloat", "c": 0.9},
+                "ior": {"type": "constFloat", "c": 1.31}
+            }
+        }"#;
+        let node: crate::ir::ShaderNode = serde_json::from_str(json_str).expect("deser failed");
+        let shade = compile_sdf_shade(&node);
+        println!("SDF shade from actor JSON ({} bytes):\n{}", shade.len(), &shade[..300.min(shade.len())]);
+        assert!(shade.contains("fn shade("));
     }
 
     #[test]
@@ -916,17 +949,17 @@ mod tests {
         let tree = MaterialOutput {
             surface: Box::new(PrincipledBsdf {
                 base_color: Box::new(NoiseTexture {
-                    scale: Box::new(ConstFloat(5.0)),
-                    detail: Box::new(ConstFloat(2.0)),
-                    roughness: Box::new(ConstFloat(0.5)),
+                    scale: Box::new(ConstFloat { c: 5.0 }),
+                    detail: Box::new(ConstFloat { c: 2.0 }),
+                    roughness: Box::new(ConstFloat { c: 0.5 }),
                 }),
-                metallic: Box::new(ConstFloat(0.8)),
-                roughness: Box::new(ConstFloat(0.2)),
+                metallic: Box::new(ConstFloat { c: 0.8 }),
+                roughness: Box::new(ConstFloat { c: 0.2 }),
                 normal: None,
-                emission: Box::new(ConstVec3([0.0, 0.0, 0.0])),
-                emission_strength: Box::new(ConstFloat(0.0)),
+                emission: Box::new(ConstVec3 { c: [0.0, 0.0, 0.0] }),
+                emission_strength: Box::new(ConstFloat { c: 0.0 }),
                 ao: None,
-                alpha: Box::new(ConstFloat(1.0)),
+                alpha: Box::new(ConstFloat { c: 1.0 }),
                 subsurface: None,
                 subsurface_color: None,
                 clearcoat: None,

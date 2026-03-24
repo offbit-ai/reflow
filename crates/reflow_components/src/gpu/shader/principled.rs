@@ -43,11 +43,11 @@ pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<S
 
     let mut bsdf = json!({
         "type": "principledBsdf",
-        "baseColor": base_color,
+        "base_color": base_color,
         "metallic": metallic,
         "roughness": roughness,
         "emission": emission,
-        "emissionStrength": emission_strength,
+        "emission_strength": emission_strength,
         "alpha": alpha,
         "ior": ior_val,
     });

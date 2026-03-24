@@ -169,9 +169,9 @@ pub enum ShaderNode {
     },
 
     // ═══ Constants ═══
-    ConstFloat(f32),
-    ConstVec3([f32; 3]),
-    ConstVec4([f32; 4]),
+    ConstFloat { c: f32 },
+    ConstVec3 { c: [f32; 3] },
+    ConstVec4 { c: [f32; 4] },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
