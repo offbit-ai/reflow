@@ -67,6 +67,7 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         .unwrap_or(4) as usize;
     let bone_count = bone_bytes.len() / 64;
 
+
     // Parse bone matrices
     let mut bone_matrices: Vec<[f32; 16]> = Vec::with_capacity(bone_count);
     for i in 0..bone_count {

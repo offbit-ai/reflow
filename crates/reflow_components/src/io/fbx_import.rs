@@ -78,7 +78,7 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
 
     // Extract mesh geometry
     let (vertices, normals, indices) = extract_geometry(&tree)?;
-    let mesh_bytes = build_mesh_bytes(&vertices, &normals, &indices);
+    let (mesh_bytes, tri_to_control) = build_mesh_bytes(&vertices, &normals, &indices);
     out.insert("mesh".to_string(), Message::bytes(mesh_bytes));
 
     // Extract skeleton hierarchy
@@ -95,9 +95,37 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
         Message::object(EncodableValue::from(clip)),
     );
 
-    // Extract skin weights from Deformer/Cluster nodes
-    let (skin_bytes, skin_desc) =
-        extract_skin_weights(&tree, vertices.len() / 3, bone_names.len())?;
+    // Extract skin weights from Deformer/Cluster nodes (per control-point vertex)
+    let control_vert_count = vertices.len() / 3;
+    let (cp_skin_bytes, skin_desc) =
+        extract_skin_weights(&tree, control_vert_count, bone_names.len())?;
+
+    // Expand skin weights to match triangulated mesh (per triangle-vertex)
+    let max_influences = 4;
+    let entry_size = 6; // u16 + f32
+    let weights_per_vert = max_influences * entry_size;
+    let tri_vert_count = tri_to_control.len();
+    let mut skin_bytes = Vec::with_capacity(tri_vert_count * weights_per_vert);
+    for &cp_idx in &tri_to_control {
+        let src_off = cp_idx * weights_per_vert;
+        if src_off + weights_per_vert <= cp_skin_bytes.len() {
+            skin_bytes.extend_from_slice(&cp_skin_bytes[src_off..src_off + weights_per_vert]);
+        } else {
+            // Fallback: bone 0, weight 1.0
+            for j in 0..max_influences {
+                skin_bytes.extend_from_slice(&0u16.to_le_bytes());
+                let w: f32 = if j == 0 { 1.0 } else { 0.0 };
+                skin_bytes.extend_from_slice(&w.to_le_bytes());
+            }
+        }
+    }
+
+    // Update skin descriptor with triangle-vertex count
+    let skin_desc = json!({
+        "vertexCount": tri_vert_count,
+        "maxInfluences": max_influences,
+        "boneCount": bone_names.len(),
+    });
     out.insert("skin".to_string(), Message::bytes(skin_bytes));
     out.insert(
         "skin_descriptor".to_string(),
@@ -269,7 +297,8 @@ fn extract_geometry(tree: &FbxNode) -> Result<(Vec<f64>, Vec<f64>, Vec<i32>)> {
 }
 
 /// Build 24-byte stride vertex buffer: pos3 + normal3 (f32 each), triangulated.
-fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> Vec<u8> {
+/// Returns (bytes, tri_to_control_point_index) for skin weight expansion.
+fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> (Vec<u8>, Vec<usize>) {
     // FBX polygon indices: negative value marks end of polygon (bitwise NOT)
     let mut poly = Vec::new();
 
@@ -314,8 +343,11 @@ fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> Vec<u
     let normal_count = normals.len() / 3;
 
     let mut bytes = Vec::with_capacity(tri_verts.len() * 24);
+    let mut tri_to_control: Vec<usize> = Vec::with_capacity(tri_verts.len());
     for tv in &tri_verts {
         if tv.pos_idx < vert_count {
+            tri_to_control.push(tv.pos_idx);
+
             let px = vertices[tv.pos_idx * 3] as f32;
             let py = vertices[tv.pos_idx * 3 + 1] as f32;
             let pz = vertices[tv.pos_idx * 3 + 2] as f32;
@@ -342,7 +374,7 @@ fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> Vec<u
         }
     }
 
-    bytes
+    (bytes, tri_to_control)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -359,7 +391,16 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
         .ok_or_else(|| anyhow::anyhow!("No Connections node"))?;
 
     // Collect all Model nodes that are LimbNode or Null (skeleton bones)
-    let mut bones: Vec<(i64, String)> = Vec::new();
+    // Also extract their Lcl Translation/Rotation/Scale properties
+    struct BoneInfo {
+        id: i64,
+        name: String,
+        lcl_translation: [f64; 3],
+        lcl_rotation: [f64; 3],    // Euler degrees
+        lcl_scaling: [f64; 3],
+    }
+
+    let mut bones: Vec<BoneInfo> = Vec::new();
     let mut bone_ids: HashMap<i64, usize> = HashMap::new();
 
     for child in &objects.children {
@@ -374,10 +415,41 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
                     .next()
                     .unwrap_or("bone")
                     .to_string();
-                // Strip "Model::" prefix if present
                 let name = name.strip_prefix("Model::").unwrap_or(&name).to_string();
+
+                // Extract local bind pose from Properties70
+                let mut lcl_t = [0.0f64; 3];
+                let mut lcl_r = [0.0f64; 3];
+                let mut lcl_s = [1.0f64, 1.0, 1.0];
+
+                if let Some(props) = child.child("Properties70") {
+                    for p in &props.children {
+                        if p.name == "P" {
+                            let prop_name = p.attr_str(0).unwrap_or("");
+                            match prop_name {
+                                "Lcl Translation" => {
+                                    lcl_t = extract_p_xyz(p);
+                                }
+                                "Lcl Rotation" => {
+                                    lcl_r = extract_p_xyz(p);
+                                }
+                                "Lcl Scaling" => {
+                                    lcl_s = extract_p_xyz(p);
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+
                 bone_ids.insert(id, bones.len());
-                bones.push((id, name));
+                bones.push(BoneInfo {
+                    id,
+                    name,
+                    lcl_translation: lcl_t,
+                    lcl_rotation: lcl_r,
+                    lcl_scaling: lcl_s,
+                });
             }
         }
     }
@@ -399,13 +471,24 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
         }
     }
 
-    let bone_names: Vec<String> = bones.iter().map(|(_, n)| n.clone()).collect();
+    let bone_names: Vec<String> = bones.iter().map(|b| b.name.clone()).collect();
     let mut bone_array = Vec::new();
-    for (i, (_, name)) in bones.iter().enumerate() {
+    for (i, bone) in bones.iter().enumerate() {
         let parent = parent_map.get(&i).map(|&p| p as i64).unwrap_or(-1);
+
+        // Build localBindTransform from TRS
+        let local_mat = trs_to_column_major_mat4(
+            bone.lcl_translation,
+            bone.lcl_rotation,
+            bone.lcl_scaling,
+        );
+        let mat_json: Vec<Value> = local_mat.iter().map(|&v| json!(v)).collect();
+
         bone_array.push(json!({
-            "name": name,
+            "name": bone.name,
             "parent": parent,
+            "index": i,
+            "localBindTransform": mat_json,
         }));
     }
 
@@ -415,6 +498,59 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
     });
 
     Ok((skeleton, bone_names))
+}
+
+/// Extract x,y,z from FBX Properties70 P node (attributes at indices 4,5,6)
+fn extract_p_xyz(p: &FbxNode) -> [f64; 3] {
+    let x = match p.attributes.get(4) {
+        Some(AttributeValue::F64(v)) => *v,
+        Some(AttributeValue::F32(v)) => *v as f64,
+        Some(AttributeValue::I32(v)) => *v as f64,
+        _ => 0.0,
+    };
+    let y = match p.attributes.get(5) {
+        Some(AttributeValue::F64(v)) => *v,
+        Some(AttributeValue::F32(v)) => *v as f64,
+        Some(AttributeValue::I32(v)) => *v as f64,
+        _ => 0.0,
+    };
+    let z = match p.attributes.get(6) {
+        Some(AttributeValue::F64(v)) => *v,
+        Some(AttributeValue::F32(v)) => *v as f64,
+        Some(AttributeValue::I32(v)) => *v as f64,
+        _ => 0.0,
+    };
+    [x, y, z]
+}
+
+/// Build column-major 4x4 matrix from TRS (Euler rotation in degrees, XYZ order)
+fn trs_to_column_major_mat4(t: [f64; 3], r_deg: [f64; 3], s: [f64; 3]) -> [f64; 16] {
+    let rx = r_deg[0].to_radians();
+    let ry = r_deg[1].to_radians();
+    let rz = r_deg[2].to_radians();
+
+    let (sx, cx) = (rx.sin(), rx.cos());
+    let (sy, cy) = (ry.sin(), ry.cos());
+    let (sz, cz) = (rz.sin(), rz.cos());
+
+    // Rotation = Rz * Ry * Rx (FBX convention)
+    let r00 = cy * cz;
+    let r01 = cz * sx * sy - cx * sz;
+    let r02 = cx * cz * sy + sx * sz;
+    let r10 = cy * sz;
+    let r11 = cx * cz + sx * sy * sz;
+    let r12 = cx * sy * sz - cz * sx;
+    let r20 = -sy;
+    let r21 = cy * sx;
+    let r22 = cx * cy;
+
+    // Column-major: [col0, col1, col2, col3]
+    [
+        r00 * s[0], r10 * s[0], r20 * s[0], 0.0,  // col 0
+        r01 * s[1], r11 * s[1], r21 * s[1], 0.0,  // col 1
+        r02 * s[2], r12 * s[2], r22 * s[2], 0.0,  // col 2
+        t[0],       t[1],       t[2],       1.0,   // col 3
+    ]
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -537,9 +673,8 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
         }
     }
 
-    // Build animation channels: bone_name + property + component → keyframes
-    // Group: (bone_name, property) → { x: curve, y: curve, z: curve }
-    struct CurveData {
+    // Collect per-scalar curve data
+    struct ScalarCurve {
         bone_idx: usize,
         property: String, // "T", "R", "S"
         component: String, // "d|X", "d|Y", "d|Z"
@@ -547,7 +682,7 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
         values: Vec<f32>,
     }
 
-    let mut curve_list: Vec<CurveData> = Vec::new();
+    let mut scalar_curves: Vec<ScalarCurve> = Vec::new();
     let mut max_time: f64 = 0.0;
 
     for (&curve_id, (times, values)) in &curves {
@@ -576,7 +711,7 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
             }
         }
 
-        curve_list.push(CurveData {
+        scalar_curves.push(ScalarCurve {
             bone_idx,
             property,
             component,
@@ -585,27 +720,79 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
         });
     }
 
-    // Group by (bone_idx, property) and build JSON channels
+    // Group by (bone_idx, property) and merge X/Y/Z into vec3 or quat channels
+    // Key: (bone_idx, property) → { "d|X": curve, "d|Y": curve, "d|Z": curve }
+    let mut grouped: HashMap<(usize, String), HashMap<String, (Vec<f64>, Vec<f32>)>> =
+        HashMap::new();
+    for sc in &scalar_curves {
+        grouped
+            .entry((sc.bone_idx, sc.property.clone()))
+            .or_default()
+            .insert(
+                sc.component.clone(),
+                (sc.times.clone(), sc.values.clone()),
+            );
+    }
+
     let mut channels: Vec<Value> = Vec::new();
-    for cd in &curve_list {
-        let path = match cd.property.as_str() {
-            "T" => "translation",
+    for ((bone_idx, prop), components) in &grouped {
+        let property = match prop.as_str() {
+            "T" => "position",
             "R" => "rotation",
             "S" => "scale",
-            _ => &cd.property,
+            _ => continue,
         };
-        let keyframes: Vec<Value> = cd
-            .times
+
+        let x_curve = components.get("d|X");
+        let y_curve = components.get("d|Y");
+        let z_curve = components.get("d|Z");
+
+        // Use the longest time array as reference
+        let ref_times = [x_curve, y_curve, z_curve]
             .iter()
-            .zip(cd.values.iter())
-            .map(|(&t, &v)| json!({ "time": t, "value": v }))
-            .collect();
+            .filter_map(|c| c.map(|(t, _)| t))
+            .max_by_key(|t| t.len())
+            .cloned()
+            .unwrap_or_default();
+
+        if ref_times.is_empty() {
+            continue;
+        }
+
+        let times_json: Vec<Value> = ref_times.iter().map(|&t| json!(t)).collect();
+
+        // Sample each component at reference times
+        let values_json: Vec<Value> = if property == "rotation" {
+            // FBX rotation: Euler angles in degrees → convert to quaternion
+            ref_times
+                .iter()
+                .map(|&t| {
+                    let rx = sample_curve(x_curve, t).to_radians() as f64;
+                    let ry = sample_curve(y_curve, t).to_radians() as f64;
+                    let rz = sample_curve(z_curve, t).to_radians() as f64;
+                    let q = euler_xyz_to_quat(rx, ry, rz);
+                    json!([q[0], q[1], q[2], q[3]])
+                })
+                .collect()
+        } else {
+            // Position or scale: vec3
+            ref_times
+                .iter()
+                .map(|&t| {
+                    let x = sample_curve(x_curve, t);
+                    let y = sample_curve(y_curve, t);
+                    let z = sample_curve(z_curve, t);
+                    json!([x, y, z])
+                })
+                .collect()
+        };
 
         channels.push(json!({
-            "boneIndex": cd.bone_idx,
-            "path": path,
-            "component": cd.component,
-            "keyframes": keyframes,
+            "boneIndex": bone_idx,
+            "property": property,
+            "interpolation": "linear",
+            "times": times_json,
+            "values": values_json,
         }));
     }
 
@@ -617,6 +804,46 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
     });
 
     Ok(clip)
+}
+
+/// Sample a scalar animation curve at time t (linear interpolation)
+fn sample_curve(curve: Option<&(Vec<f64>, Vec<f32>)>, t: f64) -> f32 {
+    let (times, values) = match curve {
+        Some(c) if !c.0.is_empty() => (&c.0, &c.1),
+        _ => return 0.0,
+    };
+    if times.len() == 1 || t <= times[0] {
+        return values[0];
+    }
+    if t >= *times.last().unwrap() {
+        return *values.last().unwrap();
+    }
+    // Find bracket
+    let mut i = 0;
+    while i + 1 < times.len() && times[i + 1] < t {
+        i += 1;
+    }
+    let dt = times[i + 1] - times[i];
+    if dt <= 0.0 {
+        return values[i];
+    }
+    let frac = ((t - times[i]) / dt) as f32;
+    values[i] * (1.0 - frac) + values[i + 1] * frac
+}
+
+/// Convert Euler XYZ angles (radians) to quaternion [x, y, z, w]
+fn euler_xyz_to_quat(rx: f64, ry: f64, rz: f64) -> [f64; 4] {
+    let (sx, cx) = (rx * 0.5).sin_cos();
+    let (sy, cy) = (ry * 0.5).sin_cos();
+    let (sz, cz) = (rz * 0.5).sin_cos();
+
+    // ZYX composition order (FBX convention: Rz * Ry * Rx)
+    let w = cx * cy * cz + sx * sy * sz;
+    let x = sx * cy * cz - cx * sy * sz;
+    let y = cx * sy * cz + sx * cy * sz;
+    let z = cx * cy * sz - sx * sy * cz;
+
+    [x, y, z, w]
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -979,6 +1206,26 @@ mod tests {
                         tri_verts,
                         tri_verts / 3
                     );
+                    // Print vertex bounds
+                    let mut min = [f32::MAX; 3];
+                    let mut max = [f32::MIN; 3];
+                    for i in 0..tri_verts {
+                        let off = i * 24;
+                        for j in 0..3 {
+                            let v = f32::from_le_bytes([
+                                mesh[off + j * 4],
+                                mesh[off + j * 4 + 1],
+                                mesh[off + j * 4 + 2],
+                                mesh[off + j * 4 + 3],
+                            ]);
+                            if v < min[j] { min[j] = v; }
+                            if v > max[j] { max[j] = v; }
+                        }
+                    }
+                    println!(
+                        "Bounds: x=[{:.1}, {:.1}] y=[{:.1}, {:.1}] z=[{:.1}, {:.1}]",
+                        min[0], max[0], min[1], max[1], min[2], max[2]
+                    );
                 }
 
                 if let Some(Message::Object(clip)) = out.get("clip") {
@@ -989,23 +1236,27 @@ mod tests {
                         "Animation: duration={:.3}s, {} channels",
                         duration, channels
                     );
-                    // Print first few channels
                     if let Some(chs) = v["channels"].as_array() {
-                        for ch in chs.iter().take(5) {
+                        for ch in chs.iter().take(8) {
                             let bi = ch["boneIndex"].as_u64().unwrap_or(0);
-                            let path = ch["path"].as_str().unwrap_or("?");
-                            let comp = ch["component"].as_str().unwrap_or("?");
-                            let kf_count = ch["keyframes"]
+                            let prop = ch["property"].as_str().unwrap_or("?");
+                            let kf_count = ch["times"]
                                 .as_array()
                                 .map(|a| a.len())
                                 .unwrap_or(0);
                             println!(
-                                "  bone[{}] {}.{}: {} keyframes",
-                                bi, path, comp, kf_count
+                                "  bone[{}] {}: {} keyframes",
+                                bi, prop, kf_count
                             );
+                            // Print first value
+                            if let Some(vals) = ch["values"].as_array() {
+                                if let Some(v0) = vals.first() {
+                                    println!("    first value: {}", v0);
+                                }
+                            }
                         }
-                        if chs.len() > 5 {
-                            println!("  ... and {} more channels", chs.len() - 5);
+                        if chs.len() > 8 {
+                            println!("  ... and {} more channels", chs.len() - 8);
                         }
                     }
                 }

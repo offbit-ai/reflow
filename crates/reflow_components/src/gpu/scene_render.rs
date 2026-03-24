@@ -71,6 +71,8 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             .unwrap_or(0.0) as f32,
     ];
     let msaa_samples = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
+    let near_plane = config.get("near").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+    let far_plane = config.get("far").and_then(|v| v.as_f64()).unwrap_or(10000.0) as f32;
     let clear_color = [
         config.get("bgR").and_then(|v| v.as_f64()).unwrap_or(0.1),
         config.get("bgG").and_then(|v| v.as_f64()).unwrap_or(0.1),
@@ -137,6 +139,8 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             cam_target,
             msaa_samples,
             clear_color,
+            near_plane,
+            far_plane,
             &objects_clone,
             prefab_mesh.as_deref(),
             terrain_mesh.as_deref(),
@@ -595,6 +599,8 @@ fn render_scene(
     cam_target: [f32; 3],
     msaa_samples: u32,
     clear_color: [f64; 3],
+    near: f32,
+    far: f32,
     objects: &[serde_json::Value],
     prefab_mesh: Option<&[u8]>,
     terrain_mesh: Option<&[u8]>,
@@ -626,7 +632,7 @@ fn render_scene(
         usage: wgpu::BufferUsages::VERTEX,
     });
 
-    let view_proj = build_view_proj(cam_pos, cam_target, fov, width as f32 / height as f32);
+    let view_proj = build_view_proj(cam_pos, cam_target, fov, width as f32 / height as f32, near, far);
     let uniforms = SceneUniforms {
         view_proj,
         light_dir: [0.577, 0.577, -0.577],
@@ -660,8 +666,13 @@ fn render_scene(
     });
     let resolve_view = resolve_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+    let color_usage = if sample_count > 1 {
+        wgpu::TextureUsages::RENDER_ATTACHMENT
+    } else {
+        wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC
+    };
     let color_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("MSAA Color"),
+        label: Some("Color"),
         size: wgpu::Extent3d {
             width,
             height,
@@ -671,7 +682,7 @@ fn render_scene(
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        usage: color_usage,
         view_formats: &[],
     });
     let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -873,7 +884,7 @@ fn generate_cube(center: [f32; 3], half: f32, color: [f32; 3]) -> Vec<f32> {
     verts
 }
 
-fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32) -> [[f32; 4]; 4] {
+fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32, near: f32, far: f32) -> [[f32; 4]; 4] {
     let fwd = normalize([target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]]);
     let right = normalize(cross([0.0, 1.0, 0.0], fwd));
     let up = cross(fwd, right);
@@ -887,8 +898,6 @@ fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32) -
 
     let fov = fov_deg.to_radians();
     let f = 1.0 / (fov / 2.0).tan();
-    let near = 0.1f32;
-    let far = 100.0f32;
     let nf = 1.0 / (near - far);
 
     let proj = [
