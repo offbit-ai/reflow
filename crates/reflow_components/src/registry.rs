@@ -23,7 +23,7 @@ use crate::flow_control::{
     SplitActor, SubscriberActor, SwitchCaseActor,
 };
 use crate::gpu::font_load::FontLoadActor;
-use crate::gpu::post_process::{BloomPostProcessActor, SSAOActor, ToneMapActor};
+use crate::gpu::post_process::{BloomPostProcessActor, SSAOActor, ShadowMapActor, ToneMapActor};
 use crate::gpu::glyph_atlas::GlyphAtlasActor;
 use crate::gpu::shader::{
     ShaderBrickTextureActor, ShaderBumpMapActor, ShaderCheckerTextureActor,
@@ -407,6 +407,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_tone_map" => Some(Arc::new(ToneMapActor::new())),
         "tpl_bloom" => Some(Arc::new(BloomPostProcessActor::new())),
         "tpl_ssao" => Some(Arc::new(SSAOActor::new())),
+        "tpl_shadow_map" => Some(Arc::new(ShadowMapActor::new())),
 
         // Shader Graph (node-based materials)
         "tpl_shader_compiler" => Some(Arc::new(ShaderCompilerActor::new())),
@@ -900,6 +901,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_tone_map", "ToneMapActor"),
         ("tpl_bloom", "BloomPostProcessActor"),
         ("tpl_ssao", "SSAOActor"),
+        ("tpl_shadow_map", "ShadowMapActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }

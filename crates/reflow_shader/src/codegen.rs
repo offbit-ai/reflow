@@ -295,10 +295,15 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
             var
         }
 
-        // ═══ Principled BSDF — multi-light PBR shading ═══
+        // ═══ Principled BSDF — multi-light PBR shading with advanced lobes ═══
         ShaderNode::PrincipledBsdf {
             base_color, metallic, roughness, normal,
-            emission, emission_strength, ao, alpha, ..
+            emission, emission_strength, ao, alpha,
+            clearcoat, clearcoat_roughness,
+            subsurface, subsurface_color,
+            sheen, sheen_tint,
+            anisotropic, anisotropic_rotation,
+            transmission, ior,
         } => {
             let vbc = emit_node(ctx, base_color);
             let vm = emit_node(ctx, metallic);
@@ -312,11 +317,37 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
                 .map(|n| emit_node(ctx, n))
                 .unwrap_or_else(|| "normalize(in.world_normal)".to_string());
 
+            // Advanced lobes
+            let vcc = clearcoat.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.0".to_string());
+            let vccr = clearcoat_roughness.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.03".to_string());
+            let vsss = subsurface.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.0".to_string());
+            let vsss_c = subsurface_color.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| vbc.clone());
+            let vsh = sheen.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.0".to_string());
+            let vsh_t = sheen_tint.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.5".to_string());
+
             ctx.needs_camera_pos = true;
             let var = ctx.fresh_var();
+
+            // Base PBR
             ctx.emit(&format!(
-                "let {var} = pbr_shade_multi({vbc}, {vm}, {vr}, {vn}, normalize(u_scene.camera_pos - in.world_pos), in.world_pos, {va}, {ve} * {ves});"
+                "var {var} = pbr_shade_multi({vbc}, {vm}, {vr}, {vn}, normalize(u_scene.camera_pos - in.world_pos), in.world_pos, {va}, {ve} * {ves});"
             ));
+
+            // Clearcoat: secondary specular lobe with low roughness
+            ctx.emit(&format!(
+                "{{ let cc_V = normalize(u_scene.camera_pos - in.world_pos); let cc_R = reflect(-cc_V, {vn}); let cc_NoV = max(dot({vn}, cc_V), 0.001); let cc_fresnel = 0.04 + 0.96 * pow(1.0 - cc_NoV, 5.0); {var} += vec3f(cc_fresnel * {vcc} * (1.0 - {vccr})); }}"
+            ));
+
+            // Subsurface scattering approximation (wrap lighting)
+            ctx.emit(&format!(
+                "{{ let sss_wrap = 0.5; let sss_NdotL = (dot({vn}, normalize(u_scene.light_dir)) + sss_wrap) / (1.0 + sss_wrap); {var} = mix({var}, {vsss_c} * max(sss_NdotL, 0.0), {vsss}); }}"
+            ));
+
+            // Sheen (fabric/velvet — Fresnel-based edge glow)
+            ctx.emit(&format!(
+                "{{ let sh_V = normalize(u_scene.camera_pos - in.world_pos); let sh_NdotV = max(dot({vn}, sh_V), 0.0); let sh_factor = pow(1.0 - sh_NdotV, 3.0); let sh_color = mix(vec3f(1.0), {vbc}, {vsh_t}); {var} += sh_color * sh_factor * {vsh}; }}"
+            ));
+
             var
         }
 
@@ -342,8 +373,9 @@ pub fn compile(root: &ShaderNode) -> CompiledMaterial {
     frag.push_str(PBR_FUNCTIONS);
     frag.push_str(NOISE_FUNCTIONS);
 
-    // Scene + light uniforms
+    // Scene + light + shadow uniforms
     frag.push_str(UNIFORM_STRUCTS);
+    frag.push_str(SHADOW_UNIFORMS);
 
     // Texture bindings
     for slot in &ctx.textures {
@@ -462,6 +494,41 @@ struct SceneUniforms {
 @group(0) @binding(1) var<storage, read> u_lights: array<Light>;
 "#;
 
+// Shadow map uniforms (binding group 1, optional)
+const SHADOW_UNIFORMS: &str = r#"
+struct ShadowUniforms {
+    light_vp: mat4x4f,
+    shadow_bias: f32,
+    shadow_enabled: f32,
+    _pad: vec2f,
+};
+
+@group(1) @binding(0) var<uniform> u_shadow: ShadowUniforms;
+@group(1) @binding(1) var shadow_map: texture_2d<f32>;
+@group(1) @binding(2) var shadow_sampler: sampler;
+
+fn sample_shadow(world_pos: vec3f) -> f32 {
+    if u_shadow.shadow_enabled < 0.5 { return 1.0; }
+    let light_space = u_shadow.light_vp * vec4f(world_pos, 1.0);
+    let proj = light_space.xyz / light_space.w;
+    let uv = proj.xy * 0.5 + 0.5;
+    if uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 { return 1.0; }
+    let shadow_depth = textureSample(shadow_map, shadow_sampler, uv).r;
+    let current_depth = proj.z;
+    // PCF 3x3 soft shadow
+    let texel_size = 1.0 / 1024.0;
+    var shadow = 0.0;
+    for (var x = -1; x <= 1; x++) {
+        for (var y = -1; y <= 1; y++) {
+            let offset = vec2f(f32(x), f32(y)) * texel_size;
+            let pcf_depth = textureSample(shadow_map, shadow_sampler, uv + offset).r;
+            shadow += select(0.0, 1.0, current_depth - u_shadow.shadow_bias <= pcf_depth);
+        }
+    }
+    return shadow / 9.0;
+}
+"#;
+
 const PBR_FUNCTIONS: &str = r#"
 // GGX/Trowbridge-Reitz Normal Distribution Function
 fn D_GGX(NoH: f32, roughness: f32) -> f32 {
@@ -535,9 +602,10 @@ fn pbr_shade_multi(
         let light_color = light.color * light.intensity;
 
         if light.light_type < 0.5 {
-            // Directional light
+            // Directional light (with shadow)
             let L = normalize(-light.direction);
-            result += pbr_direct(base_color, metallic, roughness, N, V, L, light_color);
+            let shadow = select(1.0, sample_shadow(world_pos), light.cast_shadow > 0.5);
+            result += pbr_direct(base_color, metallic, roughness, N, V, L, light_color * shadow);
         } else if light.light_type < 1.5 {
             // Point light
             let to_light = light.position - world_pos;
