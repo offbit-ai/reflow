@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
     for tpl in [
         // SDF primitives + operations
         "tpl_sdf_box",
-        "tpl_sdf_cylinder",
+        "tpl_sdf_union",
         "tpl_sdf_smooth_union",
         "tpl_sdf_translate",
         "tpl_sdf_round",
@@ -82,34 +82,40 @@ async fn main() -> anyhow::Result<()> {
         "sizeX": 0.5, "sizeY": 0.5, "sizeZ": 0.5,
     })))?;
     net.add_node("ice_round", "tpl_sdf_round", config(json!({
-        "radius": 0.08,
+        "radius": 0.15,
     })))?;
     net.add_node("ice_displace", "tpl_sdf_displace", config(json!({
-        "frequency": 6.0,
-        "amplitude": 0.04,
+        "frequency": 5.0,
+        "amplitude": 0.03,
         "octaves": 3,
     })))?;
 
     // Puddle: flattened sphere + heavy noise = blobby organic water splat
-    // Puddle: very thin cylinder (flat disc) with blobby edge displacement
-    // Sits just below the ice cube base
-    net.add_node("puddle_base", "tpl_sdf_cylinder", config(json!({
-        "radius": 1.2,
-        "height": 0.008,
-    })))?;
-    net.add_node("puddle_displace", "tpl_sdf_displace", config(json!({
-        "frequency": 1.5,
-        "amplitude": 0.06,
-        "octaves": 2,
-    })))?;
-    net.add_node("puddle", "tpl_sdf_translate", config(json!({
-        "x": 0.0, "y": -0.52, "z": 0.0,
-    })))?;
+    // Puddle: thin rounded boxes smooth-unioned = blobby water splat
+    // Central disc (wide, paper thin)
+    net.add_node("blob_c", "tpl_sdf_box", config(json!({ "sizeX": 0.7, "sizeY": 0.005, "sizeZ": 0.7 })))?;
+    net.add_node("blob_c_r", "tpl_sdf_round", config(json!({ "radius": 0.3 })))?;
+    // Right lobe
+    net.add_node("blob_r", "tpl_sdf_box", config(json!({ "sizeX": 0.4, "sizeY": 0.005, "sizeZ": 0.25 })))?;
+    net.add_node("blob_r_r", "tpl_sdf_round", config(json!({ "radius": 0.2 })))?;
+    net.add_node("blob_r_t", "tpl_sdf_translate", config(json!({ "x": 0.7, "y": 0.0, "z": 0.15 })))?;
+    // Left-back lobe
+    net.add_node("blob_l", "tpl_sdf_box", config(json!({ "sizeX": 0.3, "sizeY": 0.005, "sizeZ": 0.35 })))?;
+    net.add_node("blob_l_r", "tpl_sdf_round", config(json!({ "radius": 0.2 })))?;
+    net.add_node("blob_l_t", "tpl_sdf_translate", config(json!({ "x": -0.55, "y": 0.0, "z": -0.5 })))?;
+    // Front lobe
+    net.add_node("blob_f", "tpl_sdf_box", config(json!({ "sizeX": 0.2, "sizeY": 0.005, "sizeZ": 0.3 })))?;
+    net.add_node("blob_f_r", "tpl_sdf_round", config(json!({ "radius": 0.15 })))?;
+    net.add_node("blob_f_t", "tpl_sdf_translate", config(json!({ "x": 0.15, "y": 0.0, "z": 0.7 })))?;
+    // Merge lobes with smooth union for organic edges
+    net.add_node("puddle_01", "tpl_sdf_smooth_union", config(json!({ "k": 0.15 })))?;
+    net.add_node("puddle_012", "tpl_sdf_smooth_union", config(json!({ "k": 0.15 })))?;
+    net.add_node("puddle_all", "tpl_sdf_smooth_union", config(json!({ "k": 0.15 })))?;
+    // Position at cube base
+    net.add_node("puddle", "tpl_sdf_translate", config(json!({ "x": 0.0, "y": -0.52, "z": 0.0 })))?;
 
-    // Smooth union: slight blend at contact point
-    net.add_node("melt_blend", "tpl_sdf_smooth_union", config(json!({
-        "k": 0.03,
-    })))?;
+    // Hard union — cube sits on puddle
+    net.add_node("melt_blend", "tpl_sdf_union", None)?;
 
     // Wire SDF graph
 
@@ -118,7 +124,7 @@ async fn main() -> anyhow::Result<()> {
         "width": w, "height": h,
         "maxSteps": 200,
         "fov": 60.0,
-        "cameraPosX": 3.5, "cameraPosY": 3.0, "cameraPosZ": 3.5,
+        "cameraPosX": 4.5, "cameraPosY": 3.5, "cameraPosZ": 4.5,
         "cameraTargetX": 0.0, "cameraTargetY": -0.2, "cameraTargetZ": 0.0,
         "softShadows": true,
         "shadowK": 16.0,
@@ -168,8 +174,22 @@ async fn main() -> anyhow::Result<()> {
     // SDF: ice (box → round → displace) + puddle (box → round → displace → translate)
     net.add_connection(wire("ice_box", "sdf", "ice_round", "sdf"));
     net.add_connection(wire("ice_round", "sdf", "ice_displace", "sdf"));
-    net.add_connection(wire("puddle_base", "sdf", "puddle_displace", "sdf"));
-    net.add_connection(wire("puddle_displace", "sdf", "puddle", "sdf"));
+    // Puddle blob chains: box → round → translate
+    net.add_connection(wire("blob_c", "sdf", "blob_c_r", "sdf"));
+    net.add_connection(wire("blob_r", "sdf", "blob_r_r", "sdf"));
+    net.add_connection(wire("blob_r_r", "sdf", "blob_r_t", "sdf"));
+    net.add_connection(wire("blob_l", "sdf", "blob_l_r", "sdf"));
+    net.add_connection(wire("blob_l_r", "sdf", "blob_l_t", "sdf"));
+    net.add_connection(wire("blob_f", "sdf", "blob_f_r", "sdf"));
+    net.add_connection(wire("blob_f_r", "sdf", "blob_f_t", "sdf"));
+    // Merge: c+r → +l → +f → translate
+    net.add_connection(wire("blob_c_r", "sdf", "puddle_01", "sdf_a"));
+    net.add_connection(wire("blob_r_t", "sdf", "puddle_01", "sdf_b"));
+    net.add_connection(wire("puddle_01", "sdf", "puddle_012", "sdf_a"));
+    net.add_connection(wire("blob_l_t", "sdf", "puddle_012", "sdf_b"));
+    net.add_connection(wire("puddle_012", "sdf", "puddle_all", "sdf_a"));
+    net.add_connection(wire("blob_f_t", "sdf", "puddle_all", "sdf_b"));
+    net.add_connection(wire("puddle_all", "sdf", "puddle", "sdf"));
     net.add_connection(wire("ice_displace", "sdf", "melt_blend", "sdf_a"));
     net.add_connection(wire("puddle", "sdf", "melt_blend", "sdf_b"));
     net.add_connection(wire("melt_blend", "sdf", "render", "sdf"));
@@ -190,7 +210,10 @@ async fn main() -> anyhow::Result<()> {
 
     // Bootstrap SDF primitives
     net.add_initial(iip("ice_box", "_trigger", Message::Flow));
-    net.add_initial(iip("puddle_base", "_trigger", Message::Flow));
+    net.add_initial(iip("blob_c", "_trigger", Message::Flow));
+    net.add_initial(iip("blob_r", "_trigger", Message::Flow));
+    net.add_initial(iip("blob_l", "_trigger", Message::Flow));
+    net.add_initial(iip("blob_f", "_trigger", Message::Flow));
 
     println!("Pipeline:");
     println!("  SdfBox + SdfPlane → SmoothUnion → SdfScene → LiveRender");
