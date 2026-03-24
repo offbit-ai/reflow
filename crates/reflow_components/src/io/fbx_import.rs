@@ -81,15 +81,15 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
     let (mesh_bytes, tri_to_control) = build_mesh_bytes(&vertices, &normals, &indices);
     out.insert("mesh".to_string(), Message::bytes(mesh_bytes));
 
-    // Extract skeleton hierarchy
-    let (skeleton, bone_names) = extract_skeleton(&tree)?;
+    // Extract skeleton hierarchy (includes per-bone PreRotation for animation)
+    let (skeleton, bone_names, pre_rotations) = extract_skeleton(&tree)?;
     out.insert(
         "skeleton".to_string(),
         Message::object(EncodableValue::from(skeleton.clone())),
     );
 
-    // Extract animation curves
-    let clip = extract_animation(&tree, &bone_names)?;
+    // Extract animation curves (composes PreRotation with rotation keyframes)
+    let clip = extract_animation(&tree, &bone_names, &pre_rotations)?;
     out.insert(
         "clip".to_string(),
         Message::object(EncodableValue::from(clip)),
@@ -381,7 +381,8 @@ fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> (Vec<
 // Skeleton extraction
 // ═══════════════════════════════════════════════════════════════
 
-fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
+/// Returns (skeleton_json, bone_names, pre_rotations_deg_per_bone)
+fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>, Vec<[f64; 3]>)> {
     let objects = tree
         .child("Objects")
         .ok_or_else(|| anyhow::anyhow!("No Objects node"))?;
@@ -396,6 +397,7 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
         id: i64,
         name: String,
         lcl_translation: [f64; 3],
+        pre_rotation: [f64; 3],    // Euler degrees — applied BEFORE Lcl Rotation
         lcl_rotation: [f64; 3],    // Euler degrees
         lcl_scaling: [f64; 3],
     }
@@ -419,6 +421,7 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
 
                 // Extract local bind pose from Properties70
                 let mut lcl_t = [0.0f64; 3];
+                let mut pre_r = [0.0f64; 3];
                 let mut lcl_r = [0.0f64; 3];
                 let mut lcl_s = [1.0f64, 1.0, 1.0];
 
@@ -427,15 +430,10 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
                         if p.name == "P" {
                             let prop_name = p.attr_str(0).unwrap_or("");
                             match prop_name {
-                                "Lcl Translation" => {
-                                    lcl_t = extract_p_xyz(p);
-                                }
-                                "Lcl Rotation" => {
-                                    lcl_r = extract_p_xyz(p);
-                                }
-                                "Lcl Scaling" => {
-                                    lcl_s = extract_p_xyz(p);
-                                }
+                                "Lcl Translation" => lcl_t = extract_p_xyz(p),
+                                "PreRotation" => pre_r = extract_p_xyz(p),
+                                "Lcl Rotation" => lcl_r = extract_p_xyz(p),
+                                "Lcl Scaling" => lcl_s = extract_p_xyz(p),
                                 _ => {}
                             }
                         }
@@ -447,6 +445,7 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
                     id,
                     name,
                     lcl_translation: lcl_t,
+                    pre_rotation: pre_r,
                     lcl_rotation: lcl_r,
                     lcl_scaling: lcl_s,
                 });
@@ -472,13 +471,15 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
     }
 
     let bone_names: Vec<String> = bones.iter().map(|b| b.name.clone()).collect();
+    let pre_rotations: Vec<[f64; 3]> = bones.iter().map(|b| b.pre_rotation).collect();
     let mut bone_array = Vec::new();
     for (i, bone) in bones.iter().enumerate() {
         let parent = parent_map.get(&i).map(|&p| p as i64).unwrap_or(-1);
 
-        // Build localBindTransform from TRS
-        let local_mat = trs_to_column_major_mat4(
+        // Build localBindTransform: T × PreRotation × LclRotation × S
+        let local_mat = trs_pre_rot_mat4(
             bone.lcl_translation,
+            bone.pre_rotation,
             bone.lcl_rotation,
             bone.lcl_scaling,
         );
@@ -497,7 +498,7 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>)> {
         "boneCount": bones.len(),
     });
 
-    Ok((skeleton, bone_names))
+    Ok((skeleton, bone_names, pre_rotations))
 }
 
 /// Extract x,y,z from FBX Properties70 P node (attributes at indices 4,5,6)
@@ -521,6 +522,46 @@ fn extract_p_xyz(p: &FbxNode) -> [f64; 3] {
         _ => 0.0,
     };
     [x, y, z]
+}
+
+/// Build column-major 4x4 from T × PreRotation × LclRotation × S
+fn trs_pre_rot_mat4(t: [f64; 3], pre_deg: [f64; 3], lcl_deg: [f64; 3], s: [f64; 3]) -> [f64; 16] {
+    // Compose PreRotation and LclRotation as quaternions
+    let pre_q = euler_xyz_to_quat(
+        pre_deg[0].to_radians(),
+        pre_deg[1].to_radians(),
+        pre_deg[2].to_radians(),
+    );
+    let lcl_q = euler_xyz_to_quat(
+        lcl_deg[0].to_radians(),
+        lcl_deg[1].to_radians(),
+        lcl_deg[2].to_radians(),
+    );
+    let combined_q = quat_mul_f64(pre_q, lcl_q);
+
+    // Build rotation matrix from combined quaternion
+    let [qx, qy, qz, qw] = combined_q;
+    let xx = qx * qx; let yy = qy * qy; let zz = qz * qz;
+    let xy = qx * qy; let xz = qx * qz; let yz = qy * qz;
+    let wx = qw * qx; let wy = qw * qy; let wz = qw * qz;
+
+    let r00 = 1.0 - 2.0 * (yy + zz);
+    let r01 = 2.0 * (xy - wz);
+    let r02 = 2.0 * (xz + wy);
+    let r10 = 2.0 * (xy + wz);
+    let r11 = 1.0 - 2.0 * (xx + zz);
+    let r12 = 2.0 * (yz - wx);
+    let r20 = 2.0 * (xz - wy);
+    let r21 = 2.0 * (yz + wx);
+    let r22 = 1.0 - 2.0 * (xx + yy);
+
+    // Column-major: col0, col1, col2, col3
+    [
+        r00 * s[0], r10 * s[0], r20 * s[0], 0.0,
+        r01 * s[1], r11 * s[1], r21 * s[1], 0.0,
+        r02 * s[2], r12 * s[2], r22 * s[2], 0.0,
+        t[0],       t[1],       t[2],       1.0,
+    ]
 }
 
 /// Build column-major 4x4 matrix from TRS (Euler rotation in degrees, XYZ order)
@@ -560,7 +601,7 @@ fn trs_to_column_major_mat4(t: [f64; 3], r_deg: [f64; 3], s: [f64; 3]) -> [f64; 
 /// FBX time unit: 46186158000 ticks per second
 const FBX_TIME_UNIT: f64 = 46186158000.0;
 
-fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
+fn extract_animation(tree: &FbxNode, bone_names: &[String], pre_rotations: &[[f64; 3]]) -> Result<Value> {
     let objects = tree
         .child("Objects")
         .ok_or_else(|| anyhow::anyhow!("No Objects node"))?;
@@ -763,14 +804,27 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String]) -> Result<Value> {
 
         // Sample each component at reference times
         let values_json: Vec<Value> = if property == "rotation" {
-            // FBX rotation: Euler angles in degrees → convert to quaternion
+            // FBX: full rotation = PreRotation × LclRotation
+            // Compose PreRotation quat with animated rotation quat
+            let pre_r = if *bone_idx < pre_rotations.len() {
+                pre_rotations[*bone_idx]
+            } else {
+                [0.0, 0.0, 0.0]
+            };
+            let pre_q = euler_xyz_to_quat(
+                pre_r[0].to_radians(),
+                pre_r[1].to_radians(),
+                pre_r[2].to_radians(),
+            );
+
             ref_times
                 .iter()
                 .map(|&t| {
                     let rx = sample_curve(x_curve, t).to_radians() as f64;
                     let ry = sample_curve(y_curve, t).to_radians() as f64;
                     let rz = sample_curve(z_curve, t).to_radians() as f64;
-                    let q = euler_xyz_to_quat(rx, ry, rz);
+                    let anim_q = euler_xyz_to_quat(rx, ry, rz);
+                    let q = quat_mul_f64(pre_q, anim_q);
                     json!([q[0], q[1], q[2], q[3]])
                 })
                 .collect()
@@ -829,6 +883,16 @@ fn sample_curve(curve: Option<&(Vec<f64>, Vec<f32>)>, t: f64) -> f32 {
     }
     let frac = ((t - times[i]) / dt) as f32;
     values[i] * (1.0 - frac) + values[i + 1] * frac
+}
+
+/// Multiply two quaternions [x, y, z, w]: result = a * b
+fn quat_mul_f64(a: [f64; 4], b: [f64; 4]) -> [f64; 4] {
+    [
+        a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+        a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+        a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+        a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
+    ]
 }
 
 /// Convert Euler XYZ angles (radians) to quaternion [x, y, z, w]
