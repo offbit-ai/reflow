@@ -97,21 +97,18 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         );
     }
     if let Some(Message::Bytes(b)) = payload.get("texture") {
-        // Decode image once and cache as RGBA pixels (not raw JPEG)
-        if let Ok(img) = image::load_from_memory(&b) {
-            let rgba = img.to_rgba8();
-            let w = rgba.width();
-            let h = rgba.height();
-            let mut buf = Vec::with_capacity(8 + (w * h * 4) as usize);
-            buf.extend_from_slice(&w.to_le_bytes());
-            buf.extend_from_slice(&h.to_le_bytes());
-            buf.extend_from_slice(rgba.as_raw());
-            use base64::Engine;
-            ctx.pool_upsert(
-                "_cache",
-                "texture_rgba_b64",
-                serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&buf)),
-            );
+        // Decode image once into static cache (zero-copy on subsequent frames)
+        if get_texture_cache().lock().is_none() {
+            if let Ok(img) = image::load_from_memory(&b) {
+                let rgba = img.to_rgba8();
+                let w = rgba.width();
+                let h = rgba.height();
+                let mut buf = Vec::with_capacity(8 + (w * h * 4) as usize);
+                buf.extend_from_slice(&w.to_le_bytes());
+                buf.extend_from_slice(&h.to_le_bytes());
+                buf.extend_from_slice(rgba.as_raw());
+                *get_texture_cache().lock() = Some(buf);
+            }
         }
     }
 
@@ -139,12 +136,8 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
                 .decode(s)
                 .unwrap_or_default()
         });
-    // Read pre-decoded RGBA texture from cache (decoded once on arrival, not per-frame)
-    let texture_rgba: Option<Vec<u8>> =
-        cache.get("texture_rgba_b64").and_then(|v| v.as_str()).and_then(|s| {
-            use base64::Engine;
-            base64::engine::general_purpose::STANDARD.decode(s).ok()
-        });
+    // Read pre-decoded RGBA texture from static cache (zero base64 overhead)
+    let texture_rgba: Option<Vec<u8>> = get_texture_cache().lock().clone();
 
     let objects = scene_data
         .get("objects")
@@ -510,6 +503,14 @@ struct CachedScenePipeline {
     pipeline: wgpu::RenderPipeline,
     bgl: wgpu::BindGroupLayout,
     sample_count: u32,
+}
+
+/// Static texture cache — decoded RGBA bytes, bypasses JSON pool entirely.
+/// Format: [w:u32 LE, h:u32 LE, rgba_pixels...]
+static TEXTURE_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<Vec<u8>>>> = std::sync::OnceLock::new();
+
+fn get_texture_cache() -> &'static parking_lot::Mutex<Option<Vec<u8>>> {
+    TEXTURE_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
 }
 
 use std::sync::OnceLock;
