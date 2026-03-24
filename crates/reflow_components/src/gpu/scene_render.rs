@@ -79,21 +79,12 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     ];
 
     // Cache meshes and texture in state
+    // Cache meshes in static Arc buffers (zero base64 overhead)
     if let Some(Message::Bytes(b)) = payload.get("meshes") {
-        use base64::Engine;
-        ctx.pool_upsert(
-            "_cache",
-            "meshes_b64",
-            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)),
-        );
+        *get_mesh_cache().lock() = Some(std::sync::Arc::new(b.to_vec()));
     }
     if let Some(Message::Bytes(b)) = payload.get("terrain_mesh") {
-        use base64::Engine;
-        ctx.pool_upsert(
-            "_cache",
-            "terrain_b64",
-            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)),
-        );
+        *get_terrain_cache().lock() = Some(std::sync::Arc::new(b.to_vec()));
     }
     if let Some(Message::Bytes(b)) = payload.get("texture") {
         // Decode image once into static cache (zero-copy on subsequent frames)
@@ -111,17 +102,12 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         }
     }
 
-    // Cache light buffer from light collector
+    // Cache light buffer in shared buffer (zero base64 overhead)
     if let Some(Message::Bytes(b)) = payload.get("lights") {
-        use base64::Engine;
-        ctx.pool_upsert(
-            "_cache",
-            "lights_b64",
-            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)),
-        );
+        *get_light_cache().lock() = Some(std::sync::Arc::new(b.to_vec()));
     }
     if let Some(Message::Integer(n)) = payload.get("light_count") {
-        ctx.pool_upsert("_cache", "light_count", serde_json::json!(n));
+        *get_light_count_cache().lock() = Some(*n as u32);
     }
 
     // Cache compiled material from shader graph
@@ -139,23 +125,11 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         _ => return Ok(HashMap::new()),
     };
 
-    // Read cached meshes
-    let cache: HashMap<String, serde_json::Value> = ctx.get_pool("_cache").into_iter().collect();
-    let prefab_mesh: Option<Vec<u8>> = cache.get("meshes_b64").and_then(|v| v.as_str()).map(|s| {
-        use base64::Engine;
-        base64::engine::general_purpose::STANDARD
-            .decode(s)
-            .unwrap_or_default()
-    });
-    let terrain_mesh: Option<Vec<u8>> =
-        cache.get("terrain_b64").and_then(|v| v.as_str()).map(|s| {
-            use base64::Engine;
-            base64::engine::general_purpose::STANDARD
-                .decode(s)
-                .unwrap_or_default()
-        });
-    // Read pre-decoded RGBA texture from static cache (Arc clone = pointer bump, not 4MB copy)
+    // Read cached data from static Arc buffers (pointer bump, no base64 decode)
+    let prefab_mesh: Option<std::sync::Arc<Vec<u8>>> = get_mesh_cache().lock().clone();
+    let terrain_mesh: Option<std::sync::Arc<Vec<u8>>> = get_terrain_cache().lock().clone();
     let texture_rgba: Option<std::sync::Arc<Vec<u8>>> = get_texture_cache().lock().clone();
+    let cache: HashMap<String, serde_json::Value> = ctx.get_pool("_cache").into_iter().collect();
 
     let objects = scene_data
         .get("objects")
@@ -178,8 +152,8 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             near_plane,
             far_plane,
             &objects_clone,
-            prefab_mesh.as_deref(),
-            terrain_mesh.as_deref(),
+            prefab_mesh.as_deref().map(|v| v.as_slice()),
+            terrain_mesh.as_deref().map(|v| v.as_slice()),
             texture_rgba.as_deref().map(|v| v.as_slice()),
             compiled_mat.as_ref(),
         )
@@ -525,13 +499,30 @@ struct CachedScenePipeline {
     sample_count: u32,
 }
 
-/// Static texture cache — decoded RGBA bytes, bypasses JSON pool entirely.
-/// Format: [w:u32 LE, h:u32 LE, rgba_pixels...]
-/// Uses Arc to avoid cloning 4MB per frame.
+/// Static shared buffer caches — Arc<Vec<u8>> for zero-copy per-frame access.
+/// Replaces base64 JSON pool round-trip with pointer-bump Arc::clone.
+static MESH_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
+static TERRAIN_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
 static TEXTURE_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
 
+fn get_mesh_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
+    MESH_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
+}
+fn get_terrain_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
+    TERRAIN_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
+}
 fn get_texture_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
     TEXTURE_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
+}
+
+static LIGHT_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
+static LIGHT_COUNT_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<u32>>> = std::sync::OnceLock::new();
+
+fn get_light_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
+    LIGHT_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
+}
+fn get_light_count_cache() -> &'static parking_lot::Mutex<Option<u32>> {
+    LIGHT_COUNT_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
 }
 
 /// Cached GPU diffuse texture + view + sampler. Uploaded once, reused every frame.
@@ -936,11 +927,8 @@ fn render_scene(
 
     let view_proj = build_view_proj(cam_pos, cam_target, fov, width as f32 / height as f32, near, far);
     // Read light buffer from cache
-    let light_buffer_data: Option<Vec<u8>> = cache.get("lights_b64").and_then(|v| v.as_str()).and_then(|s| {
-        use base64::Engine;
-        base64::engine::general_purpose::STANDARD.decode(s).ok()
-    });
-    let light_count = cache.get("light_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+    let light_buffer_data: Option<Vec<u8>> = get_light_cache().lock().as_ref().map(|a| a.to_vec());
+    let light_count = get_light_count_cache().lock().unwrap_or(0);
 
     let uniforms = SceneUniforms {
         view_proj,
@@ -1046,7 +1034,7 @@ fn render_scene(
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::ReadOnlyStorage, has_dynamic_offset: false, min_binding_size: None },
+                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None },
                         count: None,
                     },
                 ],

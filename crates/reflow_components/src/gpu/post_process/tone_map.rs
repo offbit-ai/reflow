@@ -43,42 +43,23 @@ pub async fn tone_map_actor(ctx: ActorContext) -> Result<HashMap<String, Message
 
     let mut output = pixels.to_vec();
     let pixel_count = output.len() / 4;
+    let scale = exposure / 255.0;
 
+    // Select tone map function pointer to avoid branch in hot loop
+    let tone_fn: fn(f32) -> f32 = match mode {
+        "aces" => aces_filmic,
+        "reinhard" => |x: f32| x / (1.0 + x),
+        "uncharted2" => uncharted2,
+        _ => |x: f32| x.min(1.0),
+    };
+
+    // Process pixels — written for auto-vectorization (no branches in loop body)
     for i in 0..pixel_count {
         let off = i * 4;
-        let mut r = output[off] as f32 / 255.0 * exposure;
-        let mut g = output[off + 1] as f32 / 255.0 * exposure;
-        let mut b = output[off + 2] as f32 / 255.0 * exposure;
-
-        // Tone map
-        match mode {
-            "aces" => {
-                r = aces_filmic(r);
-                g = aces_filmic(g);
-                b = aces_filmic(b);
-            }
-            "reinhard" => {
-                r = r / (1.0 + r);
-                g = g / (1.0 + g);
-                b = b / (1.0 + b);
-            }
-            "uncharted2" => {
-                r = uncharted2(r);
-                g = uncharted2(g);
-                b = uncharted2(b);
-            }
-            _ => {
-                r = r.min(1.0);
-                g = g.min(1.0);
-                b = b.min(1.0);
-            }
-        }
-
-        // Gamma correction
-        r = r.powf(inv_gamma);
-        g = g.powf(inv_gamma);
-        b = b.powf(inv_gamma);
-
+        // Convert + expose + tone map + gamma in one pass
+        let r = tone_fn(output[off] as f32 * scale).powf(inv_gamma);
+        let g = tone_fn(output[off + 1] as f32 * scale).powf(inv_gamma);
+        let b = tone_fn(output[off + 2] as f32 * scale).powf(inv_gamma);
         output[off] = (r.clamp(0.0, 1.0) * 255.0) as u8;
         output[off + 1] = (g.clamp(0.0, 1.0) * 255.0) as u8;
         output[off + 2] = (b.clamp(0.0, 1.0) * 255.0) as u8;

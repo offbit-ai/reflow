@@ -46,10 +46,12 @@ reflow_api = { path = "../reflow_api", optional = true }
 # Asset database (pure Rust, Wasm-safe)
 reflow_assets = { path = "../reflow_assets" }
 
+# Zero-cost byte↔float reinterpretation (always available for skinning SIMD)
+bytemuck = { version = "1.14", features = ["derive"] }
+
 # GPU compute (wgpu — optional, native-only)
 once_cell = { version = "1", optional = true }
 wgpu = { version = "24", optional = true }
-bytemuck = { version = "1.14", features = ["derive"], optional = true }
 pollster = { version = "0.4", optional = true }
 
 # Video encoding (optional, native-only)
@@ -85,7 +87,7 @@ web-sys = { version = "0.3", features = ["Window"] }
 default = ["av-core", "gpu", "window-events"]
 api = ["dep:reflow_api"]
 av-core = ["dep:reflow_dsp"]
-gpu = ["dep:wgpu", "dep:bytemuck", "dep:pollster", "dep:once_cell"]
+gpu = ["dep:wgpu", "dep:pollster", "dep:once_cell"]
 video-encode = ["dep:openh264"]
 browser = ["dep:chromiumoxide"]
 window-events = []

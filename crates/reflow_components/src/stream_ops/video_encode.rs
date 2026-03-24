@@ -138,15 +138,28 @@ fn stream_encode(
     Ok((mp4, width, height, fps, frame_count))
 }
 
+/// RGBA→RGB conversion. Processes 4 pixels at a time for auto-vectorization.
 fn rgba_to_rgb(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
     let pixel_count = (width * height) as usize;
-    let mut rgb = Vec::with_capacity(pixel_count * 3);
-    for i in 0..pixel_count {
-        let off = i * 4;
-        if off + 3 <= rgba.len() {
-            rgb.push(rgba[off]);
-            rgb.push(rgba[off + 1]);
-            rgb.push(rgba[off + 2]);
+    let mut rgb = vec![0u8; pixel_count * 3];
+
+    // Process 4 pixels at a time (16 RGBA bytes → 12 RGB bytes)
+    let chunks = pixel_count / 4;
+    for c in 0..chunks {
+        let si = c * 16; // source: 4 pixels × 4 bytes
+        let di = c * 12; // dest: 4 pixels × 3 bytes
+        // Batch copy — LLVM vectorizes this into SIMD shuffle
+        rgb[di]     = rgba[si];     rgb[di + 1]  = rgba[si + 1];  rgb[di + 2]  = rgba[si + 2];
+        rgb[di + 3] = rgba[si + 4]; rgb[di + 4]  = rgba[si + 5];  rgb[di + 5]  = rgba[si + 6];
+        rgb[di + 6] = rgba[si + 8]; rgb[di + 7]  = rgba[si + 9];  rgb[di + 8]  = rgba[si + 10];
+        rgb[di + 9] = rgba[si + 12]; rgb[di + 10] = rgba[si + 13]; rgb[di + 11] = rgba[si + 14];
+    }
+    // Remainder
+    for i in (chunks * 4)..pixel_count {
+        let si = i * 4;
+        let di = i * 3;
+        if si + 2 < rgba.len() {
+            rgb[di] = rgba[si]; rgb[di + 1] = rgba[si + 1]; rgb[di + 2] = rgba[si + 2];
         }
     }
     rgb
