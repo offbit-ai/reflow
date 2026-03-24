@@ -20,16 +20,17 @@ use std::collections::HashMap;
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct SceneUniforms {
     view_proj: [[f32; 4]; 4], // 64 bytes
-    light_dir: [f32; 3],      // 12 bytes
+    light_dir: [f32; 3],      // 12 bytes (legacy fallback)
     _pad0: f32,               // 4 bytes  → 80
     camera_pos: [f32; 3],     // 12 bytes
     time: f32,                // 4 bytes  → 96
-    _pad4: [f32; 4],          // 16 bytes → 112
+    light_count: u32,         // 4 bytes
+    _pad4: [u32; 3],          // 12 bytes → 112
 }
 
 #[actor(
     SceneRenderActor,
-    inports::<10>(scene, meshes, terrain_mesh, texture, material),
+    inports::<10>(scene, meshes, terrain_mesh, texture, material, lights),
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
@@ -108,6 +109,19 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
                 *get_texture_cache().lock() = Some(std::sync::Arc::new(buf));
             }
         }
+    }
+
+    // Cache light buffer from light collector
+    if let Some(Message::Bytes(b)) = payload.get("lights") {
+        use base64::Engine;
+        ctx.pool_upsert(
+            "_cache",
+            "lights_b64",
+            serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(&**b)),
+        );
+    }
+    if let Some(Message::Integer(n)) = payload.get("light_count") {
+        ctx.pool_upsert("_cache", "light_count", serde_json::json!(n));
     }
 
     // Cache compiled material from shader graph
@@ -921,13 +935,21 @@ fn render_scene(
     });
 
     let view_proj = build_view_proj(cam_pos, cam_target, fov, width as f32 / height as f32, near, far);
+    // Read light buffer from cache
+    let light_buffer_data: Option<Vec<u8>> = cache.get("lights_b64").and_then(|v| v.as_str()).and_then(|s| {
+        use base64::Engine;
+        base64::engine::general_purpose::STANDARD.decode(s).ok()
+    });
+    let light_count = cache.get("light_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+
     let uniforms = SceneUniforms {
         view_proj,
         light_dir: [0.577, 0.577, -0.577],
         _pad0: 0.0,
         camera_pos: cam_pos,
         time: 0.0,
-        _pad4: [0.0; 4],
+        light_count,
+        _pad4: [0; 3],
     };
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Uniforms"),
@@ -1014,12 +1036,20 @@ fn render_scene(
             });
             let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: None,
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
-                    count: None,
-                }],
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::ReadOnlyStorage, has_dynamic_offset: false, min_binding_size: None },
+                        count: None,
+                    },
+                ],
             });
             let mut attrs = vec![
                 wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
@@ -1063,9 +1093,21 @@ fn render_scene(
             dyn_cache.insert(pipeline_hash, CachedDynamicPipeline { pipeline, bgl });
         }
         let cached = dyn_cache.get(&pipeline_hash).unwrap();
+
+        // Create light storage buffer (empty if no lights)
+        let light_data = light_buffer_data.as_deref().unwrap_or(&[0u8; 64]); // min 1 light slot
+        let light_gpu_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Lights"),
+            contents: light_data,
+            usage: wgpu::BufferUsages::STORAGE,
+        });
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None, layout: &cached.bgl,
-            entries: &[wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() }],
+            entries: &[
+                wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() },
+                wgpu::BindGroupEntry { binding: 1, resource: light_gpu_buffer.as_entire_binding() },
+            ],
         });
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

@@ -295,7 +295,7 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
             var
         }
 
-        // ═══ Principled BSDF — terminates into pbr_shade call ═══
+        // ═══ Principled BSDF — multi-light PBR shading ═══
         ShaderNode::PrincipledBsdf {
             base_color, metallic, roughness, normal,
             emission, emission_strength, ao, alpha, ..
@@ -306,7 +306,7 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
             let ve = emit_node(ctx, emission);
             let ves = emit_node(ctx, emission_strength);
             let va = ao.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "1.0".to_string());
-            let valpha = emit_node(ctx, alpha);
+            let _valpha = emit_node(ctx, alpha);
             let vn = normal
                 .as_ref()
                 .map(|n| emit_node(ctx, n))
@@ -315,7 +315,7 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
             ctx.needs_camera_pos = true;
             let var = ctx.fresh_var();
             ctx.emit(&format!(
-                "let {var} = pbr_shade({vbc}, {vm}, {vr}, {vn}, normalize(u_scene.camera_pos - in.world_pos), u_scene.light_dir, vec3f(1.0), {va}, {ve} * {ves});"
+                "let {var} = pbr_shade_multi({vbc}, {vm}, {vr}, {vn}, normalize(u_scene.camera_pos - in.world_pos), in.world_pos, {va}, {ve} * {ves});"
             ));
             var
         }
@@ -342,15 +342,8 @@ pub fn compile(root: &ShaderNode) -> CompiledMaterial {
     frag.push_str(PBR_FUNCTIONS);
     frag.push_str(NOISE_FUNCTIONS);
 
-    // Scene uniforms
-    frag.push_str("struct SceneUniforms {\n");
-    frag.push_str("    view_proj: mat4x4f,\n");
-    frag.push_str("    light_dir: vec3f,\n");
-    frag.push_str("    _pad: f32,\n");
-    frag.push_str("    camera_pos: vec3f,\n");
-    frag.push_str("    time: f32,\n");
-    frag.push_str("};\n\n");
-    frag.push_str("@group(0) @binding(0) var<uniform> u_scene: SceneUniforms;\n\n");
+    // Scene + light uniforms
+    frag.push_str(UNIFORM_STRUCTS);
 
     // Texture bindings
     for slot in &ctx.textures {
@@ -409,14 +402,7 @@ pub fn compile(root: &ShaderNode) -> CompiledMaterial {
 
 fn build_vertex_shader(needs_uv: bool, _needs_tangent: bool) -> String {
     let mut vs = String::new();
-    vs.push_str("struct SceneUniforms {\n");
-    vs.push_str("    view_proj: mat4x4f,\n");
-    vs.push_str("    light_dir: vec3f,\n");
-    vs.push_str("    _pad: f32,\n");
-    vs.push_str("    camera_pos: vec3f,\n");
-    vs.push_str("    time: f32,\n");
-    vs.push_str("};\n\n");
-    vs.push_str("@group(0) @binding(0) var<uniform> u_scene: SceneUniforms;\n\n");
+    vs.push_str(UNIFORM_STRUCTS);
     vs.push_str("struct VertexInput {\n");
     vs.push_str("    @location(0) position: vec3f,\n");
     vs.push_str("    @location(1) normal: vec3f,\n");
@@ -448,6 +434,34 @@ fn build_vertex_shader(needs_uv: bool, _needs_tangent: bool) -> String {
 // PBR lighting functions (Cook-Torrance)
 // ═══════════════════════════════════════════════════════════════
 
+const UNIFORM_STRUCTS: &str = r#"
+struct Light {
+    position: vec3f,
+    light_type: f32,   // 0=directional, 1=point, 2=spot, 3=ambient
+    direction: vec3f,
+    intensity: f32,
+    color: vec3f,
+    range: f32,
+    inner_cos: f32,
+    outer_cos: f32,
+    cast_shadow: f32,
+    _pad: f32,
+};
+
+struct SceneUniforms {
+    view_proj: mat4x4f,
+    light_dir: vec3f,      // legacy fallback directional
+    _pad: f32,
+    camera_pos: vec3f,
+    time: f32,
+    light_count: u32,
+    _pad2: vec3<u32>,
+};
+
+@group(0) @binding(0) var<uniform> u_scene: SceneUniforms;
+@group(0) @binding(1) var<storage, read> u_lights: array<Light>;
+"#;
+
 const PBR_FUNCTIONS: &str = r#"
 // GGX/Trowbridge-Reitz Normal Distribution Function
 fn D_GGX(NoH: f32, roughness: f32) -> f32 {
@@ -473,10 +487,10 @@ fn F_Schlick(cosTheta: f32, F0: vec3f) -> vec3f {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-fn pbr_shade(
+// Single-light PBR (used internally by multi-light loop)
+fn pbr_direct(
     base_color: vec3f, metallic: f32, roughness: f32,
-    N: vec3f, V: vec3f, L: vec3f, light_color: vec3f,
-    ao: f32, emission: vec3f
+    N: vec3f, V: vec3f, L: vec3f, radiance: vec3f,
 ) -> vec3f {
     let H = normalize(V + L);
     let NoL = max(dot(N, L), 0.0);
@@ -490,25 +504,83 @@ fn pbr_shade(
     let G = G_Smith(NoV, NoL, max(roughness, 0.04));
     let F = F_Schlick(HoV, F0);
 
-    // Specular
     let numerator = D * G * F;
     let denominator = 4.0 * NoV * NoL + 0.0001;
     let specular = numerator / denominator;
 
-    // Diffuse (energy-conserving Lambert)
     let kS = F;
     let kD = (vec3f(1.0) - kS) * (1.0 - metallic);
     let diffuse = kD * base_color / 3.14159265;
 
-    // Direct lighting
-    let radiance = light_color * NoL;
-    let direct = (diffuse + specular) * radiance;
+    return (diffuse + specular) * radiance * NoL;
+}
 
-    // Ambient (simple hemisphere)
-    let ambient_up = vec3f(0.1, 0.12, 0.15);
-    let ambient_down = vec3f(0.05, 0.04, 0.03);
+// Multi-light PBR: loops over light array, handles directional/point/spot
+fn pbr_shade_multi(
+    base_color: vec3f, metallic: f32, roughness: f32,
+    N: vec3f, V: vec3f, world_pos: vec3f,
+    ao: f32, emission: vec3f
+) -> vec3f {
+    var result = vec3f(0.0);
+    let light_count = u_scene.light_count;
+
+    // If no lights in array, use legacy single directional light
+    if light_count == 0u {
+        let L = normalize(u_scene.light_dir);
+        result += pbr_direct(base_color, metallic, roughness, N, V, L, vec3f(1.0));
+    }
+
+    for (var i = 0u; i < min(light_count, 16u); i++) {
+        let light = u_lights[i];
+        let light_color = light.color * light.intensity;
+
+        if light.light_type < 0.5 {
+            // Directional light
+            let L = normalize(-light.direction);
+            result += pbr_direct(base_color, metallic, roughness, N, V, L, light_color);
+        } else if light.light_type < 1.5 {
+            // Point light
+            let to_light = light.position - world_pos;
+            let dist = length(to_light);
+            let L = normalize(to_light);
+            let attenuation = max(1.0 - dist / light.range, 0.0);
+            let atten2 = attenuation * attenuation;
+            result += pbr_direct(base_color, metallic, roughness, N, V, L, light_color * atten2);
+        } else if light.light_type < 2.5 {
+            // Spot light
+            let to_light = light.position - world_pos;
+            let dist = length(to_light);
+            let L = normalize(to_light);
+            let theta = dot(L, normalize(-light.direction));
+            let epsilon = light.inner_cos - light.outer_cos;
+            let spot_atten = clamp((theta - light.outer_cos) / max(epsilon, 0.001), 0.0, 1.0);
+            let dist_atten = max(1.0 - dist / light.range, 0.0);
+            let atten = spot_atten * dist_atten * dist_atten;
+            result += pbr_direct(base_color, metallic, roughness, N, V, L, light_color * atten);
+        } else {
+            // Ambient light
+            result += base_color * light_color * ao;
+        }
+    }
+
+    // Hemisphere ambient (fallback when no ambient light in array)
+    let ambient_up = vec3f(0.08, 0.10, 0.12);
+    let ambient_down = vec3f(0.04, 0.03, 0.02);
     let ambient = mix(ambient_down, ambient_up, dot(N, vec3f(0.0, 1.0, 0.0)) * 0.5 + 0.5) * base_color * ao;
 
+    return ambient + result + emission;
+}
+
+// Legacy single-light PBR (backward compat)
+fn pbr_shade(
+    base_color: vec3f, metallic: f32, roughness: f32,
+    N: vec3f, V: vec3f, L: vec3f, light_color: vec3f,
+    ao: f32, emission: vec3f
+) -> vec3f {
+    let direct = pbr_direct(base_color, metallic, roughness, N, V, L, light_color);
+    let ambient_up = vec3f(0.08, 0.10, 0.12);
+    let ambient_down = vec3f(0.04, 0.03, 0.02);
+    let ambient = mix(ambient_down, ambient_up, dot(N, vec3f(0.0, 1.0, 0.0)) * 0.5 + 0.5) * base_color * ao;
     return ambient + direct + emission;
 }
 "#;
