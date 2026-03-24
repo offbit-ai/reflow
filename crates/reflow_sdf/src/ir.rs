@@ -223,6 +223,10 @@ pub struct SceneSettings {
     pub width: u32,
     #[serde(default = "default_height")]
     pub height: u32,
+    /// Custom shade function WGSL — injected from shader graph compiler.
+    /// If set, replaces the default shade function entirely.
+    #[serde(default)]
+    pub custom_shade_wgsl: String,
     /// Animation time (seconds) — passed to shader as uniform.
     #[serde(default)]
     pub time: f32,
@@ -286,6 +290,7 @@ impl Default for SceneSettings {
             ao: true,
             width: default_width(),
             height: default_height(),
+            custom_shade_wgsl: String::new(),
             time: 0.0,
         }
     }

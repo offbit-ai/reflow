@@ -61,6 +61,14 @@ async fn main() -> anyhow::Result<()> {
         "tpl_sdf_displace",
         // SDF renderer (per-frame with time inport)
         "tpl_sdf_render",
+        // Shader graph (material for SDF)
+        "tpl_shader_noise_texture",
+        "tpl_shader_color_mix",
+        "tpl_shader_principled_bsdf",
+        "tpl_shader_material_output",
+        "tpl_shader_compiler",
+        // SDF scene (accepts shade from shader graph)
+        "tpl_sdf_scene",
         // Timing
         "tpl_interval_trigger",
         "tpl_animation_time",
@@ -104,7 +112,41 @@ async fn main() -> anyhow::Result<()> {
     // Hard union — cube sits on puddle
     net.add_node("melt_blend", "tpl_sdf_union", None)?;
 
-    // Wire SDF graph
+    // ═══ SHADER GRAPH: ice material ═══
+    // Only dynamic nodes get actors. Constants go in BSDF config.
+    net.add_node("noise_mix", "tpl_shader_noise_texture", config(json!({ "scale": 5.0 })))?;
+    net.add_node("color_mix", "tpl_shader_color_mix", config(json!({
+        "mode": "mix",
+        "a": { "type": "constVec3", "c": [0.75, 0.88, 0.95] },  // ice blue
+        "b": { "type": "constVec3", "c": [0.4, 0.6, 0.8] },     // water blue
+    })))?;
+    // PrincipledBSDF — constants as config, only base_color wired dynamically
+    net.add_node("bsdf", "tpl_shader_principled_bsdf", config(json!({
+        "metallic": { "type": "constFloat", "c": 0.0 },
+        "roughness": { "type": "constFloat", "c": 0.08 },
+        "emission": { "type": "constVec3", "c": [0.1, 0.15, 0.2] },
+        "emission_strength": { "type": "constFloat", "c": 0.2 },
+        "alpha": { "type": "constFloat", "c": 0.9 },
+        "ior": { "type": "constFloat", "c": 1.31 },
+    })))?;
+    net.add_node("mat_out", "tpl_shader_material_output", None)?;
+    net.add_node("compiler", "tpl_shader_compiler", None)?;
+
+    // SDF Scene: wraps SDF + shade from shader graph
+    net.add_node("sdf_scene", "tpl_sdf_scene", config(json!({
+        "softShadows": true,
+        "shadowK": 16.0,
+        "ao": true,
+        "ambient": 0.25,
+    })))?;
+
+    // Wire shader graph: noise → color mix → BSDF → compile → SDF scene
+    net.add_connection(wire("noise_mix", "shader", "color_mix", "fac"));
+    // Ice blue ↔ water blue mixed by noise — colors as BSDF config defaults
+    net.add_connection(wire("color_mix", "shader", "bsdf", "base_color"));
+    net.add_connection(wire("bsdf", "shader", "mat_out", "surface"));
+    net.add_connection(wire("mat_out", "shader", "compiler", "shader"));
+    net.add_connection(wire("compiler", "shade", "sdf_scene", "shade"));
 
     // ═══ SDF RENDER (per-frame with time) ═══
     net.add_node("render", "tpl_sdf_render", config(json!({
@@ -165,7 +207,9 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("puddle_shape", "sdf", "puddle", "sdf"));
     net.add_connection(wire("ice_displace", "sdf", "melt_blend", "sdf_a"));
     net.add_connection(wire("puddle", "sdf", "melt_blend", "sdf_b"));
-    net.add_connection(wire("melt_blend", "sdf", "render", "sdf"));
+    // SDF → scene (injects shader graph shade function) → render
+    net.add_connection(wire("melt_blend", "sdf", "sdf_scene", "sdf"));
+    net.add_connection(wire("sdf_scene", "sdf", "render", "sdf"));
 
     // Per-frame: tick → time → render (triggers re-render each frame)
     net.add_connection(wire("tick", "trigger", "anim_time", "trigger"));
@@ -178,12 +222,15 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
 
-    // Start tick after first render completes
-    net.add_connection(wire("render", "metadata", "tick", "start"));
+    // Start tick after SDF scene is compiled (includes shade from shader graph)
+    net.add_connection(wire("sdf_scene", "stats", "tick", "start"));
 
     // Bootstrap SDF primitives
     net.add_initial(iip("ice_box", "_trigger", Message::Flow));
     net.add_initial(iip("puddle_shape", "_trigger", Message::Flow));
+    // Trigger shader graph chain
+    net.add_initial(iip("noise_mix", "scale", Message::Float(5.0)));
+    net.add_initial(iip("color_mix", "fac", Message::Flow));
 
     println!("Pipeline:");
     println!("  SdfBox + SdfPlane → SmoothUnion → SdfScene → LiveRender");

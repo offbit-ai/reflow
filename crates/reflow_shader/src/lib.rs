@@ -8,5 +8,5 @@
 pub mod codegen;
 pub mod ir;
 
-pub use codegen::compile;
+pub use codegen::{compile, compile_sdf_shade};
 pub use ir::{CompiledMaterial, MathOpType, MixMode, ShaderNode};

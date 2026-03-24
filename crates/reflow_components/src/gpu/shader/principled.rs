@@ -39,6 +39,8 @@ pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<S
     }).filter(|v| !v.is_null());
     let alpha = get_shader_ir(&payload, &config, "alpha", json!({"type": "constFloat", "c": 1.0}));
 
+    let ior_val = get_shader_ir(&payload, &config, "ior", json!({"type": "constFloat", "c": 1.5}));
+
     let mut bsdf = json!({
         "type": "principledBsdf",
         "baseColor": base_color,
@@ -47,6 +49,7 @@ pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<S
         "emission": emission,
         "emissionStrength": emission_strength,
         "alpha": alpha,
+        "ior": ior_val,
     });
     if let Some(n) = normal {
         bsdf["normal"] = n;

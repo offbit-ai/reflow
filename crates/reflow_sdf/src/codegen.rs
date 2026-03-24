@@ -471,11 +471,13 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     if settings.ao {
         shader.push_str(AO_FUNCTION);
     }
-    shader.push_str(if settings.ao {
-        SHADE_WITH_AO
+    if !settings.custom_shade_wgsl.is_empty() {
+        shader.push_str(&settings.custom_shade_wgsl);
+    } else if settings.ao {
+        shader.push_str(SHADE_WITH_AO);
     } else {
-        SHADE_NO_AO
-    });
+        shader.push_str(SHADE_NO_AO);
+    }
     shader.push_str(CAMERA_FUNCTION);
     shader.push_str(COMPUTE_ENTRY);
 

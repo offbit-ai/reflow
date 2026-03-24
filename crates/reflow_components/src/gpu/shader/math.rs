@@ -34,9 +34,9 @@ pub async fn shader_color_mix_actor(ctx: ActorContext) -> Result<HashMap<String,
     fn get_ir(payload: &HashMap<String, Message>, port: &str, default: Value) -> Value {
         if let Some(Message::Object(obj)) = payload.get(port) { obj.as_ref().clone().into() } else { default }
     }
-    let fac = get_ir(&payload, "fac", json!({"type": "constFloat", "c": 0.5}));
-    let a = get_ir(&payload, "a", json!({"type": "constVec3", "c": [0.0, 0.0, 0.0]}));
-    let b = get_ir(&payload, "b", json!({"type": "constVec3", "c": [1.0, 1.0, 1.0]}));
+    let fac = get_ir(&payload, "fac", config.get("fac").cloned().unwrap_or(json!({"type": "constFloat", "c": 0.5})));
+    let a = get_ir(&payload, "a", config.get("a").cloned().unwrap_or(json!({"type": "constVec3", "c": [0.0, 0.0, 0.0]})));
+    let b = get_ir(&payload, "b", config.get("b").cloned().unwrap_or(json!({"type": "constVec3", "c": [1.0, 1.0, 1.0]})));
     let mut out = HashMap::new();
     out.insert("shader".to_string(), Message::object(EncodableValue::from(json!({
         "type": "colorMix", "mode": mode, "fac": fac, "a": a, "b": b,

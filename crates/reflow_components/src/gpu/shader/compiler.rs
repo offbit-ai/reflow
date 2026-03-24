@@ -12,7 +12,7 @@ use std::sync::Arc;
 #[actor(
     ShaderCompilerActor,
     inports::<10>(shader),
-    outports::<1>(material, wgsl, error),
+    outports::<1>(material, wgsl, shade, error),
     state(MemoryState)
 )]
 pub async fn shader_compiler_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
@@ -60,5 +60,13 @@ pub async fn shader_compiler_actor(ctx: ActorContext) -> Result<HashMap<String, 
         "wgsl".to_string(),
         Message::String(Arc::new(compiled.fragment_wgsl)),
     );
+
+    // Also compile SDF-compatible shade function (for SDF renderer integration)
+    let sdf_shade = reflow_shader::compile_sdf_shade(&node);
+    out.insert(
+        "shade".to_string(),
+        Message::String(Arc::new(sdf_shade)),
+    );
+
     Ok(out)
 }

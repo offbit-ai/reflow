@@ -432,6 +432,176 @@ pub fn compile(root: &ShaderNode) -> CompiledMaterial {
     }
 }
 
+/// Compile a ShaderNode tree into a `fn shade(ro, rd, t) -> vec3f` WGSL function
+/// compatible with the SDF ray march renderer. The SDF renderer provides:
+/// - `ro`: ray origin (camera), `rd`: ray direction, `t`: hit distance
+/// - `calc_normal(p)`: SDF gradient normal
+/// - `sdf_scene(p)`: scene distance function
+/// - `LIGHT_DIR`, `LIGHT_COLOR`, `AMBIENT`: scene lighting constants
+/// - `soft_shadow(ro, rd, mint, maxt)`: if soft shadows enabled
+/// - `calc_ao(pos, nor)`: if AO enabled
+/// Compile a ShaderNode tree into a `fn shade(ro, rd, t) -> vec3f` WGSL string
+/// for the SDF ray march renderer. Extracts material parameters from the IR
+/// and generates a shade function using SDF-context variables.
+pub fn compile_sdf_shade(root: &ShaderNode) -> String {
+    // Extract PBR parameters from the IR tree
+    let (base_color, metallic, roughness, emission, emission_str, ior) = extract_pbr_params(root);
+
+    let mut shade = String::new();
+    shade.push_str(PBR_SDF_FUNCTIONS);
+
+    shade.push_str("fn shade(ro: vec3f, rd: vec3f, t: f32) -> vec3f {\n");
+    shade.push_str("    let p = ro + rd * t;\n");
+    shade.push_str("    let N = calc_normal(p);\n");
+    shade.push_str("    let V = -rd;\n");
+    shade.push_str("    let ao = calc_ao(p, N);\n");
+    shade.push_str("\n");
+
+    // Base color (may include noise)
+    shade.push_str(&format!("    let base_color = {};\n", base_color));
+    shade.push_str(&format!("    let metallic = {:.4};\n", metallic));
+    shade.push_str(&format!("    let roughness = {:.4};\n", roughness));
+    shade.push_str(&format!("    let emission = {} * {:.4};\n", emission, emission_str));
+
+    // Fresnel: edges reflective, center transparent
+    shade.push_str(&format!("    let ior = {:.4};\n", ior));
+    shade.push_str("    let NoV = max(dot(N, V), 0.0);\n");
+    shade.push_str("    let fresnel = pow(1.0 - NoV, 5.0);\n");
+    shade.push_str("    let F0 = pow((1.0 - ior) / (1.0 + ior), 2.0);\n");
+    shade.push_str("    let fresnel_factor = F0 + (1.0 - F0) * fresnel;\n");
+    shade.push_str("\n");
+
+    // PBR direct lighting
+    shade.push_str("    let pbr = pbr_shade_sdf(base_color, metallic, roughness, N, V, ao, emission);\n");
+
+    // Refraction through the ice volume
+    shade.push_str("    let refr_color = sdf_refract_color(p, rd, N, ior, base_color);\n");
+
+    // Blend: fresnel controls reflection vs refraction
+    shade.push_str("    let col = mix(refr_color, pbr, fresnel_factor);\n");
+
+    shade.push_str("    return col;\n");
+    shade.push_str("}\n\n");
+    shade
+}
+
+/// Extract PBR parameters from a ShaderNode IR tree as WGSL expressions
+fn extract_pbr_params(root: &ShaderNode) -> (String, f32, f32, String, f32, f32) {
+    match root {
+        ShaderNode::MaterialOutput { surface } => extract_pbr_params(surface),
+        ShaderNode::PrincipledBsdf {
+            base_color, metallic, roughness,
+            emission, emission_strength,
+            ior, ..
+        } => {
+            let bc = extract_color_expr(base_color);
+            let m = extract_float(metallic);
+            let r = extract_float(roughness);
+            let em = extract_color_expr(emission);
+            let es = extract_float(emission_strength);
+            let i = ior.as_ref().map(|n| extract_float(n)).unwrap_or(1.31);
+            (bc, m, r, em, es, i)
+        }
+        _ => ("vec3f(0.8, 0.8, 0.8)".to_string(), 0.0, 0.5, "vec3f(0.0)".to_string(), 0.0, 1.31),
+    }
+}
+
+fn extract_float(node: &ShaderNode) -> f32 {
+    match node {
+        ShaderNode::ConstFloat(v) => *v,
+        _ => 0.5,
+    }
+}
+
+fn extract_color_expr(node: &ShaderNode) -> String {
+    match node {
+        ShaderNode::ConstVec3(v) => format!("vec3f({:.4}, {:.4}, {:.4})", v[0], v[1], v[2]),
+        ShaderNode::ConstFloat(v) => format!("vec3f({:.4})", v),
+        ShaderNode::NoiseTexture { .. } => {
+            // Generate inline noise expression using world position
+            "vec3f(noise3d(p * 5.0) * 0.3 + 0.7)".to_string()
+        }
+        ShaderNode::ColorMix { fac, a, b, .. } => {
+            let fa = extract_color_expr(a);
+            let fb = extract_color_expr(b);
+            let ff = extract_color_expr(fac);
+            format!("mix({fa}, {fb}, {ff})")
+        }
+        _ => "vec3f(0.8, 0.8, 0.8)".to_string(),
+    }
+}
+
+/// PBR functions adapted for SDF renderer context (uses LIGHT_DIR/LIGHT_COLOR constants)
+const PBR_SDF_FUNCTIONS: &str = r#"
+fn D_GGX_sdf(NoH: f32, roughness: f32) -> f32 {
+    let a = roughness * roughness;
+    let a2 = a * a;
+    let d = (NoH * NoH) * (a2 - 1.0) + 1.0;
+    return a2 / (3.14159265 * d * d + 0.00001);
+}
+
+fn F_Schlick_sdf(cosTheta: f32, F0: vec3f) -> vec3f {
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+fn G_Smith_sdf(NoV: f32, NoL: f32, roughness: f32) -> f32 {
+    let r = roughness + 1.0;
+    let k = (r * r) / 8.0;
+    let g1 = NoV / (NoV * (1.0 - k) + k);
+    let g2 = NoL / (NoL * (1.0 - k) + k);
+    return g1 * g2;
+}
+
+fn pbr_shade_sdf(
+    base_color: vec3f, metallic: f32, roughness: f32,
+    N: vec3f, V: vec3f, ao: f32, emission: vec3f
+) -> vec3f {
+    let L = LIGHT_DIR;
+    let H = normalize(V + L);
+    let NoL = max(dot(N, L), 0.0);
+    let NoV = max(dot(N, V), 0.001);
+    let NoH = max(dot(N, H), 0.0);
+    let HoV = max(dot(H, V), 0.0);
+
+    let F0 = mix(vec3f(0.04), base_color, metallic);
+    let D = D_GGX_sdf(NoH, max(roughness, 0.04));
+    let G = G_Smith_sdf(NoV, NoL, max(roughness, 0.04));
+    let F = F_Schlick_sdf(HoV, F0);
+
+    let spec = (D * G * F) / (4.0 * NoV * NoL + 0.0001);
+    let kD = (vec3f(1.0) - F) * (1.0 - metallic);
+    let diffuse = kD * base_color / 3.14159265;
+
+    let direct = (diffuse + spec) * LIGHT_COLOR * NoL;
+    let ambient = vec3f(AMBIENT) * base_color * ao;
+
+    return ambient + direct + emission;
+}
+
+// Refraction: bend ray through surface, march inside, exit
+fn sdf_refract_color(p: vec3f, rd: vec3f, N: vec3f, ior: f32, base_tint: vec3f) -> vec3f {
+    let refr = refract(rd, N, 1.0 / ior);
+    if length(refr) < 0.001 { return vec3f(0.0); } // total internal reflection
+    // March a short distance inside the volume
+    var interior_p = p + refr * 0.01;
+    var total_dist = 0.0;
+    for (var i = 0u; i < 32u; i++) {
+        let d = abs(sdf_scene(interior_p));
+        if d > 0.5 { break; } // exited the object
+        total_dist += max(d, 0.005);
+        interior_p += refr * max(d, 0.005);
+    }
+    // Beer's law absorption: longer path = more tinted
+    let absorption = exp(-total_dist * 2.0);
+    // After exiting, sample the background
+    let exit_n = calc_normal(interior_p);
+    let exit_rd = refract(refr, -exit_n, ior);
+    // Background: just use a gradient based on exit direction
+    let bg = mix(vec3f(0.6, 0.7, 0.8), vec3f(0.9, 0.95, 1.0), exit_rd.y * 0.5 + 0.5);
+    return bg * absorption * base_tint;
+}
+"#;
+
 fn build_vertex_shader(needs_uv: bool, _needs_tangent: bool) -> String {
     let mut vs = String::new();
     vs.push_str(UNIFORM_STRUCTS);

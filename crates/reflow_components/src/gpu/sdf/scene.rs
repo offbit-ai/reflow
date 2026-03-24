@@ -67,12 +67,36 @@ pub async fn sdf_material_actor(context: ActorContext) -> Result<HashMap<String,
 /// Takes a root SDF and scene config, wraps into Scene node, and
 /// compiles to WGSL. Outputs the WGSL source on `wgsl` port and
 /// the IR tree on `sdf` port.
-#[actor(SdfSceneActor, inports::<10>(sdf), outports::<1>(wgsl, sdf, stats, error), state(MemoryState))]
+#[actor(SdfSceneActor, inports::<10>(sdf, shade), outports::<1>(wgsl, sdf, stats, error), state(MemoryState))]
 pub async fn sdf_scene_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
 
-    let root = parse_sdf(payload.get("sdf")).ok_or_else(|| anyhow::anyhow!("Missing sdf input"))?;
+    // Cache shade WGSL from shader graph compiler
+    if let Some(Message::String(s)) = payload.get("shade") {
+        context.pool_upsert("_scene", "shade_wgsl", serde_json::json!(s.to_string()));
+    }
+
+    // Cache SDF IR when it arrives
+    if let Some(sdf_msg) = payload.get("sdf") {
+        if let Some(root) = parse_sdf(Some(sdf_msg)) {
+            let ir_json = serde_json::to_value(&root).unwrap_or(serde_json::json!(null));
+            context.pool_upsert("_scene", "sdf_ir", ir_json);
+        }
+    }
+
+    // Read cached SDF + shade — proceed only when SDF is available
+    let cache: HashMap<String, serde_json::Value> = context.get_pool("_scene").into_iter().collect();
+    let root: SdfNode = match cache.get("sdf_ir") {
+        Some(v) if !v.is_null() => serde_json::from_value(v.clone())
+            .map_err(|e| anyhow::anyhow!("SDF IR: {}", e))?,
+        _ => return Ok(HashMap::new()),
+    };
+    let custom_shade: String = cache.get("shade_wgsl")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    eprintln!("[sdf_scene] custom_shade={} bytes", custom_shade.len());
 
     let settings = SceneSettings {
         width: config.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32,
@@ -119,6 +143,7 @@ pub async fn sdf_scene_actor(context: ActorContext) -> Result<HashMap<String, Me
             .get("ambient")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.15) as f32,
+        custom_shade_wgsl: custom_shade,
         ..Default::default()
     };
 
