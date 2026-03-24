@@ -146,6 +146,8 @@ pub async fn sdf_render_actor(context: ActorContext) -> Result<HashMap<String, M
             ])
             .unwrap_or([0.1, 0.1, 0.15]),
         time,
+        // Preserve custom shade from upstream SdfScene if present
+        custom_shade_wgsl: extract_custom_shade(&root),
         ..Default::default()
     };
 
@@ -210,6 +212,14 @@ pub async fn sdf_render_actor(context: ActorContext) -> Result<HashMap<String, M
         }))),
     );
     Ok(results)
+}
+
+/// Extract custom_shade_wgsl from an incoming SdfNode if it's a Scene with custom shade.
+fn extract_custom_shade(node: &SdfNode) -> String {
+    match node {
+        SdfNode::Scene { settings, .. } => settings.custom_shade_wgsl.clone(),
+        _ => String::new(),
+    }
 }
 
 /// Synchronous GPU render — runs on a blocking thread.
