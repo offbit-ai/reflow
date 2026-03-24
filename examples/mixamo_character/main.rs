@@ -91,6 +91,8 @@ async fn main() -> anyhow::Result<()> {
         "tpl_instance",
         "tpl_scene_graph",
         "tpl_scene_render",
+        // Compositing (layer + watermark)
+        "tpl_gpu_2d_render",
         // Flow control
         "tpl_signal",
         "tpl_subscriber",
@@ -156,6 +158,27 @@ async fn main() -> anyhow::Result<()> {
         })),
     )?;
 
+    // ═══ COMPOSITOR — scene frame as layer + watermark text ═══
+    net.add_node(
+        "composite",
+        "tpl_gpu_2d_render",
+        config(json!({
+            "width": w, "height": h, "msaa": 1,
+            "background": [0.0, 0.0, 0.0, 0.0],
+            "shapes": [
+                { "type": "image", "bounds": [0, 0, w, h], "z": 0 },
+            ],
+            "text": [{
+                "content": "Reflow + Mixamo",
+                "x": w as f64 - 155.0, "y": h as f64 - 14.0,
+                "size": 14.0,
+                "color": [1.0, 1.0, 1.0, 0.5],
+                "tracking": 0.5, "center": false,
+                "font": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            }],
+        })),
+    )?;
+
     // ═══ VIDEO ═══
     net.add_node(
         "collector",
@@ -211,8 +234,9 @@ async fn main() -> anyhow::Result<()> {
     net.add_connection(wire("scene", "scene", "render", "scene"));
     net.add_connection(wire("skin", "deformed_mesh", "render", "meshes"));
 
-    // Video output
-    net.add_connection(wire("render", "output", "collector", "frame"));
+    // Scene render → compositor (layer image) → video
+    net.add_connection(wire("render", "output", "composite", "data"));
+    net.add_connection(wire("composite", "image", "collector", "frame"));
     net.add_connection(wire("anim_time", "frame_number", "collector", "frame_number"));
     net.add_connection(wire("collector", "stream", "encoder", "stream"));
     net.add_connection(wire("encoder", "output", "save", "input"));
