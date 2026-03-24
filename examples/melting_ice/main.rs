@@ -89,17 +89,25 @@ async fn main() -> anyhow::Result<()> {
         "octaves": 3,
     })))?;
 
-    // Puddle: flat wide box translated down below the ice cube
+    // Puddle: flat disc (rounded box) + noise displacement for irregular edges
     net.add_node("puddle_box", "tpl_sdf_box", config(json!({
-        "sizeX": 1.5, "sizeY": 0.02, "sizeZ": 1.5,
+        "sizeX": 0.9, "sizeY": 0.01, "sizeZ": 0.9,
+    })))?;
+    net.add_node("puddle_round", "tpl_sdf_round", config(json!({
+        "radius": 0.3,
+    })))?;
+    net.add_node("puddle_displace", "tpl_sdf_displace", config(json!({
+        "frequency": 3.0,
+        "amplitude": 0.08,
+        "octaves": 2,
     })))?;
     net.add_node("puddle", "tpl_sdf_translate", config(json!({
-        "x": 0.0, "y": -0.52, "z": 0.0,
+        "x": 0.0, "y": -0.53, "z": 0.0,
     })))?;
 
     // Smooth union: ice melts into puddle
     net.add_node("melt_blend", "tpl_sdf_smooth_union", config(json!({
-        "k": 0.15,
+        "k": 0.12,
     })))?;
 
     // Wire SDF graph
@@ -156,10 +164,12 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ CONNECTIONS ═══
 
-    // SDF: box → round → displace → smooth_union(puddle) → render
+    // SDF: ice (box → round → displace) + puddle (box → round → displace → translate)
     net.add_connection(wire("ice_box", "sdf", "ice_round", "sdf"));
     net.add_connection(wire("ice_round", "sdf", "ice_displace", "sdf"));
-    net.add_connection(wire("puddle_box", "sdf", "puddle", "sdf"));
+    net.add_connection(wire("puddle_box", "sdf", "puddle_round", "sdf"));
+    net.add_connection(wire("puddle_round", "sdf", "puddle_displace", "sdf"));
+    net.add_connection(wire("puddle_displace", "sdf", "puddle", "sdf"));
     net.add_connection(wire("ice_displace", "sdf", "melt_blend", "sdf_a"));
     net.add_connection(wire("puddle", "sdf", "melt_blend", "sdf_b"));
     net.add_connection(wire("melt_blend", "sdf", "render", "sdf"));
