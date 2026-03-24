@@ -54,6 +54,8 @@ async fn main() -> anyhow::Result<()> {
     for tpl in [
         // SDF primitives + operations
         "tpl_sdf_box",
+        "tpl_sdf_smooth_union",
+        "tpl_sdf_translate",
         // SDF renderer (per-frame with time inport)
         "tpl_sdf_render",
         // Timing
@@ -72,8 +74,22 @@ async fn main() -> anyhow::Result<()> {
     // ═══ SDF SCENE: ice cube + water puddle ═══
 
     // Ice cube: rounded box
+    // Ice cube
     net.add_node("ice_box", "tpl_sdf_box", config(json!({
-        "sizeX": 0.3, "sizeY": 0.3, "sizeZ": 0.3,
+        "sizeX": 0.5, "sizeY": 0.5, "sizeZ": 0.5,
+    })))?;
+
+    // Puddle: flat wide box translated down below the ice cube
+    net.add_node("puddle_box", "tpl_sdf_box", config(json!({
+        "sizeX": 1.5, "sizeY": 0.02, "sizeZ": 1.5,
+    })))?;
+    net.add_node("puddle", "tpl_sdf_translate", config(json!({
+        "x": 0.0, "y": -0.52, "z": 0.0,
+    })))?;
+
+    // Smooth union: ice melts into puddle
+    net.add_node("melt_blend", "tpl_sdf_smooth_union", config(json!({
+        "k": 0.15,
     })))?;
 
     // Wire SDF graph
@@ -82,16 +98,16 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("render", "tpl_sdf_render", config(json!({
         "width": w, "height": h,
         "maxSteps": 200,
-        "fov": 45.0,
-        "cameraPosX": 1.5, "cameraPosY": 1.0, "cameraPosZ": 1.5,
-        "cameraTargetX": 0.0, "cameraTargetY": -0.1, "cameraTargetZ": 0.0,
+        "fov": 60.0,
+        "cameraPosX": 2.0, "cameraPosY": 2.0, "cameraPosZ": 2.0,
+        "cameraTargetX": 0.0, "cameraTargetY": -0.3, "cameraTargetZ": 0.0,
         "softShadows": true,
         "shadowK": 16.0,
         "ao": true,
-        "ambient": 0.35,
-        "lightDir": [0.5, 0.8, -0.4],
+        "ambient": 0.3,
+        "lightDir": [0.3, 0.7, 0.5],
         "lightColor": [1.0, 0.98, 0.95],
-        "background": [0.55, 0.58, 0.65],
+        "background": [0.65, 0.68, 0.72],
     })))?;
 
     // ═══ TIMING ═══
@@ -130,8 +146,11 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ CONNECTIONS ═══
 
-    // SDF → render directly
-    net.add_connection(wire("ice_box", "sdf", "render", "sdf"));
+    // SDF: ice box + puddle (translated flat box) → smooth union → render
+    net.add_connection(wire("puddle_box", "sdf", "puddle", "sdf"));
+    net.add_connection(wire("ice_box", "sdf", "melt_blend", "sdf_a"));
+    net.add_connection(wire("puddle", "sdf", "melt_blend", "sdf_b"));
+    net.add_connection(wire("melt_blend", "sdf", "render", "sdf"));
 
     // Per-frame: tick → time → render (triggers re-render each frame)
     net.add_connection(wire("tick", "trigger", "anim_time", "trigger"));
@@ -149,6 +168,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Bootstrap SDF primitives
     net.add_initial(iip("ice_box", "_trigger", Message::Flow));
+    net.add_initial(iip("puddle_box", "_trigger", Message::Flow));
 
     println!("Pipeline:");
     println!("  SdfBox + SdfPlane → SmoothUnion → SdfScene → LiveRender");

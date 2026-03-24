@@ -657,7 +657,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let dims = textureDimensions(output_texture);
   if gid.x >= dims.x || gid.y >= dims.y { return; }
 
-  let uv = (vec2f(f32(gid.x), f32(gid.y)) - vec2f(f32(dims.x), f32(dims.y)) * 0.5) / f32(dims.y);
+  let uv = (vec2f(f32(gid.x), f32(dims.y) - f32(gid.y)) - vec2f(f32(dims.x), f32(dims.y)) * 0.5) / f32(dims.y);
 
   let ro = u.camera_pos;
   let rd = camera_ray(uv, ro, u.camera_target, u.fov);
