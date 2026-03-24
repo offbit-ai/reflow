@@ -496,9 +496,11 @@ pub fn compile_sdf_shade(root: &ShaderNode) -> String {
     shade.push_str("        } else {\n");
     shade.push_str("            refl_col = mix(vec3f(0.7, 0.75, 0.82), vec3f(0.9, 0.93, 0.97), refl_rd.y * 0.5 + 0.5);\n");
     shade.push_str("        }\n");
-    shade.push_str("        let water_fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(N, V), 0.0), 5.0);\n");
-    shade.push_str("        let water_base = vec3f(0.6, 0.7, 0.78) * (AMBIENT + max(dot(N, LIGHT_DIR), 0.0) * 0.5);\n");
-    shade.push_str("        col = mix(water_base, refl_col, water_fresnel) * ao;\n");
+    shade.push_str("        let water_fresnel = 0.04 + 0.96 * pow(1.0 - max(dot(N, V), 0.0), 5.0);\n");
+    shade.push_str("        let water_diff = max(dot(N, LIGHT_DIR), 0.0);\n");
+    shade.push_str("        let water_spec = pow(max(dot(reflect(-LIGHT_DIR, N), V), 0.0), 64.0);\n");
+    shade.push_str("        let water_base = vec3f(0.65, 0.73, 0.82) * (0.3 + water_diff * 0.5) + vec3f(water_spec * 0.6);\n");
+    shade.push_str("        col = mix(water_base, refl_col, water_fresnel);\n");
     shade.push_str("    } else {\n");
     shade.push_str("        // Ice: fresnel blend of refraction and PBR specular\n");
     shade.push_str("        col = mix(refr_color, pbr, fresnel_factor);\n");
@@ -602,34 +604,37 @@ fn pbr_shade_sdf(
     return ambient + direct + emission;
 }
 
-// Chromatic refraction: split R/G/B at different IORs for prismatic effect
-fn sdf_refract_channel(p: vec3f, rd: vec3f, N: vec3f, ior_ch: f32) -> f32 {
+// Refraction: march through ice volume, exit out the back, sample background
+// Chromatic dispersion applied at edges via IOR offset per channel
+fn sdf_refract_channel(p: vec3f, rd: vec3f, N: vec3f, ior_ch: f32) -> vec3f {
     let refr = refract(rd, N, 1.0 / ior_ch);
-    if length(refr) < 0.001 { return 0.8; } // total internal reflection → bright
-    var interior_p = p + refr * 0.01;
-    var total_dist = 0.0;
-    for (var i = 0u; i < 24u; i++) {
-        let d = abs(sdf_scene(interior_p));
-        if d > 0.5 { break; }
-        total_dist += max(d, 0.005);
-        interior_p += refr * max(d, 0.005);
+    if length(refr) < 0.001 { return vec3f(0.85, 0.88, 0.92); }
+    // March through the volume to find the exit point
+    var pos = p + refr * 0.02;
+    var dist = 0.0;
+    for (var i = 0u; i < 40u; i++) {
+        let d = sdf_scene(pos);
+        if d > 0.01 { break; } // exited the surface
+        pos += refr * max(abs(d), 0.008);
+        dist += max(abs(d), 0.008);
     }
-    let absorption = exp(-total_dist * 0.4);
-    let exit_n = calc_normal(interior_p);
+    // Refract again at exit surface
+    let exit_n = calc_normal(pos);
     let exit_rd = refract(refr, -exit_n, ior_ch);
-    let bg = 0.8 + 0.15 * exit_rd.y;
+    // Background: bright gradient — what you see through the ice
+    let bg = mix(vec3f(0.78, 0.82, 0.88), vec3f(0.92, 0.95, 1.0), exit_rd.y * 0.5 + 0.5);
+    // Gentle absorption
+    let absorption = exp(-dist * 0.3);
     return bg * absorption;
 }
 
 fn sdf_refract_color(p: vec3f, rd: vec3f, N: vec3f, ior: f32, base_tint: vec3f) -> vec3f {
-    // Chromatic dispersion: red bends less, blue bends more
-    let ior_r = ior - 0.02;
-    let ior_g = ior;
-    let ior_b = ior + 0.02;
-    let r = sdf_refract_channel(p, rd, N, ior_r);
-    let g = sdf_refract_channel(p, rd, N, ior_g);
-    let b = sdf_refract_channel(p, rd, N, ior_b);
-    return vec3f(r, g, b) * mix(vec3f(1.0), base_tint, 0.25);
+    // Chromatic dispersion: offset IOR per channel for edge rainbow
+    let col_r = sdf_refract_channel(p, rd, N, ior - 0.03);
+    let col_g = sdf_refract_channel(p, rd, N, ior);
+    let col_b = sdf_refract_channel(p, rd, N, ior + 0.03);
+    let col = vec3f(col_r.x, col_g.y, col_b.z);
+    return col * mix(vec3f(1.0), base_tint, 0.12);
 }
 "#;
 

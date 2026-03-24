@@ -99,7 +99,7 @@ async fn main() -> anyhow::Result<()> {
     })))?;
 
     net.add_node("puddle_shape", "tpl_sdf_puddle", config(json!({
-        "radius": 1.8, "height": 0.006, "noiseFreq": 1.2, "noiseAmp": 0.6,
+        "radius": 1.8, "height": 0.002, "noiseFreq": 1.2, "noiseAmp": 0.6,
     })))?;
     net.add_node("puddle", "tpl_sdf_translate", config(json!({ "x": 0.0, "y": -0.52, "z": 0.0 })))?;
 
