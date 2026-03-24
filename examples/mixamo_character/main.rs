@@ -130,13 +130,13 @@ async fn main() -> anyhow::Result<()> {
         "tpl_animation_sampler",
         config(json!({ "loop": true })),
     )?;
-    net.add_node("skin", "tpl_skinning", config(json!({ "stride": 24 })))?;
+    net.add_node("skin", "tpl_skinning", config(json!({ "stride": 36 })))?;
 
     // ═══ SCENE ═══
     net.add_node(
         "prefab",
         "tpl_prefab",
-        config(json!({ "name": "character", "stride": 24 })),
+        config(json!({ "name": "character", "stride": 36 })),
     )?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "character_0" })))?;
     net.add_node(

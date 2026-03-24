@@ -76,9 +76,27 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
 
     let mut out = HashMap::new();
 
-    // Extract mesh geometry
-    let (vertices, normals, indices) = extract_geometry(&tree)?;
-    let (mesh_bytes, tri_to_control) = build_mesh_bytes(&vertices, &normals, &indices);
+    // Extract mesh geometry (with UVs and material indices)
+    let geom = extract_geometry(&tree)?;
+
+    // Extract embedded diffuse texture for vertex color baking
+    let textures = extract_embedded_textures(&tree);
+    let diffuse_img = textures
+        .iter()
+        .find(|(name, _)| name.contains("diffuse") || name.contains("Diffuse"))
+        .or_else(|| textures.first()) // fallback to first texture
+        .and_then(|(_, data)| {
+            image::load_from_memory(data)
+                .ok()
+                .map(|img| img.to_rgba8())
+        });
+
+    // Build mesh with vertex colors baked from diffuse texture
+    let (mesh_bytes, tri_to_control) = build_mesh_bytes_colored(
+        &geom,
+        diffuse_img.as_ref(),
+    );
+    let mesh_stride = if diffuse_img.is_some() && !geom.uvs.is_empty() { 36 } else { 24 };
     out.insert("mesh".to_string(), Message::bytes(mesh_bytes));
 
     // Extract skeleton hierarchy (includes per-bone PreRotation for animation)
@@ -96,7 +114,7 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
     );
 
     // Extract skin weights from Deformer/Cluster nodes (per control-point vertex)
-    let control_vert_count = vertices.len() / 3;
+    let control_vert_count = geom.vertices.len() / 3;
     let (cp_skin_bytes, skin_desc) =
         extract_skin_weights(&tree, control_vert_count, bone_names.len())?;
 
@@ -140,13 +158,17 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
     );
 
     // Metadata
+    let tri_vert_count = tri_to_control.len();
     out.insert(
         "metadata".to_string(),
         Message::object(EncodableValue::from(json!({
             "format": "fbx",
-            "vertices": vertices.len() / 3,
+            "vertices": geom.vertices.len() / 3,
+            "triangleVertices": tri_vert_count,
             "bones": bone_names.len(),
             "boneNames": bone_names,
+            "stride": mesh_stride,
+            "hasTexture": diffuse_img.is_some(),
         }))),
     );
 
@@ -262,7 +284,16 @@ fn collect_fbx_tree<R: std::io::Read + std::io::Seek>(
 // Geometry extraction
 // ═══════════════════════════════════════════════════════════════
 
-fn extract_geometry(tree: &FbxNode) -> Result<(Vec<f64>, Vec<f64>, Vec<i32>)> {
+struct GeometryData {
+    vertices: Vec<f64>,
+    normals: Vec<f64>,
+    indices: Vec<i32>,
+    uvs: Vec<f64>,          // flat f64 pairs (u, v)
+    uv_indices: Vec<i32>,   // per-polygon-vertex UV index (or empty if direct)
+    mat_indices: Vec<i32>,  // per-polygon material index
+}
+
+fn extract_geometry(tree: &FbxNode) -> Result<GeometryData> {
     let objects = tree
         .child("Objects")
         .ok_or_else(|| anyhow::anyhow!("No Objects node"))?;
@@ -281,14 +312,38 @@ fn extract_geometry(tree: &FbxNode) -> Result<(Vec<f64>, Vec<f64>, Vec<i32>)> {
                     .and_then(|n| n.attr_i32_arr(0))
                     .unwrap_or(&[]);
 
-                // Normals — FBX stores in LayerElementNormal/Normals
                 let normals = child
                     .child("LayerElementNormal")
                     .and_then(|n| n.child("Normals"))
                     .and_then(|n| n.attr_f64_arr(0))
                     .unwrap_or(&[]);
 
-                return Ok((verts.to_vec(), normals.to_vec(), indices.to_vec()));
+                // UV coordinates from first LayerElementUV
+                let uv_node = child.child("LayerElementUV");
+                let uvs = uv_node
+                    .and_then(|n| n.child("UV"))
+                    .and_then(|n| n.attr_f64_arr(0))
+                    .unwrap_or(&[]);
+                let uv_indices = uv_node
+                    .and_then(|n| n.child("UVIndex"))
+                    .and_then(|n| n.attr_i32_arr(0))
+                    .unwrap_or(&[]);
+
+                // Per-polygon material indices
+                let mat_indices = child
+                    .child("LayerElementMaterial")
+                    .and_then(|n| n.child("Materials"))
+                    .and_then(|n| n.attr_i32_arr(0))
+                    .unwrap_or(&[]);
+
+                return Ok(GeometryData {
+                    vertices: verts.to_vec(),
+                    normals: normals.to_vec(),
+                    indices: indices.to_vec(),
+                    uvs: uvs.to_vec(),
+                    uv_indices: uv_indices.to_vec(),
+                    mat_indices: mat_indices.to_vec(),
+                });
             }
         }
     }
@@ -296,20 +351,30 @@ fn extract_geometry(tree: &FbxNode) -> Result<(Vec<f64>, Vec<f64>, Vec<i32>)> {
     Err(anyhow::anyhow!("No Geometry/Mesh found in FBX"))
 }
 
-/// Build 24-byte stride vertex buffer: pos3 + normal3 (f32 each), triangulated.
+/// Build triangulated vertex buffer with optional vertex colors from texture.
+/// If diffuse texture + UVs are available: 36-byte stride (pos3+normal3+color3).
+/// Otherwise: 24-byte stride (pos3+normal3).
 /// Returns (bytes, tri_to_control_point_index) for skin weight expansion.
-fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> (Vec<u8>, Vec<usize>) {
+fn build_mesh_bytes_colored(
+    geom: &GeometryData,
+    diffuse_img: Option<&image::RgbaImage>,
+) -> (Vec<u8>, Vec<usize>) {
+    let vertices = &geom.vertices;
+    let normals = &geom.normals;
+    let indices = &geom.indices;
+    let has_color = diffuse_img.is_some() && !geom.uvs.is_empty();
+    let stride = if has_color { 36 } else { 24 };
+
     // FBX polygon indices: negative value marks end of polygon (bitwise NOT)
     let mut poly = Vec::new();
 
-    // FBX normals can be ByPolygonVertex (indexed by polygon-vertex order)
-    // or ByControlPoint (indexed by vertex index)
     let normals_by_polygon_vertex = normals.len() != vertices.len() && !normals.is_empty();
     let mut poly_vert_idx = 0usize;
 
     struct TriVert {
         pos_idx: usize,
         normal_idx: usize,
+        pv_idx: usize, // polygon-vertex index (for UV lookup)
     }
 
     let mut tri_verts: Vec<TriVert> = Vec::new();
@@ -320,19 +385,21 @@ fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> (Vec<
         poly_vert_idx += 1;
 
         if idx < 0 {
-            // End of polygon — triangulate with fan
             for i in 1..poly.len() - 1 {
                 tri_verts.push(TriVert {
                     pos_idx: poly[0].0,
                     normal_idx: poly[0].1,
+                    pv_idx: poly[0].1,
                 });
                 tri_verts.push(TriVert {
                     pos_idx: poly[i].0,
                     normal_idx: poly[i].1,
+                    pv_idx: poly[i].1,
                 });
                 tri_verts.push(TriVert {
                     pos_idx: poly[i + 1].0,
                     normal_idx: poly[i + 1].1,
+                    pv_idx: poly[i + 1].1,
                 });
             }
             poly.clear();
@@ -341,8 +408,9 @@ fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> (Vec<
 
     let vert_count = vertices.len() / 3;
     let normal_count = normals.len() / 3;
+    let uv_count = geom.uvs.len() / 2;
 
-    let mut bytes = Vec::with_capacity(tri_verts.len() * 24);
+    let mut bytes = Vec::with_capacity(tri_verts.len() * stride);
     let mut tri_to_control: Vec<usize> = Vec::with_capacity(tri_verts.len());
     for tv in &tri_verts {
         if tv.pos_idx < vert_count {
@@ -371,10 +439,88 @@ fn build_mesh_bytes(vertices: &[f64], normals: &[f64], indices: &[i32]) -> (Vec<
             } else {
                 bytes.extend_from_slice(&[0u8; 12]);
             }
+
+            // Vertex color from diffuse texture sampling
+            if has_color {
+                let color = if let Some(img) = diffuse_img {
+                    // Resolve UV index: UVIndex maps polygon-vertex → UV array index
+                    let uv_idx = if !geom.uv_indices.is_empty() {
+                        geom.uv_indices.get(tv.pv_idx).copied().unwrap_or(0) as usize
+                    } else {
+                        tv.pv_idx // direct mapping
+                    };
+                    if uv_idx < uv_count {
+                        let u = geom.uvs[uv_idx * 2] as f32;
+                        let v = geom.uvs[uv_idx * 2 + 1] as f32;
+                        sample_texture_at_uv(img, u, v)
+                    } else {
+                        [0.7, 0.7, 0.7]
+                    }
+                } else {
+                    [0.7, 0.7, 0.7]
+                };
+                bytes.extend_from_slice(&color[0].to_le_bytes());
+                bytes.extend_from_slice(&color[1].to_le_bytes());
+                bytes.extend_from_slice(&color[2].to_le_bytes());
+            }
         }
     }
 
     (bytes, tri_to_control)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Embedded texture extraction
+// ═══════════════════════════════════════════════════════════════
+
+/// Extract embedded textures from Video nodes. Returns (name, image_bytes) pairs.
+fn extract_embedded_textures(tree: &FbxNode) -> Vec<(String, Vec<u8>)> {
+    let mut textures = Vec::new();
+    let objects = match tree.child("Objects") {
+        Some(o) => o,
+        None => return textures,
+    };
+
+    for child in &objects.children {
+        if child.name == "Video" {
+            let name = child
+                .attr_str(1)
+                .unwrap_or("")
+                .split('\0')
+                .next()
+                .unwrap_or("")
+                .to_string();
+
+            // Look for Content child with binary data
+            if let Some(content) = child.child("Content") {
+                if let Some(AttributeValue::Binary(data)) = content.attributes.first() {
+                    if !data.is_empty() {
+                        textures.push((name, data.clone()));
+                    }
+                }
+            }
+        }
+    }
+    textures
+}
+
+/// Decode a JPEG/PNG image and sample color at UV coordinate
+fn sample_texture_at_uv(
+    img: &image::RgbaImage,
+    u: f32,
+    v: f32,
+) -> [f32; 3] {
+    let w = img.width() as f32;
+    let h = img.height() as f32;
+    // FBX UVs: u=[0,1] horizontal, v=[0,1] vertical (flip Y for image)
+    let px = ((u * w) as u32).min(img.width().saturating_sub(1));
+    let py = (((1.0 - v) * h) as u32).min(img.height().saturating_sub(1));
+    let pixel = img.get_pixel(px, py);
+    [
+        pixel[0] as f32 / 255.0,
+        pixel[1] as f32 / 255.0,
+        pixel[2] as f32 / 255.0,
+    ]
 }
 
 // ═══════════════════════════════════════════════════════════════
