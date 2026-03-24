@@ -24,6 +24,14 @@ use crate::flow_control::{
 };
 use crate::gpu::font_load::FontLoadActor;
 use crate::gpu::glyph_atlas::GlyphAtlasActor;
+use crate::gpu::shader::{
+    ShaderCheckerTextureActor, ShaderColorMixActor, ShaderColorRampActor,
+    ShaderCompilerActor, ShaderConstColorActor, ShaderConstFloatActor,
+    ShaderFresnelActor, ShaderImageTextureActor, ShaderMaterialOutputActor,
+    ShaderMathActor, ShaderNoiseTextureActor, ShaderNormalInputActor,
+    ShaderPositionInputActor, ShaderPrincipledBsdfActor, ShaderTexCoordActor,
+    ShaderTimeInputActor, ShaderVertexColorActor,
+};
 #[cfg(feature = "gpu")]
 use crate::gpu::scene_render::SceneRenderActor;
 use crate::gpu::sdf::SdfPathActor;
@@ -390,6 +398,25 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_gpu_2d_render" => Some(Arc::new(Gpu2DRenderActor::new())),
         "tpl_font_load" => Some(Arc::new(FontLoadActor::new())),
         "tpl_glyph_atlas" => Some(Arc::new(GlyphAtlasActor::new())),
+
+        // Shader Graph (node-based materials)
+        "tpl_shader_compiler" => Some(Arc::new(ShaderCompilerActor::new())),
+        "tpl_shader_principled_bsdf" => Some(Arc::new(ShaderPrincipledBsdfActor::new())),
+        "tpl_shader_material_output" => Some(Arc::new(ShaderMaterialOutputActor::new())),
+        "tpl_shader_const_float" => Some(Arc::new(ShaderConstFloatActor::new())),
+        "tpl_shader_const_color" => Some(Arc::new(ShaderConstColorActor::new())),
+        "tpl_shader_texcoord" => Some(Arc::new(ShaderTexCoordActor::new())),
+        "tpl_shader_position" => Some(Arc::new(ShaderPositionInputActor::new())),
+        "tpl_shader_normal" => Some(Arc::new(ShaderNormalInputActor::new())),
+        "tpl_shader_time" => Some(Arc::new(ShaderTimeInputActor::new())),
+        "tpl_shader_vertex_color" => Some(Arc::new(ShaderVertexColorActor::new())),
+        "tpl_shader_image_texture" => Some(Arc::new(ShaderImageTextureActor::new())),
+        "tpl_shader_noise_texture" => Some(Arc::new(ShaderNoiseTextureActor::new())),
+        "tpl_shader_checker_texture" => Some(Arc::new(ShaderCheckerTextureActor::new())),
+        "tpl_shader_math" => Some(Arc::new(ShaderMathActor::new())),
+        "tpl_shader_color_mix" => Some(Arc::new(ShaderColorMixActor::new())),
+        "tpl_shader_color_ramp" => Some(Arc::new(ShaderColorRampActor::new())),
+        "tpl_shader_fresnel" => Some(Arc::new(ShaderFresnelActor::new())),
 
         // Animation
         "tpl_skeleton" => Some(Arc::new(SkeletonActor::new())),
@@ -846,6 +873,29 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     }
     mapping.insert("tpl_font_load".to_string(), "FontLoadActor".to_string());
     mapping.insert("tpl_glyph_atlas".to_string(), "GlyphAtlasActor".to_string());
+
+    // Shader Graph
+    for (id, name) in [
+        ("tpl_shader_compiler", "ShaderCompilerActor"),
+        ("tpl_shader_principled_bsdf", "ShaderPrincipledBsdfActor"),
+        ("tpl_shader_material_output", "ShaderMaterialOutputActor"),
+        ("tpl_shader_const_float", "ShaderConstFloatActor"),
+        ("tpl_shader_const_color", "ShaderConstColorActor"),
+        ("tpl_shader_texcoord", "ShaderTexCoordActor"),
+        ("tpl_shader_position", "ShaderPositionInputActor"),
+        ("tpl_shader_normal", "ShaderNormalInputActor"),
+        ("tpl_shader_time", "ShaderTimeInputActor"),
+        ("tpl_shader_vertex_color", "ShaderVertexColorActor"),
+        ("tpl_shader_image_texture", "ShaderImageTextureActor"),
+        ("tpl_shader_noise_texture", "ShaderNoiseTextureActor"),
+        ("tpl_shader_checker_texture", "ShaderCheckerTextureActor"),
+        ("tpl_shader_math", "ShaderMathActor"),
+        ("tpl_shader_color_mix", "ShaderColorMixActor"),
+        ("tpl_shader_color_ramp", "ShaderColorRampActor"),
+        ("tpl_shader_fresnel", "ShaderFresnelActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
     mapping.insert("tpl_obj_export".to_string(), "ObjExportActor".to_string());
     mapping.insert("tpl_stl_export".to_string(), "StlExportActor".to_string());
     mapping.insert("tpl_gltf_export".to_string(), "GltfExportActor".to_string());

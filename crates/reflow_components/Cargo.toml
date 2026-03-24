@@ -63,6 +63,9 @@ gltf = "1"
 tobj = "4"
 fbxcel = "0.9"
 
+# Shader graph (node-based materials → WGSL codegen)
+reflow_shader = { path = "../reflow_shader" }
+
 # Physics (pure Rust, Wasm-safe)
 rapier3d = { version = "0.22", features = ["serde-serialize"] }
 

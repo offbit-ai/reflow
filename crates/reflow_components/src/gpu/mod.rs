@@ -17,3 +17,4 @@ pub mod scene_render;
 pub mod sdf;
 #[cfg(feature = "gpu")]
 pub mod sdf_2d;
+pub mod shader;

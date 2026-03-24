@@ -22,16 +22,14 @@ struct SceneUniforms {
     view_proj: [[f32; 4]; 4], // 64 bytes
     light_dir: [f32; 3],      // 12 bytes
     _pad0: f32,               // 4 bytes  → 80
-    ambient: f32,             // 4 bytes
-    _pad1: f32,               // 4 bytes
-    _pad2: f32,               // 4 bytes
-    _pad3: f32,               // 4 bytes  → 96
+    camera_pos: [f32; 3],     // 12 bytes
+    time: f32,                // 4 bytes  → 96
     _pad4: [f32; 4],          // 16 bytes → 112
 }
 
 #[actor(
     SceneRenderActor,
-    inports::<10>(scene, meshes, terrain_mesh, texture),
+    inports::<10>(scene, meshes, terrain_mesh, texture, material),
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
@@ -112,6 +110,12 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         }
     }
 
+    // Cache compiled material from shader graph
+    if let Some(Message::Object(obj)) = payload.get("material") {
+        let v: serde_json::Value = obj.as_ref().clone().into();
+        set_compiled_material(v);
+    }
+
     // Scene is the per-frame trigger — if missing, just cache and return
     let scene_data = match payload.get("scene") {
         Some(Message::Object(obj)) => {
@@ -146,6 +150,7 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         .unwrap_or_default();
 
     let objects_clone = objects.clone();
+    let compiled_mat = get_compiled_material();
 
     let pixels = tokio::task::spawn_blocking(move || {
         render_scene(
@@ -162,6 +167,7 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             prefab_mesh.as_deref(),
             terrain_mesh.as_deref(),
             texture_rgba.as_deref().map(|v| v.as_slice()),
+            compiled_mat.as_ref(),
         )
     })
     .await
@@ -526,6 +532,32 @@ use std::sync::OnceLock;
 static SCENE_PIPELINE_4X: OnceLock<CachedScenePipeline> = OnceLock::new();
 static SCENE_PIPELINE_1X: OnceLock<CachedScenePipeline> = OnceLock::new();
 
+/// Compiled material from shader graph (cached across frames).
+static COMPILED_MATERIAL: OnceLock<parking_lot::Mutex<Option<serde_json::Value>>> = OnceLock::new();
+
+fn get_compiled_material_cache() -> &'static parking_lot::Mutex<Option<serde_json::Value>> {
+    COMPILED_MATERIAL.get_or_init(|| parking_lot::Mutex::new(None))
+}
+
+fn set_compiled_material(mat: serde_json::Value) {
+    *get_compiled_material_cache().lock() = Some(mat);
+}
+
+fn get_compiled_material() -> Option<serde_json::Value> {
+    get_compiled_material_cache().lock().clone()
+}
+
+/// Dynamic pipeline cache — keyed by pipeline_hash from compiled material.
+struct CachedDynamicPipeline {
+    pipeline: wgpu::RenderPipeline,
+    bgl: wgpu::BindGroupLayout,
+}
+static DYNAMIC_PIPELINE_CACHE: OnceLock<parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>>> = OnceLock::new();
+
+fn get_dynamic_cache() -> &'static parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
+    DYNAMIC_PIPELINE_CACHE.get_or_init(|| parking_lot::Mutex::new(std::collections::HashMap::new()))
+}
+
 fn get_or_create_pipeline(
     device: &wgpu::Device,
     sample_count: u32,
@@ -716,8 +748,8 @@ struct Uniforms {
     view_proj: mat4x4f,
     light_dir: vec3f,
     _pad: f32,
-    ambient: f32,
-    _pad2: vec3f,
+    camera_pos: vec3f,
+    time: f32,
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -751,7 +783,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let tex_color = textureSample(diffuse_tex, diffuse_samp, uv);
     let n = normalize(in.normal);
     let diff = max(dot(n, u.light_dir), 0.0);
-    let light = u.ambient + diff * 0.8;
+    let light = 0.2 + diff * 0.8;
     let col = tex_color.rgb * light;
     return vec4f(col, 1.0);
 }
@@ -770,7 +802,8 @@ fn render_scene(
     objects: &[serde_json::Value],
     prefab_mesh: Option<&[u8]>,
     terrain_mesh: Option<&[u8]>,
-    texture_rgba: Option<&[u8]>, // [w:u32, h:u32, rgba pixels...] or None
+    texture_rgba: Option<&[u8]>,
+    compiled_material: Option<&serde_json::Value>,
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
@@ -778,15 +811,52 @@ fn render_scene(
     let device = ctx.device();
     let queue = ctx.queue();
 
-    // Check if we have a textured mesh (32-byte stride: pos3+normal3+uv2)
+    // Check rendering mode
     let mesh_stride = objects
         .first()
         .and_then(|o| o.get("meshStride"))
         .and_then(|v| v.as_u64())
         .unwrap_or(24) as usize;
-    let has_texture = texture_rgba.is_some() && mesh_stride == 32 && prefab_mesh.is_some();
+    let has_compiled_material = compiled_material.is_some() && prefab_mesh.is_some();
+    let has_texture = !has_compiled_material && texture_rgba.is_some() && mesh_stride == 32 && prefab_mesh.is_some();
 
-    let (vertex_data, vertex_count, use_textured_pipeline) = if has_texture {
+    // Render mode: 0=standard vertex-color, 1=textured, 2=PBR material
+    let render_mode: u8;
+
+    let (vertex_data, vertex_count, use_textured_pipeline) = if has_compiled_material {
+        // PBR material path: use stride from compiled material
+        let mat = compiled_material.unwrap();
+        let mat_stride = mat.get("vertexStride").and_then(|v| v.as_u64()).unwrap_or(mesh_stride as u64) as usize;
+        let mesh = prefab_mesh.unwrap();
+        let vc = mesh.len() / mat_stride.max(1);
+        let transform = objects.first().and_then(|o| o.get("transform")).cloned().unwrap_or(serde_json::json!({}));
+        let pos = transform.get("position").and_then(|p| p.as_array())
+            .map(|a| [
+                a.first().and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+            ]).unwrap_or([0.0; 3]);
+        let scl = transform.get("scale").and_then(|s| s.as_array())
+            .map(|a| [
+                a.first().and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+            ]).unwrap_or([1.0; 3]);
+        let mut transformed = Vec::with_capacity(mesh.len());
+        for i in 0..vc {
+            let off = i * mat_stride;
+            let px = f32::from_le_bytes(mesh[off..off+4].try_into().unwrap());
+            let py = f32::from_le_bytes(mesh[off+4..off+8].try_into().unwrap());
+            let pz = f32::from_le_bytes(mesh[off+8..off+12].try_into().unwrap());
+            let tp = transform_pos([px, py, pz], pos, scl);
+            transformed.extend_from_slice(&tp[0].to_le_bytes());
+            transformed.extend_from_slice(&tp[1].to_le_bytes());
+            transformed.extend_from_slice(&tp[2].to_le_bytes());
+            transformed.extend_from_slice(&mesh[off+12..off+mat_stride]);
+        }
+        render_mode = 2;
+        (transformed, vc, false)
+    } else if has_texture {
         // Textured path: pass mesh data as-is (32-byte stride: pos3+normal3+uv2)
         let mesh = prefab_mesh.unwrap();
         let vc = mesh.len() / 32;
@@ -821,6 +891,7 @@ fn render_scene(
             // Copy normal (12 bytes) + UV (8 bytes) as-is
             transformed.extend_from_slice(&mesh[off+12..off+32]);
         }
+        render_mode = 1;
         (transformed, vc, true)
     } else {
         // Standard path: build colored vertex buffer (36-byte stride)
@@ -829,6 +900,7 @@ fn render_scene(
             return Ok(vec![30; (width * height * 4) as usize]);
         }
         let vc = all_vertices.len() / 9;
+        render_mode = 0;
         (bytemuck::cast_slice(&all_vertices).to_vec(), vc, false)
     };
 
@@ -853,10 +925,8 @@ fn render_scene(
         view_proj,
         light_dir: [0.577, 0.577, -0.577],
         _pad0: 0.0,
-        ambient: 0.2,
-        _pad1: 0.0,
-        _pad2: 0.0,
-        _pad3: 0.0,
+        camera_pos: cam_pos,
+        time: 0.0,
         _pad4: [0.0; 4],
     };
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -922,7 +992,106 @@ fn render_scene(
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-    if use_textured_pipeline {
+    if render_mode == 2 {
+        // ─── PBR material rendering path (compiled shader graph) ───
+        let mat = compiled_material.unwrap();
+        let vert_wgsl = mat.get("vertexWgsl").and_then(|v| v.as_str()).unwrap_or("");
+        let frag_wgsl = mat.get("fragmentWgsl").and_then(|v| v.as_str()).unwrap_or("");
+        let pipeline_hash = mat.get("pipelineHash").and_then(|v| v.as_u64()).unwrap_or(0);
+        let mat_stride = mat.get("vertexStride").and_then(|v| v.as_u64()).unwrap_or(24) as u64;
+        let has_uv = mat_stride >= 32;
+
+        // Get or create pipeline from dynamic cache
+        let mut dyn_cache = get_dynamic_cache().lock();
+        if !dyn_cache.contains_key(&pipeline_hash) {
+            let vs_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("PBR Vertex"),
+                source: wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed(vert_wgsl)),
+            });
+            let fs_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("PBR Fragment"),
+                source: wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed(frag_wgsl)),
+            });
+            let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: None,
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                    count: None,
+                }],
+            });
+            let mut attrs = vec![
+                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
+                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
+            ];
+            if has_uv {
+                attrs.push(wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x2, offset: 24, shader_location: 2 });
+            }
+            let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("PBR Pipeline"),
+                layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: None, bind_group_layouts: &[&bgl], push_constant_ranges: &[],
+                })),
+                vertex: wgpu::VertexState {
+                    module: &vs_module, entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[wgpu::VertexBufferLayout {
+                        array_stride: mat_stride,
+                        step_mode: wgpu::VertexStepMode::Vertex,
+                        attributes: &attrs,
+                    }],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &fs_module, entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                        blend: Some(wgpu::BlendState::REPLACE),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: wgpu::TextureFormat::Depth32Float,
+                    depth_write_enabled: true, depth_compare: wgpu::CompareFunction::Less,
+                    stencil: wgpu::StencilState::default(), bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState { count: sample_count, mask: !0, alpha_to_coverage_enabled: false },
+                multiview: None, cache: None,
+            });
+            dyn_cache.insert(pipeline_hash, CachedDynamicPipeline { pipeline, bgl });
+        }
+        let cached = dyn_cache.get(&pipeline_hash).unwrap();
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None, layout: &cached.bgl,
+            entries: &[wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() }],
+        });
+        {
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("PBR Material Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &color_view,
+                    resolve_target: if sample_count > 1 { Some(&resolve_view) } else { None },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: clear_color[0], g: clear_color[1], b: clear_color[2], a: 1.0 }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &depth_view,
+                    depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None, occlusion_query_set: None,
+            });
+            pass.set_pipeline(&cached.pipeline);
+            pass.set_bind_group(0, &bind_group, &[]);
+            pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            pass.draw(0..vertex_count as u32, 0..1);
+        }
+        drop(dyn_cache);
+    } else if use_textured_pipeline {
         // ─── Textured rendering path ───
         let cached_pipe = get_or_create_textured_pipeline(device, sample_count);
 
@@ -1236,8 +1405,8 @@ struct Uniforms {
     view_proj: mat4x4f,
     light_dir: vec3f,
     _pad: f32,
-    ambient: f32,
-    _pad2: vec3f,
+    camera_pos: vec3f,
+    time: f32,
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -1283,7 +1452,7 @@ fn procedural_pattern(p: vec3f, base: vec3f) -> vec3f {
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let n = normalize(in.normal);
     let diff = max(dot(n, u.light_dir), 0.0);
-    let light = u.ambient + diff * 0.8;
+    let light = 0.2 + diff * 0.8;
     let patterned = procedural_pattern(in.world_pos, in.color);
     let col = patterned * light;
     return vec4f(col, 1.0);

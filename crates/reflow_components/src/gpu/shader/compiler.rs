@@ -1,0 +1,64 @@
+//! Shader Compiler — receives ShaderNode IR tree and generates WGSL material.
+
+use crate::{Actor, ActorBehavior, Message, Port};
+use actor_macro::actor;
+use anyhow::{Error, Result};
+use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_shader::ir::ShaderNode;
+use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::sync::Arc;
+
+#[actor(
+    ShaderCompilerActor,
+    inports::<10>(shader),
+    outports::<1>(material, wgsl, error),
+    state(MemoryState)
+)]
+pub async fn shader_compiler_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let payload = ctx.get_payload();
+
+    let ir_value = match payload.get("shader") {
+        Some(Message::Object(obj)) => {
+            let v: Value = obj.as_ref().clone().into();
+            v
+        }
+        _ => return Ok(HashMap::new()),
+    };
+
+    // Deserialize IR tree
+    let node: ShaderNode = match serde_json::from_value(ir_value.clone()) {
+        Ok(n) => n,
+        Err(e) => {
+            let mut out = HashMap::new();
+            out.insert(
+                "error".to_string(),
+                Message::Error(format!("Shader IR parse error: {}", e).into()),
+            );
+            return Ok(out);
+        }
+    };
+
+    // Compile to WGSL
+    let compiled = reflow_shader::compile(&node);
+
+    // Output compiled material as JSON (scene render reads this)
+    let mat_json = json!({
+        "vertexWgsl": compiled.vertex_wgsl,
+        "fragmentWgsl": compiled.fragment_wgsl,
+        "vertexStride": compiled.vertex_stride,
+        "textureSlots": compiled.texture_slots,
+        "pipelineHash": compiled.pipeline_hash,
+    });
+
+    let mut out = HashMap::new();
+    out.insert(
+        "material".to_string(),
+        Message::object(EncodableValue::from(mat_json)),
+    );
+    out.insert(
+        "wgsl".to_string(),
+        Message::String(Arc::new(compiled.fragment_wgsl)),
+    );
+    Ok(out)
+}
