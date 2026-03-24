@@ -457,53 +457,48 @@ pub fn compile_sdf_shade(root: &ShaderNode) -> String {
     shade.push_str("    let ao = calc_ao(p, N);\n");
     shade.push_str("\n");
 
-    // Base color (may include noise)
     shade.push_str(&format!("    let base_color = {};\n", base_color));
-    shade.push_str(&format!("    let metallic = {:.4};\n", metallic));
     shade.push_str(&format!("    let roughness = {:.4};\n", roughness));
-    shade.push_str(&format!("    let emission = {} * {:.4};\n", emission, emission_str));
-
-    // Fresnel: edges reflective, center transparent
     shade.push_str(&format!("    let ior = {:.4};\n", ior));
-    shade.push_str("    let NoV = max(dot(N, V), 0.0);\n");
-    shade.push_str("    let fresnel = pow(1.0 - NoV, 5.0);\n");
-    shade.push_str("    let F0 = pow((1.0 - ior) / (1.0 + ior), 2.0);\n");
-    shade.push_str("    let fresnel_factor = F0 + (1.0 - F0) * fresnel;\n");
-    shade.push_str("\n");
 
-    // Detect puddle vs ice: puddle is flat (normal nearly vertical, position low)
-    shade.push_str("    let is_puddle = N.y > 0.9 && p.y < -0.4;\n");
-    shade.push_str("\n");
-
-    // PBR direct lighting
-    shade.push_str("    let pbr = pbr_shade_sdf(base_color, metallic, roughness, N, V, ao, emission);\n");
-
-    // Refraction through the ice volume (only for non-puddle surfaces)
-    shade.push_str("    let refr_color = sdf_refract_color(p, rd, N, ior, base_color);\n");
-
-    // Reflection for puddle: reflect the ray and sample the scene
+    // Detect puddle vs ice
+    shade.push_str("    let is_puddle = N.y > 0.85 && p.y < -0.4;\n");
     shade.push_str("    var col: vec3f;\n");
+    shade.push_str("\n");
+
     shade.push_str("    if is_puddle {\n");
-    shade.push_str("        // Glossy water surface: reflect ray, march to find reflected object\n");
+    // ── PUDDLE: wet reflective surface ──
     shade.push_str("        let refl_rd = reflect(rd, N);\n");
     shade.push_str("        let refl_t = ray_march(p + N * 0.02, refl_rd);\n");
     shade.push_str("        var refl_col: vec3f;\n");
     shade.push_str("        if refl_t > 0.0 {\n");
     shade.push_str("            let rp = p + N * 0.02 + refl_rd * refl_t;\n");
     shade.push_str("            let rn = calc_normal(rp);\n");
-    shade.push_str("            let rdiff = max(dot(rn, LIGHT_DIR), 0.0);\n");
-    shade.push_str("            refl_col = base_color * (AMBIENT + rdiff * 0.7);\n");
+    shade.push_str("            refl_col = vec3f(0.8, 0.85, 0.9) * (0.3 + max(dot(rn, LIGHT_DIR), 0.0) * 0.6);\n");
     shade.push_str("        } else {\n");
-    shade.push_str("            refl_col = mix(vec3f(0.7, 0.75, 0.82), vec3f(0.9, 0.93, 0.97), refl_rd.y * 0.5 + 0.5);\n");
+    shade.push_str("            refl_col = mix(vec3f(0.7, 0.75, 0.82), vec3f(0.92, 0.94, 0.97), refl_rd.y * 0.5 + 0.5);\n");
     shade.push_str("        }\n");
-    shade.push_str("        let water_fresnel = 0.04 + 0.96 * pow(1.0 - max(dot(N, V), 0.0), 5.0);\n");
-    shade.push_str("        let water_diff = max(dot(N, LIGHT_DIR), 0.0);\n");
-    shade.push_str("        let water_spec = pow(max(dot(reflect(-LIGHT_DIR, N), V), 0.0), 64.0);\n");
-    shade.push_str("        let water_base = vec3f(0.65, 0.73, 0.82) * (0.3 + water_diff * 0.5) + vec3f(water_spec * 0.6);\n");
-    shade.push_str("        col = mix(water_base, refl_col, water_fresnel);\n");
+    shade.push_str("        let wf = 0.15 + 0.85 * pow(1.0 - max(dot(N, -rd), 0.0), 3.0);\n");
+    shade.push_str("        let water_spec = pow(max(dot(reflect(-LIGHT_DIR, N), -rd), 0.0), 128.0);\n");
+    shade.push_str("        let water_base = vec3f(0.68, 0.74, 0.82) * (0.35 + max(dot(N, LIGHT_DIR), 0.0) * 0.4);\n");
+    shade.push_str("        col = mix(water_base, refl_col, wf) + vec3f(water_spec * 0.8);\n");
+
     shade.push_str("    } else {\n");
-    shade.push_str("        // Ice: fresnel blend of refraction and PBR specular\n");
-    shade.push_str("        col = mix(refr_color, pbr, fresnel_factor);\n");
+    // ── ICE: mostly transparent with internal scattering + specular ──
+    shade.push_str("        let refr = sdf_refract_color(p, rd, N, ior, base_color);\n");
+    shade.push_str("        let NoV = max(dot(N, -rd), 0.0);\n");
+    shade.push_str("        let fresnel = 0.04 + 0.96 * pow(1.0 - NoV, 5.0);\n");
+    shade.push_str("        // Sharp specular\n");
+    shade.push_str("        let H = normalize(LIGHT_DIR - rd);\n");
+    shade.push_str("        let spec = pow(max(dot(N, H), 0.0), 128.0) * 1.5;\n");
+    shade.push_str("        // Slight diffuse wrap for translucency\n");
+    shade.push_str("        let diff = max(dot(N, LIGHT_DIR), 0.0);\n");
+    shade.push_str("        let wrap = (dot(N, LIGHT_DIR) + 0.5) / 1.5;\n");
+    shade.push_str("        let ice_sss = base_color * max(wrap, 0.0) * 0.3;\n");
+    shade.push_str("        // Reflection at edges\n");
+    shade.push_str("        let refl_col = mix(vec3f(0.7, 0.78, 0.86), vec3f(0.92, 0.95, 0.98), N.y * 0.5 + 0.5);\n");
+    shade.push_str("        // Combine: refraction + SSS glow + fresnel reflection + specular\n");
+    shade.push_str("        col = mix(refr + ice_sss, refl_col, fresnel) * ao + vec3f(spec);\n");
     shade.push_str("    }\n");
 
     shade.push_str("    return col;\n");
@@ -608,23 +603,30 @@ fn pbr_shade_sdf(
 // Chromatic dispersion applied at edges via IOR offset per channel
 fn sdf_refract_channel(p: vec3f, rd: vec3f, N: vec3f, ior_ch: f32) -> vec3f {
     let refr = refract(rd, N, 1.0 / ior_ch);
-    if length(refr) < 0.001 { return vec3f(0.85, 0.88, 0.92); }
-    // March through the volume to find the exit point
+    if length(refr) < 0.001 { return BG_COLOR; }
+    // March through ice volume to exit point
     var pos = p + refr * 0.02;
     var dist = 0.0;
-    for (var i = 0u; i < 40u; i++) {
+    for (var i = 0u; i < 30u; i++) {
         let d = sdf_scene(pos);
-        if d > 0.01 { break; } // exited the surface
+        if d > 0.01 { break; }
         pos += refr * max(abs(d), 0.008);
         dist += max(abs(d), 0.008);
     }
-    // Refract again at exit surface
     let exit_n = calc_normal(pos);
     let exit_rd = refract(refr, -exit_n, ior_ch);
-    // Background: bright gradient — what you see through the ice
-    let bg = mix(vec3f(0.78, 0.82, 0.88), vec3f(0.92, 0.95, 1.0), exit_rd.y * 0.5 + 0.5);
-    // Gentle absorption
-    let absorption = exp(-dist * 0.3);
+    // March the exit ray to find what's BEHIND the ice (puddle, ground, etc.)
+    let behind_t = ray_march(pos + exit_rd * 0.03, exit_rd);
+    var bg: vec3f;
+    if behind_t > 0.0 {
+        let bp = pos + exit_rd * 0.03 + exit_rd * behind_t;
+        let bn = calc_normal(bp);
+        let bd = max(dot(bn, LIGHT_DIR), 0.0);
+        bg = vec3f(0.72, 0.78, 0.85) * (AMBIENT + bd * 0.6);
+    } else {
+        bg = BG_COLOR;
+    }
+    let absorption = exp(-dist * 0.5);
     return bg * absorption;
 }
 
