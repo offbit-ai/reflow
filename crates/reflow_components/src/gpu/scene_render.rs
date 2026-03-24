@@ -79,7 +79,7 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         config.get("bgB").and_then(|v| v.as_f64()).unwrap_or(0.15),
     ];
 
-    // Cache meshes in state (they arrive once, scene arrives per-frame)
+    // Cache meshes in state (updated every frame for animated meshes)
     if let Some(Message::Bytes(b)) = payload.get("meshes") {
         use base64::Engine;
         ctx.pool_upsert(

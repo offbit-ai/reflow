@@ -902,20 +902,20 @@ fn extract_skin_weights(
             }
         }
 
-        // Map Cluster → Model (bone) via connections: Cluster → Deformer → Model
-        // Actually: Cluster (SubDeformer) is connected OO to Model (the bone it deforms toward)
+        // Collect all Cluster IDs
+        let cluster_ids: Vec<i64> = objects.children.iter()
+            .filter(|c| c.name == "Deformer" && c.attr_str(2) == Some("Cluster"))
+            .filter_map(|c| c.attr_i64(0))
+            .collect();
+
+        // Map Cluster → Model (bone) via connections
+        // FBX connection: Model(bone) is CHILD, Cluster is PARENT
+        let cluster_id_set: std::collections::HashSet<i64> = cluster_ids.iter().copied().collect();
         for &(child_id, parent_id) in &conn_oo {
-            // Check if child is a Cluster/SubDeformer
-            if let Some(bone_name) = model_ids.get(&parent_id) {
-                if let Some(&bi) = model_name_to_idx.get(bone_name) {
-                    // Check if child_id is a SubDeformer node
-                    for obj in &objects.children {
-                        if obj.name == "Deformer"
-                            && obj.attr_i64(0) == Some(child_id)
-                            && obj.attr_str(2) == Some("Cluster")
-                        {
-                            cluster_to_bone.insert(child_id, bi);
-                        }
+            if let Some(bone_name) = model_ids.get(&child_id) {
+                if cluster_id_set.contains(&parent_id) {
+                    if let Some(&bi) = model_name_to_idx.get(bone_name) {
+                        cluster_to_bone.insert(parent_id, bi);
                     }
                 }
             }
@@ -952,9 +952,16 @@ fn extract_skin_weights(
         }
     }
 
-    // Normalize and truncate to max_influences per vertex
+    // Merge duplicate bone entries, normalize, and truncate to max_influences
     let mut skin_bytes = Vec::with_capacity(vertex_count * max_influences * 6);
     for vw in &mut vert_weights {
+        // Merge weights for the same bone index
+        let mut merged: HashMap<u16, f32> = HashMap::new();
+        for &(bi, w) in vw.iter() {
+            *merged.entry(bi).or_insert(0.0) += w;
+        }
+        *vw = merged.into_iter().collect();
+
         // Sort by weight descending, keep top max_influences
         vw.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         vw.truncate(max_influences);
@@ -1022,16 +1029,17 @@ fn extract_inverse_bind_matrices(tree: &FbxNode, bone_count: usize) -> Result<Ve
             }
         }
 
+        // Collect Cluster IDs and map to bones (Model is CHILD, Cluster is PARENT in FBX connections)
+        let cluster_id_set: std::collections::HashSet<i64> = objects.children.iter()
+            .filter(|c| c.name == "Deformer" && c.attr_str(2) == Some("Cluster"))
+            .filter_map(|c| c.attr_i64(0))
+            .collect();
+
         let mut cluster_to_bone: HashMap<i64, usize> = HashMap::new();
         for &(child_id, parent_id) in &conn_oo {
-            if let Some(&bi) = model_ids.get(&parent_id) {
-                for obj in &objects.children {
-                    if obj.name == "Deformer"
-                        && obj.attr_i64(0) == Some(child_id)
-                        && obj.attr_str(2) == Some("Cluster")
-                    {
-                        cluster_to_bone.insert(child_id, bi);
-                    }
+            if let Some(&bi) = model_ids.get(&child_id) {
+                if cluster_id_set.contains(&parent_id) {
+                    cluster_to_bone.insert(parent_id, bi);
                 }
             }
         }
@@ -1045,19 +1053,17 @@ fn extract_inverse_bind_matrices(tree: &FbxNode, bone_count: usize) -> Result<Ve
                     None => continue,
                 };
 
-                // TransformLink is the bone's world transform at bind pose
+                // TransformLink is the bone's global bind pose transform
                 // The inverse bind matrix = inverse(TransformLink)
                 if let Some(tl) = child.child("TransformLink") {
                     if let Some(arr) = tl.attr_f64_arr(0) {
                         if arr.len() >= 16 {
-                            // FBX stores row-major 4x4, convert to column-major f32
+                            // FBX row-major layout matches our flat column-major convention
+                            // (both put translation at indices 12,13,14)
                             let mut m = [0f32; 16];
-                            for r in 0..4 {
-                                for c in 0..4 {
-                                    m[c * 4 + r] = arr[r * 4 + c] as f32;
-                                }
+                            for i in 0..16 {
+                                m[i] = arr[i] as f32;
                             }
-                            // Invert the matrix
                             if let Some(inv) = invert_4x4(&m) {
                                 matrices[bi] = inv;
                             }
@@ -1264,6 +1270,25 @@ mod tests {
                 if let Some(Message::Object(sd)) = out.get("skin_descriptor") {
                     let v: Value = sd.as_ref().clone().into();
                     println!("Skin: {}", serde_json::to_string(&v).unwrap());
+                }
+
+                // Print skin weight samples from various body parts
+                if let Some(Message::Bytes(skin)) = out.get("skin") {
+                    let stride = 24; // 4 influences × 6 bytes
+                    let total = skin.len() / stride;
+                    println!("Skin weight samples ({} total):", total);
+                    for &vi in &[0, 100, total/4, total/2, total*3/4, total-1] {
+                        if vi >= total { continue; }
+                        let off = vi * stride;
+                        print!("  v[{}]: ", vi);
+                        for j in 0..4 {
+                            let w_off = off + j * 6;
+                            let bi = u16::from_le_bytes([skin[w_off], skin[w_off + 1]]);
+                            let w = f32::from_le_bytes(skin[w_off + 2..w_off + 6].try_into().unwrap());
+                            if w > 0.001 { print!("b{}={:.3} ", bi, w); }
+                        }
+                        println!();
+                    }
                 }
             }
             Err(e) => {

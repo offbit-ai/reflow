@@ -142,15 +142,16 @@ async fn main() -> anyhow::Result<()> {
         "tpl_scene_graph",
         config(json!({ "name": "character_scene", "expectedObjects": 1 })),
     )?;
-    // Camera: character is ~186cm tall, center at Y≈90, extends ±82 on X
+    // Camera: Mixamo character ~186cm tall (cm units), center at Y≈90
     net.add_node(
         "render",
         "tpl_scene_render",
         config(json!({
             "width": w, "height": h,
-            "cameraPosX": 0.0, "cameraPosY": 90.0, "cameraPosZ": 400.0,
-            "cameraTargetX": 0.0, "cameraTargetY": 90.0, "cameraTargetZ": 0.0,
-            "fov": 30.0, "msaa": 1,
+            "cameraPosX": 150.0, "cameraPosY": 100.0, "cameraPosZ": 350.0,
+            "cameraTargetX": 0.0, "cameraTargetY": 80.0, "cameraTargetZ": 0.0,
+            "fov": 45.0, "msaa": 1,
+            "near": 1.0, "far": 5000.0,
             "bgR": 0.12, "bgG": 0.12, "bgB": 0.16,
         })),
     )?;
