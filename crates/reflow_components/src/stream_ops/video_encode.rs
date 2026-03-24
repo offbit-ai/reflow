@@ -92,7 +92,7 @@ fn stream_encode(
                     let config = EncoderConfig::new()
                         .set_bitrate_bps(bitrate_kbps * 1000)
                         .max_frame_rate(fps as f32)
-                        .rate_control_mode(openh264::encoder::RateControlMode::Bufferbased);
+                        .rate_control_mode(openh264::encoder::RateControlMode::Quality);
                     let api = openh264::OpenH264API::from_source();
                     encoder = Some(
                         Encoder::with_api_config(api, config)

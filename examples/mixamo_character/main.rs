@@ -191,7 +191,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node(
         "encoder",
         "tpl_video_encoder",
-        config(json!({ "fps": fps, "bitrate": 8000 })),
+        config(json!({ "fps": fps, "bitrate": 20000 })),
     )?;
     net.add_node(
         "save",
