@@ -93,25 +93,26 @@ async fn main() -> anyhow::Result<()> {
     // Puddle: flattened sphere + heavy noise = blobby organic water splat
     // Puddle: thin rounded boxes smooth-unioned = blobby water splat
     // Central disc (wide, paper thin)
-    net.add_node("blob_c", "tpl_sdf_box", config(json!({ "sizeX": 0.7, "sizeY": 0.005, "sizeZ": 0.7 })))?;
-    net.add_node("blob_c_r", "tpl_sdf_round", config(json!({ "radius": 0.3 })))?;
+    // Round radius adds to ALL dimensions including Y — keep it tiny
+    net.add_node("blob_c", "tpl_sdf_box", config(json!({ "sizeX": 0.7, "sizeY": 0.001, "sizeZ": 0.7 })))?;
+    net.add_node("blob_c_r", "tpl_sdf_round", config(json!({ "radius": 0.02 })))?;
     // Right lobe
-    net.add_node("blob_r", "tpl_sdf_box", config(json!({ "sizeX": 0.4, "sizeY": 0.005, "sizeZ": 0.25 })))?;
-    net.add_node("blob_r_r", "tpl_sdf_round", config(json!({ "radius": 0.2 })))?;
+    net.add_node("blob_r", "tpl_sdf_box", config(json!({ "sizeX": 0.4, "sizeY": 0.001, "sizeZ": 0.25 })))?;
+    net.add_node("blob_r_r", "tpl_sdf_round", config(json!({ "radius": 0.02 })))?;
     net.add_node("blob_r_t", "tpl_sdf_translate", config(json!({ "x": 0.7, "y": 0.0, "z": 0.15 })))?;
     // Left-back lobe
-    net.add_node("blob_l", "tpl_sdf_box", config(json!({ "sizeX": 0.3, "sizeY": 0.005, "sizeZ": 0.35 })))?;
-    net.add_node("blob_l_r", "tpl_sdf_round", config(json!({ "radius": 0.2 })))?;
+    net.add_node("blob_l", "tpl_sdf_box", config(json!({ "sizeX": 0.3, "sizeY": 0.001, "sizeZ": 0.35 })))?;
+    net.add_node("blob_l_r", "tpl_sdf_round", config(json!({ "radius": 0.02 })))?;
     net.add_node("blob_l_t", "tpl_sdf_translate", config(json!({ "x": -0.55, "y": 0.0, "z": -0.5 })))?;
     // Front lobe
-    net.add_node("blob_f", "tpl_sdf_box", config(json!({ "sizeX": 0.2, "sizeY": 0.005, "sizeZ": 0.3 })))?;
-    net.add_node("blob_f_r", "tpl_sdf_round", config(json!({ "radius": 0.15 })))?;
+    net.add_node("blob_f", "tpl_sdf_box", config(json!({ "sizeX": 0.2, "sizeY": 0.001, "sizeZ": 0.3 })))?;
+    net.add_node("blob_f_r", "tpl_sdf_round", config(json!({ "radius": 0.02 })))?;
     net.add_node("blob_f_t", "tpl_sdf_translate", config(json!({ "x": 0.15, "y": 0.0, "z": 0.7 })))?;
-    // Merge lobes with smooth union for organic edges
-    net.add_node("puddle_01", "tpl_sdf_smooth_union", config(json!({ "k": 0.15 })))?;
-    net.add_node("puddle_012", "tpl_sdf_smooth_union", config(json!({ "k": 0.15 })))?;
-    net.add_node("puddle_all", "tpl_sdf_smooth_union", config(json!({ "k": 0.15 })))?;
-    // Position at cube base
+    // Smooth union k also adds thickness — keep small
+    net.add_node("puddle_01", "tpl_sdf_smooth_union", config(json!({ "k": 0.06 })))?;
+    net.add_node("puddle_012", "tpl_sdf_smooth_union", config(json!({ "k": 0.06 })))?;
+    net.add_node("puddle_all", "tpl_sdf_smooth_union", config(json!({ "k": 0.06 })))?;
+    // Position just below cube base
     net.add_node("puddle", "tpl_sdf_translate", config(json!({ "x": 0.0, "y": -0.52, "z": 0.0 })))?;
 
     // Hard union — cube sits on puddle
