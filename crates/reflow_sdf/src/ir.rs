@@ -64,6 +64,14 @@ pub enum SdfPrimitive {
     InfRepeat {
         spacing: [f32; 3],
     },
+    /// Flat blobby puddle — 2D noise-modulated disc, perfectly flat in Y.
+    /// radius: base XZ radius, height: Y thickness, noise_freq/noise_amp: edge irregularity
+    Puddle {
+        radius: f32,
+        height: f32,
+        noise_freq: f32,
+        noise_amp: f32,
+    },
 }
 
 // ─── Operations ──────────────────────────────────────────────────────
@@ -382,6 +390,13 @@ impl SdfNode {
     pub fn plane(normal: [f32; 3], offset: f32) -> Self {
         SdfNode::Primitive {
             shape: SdfPrimitive::Plane { normal, offset },
+            material: None,
+        }
+    }
+
+    pub fn puddle(radius: f32, height: f32, noise_freq: f32, noise_amp: f32) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Puddle { radius, height, noise_freq, noise_amp },
             material: None,
         }
     }

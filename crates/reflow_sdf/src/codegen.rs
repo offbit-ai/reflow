@@ -208,6 +208,14 @@ impl CodegenContext {
             SdfPrimitive::InfRepeat { spacing } =>
                 format!("length({p} - round({p} / vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}))",
                     spacing[0], spacing[1], spacing[2], spacing[0], spacing[1], spacing[2], p = pos),
+            SdfPrimitive::Puddle { radius, height, noise_freq, noise_amp } => {
+                // 2D noise on XZ modulates the radius, Y is clamped flat
+                self.uses_noise = true;
+                format!(
+                    "max(length({p}.xz) - ({r} + {a} * (noise3d(vec3f({p}.xz * {f}, 0.0)) * 2.0 - 1.0 + noise3d(vec3f({p}.xz * {f} * 2.3, 5.0)) * 0.5)), abs({p}.y) - {h})",
+                    p = pos, r = radius, h = height, f = noise_freq, a = noise_amp
+                )
+            }
         };
         self.lines.push(format!("  let {} = {};", var, expr));
         var

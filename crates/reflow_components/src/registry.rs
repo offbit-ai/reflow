@@ -43,7 +43,7 @@ use crate::gpu::sdf::SdfPathActor;
 use crate::gpu::sdf::{MeshToSdfActor, SdfLiveRenderActor, SdfMarchingCubesActor, SdfRenderActor};
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
-    SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor,
+    SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor, SdfPuddleActor,
     SdfRepeatActor, SdfRotateActor, SdfRoundActor, SdfScaleActor, SdfSceneActor, SdfShellActor,
     SdfSmoothDifferenceActor, SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor,
     SdfTorusActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
@@ -365,6 +365,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_capsule" => Some(Arc::new(SdfCapsuleActor::new())),
         "tpl_sdf_cone" => Some(Arc::new(SdfConeActor::new())),
         "tpl_sdf_plane" => Some(Arc::new(SdfPlaneActor::new())),
+        "tpl_sdf_puddle" => Some(Arc::new(SdfPuddleActor::new())),
         "tpl_sdf_union" => Some(Arc::new(SdfUnionActor::new())),
         "tpl_sdf_intersection" => Some(Arc::new(SdfIntersectionActor::new())),
         "tpl_sdf_difference" => Some(Arc::new(SdfDifferenceActor::new())),
@@ -854,6 +855,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_sdf_capsule", "SdfCapsuleActor"),
         ("tpl_sdf_cone", "SdfConeActor"),
         ("tpl_sdf_plane", "SdfPlaneActor"),
+        ("tpl_sdf_puddle", "SdfPuddleActor"),
         ("tpl_sdf_union", "SdfUnionActor"),
         ("tpl_sdf_intersection", "SdfIntersectionActor"),
         ("tpl_sdf_difference", "SdfDifferenceActor"),

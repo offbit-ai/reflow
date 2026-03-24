@@ -104,3 +104,13 @@ pub async fn sdf_plane_actor(context: ActorContext) -> Result<HashMap<String, Me
         offset,
     )))
 }
+
+#[actor(SdfPuddleActor, inports::<1>(), outports::<1>(sdf), state(MemoryState))]
+pub async fn sdf_puddle_actor(context: ActorContext) -> Result<HashMap<String, Message>, Error> {
+    let config = context.get_config_hashmap();
+    let radius = config.get("radius").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+    let height = config.get("height").and_then(|v| v.as_f64()).unwrap_or(0.01) as f32;
+    let noise_freq = config.get("noiseFreq").and_then(|v| v.as_f64()).unwrap_or(2.0) as f32;
+    let noise_amp = config.get("noiseAmp").and_then(|v| v.as_f64()).unwrap_or(0.3) as f32;
+    Ok(sdf_output(&reflow_sdf::ir::SdfNode::puddle(radius, height, noise_freq, noise_amp)))
+}
