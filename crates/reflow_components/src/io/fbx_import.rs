@@ -79,25 +79,25 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
     // Extract mesh geometry (with UVs and material indices)
     let geom = extract_geometry(&tree)?;
 
-    // Extract embedded diffuse texture for vertex color baking
+    // Extract embedded diffuse texture
     let textures = extract_embedded_textures(&tree);
-    let diffuse_img = textures
+    let diffuse_data = textures
         .iter()
         .find(|(name, _)| name.contains("diffuse") || name.contains("Diffuse"))
-        .or_else(|| textures.first()) // fallback to first texture
-        .and_then(|(_, data)| {
-            image::load_from_memory(data)
-                .ok()
-                .map(|img| img.to_rgba8())
-        });
+        .or_else(|| textures.first())
+        .map(|(_, data)| data.clone());
+    let has_uvs = !geom.uvs.is_empty();
+    let has_texture = diffuse_data.is_some() && has_uvs;
 
-    // Build mesh with vertex colors baked from diffuse texture
-    let (mesh_bytes, tri_to_control) = build_mesh_bytes_colored(
-        &geom,
-        diffuse_img.as_ref(),
-    );
-    let mesh_stride = if diffuse_img.is_some() && !geom.uvs.is_empty() { 36 } else { 24 };
+    // Build mesh: 32-byte stride (pos3+normal3+uv2) if textured, else 24-byte (pos3+normal3)
+    let (mesh_bytes, tri_to_control) = build_mesh_bytes_colored(&geom, has_texture);
+    let mesh_stride = if has_texture { 32 } else { 24 };
     out.insert("mesh".to_string(), Message::bytes(mesh_bytes));
+
+    // Output diffuse texture as raw bytes (JPEG/PNG — scene render will decode)
+    if let Some(tex_data) = &diffuse_data {
+        out.insert("texture".to_string(), Message::bytes(tex_data.clone()));
+    }
 
     // Extract skeleton hierarchy (includes per-bone PreRotation for animation)
     let (skeleton, bone_names, pre_rotations) = extract_skeleton(&tree)?;
@@ -168,7 +168,7 @@ fn import_fbx(data: &[u8]) -> Result<HashMap<String, Message>> {
             "bones": bone_names.len(),
             "boneNames": bone_names,
             "stride": mesh_stride,
-            "hasTexture": diffuse_img.is_some(),
+            "hasTexture": has_texture,
         }))),
     );
 
@@ -351,19 +351,18 @@ fn extract_geometry(tree: &FbxNode) -> Result<GeometryData> {
     Err(anyhow::anyhow!("No Geometry/Mesh found in FBX"))
 }
 
-/// Build triangulated vertex buffer with optional vertex colors from texture.
-/// If diffuse texture + UVs are available: 36-byte stride (pos3+normal3+color3).
+/// Build triangulated vertex buffer.
+/// If has_uv: 32-byte stride (pos3+normal3+uv2).
 /// Otherwise: 24-byte stride (pos3+normal3).
 /// Returns (bytes, tri_to_control_point_index) for skin weight expansion.
 fn build_mesh_bytes_colored(
     geom: &GeometryData,
-    diffuse_img: Option<&image::RgbaImage>,
+    has_uv: bool,
 ) -> (Vec<u8>, Vec<usize>) {
     let vertices = &geom.vertices;
     let normals = &geom.normals;
     let indices = &geom.indices;
-    let has_color = diffuse_img.is_some() && !geom.uvs.is_empty();
-    let stride = if has_color { 36 } else { 24 };
+    let stride = if has_uv { 32 } else { 24 };
 
     // FBX polygon indices: negative value marks end of polygon (bitwise NOT)
     let mut poly = Vec::new();
@@ -440,28 +439,21 @@ fn build_mesh_bytes_colored(
                 bytes.extend_from_slice(&[0u8; 12]);
             }
 
-            // Vertex color from diffuse texture sampling
-            if has_color {
-                let color = if let Some(img) = diffuse_img {
-                    // Resolve UV index: UVIndex maps polygon-vertex → UV array index
-                    let uv_idx = if !geom.uv_indices.is_empty() {
-                        geom.uv_indices.get(tv.pv_idx).copied().unwrap_or(0) as usize
-                    } else {
-                        tv.pv_idx // direct mapping
-                    };
-                    if uv_idx < uv_count {
-                        let u = geom.uvs[uv_idx * 2] as f32;
-                        let v = geom.uvs[uv_idx * 2 + 1] as f32;
-                        sample_texture_at_uv(img, u, v)
-                    } else {
-                        [0.7, 0.7, 0.7]
-                    }
+            // UV coordinates
+            if has_uv {
+                let uv_idx = if !geom.uv_indices.is_empty() {
+                    geom.uv_indices.get(tv.pv_idx).copied().unwrap_or(0) as usize
                 } else {
-                    [0.7, 0.7, 0.7]
+                    tv.pv_idx
                 };
-                bytes.extend_from_slice(&color[0].to_le_bytes());
-                bytes.extend_from_slice(&color[1].to_le_bytes());
-                bytes.extend_from_slice(&color[2].to_le_bytes());
+                if uv_idx < uv_count {
+                    let u = geom.uvs[uv_idx * 2] as f32;
+                    let v = geom.uvs[uv_idx * 2 + 1] as f32;
+                    bytes.extend_from_slice(&u.to_le_bytes());
+                    bytes.extend_from_slice(&v.to_le_bytes());
+                } else {
+                    bytes.extend_from_slice(&[0u8; 8]);
+                }
             }
         }
     }

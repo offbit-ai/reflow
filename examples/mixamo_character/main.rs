@@ -62,11 +62,11 @@ async fn main() -> anyhow::Result<()> {
 
     println!("=== Mixamo Character Animation → Video ===\n");
 
-    let fps = 24u32;
+    let fps = 30u32;
     let duration = 3.0f64; // slightly longer than clip (2.867s) for full loop
     let total_frames = (duration * fps as f64) as usize;
-    let w = 480u32;
-    let h = 480u32;
+    let w = 720u32;
+    let h = 720u32;
     let interval_ms = 1000 / fps as u64;
 
     println!(
@@ -130,13 +130,13 @@ async fn main() -> anyhow::Result<()> {
         "tpl_animation_sampler",
         config(json!({ "loop": true })),
     )?;
-    net.add_node("skin", "tpl_skinning", config(json!({ "stride": 36 })))?;
+    net.add_node("skin", "tpl_skinning", config(json!({ "stride": 32 })))?;
 
     // ═══ SCENE ═══
     net.add_node(
         "prefab",
         "tpl_prefab",
-        config(json!({ "name": "character", "stride": 36 })),
+        config(json!({ "name": "character", "stride": 32 })),
     )?;
     net.add_node("inst", "tpl_instance", config(json!({ "id": "character_0" })))?;
     net.add_node(
@@ -191,7 +191,7 @@ async fn main() -> anyhow::Result<()> {
     net.add_node(
         "encoder",
         "tpl_video_encoder",
-        config(json!({ "fps": fps, "bitrate": 4000 })),
+        config(json!({ "fps": fps, "bitrate": 8000 })),
     )?;
     net.add_node(
         "save",
@@ -214,6 +214,9 @@ async fn main() -> anyhow::Result<()> {
         "sampler",
         "inverse_bind_matrices",
     ));
+
+    // FBX → Scene render (diffuse texture, cached once)
+    net.add_connection(wire("fbx", "texture", "render", "texture"));
 
     // FBX → Skinning (static data, cached once)
     net.add_connection(wire("fbx", "mesh", "skin", "mesh"));
