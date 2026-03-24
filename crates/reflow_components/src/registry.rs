@@ -23,6 +23,7 @@ use crate::flow_control::{
     SplitActor, SubscriberActor, SwitchCaseActor,
 };
 use crate::gpu::font_load::FontLoadActor;
+use crate::gpu::post_process::{BloomPostProcessActor, SSAOActor, ToneMapActor};
 use crate::gpu::glyph_atlas::GlyphAtlasActor;
 use crate::gpu::shader::{
     ShaderBrickTextureActor, ShaderBumpMapActor, ShaderCheckerTextureActor,
@@ -401,6 +402,11 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_gpu_2d_render" => Some(Arc::new(Gpu2DRenderActor::new())),
         "tpl_font_load" => Some(Arc::new(FontLoadActor::new())),
         "tpl_glyph_atlas" => Some(Arc::new(GlyphAtlasActor::new())),
+
+        // Post-processing
+        "tpl_tone_map" => Some(Arc::new(ToneMapActor::new())),
+        "tpl_bloom" => Some(Arc::new(BloomPostProcessActor::new())),
+        "tpl_ssao" => Some(Arc::new(SSAOActor::new())),
 
         // Shader Graph (node-based materials)
         "tpl_shader_compiler" => Some(Arc::new(ShaderCompilerActor::new())),
@@ -888,6 +894,15 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     }
     mapping.insert("tpl_font_load".to_string(), "FontLoadActor".to_string());
     mapping.insert("tpl_glyph_atlas".to_string(), "GlyphAtlasActor".to_string());
+
+    // Post-processing
+    for (id, name) in [
+        ("tpl_tone_map", "ToneMapActor"),
+        ("tpl_bloom", "BloomPostProcessActor"),
+        ("tpl_ssao", "SSAOActor"),
+    ] {
+        mapping.insert(id.to_string(), name.to_string());
+    }
 
     // Shader Graph
     for (id, name) in [
