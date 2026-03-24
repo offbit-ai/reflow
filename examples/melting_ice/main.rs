@@ -68,8 +68,8 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("noise", "tpl_shader_noise_texture", config(json!({ "scale": 5.0 })))?;
     net.add_node("color_mix", "tpl_shader_color_mix", config(json!({
         "mode": "mix",
-        "a": { "type": "constVec3", "c": [0.85, 0.92, 0.98] },  // light ice blue
-        "b": { "type": "constVec3", "c": [0.6, 0.78, 0.9] },   // slightly deeper blue
+        "a": { "type": "constVec3", "c": [0.7, 0.88, 0.95] },  // ice blue
+        "b": { "type": "constVec3", "c": [0.5, 0.72, 0.88] },  // deeper water blue
     })))?;
     net.add_node("bsdf", "tpl_shader_principled_bsdf", config(json!({
         "metallic": { "type": "constFloat", "c": 0.0 },
@@ -131,7 +131,7 @@ async fn main() -> anyhow::Result<()> {
         "softShadows": true, "shadowK": 16.0, "ao": true,
         "ambient": 0.3,
         "lightDir": [0.5, 0.8, -0.3],
-        "background": [0.55, 0.58, 0.65],
+        "background": [0.6, 0.82, 0.92],
     })))?;
 
     net.add_connection(wire("sdf_scene", "sdf", "render", "sdf"));
