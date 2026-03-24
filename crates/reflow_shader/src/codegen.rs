@@ -471,14 +471,38 @@ pub fn compile_sdf_shade(root: &ShaderNode) -> String {
     shade.push_str("    let fresnel_factor = F0 + (1.0 - F0) * fresnel;\n");
     shade.push_str("\n");
 
+    // Detect puddle vs ice: puddle is flat (normal nearly vertical, position low)
+    shade.push_str("    let is_puddle = N.y > 0.9 && p.y < -0.4;\n");
+    shade.push_str("\n");
+
     // PBR direct lighting
     shade.push_str("    let pbr = pbr_shade_sdf(base_color, metallic, roughness, N, V, ao, emission);\n");
 
-    // Refraction through the ice volume
+    // Refraction through the ice volume (only for non-puddle surfaces)
     shade.push_str("    let refr_color = sdf_refract_color(p, rd, N, ior, base_color);\n");
 
-    // Blend: fresnel controls reflection vs refraction
-    shade.push_str("    let col = mix(refr_color, pbr, fresnel_factor);\n");
+    // Reflection for puddle: reflect the ray and sample the scene
+    shade.push_str("    var col: vec3f;\n");
+    shade.push_str("    if is_puddle {\n");
+    shade.push_str("        // Glossy water surface: reflect ray, march to find reflected object\n");
+    shade.push_str("        let refl_rd = reflect(rd, N);\n");
+    shade.push_str("        let refl_t = ray_march(p + N * 0.02, refl_rd);\n");
+    shade.push_str("        var refl_col: vec3f;\n");
+    shade.push_str("        if refl_t > 0.0 {\n");
+    shade.push_str("            let rp = p + N * 0.02 + refl_rd * refl_t;\n");
+    shade.push_str("            let rn = calc_normal(rp);\n");
+    shade.push_str("            let rdiff = max(dot(rn, LIGHT_DIR), 0.0);\n");
+    shade.push_str("            refl_col = base_color * (AMBIENT + rdiff * 0.7);\n");
+    shade.push_str("        } else {\n");
+    shade.push_str("            refl_col = mix(vec3f(0.7, 0.75, 0.82), vec3f(0.9, 0.93, 0.97), refl_rd.y * 0.5 + 0.5);\n");
+    shade.push_str("        }\n");
+    shade.push_str("        let water_fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(N, V), 0.0), 5.0);\n");
+    shade.push_str("        let water_base = vec3f(0.6, 0.7, 0.78) * (AMBIENT + max(dot(N, LIGHT_DIR), 0.0) * 0.5);\n");
+    shade.push_str("        col = mix(water_base, refl_col, water_fresnel) * ao;\n");
+    shade.push_str("    } else {\n");
+    shade.push_str("        // Ice: fresnel blend of refraction and PBR specular\n");
+    shade.push_str("        col = mix(refr_color, pbr, fresnel_factor);\n");
+    shade.push_str("    }\n");
 
     shade.push_str("    return col;\n");
     shade.push_str("}\n\n");
@@ -578,27 +602,34 @@ fn pbr_shade_sdf(
     return ambient + direct + emission;
 }
 
-// Refraction: bend ray through surface, march inside, exit
-fn sdf_refract_color(p: vec3f, rd: vec3f, N: vec3f, ior: f32, base_tint: vec3f) -> vec3f {
-    let refr = refract(rd, N, 1.0 / ior);
-    if length(refr) < 0.001 { return vec3f(0.0); } // total internal reflection
-    // March a short distance inside the volume
+// Chromatic refraction: split R/G/B at different IORs for prismatic effect
+fn sdf_refract_channel(p: vec3f, rd: vec3f, N: vec3f, ior_ch: f32) -> f32 {
+    let refr = refract(rd, N, 1.0 / ior_ch);
+    if length(refr) < 0.001 { return 0.8; } // total internal reflection → bright
     var interior_p = p + refr * 0.01;
     var total_dist = 0.0;
-    for (var i = 0u; i < 32u; i++) {
+    for (var i = 0u; i < 24u; i++) {
         let d = abs(sdf_scene(interior_p));
-        if d > 0.5 { break; } // exited the object
+        if d > 0.5 { break; }
         total_dist += max(d, 0.005);
         interior_p += refr * max(d, 0.005);
     }
-    // Beer's law absorption: longer path = more tinted
-    let absorption = exp(-total_dist * 2.0);
-    // After exiting, sample the background
+    let absorption = exp(-total_dist * 0.4);
     let exit_n = calc_normal(interior_p);
-    let exit_rd = refract(refr, -exit_n, ior);
-    // Background: just use a gradient based on exit direction
-    let bg = mix(vec3f(0.6, 0.7, 0.8), vec3f(0.9, 0.95, 1.0), exit_rd.y * 0.5 + 0.5);
-    return bg * absorption * base_tint;
+    let exit_rd = refract(refr, -exit_n, ior_ch);
+    let bg = 0.8 + 0.15 * exit_rd.y;
+    return bg * absorption;
+}
+
+fn sdf_refract_color(p: vec3f, rd: vec3f, N: vec3f, ior: f32, base_tint: vec3f) -> vec3f {
+    // Chromatic dispersion: red bends less, blue bends more
+    let ior_r = ior - 0.02;
+    let ior_g = ior;
+    let ior_b = ior + 0.02;
+    let r = sdf_refract_channel(p, rd, N, ior_r);
+    let g = sdf_refract_channel(p, rd, N, ior_g);
+    let b = sdf_refract_channel(p, rd, N, ior_b);
+    return vec3f(r, g, b) * mix(vec3f(1.0), base_tint, 0.25);
 }
 "#;
 

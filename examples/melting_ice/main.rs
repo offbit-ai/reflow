@@ -68,8 +68,8 @@ async fn main() -> anyhow::Result<()> {
     net.add_node("noise", "tpl_shader_noise_texture", config(json!({ "scale": 5.0 })))?;
     net.add_node("color_mix", "tpl_shader_color_mix", config(json!({
         "mode": "mix",
-        "a": { "type": "constVec3", "c": [0.75, 0.88, 0.95] },
-        "b": { "type": "constVec3", "c": [0.4, 0.6, 0.8] },
+        "a": { "type": "constVec3", "c": [0.85, 0.92, 0.98] },  // light ice blue
+        "b": { "type": "constVec3", "c": [0.6, 0.78, 0.9] },   // slightly deeper blue
     })))?;
     net.add_node("bsdf", "tpl_shader_principled_bsdf", config(json!({
         "metallic": { "type": "constFloat", "c": 0.0 },
