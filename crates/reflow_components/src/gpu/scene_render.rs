@@ -107,7 +107,7 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
                 buf.extend_from_slice(&w.to_le_bytes());
                 buf.extend_from_slice(&h.to_le_bytes());
                 buf.extend_from_slice(rgba.as_raw());
-                *get_texture_cache().lock() = Some(buf);
+                *get_texture_cache().lock() = Some(std::sync::Arc::new(buf));
             }
         }
     }
@@ -136,8 +136,8 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
                 .decode(s)
                 .unwrap_or_default()
         });
-    // Read pre-decoded RGBA texture from static cache (zero base64 overhead)
-    let texture_rgba: Option<Vec<u8>> = get_texture_cache().lock().clone();
+    // Read pre-decoded RGBA texture from static cache (Arc clone = pointer bump, not 4MB copy)
+    let texture_rgba: Option<std::sync::Arc<Vec<u8>>> = get_texture_cache().lock().clone();
 
     let objects = scene_data
         .get("objects")
@@ -161,7 +161,7 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             &objects_clone,
             prefab_mesh.as_deref(),
             terrain_mesh.as_deref(),
-            texture_rgba.as_deref(),
+            texture_rgba.as_deref().map(|v| v.as_slice()),
         )
     })
     .await
@@ -507,11 +507,20 @@ struct CachedScenePipeline {
 
 /// Static texture cache — decoded RGBA bytes, bypasses JSON pool entirely.
 /// Format: [w:u32 LE, h:u32 LE, rgba_pixels...]
-static TEXTURE_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<Vec<u8>>>> = std::sync::OnceLock::new();
+/// Uses Arc to avoid cloning 4MB per frame.
+static TEXTURE_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
 
-fn get_texture_cache() -> &'static parking_lot::Mutex<Option<Vec<u8>>> {
+fn get_texture_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
     TEXTURE_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
 }
+
+/// Cached GPU diffuse texture + view + sampler. Uploaded once, reused every frame.
+struct CachedGpuDiffuse {
+    view: wgpu::TextureView,
+    sampler: wgpu::Sampler,
+    _texture: wgpu::Texture, // prevent drop
+}
+static GPU_DIFFUSE_CACHE: std::sync::OnceLock<CachedGpuDiffuse> = std::sync::OnceLock::new();
 
 use std::sync::OnceLock;
 static SCENE_PIPELINE_4X: OnceLock<CachedScenePipeline> = OnceLock::new();
@@ -915,43 +924,48 @@ fn render_scene(
 
     if use_textured_pipeline {
         // ─── Textured rendering path ───
-        let tex_data = texture_rgba.unwrap();
-        let tex_w = u32::from_le_bytes(tex_data[0..4].try_into().unwrap());
-        let tex_h = u32::from_le_bytes(tex_data[4..8].try_into().unwrap());
-        let tex_pixels = &tex_data[8..];
+        let cached_pipe = get_or_create_textured_pipeline(device, sample_count);
 
-        let cached_tex = get_or_create_textured_pipeline(device, sample_count);
-
-        let diffuse_tex = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Diffuse"),
-            size: wgpu::Extent3d { width: tex_w, height: tex_h, depth_or_array_layers: 1 },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
+        // Upload GPU texture once (OnceLock), reuse view+sampler every frame
+        let gpu_diff = GPU_DIFFUSE_CACHE.get_or_init(|| {
+            let tex_data = texture_rgba.as_ref().unwrap();
+            let tex_w = u32::from_le_bytes(tex_data[0..4].try_into().unwrap());
+            let tex_h = u32::from_le_bytes(tex_data[4..8].try_into().unwrap());
+            let tex_pixels = &tex_data[8..];
+            let texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("Diffuse"),
+                size: wgpu::Extent3d { width: tex_w, height: tex_h, depth_or_array_layers: 1 },
+                mip_level_count: 1, sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            });
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo { texture: &texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+                tex_pixels,
+                wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(tex_w * 4), rows_per_image: Some(tex_h) },
+                wgpu::Extent3d { width: tex_w, height: tex_h, depth_or_array_layers: 1 },
+            );
+            CachedGpuDiffuse {
+                view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                sampler: device.create_sampler(&wgpu::SamplerDescriptor {
+                    mag_filter: wgpu::FilterMode::Linear,
+                    min_filter: wgpu::FilterMode::Linear,
+                    ..Default::default()
+                }),
+                _texture: texture,
+            }
         });
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo { texture: &diffuse_tex, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
-            tex_pixels,
-            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(tex_w * 4), rows_per_image: Some(tex_h) },
-            wgpu::Extent3d { width: tex_w, height: tex_h, depth_or_array_layers: 1 },
-        );
-        let diffuse_view = diffuse_tex.create_view(&wgpu::TextureViewDescriptor::default());
-        let diffuse_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            ..Default::default()
-        });
 
+        // Bind group per frame (cheap — just references cached texture + new uniform)
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
-            layout: &cached_tex.bgl,
+            layout: &cached_pipe.bgl,
             entries: &[
                 wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&diffuse_view) },
-                wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&diffuse_sampler) },
+                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&gpu_diff.view) },
+                wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&gpu_diff.sampler) },
             ],
         });
 
@@ -974,7 +988,7 @@ fn render_scene(
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
-            pass.set_pipeline(&cached_tex.pipeline);
+            pass.set_pipeline(&cached_pipe.pipeline);
             pass.set_bind_group(0, &bind_group, &[]);
             pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             pass.draw(0..vertex_count as u32, 0..1);
