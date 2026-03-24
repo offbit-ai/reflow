@@ -13,22 +13,38 @@
 pub mod math_helpers;
 
 mod animation_clip;
+mod animation_event;
+mod animation_fsm;
+mod animation_layer;
 mod animation_mixer;
 mod animation_sampler;
 mod animation_time;
 mod animation_timeline;
+mod blend_tree;
+mod character_controller;
+mod ik_solver;
 mod keyframe;
+mod morph_target;
+mod root_motion;
 mod skeleton;
 mod skin_bind;
 mod skinning;
 mod sprite_animation;
 
 pub use animation_clip::AnimationClipActor;
+pub use animation_event::AnimationEventActor;
+pub use animation_fsm::AnimationFsmActor;
+pub use animation_layer::AnimationLayerActor;
 pub use animation_mixer::AnimationMixerActor;
 pub use animation_sampler::AnimationSamplerActor;
 pub use animation_time::AnimationTimeActor;
 pub use animation_timeline::AnimationTimelineActor;
+pub use blend_tree::AnimationBlendTreeActor;
+pub use character_controller::CharacterControllerActor;
+pub use ik_solver::IKSolverActor;
 pub use keyframe::KeyframeActor;
+pub use morph_target::MorphTargetActor;
+pub use root_motion::RootMotionActor;
 pub use skeleton::SkeletonActor;
 pub use skin_bind::SkinBindActor;
 pub use skinning::SkinningActor;

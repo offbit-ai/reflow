@@ -9,8 +9,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::animation::{
-    AnimationClipActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
-    AnimationTimelineActor, KeyframeActor, SkeletonActor, SkinBindActor, SkinningActor,
+    AnimationBlendTreeActor, AnimationClipActor, AnimationEventActor, AnimationFsmActor,
+    AnimationLayerActor, AnimationMixerActor, AnimationSamplerActor, AnimationTimeActor,
+    AnimationTimelineActor, CharacterControllerActor, IKSolverActor, KeyframeActor,
+    MorphTargetActor, RootMotionActor, SkeletonActor, SkinBindActor, SkinningActor,
     SpriteAnimationActor,
 };
 use crate::assets::{AssetLoadActor, AssetQueryActor, AssetStoreActor};
@@ -400,6 +402,14 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_keyframe" => Some(Arc::new(KeyframeActor::new())),
         "tpl_animation_timeline" => Some(Arc::new(AnimationTimelineActor::new())),
         "tpl_sprite_animation" => Some(Arc::new(SpriteAnimationActor::new())),
+        "tpl_animation_blend_tree" => Some(Arc::new(AnimationBlendTreeActor::new())),
+        "tpl_animation_fsm" => Some(Arc::new(AnimationFsmActor::new())),
+        "tpl_ik_solver" => Some(Arc::new(IKSolverActor::new())),
+        "tpl_root_motion" => Some(Arc::new(RootMotionActor::new())),
+        "tpl_animation_layer" => Some(Arc::new(AnimationLayerActor::new())),
+        "tpl_morph_target" => Some(Arc::new(MorphTargetActor::new())),
+        "tpl_animation_event" => Some(Arc::new(AnimationEventActor::new())),
+        "tpl_character_controller" => Some(Arc::new(CharacterControllerActor::new())),
 
         // Video
         "tpl_frame_buffer" => Some(Arc::new(crate::stream_ops::FrameBufferActor::new())),
@@ -864,6 +874,14 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_keyframe", "KeyframeActor"),
         ("tpl_animation_timeline", "AnimationTimelineActor"),
         ("tpl_sprite_animation", "SpriteAnimationActor"),
+        ("tpl_animation_blend_tree", "AnimationBlendTreeActor"),
+        ("tpl_animation_fsm", "AnimationFsmActor"),
+        ("tpl_ik_solver", "IKSolverActor"),
+        ("tpl_root_motion", "RootMotionActor"),
+        ("tpl_animation_layer", "AnimationLayerActor"),
+        ("tpl_morph_target", "MorphTargetActor"),
+        ("tpl_animation_event", "AnimationEventActor"),
+        ("tpl_character_controller", "CharacterControllerActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }
