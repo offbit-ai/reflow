@@ -25,12 +25,15 @@ use crate::flow_control::{
 use crate::gpu::font_load::FontLoadActor;
 use crate::gpu::glyph_atlas::GlyphAtlasActor;
 use crate::gpu::shader::{
-    ShaderCheckerTextureActor, ShaderColorMixActor, ShaderColorRampActor,
-    ShaderCompilerActor, ShaderConstColorActor, ShaderConstFloatActor,
-    ShaderFresnelActor, ShaderImageTextureActor, ShaderMaterialOutputActor,
-    ShaderMathActor, ShaderNoiseTextureActor, ShaderNormalInputActor,
-    ShaderPositionInputActor, ShaderPrincipledBsdfActor, ShaderTexCoordActor,
-    ShaderTimeInputActor, ShaderVertexColorActor,
+    ShaderBrickTextureActor, ShaderBumpMapActor, ShaderCheckerTextureActor,
+    ShaderClampActor, ShaderColorMixActor, ShaderColorRampActor, ShaderCombineXYZActor,
+    ShaderCompilerActor, ShaderConstColorActor, ShaderConstFloatActor, ShaderFresnelActor,
+    ShaderGradientTextureActor, ShaderImageTextureActor, ShaderMapRangeActor,
+    ShaderMappingActor, ShaderMaterialOutputActor, ShaderMathActor,
+    ShaderMusgraveTextureActor, ShaderNoiseTextureActor, ShaderNormalInputActor,
+    ShaderNormalMapActor, ShaderPositionInputActor, ShaderPrincipledBsdfActor,
+    ShaderSeparateXYZActor, ShaderTexCoordActor, ShaderTimeInputActor,
+    ShaderVertexColorActor, ShaderVoronoiTextureActor, ShaderWaveTextureActor,
 };
 #[cfg(feature = "gpu")]
 use crate::gpu::scene_render::SceneRenderActor;
@@ -417,6 +420,18 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_shader_color_mix" => Some(Arc::new(ShaderColorMixActor::new())),
         "tpl_shader_color_ramp" => Some(Arc::new(ShaderColorRampActor::new())),
         "tpl_shader_fresnel" => Some(Arc::new(ShaderFresnelActor::new())),
+        "tpl_shader_normal_map" => Some(Arc::new(ShaderNormalMapActor::new())),
+        "tpl_shader_bump_map" => Some(Arc::new(ShaderBumpMapActor::new())),
+        "tpl_shader_mapping" => Some(Arc::new(ShaderMappingActor::new())),
+        "tpl_shader_separate_xyz" => Some(Arc::new(ShaderSeparateXYZActor::new())),
+        "tpl_shader_combine_xyz" => Some(Arc::new(ShaderCombineXYZActor::new())),
+        "tpl_shader_clamp" => Some(Arc::new(ShaderClampActor::new())),
+        "tpl_shader_map_range" => Some(Arc::new(ShaderMapRangeActor::new())),
+        "tpl_shader_voronoi_texture" => Some(Arc::new(ShaderVoronoiTextureActor::new())),
+        "tpl_shader_gradient_texture" => Some(Arc::new(ShaderGradientTextureActor::new())),
+        "tpl_shader_brick_texture" => Some(Arc::new(ShaderBrickTextureActor::new())),
+        "tpl_shader_musgrave_texture" => Some(Arc::new(ShaderMusgraveTextureActor::new())),
+        "tpl_shader_wave_texture" => Some(Arc::new(ShaderWaveTextureActor::new())),
 
         // Animation
         "tpl_skeleton" => Some(Arc::new(SkeletonActor::new())),
@@ -893,6 +908,18 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_shader_color_mix", "ShaderColorMixActor"),
         ("tpl_shader_color_ramp", "ShaderColorRampActor"),
         ("tpl_shader_fresnel", "ShaderFresnelActor"),
+        ("tpl_shader_normal_map", "ShaderNormalMapActor"),
+        ("tpl_shader_bump_map", "ShaderBumpMapActor"),
+        ("tpl_shader_mapping", "ShaderMappingActor"),
+        ("tpl_shader_separate_xyz", "ShaderSeparateXYZActor"),
+        ("tpl_shader_combine_xyz", "ShaderCombineXYZActor"),
+        ("tpl_shader_clamp", "ShaderClampActor"),
+        ("tpl_shader_map_range", "ShaderMapRangeActor"),
+        ("tpl_shader_voronoi_texture", "ShaderVoronoiTextureActor"),
+        ("tpl_shader_gradient_texture", "ShaderGradientTextureActor"),
+        ("tpl_shader_brick_texture", "ShaderBrickTextureActor"),
+        ("tpl_shader_musgrave_texture", "ShaderMusgraveTextureActor"),
+        ("tpl_shader_wave_texture", "ShaderWaveTextureActor"),
     ] {
         mapping.insert(id.to_string(), name.to_string());
     }
