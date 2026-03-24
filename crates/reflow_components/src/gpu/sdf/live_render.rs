@@ -434,8 +434,15 @@ fn render_frame(
         pass.dispatch_workgroups(width.div_ceil(8), height.div_ceil(8), 1);
     }
 
-    // Copy texture to readback buffer
+    // Create a fresh readback buffer per frame (avoids mapped-state conflict)
     let padded_row = (width * 4 + 255) & !255;
+    let readback_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("SDF Live Readback"),
+        size: (padded_row * height) as u64,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
             texture: &targets.output_texture,
@@ -444,7 +451,7 @@ fn render_frame(
             aspect: wgpu::TextureAspect::All,
         },
         wgpu::TexelCopyBufferInfo {
-            buffer: &targets.readback_buffer,
+            buffer: &readback_buffer,
             layout: wgpu::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(padded_row),
@@ -461,7 +468,7 @@ fn render_frame(
     queue.submit(std::iter::once(encoder.finish()));
 
     // Readback
-    let slice = targets.readback_buffer.slice(..);
+    let slice = readback_buffer.slice(..);
     let (tx, rx) = flume::bounded(1);
     slice.map_async(wgpu::MapMode::Read, move |r| {
         let _ = tx.send(r);
@@ -479,7 +486,7 @@ fn render_frame(
         pixels.extend_from_slice(&data[start..end]);
     }
     drop(data);
-    targets.readback_buffer.unmap();
+    readback_buffer.unmap();
 
     Ok(pixels)
 }

@@ -39,7 +39,7 @@ fn parse_sdf(msg: Option<&Message>) -> Option<SdfNode> {
 
 #[actor(
     SdfRenderActor,
-    inports::<10>(sdf),
+    inports::<10>(sdf, time),
     outports::<1>(output, metadata, error),
     state(MemoryState)
 )]
@@ -47,12 +47,27 @@ pub async fn sdf_render_actor(context: ActorContext) -> Result<HashMap<String, M
     let payload = context.get_payload();
     let config = context.get_config_hashmap();
 
-    let root = parse_sdf(payload.get("sdf"))
-        .ok_or_else(|| anyhow::anyhow!("Missing SDF IR on sdf port"))?;
+    // Cache SDF on first receipt, re-render on time updates
+    if let Some(sdf_msg) = payload.get("sdf") {
+        if let Some(root) = parse_sdf(Some(sdf_msg)) {
+            let ir_json = serde_json::to_value(&root).unwrap_or(serde_json::json!(null));
+            context.pool_upsert("_sdf_render", "ir", ir_json);
+        }
+    }
+
+    let cache: HashMap<String, serde_json::Value> = context.get_pool("_sdf_render").into_iter().collect();
+    let root: SdfNode = match cache.get("ir") {
+        Some(v) => serde_json::from_value(v.clone()).map_err(|e| anyhow::anyhow!("SDF IR: {}", e))?,
+        None => return Ok(HashMap::new()),
+    };
 
     let width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
     let height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
-    let time = config.get("time").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+    let time = match payload.get("time") {
+        Some(Message::Float(f)) => *f as f32,
+        Some(Message::Integer(i)) => *i as f32,
+        _ => config.get("time").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+    };
 
     let settings = SceneSettings {
         width,
@@ -99,6 +114,37 @@ pub async fn sdf_render_actor(context: ActorContext) -> Result<HashMap<String, M
             .get("ambient")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.15) as f32,
+        shadow_k: config
+            .get("shadowK")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(32.0) as f32,
+        light_dir: config
+            .get("lightDir")
+            .and_then(|v| v.as_array())
+            .map(|a| [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.577) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.577) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(-0.577) as f32,
+            ])
+            .unwrap_or([0.577, 0.577, -0.577]),
+        light_color: config
+            .get("lightColor")
+            .and_then(|v| v.as_array())
+            .map(|a| [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+            ])
+            .unwrap_or([1.0, 1.0, 1.0]),
+        background: config
+            .get("background")
+            .and_then(|v| v.as_array())
+            .map(|a| [
+                a.get(0).and_then(|v| v.as_f64()).unwrap_or(0.1) as f32,
+                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.1) as f32,
+                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.15) as f32,
+            ])
+            .unwrap_or([0.1, 0.1, 0.15]),
         time,
         ..Default::default()
     };
@@ -198,6 +244,9 @@ fn render_to_pixels(
     });
     let output_view = output_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+    eprintln!("[sdf_render] cam=[{:.1},{:.1},{:.1}] target=[{:.1},{:.1},{:.1}] fov={:.0} time={:.2}",
+        camera_pos[0], camera_pos[1], camera_pos[2],
+        camera_target[0], camera_target[1], camera_target[2], fov, time);
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Uniforms"),
         contents: bytemuck::bytes_of(&Uniforms {
