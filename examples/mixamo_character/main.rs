@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("=== Mixamo Character Animation → Video ===\n");
 
-    let fps = 30u32;
+    let fps = 60u32;
     let duration = 3.0f64; // slightly longer than clip (2.867s) for full loop
     let total_frames = (duration * fps as f64) as usize;
     let w = 720u32;
