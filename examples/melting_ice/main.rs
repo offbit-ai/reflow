@@ -54,6 +54,7 @@ async fn main() -> anyhow::Result<()> {
     for tpl in [
         // SDF primitives + operations
         "tpl_sdf_box",
+        "tpl_sdf_cylinder",
         "tpl_sdf_smooth_union",
         "tpl_sdf_translate",
         "tpl_sdf_round",
@@ -89,25 +90,25 @@ async fn main() -> anyhow::Result<()> {
         "octaves": 3,
     })))?;
 
-    // Puddle: flat disc (rounded box) + noise displacement for irregular edges
-    net.add_node("puddle_box", "tpl_sdf_box", config(json!({
-        "sizeX": 0.9, "sizeY": 0.01, "sizeZ": 0.9,
-    })))?;
-    net.add_node("puddle_round", "tpl_sdf_round", config(json!({
-        "radius": 0.3,
+    // Puddle: flattened sphere + heavy noise = blobby organic water splat
+    // Puddle: very thin cylinder (flat disc) with blobby edge displacement
+    // Sits just below the ice cube base
+    net.add_node("puddle_base", "tpl_sdf_cylinder", config(json!({
+        "radius": 1.2,
+        "height": 0.008,
     })))?;
     net.add_node("puddle_displace", "tpl_sdf_displace", config(json!({
-        "frequency": 3.0,
-        "amplitude": 0.08,
+        "frequency": 1.5,
+        "amplitude": 0.06,
         "octaves": 2,
     })))?;
     net.add_node("puddle", "tpl_sdf_translate", config(json!({
-        "x": 0.0, "y": -0.53, "z": 0.0,
+        "x": 0.0, "y": -0.52, "z": 0.0,
     })))?;
 
-    // Smooth union: ice melts into puddle
+    // Smooth union: slight blend at contact point
     net.add_node("melt_blend", "tpl_sdf_smooth_union", config(json!({
-        "k": 0.12,
+        "k": 0.03,
     })))?;
 
     // Wire SDF graph
@@ -167,8 +168,7 @@ async fn main() -> anyhow::Result<()> {
     // SDF: ice (box → round → displace) + puddle (box → round → displace → translate)
     net.add_connection(wire("ice_box", "sdf", "ice_round", "sdf"));
     net.add_connection(wire("ice_round", "sdf", "ice_displace", "sdf"));
-    net.add_connection(wire("puddle_box", "sdf", "puddle_round", "sdf"));
-    net.add_connection(wire("puddle_round", "sdf", "puddle_displace", "sdf"));
+    net.add_connection(wire("puddle_base", "sdf", "puddle_displace", "sdf"));
     net.add_connection(wire("puddle_displace", "sdf", "puddle", "sdf"));
     net.add_connection(wire("ice_displace", "sdf", "melt_blend", "sdf_a"));
     net.add_connection(wire("puddle", "sdf", "melt_blend", "sdf_b"));
@@ -190,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Bootstrap SDF primitives
     net.add_initial(iip("ice_box", "_trigger", Message::Flow));
-    net.add_initial(iip("puddle_box", "_trigger", Message::Flow));
+    net.add_initial(iip("puddle_base", "_trigger", Message::Flow));
 
     println!("Pipeline:");
     println!("  SdfBox + SdfPlane → SmoothUnion → SdfScene → LiveRender");
