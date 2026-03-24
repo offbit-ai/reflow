@@ -56,6 +56,8 @@ async fn main() -> anyhow::Result<()> {
         "tpl_sdf_box",
         "tpl_sdf_smooth_union",
         "tpl_sdf_translate",
+        "tpl_sdf_round",
+        "tpl_sdf_displace",
         // SDF renderer (per-frame with time inport)
         "tpl_sdf_render",
         // Timing
@@ -74,9 +76,17 @@ async fn main() -> anyhow::Result<()> {
     // ═══ SDF SCENE: ice cube + water puddle ═══
 
     // Ice cube: rounded box
-    // Ice cube
+    // Ice cube: box → round edges → noise displacement for irregular melt surface
     net.add_node("ice_box", "tpl_sdf_box", config(json!({
         "sizeX": 0.5, "sizeY": 0.5, "sizeZ": 0.5,
+    })))?;
+    net.add_node("ice_round", "tpl_sdf_round", config(json!({
+        "radius": 0.08,
+    })))?;
+    net.add_node("ice_displace", "tpl_sdf_displace", config(json!({
+        "frequency": 6.0,
+        "amplitude": 0.04,
+        "octaves": 3,
     })))?;
 
     // Puddle: flat wide box translated down below the ice cube
@@ -146,9 +156,11 @@ async fn main() -> anyhow::Result<()> {
 
     // ═══ CONNECTIONS ═══
 
-    // SDF: ice box + puddle (translated flat box) → smooth union → render
+    // SDF: box → round → displace → smooth_union(puddle) → render
+    net.add_connection(wire("ice_box", "sdf", "ice_round", "sdf"));
+    net.add_connection(wire("ice_round", "sdf", "ice_displace", "sdf"));
     net.add_connection(wire("puddle_box", "sdf", "puddle", "sdf"));
-    net.add_connection(wire("ice_box", "sdf", "melt_blend", "sdf_a"));
+    net.add_connection(wire("ice_displace", "sdf", "melt_blend", "sdf_a"));
     net.add_connection(wire("puddle", "sdf", "melt_blend", "sdf_b"));
     net.add_connection(wire("melt_blend", "sdf", "render", "sdf"));
 
