@@ -98,8 +98,14 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let states = config.get("states").cloned().unwrap_or(Value::Object(Default::default()));
-    let guards_def = config.get("guards").cloned().unwrap_or(Value::Object(Default::default()));
+    let states = config
+        .get("states")
+        .cloned()
+        .unwrap_or(Value::Object(Default::default()));
+    let guards_def = config
+        .get("guards")
+        .cloned()
+        .unwrap_or(Value::Object(Default::default()));
     let initial = config
         .get("initial")
         .and_then(|v| v.as_str())
@@ -148,10 +154,7 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
                 }
             }
             let mut out = HashMap::new();
-            out.insert(
-                "state".to_string(),
-                Message::String(initial.clone().into()),
-            );
+            out.insert("state".to_string(), Message::String(initial.clone().into()));
             return Ok(out);
         } else if let Some(target) = cmd.strip_prefix("set:") {
             ctx.pool_upsert("_fsm", "current", json!(target));
@@ -184,7 +187,12 @@ pub async fn fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Er
     if payload.contains_key("tick") && event_name.is_none() {
         static FSM_TICK_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let tc = FSM_TICK_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        if tc % 100 == 0 { eprintln!("[fsm:{}] tick={tc} state={current_state}", ctx.get_config().get_node_id()); }
+        if tc % 100 == 0 {
+            eprintln!(
+                "[fsm:{}] tick={tc} state={current_state}",
+                ctx.get_config().get_node_id()
+            );
+        }
         let state_def = states.get(&current_state);
         if let Some(timeout_trans) = state_def
             .and_then(|s| s.get("on"))
@@ -411,11 +419,17 @@ fn find_transition(
             let guard = t.get("guard").and_then(|g| g.as_str());
             if let Some(guard_name) = guard {
                 if evaluate_guard(guard_name, guards_def, scope) {
-                    return t.get("target").and_then(|t| t.as_str()).map(|s| s.to_string());
+                    return t
+                        .get("target")
+                        .and_then(|t| t.as_str())
+                        .map(|s| s.to_string());
                 }
             } else {
                 // No guard = default/fallback
-                return t.get("target").and_then(|t| t.as_str()).map(|s| s.to_string());
+                return t
+                    .get("target")
+                    .and_then(|t| t.as_str())
+                    .map(|s| s.to_string());
             }
         }
         return None;
@@ -447,10 +461,16 @@ fn find_transient_transition(
             let guard = t.get("guard").and_then(|g| g.as_str());
             if let Some(guard_name) = guard {
                 if evaluate_guard(guard_name, guards_def, scope) {
-                    return t.get("target").and_then(|t| t.as_str()).map(|s| s.to_string());
+                    return t
+                        .get("target")
+                        .and_then(|t| t.as_str())
+                        .map(|s| s.to_string());
                 }
             } else {
-                return t.get("target").and_then(|t| t.as_str()).map(|s| s.to_string());
+                return t
+                    .get("target")
+                    .and_then(|t| t.as_str())
+                    .map(|s| s.to_string());
             }
         }
     }
@@ -493,10 +513,7 @@ fn execute_transition(
 
     loop {
         // Execute exit action of current state
-        if let Some(exit_action) = states
-            .get(&current)
-            .and_then(|s| s.get("exit"))
-        {
+        if let Some(exit_action) = states.get(&current).and_then(|s| s.get("exit")) {
             apply_action(exit_action, ctx, &mut emit_values);
         }
 
@@ -505,10 +522,7 @@ fn execute_transition(
         ctx.pool_upsert("_fsm", "timeout_elapsed", json!(0.0));
 
         // Execute entry action of target state
-        if let Some(entry_action) = states
-            .get(&target)
-            .and_then(|s| s.get("entry"))
-        {
+        if let Some(entry_action) = states.get(&target).and_then(|s| s.get("entry")) {
             apply_action(entry_action, ctx, &mut emit_values);
         }
 
@@ -597,10 +611,8 @@ fn execute_transition(
         .unwrap_or(false);
 
     if should_emit_ctx {
-        let ctx_map: serde_json::Map<String, Value> = ctx
-            .get_pool("_fsm_ctx")
-            .into_iter()
-            .collect();
+        let ctx_map: serde_json::Map<String, Value> =
+            ctx.get_pool("_fsm_ctx").into_iter().collect();
         out.insert(
             "context".to_string(),
             Message::object(EncodableValue::from(Value::Object(ctx_map))),
@@ -637,14 +649,8 @@ fn apply_action(
                 .unwrap_or(0.0);
 
             if let Some(op_obj) = mutation.as_object() {
-                let op = op_obj
-                    .get("op")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("set");
-                let val = op_obj
-                    .get("value")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(1.0);
+                let op = op_obj.get("op").and_then(|v| v.as_str()).unwrap_or("set");
+                let val = op_obj.get("value").and_then(|v| v.as_f64()).unwrap_or(1.0);
 
                 let new_val = match op {
                     "set" => val,

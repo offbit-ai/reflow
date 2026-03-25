@@ -43,12 +43,7 @@ pub async fn data_emit_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
         .unwrap_or(true);
 
     // One-shot guard: skip if already emitted
-    if oneshot
-        && ctx
-            .get_pool("_emit")
-            .into_iter()
-            .any(|(k, _)| k == "done")
-    {
+    if oneshot && ctx.get_pool("_emit").into_iter().any(|(k, _)| k == "done") {
         return Ok(HashMap::new());
     }
 

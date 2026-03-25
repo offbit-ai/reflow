@@ -121,10 +121,8 @@ pub async fn hit_test_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let extra = if was_inside { padding } else { 0.0 };
     let hw = target_w / 2.0 + extra;
     let hh = target_h / 2.0 + extra;
-    let inside = src_x >= tgt_x - hw
-        && src_x <= tgt_x + hw
-        && src_y >= tgt_y - hh
-        && src_y <= tgt_y + hh;
+    let inside =
+        src_x >= tgt_x - hw && src_x <= tgt_x + hw && src_y >= tgt_y - hh && src_y <= tgt_y + hh;
 
     // Only emit on state transitions — silent when unchanged
     if inside == was_inside {

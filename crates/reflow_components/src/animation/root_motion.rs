@@ -34,9 +34,18 @@ pub async fn root_motion_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     let config = ctx.get_config_hashmap();
 
     let root_bone = config.get("rootBone").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-    let extract_x = config.get("extractX").and_then(|v| v.as_bool()).unwrap_or(true);
-    let extract_y = config.get("extractY").and_then(|v| v.as_bool()).unwrap_or(false);
-    let extract_z = config.get("extractZ").and_then(|v| v.as_bool()).unwrap_or(true);
+    let extract_x = config
+        .get("extractX")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let extract_y = config
+        .get("extractY")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let extract_z = config
+        .get("extractZ")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let dt = match payload.get("dt") {
         Some(Message::Float(f)) => *f as f32,
@@ -78,9 +87,15 @@ pub async fn root_motion_actor(ctx: ActorContext) -> Result<HashMap<String, Mess
     ctx.pool_upsert("_root", "z", json!(rz));
 
     // Strip extracted axes from root bone translation
-    if extract_x { bytes[off + 48..off + 52].copy_from_slice(&0.0f32.to_le_bytes()); }
-    if extract_y { bytes[off + 52..off + 56].copy_from_slice(&0.0f32.to_le_bytes()); }
-    if extract_z { bytes[off + 56..off + 60].copy_from_slice(&0.0f32.to_le_bytes()); }
+    if extract_x {
+        bytes[off + 48..off + 52].copy_from_slice(&0.0f32.to_le_bytes());
+    }
+    if extract_y {
+        bytes[off + 52..off + 56].copy_from_slice(&0.0f32.to_le_bytes());
+    }
+    if extract_z {
+        bytes[off + 56..off + 60].copy_from_slice(&0.0f32.to_le_bytes());
+    }
 
     let mut out = HashMap::new();
     out.insert("bone_transforms".to_string(), Message::bytes(bytes));

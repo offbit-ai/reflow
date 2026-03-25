@@ -94,7 +94,8 @@ pub async fn interval_trigger_actor(ctx: ActorContext) -> Result<HashMap<String,
         .to_string();
 
     // Guard: only spawn the background task once
-    let already_spawned = ctx.get_pool("_trigger")
+    let already_spawned = ctx
+        .get_pool("_trigger")
         .into_iter()
         .any(|(k, _)| k == "spawned");
     if already_spawned {

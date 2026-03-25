@@ -71,7 +71,10 @@ pub async fn scene_render_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     ];
     let msaa_samples = config.get("msaa").and_then(|v| v.as_u64()).unwrap_or(4) as u32;
     let near_plane = config.get("near").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
-    let far_plane = config.get("far").and_then(|v| v.as_f64()).unwrap_or(10000.0) as f32;
+    let far_plane = config
+        .get("far")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(10000.0) as f32;
     let clear_color = [
         config.get("bgR").and_then(|v| v.as_f64()).unwrap_or(0.1),
         config.get("bgG").and_then(|v| v.as_f64()).unwrap_or(0.1),
@@ -501,9 +504,12 @@ struct CachedScenePipeline {
 
 /// Static shared buffer caches — Arc<Vec<u8>> for zero-copy per-frame access.
 /// Replaces base64 JSON pool round-trip with pointer-bump Arc::clone.
-static MESH_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
-static TERRAIN_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
-static TEXTURE_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
+static MESH_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> =
+    std::sync::OnceLock::new();
+static TERRAIN_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> =
+    std::sync::OnceLock::new();
+static TEXTURE_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> =
+    std::sync::OnceLock::new();
 
 fn get_mesh_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
     MESH_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
@@ -515,8 +521,10 @@ fn get_texture_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<
     TEXTURE_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
 }
 
-static LIGHT_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> = std::sync::OnceLock::new();
-static LIGHT_COUNT_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<u32>>> = std::sync::OnceLock::new();
+static LIGHT_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>>> =
+    std::sync::OnceLock::new();
+static LIGHT_COUNT_CACHE: std::sync::OnceLock<parking_lot::Mutex<Option<u32>>> =
+    std::sync::OnceLock::new();
 
 fn get_light_cache() -> &'static parking_lot::Mutex<Option<std::sync::Arc<Vec<u8>>>> {
     LIGHT_CACHE.get_or_init(|| parking_lot::Mutex::new(None))
@@ -557,9 +565,12 @@ struct CachedDynamicPipeline {
     pipeline: wgpu::RenderPipeline,
     bgl: wgpu::BindGroupLayout,
 }
-static DYNAMIC_PIPELINE_CACHE: OnceLock<parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>>> = OnceLock::new();
+static DYNAMIC_PIPELINE_CACHE: OnceLock<
+    parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>>,
+> = OnceLock::new();
 
-fn get_dynamic_cache() -> &'static parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
+fn get_dynamic_cache(
+) -> &'static parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
     DYNAMIC_PIPELINE_CACHE.get_or_init(|| parking_lot::Mutex::new(std::collections::HashMap::new()))
 }
 
@@ -672,7 +683,11 @@ fn get_or_create_textured_pipeline(
     device: &wgpu::Device,
     sample_count: u32,
 ) -> &'static CachedScenePipeline {
-    let lock = if sample_count > 1 { &TEXTURED_PIPELINE_4X } else { &TEXTURED_PIPELINE_1X };
+    let lock = if sample_count > 1 {
+        &TEXTURED_PIPELINE_4X
+    } else {
+        &TEXTURED_PIPELINE_1X
+    };
     lock.get_or_init(|| {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Textured Scene Shader"),
@@ -684,13 +699,21 @@ fn get_or_create_textured_pipeline(
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture { sample_type: wgpu::TextureSampleType::Float { filterable: true }, view_dimension: wgpu::TextureViewDimension::D2, multisampled: false },
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
@@ -703,11 +726,13 @@ fn get_or_create_textured_pipeline(
         });
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Textured Scene Pipeline"),
-            layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: &[&bgl],
-                push_constant_ranges: &[],
-            })),
+            layout: Some(
+                &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: None,
+                    bind_group_layouts: &[&bgl],
+                    push_constant_ranges: &[],
+                }),
+            ),
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
@@ -716,9 +741,21 @@ fn get_or_create_textured_pipeline(
                     array_stride: 32, // pos3(12) + normal3(12) + uv2(8)
                     step_mode: wgpu::VertexStepMode::Vertex,
                     attributes: &[
-                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },  // position
-                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 }, // normal
-                        wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x2, offset: 24, shader_location: 2 }, // uv
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: 0,
+                            shader_location: 0,
+                        }, // position
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: 12,
+                            shader_location: 1,
+                        }, // normal
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: 24,
+                            shader_location: 2,
+                        }, // uv
                     ],
                 }],
             },
@@ -732,7 +769,11 @@ fn get_or_create_textured_pipeline(
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
-            primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                cull_mode: None,
+                ..Default::default()
+            },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: wgpu::TextureFormat::Depth32Float,
                 depth_write_enabled: true,
@@ -740,11 +781,19 @@ fn get_or_create_textured_pipeline(
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
-            multisample: wgpu::MultisampleState { count: sample_count, mask: !0, alpha_to_coverage_enabled: false },
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview: None,
             cache: None,
         });
-        CachedScenePipeline { pipeline, bgl, sample_count }
+        CachedScenePipeline {
+            pipeline,
+            bgl,
+            sample_count,
+        }
     })
 }
 
@@ -823,7 +872,10 @@ fn render_scene(
         .and_then(|v| v.as_u64())
         .unwrap_or(24) as usize;
     let has_compiled_material = compiled_material.is_some() && prefab_mesh.is_some();
-    let has_texture = !has_compiled_material && texture_rgba.is_some() && mesh_stride == 32 && prefab_mesh.is_some();
+    let has_texture = !has_compiled_material
+        && texture_rgba.is_some()
+        && mesh_stride == 32
+        && prefab_mesh.is_some();
 
     // Render mode: 0=standard vertex-color, 1=textured, 2=PBR material
     let render_mode: u8;
@@ -831,33 +883,50 @@ fn render_scene(
     let (vertex_data, vertex_count, use_textured_pipeline) = if has_compiled_material {
         // PBR material path: use stride from compiled material
         let mat = compiled_material.unwrap();
-        let mat_stride = mat.get("vertexStride").and_then(|v| v.as_u64()).unwrap_or(mesh_stride as u64) as usize;
+        let mat_stride = mat
+            .get("vertexStride")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(mesh_stride as u64) as usize;
         let mesh = prefab_mesh.unwrap();
         let vc = mesh.len() / mat_stride.max(1);
-        let transform = objects.first().and_then(|o| o.get("transform")).cloned().unwrap_or(serde_json::json!({}));
-        let pos = transform.get("position").and_then(|p| p.as_array())
-            .map(|a| [
-                a.first().and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            ]).unwrap_or([0.0; 3]);
-        let scl = transform.get("scale").and_then(|s| s.as_array())
-            .map(|a| [
-                a.first().and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-            ]).unwrap_or([1.0; 3]);
+        let transform = objects
+            .first()
+            .and_then(|o| o.get("transform"))
+            .cloned()
+            .unwrap_or(serde_json::json!({}));
+        let pos = transform
+            .get("position")
+            .and_then(|p| p.as_array())
+            .map(|a| {
+                [
+                    a.first().and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                ]
+            })
+            .unwrap_or([0.0; 3]);
+        let scl = transform
+            .get("scale")
+            .and_then(|s| s.as_array())
+            .map(|a| {
+                [
+                    a.first().and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                ]
+            })
+            .unwrap_or([1.0; 3]);
         let mut transformed = Vec::with_capacity(mesh.len());
         for i in 0..vc {
             let off = i * mat_stride;
-            let px = f32::from_le_bytes(mesh[off..off+4].try_into().unwrap());
-            let py = f32::from_le_bytes(mesh[off+4..off+8].try_into().unwrap());
-            let pz = f32::from_le_bytes(mesh[off+8..off+12].try_into().unwrap());
+            let px = f32::from_le_bytes(mesh[off..off + 4].try_into().unwrap());
+            let py = f32::from_le_bytes(mesh[off + 4..off + 8].try_into().unwrap());
+            let pz = f32::from_le_bytes(mesh[off + 8..off + 12].try_into().unwrap());
             let tp = transform_pos([px, py, pz], pos, scl);
             transformed.extend_from_slice(&tp[0].to_le_bytes());
             transformed.extend_from_slice(&tp[1].to_le_bytes());
             transformed.extend_from_slice(&tp[2].to_le_bytes());
-            transformed.extend_from_slice(&mesh[off+12..off+mat_stride]);
+            transformed.extend_from_slice(&mesh[off + 12..off + mat_stride]);
         }
         render_mode = 2;
         (transformed, vc, false)
@@ -866,35 +935,46 @@ fn render_scene(
         let mesh = prefab_mesh.unwrap();
         let vc = mesh.len() / 32;
         // Apply per-object transform to vertices
-        let transform = objects.first()
+        let transform = objects
+            .first()
             .and_then(|o| o.get("transform"))
             .cloned()
             .unwrap_or(serde_json::json!({}));
-        let pos = transform.get("position").and_then(|p| p.as_array())
-            .map(|a| [
-                a.first().and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-            ]).unwrap_or([0.0; 3]);
-        let scl = transform.get("scale").and_then(|s| s.as_array())
-            .map(|a| [
-                a.first().and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-                a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
-            ]).unwrap_or([1.0; 3]);
+        let pos = transform
+            .get("position")
+            .and_then(|p| p.as_array())
+            .map(|a| {
+                [
+                    a.first().and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
+                ]
+            })
+            .unwrap_or([0.0; 3]);
+        let scl = transform
+            .get("scale")
+            .and_then(|s| s.as_array())
+            .map(|a| {
+                [
+                    a.first().and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(1).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                    a.get(2).and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
+                ]
+            })
+            .unwrap_or([1.0; 3]);
 
         let mut transformed = Vec::with_capacity(mesh.len());
         for i in 0..vc {
             let off = i * 32;
-            let px = f32::from_le_bytes(mesh[off..off+4].try_into().unwrap());
-            let py = f32::from_le_bytes(mesh[off+4..off+8].try_into().unwrap());
-            let pz = f32::from_le_bytes(mesh[off+8..off+12].try_into().unwrap());
+            let px = f32::from_le_bytes(mesh[off..off + 4].try_into().unwrap());
+            let py = f32::from_le_bytes(mesh[off + 4..off + 8].try_into().unwrap());
+            let pz = f32::from_le_bytes(mesh[off + 8..off + 12].try_into().unwrap());
             let tp = transform_pos([px, py, pz], pos, scl);
             transformed.extend_from_slice(&tp[0].to_le_bytes());
             transformed.extend_from_slice(&tp[1].to_le_bytes());
             transformed.extend_from_slice(&tp[2].to_le_bytes());
             // Copy normal (12 bytes) + UV (8 bytes) as-is
-            transformed.extend_from_slice(&mesh[off+12..off+32]);
+            transformed.extend_from_slice(&mesh[off + 12..off + 32]);
         }
         render_mode = 1;
         (transformed, vc, true)
@@ -925,7 +1005,14 @@ fn render_scene(
         usage: wgpu::BufferUsages::VERTEX,
     });
 
-    let view_proj = build_view_proj(cam_pos, cam_target, fov, width as f32 / height as f32, near, far);
+    let view_proj = build_view_proj(
+        cam_pos,
+        cam_target,
+        fov,
+        width as f32 / height as f32,
+        near,
+        far,
+    );
     // Read light buffer from cache
     let light_buffer_data: Option<Vec<u8>> = get_light_cache().lock().as_ref().map(|a| a.to_vec());
     let light_count = get_light_count_cache().lock().unwrap_or(0);
@@ -1006,9 +1093,18 @@ fn render_scene(
         // ─── PBR material rendering path (compiled shader graph) ───
         let mat = compiled_material.unwrap();
         let vert_wgsl = mat.get("vertexWgsl").and_then(|v| v.as_str()).unwrap_or("");
-        let frag_wgsl = mat.get("fragmentWgsl").and_then(|v| v.as_str()).unwrap_or("");
-        let pipeline_hash = mat.get("pipelineHash").and_then(|v| v.as_u64()).unwrap_or(0);
-        let mat_stride = mat.get("vertexStride").and_then(|v| v.as_u64()).unwrap_or(24) as u64;
+        let frag_wgsl = mat
+            .get("fragmentWgsl")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let pipeline_hash = mat
+            .get("pipelineHash")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let mat_stride = mat
+            .get("vertexStride")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(24) as u64;
         let has_uv = mat_stride >= 32;
 
         // Get or create pipeline from dynamic cache
@@ -1028,31 +1124,56 @@ fn render_scene(
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
                         visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None },
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
                         count: None,
                     },
                 ],
             });
             let mut attrs = vec![
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x3,
+                    offset: 0,
+                    shader_location: 0,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x3,
+                    offset: 12,
+                    shader_location: 1,
+                },
             ];
             if has_uv {
-                attrs.push(wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x2, offset: 24, shader_location: 2 });
+                attrs.push(wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    offset: 24,
+                    shader_location: 2,
+                });
             }
             let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("PBR Pipeline"),
-                layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                    label: None, bind_group_layouts: &[&bgl], push_constant_ranges: &[],
-                })),
+                layout: Some(
+                    &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                        label: None,
+                        bind_group_layouts: &[&bgl],
+                        push_constant_ranges: &[],
+                    }),
+                ),
                 vertex: wgpu::VertexState {
-                    module: &vs_module, entry_point: Some("vs_main"),
+                    module: &vs_module,
+                    entry_point: Some("vs_main"),
                     compilation_options: Default::default(),
                     buffers: &[wgpu::VertexBufferLayout {
                         array_stride: mat_stride,
@@ -1061,7 +1182,8 @@ fn render_scene(
                     }],
                 },
                 fragment: Some(wgpu::FragmentState {
-                    module: &fs_module, entry_point: Some("fs_main"),
+                    module: &fs_module,
+                    entry_point: Some("fs_main"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -1069,14 +1191,25 @@ fn render_scene(
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
                 }),
-                primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    cull_mode: None,
+                    ..Default::default()
+                },
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth32Float,
-                    depth_write_enabled: true, depth_compare: wgpu::CompareFunction::Less,
-                    stencil: wgpu::StencilState::default(), bias: wgpu::DepthBiasState::default(),
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::Less,
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
                 }),
-                multisample: wgpu::MultisampleState { count: sample_count, mask: !0, alpha_to_coverage_enabled: false },
-                multiview: None, cache: None,
+                multisample: wgpu::MultisampleState {
+                    count: sample_count,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+                multiview: None,
+                cache: None,
             });
             dyn_cache.insert(pipeline_hash, CachedDynamicPipeline { pipeline, bgl });
         }
@@ -1091,10 +1224,17 @@ fn render_scene(
         });
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: None, layout: &cached.bgl,
+            label: None,
+            layout: &cached.bgl,
             entries: &[
-                wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 1, resource: light_gpu_buffer.as_entire_binding() },
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: light_gpu_buffer.as_entire_binding(),
+                },
             ],
         });
         {
@@ -1102,18 +1242,31 @@ fn render_scene(
                 label: Some("PBR Material Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &color_view,
-                    resolve_target: if sample_count > 1 { Some(&resolve_view) } else { None },
+                    resolve_target: if sample_count > 1 {
+                        Some(&resolve_view)
+                    } else {
+                        None
+                    },
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color { r: clear_color[0], g: clear_color[1], b: clear_color[2], a: 1.0 }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: clear_color[0],
+                            g: clear_color[1],
+                            b: clear_color[2],
+                            a: 1.0,
+                        }),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                     view: &depth_view,
-                    depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }),
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
                     stencil_ops: None,
                 }),
-                timestamp_writes: None, occlusion_query_set: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
             });
             pass.set_pipeline(&cached.pipeline);
             pass.set_bind_group(0, &bind_group, &[]);
@@ -1133,18 +1286,36 @@ fn render_scene(
             let tex_pixels = &tex_data[8..];
             let texture = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("Diffuse"),
-                size: wgpu::Extent3d { width: tex_w, height: tex_h, depth_or_array_layers: 1 },
-                mip_level_count: 1, sample_count: 1,
+                size: wgpu::Extent3d {
+                    width: tex_w,
+                    height: tex_h,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
                 format: wgpu::TextureFormat::Rgba8UnormSrgb,
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
             });
             queue.write_texture(
-                wgpu::TexelCopyTextureInfo { texture: &texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+                wgpu::TexelCopyTextureInfo {
+                    texture: &texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
                 tex_pixels,
-                wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(tex_w * 4), rows_per_image: Some(tex_h) },
-                wgpu::Extent3d { width: tex_w, height: tex_h, depth_or_array_layers: 1 },
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(tex_w * 4),
+                    rows_per_image: Some(tex_h),
+                },
+                wgpu::Extent3d {
+                    width: tex_w,
+                    height: tex_h,
+                    depth_or_array_layers: 1,
+                },
             );
             CachedGpuDiffuse {
                 view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
@@ -1162,9 +1333,18 @@ fn render_scene(
             label: None,
             layout: &cached_pipe.bgl,
             entries: &[
-                wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&gpu_diff.view) },
-                wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&gpu_diff.sampler) },
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&gpu_diff.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&gpu_diff.sampler),
+                },
             ],
         });
 
@@ -1173,15 +1353,27 @@ fn render_scene(
                 label: Some("Textured Scene Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &color_view,
-                    resolve_target: if sample_count > 1 { Some(&resolve_view) } else { None },
+                    resolve_target: if sample_count > 1 {
+                        Some(&resolve_view)
+                    } else {
+                        None
+                    },
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color { r: clear_color[0], g: clear_color[1], b: clear_color[2], a: 1.0 }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: clear_color[0],
+                            g: clear_color[1],
+                            b: clear_color[2],
+                            a: 1.0,
+                        }),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                     view: &depth_view,
-                    depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }),
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
                     stencil_ops: None,
                 }),
                 timestamp_writes: None,
@@ -1209,15 +1401,27 @@ fn render_scene(
                 label: Some("Scene Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &color_view,
-                    resolve_target: if sample_count > 1 { Some(&resolve_view) } else { None },
+                    resolve_target: if sample_count > 1 {
+                        Some(&resolve_view)
+                    } else {
+                        None
+                    },
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color { r: clear_color[0], g: clear_color[1], b: clear_color[2], a: 1.0 }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: clear_color[0],
+                            g: clear_color[1],
+                            b: clear_color[2],
+                            a: 1.0,
+                        }),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                     view: &depth_view,
-                    depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }),
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
                     stencil_ops: None,
                 }),
                 timestamp_writes: None,
@@ -1363,7 +1567,14 @@ fn generate_cube(center: [f32; 3], half: f32, color: [f32; 3]) -> Vec<f32> {
     verts
 }
 
-fn build_view_proj(eye: [f32; 3], target: [f32; 3], fov_deg: f32, aspect: f32, near: f32, far: f32) -> [[f32; 4]; 4] {
+fn build_view_proj(
+    eye: [f32; 3],
+    target: [f32; 3],
+    fov_deg: f32,
+    aspect: f32,
+    near: f32,
+    far: f32,
+) -> [[f32; 4]; 4] {
     let fwd = normalize([target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]]);
     let right = normalize(cross([0.0, 1.0, 0.0], fwd));
     let up = cross(fwd, right);

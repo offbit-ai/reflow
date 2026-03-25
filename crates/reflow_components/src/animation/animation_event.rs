@@ -47,7 +47,10 @@ pub async fn animation_event_actor(ctx: ActorContext) -> Result<HashMap<String, 
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let duration = config.get("duration").and_then(|v| v.as_f64()).unwrap_or(1.0);
+    let duration = config
+        .get("duration")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(1.0);
     let do_loop = config.get("loop").and_then(|v| v.as_bool()).unwrap_or(true);
 
     let current_time = match payload.get("time") {
@@ -65,7 +68,10 @@ pub async fn animation_event_actor(ctx: ActorContext) -> Result<HashMap<String, 
 
     // Read previous time from pool
     let pool: HashMap<String, Value> = ctx.get_pool("_evt").into_iter().collect();
-    let prev_t = pool.get("prev_time").and_then(|v| v.as_f64()).unwrap_or(-1.0);
+    let prev_t = pool
+        .get("prev_time")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(-1.0);
     ctx.pool_upsert("_evt", "prev_time", json!(t));
 
     // Find events that fire between prev_t and t
@@ -102,7 +108,10 @@ pub async fn animation_event_actor(ctx: ActorContext) -> Result<HashMap<String, 
     }
 
     if !fired.is_empty() {
-        let arr: Vec<EncodableValue> = fired.iter().map(|v| EncodableValue::from(v.clone())).collect();
+        let arr: Vec<EncodableValue> = fired
+            .iter()
+            .map(|v| EncodableValue::from(v.clone()))
+            .collect();
         out.insert("events".to_string(), Message::Array(Arc::new(arr)));
     }
 

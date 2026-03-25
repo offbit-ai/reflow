@@ -708,8 +708,12 @@ pub fn render_2d_with_layer(
             ],
         });
         *bufs_guard = Some(CachedBuffers {
-            uniform_buf, prim_buf, bind_group,
-            width, height, prim_capacity,
+            uniform_buf,
+            prim_buf,
+            bind_group,
+            width,
+            height,
+            prim_capacity,
         });
     } else {
         // Just update primitive data
@@ -726,7 +730,10 @@ pub fn render_2d_with_layer(
         Some(a) => (&a.data[..], a.width, a.height),
         None => (&[128u8] as &[u8], 1u32, 1u32),
     };
-    let mut atlas_cache_guard = CACHED_ATLAS.lock().unwrap_or_else(|e| { eprintln!("[MUTEX POISON] atlas"); e.into_inner() });
+    let mut atlas_cache_guard = CACHED_ATLAS.lock().unwrap_or_else(|e| {
+        eprintln!("[MUTEX POISON] atlas");
+        e.into_inner()
+    });
     let needs_atlas = atlas_cache_guard.as_ref().map_or(true, |c| {
         c.width != atlas_w || c.height != atlas_h || c.data_len != atlas_data.len()
     });
@@ -813,13 +820,17 @@ pub fn render_2d_with_layer(
         None => (&placeholder_pixel[..], 1u32, 1u32),
     };
     let mut layer_cache_guard = CACHED_LAYER.lock().unwrap_or_else(|e| e.into_inner());
-    let needs_layer = layer_cache_guard.as_ref().map_or(true, |c| {
-        c.width != layer_w || c.height != layer_h
-    });
+    let needs_layer = layer_cache_guard
+        .as_ref()
+        .map_or(true, |c| c.width != layer_w || c.height != layer_h);
     if needs_layer {
         let tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Layer Image"),
-            size: wgpu::Extent3d { width: layer_w, height: layer_h, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: layer_w,
+                height: layer_h,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -838,26 +849,55 @@ pub fn render_2d_with_layer(
             label: Some("Layer Bind Group"),
             layout: &cached.layer_bind_group_layout,
             entries: &[
-                wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&view) },
-                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&sampler) },
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
             ],
         });
-        *layer_cache_guard = Some(CachedLayer { tex, view, sampler, bind_group, width: layer_w, height: layer_h });
+        *layer_cache_guard = Some(CachedLayer {
+            tex,
+            view,
+            sampler,
+            bind_group,
+            width: layer_w,
+            height: layer_h,
+        });
     }
     // Upload pixel data via write_texture (fast GPU-side copy, no allocation)
     if let Some(ref cl) = *layer_cache_guard {
         queue.write_texture(
-            wgpu::TexelCopyTextureInfo { texture: &cl.tex, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+            wgpu::TexelCopyTextureInfo {
+                texture: &cl.tex,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
             layer_data,
-            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(layer_w * 4), rows_per_image: Some(layer_h) },
-            wgpu::Extent3d { width: layer_w, height: layer_h, depth_or_array_layers: 1 },
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(layer_w * 4),
+                rows_per_image: Some(layer_h),
+            },
+            wgpu::Extent3d {
+                width: layer_w,
+                height: layer_h,
+                depth_or_array_layers: 1,
+            },
         );
     }
     let layer_bind_group = &layer_cache_guard.as_ref().unwrap().bind_group;
 
     // Render targets — cached for constant output dimensions.
     // Avoids recreating 3.5 MB MSAA + 0.9 MB resolve + 1.6 MB readback every frame.
-    let mut rt_cache_guard = CACHED_RENDER_TARGETS.lock().unwrap_or_else(|e| { eprintln!("[MUTEX POISON] rt"); e.into_inner() });
+    let mut rt_cache_guard = CACHED_RENDER_TARGETS.lock().unwrap_or_else(|e| {
+        eprintln!("[MUTEX POISON] rt");
+        e.into_inner()
+    });
     let needs_rt = rt_cache_guard.as_ref().map_or(true, |c| {
         c.width != width || c.height != height || c.sample_count != sample_count
     });
@@ -896,7 +936,9 @@ pub fn render_2d_with_layer(
         } else {
             None
         };
-        let msaa_view = msaa_tex.as_ref().map(|t| t.create_view(&Default::default()));
+        let msaa_view = msaa_tex
+            .as_ref()
+            .map(|t| t.create_view(&Default::default()));
         let readback_buf = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("SDF 2D Readback"),
             size: (bytes_per_row * height) as u64,
@@ -1273,24 +1315,46 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     // ── Inline font loading: build atlas from text config font path ──
     // If no atlas cached yet and any text entry carries a "font" path,
     // build the atlas immediately without an external font/atlas pipeline.
-    let atlas_empty = ctx.get_pool("_atlas").into_iter()
+    let atlas_empty = ctx
+        .get_pool("_atlas")
+        .into_iter()
         .find(|(k, _)| k == "bitmap")
         .is_none();
     if atlas_empty {
-        let text_cfgs = config.get("text").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-        if let Some(font_path) = text_cfgs.iter().find_map(|t| t.get("font").and_then(|v| v.as_str()).map(|s| s.to_string())) {
-            let font_size = text_cfgs.iter().find_map(|t| t.get("size").and_then(|v| v.as_f64())).unwrap_or(48.0) as f32;
+        let text_cfgs = config
+            .get("text")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        if let Some(font_path) = text_cfgs.iter().find_map(|t| {
+            t.get("font")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        }) {
+            let font_size = text_cfgs
+                .iter()
+                .find_map(|t| t.get("size").and_then(|v| v.as_f64()))
+                .unwrap_or(48.0) as f32;
             if let Ok(font_bytes) = std::fs::read(&font_path) {
-                if let Ok(atlas) = super::font_atlas::get_or_build_atlas(&font_path, &font_bytes, font_size, false, "") {
+                if let Ok(atlas) = super::font_atlas::get_or_build_atlas(
+                    &font_path,
+                    &font_bytes,
+                    font_size,
+                    false,
+                    "",
+                ) {
                     ctx.pool_upsert("_atlas", "bitmap", json!(base64_encode(&atlas.bitmap)));
                     let mut metrics_map = serde_json::Map::new();
                     for (ch, info) in &atlas.glyphs {
-                        metrics_map.insert(ch.to_string(), json!({
-                            "x": info.atlas_x, "y": info.atlas_y,
-                            "w": info.width, "h": info.height,
-                            "advance": info.advance,
-                            "bearing_x": info.bearing_x, "bearing_y": info.bearing_y,
-                        }));
+                        metrics_map.insert(
+                            ch.to_string(),
+                            json!({
+                                "x": info.atlas_x, "y": info.atlas_y,
+                                "w": info.width, "h": info.height,
+                                "advance": info.advance,
+                                "bearing_x": info.bearing_x, "bearing_y": info.bearing_y,
+                            }),
+                        );
                     }
                     ctx.pool_upsert("_atlas", "metrics", Value::Object(metrics_map));
                     ctx.pool_upsert("_atlas", "size", json!([atlas.width, atlas.height]));
@@ -1335,7 +1399,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     // Accepts either Message::Bytes (raw) or Message::Integer (frame pool slot index).
     if let Some(Message::Integer(slot_idx)) = payload.get("data") {
         // Frame pool mode: read from shared pool by slot index
-        let pool_name = config.get("framePool").and_then(|v| v.as_str()).unwrap_or("video_pipe");
+        let pool_name = config
+            .get("framePool")
+            .and_then(|v| v.as_str())
+            .unwrap_or("video_pipe");
         if let Some(pool) = reflow_actor::frame_pool::FramePool::get(pool_name) {
             pool.read(*slot_idx as usize, |data| {
                 let len = data.len();
@@ -1345,11 +1412,16 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                         (width, height)
                     } else {
                         let try_ratios: &[(u32, u32)] = &[(16, 9), (4, 3), (3, 2), (1, 1)];
-                        try_ratios.iter()
+                        try_ratios
+                            .iter()
                             .find_map(|&(rw, rh)| {
                                 let h = ((pixels as f64 * rh as f64 / rw as f64).sqrt()) as u32;
                                 let w = pixels / h.max(1);
-                                if w * h == pixels { Some((w, h)) } else { None }
+                                if w * h == pixels {
+                                    Some((w, h))
+                                } else {
+                                    None
+                                }
                             })
                             .unwrap_or_else(|| {
                                 let w = (pixels as f64).sqrt() as u32;
@@ -1371,11 +1443,16 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             } else {
                 // Try 16:9, 4:3, then square-ish fallback
                 let try_ratios: &[(u32, u32)] = &[(16, 9), (4, 3), (3, 2), (1, 1)];
-                try_ratios.iter()
+                try_ratios
+                    .iter()
                     .find_map(|&(rw, rh)| {
                         let h = ((pixels as f64 * rh as f64 / rw as f64).sqrt()) as u32;
                         let w = pixels / h.max(1);
-                        if w * h == pixels { Some((w, h)) } else { None }
+                        if w * h == pixels {
+                            Some((w, h))
+                        } else {
+                            None
+                        }
                     })
                     .unwrap_or_else(|| {
                         let w = (pixels as f64).sqrt() as u32;
@@ -1431,14 +1508,17 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     // z controls ordering within each phase: shapes default to idx*10,
     // text defaults to 0.5 so it renders above s0 but below s1 by default.
     let mut shadow_prims: Vec<(f32, GpuPrimitive)> = Vec::new();
-    let mut fill_prims:   Vec<(f32, GpuPrimitive)> = Vec::new();
+    let mut fill_prims: Vec<(f32, GpuPrimitive)> = Vec::new();
 
     // ── Geometric shapes (sN_ prefix) ──
     // z defaults to idx*10 so declaration order is the natural z-order.
     // Set "z" in the shape config to override (e.g. cursor at z:20 floats above text at z:5).
     for (idx, prim_json) in shapes.iter().enumerate() {
         let pfx = format!("s{}", idx);
-        let z = prim_json.get("z").and_then(|v| v.as_f64()).unwrap_or(idx as f64 * 10.0) as f32;
+        let z = prim_json
+            .get("z")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(idx as f64 * 10.0) as f32;
         let anim_x = get_val(&pfx, "x");
         let anim_y = get_val(&pfx, "y");
         let anim_scale = get_val(&pfx, "scale").unwrap_or(1.0);
@@ -1635,7 +1715,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let u1 = (gx + gw) / aw as f32;
                     let v1 = (gy + gh) / ah as f32;
 
-                    fill_prims.push((text_z, GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color)));
+                    fill_prims.push((
+                        text_z,
+                        GpuPrimitive::glyph(qx, qy, qw, qh, [u0, v0, u1, v1], color),
+                    ));
                 }
             } else {
                 // ── Fallback: geometric segment font ──
@@ -1652,14 +1735,10 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
                     let sy1 = ccy + (seg[1] * size - hs) * s;
                     let sx2 = ccx + (seg[2] * size - hw) * s;
                     let sy2 = ccy + (seg[3] * size - hs) * s;
-                    fill_prims.push((text_z, GpuPrimitive::segment(
-                        sx1,
-                        sy1,
-                        sx2,
-                        sy2,
-                        thickness * s,
-                        color,
-                    )));
+                    fill_prims.push((
+                        text_z,
+                        GpuPrimitive::segment(sx1, sy1, sx2, sy2, thickness * s, color),
+                    ));
                 }
             }
         }
@@ -1668,8 +1747,7 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     // Sort each phase by z, then assemble: shadows first, then fills.
     shadow_prims.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
     fill_prims.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
-    let mut gpu_prims: Vec<GpuPrimitive> =
-        shadow_prims.into_iter().map(|(_, p)| p).collect();
+    let mut gpu_prims: Vec<GpuPrimitive> = shadow_prims.into_iter().map(|(_, p)| p).collect();
     gpu_prims.extend(fill_prims.into_iter().map(|(_, p)| p));
 
     if gpu_prims.is_empty() {
@@ -1705,14 +1783,34 @@ pub async fn gpu_2d_render_actor(ctx: ActorContext) -> Result<HashMap<String, Me
     let rgba = {
         static RENDER_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let rc = RENDER_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        if rc % 20 == 0 { eprintln!("[render] frame={rc} prims={} layer={}", gpu_prims.len(), layer_ref.is_some()); }
+        if rc % 20 == 0 {
+            eprintln!(
+                "[render] frame={rc} prims={} layer={}",
+                gpu_prims.len(),
+                layer_ref.is_some()
+            );
+        }
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            render_2d_with_layer(&gpu_prims, width, height, bg, atlas_gpu.as_ref(), msaa, layer_ref)
+            render_2d_with_layer(
+                &gpu_prims,
+                width,
+                height,
+                bg,
+                atlas_gpu.as_ref(),
+                msaa,
+                layer_ref,
+            )
         }));
         match result {
             Ok(out) => out,
             Err(e) => {
-                let msg = if let Some(s) = e.downcast_ref::<&str>() { (*s).to_string() } else if let Some(s) = e.downcast_ref::<String>() { s.clone() } else { "unknown".to_string() };
+                let msg = if let Some(s) = e.downcast_ref::<&str>() {
+                    (*s).to_string()
+                } else if let Some(s) = e.downcast_ref::<String>() {
+                    s.clone()
+                } else {
+                    "unknown".to_string()
+                };
                 eprintln!("[render_2d panic] {msg}");
                 return Ok(HashMap::new());
             }

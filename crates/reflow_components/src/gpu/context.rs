@@ -12,6 +12,11 @@ use std::sync::Arc;
 pub static GPU_CONTEXT: Lazy<GpuContext> =
     Lazy::new(|| pollster::block_on(GpuContext::init()).expect("Failed to initialize GPU context"));
 
+/// Fallible GPU context access for render paths that should degrade to an actor
+/// error instead of poisoning a global singleton in headless environments.
+static GPU_CONTEXT_RESULT: Lazy<Result<GpuContext, String>> =
+    Lazy::new(|| pollster::block_on(GpuContext::init()));
+
 pub struct GpuContext {
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
@@ -31,6 +36,11 @@ impl GpuContext {
             })
             .await
             .ok_or("No GPU adapter found")?;
+        let info = adapter.get_info();
+        eprintln!(
+            "[gpu] backend={:?} device='{}' vendor={} device_type={:?}",
+            info.backend, info.name, info.vendor, info.device_type
+        );
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -64,5 +74,12 @@ impl GpuContext {
     /// readback in a single poll, avoiding double-poll deadlocks on Metal.
     pub fn submit_and_poll(&self, command_buffer: wgpu::CommandBuffer) {
         self.queue.submit(std::iter::once(command_buffer));
+    }
+}
+
+pub fn try_gpu_context() -> Result<&'static GpuContext, String> {
+    match &*GPU_CONTEXT_RESULT {
+        Ok(ctx) => Ok(ctx),
+        Err(err) => Err(err.clone()),
     }
 }

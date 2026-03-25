@@ -40,13 +40,21 @@ pub async fn morph_target_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     // Cache base mesh and targets
     if let Some(Message::Bytes(b)) = payload.get("mesh") {
         use base64::Engine;
-        ctx.pool_upsert("_morph", "base", json!(base64::engine::general_purpose::STANDARD.encode(&**b)));
+        ctx.pool_upsert(
+            "_morph",
+            "base",
+            json!(base64::engine::general_purpose::STANDARD.encode(&**b)),
+        );
     }
     for i in 0..8 {
         let port = format!("target_{}", i);
         if let Some(Message::Bytes(b)) = payload.get(&port) {
             use base64::Engine;
-            ctx.pool_upsert("_morph", &port, json!(base64::engine::general_purpose::STANDARD.encode(&**b)));
+            ctx.pool_upsert(
+                "_morph",
+                &port,
+                json!(base64::engine::general_purpose::STANDARD.encode(&**b)),
+            );
         }
     }
 
@@ -56,7 +64,11 @@ pub async fn morph_target_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             let v: Value = obj.as_ref().clone().into();
             v.get("weights")
                 .and_then(|v| v.as_array())
-                .map(|a| a.iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_f64().map(|f| f as f32))
+                        .collect()
+                })
                 .unwrap_or_default()
         }
         _ => return Ok(HashMap::new()),
@@ -68,7 +80,9 @@ pub async fn morph_target_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     let base_mesh = match cache.get("base").and_then(|v| v.as_str()) {
         Some(s) => {
             use base64::Engine;
-            base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+            base64::engine::general_purpose::STANDARD
+                .decode(s)
+                .unwrap_or_default()
         }
         None => return Ok(HashMap::new()),
     };
@@ -80,16 +94,22 @@ pub async fn morph_target_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
     let mut output = base_mesh.clone();
 
     for (ti, &w) in weights.iter().enumerate() {
-        if w.abs() < 1e-6 { continue; }
+        if w.abs() < 1e-6 {
+            continue;
+        }
         let key = format!("target_{}", ti);
         let target = match cache.get(&key).and_then(|v| v.as_str()) {
             Some(s) => {
                 use base64::Engine;
-                base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
+                base64::engine::general_purpose::STANDARD
+                    .decode(s)
+                    .unwrap_or_default()
             }
             None => continue,
         };
-        if target.len() != base_mesh.len() { continue; }
+        if target.len() != base_mesh.len() {
+            continue;
+        }
 
         // Add weighted delta to position components
         for vi in 0..vertex_count {
@@ -98,7 +118,8 @@ pub async fn morph_target_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
                 let fo = off + j * 4;
                 let base_v = f32::from_le_bytes(output[fo..fo + 4].try_into().unwrap());
                 let target_v = f32::from_le_bytes(target[fo..fo + 4].try_into().unwrap());
-                let delta = target_v - f32::from_le_bytes(base_mesh[fo..fo + 4].try_into().unwrap());
+                let delta =
+                    target_v - f32::from_le_bytes(base_mesh[fo..fo + 4].try_into().unwrap());
                 let result = base_v + delta * w;
                 output[fo..fo + 4].copy_from_slice(&result.to_le_bytes());
             }

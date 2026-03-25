@@ -31,8 +31,14 @@ pub async fn tone_map_actor(ctx: ActorContext) -> Result<HashMap<String, Message
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let mode = config.get("mode").and_then(|v| v.as_str()).unwrap_or("aces");
-    let exposure = config.get("exposure").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+    let mode = config
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("aces");
+    let exposure = config
+        .get("exposure")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(1.0) as f32;
     let gamma = config.get("gamma").and_then(|v| v.as_f64()).unwrap_or(2.2) as f32;
     let inv_gamma = 1.0 / gamma;
 

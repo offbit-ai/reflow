@@ -1,5 +1,6 @@
 //! Principled BSDF + Material Output shader nodes.
 
+use super::{cached_shader_input, connected_shader_inputs_ready, update_shader_input_cache};
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
@@ -10,36 +11,110 @@ use std::collections::HashMap;
 /// Principled BSDF — collects shader IR subtrees from inports, nests them.
 #[actor(
     ShaderPrincipledBsdfActor,
-    inports::<10>(base_color, metallic, roughness, normal, emission, emission_strength, ao, alpha),
+    inports::<10>(base_color, metallic, roughness, normal, emission, emission_strength, ao, alpha, transmission, ior),
     outports::<1>(shader),
     state(MemoryState)
 )]
-pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
-    let payload = ctx.get_payload();
+pub async fn shader_principled_bsdf_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
-
-    fn get_shader_ir(payload: &HashMap<String, Message>, config: &HashMap<String, Value>, port: &str, default: Value) -> Value {
-        if let Some(Message::Object(obj)) = payload.get(port) {
-            obj.as_ref().clone().into()
-        } else {
-            config.get(port).cloned().unwrap_or(default)
-        }
+    let cache = update_shader_input_cache(
+        &ctx,
+        &[
+            "base_color",
+            "metallic",
+            "roughness",
+            "normal",
+            "emission",
+            "emission_strength",
+            "ao",
+            "alpha",
+            "transmission",
+            "ior",
+        ],
+    );
+    if !connected_shader_inputs_ready(
+        &ctx,
+        &cache,
+        &[
+            "base_color",
+            "metallic",
+            "roughness",
+            "normal",
+            "emission",
+            "emission_strength",
+            "ao",
+            "alpha",
+            "transmission",
+            "ior",
+        ],
+    ) {
+        return Ok(HashMap::new());
     }
 
-    let base_color = get_shader_ir(&payload, &config, "base_color", json!({"type": "constVec3", "c": [0.8, 0.8, 0.8]}));
-    let metallic = get_shader_ir(&payload, &config, "metallic", json!({"type": "constFloat", "c": 0.0}));
-    let roughness = get_shader_ir(&payload, &config, "roughness", json!({"type": "constFloat", "c": 0.5}));
-    let normal = payload.get("normal").map(|m| {
-        if let Message::Object(obj) = m { let v: Value = obj.as_ref().clone().into(); v } else { json!(null) }
-    }).filter(|v| !v.is_null());
-    let emission = get_shader_ir(&payload, &config, "emission", json!({"type": "constVec3", "c": [0.0, 0.0, 0.0]}));
-    let emission_strength = get_shader_ir(&payload, &config, "emission_strength", json!({"type": "constFloat", "c": 0.0}));
-    let ao = payload.get("ao").map(|m| {
-        if let Message::Object(obj) = m { let v: Value = obj.as_ref().clone().into(); v } else { json!(null) }
-    }).filter(|v| !v.is_null());
-    let alpha = get_shader_ir(&payload, &config, "alpha", json!({"type": "constFloat", "c": 1.0}));
+    fn get_shader_ir(
+        cache: &HashMap<String, Value>,
+        config: &HashMap<String, Value>,
+        port: &str,
+        default: Value,
+    ) -> Value {
+        cached_shader_input(cache, port)
+            .or_else(|| config.get(port).cloned())
+            .unwrap_or(default)
+    }
 
-    let ior_val = get_shader_ir(&payload, &config, "ior", json!({"type": "constFloat", "c": 1.5}));
+    let base_color = get_shader_ir(
+        &cache,
+        &config,
+        "base_color",
+        json!({"type": "constVec3", "c": [0.8, 0.8, 0.8]}),
+    );
+    let metallic = get_shader_ir(
+        &cache,
+        &config,
+        "metallic",
+        json!({"type": "constFloat", "c": 0.0}),
+    );
+    let roughness = get_shader_ir(
+        &cache,
+        &config,
+        "roughness",
+        json!({"type": "constFloat", "c": 0.5}),
+    );
+    let normal = cached_shader_input(&cache, "normal");
+    let emission = get_shader_ir(
+        &cache,
+        &config,
+        "emission",
+        json!({"type": "constVec3", "c": [0.0, 0.0, 0.0]}),
+    );
+    let emission_strength = get_shader_ir(
+        &cache,
+        &config,
+        "emission_strength",
+        json!({"type": "constFloat", "c": 0.0}),
+    );
+    let ao = cached_shader_input(&cache, "ao");
+    let alpha = get_shader_ir(
+        &cache,
+        &config,
+        "alpha",
+        json!({"type": "constFloat", "c": 1.0}),
+    );
+    let transmission = get_shader_ir(
+        &cache,
+        &config,
+        "transmission",
+        json!({"type": "constFloat", "c": 0.0}),
+    );
+
+    let ior_val = get_shader_ir(
+        &cache,
+        &config,
+        "ior",
+        json!({"type": "constFloat", "c": 1.5}),
+    );
 
     let mut bsdf = json!({
         "type": "principledBsdf",
@@ -49,6 +124,7 @@ pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<S
         "emission": emission,
         "emission_strength": emission_strength,
         "alpha": alpha,
+        "transmission": transmission,
         "ior": ior_val,
     });
     if let Some(n) = normal {
@@ -59,7 +135,10 @@ pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<S
     }
 
     let mut out = HashMap::new();
-    out.insert("shader".to_string(), Message::object(EncodableValue::from(bsdf)));
+    out.insert(
+        "shader".to_string(),
+        Message::object(EncodableValue::from(bsdf)),
+    );
     Ok(out)
 }
 
@@ -70,7 +149,9 @@ pub async fn shader_principled_bsdf_actor(ctx: ActorContext) -> Result<HashMap<S
     outports::<1>(shader),
     state(MemoryState)
 )]
-pub async fn shader_material_output_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn shader_material_output_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
 
     let surface = match payload.get("surface") {
@@ -87,6 +168,9 @@ pub async fn shader_material_output_actor(ctx: ActorContext) -> Result<HashMap<S
     });
 
     let mut out = HashMap::new();
-    out.insert("shader".to_string(), Message::object(EncodableValue::from(material_output)));
+    out.insert(
+        "shader".to_string(),
+        Message::object(EncodableValue::from(material_output)),
+    );
     Ok(out)
 }

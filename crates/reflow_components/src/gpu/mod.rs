@@ -12,10 +12,10 @@ pub mod context;
 pub mod font_atlas;
 pub mod font_load;
 pub mod glyph_atlas;
+pub mod post_process;
 #[cfg(feature = "gpu")]
 pub mod scene_render;
 pub mod sdf;
 #[cfg(feature = "gpu")]
 pub mod sdf_2d;
-pub mod post_process;
 pub mod shader;

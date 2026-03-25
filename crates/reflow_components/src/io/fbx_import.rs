@@ -288,9 +288,9 @@ struct GeometryData {
     vertices: Vec<f64>,
     normals: Vec<f64>,
     indices: Vec<i32>,
-    uvs: Vec<f64>,          // flat f64 pairs (u, v)
-    uv_indices: Vec<i32>,   // per-polygon-vertex UV index (or empty if direct)
-    mat_indices: Vec<i32>,  // per-polygon material index
+    uvs: Vec<f64>,         // flat f64 pairs (u, v)
+    uv_indices: Vec<i32>,  // per-polygon-vertex UV index (or empty if direct)
+    mat_indices: Vec<i32>, // per-polygon material index
 }
 
 fn extract_geometry(tree: &FbxNode) -> Result<GeometryData> {
@@ -355,10 +355,7 @@ fn extract_geometry(tree: &FbxNode) -> Result<GeometryData> {
 /// If has_uv: 32-byte stride (pos3+normal3+uv2).
 /// Otherwise: 24-byte stride (pos3+normal3).
 /// Returns (bytes, tri_to_control_point_index) for skin weight expansion.
-fn build_mesh_bytes_colored(
-    geom: &GeometryData,
-    has_uv: bool,
-) -> (Vec<u8>, Vec<usize>) {
+fn build_mesh_bytes_colored(geom: &GeometryData, has_uv: bool) -> (Vec<u8>, Vec<usize>) {
     let vertices = &geom.vertices;
     let normals = &geom.normals;
     let indices = &geom.indices;
@@ -497,11 +494,7 @@ fn extract_embedded_textures(tree: &FbxNode) -> Vec<(String, Vec<u8>)> {
 }
 
 /// Decode a JPEG/PNG image and sample color at UV coordinate
-fn sample_texture_at_uv(
-    img: &image::RgbaImage,
-    u: f32,
-    v: f32,
-) -> [f32; 3] {
+fn sample_texture_at_uv(img: &image::RgbaImage, u: f32, v: f32) -> [f32; 3] {
     let w = img.width() as f32;
     let h = img.height() as f32;
     // FBX UVs: u=[0,1] horizontal, v=[0,1] vertical (flip Y for image)
@@ -535,8 +528,8 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>, Vec<[f64; 3]>
         id: i64,
         name: String,
         lcl_translation: [f64; 3],
-        pre_rotation: [f64; 3],    // Euler degrees — applied BEFORE Lcl Rotation
-        lcl_rotation: [f64; 3],    // Euler degrees
+        pre_rotation: [f64; 3], // Euler degrees — applied BEFORE Lcl Rotation
+        lcl_rotation: [f64; 3], // Euler degrees
         lcl_scaling: [f64; 3],
     }
 
@@ -599,8 +592,7 @@ fn extract_skeleton(tree: &FbxNode) -> Result<(Value, Vec<String>, Vec<[f64; 3]>
             if conn_type == "OO" {
                 let child_id = conn.attr_i64(1).unwrap_or(0);
                 let parent_id = conn.attr_i64(2).unwrap_or(0);
-                if let (Some(&ci), Some(&pi)) =
-                    (bone_ids.get(&child_id), bone_ids.get(&parent_id))
+                if let (Some(&ci), Some(&pi)) = (bone_ids.get(&child_id), bone_ids.get(&parent_id))
                 {
                     parent_map.insert(ci, pi);
                 }
@@ -679,9 +671,15 @@ fn trs_pre_rot_mat4(t: [f64; 3], pre_deg: [f64; 3], lcl_deg: [f64; 3], s: [f64; 
 
     // Build rotation matrix from combined quaternion
     let [qx, qy, qz, qw] = combined_q;
-    let xx = qx * qx; let yy = qy * qy; let zz = qz * qz;
-    let xy = qx * qy; let xz = qx * qz; let yz = qy * qz;
-    let wx = qw * qx; let wy = qw * qy; let wz = qw * qz;
+    let xx = qx * qx;
+    let yy = qy * qy;
+    let zz = qz * qz;
+    let xy = qx * qy;
+    let xz = qx * qz;
+    let yz = qy * qz;
+    let wx = qw * qx;
+    let wy = qw * qy;
+    let wz = qw * qz;
 
     let r00 = 1.0 - 2.0 * (yy + zz);
     let r01 = 2.0 * (xy - wz);
@@ -695,10 +693,22 @@ fn trs_pre_rot_mat4(t: [f64; 3], pre_deg: [f64; 3], lcl_deg: [f64; 3], s: [f64; 
 
     // Column-major: col0, col1, col2, col3
     [
-        r00 * s[0], r10 * s[0], r20 * s[0], 0.0,
-        r01 * s[1], r11 * s[1], r21 * s[1], 0.0,
-        r02 * s[2], r12 * s[2], r22 * s[2], 0.0,
-        t[0],       t[1],       t[2],       1.0,
+        r00 * s[0],
+        r10 * s[0],
+        r20 * s[0],
+        0.0,
+        r01 * s[1],
+        r11 * s[1],
+        r21 * s[1],
+        0.0,
+        r02 * s[2],
+        r12 * s[2],
+        r22 * s[2],
+        0.0,
+        t[0],
+        t[1],
+        t[2],
+        1.0,
     ]
 }
 
@@ -725,10 +735,22 @@ fn trs_to_column_major_mat4(t: [f64; 3], r_deg: [f64; 3], s: [f64; 3]) -> [f64; 
 
     // Column-major: [col0, col1, col2, col3]
     [
-        r00 * s[0], r10 * s[0], r20 * s[0], 0.0,  // col 0
-        r01 * s[1], r11 * s[1], r21 * s[1], 0.0,  // col 1
-        r02 * s[2], r12 * s[2], r22 * s[2], 0.0,  // col 2
-        t[0],       t[1],       t[2],       1.0,   // col 3
+        r00 * s[0],
+        r10 * s[0],
+        r20 * s[0],
+        0.0, // col 0
+        r01 * s[1],
+        r11 * s[1],
+        r21 * s[1],
+        0.0, // col 1
+        r02 * s[2],
+        r12 * s[2],
+        r22 * s[2],
+        0.0, // col 2
+        t[0],
+        t[1],
+        t[2],
+        1.0, // col 3
     ]
 }
 
@@ -739,7 +761,11 @@ fn trs_to_column_major_mat4(t: [f64; 3], r_deg: [f64; 3], s: [f64; 3]) -> [f64; 
 /// FBX time unit: 46186158000 ticks per second
 const FBX_TIME_UNIT: f64 = 46186158000.0;
 
-fn extract_animation(tree: &FbxNode, bone_names: &[String], pre_rotations: &[[f64; 3]]) -> Result<Value> {
+fn extract_animation(
+    tree: &FbxNode,
+    bone_names: &[String],
+    pre_rotations: &[[f64; 3]],
+) -> Result<Value> {
     let objects = tree
         .child("Objects")
         .ok_or_else(|| anyhow::anyhow!("No Objects node"))?;
@@ -855,7 +881,7 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String], pre_rotations: &[[f6
     // Collect per-scalar curve data
     struct ScalarCurve {
         bone_idx: usize,
-        property: String, // "T", "R", "S"
+        property: String,  // "T", "R", "S"
         component: String, // "d|X", "d|Y", "d|Z"
         times: Vec<f64>,
         values: Vec<f32>,
@@ -907,10 +933,7 @@ fn extract_animation(tree: &FbxNode, bone_names: &[String], pre_rotations: &[[f6
         grouped
             .entry((sc.bone_idx, sc.property.clone()))
             .or_default()
-            .insert(
-                sc.component.clone(),
-                (sc.times.clone(), sc.values.clone()),
-            );
+            .insert(sc.component.clone(), (sc.times.clone(), sc.values.clone()));
     }
 
     let mut channels: Vec<Value> = Vec::new();
@@ -1105,7 +1128,9 @@ fn extract_skin_weights(
         }
 
         // Collect all Cluster IDs
-        let cluster_ids: Vec<i64> = objects.children.iter()
+        let cluster_ids: Vec<i64> = objects
+            .children
+            .iter()
             .filter(|c| c.name == "Deformer" && c.attr_str(2) == Some("Cluster"))
             .filter_map(|c| c.attr_i64(0))
             .collect();
@@ -1211,10 +1236,7 @@ fn extract_inverse_bind_matrices(tree: &FbxNode, bone_count: usize) -> Result<Ve
         let mut conn_oo: Vec<(i64, i64)> = Vec::new();
         for conn in &connections.children {
             if conn.name == "C" && conn.attr_str(0) == Some("OO") {
-                conn_oo.push((
-                    conn.attr_i64(1).unwrap_or(0),
-                    conn.attr_i64(2).unwrap_or(0),
-                ));
+                conn_oo.push((conn.attr_i64(1).unwrap_or(0), conn.attr_i64(2).unwrap_or(0)));
             }
         }
 
@@ -1232,7 +1254,9 @@ fn extract_inverse_bind_matrices(tree: &FbxNode, bone_count: usize) -> Result<Ve
         }
 
         // Collect Cluster IDs and map to bones (Model is CHILD, Cluster is PARENT in FBX connections)
-        let cluster_id_set: std::collections::HashSet<i64> = objects.children.iter()
+        let cluster_id_set: std::collections::HashSet<i64> = objects
+            .children
+            .iter()
             .filter(|c| c.name == "Deformer" && c.attr_str(2) == Some("Cluster"))
             .filter_map(|c| c.attr_i64(0))
             .collect();
@@ -1389,10 +1413,7 @@ mod tests {
 
                 if let Some(Message::Object(meta)) = out.get("metadata") {
                     let v: Value = meta.as_ref().clone().into();
-                    println!(
-                        "Metadata: {}",
-                        serde_json::to_string_pretty(&v).unwrap()
-                    );
+                    println!("Metadata: {}", serde_json::to_string_pretty(&v).unwrap());
                     let verts = v["vertices"].as_u64().unwrap_or(0);
                     let bones = v["bones"].as_u64().unwrap_or(0);
                     assert!(verts > 0, "Should have vertices");
@@ -1426,8 +1447,12 @@ mod tests {
                                 mesh[off + j * 4 + 2],
                                 mesh[off + j * 4 + 3],
                             ]);
-                            if v < min[j] { min[j] = v; }
-                            if v > max[j] { max[j] = v; }
+                            if v < min[j] {
+                                min[j] = v;
+                            }
+                            if v > max[j] {
+                                max[j] = v;
+                            }
                         }
                     }
                     println!(
@@ -1448,14 +1473,8 @@ mod tests {
                         for ch in chs.iter().take(8) {
                             let bi = ch["boneIndex"].as_u64().unwrap_or(0);
                             let prop = ch["property"].as_str().unwrap_or("?");
-                            let kf_count = ch["times"]
-                                .as_array()
-                                .map(|a| a.len())
-                                .unwrap_or(0);
-                            println!(
-                                "  bone[{}] {}: {} keyframes",
-                                bi, prop, kf_count
-                            );
+                            let kf_count = ch["times"].as_array().map(|a| a.len()).unwrap_or(0);
+                            println!("  bone[{}] {}: {} keyframes", bi, prop, kf_count);
                             // Print first value
                             if let Some(vals) = ch["values"].as_array() {
                                 if let Some(v0) = vals.first() {
@@ -1479,15 +1498,20 @@ mod tests {
                     let stride = 24; // 4 influences × 6 bytes
                     let total = skin.len() / stride;
                     println!("Skin weight samples ({} total):", total);
-                    for &vi in &[0, 100, total/4, total/2, total*3/4, total-1] {
-                        if vi >= total { continue; }
+                    for &vi in &[0, 100, total / 4, total / 2, total * 3 / 4, total - 1] {
+                        if vi >= total {
+                            continue;
+                        }
                         let off = vi * stride;
                         print!("  v[{}]: ", vi);
                         for j in 0..4 {
                             let w_off = off + j * 6;
                             let bi = u16::from_le_bytes([skin[w_off], skin[w_off + 1]]);
-                            let w = f32::from_le_bytes(skin[w_off + 2..w_off + 6].try_into().unwrap());
-                            if w > 0.001 { print!("b{}={:.3} ", bi, w); }
+                            let w =
+                                f32::from_le_bytes(skin[w_off + 2..w_off + 6].try_into().unwrap());
+                            if w > 0.001 {
+                                print!("b{}={:.3} ", bi, w);
+                            }
                         }
                         println!();
                     }

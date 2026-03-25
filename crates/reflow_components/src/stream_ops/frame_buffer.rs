@@ -16,11 +16,11 @@
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
+use parking_lot::Mutex as ParkMutex;
 use reflow_actor::ActorContext;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
-use parking_lot::Mutex as ParkMutex;
 
 struct SharedBuffer {
     frames: std::collections::VecDeque<Vec<u8>>,
@@ -65,7 +65,10 @@ pub async fn frame_buffer_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
             .clone()
     };
 
-    let pool_name = config.get("framePool").and_then(|v| v.as_str()).unwrap_or("");
+    let pool_name = config
+        .get("framePool")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
 
     // Ingest: buffer incoming frames
     if let Some(msg) = payload.get("frame") {
@@ -94,7 +97,11 @@ pub async fn frame_buffer_actor(ctx: ActorContext) -> Result<HashMap<String, Mes
         let t = FBUF_TICK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         if t % 50 == 0 {
             let b = buf.lock();
-            eprintln!("[fbuf] tick={t} buffered={} last={}", b.frames.len(), b.last_frame.is_some());
+            eprintln!(
+                "[fbuf] tick={t} buffered={} last={}",
+                b.frames.len(),
+                b.last_frame.is_some()
+            );
         }
         let mut b = buf.lock();
         let frame = if let Some(f) = b.frames.pop_front() {

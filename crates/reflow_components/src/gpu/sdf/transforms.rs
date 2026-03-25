@@ -64,9 +64,21 @@ pub async fn sdf_scale_actor(context: ActorContext) -> Result<HashMap<String, Me
     let child =
         parse_sdf(payload.get("sdf")).ok_or_else(|| anyhow::anyhow!("Missing sdf input"))?;
     let uniform = config.get("factor").and_then(|v| v.as_f64());
-    let sx = config.get("factorX").and_then(|v| v.as_f64()).or(uniform).unwrap_or(1.0) as f32;
-    let sy = config.get("factorY").and_then(|v| v.as_f64()).or(uniform).unwrap_or(1.0) as f32;
-    let sz = config.get("factorZ").and_then(|v| v.as_f64()).or(uniform).unwrap_or(1.0) as f32;
+    let sx = config
+        .get("factorX")
+        .and_then(|v| v.as_f64())
+        .or(uniform)
+        .unwrap_or(1.0) as f32;
+    let sy = config
+        .get("factorY")
+        .and_then(|v| v.as_f64())
+        .or(uniform)
+        .unwrap_or(1.0) as f32;
+    let sz = config
+        .get("factorZ")
+        .and_then(|v| v.as_f64())
+        .or(uniform)
+        .unwrap_or(1.0) as f32;
     Ok(sdf_output(&child.scale([sx, sy, sz])))
 }
 

@@ -53,11 +53,26 @@ pub async fn character_controller_actor(
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let walk_speed = config.get("walkSpeed").and_then(|v| v.as_f64()).unwrap_or(150.0) as f32;
-    let run_speed = config.get("runSpeed").and_then(|v| v.as_f64()).unwrap_or(350.0) as f32;
-    let turn_speed = config.get("turnSpeed").and_then(|v| v.as_f64()).unwrap_or(180.0) as f32;
-    let gravity = config.get("gravity").and_then(|v| v.as_f64()).unwrap_or(-980.0) as f32;
-    let jump_force = config.get("jumpForce").and_then(|v| v.as_f64()).unwrap_or(400.0) as f32;
+    let walk_speed = config
+        .get("walkSpeed")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(150.0) as f32;
+    let run_speed = config
+        .get("runSpeed")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(350.0) as f32;
+    let turn_speed = config
+        .get("turnSpeed")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(180.0) as f32;
+    let gravity = config
+        .get("gravity")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(-980.0) as f32;
+    let jump_force = config
+        .get("jumpForce")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(400.0) as f32;
 
     let dt = match payload.get("dt") {
         Some(Message::Float(f)) => *f as f32,
@@ -103,7 +118,11 @@ pub async fn character_controller_actor(
     let anim_state = if !grounded {
         "jump"
     } else if input_mag > 0.1 {
-        if is_run { "run" } else { "walk" }
+        if is_run {
+            "run"
+        } else {
+            "walk"
+        }
     } else {
         "idle"
     };
@@ -148,15 +167,21 @@ pub async fn character_controller_actor(
     );
     out.insert(
         "position".to_string(),
-        Message::object(EncodableValue::from(json!({ "x": pos_x, "y": pos_y, "z": pos_z }))),
+        Message::object(EncodableValue::from(
+            json!({ "x": pos_x, "y": pos_y, "z": pos_z }),
+        )),
     );
     out.insert(
         "rotation".to_string(),
-        Message::object(EncodableValue::from(json!({ "x": 0.0, "y": rot_y, "z": 0.0 }))),
+        Message::object(EncodableValue::from(
+            json!({ "x": 0.0, "y": rot_y, "z": 0.0 }),
+        )),
     );
     out.insert(
         "velocity".to_string(),
-        Message::object(EncodableValue::from(json!({ "x": fwd_x * speed * input_mag, "y": vel_y, "z": fwd_z * speed * input_mag }))),
+        Message::object(EncodableValue::from(
+            json!({ "x": fwd_x * speed * input_mag, "y": vel_y, "z": fwd_z * speed * input_mag }),
+        )),
     );
     out.insert(
         "metadata".to_string(),

@@ -7,6 +7,14 @@
 
 use serde::{Deserialize, Serialize};
 
+fn default_puddle_bevel() -> f32 {
+    0.08
+}
+
+fn default_puddle_meniscus() -> f32 {
+    0.01
+}
+
 // ─── Primitives ──────────────────────────────────────────────────────
 
 /// A primitive SDF shape.
@@ -22,6 +30,14 @@ pub enum SdfPrimitive {
     RoundBox {
         size: [f32; 3],
         radius: f32,
+    },
+    Ellipsoid {
+        radii: [f32; 3],
+    },
+    RoundBoxShell {
+        size: [f32; 3],
+        radius: f32,
+        thickness: f32,
     },
     Cylinder {
         radius: f32,
@@ -64,13 +80,16 @@ pub enum SdfPrimitive {
     InfRepeat {
         spacing: [f32; 3],
     },
-    /// Flat blobby puddle — 2D noise-modulated disc, perfectly flat in Y.
-    /// radius: base XZ radius, height: Y thickness, noise_freq/noise_amp: edge irregularity
+    /// Surface-resting puddle with irregular outline, tapered edge, and slight meniscus lift.
     Puddle {
         radius: f32,
         height: f32,
         noise_freq: f32,
         noise_amp: f32,
+        #[serde(default = "default_puddle_bevel")]
+        bevel: f32,
+        #[serde(default = "default_puddle_meniscus")]
+        meniscus: f32,
     },
 }
 
@@ -134,6 +153,10 @@ pub enum SdfTransform {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SdfMaterial {
+    /// Optional named material slot used by the SDF scene renderer to
+    /// dispatch separate graph-compiled shade functions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slot: Option<String>,
     /// Base color (linear RGB, 0–1).
     #[serde(default = "default_color")]
     pub color: [f32; 3],
@@ -164,6 +187,7 @@ fn default_ior() -> f32 {
 impl Default for SdfMaterial {
     fn default() -> Self {
         Self {
+            slot: None,
             color: default_color(),
             roughness: default_roughness(),
             metallic: 0.0,
@@ -368,6 +392,31 @@ impl SdfNode {
         }
     }
 
+    pub fn round_box(size: [f32; 3], radius: f32) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::RoundBox { size, radius },
+            material: None,
+        }
+    }
+
+    pub fn ellipsoid(radii: [f32; 3]) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Ellipsoid { radii },
+            material: None,
+        }
+    }
+
+    pub fn round_box_shell(size: [f32; 3], radius: f32, thickness: f32) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::RoundBoxShell {
+                size,
+                radius,
+                thickness,
+            },
+            material: None,
+        }
+    }
+
     pub fn cylinder(radius: f32, height: f32) -> Self {
         SdfNode::Primitive {
             shape: SdfPrimitive::Cylinder { radius, height },
@@ -399,9 +448,41 @@ impl SdfNode {
         }
     }
 
-    pub fn puddle(radius: f32, height: f32, noise_freq: f32, noise_amp: f32) -> Self {
+    pub fn inf_repeat(spacing: [f32; 3]) -> Self {
         SdfNode::Primitive {
-            shape: SdfPrimitive::Puddle { radius, height, noise_freq, noise_amp },
+            shape: SdfPrimitive::InfRepeat { spacing },
+            material: None,
+        }
+    }
+
+    pub fn puddle(radius: f32, height: f32, noise_freq: f32, noise_amp: f32) -> Self {
+        Self::puddle_profiled(
+            radius,
+            height,
+            noise_freq,
+            noise_amp,
+            (radius * 0.12).max(height * 6.0),
+            height * 0.35,
+        )
+    }
+
+    pub fn puddle_profiled(
+        radius: f32,
+        height: f32,
+        noise_freq: f32,
+        noise_amp: f32,
+        bevel: f32,
+        meniscus: f32,
+    ) -> Self {
+        SdfNode::Primitive {
+            shape: SdfPrimitive::Puddle {
+                radius,
+                height,
+                noise_freq,
+                noise_amp,
+                bevel,
+                meniscus,
+            },
             material: None,
         }
     }

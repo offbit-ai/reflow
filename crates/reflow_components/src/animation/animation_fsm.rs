@@ -50,7 +50,10 @@ pub async fn animation_fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     let states_cfg = config.get("states").cloned().unwrap_or(json!({}));
     let transitions_cfg = config.get("transitions").cloned().unwrap_or(json!({}));
-    let initial = config.get("initial").and_then(|v| v.as_str()).unwrap_or("idle");
+    let initial = config
+        .get("initial")
+        .and_then(|v| v.as_str())
+        .unwrap_or("idle");
 
     // Cache inputs
     for i in 0..8 {
@@ -98,15 +101,19 @@ pub async fn animation_fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             Message::String(s) => s.to_string(),
             Message::Object(obj) => {
                 let v: Value = obj.as_ref().clone().into();
-                v.get("target").and_then(|v| v.as_str()).unwrap_or("").to_string()
+                v.get("target")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
             }
             _ => String::new(),
         };
         if !target.is_empty() && target != current_state {
             // Look up transition duration
-            let key1 = format!("{}->{}",current_state, target);
+            let key1 = format!("{}->{}", current_state, target);
             let key2 = format!("*->{}", target);
-            let dur = transitions_cfg.get(&key1)
+            let dur = transitions_cfg
+                .get(&key1)
                 .or_else(|| transitions_cfg.get(&key2))
                 .and_then(|v| v.get("duration"))
                 .and_then(|v| v.as_f64())
@@ -165,8 +172,14 @@ pub async fn animation_fsm_actor(ctx: ActorContext) -> Result<HashMap<String, Me
             for b in 0..bone_count {
                 let off = b * 64;
                 for j in 0..16 {
-                    let va = f32::from_le_bytes(prev_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
-                    let vb = f32::from_le_bytes(current_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                    let va = f32::from_le_bytes(
+                        prev_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap(),
+                    );
+                    let vb = f32::from_le_bytes(
+                        current_bytes[off + j * 4..off + j * 4 + 4]
+                            .try_into()
+                            .unwrap(),
+                    );
                     let r = va * (1.0 - alpha) + vb * alpha;
                     out.extend_from_slice(&r.to_le_bytes());
                 }

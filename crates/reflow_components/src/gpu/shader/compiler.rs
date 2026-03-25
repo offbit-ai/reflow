@@ -17,17 +17,14 @@ use std::sync::Arc;
 )]
 pub async fn shader_compiler_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
+    let config = ctx.get_config_hashmap();
 
     let ir_value = match payload.get("shader") {
         Some(Message::Object(obj)) => {
             let v: Value = obj.as_ref().clone().into();
-            eprintln!("[shader_compiler] received IR, type={}", v.get("type").and_then(|v| v.as_str()).unwrap_or("?"));
             v
         }
-        _ => {
-            eprintln!("[shader_compiler] no shader on payload, ports: {:?}", payload.keys().collect::<Vec<_>>());
-            return Ok(HashMap::new());
-        }
+        _ => return Ok(HashMap::new()),
     };
 
     // Deserialize IR tree
@@ -66,13 +63,12 @@ pub async fn shader_compiler_actor(ctx: ActorContext) -> Result<HashMap<String, 
     );
 
     // Also compile SDF-compatible shade function (for SDF renderer integration)
-    eprintln!("[shader_compiler] calling compile_sdf_shade...");
-    let sdf_shade = reflow_shader::compile_sdf_shade(&node);
-    eprintln!("[shader_compiler] shade output: {} bytes", sdf_shade.len());
-    out.insert(
-        "shade".to_string(),
-        Message::String(Arc::new(sdf_shade)),
-    );
+    let shade_name = config
+        .get("shadeName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("shade");
+    let sdf_shade = reflow_shader::codegen::compile_sdf_shade_named(&node, shade_name);
+    out.insert("shade".to_string(), Message::String(Arc::new(sdf_shade)));
 
     Ok(out)
 }

@@ -79,20 +79,19 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
 
     // Resolve background
     let bg_pool: HashMap<String, Value> = ctx.get_pool("_canvas_bg").into_iter().collect();
-    let mut canvas: Vec<u8> =
-        if let Some(encoded) = bg_pool.get("image").and_then(|v| v.as_str()) {
-            use base64::Engine;
-            let decoded = base64::engine::general_purpose::STANDARD
-                .decode(encoded)
-                .unwrap_or_default();
-            if decoded.len() == pixel_count {
-                decoded
-            } else {
-                make_solid_bg(&config, pixel_count)
-            }
+    let mut canvas: Vec<u8> = if let Some(encoded) = bg_pool.get("image").and_then(|v| v.as_str()) {
+        use base64::Engine;
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .unwrap_or_default();
+        if decoded.len() == pixel_count {
+            decoded
         } else {
             make_solid_bg(&config, pixel_count)
-        };
+        }
+    } else {
+        make_solid_bg(&config, pixel_count)
+    };
 
     // Resolve layer order
     let pool: HashMap<String, Value> = ctx.get_pool("_layers").into_iter().collect();
@@ -125,7 +124,9 @@ pub async fn canvas_2d_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     } else {
         let mut keys: Vec<String> = pool.keys().cloned().collect();
         keys.sort();
-        keys.into_iter().map(|k| (k, "normal".to_string(), 1.0f32)).collect()
+        keys.into_iter()
+            .map(|k| (k, "normal".to_string(), 1.0f32))
+            .collect()
     };
 
     // Composite

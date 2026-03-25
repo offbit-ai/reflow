@@ -54,7 +54,10 @@ fn parse_port_entry(input: ParseStream) -> syn::Result<PortDef> {
             other => {
                 return Err(syn::Error::new(
                     kind.span(),
-                    format!("Unknown port delivery kind '{}'. Expected 'latest', 'reliable', or 'pool(\"name\")'", other),
+                    format!(
+                        "Unknown port delivery kind '{}'. Expected 'latest', 'reliable', or 'pool(\"name\")'",
+                        other
+                    ),
                 ));
             }
         }
@@ -244,7 +247,10 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     });
 
     // Generate port delivery metadata entries
-    let all_port_defs: Vec<&PortDef> = args.inports.port_defs.iter()
+    let all_port_defs: Vec<&PortDef> = args
+        .inports
+        .port_defs
+        .iter()
         .chain(args.outports.port_defs.iter())
         .collect();
     let port_delivery_entries = all_port_defs.iter().filter_map(|pd| {

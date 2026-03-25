@@ -36,17 +36,21 @@ pub async fn animation_layer_actor(ctx: ActorContext) -> Result<HashMap<String, 
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let mode = config.get("mode").and_then(|v| v.as_str()).unwrap_or("override");
+    let mode = config
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("override");
 
     let w = match payload.get("weight") {
         Some(Message::Float(f)) => *f as f32,
         _ => config.get("weight").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32,
     };
 
-    let mask: Option<Vec<usize>> = config
-        .get("mask")
-        .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|v| v.as_u64().map(|n| n as usize)).collect());
+    let mask: Option<Vec<usize>> = config.get("mask").and_then(|v| v.as_array()).map(|a| {
+        a.iter()
+            .filter_map(|v| v.as_u64().map(|n| n as usize))
+            .collect()
+    });
 
     // Cache layer input
     if let Some(Message::Bytes(b)) = payload.get("layer") {
@@ -67,10 +71,14 @@ pub async fn animation_layer_actor(ctx: ActorContext) -> Result<HashMap<String, 
         .get_pool("_cache")
         .into_iter()
         .find(|(k, _)| k == "layer_b64")
-        .and_then(|(_, v)| v.as_str().map(|s| {
-            use base64::Engine;
-            base64::engine::general_purpose::STANDARD.decode(s).unwrap_or_default()
-        }));
+        .and_then(|(_, v)| {
+            v.as_str().map(|s| {
+                use base64::Engine;
+                base64::engine::general_purpose::STANDARD
+                    .decode(s)
+                    .unwrap_or_default()
+            })
+        });
 
     let bone_count = base_bytes.len() / 64;
 
@@ -82,15 +90,21 @@ pub async fn animation_layer_actor(ctx: ActorContext) -> Result<HashMap<String, 
         for b in 0..count {
             // Check mask
             if let Some(ref m) = mask {
-                if !m.contains(&b) { continue; }
+                if !m.contains(&b) {
+                    continue;
+                }
             }
 
             let off = b * 64;
             match mode {
                 "additive" => {
                     for j in 0..16 {
-                        let base_v = f32::from_le_bytes(base_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
-                        let layer_v = f32::from_le_bytes(layer[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                        let base_v = f32::from_le_bytes(
+                            base_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap(),
+                        );
+                        let layer_v = f32::from_le_bytes(
+                            layer[off + j * 4..off + j * 4 + 4].try_into().unwrap(),
+                        );
                         let id_v = MAT4_IDENTITY[j];
                         let result = base_v + w * (layer_v - id_v);
                         out[off + j * 4..off + j * 4 + 4].copy_from_slice(&result.to_le_bytes());
@@ -99,8 +113,12 @@ pub async fn animation_layer_actor(ctx: ActorContext) -> Result<HashMap<String, 
                 _ => {
                     // Override
                     for j in 0..16 {
-                        let base_v = f32::from_le_bytes(base_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
-                        let layer_v = f32::from_le_bytes(layer[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                        let base_v = f32::from_le_bytes(
+                            base_bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap(),
+                        );
+                        let layer_v = f32::from_le_bytes(
+                            layer[off + j * 4..off + j * 4 + 4].try_into().unwrap(),
+                        );
                         let result = base_v * (1.0 - w) + layer_v * w;
                         out[off + j * 4..off + j * 4 + 4].copy_from_slice(&result.to_le_bytes());
                     }

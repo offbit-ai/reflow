@@ -37,7 +37,10 @@ pub async fn ssao_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, E
     let config = ctx.get_config_hashmap();
 
     let radius = config.get("radius").and_then(|v| v.as_u64()).unwrap_or(4) as i32;
-    let intensity = config.get("intensity").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+    let intensity = config
+        .get("intensity")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(1.0) as f32;
 
     if let Some(Message::Integer(w)) = payload.get("width") {
         ctx.pool_upsert("_ssao", "w", json!(w));
@@ -78,8 +81,16 @@ pub async fn ssao_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, E
             let mut samples = 0.0f32;
 
             // Sample in a cross pattern for speed
-            for &(dx, dy) in &[(radius, 0), (-radius, 0), (0, radius), (0, -radius),
-                                (radius, radius), (-radius, -radius), (radius, -radius), (-radius, radius)] {
+            for &(dx, dy) in &[
+                (radius, 0),
+                (-radius, 0),
+                (0, radius),
+                (0, -radius),
+                (radius, radius),
+                (-radius, -radius),
+                (radius, -radius),
+                (-radius, radius),
+            ] {
                 let nx = x + dx;
                 let ny = y + dy;
                 let sample_lum = lum((ny as usize * w + nx as usize) * 4);

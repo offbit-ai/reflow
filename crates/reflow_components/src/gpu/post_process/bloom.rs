@@ -28,12 +28,20 @@ use std::collections::HashMap;
     state(MemoryState),
     await_inports(input)
 )]
-pub async fn bloom_post_process_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
+pub async fn bloom_post_process_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let threshold = config.get("threshold").and_then(|v| v.as_f64()).unwrap_or(0.8) as f32;
-    let intensity = config.get("intensity").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
+    let threshold = config
+        .get("threshold")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.8) as f32;
+    let intensity = config
+        .get("intensity")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.5) as f32;
     let radius = config.get("radius").and_then(|v| v.as_u64()).unwrap_or(8) as usize;
 
     // Cache width/height

@@ -18,6 +18,10 @@ use std::collections::HashMap;
 )]
 pub async fn animation_time_actor(ctx: ActorContext) -> Result<HashMap<String, Message>, Error> {
     let config = ctx.get_config_hashmap();
+    let log_progress = config
+        .get("logProgress")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let speed = config.get("speed").and_then(|v| v.as_f64()).unwrap_or(1.0);
     let fps = config.get("fps").and_then(|v| v.as_f64()).unwrap_or(30.0);
@@ -40,6 +44,13 @@ pub async fn animation_time_actor(ctx: ActorContext) -> Result<HashMap<String, M
     // Persist state
     ctx.pool_upsert("_anim_time", "elapsed", json!(new_elapsed));
     ctx.pool_upsert("_anim_time", "frame", json!(new_frame));
+
+    if log_progress && (new_frame <= 3 || new_frame % 6 == 0) {
+        eprintln!(
+            "[anim_time] frame={} time={:.3} dt={:.3}",
+            new_frame, new_elapsed, dt
+        );
+    }
 
     let mut out = HashMap::new();
     out.insert("time".to_string(), Message::Float(new_elapsed));

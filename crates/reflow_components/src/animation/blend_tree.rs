@@ -108,8 +108,14 @@ pub async fn animation_blend_tree_actor(
                     a.iter()
                         .map(|p| {
                             let arr = p.as_array();
-                            let x = arr.and_then(|a| a.first()).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
-                            let y = arr.and_then(|a| a.get(1)).and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                            let x = arr
+                                .and_then(|a| a.first())
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0) as f32;
+                            let y = arr
+                                .and_then(|a| a.get(1))
+                                .and_then(|v| v.as_f64())
+                                .unwrap_or(0.0) as f32;
                             [x, y]
                         })
                         .collect()
@@ -124,13 +130,21 @@ pub async fn animation_blend_tree_actor(
                     let v: Value = obj.as_ref().clone().into();
                     v.get("weights")
                         .and_then(|v| v.as_array())
-                        .map(|a| a.iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect())
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|v| v.as_f64().map(|f| f as f32))
+                                .collect()
+                        })
                         .unwrap_or_default()
                 }
                 _ => config
                     .get("weights")
                     .and_then(|v| v.as_array())
-                    .map(|a| a.iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|v| v.as_f64().map(|f| f as f32))
+                            .collect()
+                    })
                     .unwrap_or_default(),
             };
             blend_direct(&inputs, &weights, bone_count)
@@ -151,7 +165,12 @@ pub async fn animation_blend_tree_actor(
 }
 
 /// 1D blend space: interpolate between two nearest clips based on parameter threshold
-fn blend_1d(inputs: &[(usize, Vec<u8>)], thresholds: &[f64], param: f32, bone_count: usize) -> Vec<u8> {
+fn blend_1d(
+    inputs: &[(usize, Vec<u8>)],
+    thresholds: &[f64],
+    param: f32,
+    bone_count: usize,
+) -> Vec<u8> {
     if inputs.len() == 1 {
         return inputs[0].1.clone();
     }
@@ -160,7 +179,10 @@ fn blend_1d(inputs: &[(usize, Vec<u8>)], thresholds: &[f64], param: f32, bone_co
     let mut lower = 0;
     let mut upper = inputs.len() - 1;
     for i in 0..inputs.len() {
-        let t = thresholds.get(i).copied().unwrap_or(i as f64 / (inputs.len() - 1) as f64) as f32;
+        let t = thresholds
+            .get(i)
+            .copied()
+            .unwrap_or(i as f64 / (inputs.len() - 1) as f64) as f32;
         if t <= param {
             lower = i;
         }
@@ -175,13 +197,22 @@ fn blend_1d(inputs: &[(usize, Vec<u8>)], thresholds: &[f64], param: f32, bone_co
     let t_low = thresholds.get(lower).copied().unwrap_or(0.0) as f32;
     let t_high = thresholds.get(upper).copied().unwrap_or(1.0) as f32;
     let range = t_high - t_low;
-    let alpha = if range > 1e-6 { (param - t_low) / range } else { 0.0 };
+    let alpha = if range > 1e-6 {
+        (param - t_low) / range
+    } else {
+        0.0
+    };
 
     lerp_transforms(&inputs[lower].1, &inputs[upper].1, alpha, bone_count)
 }
 
 /// 2D blend space: inverse-distance weighted blend from positioned clips
-fn blend_2d(inputs: &[(usize, Vec<u8>)], positions: &[[f32; 2]], target: [f32; 2], bone_count: usize) -> Vec<u8> {
+fn blend_2d(
+    inputs: &[(usize, Vec<u8>)],
+    positions: &[[f32; 2]],
+    target: [f32; 2],
+    bone_count: usize,
+) -> Vec<u8> {
     if inputs.len() == 1 {
         return inputs[0].1.clone();
     }
@@ -215,12 +246,16 @@ fn blend_direct_impl(inputs: &[(usize, Vec<u8>)], weights: &[f32], bone_count: u
     let mut output = vec![0u8; bone_count * 64];
     for (i, (_, bytes)) in inputs.iter().enumerate() {
         let w = weights.get(i).copied().unwrap_or(0.0);
-        if w < 1e-6 { continue; }
+        if w < 1e-6 {
+            continue;
+        }
         for b in 0..bone_count {
             let off = b * 64;
             for j in 0..16 {
-                let src = f32::from_le_bytes(bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
-                let dst = f32::from_le_bytes(output[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                let src =
+                    f32::from_le_bytes(bytes[off + j * 4..off + j * 4 + 4].try_into().unwrap());
+                let dst =
+                    f32::from_le_bytes(output[off + j * 4..off + j * 4 + 4].try_into().unwrap());
                 let blended = dst + src * w;
                 output[off + j * 4..off + j * 4 + 4].copy_from_slice(&blended.to_le_bytes());
             }

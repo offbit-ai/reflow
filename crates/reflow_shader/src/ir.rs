@@ -13,12 +13,14 @@ pub enum ShaderNode {
 
     // ═══ BSDF ═══
     PrincipledBsdf {
+        #[serde(alias = "baseColor")]
         base_color: Box<ShaderNode>,
         metallic: Box<ShaderNode>,
         roughness: Box<ShaderNode>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         normal: Option<Box<ShaderNode>>,
         emission: Box<ShaderNode>,
+        #[serde(alias = "emissionStrength")]
         emission_strength: Box<ShaderNode>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         ao: Option<Box<ShaderNode>>,
@@ -27,18 +29,22 @@ pub enum ShaderNode {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         subsurface: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "subsurfaceColor")]
         subsurface_color: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         clearcoat: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "clearcoatRoughness")]
         clearcoat_roughness: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         anisotropic: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "anisotropicRotation")]
         anisotropic_rotation: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         sheen: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "sheenTint")]
         sheen_tint: Option<Box<ShaderNode>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         transmission: Option<Box<ShaderNode>>,
@@ -48,6 +54,7 @@ pub enum ShaderNode {
 
     // ═══ Textures ═══
     ImageTexture {
+        #[serde(alias = "assetId")]
         asset_id: String,
         uv: Box<ShaderNode>,
     },
@@ -66,13 +73,16 @@ pub enum ShaderNode {
         color2: Box<ShaderNode>,
     },
     GradientTexture {
+        #[serde(alias = "gradientType")]
         gradient_type: GradientType,
     },
     BrickTexture {
         scale: Box<ShaderNode>,
+        #[serde(alias = "mortarSize")]
         mortar_size: Box<ShaderNode>,
         color1: Box<ShaderNode>,
         color2: Box<ShaderNode>,
+        #[serde(alias = "mortarColor")]
         mortar_color: Box<ShaderNode>,
     },
     MusgraveTexture {
@@ -81,6 +91,7 @@ pub enum ShaderNode {
         dimension: Box<ShaderNode>,
     },
     WaveTexture {
+        #[serde(alias = "waveType")]
         wave_type: WaveType,
         scale: Box<ShaderNode>,
         distortion: Box<ShaderNode>,
@@ -89,9 +100,11 @@ pub enum ShaderNode {
 
     // ═══ Environment ═══
     EnvironmentTexture {
+        #[serde(alias = "assetId")]
         asset_id: String,
     },
     SkyTexture {
+        #[serde(alias = "sunDirection")]
         sun_direction: Box<ShaderNode>,
         turbidity: Box<ShaderNode>,
     },
@@ -150,14 +163,20 @@ pub enum ShaderNode {
     },
     Clamp {
         input: Box<ShaderNode>,
+        #[serde(alias = "minVal")]
         min_val: f32,
+        #[serde(alias = "maxVal")]
         max_val: f32,
     },
     MapRange {
         input: Box<ShaderNode>,
+        #[serde(alias = "fromMin")]
         from_min: f32,
+        #[serde(alias = "fromMax")]
         from_max: f32,
+        #[serde(alias = "toMin")]
         to_min: f32,
+        #[serde(alias = "toMax")]
         to_max: f32,
     },
 
@@ -169,9 +188,15 @@ pub enum ShaderNode {
     },
 
     // ═══ Constants ═══
-    ConstFloat { c: f32 },
-    ConstVec3 { c: [f32; 3] },
-    ConstVec4 { c: [f32; 4] },
+    ConstFloat {
+        c: f32,
+    },
+    ConstVec3 {
+        c: [f32; 3],
+    },
+    ConstVec4 {
+        c: [f32; 4],
+    },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

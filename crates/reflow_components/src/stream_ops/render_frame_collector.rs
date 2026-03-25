@@ -31,6 +31,10 @@ pub async fn render_frame_collector_actor(
 ) -> Result<HashMap<String, Message>, Error> {
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
+    let log_progress = config
+        .get("logProgress")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let total_frames = config
         .get("totalFrames")
@@ -106,6 +110,9 @@ pub async fn render_frame_collector_actor(
                     "totalFrames": total_frames,
                 }))),
             );
+            if log_progress && (count <= 3 || count % 6 == 0 || count as usize >= total_frames) {
+                eprintln!("[collector] frame {}/{}", count, total_frames);
+            }
         }
     } else {
         // First frame — create the stream
@@ -141,6 +148,9 @@ pub async fn render_frame_collector_actor(
         }
 
         results.insert("stream".to_string(), Message::stream_handle(handle));
+        if log_progress {
+            eprintln!("[collector] frame 1/{}", total_frames);
+        }
     }
 
     Ok(results)

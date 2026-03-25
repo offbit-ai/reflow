@@ -1665,6 +1665,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: HashMap::new(),
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         let context = ActorContext::new(

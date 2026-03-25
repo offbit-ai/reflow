@@ -121,17 +121,16 @@ impl ActorProcess {
                     *port_counts.entry(port.clone()).or_insert(0) += 1;
                 }
 
-                let has_all_required =
-                    self.required_inports.iter().all(|req| {
-                        let needed = self
-                            .config
-                            .inport_connection_counts
-                            .get(req)
-                            .copied()
-                            .unwrap_or(1);
-                        let received = port_counts.get(req).copied().unwrap_or(0);
-                        received >= needed
-                    });
+                let has_all_required = self.required_inports.iter().all(|req| {
+                    let needed = self
+                        .config
+                        .inport_connection_counts
+                        .get(req)
+                        .copied()
+                        .unwrap_or(1);
+                    let received = port_counts.get(req).copied().unwrap_or(0);
+                    received >= needed
+                });
                 if !has_all_required {
                     continue;
                 }
@@ -192,10 +191,7 @@ impl ActorProcess {
 /// When multiple connections fan-in to the same port and both carry
 /// Object messages, their keys are merged (shallow) so no data is lost.
 /// For non-Object types, last-write-wins (same as HashMap::extend).
-fn merge_accumulate(
-    accumulated: &mut HashMap<String, Message>,
-    packet: HashMap<String, Message>,
-) {
+fn merge_accumulate(accumulated: &mut HashMap<String, Message>, packet: HashMap<String, Message>) {
     for (port, msg) in packet {
         match accumulated.get(&port) {
             Some(Message::Object(existing_obj)) => {

@@ -148,7 +148,9 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
                 MixMode::Multiply => format!("mix({va}, {va} * {vb}, {vf})"),
                 MixMode::Screen => format!("mix({va}, 1.0 - (1.0 - {va}) * (1.0 - {vb}), {vf})"),
                 MixMode::Overlay => {
-                    format!("mix({va}, mix(2.0*{va}*{vb}, 1.0-2.0*(1.0-{va})*(1.0-{vb}), step(0.5,{va})), {vf})")
+                    format!(
+                        "mix({va}, mix(2.0*{va}*{vb}, 1.0-2.0*(1.0-{va})*(1.0-{vb}), step(0.5,{va})), {vf})"
+                    )
                 }
                 MixMode::Darken => format!("mix({va}, min({va}, {vb}), {vf})"),
                 MixMode::Lighten => format!("mix({va}, max({va}, {vb}), {vf})"),
@@ -165,7 +167,10 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
             let vi = emit_node(ctx, input);
             let var = ctx.fresh_var();
             if stops.len() < 2 {
-                let c = stops.first().map(|s| s.color).unwrap_or([1.0, 1.0, 1.0, 1.0]);
+                let c = stops
+                    .first()
+                    .map(|s| s.color)
+                    .unwrap_or([1.0, 1.0, 1.0, 1.0]);
                 ctx.emit(&format!(
                     "let {var} = vec3f({:.4}, {:.4}, {:.4});",
                     c[0], c[1], c[2]
@@ -220,31 +225,57 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
         }
 
         // ═══ Clamp / MapRange ═══
-        ShaderNode::Clamp { input, min_val, max_val } => {
+        ShaderNode::Clamp {
+            input,
+            min_val,
+            max_val,
+        } => {
             let vi = emit_node(ctx, input);
             let var = ctx.fresh_var();
-            ctx.emit(&format!("let {var} = clamp({vi}, {:.6}, {:.6});", min_val, max_val));
+            ctx.emit(&format!(
+                "let {var} = clamp({vi}, {:.6}, {:.6});",
+                min_val, max_val
+            ));
             var
         }
-        ShaderNode::MapRange { input, from_min, from_max, to_min, to_max } => {
+        ShaderNode::MapRange {
+            input,
+            from_min,
+            from_max,
+            to_min,
+            to_max,
+        } => {
             let vi = emit_node(ctx, input);
             let var = ctx.fresh_var();
             ctx.emit(&format!(
                 "let {var} = {:.6} + ({vi} - {:.6}) / {:.6} * {:.6};",
-                to_min, from_min, (from_max - from_min).max(0.0001), to_max - to_min
+                to_min,
+                from_min,
+                (from_max - from_min).max(0.0001),
+                to_max - to_min
             ));
             var
         }
 
         // ═══ Procedural textures ═══
-        ShaderNode::NoiseTexture { scale, detail, roughness } => {
+        ShaderNode::NoiseTexture {
+            scale,
+            detail,
+            roughness,
+        } => {
             let vs = emit_node(ctx, scale);
             ctx.needs_uv = true;
             let var = ctx.fresh_var();
-            ctx.emit(&format!("let {var} = vec3f(fbm_noise(in.world_pos * {vs}));"));
+            ctx.emit(&format!(
+                "let {var} = vec3f(fbm_noise(in.world_pos * {vs}));"
+            ));
             var
         }
-        ShaderNode::CheckerTexture { scale, color1, color2 } => {
+        ShaderNode::CheckerTexture {
+            scale,
+            color1,
+            color2,
+        } => {
             let vs = emit_node(ctx, scale);
             let vc1 = emit_node(ctx, color1);
             let vc2 = emit_node(ctx, color2);
@@ -257,7 +288,9 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
         ShaderNode::VoronoiTexture { scale, .. } => {
             let vs = emit_node(ctx, scale);
             let var = ctx.fresh_var();
-            ctx.emit(&format!("let {var} = vec3f(voronoi_noise(in.world_pos * {vs}));"));
+            ctx.emit(&format!(
+                "let {var} = vec3f(voronoi_noise(in.world_pos * {vs}));"
+            ));
             var
         }
 
@@ -297,20 +330,34 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
 
         // ═══ Principled BSDF — multi-light PBR shading with advanced lobes ═══
         ShaderNode::PrincipledBsdf {
-            base_color, metallic, roughness, normal,
-            emission, emission_strength, ao, alpha,
-            clearcoat, clearcoat_roughness,
-            subsurface, subsurface_color,
-            sheen, sheen_tint,
-            anisotropic, anisotropic_rotation,
-            transmission, ior,
+            base_color,
+            metallic,
+            roughness,
+            normal,
+            emission,
+            emission_strength,
+            ao,
+            alpha,
+            clearcoat,
+            clearcoat_roughness,
+            subsurface,
+            subsurface_color,
+            sheen,
+            sheen_tint,
+            anisotropic,
+            anisotropic_rotation,
+            transmission,
+            ior,
         } => {
             let vbc = emit_node(ctx, base_color);
             let vm = emit_node(ctx, metallic);
             let vr = emit_node(ctx, roughness);
             let ve = emit_node(ctx, emission);
             let ves = emit_node(ctx, emission_strength);
-            let va = ao.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "1.0".to_string());
+            let va = ao
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| "1.0".to_string());
             let _valpha = emit_node(ctx, alpha);
             let vn = normal
                 .as_ref()
@@ -318,12 +365,30 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
                 .unwrap_or_else(|| "normalize(in.world_normal)".to_string());
 
             // Advanced lobes
-            let vcc = clearcoat.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.0".to_string());
-            let vccr = clearcoat_roughness.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.03".to_string());
-            let vsss = subsurface.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.0".to_string());
-            let vsss_c = subsurface_color.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| vbc.clone());
-            let vsh = sheen.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.0".to_string());
-            let vsh_t = sheen_tint.as_ref().map(|n| emit_node(ctx, n)).unwrap_or_else(|| "0.5".to_string());
+            let vcc = clearcoat
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| "0.0".to_string());
+            let vccr = clearcoat_roughness
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| "0.03".to_string());
+            let vsss = subsurface
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| "0.0".to_string());
+            let vsss_c = subsurface_color
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| vbc.clone());
+            let vsh = sheen
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| "0.0".to_string());
+            let vsh_t = sheen_tint
+                .as_ref()
+                .map(|n| emit_node(ctx, n))
+                .unwrap_or_else(|| "0.5".to_string());
 
             ctx.needs_camera_pos = true;
             let var = ctx.fresh_var();
@@ -352,9 +417,7 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
         }
 
         // ═══ Material output ═══
-        ShaderNode::MaterialOutput { surface } => {
-            emit_node(ctx, surface)
-        }
+        ShaderNode::MaterialOutput { surface } => emit_node(ctx, surface),
 
         // ═══ Fallback ═══
         _ => "vec3f(0.8, 0.0, 0.8)".to_string(), // magenta = unimplemented
@@ -444,108 +507,799 @@ pub fn compile(root: &ShaderNode) -> CompiledMaterial {
 /// for the SDF ray march renderer. Extracts material parameters from the IR
 /// and generates a shade function using SDF-context variables.
 pub fn compile_sdf_shade(root: &ShaderNode) -> String {
-    // Extract PBR parameters from the IR tree
-    let (base_color, metallic, roughness, emission, emission_str, ior) = extract_pbr_params(root);
+    compile_sdf_shade_named(root, "shade")
+}
+
+pub fn compile_sdf_shade_named(root: &ShaderNode, fn_name: &str) -> String {
+    let mut ctx = SdfShadeCtx::default();
+    let params = extract_sdf_material(&mut ctx, root);
 
     let mut shade = String::new();
     shade.push_str(PBR_SDF_FUNCTIONS);
+    shade.push_str(SDF_SHADE_NOISE_FUNCTIONS);
 
-    shade.push_str("fn shade(ro: vec3f, rd: vec3f, t: f32) -> vec3f {\n");
+    let probe_fn_name = format!("{fn_name}_probe");
+    shade.push_str(&build_sdf_shade_function(
+        &probe_fn_name,
+        &ctx.code,
+        &params,
+        true,
+    ));
+    shade.push_str(&build_sdf_shade_function(
+        fn_name, &ctx.code, &params, false,
+    ));
+    shade
+}
+
+fn build_sdf_shade_function(
+    fn_name: &str,
+    setup_code: &str,
+    params: &SdfMaterialExprs,
+    is_probe: bool,
+) -> String {
+    let mut shade = String::new();
+    shade.push_str(&format!(
+        "fn {fn_name}(ro: vec3f, rd: vec3f, t: f32) -> vec3f {{\n"
+    ));
     shade.push_str("    let p = ro + rd * t;\n");
-    shade.push_str("    let N = calc_normal(p);\n");
+    shade.push_str("    let N_geom = calc_normal(p);\n");
     shade.push_str("    let V = -rd;\n");
-    shade.push_str("    let ao = calc_ao(p, N);\n");
+    shade.push_str(setup_code);
     shade.push_str("\n");
 
-    shade.push_str(&format!("    let base_color = {};\n", base_color));
-    shade.push_str(&format!("    let roughness = {:.4};\n", roughness));
-    shade.push_str(&format!("    let ior = {:.4};\n", ior));
-
-    // Detect puddle vs ice
-    shade.push_str("    let is_puddle = N.y > 0.85 && p.y < -0.4;\n");
-    shade.push_str("    var col: vec3f;\n");
+    shade.push_str(&format!(
+        "    let base_color = clamp({}, vec3f(0.0), vec3f(1.0));\n",
+        params.base_color
+    ));
+    shade.push_str(&format!(
+        "    let metallic = clamp({}, 0.0, 1.0);\n",
+        params.metallic
+    ));
+    shade.push_str(&format!(
+        "    let roughness = clamp({}, 0.02, 1.0);\n",
+        params.roughness
+    ));
+    shade.push_str(&format!(
+        "    let emission = {} * {};\n",
+        params.emission, params.emission_strength
+    ));
+    shade.push_str(&format!(
+        "    let alpha = clamp({}, 0.0, 1.0);\n",
+        params.alpha
+    ));
+    shade.push_str(&format!(
+        "    let transmission = clamp({}, 0.0, 1.0);\n",
+        params
+            .transmission
+            .clone()
+            .unwrap_or_else(|| "(1.0 - alpha)".to_string())
+    ));
+    shade.push_str(&format!("    let ior = max({}, 1.01);\n", params.ior));
+    shade.push_str(&format!(
+        "    let ao = clamp(calc_ao(p, N_geom) * {}, 0.0, 1.0);\n",
+        params.ao.clone().unwrap_or_else(|| "1.0".to_string())
+    ));
+    if let Some(normal) = &params.normal {
+        shade.push_str(&format!("    let N = normalize({});\n", normal));
+    } else {
+        shade.push_str("    let N = N_geom;\n");
+    }
     shade.push_str("\n");
 
-    shade.push_str("    if is_puddle {\n");
-    // ── PUDDLE: wet reflective surface ──
-    shade.push_str("        let refl_rd = reflect(rd, N);\n");
-    shade.push_str("        let refl_t = ray_march(p + N * 0.02, refl_rd);\n");
-    shade.push_str("        var refl_col: vec3f;\n");
-    shade.push_str("        if refl_t > 0.0 {\n");
-    shade.push_str("            let rp = p + N * 0.02 + refl_rd * refl_t;\n");
-    shade.push_str("            let rn = calc_normal(rp);\n");
-    shade.push_str("            refl_col = vec3f(0.8, 0.85, 0.9) * (0.3 + max(dot(rn, LIGHT_DIR), 0.0) * 0.6);\n");
-    shade.push_str("        } else {\n");
-    shade.push_str("            refl_col = mix(vec3f(0.7, 0.75, 0.82), vec3f(0.92, 0.94, 0.97), refl_rd.y * 0.5 + 0.5);\n");
-    shade.push_str("        }\n");
-    shade.push_str("        let wf = 0.15 + 0.85 * pow(1.0 - max(dot(N, -rd), 0.0), 3.0);\n");
-    shade.push_str("        let water_spec = pow(max(dot(reflect(-LIGHT_DIR, N), -rd), 0.0), 128.0);\n");
-    shade.push_str("        let water_base = vec3f(0.5, 0.72, 0.85) * (0.4 + max(dot(N, LIGHT_DIR), 0.0) * 0.5);\n");
-    shade.push_str("        col = mix(water_base, refl_col, wf) + vec3f(water_spec * 0.8);\n");
-
-    shade.push_str("    } else {\n");
-    // ── ICE: mostly transparent with internal scattering + specular ──
-    shade.push_str("        let refr = sdf_refract_color(p, rd, N, ior, base_color);\n");
-    shade.push_str("        let NoV = max(dot(N, -rd), 0.0);\n");
-    shade.push_str("        let fresnel = 0.04 + 0.96 * pow(1.0 - NoV, 5.0);\n");
-    shade.push_str("        // Sharp specular\n");
-    shade.push_str("        let H = normalize(LIGHT_DIR - rd);\n");
-    shade.push_str("        let spec = pow(max(dot(N, H), 0.0), 128.0) * 1.5;\n");
-    shade.push_str("        // Environment reflection at edges\n");
-    shade.push_str("        let refl_rd = reflect(rd, N);\n");
-    shade.push_str("        let env = mix(BG_COLOR * 1.2, vec3f(0.7, 0.8, 0.9), refl_rd.y * 0.5 + 0.5);\n");
-    shade.push_str("        // Refraction is primary — fresnel blends reflection at edges\n");
-    shade.push_str("        col = mix(refr, env, fresnel) * max(ao, 0.7) + vec3f(spec);\n");
-    shade.push_str("    }\n");
-
+    shade.push_str("    let NoV = max(dot(N, V), 0.0);\n");
+    shade.push_str("    let dielectric_f0 = pow((ior - 1.0) / (ior + 1.0), 2.0);\n");
+    shade.push_str("    let F0 = mix(vec3f(dielectric_f0), base_color, metallic);\n");
+    shade.push_str("    let fresnel = F_Schlick_sdf(NoV, F0);\n");
+    shade.push_str(
+        "    let fresnel_strength = clamp(max(max(fresnel.x, fresnel.y), fresnel.z), 0.0, 1.0);\n",
+    );
+    shade.push_str("    let thickness = sdf_refract_thickness(p, rd, N, ior);\n");
+    shade.push_str("    let density = 1.0 - exp(-thickness * mix(0.015, 0.0012, transmission));\n");
+    shade.push_str("    let thin_factor = smoothstep(0.03, 0.24, thickness);\n");
+    if is_probe {
+        shade.push_str(
+            "    let refracted = sdf_refract_color_env(p, rd, N, ior, base_color, transmission, thickness);\n",
+        );
+    } else {
+        shade.push_str(
+            "    let refracted = sdf_refract_color_scene(p, rd, N, ior, base_color, transmission, thickness);\n",
+        );
+    }
+    shade.push_str(
+        "    let transmitted_light = sdf_transmission_light(p, rd, N, ior, roughness, transmission, thickness, base_color);\n",
+    );
+    shade.push_str(
+        "    let body_color = mix(base_color * 0.001, base_color * 0.008, clamp(density * 0.40, 0.0, 1.0));\n",
+    );
+    shade.push_str(
+        "    let surface = pbr_shade_sdf(body_color * (1.0 - transmission) * mix(0.08, 0.82, roughness), metallic, roughness, N, V, ao, emission);\n",
+    );
+    shade.push_str("    let side_bias = pow(1.0 - abs(N.y), 0.78);\n");
+    shade.push_str(&format!(
+        "    let transmit_weight = clamp(transmission * (1.0 - alpha * 0.004) * (1.0 - density * 0.002) * mix(0.995, 1.0, thin_factor) * mix(1.0, 0.995, side_bias) * {}, 0.0, 1.0);\n",
+        if is_probe { "0.62" } else { "1.0" }
+    ));
+    if is_probe {
+        shade.push_str("    let reflected = sdf_env_color(reflect(rd, N));\n");
+    } else {
+        shade.push_str(
+            "    let reflected = sdf_scene_reflection_color(p, rd, N, roughness, transmission);\n",
+        );
+    }
+    shade.push_str(&format!(
+        "    let reflection_weight = clamp((fresnel_strength * mix(0.003, 0.045, transmission) + fresnel_strength * transmission * (1.0 - roughness) * {}) * mix(1.02, 1.0, thin_factor), 0.0, 0.12);\n",
+        if is_probe { "0.015" } else { "0.008" }
+    ));
+    shade.push_str(
+        "    let refracted_term = refracted * transmit_weight * (1.0 - reflection_weight);\n",
+    );
+    shade.push_str(&format!(
+        "    let surface_weight = clamp((1.0 - transmission) * mix(0.003, 0.04, roughness) + alpha * 0.0006 + density * mix(0.0002, 0.0012, 1.0 - transmission) + transmission * (1.0 - roughness) * {}, 0.0, 1.0) * mix(0.03, 0.36, thin_factor) * (1.0 - reflection_weight * 0.05) * mix(1.0, 1.002, side_bias);\n",
+        if is_probe { "0.012" } else { "0.003" }
+    ));
+    shade.push_str("    let reflection_term = reflected * reflection_weight;\n");
+    shade.push_str("    var col = refracted_term + transmitted_light + surface * surface_weight + reflection_term;\n");
+    shade.push_str("    col *= mix(0.9, 1.0, ao);\n");
     shade.push_str("    return col;\n");
     shade.push_str("}\n\n");
     shade
 }
 
-/// Extract PBR parameters from a ShaderNode IR tree as WGSL expressions
-fn extract_pbr_params(root: &ShaderNode) -> (String, f32, f32, String, f32, f32) {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SdfExprType {
+    Float,
+    Vec3,
+}
+
+struct SdfExpr {
+    expr: String,
+    ty: SdfExprType,
+}
+
+#[derive(Default)]
+struct SdfShadeCtx {
+    code: String,
+    var_counter: usize,
+    needs_noise: bool,
+}
+
+impl SdfShadeCtx {
+    fn emit(&mut self, line: &str) {
+        self.code.push_str("    ");
+        self.code.push_str(line);
+        self.code.push('\n');
+    }
+
+    fn fresh_var(&mut self) -> String {
+        let var = format!("sdf_v{}", self.var_counter);
+        self.var_counter += 1;
+        var
+    }
+}
+
+struct SdfMaterialExprs {
+    base_color: String,
+    metallic: String,
+    roughness: String,
+    normal: Option<String>,
+    emission: String,
+    emission_strength: String,
+    ao: Option<String>,
+    alpha: String,
+    transmission: Option<String>,
+    ior: String,
+}
+
+fn extract_sdf_material(ctx: &mut SdfShadeCtx, root: &ShaderNode) -> SdfMaterialExprs {
     match root {
-        ShaderNode::MaterialOutput { surface } => extract_pbr_params(surface),
+        ShaderNode::MaterialOutput { surface } => extract_sdf_material(ctx, surface),
         ShaderNode::PrincipledBsdf {
-            base_color, metallic, roughness,
-            emission, emission_strength,
-            ior, ..
+            base_color,
+            metallic,
+            roughness,
+            normal,
+            emission,
+            emission_strength,
+            ao,
+            alpha,
+            transmission,
+            ior,
+            ..
+        } => SdfMaterialExprs {
+            base_color: sdf_to_vec3(emit_sdf_node(ctx, base_color)),
+            metallic: sdf_to_float(emit_sdf_node(ctx, metallic)),
+            roughness: sdf_to_float(emit_sdf_node(ctx, roughness)),
+            normal: normal
+                .as_deref()
+                .map(|node| sdf_to_vec3(emit_sdf_node(ctx, node))),
+            emission: sdf_to_vec3(emit_sdf_node(ctx, emission)),
+            emission_strength: sdf_to_float(emit_sdf_node(ctx, emission_strength)),
+            ao: ao
+                .as_deref()
+                .map(|node| sdf_to_float(emit_sdf_node(ctx, node))),
+            alpha: sdf_to_float(emit_sdf_node(ctx, alpha)),
+            transmission: transmission
+                .as_deref()
+                .map(|node| sdf_to_float(emit_sdf_node(ctx, node))),
+            ior: ior
+                .as_deref()
+                .map(|node| sdf_to_float(emit_sdf_node(ctx, node)))
+                .unwrap_or_else(|| "1.31".to_string()),
+        },
+        _ => SdfMaterialExprs {
+            base_color: "vec3f(0.8, 0.8, 0.8)".to_string(),
+            metallic: "0.0".to_string(),
+            roughness: "0.5".to_string(),
+            normal: None,
+            emission: "vec3f(0.0)".to_string(),
+            emission_strength: "0.0".to_string(),
+            ao: None,
+            alpha: "1.0".to_string(),
+            transmission: None,
+            ior: "1.31".to_string(),
+        },
+    }
+}
+
+#[derive(Clone)]
+struct SdfEvalEnv {
+    position: String,
+    geometric_normal: String,
+    view: String,
+}
+
+impl Default for SdfEvalEnv {
+    fn default() -> Self {
+        Self {
+            position: "p".to_string(),
+            geometric_normal: "N_geom".to_string(),
+            view: "V".to_string(),
+        }
+    }
+}
+
+impl SdfEvalEnv {
+    fn sampled(position: String, view: impl Into<String>) -> Self {
+        let geometric_normal = format!("calc_normal({position})");
+        Self {
+            position,
+            geometric_normal,
+            view: view.into(),
+        }
+    }
+}
+
+fn emit_sdf_node(ctx: &mut SdfShadeCtx, node: &ShaderNode) -> SdfExpr {
+    emit_sdf_node_in_env(ctx, node, &SdfEvalEnv::default())
+}
+
+fn emit_sdf_node_in_env(ctx: &mut SdfShadeCtx, node: &ShaderNode, env: &SdfEvalEnv) -> SdfExpr {
+    match node {
+        ShaderNode::MaterialOutput { surface } => emit_sdf_node_in_env(ctx, surface, env),
+        ShaderNode::ConstFloat { c } => SdfExpr {
+            expr: format!("{:.6}", c),
+            ty: SdfExprType::Float,
+        },
+        ShaderNode::ConstVec3 { c } => SdfExpr {
+            expr: format!("vec3f({:.6}, {:.6}, {:.6})", c[0], c[1], c[2]),
+            ty: SdfExprType::Vec3,
+        },
+        ShaderNode::ConstVec4 { c } => SdfExpr {
+            expr: format!("vec3f({:.6}, {:.6}, {:.6})", c[0], c[1], c[2]),
+            ty: SdfExprType::Vec3,
+        },
+        ShaderNode::TexCoord => SdfExpr {
+            expr: format!("vec3f({}.x, {}.z, 0.0)", env.position, env.position),
+            ty: SdfExprType::Vec3,
+        },
+        ShaderNode::ObjectPosition => SdfExpr {
+            expr: env.position.clone(),
+            ty: SdfExprType::Vec3,
+        },
+        ShaderNode::ObjectNormal => SdfExpr {
+            expr: env.geometric_normal.clone(),
+            ty: SdfExprType::Vec3,
+        },
+        ShaderNode::CameraVector => SdfExpr {
+            expr: env.view.clone(),
+            ty: SdfExprType::Vec3,
+        },
+        ShaderNode::Time => SdfExpr {
+            expr: "u.time".to_string(),
+            ty: SdfExprType::Float,
+        },
+        ShaderNode::MathOp { op, a, b } => emit_sdf_math(ctx, env, op, a, b.as_deref()),
+        ShaderNode::ColorMix { mode, fac, a, b } => emit_sdf_color_mix(ctx, env, mode, fac, a, b),
+        ShaderNode::ColorRamp { stops, input } => emit_sdf_color_ramp(ctx, env, stops, input),
+        ShaderNode::SeparateXYZ { input, component } => {
+            let input = sdf_to_vec3(emit_sdf_node_in_env(ctx, input, env));
+            let channel = match component.as_str() {
+                "y" => "y",
+                "z" => "z",
+                _ => "x",
+            };
+            SdfExpr {
+                expr: format!("{input}.{channel}"),
+                ty: SdfExprType::Float,
+            }
+        }
+        ShaderNode::CombineXYZ { x, y, z } => {
+            let x = sdf_to_float(emit_sdf_node_in_env(ctx, x, env));
+            let y = sdf_to_float(emit_sdf_node_in_env(ctx, y, env));
+            let z = sdf_to_float(emit_sdf_node_in_env(ctx, z, env));
+            let var = ctx.fresh_var();
+            ctx.emit(&format!("let {var} = vec3f({x}, {y}, {z});"));
+            SdfExpr {
+                expr: var,
+                ty: SdfExprType::Vec3,
+            }
+        }
+        ShaderNode::Fresnel { ior } => {
+            let ior = sdf_to_float(emit_sdf_node_in_env(ctx, ior, env));
+            let var = ctx.fresh_var();
+            ctx.emit(&format!(
+                "let {var}_f0 = pow((max({ior}, 1.01) - 1.0) / (max({ior}, 1.01) + 1.0), 2.0);"
+            ));
+            ctx.emit(&format!(
+                "let {var} = {var}_f0 + (1.0 - {var}_f0) * pow(1.0 - max(dot(normalize({}), normalize({})), 0.0), 5.0);",
+                env.geometric_normal, env.view
+            ));
+            SdfExpr {
+                expr: var,
+                ty: SdfExprType::Float,
+            }
+        }
+        ShaderNode::NormalMap { strength, color } => emit_sdf_normal_map(ctx, env, strength, color),
+        ShaderNode::BumpMap { strength, height } => emit_sdf_bump_map(ctx, env, strength, height),
+        ShaderNode::Clamp {
+            input,
+            min_val,
+            max_val,
         } => {
-            let bc = extract_color_expr(base_color);
-            let m = extract_float(metallic);
-            let r = extract_float(roughness);
-            let em = extract_color_expr(emission);
-            let es = extract_float(emission_strength);
-            let i = ior.as_ref().map(|n| extract_float(n)).unwrap_or(1.31);
-            (bc, m, r, em, es, i)
+            let input_expr = emit_sdf_node_in_env(ctx, input, env);
+            let value = match input_expr.ty {
+                SdfExprType::Float => {
+                    format!("clamp({}, {:.6}, {:.6})", input_expr.expr, min_val, max_val)
+                }
+                SdfExprType::Vec3 => format!(
+                    "clamp({}, vec3f({:.6}), vec3f({:.6}))",
+                    input_expr.expr, min_val, max_val
+                ),
+            };
+            let var = ctx.fresh_var();
+            ctx.emit(&format!("let {var} = {value};"));
+            SdfExpr {
+                expr: var,
+                ty: input_expr.ty,
+            }
         }
-        _ => ("vec3f(0.8, 0.8, 0.8)".to_string(), 0.0, 0.5, "vec3f(0.0)".to_string(), 0.0, 1.31),
+        ShaderNode::MapRange {
+            input,
+            from_min,
+            from_max,
+            to_min,
+            to_max,
+        } => {
+            let input_expr = emit_sdf_node_in_env(ctx, input, env);
+            let value = match input_expr.ty {
+                SdfExprType::Float => format!(
+                    "{to_min:.6} + ({expr} - {from_min:.6}) / {range:.6} * {to_range:.6}",
+                    expr = input_expr.expr,
+                    range = (from_max - from_min).max(0.0001),
+                    to_range = to_max - to_min
+                ),
+                SdfExprType::Vec3 => format!(
+                    "vec3f({to_min:.6}) + ({expr} - vec3f({from_min:.6})) / vec3f({range:.6}) * vec3f({to_range:.6})",
+                    expr = input_expr.expr,
+                    range = (from_max - from_min).max(0.0001),
+                    to_range = to_max - to_min
+                ),
+            };
+            let var = ctx.fresh_var();
+            ctx.emit(&format!("let {var} = {value};"));
+            SdfExpr {
+                expr: var,
+                ty: input_expr.ty,
+            }
+        }
+        ShaderNode::NoiseTexture { scale, .. } => {
+            ctx.needs_noise = true;
+            let scale = sdf_to_float(emit_sdf_node_in_env(ctx, scale, env));
+            let var = ctx.fresh_var();
+            ctx.emit(&format!(
+                "let {var} = vec3f(shade_fbm_noise({} * {scale}));",
+                env.position
+            ));
+            SdfExpr {
+                expr: var,
+                ty: SdfExprType::Vec3,
+            }
+        }
+        ShaderNode::CheckerTexture {
+            scale,
+            color1,
+            color2,
+        } => {
+            let scale = sdf_to_float(emit_sdf_node_in_env(ctx, scale, env));
+            let color1 = sdf_to_vec3(emit_sdf_node_in_env(ctx, color1, env));
+            let color2 = sdf_to_vec3(emit_sdf_node_in_env(ctx, color2, env));
+            let var = ctx.fresh_var();
+            ctx.emit(&format!(
+                "let {var} = select({color1}, {color2}, (floor({p}.x * {scale}) + floor({p}.y * {scale}) + floor({p}.z * {scale})) % 2.0 < 1.0);",
+                p = env.position
+            ));
+            SdfExpr {
+                expr: var,
+                ty: SdfExprType::Vec3,
+            }
+        }
+        ShaderNode::VoronoiTexture { scale, .. } => {
+            ctx.needs_noise = true;
+            let scale = sdf_to_float(emit_sdf_node_in_env(ctx, scale, env));
+            let var = ctx.fresh_var();
+            ctx.emit(&format!(
+                "let {var} = vec3f(shade_voronoi_noise({} * {scale}));",
+                env.position
+            ));
+            SdfExpr {
+                expr: var,
+                ty: SdfExprType::Vec3,
+            }
+        }
+        ShaderNode::Mapping {
+            location,
+            rotation,
+            scale,
+            input,
+        } => {
+            let input = sdf_to_vec3(emit_sdf_node_in_env(ctx, input, env));
+            let var = ctx.fresh_var();
+            ctx.emit(&format!(
+                "let {var} = rot_xyz(({input} + vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}));",
+                location[0],
+                location[1],
+                location[2],
+                scale[0],
+                scale[1],
+                scale[2],
+                rotation[0],
+                rotation[1],
+                rotation[2]
+            ));
+            SdfExpr {
+                expr: var,
+                ty: SdfExprType::Vec3,
+            }
+        }
+        _ => SdfExpr {
+            expr: "vec3f(0.8, 0.8, 0.8)".to_string(),
+            ty: SdfExprType::Vec3,
+        },
     }
 }
 
-fn extract_float(node: &ShaderNode) -> f32 {
-    match node {
-        ShaderNode::ConstFloat { c: v } => *v,
-        _ => 0.5,
+fn emit_sdf_normal_map(
+    ctx: &mut SdfShadeCtx,
+    env: &SdfEvalEnv,
+    strength: &ShaderNode,
+    color: &ShaderNode,
+) -> SdfExpr {
+    let strength = sdf_to_float(emit_sdf_node_in_env(ctx, strength, env));
+    let color = sdf_to_vec3(emit_sdf_node_in_env(ctx, color, env));
+    let var = ctx.fresh_var();
+    ctx.emit(&format!(
+        "let {var}_base_n = normalize({});",
+        env.geometric_normal
+    ));
+    ctx.emit(&format!(
+        "let {var}_up = select(vec3f(0.0, 1.0, 0.0), vec3f(1.0, 0.0, 0.0), abs({var}_base_n.y) > 0.98);"
+    ));
+    ctx.emit(&format!(
+        "let {var}_tangent = normalize(cross({var}_up, {var}_base_n));"
+    ));
+    ctx.emit(&format!(
+        "let {var}_bitangent = cross({var}_base_n, {var}_tangent);"
+    ));
+    ctx.emit(&format!(
+        "let {var}_raw = clamp({color}, vec3f(0.0), vec3f(1.0)) * 2.0 - vec3f(1.0);"
+    ));
+    ctx.emit(&format!(
+        "let {var}_mapped = normalize({var}_tangent * {var}_raw.x + {var}_bitangent * {var}_raw.y + {var}_base_n * max({var}_raw.z, 0.0001));"
+    ));
+    ctx.emit(&format!(
+        "let {var} = normalize(mix({var}_base_n, {var}_mapped, clamp({strength}, 0.0, 1.0)));"
+    ));
+    SdfExpr {
+        expr: var,
+        ty: SdfExprType::Vec3,
     }
 }
 
-fn extract_color_expr(node: &ShaderNode) -> String {
-    match node {
-        ShaderNode::ConstVec3 { c: v } => format!("vec3f({:.4}, {:.4}, {:.4})", v[0], v[1], v[2]),
-        ShaderNode::ConstFloat { c: v } => format!("vec3f({:.4})", v),
-        ShaderNode::NoiseTexture { .. } => {
-            // Generate inline noise expression using world position
-            "vec3f(noise3d(p * 5.0) * 0.3 + 0.7)".to_string()
+fn emit_sdf_bump_map(
+    ctx: &mut SdfShadeCtx,
+    env: &SdfEvalEnv,
+    strength: &ShaderNode,
+    height: &ShaderNode,
+) -> SdfExpr {
+    let strength = sdf_to_float(emit_sdf_node_in_env(ctx, strength, env));
+    let var = ctx.fresh_var();
+    ctx.emit(&format!(
+        "let {var}_base_n = normalize({});",
+        env.geometric_normal
+    ));
+    ctx.emit(&format!(
+        "let {var}_up = select(vec3f(0.0, 1.0, 0.0), vec3f(1.0, 0.0, 0.0), abs({var}_base_n.y) > 0.98);"
+    ));
+    ctx.emit(&format!(
+        "let {var}_tangent = normalize(cross({var}_up, {var}_base_n));"
+    ));
+    ctx.emit(&format!(
+        "let {var}_bitangent = cross({var}_base_n, {var}_tangent);"
+    ));
+    ctx.emit(&format!("let {var}_eps = max(EPSILON * 8.0, 0.01);"));
+    ctx.emit(&format!(
+        "let {var}_tan_pos = ({}) + {var}_tangent * {var}_eps;",
+        env.position
+    ));
+    ctx.emit(&format!(
+        "let {var}_tan_neg = ({}) - {var}_tangent * {var}_eps;",
+        env.position
+    ));
+    ctx.emit(&format!(
+        "let {var}_bitan_pos = ({}) + {var}_bitangent * {var}_eps;",
+        env.position
+    ));
+    ctx.emit(&format!(
+        "let {var}_bitan_neg = ({}) - {var}_bitangent * {var}_eps;",
+        env.position
+    ));
+
+    let tan_pos = SdfEvalEnv::sampled(format!("{var}_tan_pos"), env.view.clone());
+    let tan_neg = SdfEvalEnv::sampled(format!("{var}_tan_neg"), env.view.clone());
+    let bitan_pos = SdfEvalEnv::sampled(format!("{var}_bitan_pos"), env.view.clone());
+    let bitan_neg = SdfEvalEnv::sampled(format!("{var}_bitan_neg"), env.view.clone());
+
+    let h_tan_pos = sdf_to_float(emit_sdf_node_in_env(ctx, height, &tan_pos));
+    let h_tan_neg = sdf_to_float(emit_sdf_node_in_env(ctx, height, &tan_neg));
+    let h_bitan_pos = sdf_to_float(emit_sdf_node_in_env(ctx, height, &bitan_pos));
+    let h_bitan_neg = sdf_to_float(emit_sdf_node_in_env(ctx, height, &bitan_neg));
+
+    ctx.emit(&format!(
+        "let {var}_dhdx = ({h_tan_pos} - {h_tan_neg}) / ({var}_eps * 2.0);"
+    ));
+    ctx.emit(&format!(
+        "let {var}_dhdy = ({h_bitan_pos} - {h_bitan_neg}) / ({var}_eps * 2.0);"
+    ));
+    ctx.emit(&format!(
+        "let {var} = normalize({var}_base_n - ({var}_tangent * {var}_dhdx + {var}_bitangent * {var}_dhdy) * clamp({strength}, 0.0, 1.0));"
+    ));
+    SdfExpr {
+        expr: var,
+        ty: SdfExprType::Vec3,
+    }
+}
+
+fn emit_sdf_math(
+    ctx: &mut SdfShadeCtx,
+    env: &SdfEvalEnv,
+    op: &MathOpType,
+    a: &ShaderNode,
+    b: Option<&ShaderNode>,
+) -> SdfExpr {
+    let a_expr = emit_sdf_node_in_env(ctx, a, env);
+    let b_expr = b.map(|node| emit_sdf_node_in_env(ctx, node, env));
+    let result_ty = match op {
+        MathOpType::Dot | MathOpType::Distance | MathOpType::Length => SdfExprType::Float,
+        MathOpType::Cross | MathOpType::Normalize | MathOpType::Reflect => SdfExprType::Vec3,
+        _ => b_expr
+            .as_ref()
+            .map(|rhs| sdf_result_type(a_expr.ty, rhs.ty))
+            .unwrap_or(a_expr.ty),
+    };
+
+    let lhs = sdf_coerce(&a_expr, result_ty);
+    let rhs = b_expr
+        .as_ref()
+        .map(|expr| sdf_coerce(expr, result_ty))
+        .unwrap_or_default();
+
+    let value = match op {
+        MathOpType::Add => format!("({lhs} + {rhs})"),
+        MathOpType::Subtract => format!("({lhs} - {rhs})"),
+        MathOpType::Multiply => format!("({lhs} * {rhs})"),
+        MathOpType::Divide => format!("({lhs} / {rhs})"),
+        MathOpType::Power => format!("pow({lhs}, {rhs})"),
+        MathOpType::Min => format!("min({lhs}, {rhs})"),
+        MathOpType::Max => format!("max({lhs}, {rhs})"),
+        MathOpType::Modulo => format!("({lhs} % {rhs})"),
+        MathOpType::Atan2 => format!("atan2({lhs}, {rhs})"),
+        MathOpType::Smoothstep => format!("smoothstep(0.0, 1.0, {lhs})"),
+        MathOpType::Lerp => format!("mix({lhs}, {rhs}, 0.5)"),
+        MathOpType::Step => format!("step({lhs}, {rhs})"),
+        MathOpType::Dot => {
+            let lhs = sdf_to_vec3(a_expr);
+            let rhs = b_expr
+                .map(sdf_to_vec3)
+                .unwrap_or_else(|| "vec3f(0.0)".to_string());
+            format!("dot({lhs}, {rhs})")
         }
-        ShaderNode::ColorMix { fac, a, b, .. } => {
-            let fa = extract_color_expr(a);
-            let fb = extract_color_expr(b);
-            let ff = extract_color_expr(fac);
-            format!("mix({fa}, {fb}, {ff})")
+        MathOpType::Cross => {
+            let lhs = sdf_to_vec3(a_expr);
+            let rhs = b_expr
+                .map(sdf_to_vec3)
+                .unwrap_or_else(|| "vec3f(0.0)".to_string());
+            format!("cross({lhs}, {rhs})")
         }
-        _ => "vec3f(0.8, 0.8, 0.8)".to_string(),
+        MathOpType::Distance => {
+            let lhs = sdf_to_vec3(a_expr);
+            let rhs = b_expr
+                .map(sdf_to_vec3)
+                .unwrap_or_else(|| "vec3f(0.0)".to_string());
+            format!("distance({lhs}, {rhs})")
+        }
+        MathOpType::Reflect => {
+            let lhs = sdf_to_vec3(a_expr);
+            let rhs = b_expr
+                .map(sdf_to_vec3)
+                .unwrap_or_else(|| env.geometric_normal.clone());
+            format!("reflect({lhs}, {rhs})")
+        }
+        MathOpType::Sqrt => format!("sqrt(abs({lhs}))"),
+        MathOpType::Abs => format!("abs({lhs})"),
+        MathOpType::Sin => format!("sin({lhs})"),
+        MathOpType::Cos => format!("cos({lhs})"),
+        MathOpType::Tan => format!("tan({lhs})"),
+        MathOpType::Asin => format!("asin(clamp({lhs}, -1.0, 1.0))"),
+        MathOpType::Acos => format!("acos(clamp({lhs}, -1.0, 1.0))"),
+        MathOpType::Floor => format!("floor({lhs})"),
+        MathOpType::Ceil => format!("ceil({lhs})"),
+        MathOpType::Fract => format!("fract({lhs})"),
+        MathOpType::Sign => format!("sign({lhs})"),
+        MathOpType::Log => format!("log({lhs})"),
+        MathOpType::Exp => format!("exp({lhs})"),
+        MathOpType::Normalize => {
+            let lhs = sdf_to_vec3(a_expr);
+            format!("normalize({lhs})")
+        }
+        MathOpType::Length => {
+            let lhs = sdf_to_vec3(a_expr);
+            format!("length({lhs})")
+        }
+        MathOpType::Negate => format!("(-{lhs})"),
+        MathOpType::Invert => format!("(1.0 - {lhs})"),
+    };
+
+    let var = ctx.fresh_var();
+    ctx.emit(&format!("let {var} = {value};"));
+    SdfExpr {
+        expr: var,
+        ty: result_ty,
+    }
+}
+
+fn emit_sdf_color_mix(
+    ctx: &mut SdfShadeCtx,
+    env: &SdfEvalEnv,
+    mode: &MixMode,
+    fac: &ShaderNode,
+    a: &ShaderNode,
+    b: &ShaderNode,
+) -> SdfExpr {
+    let fac_expr = emit_sdf_node_in_env(ctx, fac, env);
+    let a_expr = emit_sdf_node_in_env(ctx, a, env);
+    let b_expr = emit_sdf_node_in_env(ctx, b, env);
+    let result_ty = sdf_result_type(a_expr.ty, b_expr.ty);
+    let lhs = sdf_coerce(&a_expr, result_ty);
+    let rhs = sdf_coerce(&b_expr, result_ty);
+    let fac = if result_ty == SdfExprType::Float {
+        sdf_to_float(fac_expr)
+    } else {
+        sdf_coerce(&fac_expr, SdfExprType::Vec3)
+    };
+
+    let value = match mode {
+        MixMode::Mix => format!("mix({lhs}, {rhs}, {fac})"),
+        MixMode::Add => format!("({lhs} + {rhs} * {fac})"),
+        MixMode::Multiply => format!("mix({lhs}, {lhs} * {rhs}, {fac})"),
+        MixMode::Screen => format!("mix({lhs}, 1.0 - (1.0 - {lhs}) * (1.0 - {rhs}), {fac})"),
+        MixMode::Overlay => format!(
+            "mix({lhs}, mix(2.0 * {lhs} * {rhs}, 1.0 - 2.0 * (1.0 - {lhs}) * (1.0 - {rhs}), step(0.5, {lhs})), {fac})"
+        ),
+        MixMode::Darken => format!("mix({lhs}, min({lhs}, {rhs}), {fac})"),
+        MixMode::Lighten => format!("mix({lhs}, max({lhs}, {rhs}), {fac})"),
+        MixMode::Difference => format!("mix({lhs}, abs({lhs} - {rhs}), {fac})"),
+        MixMode::Subtract => format!("mix({lhs}, {lhs} - {rhs}, {fac})"),
+        _ => format!("mix({lhs}, {rhs}, {fac})"),
+    };
+
+    let var = ctx.fresh_var();
+    ctx.emit(&format!("let {var} = {value};"));
+    SdfExpr {
+        expr: var,
+        ty: result_ty,
+    }
+}
+
+fn emit_sdf_color_ramp(
+    ctx: &mut SdfShadeCtx,
+    env: &SdfEvalEnv,
+    stops: &[ColorStop],
+    input: &ShaderNode,
+) -> SdfExpr {
+    let input = sdf_to_float(emit_sdf_node_in_env(ctx, input, env));
+    let var = ctx.fresh_var();
+    if stops.len() < 2 {
+        let color = stops
+            .first()
+            .map(|stop| stop.color)
+            .unwrap_or([1.0, 1.0, 1.0, 1.0]);
+        ctx.emit(&format!(
+            "let {var} = vec3f({:.6}, {:.6}, {:.6});",
+            color[0], color[1], color[2]
+        ));
+    } else {
+        ctx.emit(&format!("var {var} = vec3f(0.0);"));
+        for pair in stops.windows(2) {
+            let a = &pair[0];
+            let b = &pair[1];
+            ctx.emit(&format!(
+                "if ({input} >= {:.6} && {input} <= {:.6}) {{ let t = ({input} - {:.6}) / {:.6}; {var} = mix(vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), t); }}",
+                a.position,
+                b.position,
+                a.position,
+                (b.position - a.position).max(0.0001),
+                a.color[0],
+                a.color[1],
+                a.color[2],
+                b.color[0],
+                b.color[1],
+                b.color[2]
+            ));
+        }
+    }
+
+    SdfExpr {
+        expr: var,
+        ty: SdfExprType::Vec3,
+    }
+}
+
+fn sdf_to_float(expr: SdfExpr) -> String {
+    match expr.ty {
+        SdfExprType::Float => expr.expr,
+        SdfExprType::Vec3 => {
+            format!("dot({}, vec3f(0.333333, 0.333333, 0.333333))", expr.expr)
+        }
+    }
+}
+
+fn sdf_to_vec3(expr: SdfExpr) -> String {
+    match expr.ty {
+        SdfExprType::Float => format!("vec3f({})", expr.expr),
+        SdfExprType::Vec3 => expr.expr,
+    }
+}
+
+fn sdf_result_type(a: SdfExprType, b: SdfExprType) -> SdfExprType {
+    if a == SdfExprType::Vec3 || b == SdfExprType::Vec3 {
+        SdfExprType::Vec3
+    } else {
+        SdfExprType::Float
+    }
+}
+
+fn sdf_coerce(expr: &SdfExpr, ty: SdfExprType) -> String {
+    match ty {
+        SdfExprType::Float => match expr.ty {
+            SdfExprType::Float => expr.expr.clone(),
+            SdfExprType::Vec3 => {
+                format!("dot({}, vec3f(0.333333, 0.333333, 0.333333))", expr.expr)
+            }
+        },
+        SdfExprType::Vec3 => match expr.ty {
+            SdfExprType::Float => format!("vec3f({})", expr.expr),
+            SdfExprType::Vec3 => expr.expr.clone(),
+        },
     }
 }
 
@@ -596,12 +1350,173 @@ fn pbr_shade_sdf(
     return ambient + direct + emission;
 }
 
-// Refraction: march through ice volume, exit out the back, sample background
-// Chromatic dispersion applied at edges via IOR offset per channel
-fn sdf_refract_channel(p: vec3f, rd: vec3f, N: vec3f, ior_ch: f32) -> vec3f {
-    let refr = refract(rd, N, 1.0 / ior_ch);
-    if length(refr) < 0.001 { return BG_COLOR; }
-    // March through ice volume to exit point
+fn sdf_env_color(dir: vec3f) -> vec3f {
+    let up = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
+    let base_low = clamp(BG_COLOR * vec3f(0.48, 0.64, 0.80) + vec3f(0.003, 0.008, 0.018), vec3f(0.0), vec3f(1.0));
+    let base_high = clamp(BG_COLOR * vec3f(0.62, 0.74, 0.86) + vec3f(0.006, 0.012, 0.022), vec3f(0.0), vec3f(1.0));
+    let base = mix(base_low, base_high, smoothstep(0.0, 1.0, up));
+    let key_dir = normalize(LIGHT_DIR + vec3f(0.0, 0.22, 0.0));
+    let fill_dir = normalize(vec3f(-LIGHT_DIR.x * 0.65, 0.38, -LIGHT_DIR.z * 0.65));
+    let key = exp((dot(normalize(dir), key_dir) - 1.0) * 44.0) * 0.035;
+    let fill = exp((dot(normalize(dir), fill_dir) - 1.0) * 28.0) * 0.008;
+    let rim = exp(-pow(abs(dir.y) * 2.8, 2.0)) * 0.0004;
+    return clamp(base + LIGHT_COLOR * key + vec3f(1.0) * fill + vec3f(rim), vec3f(0.0), vec3f(1.0));
+}
+
+fn sdf_floor_color(uv: vec2f) -> vec3f {
+    let radial = clamp(length(uv) * 0.072, 0.0, 1.0);
+    let depth = smoothstep(-2.6, 6.8, uv.y);
+    let center = clamp(BG_COLOR * vec3f(0.56, 0.70, 0.84) + vec3f(0.010, 0.018, 0.028), vec3f(0.0), vec3f(1.0));
+    let edge = clamp(BG_COLOR * vec3f(0.34, 0.48, 0.64) + vec3f(0.002, 0.004, 0.008), vec3f(0.0), vec3f(1.0));
+    let base = mix(center, edge, clamp(depth * 0.68 + radial * 0.46, 0.0, 1.0));
+    let sheen = vec3f(exp(-dot(uv, uv) * 0.012) * 0.0008);
+    return clamp(base + sheen, vec3f(0.0), vec3f(1.0));
+}
+
+fn sdf_scene_reflection_color(
+    p: vec3f,
+    rd: vec3f,
+    N: vec3f,
+    roughness: f32,
+    transmission: f32
+) -> vec3f {
+    let gloss = clamp(1.0 - roughness * 0.75, 0.0, 1.0);
+    let refl_dir = normalize(mix(reflect(rd, N), N, roughness * roughness * 0.1));
+    let origin = p + N * mix(0.018, 0.04, transmission) + refl_dir * 0.01;
+    let hit_t = ray_march_from(origin, refl_dir, 0.0, MAX_DIST);
+    if hit_t > 0.0 {
+        let hit_color = shade_probe(origin, refl_dir, hit_t);
+        return mix(sdf_env_color(refl_dir), hit_color, gloss);
+    }
+    return sdf_env_color(refl_dir);
+}
+
+fn sdf_refract_thickness(p: vec3f, rd: vec3f, N: vec3f, ior: f32) -> f32 {
+    let refr = refract(rd, N, 1.0 / ior);
+    if length(refr) < 0.001 { return 0.0; }
+    var pos = p + refr * 0.012;
+    var dist = 0.0;
+    for (var i = 0u; i < 40u; i++) {
+        let d = sdf_scene(pos);
+        if d > 0.0015 { break; }
+        let step_len = clamp(abs(d) * 0.85 + 0.006, 0.006, 0.05);
+        pos += refr * step_len;
+        dist += step_len;
+    }
+    return dist;
+}
+
+fn sdf_transmission_light(
+    p: vec3f,
+    rd: vec3f,
+    N: vec3f,
+    ior: f32,
+    roughness: f32,
+    transmission: f32,
+    thickness: f32,
+    base_tint: vec3f
+) -> vec3f {
+    let L = normalize(LIGHT_DIR);
+    let light_in = -L;
+    let V = -rd;
+    let side_bias = pow(1.0 - abs(N.y), 0.82);
+    let thickness_factor = smoothstep(0.05, 0.42, thickness);
+    let entry_n = sdf_refract_micro_normal(p, -N, thickness * 0.7, transmission);
+    var light_refr = refract(light_in, -entry_n, 1.0 / ior);
+    if length(light_refr) < 0.001 {
+        light_refr = light_in;
+    }
+    let light_refr_n = normalize(light_refr);
+    let through_view = pow(max(dot(light_refr_n, V), 0.0), mix(12.0, 5.0, roughness));
+    let backlight = pow(max(dot(N, light_in), 0.0), 1.15);
+    let through_light = pow(max(dot(V, light_in), 0.0), 1.35);
+    let lateral_light = normalize(vec3f(light_refr.x, 0.0, light_refr.z) + vec3f(0.0001, 0.0, 0.0));
+    let lateral_view = normalize(vec3f(V.x, 0.0, V.z) + vec3f(0.0001, 0.0, 0.0));
+    let side_through = pow(max(dot(lateral_light, lateral_view), 0.0), mix(2.6, 1.5, roughness));
+    let side_wrap = pow(max(dot(normalize(light_refr_n - N * dot(light_refr_n, N)), normalize(V - N * dot(V, N))), 0.0), mix(3.4, 1.9, roughness));
+    let lateral_backlight = pow(1.0 - abs(dot(N, light_in)), 0.95);
+    let forward_strength = transmission
+        * thickness_factor
+        * mix(0.14, 0.34, side_bias)
+        * mix(0.58, 0.90, backlight);
+    let lateral_strength = transmission
+        * thickness_factor
+        * mix(0.35, 1.0, side_bias)
+        * mix(0.22, 0.72, lateral_backlight)
+        * smoothstep(0.06, 0.30, thickness);
+    let lateral_glow = transmission
+        * thickness_factor
+        * side_bias
+        * lateral_backlight
+        * 0.22;
+    let tint = mix(vec3f(1.0), base_tint, 0.06);
+    let forward_term = forward_strength * mix(through_light, through_view, 0.78);
+    let lateral_term = lateral_strength * mix(side_through, side_wrap, 0.45);
+    return LIGHT_COLOR * tint * (forward_term + lateral_term + lateral_glow);
+}
+
+fn sdf_refract_micro_normal(
+    p: vec3f,
+    N: vec3f,
+    thickness: f32,
+    transmission: f32
+) -> vec3f {
+    let side_bias = pow(1.0 - abs(N.y), 0.72);
+    let q = p * mix(1.05, 2.05, transmission);
+    let broad_q = p * mix(0.34, 0.88, transmission);
+    let nx = shade_fbm_noise(q + vec3f(13.1, 1.7, 0.4)) * 2.0 - 1.0;
+    let ny = shade_fbm_noise(q + vec3f(0.7, 11.3, 2.2)) * 2.0 - 1.0;
+    let nz = shade_fbm_noise(q + vec3f(3.4, 0.9, 17.2)) * 2.0 - 1.0;
+    let bx = shade_fbm_noise(broad_q + vec3f(2.3, 7.1, 1.9)) * 2.0 - 1.0;
+    let bz = shade_fbm_noise(broad_q + vec3f(8.4, 0.6, 5.7)) * 2.0 - 1.0;
+    var tangent = cross(vec3f(0.0, 1.0, 0.0), N);
+    if length(tangent) < 0.001 {
+        tangent = cross(vec3f(1.0, 0.0, 0.0), N);
+    }
+    tangent = normalize(tangent);
+    let bitangent = normalize(cross(N, tangent));
+    let thickness_factor = smoothstep(0.05, 0.34, thickness);
+    let strength = clamp(
+        thickness * mix(0.10, 0.05, transmission) + thickness_factor * side_bias * mix(0.015, 0.035, transmission),
+        0.0,
+        0.085
+    );
+    let warp = tangent * mix(nx, bx, 0.88) + bitangent * mix(nz, bz, 0.88) + N * ny * 0.02;
+    return normalize(N + warp * strength);
+}
+
+fn sdf_refract_sample_env(sample_origin: vec3f, sample_dir: vec3f, fallback_pos: vec3f, travel_dist: f32) -> vec3f {
+    var bg = sdf_env_color(sample_dir);
+    if sample_dir.y < 0.0 {
+        bg = sdf_floor_color(fallback_pos.xz + sample_dir.xz * (0.65 + travel_dist * 0.45));
+    }
+    return bg;
+}
+
+fn sdf_refract_sample_scene(sample_origin: vec3f, sample_dir: vec3f, fallback_pos: vec3f, travel_dist: f32) -> vec3f {
+    var bg = sdf_env_color(sample_dir);
+    let hit_t = ray_march_from(sample_origin + sample_dir * 0.025, sample_dir, 0.0, MAX_DIST);
+    if hit_t > 0.0 {
+        bg = shade_probe(sample_origin, sample_dir, hit_t);
+    } else if sample_dir.y < 0.0 {
+        bg = sdf_floor_color(fallback_pos.xz + sample_dir.xz * (0.65 + travel_dist * 0.45));
+    }
+    return bg;
+}
+
+fn sdf_refract_channel_env(
+    p: vec3f,
+    rd: vec3f,
+    N: vec3f,
+    ior_ch: f32,
+    absorption: f32,
+    thickness: f32,
+    transmission: f32
+) -> vec3f {
+    let side_bias = pow(1.0 - abs(N.y), 0.82);
+    let entry_n = sdf_refract_micro_normal(p, N, thickness, transmission);
+    let refr = refract(rd, entry_n, 1.0 / ior_ch);
+    if length(refr) < 0.001 { return sdf_env_color(reflect(rd, N)); }
     var pos = p + refr * 0.02;
     var dist = 0.0;
     for (var i = 0u; i < 30u; i++) {
@@ -610,28 +1525,242 @@ fn sdf_refract_channel(p: vec3f, rd: vec3f, N: vec3f, ior_ch: f32) -> vec3f {
         pos += refr * max(abs(d), 0.008);
         dist += max(abs(d), 0.008);
     }
-    let exit_n = calc_normal(pos);
+    let exit_n = sdf_refract_micro_normal(pos, calc_normal(pos), thickness + dist * 0.25, transmission);
     let exit_rd = refract(refr, -exit_n, ior_ch);
-    // What you see through the ice — ground below, sky above
-    var bg: vec3f;
-    if exit_rd.y < 0.0 {
-        // Looking down through ice → ground surface (light blue)
-        bg = vec3f(0.5, 0.72, 0.86);
-    } else {
-        // Looking up/sideways → sky background
-        bg = mix(BG_COLOR, vec3f(0.75, 0.88, 0.95), exit_rd.y);
+    var sample_dir = exit_rd;
+    if length(sample_dir) < 0.001 {
+        sample_dir = refr;
     }
-    let absorption = exp(-dist * 0.3);
-    return bg * absorption;
+    let primary = sdf_refract_sample_env(pos, sample_dir, pos, dist);
+    var col = primary * exp(-dist * absorption);
+
+    let exit_fresnel = pow(1.0 - max(dot(-refr, exit_n), 0.0), 2.4);
+    let bounce_weight = clamp(exit_fresnel * transmission * (0.004 + side_bias * 0.025) * smoothstep(0.10, 0.45, dist), 0.0, 0.035);
+    if bounce_weight > 0.001 {
+        let bounce = reflect(refr, -exit_n);
+        var bounce_pos = pos + bounce * 0.02;
+        var bounce_dist = 0.0;
+        for (var i = 0u; i < 24u; i++) {
+            let d = sdf_scene(bounce_pos);
+            if d > 0.01 { break; }
+            bounce_pos += bounce * max(abs(d), 0.008);
+            bounce_dist += max(abs(d), 0.008);
+        }
+        let bounce_exit_n = sdf_refract_micro_normal(
+            bounce_pos,
+            calc_normal(bounce_pos),
+            thickness + (dist + bounce_dist) * 0.35,
+            transmission
+        );
+        var bounce_dir = refract(bounce, -bounce_exit_n, ior_ch);
+        if length(bounce_dir) < 0.001 {
+            bounce_dir = reflect(bounce, -bounce_exit_n);
+        }
+        let bounced = sdf_refract_sample_env(bounce_pos, bounce_dir, bounce_pos, dist + bounce_dist);
+        let bounced_col = bounced * exp(-(dist + bounce_dist) * absorption * 1.08);
+        col = mix(col, bounced_col, bounce_weight);
+    }
+    return col;
 }
 
-fn sdf_refract_color(p: vec3f, rd: vec3f, N: vec3f, ior: f32, base_tint: vec3f) -> vec3f {
-    // Chromatic dispersion: offset IOR per channel for edge rainbow
-    let col_r = sdf_refract_channel(p, rd, N, ior - 0.03);
-    let col_g = sdf_refract_channel(p, rd, N, ior);
-    let col_b = sdf_refract_channel(p, rd, N, ior + 0.03);
+fn sdf_refract_channel_scene(
+    p: vec3f,
+    rd: vec3f,
+    N: vec3f,
+    ior_ch: f32,
+    absorption: f32,
+    thickness: f32,
+    transmission: f32
+) -> vec3f {
+    let side_bias = pow(1.0 - abs(N.y), 0.82);
+    let entry_n = sdf_refract_micro_normal(p, N, thickness, transmission);
+    let refr = refract(rd, entry_n, 1.0 / ior_ch);
+    if length(refr) < 0.001 { return sdf_env_color(reflect(rd, N)); }
+    var pos = p + refr * 0.02;
+    var dist = 0.0;
+    for (var i = 0u; i < 30u; i++) {
+        let d = sdf_scene(pos);
+        if d > 0.01 { break; }
+        pos += refr * max(abs(d), 0.008);
+        dist += max(abs(d), 0.008);
+    }
+    let exit_n = sdf_refract_micro_normal(pos, calc_normal(pos), thickness + dist * 0.25, transmission);
+    let exit_rd = refract(refr, -exit_n, ior_ch);
+    var sample_dir = exit_rd;
+    if length(sample_dir) < 0.001 {
+        sample_dir = refr;
+    }
+    let primary = sdf_refract_sample_scene(pos, sample_dir, pos, dist);
+    var col = primary * exp(-dist * absorption);
+
+    let face_edge = pow(1.0 - max(dot(-rd, N), 0.0), 1.6);
+    let interior_lobe_weight = clamp(
+        transmission * face_edge * (0.0008 + side_bias * 0.006) * smoothstep(0.10, 0.38, dist),
+        0.0,
+        0.010
+    );
+    if interior_lobe_weight > 0.001 {
+        let lobe_origin = p + refr * clamp(dist * 0.45, 0.035, 0.34);
+        let lobe_n = sdf_refract_micro_normal(
+            lobe_origin,
+            normalize(mix(entry_n, exit_n, 0.35)),
+            thickness + dist * 0.45,
+            transmission
+        );
+        let lobe_dir = normalize(mix(sample_dir, reflect(refr, lobe_n), 0.24 + side_bias * 0.18));
+        let lobe = sdf_refract_sample_scene(lobe_origin, lobe_dir, lobe_origin, dist * 0.75);
+        let lobe_col = lobe * exp(-dist * absorption * 0.92);
+        col = mix(col, lobe_col, interior_lobe_weight);
+    }
+
+    let wall_face_weight = clamp(
+        transmission * face_edge * (0.001 + side_bias * 0.008) * smoothstep(0.10, 0.42, dist),
+        0.0,
+        0.012
+    );
+    if wall_face_weight > 0.001 {
+        let wall_origin = p + refr * clamp(dist * 0.18, 0.028, 0.14);
+        let wall_n = normalize(mix(entry_n, -exit_n, 0.46));
+        let wall_dir = normalize(reflect(refr, wall_n));
+        let wall_t = ray_march_from(
+            wall_origin + wall_dir * 0.02,
+            wall_dir,
+            0.0,
+            clamp(dist * 1.55 + thickness * 1.10, 0.28, 1.0)
+        );
+        if wall_t > 0.0 {
+            let wall_face = shade_probe(wall_origin, wall_dir, wall_t);
+            col = mix(col, wall_face, wall_face_weight);
+        }
+    }
+
+    let exit_fresnel = pow(1.0 - max(dot(-refr, exit_n), 0.0), 2.4);
+    let bounce_weight = clamp(
+        transmission * face_edge * (0.0015 + side_bias * 0.010 + exit_fresnel * 0.010) * smoothstep(0.12, 0.45, dist),
+        0.0,
+        0.016
+    );
+    if bounce_weight > 0.001 {
+        let bounce = reflect(refr, -exit_n);
+        var bounce_pos = pos + bounce * 0.02;
+        var bounce_dist = 0.0;
+        for (var i = 0u; i < 24u; i++) {
+            let d = sdf_scene(bounce_pos);
+            if d > 0.01 { break; }
+            bounce_pos += bounce * max(abs(d), 0.008);
+            bounce_dist += max(abs(d), 0.008);
+        }
+        let bounce_exit_n = sdf_refract_micro_normal(
+            bounce_pos,
+            calc_normal(bounce_pos),
+            thickness + (dist + bounce_dist) * 0.35,
+            transmission
+        );
+        var bounce_dir = refract(bounce, -bounce_exit_n, ior_ch);
+        if length(bounce_dir) < 0.001 {
+            bounce_dir = reflect(bounce, -bounce_exit_n);
+        }
+        let bounced = sdf_refract_sample_scene(bounce_pos, bounce_dir, bounce_pos, dist + bounce_dist);
+        let bounced_col = bounced * exp(-(dist + bounce_dist) * absorption * 1.08);
+        col = mix(col, bounced_col, bounce_weight);
+    }
+    return col;
+}
+
+fn sdf_refract_color_env(
+    p: vec3f,
+    rd: vec3f,
+    N: vec3f,
+    ior: f32,
+    base_tint: vec3f,
+    transmission: f32,
+    thickness: f32
+) -> vec3f {
+    let side_bias = pow(1.0 - abs(N.y), 0.82);
+    let thickness_factor = smoothstep(0.05, 0.42, thickness);
+    let prism_factor = clamp(thickness_factor * mix(0.72, 1.0, side_bias), 0.0, 1.0);
+    let dispersion = mix(0.0008, 0.010, prism_factor) * mix(0.9, 1.16, transmission);
+    let absorption = mix(vec3f(0.012, 0.005, 0.002), vec3f(0.0015, 0.0005, 0.00025), transmission);
+    let col_r = sdf_refract_channel_env(p, rd, N, max(1.01, ior - dispersion), absorption.x, thickness, transmission);
+    let col_g = sdf_refract_channel_env(p, rd, N, ior, absorption.y, thickness, transmission);
+    let col_b = sdf_refract_channel_env(p, rd, N, ior + dispersion, absorption.z, thickness, transmission);
     let col = vec3f(col_r.x, col_g.y, col_b.z);
-    return col * mix(vec3f(1.0), base_tint, 0.12);
+    let tint_strength = clamp(thickness * mix(0.003, 0.001, transmission), 0.0, 0.004);
+    return col * mix(vec3f(1.0), base_tint, tint_strength);
+}
+
+fn sdf_refract_color_scene(
+    p: vec3f,
+    rd: vec3f,
+    N: vec3f,
+    ior: f32,
+    base_tint: vec3f,
+    transmission: f32,
+    thickness: f32
+) -> vec3f {
+    let side_bias = pow(1.0 - abs(N.y), 0.82);
+    let thickness_factor = smoothstep(0.05, 0.42, thickness);
+    let prism_factor = clamp(thickness_factor * mix(0.72, 1.0, side_bias), 0.0, 1.0);
+    let dispersion = mix(0.0008, 0.010, prism_factor) * mix(0.9, 1.16, transmission);
+    let absorption = mix(vec3f(0.012, 0.005, 0.002), vec3f(0.0015, 0.0005, 0.00025), transmission);
+    let col_r = sdf_refract_channel_scene(p, rd, N, max(1.01, ior - dispersion), absorption.x, thickness, transmission);
+    let col_g = sdf_refract_channel_scene(p, rd, N, ior, absorption.y, thickness, transmission);
+    let col_b = sdf_refract_channel_scene(p, rd, N, ior + dispersion, absorption.z, thickness, transmission);
+    let col = vec3f(col_r.x, col_g.y, col_b.z);
+    let tint_strength = clamp(thickness * mix(0.003, 0.001, transmission), 0.0, 0.004);
+    return col * mix(vec3f(1.0), base_tint, tint_strength);
+}
+"#;
+
+const SDF_SHADE_NOISE_FUNCTIONS: &str = r#"
+fn shade_hash3(p: vec3f) -> f32 {
+    var q = fract(p * 0.1031);
+    q = q + dot(q, q.yzx + 19.19);
+    return fract((q.x + q.y) * q.z);
+}
+
+fn shade_noise3d(p: vec3f) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let u = f * f * (3.0 - 2.0 * f);
+    return mix(
+        mix(mix(shade_hash3(i), shade_hash3(i + vec3f(1.0, 0.0, 0.0)), u.x),
+            mix(shade_hash3(i + vec3f(0.0, 1.0, 0.0)), shade_hash3(i + vec3f(1.0, 1.0, 0.0)), u.x), u.y),
+        mix(mix(shade_hash3(i + vec3f(0.0, 0.0, 1.0)), shade_hash3(i + vec3f(1.0, 0.0, 1.0)), u.x),
+            mix(shade_hash3(i + vec3f(0.0, 1.0, 1.0)), shade_hash3(i + vec3f(1.0, 1.0, 1.0)), u.x), u.y), u.z);
+}
+
+fn shade_fbm_noise(p: vec3f) -> f32 {
+    var value = 0.0;
+    var amplitude = 0.5;
+    var q = p;
+    for (var i = 0u; i < 4u; i = i + 1u) {
+        value = value + amplitude * shade_noise3d(q);
+        q = q * 2.0;
+        amplitude = amplitude * 0.5;
+    }
+    return value;
+}
+
+fn shade_voronoi_noise(p: vec3f) -> f32 {
+    let n = floor(p);
+    let f = fract(p);
+    var md = 8.0;
+    for (var k = -1; k <= 1; k++) {
+        for (var j = -1; j <= 1; j++) {
+            for (var i = -1; i <= 1; i++) {
+                let g = vec3f(f32(i), f32(j), f32(k));
+                let o = vec3f(
+                    shade_hash3(n + g),
+                    shade_hash3(n + g + 17.0),
+                    shade_hash3(n + g + 31.0)
+                );
+                let r = g + o - f;
+                md = min(md, dot(r, r));
+            }
+        }
+    }
+    return sqrt(md);
 }
 "#;
 
@@ -941,12 +2070,23 @@ mod tests {
         assert!(mat.fragment_wgsl.contains("D_GGX"));
         assert!(mat.fragment_wgsl.contains("F_Schlick"));
         assert!(mat.vertex_wgsl.contains("vs_main"));
-        println!("Fragment WGSL ({} bytes):\n{}", mat.fragment_wgsl.len(), &mat.fragment_wgsl[..500.min(mat.fragment_wgsl.len())]);
+        println!(
+            "Fragment WGSL ({} bytes):\n{}",
+            mat.fragment_wgsl.len(),
+            &mat.fragment_wgsl[..500.min(mat.fragment_wgsl.len())]
+        );
 
         // Also test SDF shade compilation
         let shade = compile_sdf_shade(&tree);
-        println!("SDF shade WGSL ({} bytes):\n{}", shade.len(), &shade[..200.min(shade.len())]);
+        println!(
+            "SDF shade WGSL ({} bytes):\n{}",
+            shade.len(),
+            &shade[..200.min(shade.len())]
+        );
         assert!(shade.contains("fn shade("));
+        assert!(shade.contains("fn shade_probe("));
+        assert!(shade.contains("sdf_refract_color_env("));
+        assert!(shade.contains("sdf_refract_color_scene("));
         assert!(shade.contains("pbr_shade_sdf"));
     }
 
@@ -973,8 +2113,14 @@ mod tests {
         }"#;
         let node: crate::ir::ShaderNode = serde_json::from_str(json_str).expect("deser failed");
         let shade = compile_sdf_shade(&node);
-        println!("SDF shade from actor JSON ({} bytes):\n{}", shade.len(), &shade[..300.min(shade.len())]);
+        println!(
+            "SDF shade from actor JSON ({} bytes):\n{}",
+            shade.len(),
+            &shade[..300.min(shade.len())]
+        );
         assert!(shade.contains("fn shade("));
+        assert!(shade.contains("fn shade_probe("));
+        assert!(shade.contains("sdf_refract_color_env("));
     }
 
     #[test]
@@ -1009,5 +2155,50 @@ mod tests {
         let mat = compile(&tree);
         assert!(mat.fragment_wgsl.contains("fbm_noise"));
         println!("Noise material WGSL ({} bytes)", mat.fragment_wgsl.len());
+    }
+
+    #[test]
+    fn test_compile_sdf_bump_normal_material() {
+        let tree = MaterialOutput {
+            surface: Box::new(PrincipledBsdf {
+                base_color: Box::new(ConstVec3 {
+                    c: [0.9, 0.96, 1.0],
+                }),
+                metallic: Box::new(ConstFloat { c: 0.0 }),
+                roughness: Box::new(ConstFloat { c: 0.03 }),
+                normal: Some(Box::new(BumpMap {
+                    strength: Box::new(ConstFloat { c: 0.15 }),
+                    height: Box::new(SeparateXYZ {
+                        input: Box::new(NoiseTexture {
+                            scale: Box::new(ConstFloat { c: 6.0 }),
+                            detail: Box::new(ConstFloat { c: 2.0 }),
+                            roughness: Box::new(ConstFloat { c: 0.5 }),
+                        }),
+                        component: "x".to_string(),
+                    }),
+                })),
+                emission: Box::new(ConstVec3 { c: [0.0, 0.0, 0.0] }),
+                emission_strength: Box::new(ConstFloat { c: 0.0 }),
+                ao: None,
+                alpha: Box::new(ConstFloat { c: 0.02 }),
+                subsurface: None,
+                subsurface_color: None,
+                clearcoat: None,
+                clearcoat_roughness: None,
+                anisotropic: None,
+                anisotropic_rotation: None,
+                sheen: None,
+                sheen_tint: None,
+                transmission: Some(Box::new(ConstFloat { c: 0.99 })),
+                ior: Some(Box::new(ConstFloat { c: 1.31 })),
+            }),
+        };
+
+        let shade = compile_sdf_shade(&tree);
+        assert!(shade.contains("_dhdx"));
+        assert!(shade.contains("shade_fbm_noise"));
+        assert!(shade.contains("cross("));
+        assert!(shade.contains("shade_probe"));
+        assert!(shade.contains("sdf_refract_color_scene("));
     }
 }

@@ -71,7 +71,10 @@ pub async fn ik_solver_actor(ctx: ActorContext) -> Result<HashMap<String, Messag
     let target_arr = targets.as_array();
 
     for (ci, chain) in chains.iter().enumerate() {
-        let mode = chain.get("mode").and_then(|v| v.as_str()).unwrap_or("two_bone");
+        let mode = chain
+            .get("mode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("two_bone");
         let weight = chain.get("weight").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
 
         let target_pos = target_arr
@@ -146,7 +149,11 @@ fn vec3_len(v: [f32; 3]) -> f32 {
 
 fn vec3_norm(v: [f32; 3]) -> [f32; 3] {
     let l = vec3_len(v);
-    if l > 1e-6 { [v[0] / l, v[1] / l, v[2] / l] } else { [0.0, 1.0, 0.0] }
+    if l > 1e-6 {
+        [v[0] / l, v[1] / l, v[2] / l]
+    } else {
+        [0.0, 1.0, 0.0]
+    }
 }
 
 fn vec3_cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
@@ -237,10 +244,18 @@ fn solve_look_at(bytes: &mut [u8], bone: usize, target: [f32; 3], weight: f32) {
     let up = vec3_cross(forward, right);
 
     let mut look_m = MAT4_IDENTITY;
-    look_m[0] = right[0]; look_m[1] = right[1]; look_m[2] = right[2];
-    look_m[4] = up[0];    look_m[5] = up[1];    look_m[6] = up[2];
-    look_m[8] = forward[0]; look_m[9] = forward[1]; look_m[10] = forward[2];
-    look_m[12] = pos[0]; look_m[13] = pos[1]; look_m[14] = pos[2];
+    look_m[0] = right[0];
+    look_m[1] = right[1];
+    look_m[2] = right[2];
+    look_m[4] = up[0];
+    look_m[5] = up[1];
+    look_m[6] = up[2];
+    look_m[8] = forward[0];
+    look_m[9] = forward[1];
+    look_m[10] = forward[2];
+    look_m[12] = pos[0];
+    look_m[13] = pos[1];
+    look_m[14] = pos[2];
 
     // Blend with original
     let mut blended = [0.0f32; 16];

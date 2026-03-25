@@ -61,6 +61,14 @@ impl Actor for OutportBridge {
         self.load.clone()
     }
 
+    fn create_instance(&self) -> Arc<dyn Actor> {
+        Arc::new(Self::new(
+            self.external_sender.clone(),
+            self.external_port_name.clone(),
+            self.inner_port_name.clone(),
+        ))
+    }
+
     fn create_process(
         &self,
         _config: ActorConfig,
@@ -99,6 +107,11 @@ impl Actor for OutportBridge {
 pub struct SubgraphActor {
     /// The inner network this subgraph wraps
     inner_network: Arc<parking_lot::Mutex<Network>>,
+    /// Original graph export, retained so the runtime can instantiate a
+    /// fresh isolated copy for each parent node that uses this subgraph.
+    graph_export: Option<GraphExport>,
+    /// Actor templates required by the graph export.
+    actor_templates: HashMap<String, Arc<dyn Actor>>,
     /// Maps external inport name → (inner_actor_id, inner_port_name)
     inport_map: HashMap<String, (String, String)>,
     /// Maps external outport name → (inner_actor_id, inner_port_name)
@@ -128,6 +141,7 @@ impl SubgraphActor {
         actors: HashMap<String, Arc<dyn Actor>>,
     ) -> Result<Self, anyhow::Error> {
         let mut inner_network = Network::new(NetworkConfig::default());
+        let actor_templates = actors.clone();
 
         // Register actors (components) in the inner network
         for (name, actor) in actors {
@@ -191,6 +205,8 @@ impl SubgraphActor {
 
         Ok(SubgraphActor {
             inner_network: Arc::new(parking_lot::Mutex::new(inner_network)),
+            graph_export: Some(graph_export.clone()),
+            actor_templates,
             inport_map,
             outport_map,
             inports: flume::unbounded(),
@@ -211,6 +227,8 @@ impl SubgraphActor {
 
         SubgraphActor {
             inner_network: Arc::new(parking_lot::Mutex::new(inner_network)),
+            graph_export: None,
+            actor_templates: HashMap::new(),
             inport_map,
             outport_map,
             inports: flume::unbounded(),
@@ -254,6 +272,21 @@ impl Actor for SubgraphActor {
 
     fn load_count(&self) -> Arc<ActorLoad> {
         self.load.clone()
+    }
+
+    fn create_instance(&self) -> Arc<dyn Actor> {
+        if let Some(graph_export) = &self.graph_export {
+            return Arc::new(
+                SubgraphActor::from_graph_export(graph_export, self.actor_templates.clone())
+                    .expect("Failed to clone subgraph actor from graph export"),
+            );
+        }
+
+        Arc::new(SubgraphActor::new(
+            self.inner_network.lock().clone(),
+            self.inport_map.clone(),
+            self.outport_map.clone(),
+        ))
     }
 
     fn create_process(
@@ -380,6 +413,10 @@ mod tests {
             self.load.clone()
         }
 
+        fn create_instance(&self) -> Arc<dyn Actor> {
+            Arc::new(Self::new())
+        }
+
         fn inport_names(&self) -> Vec<String> {
             vec!["in".into()]
         }
@@ -472,7 +509,7 @@ mod tests {
 
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 
-        let sub_actor = parent.actors.get("SubgraphComponent").unwrap();
+        let sub_actor = parent.initialized_actors.get("sub_node").unwrap();
         let outport_receiver = sub_actor.get_outports().1;
 
         match outport_receiver.try_recv() {
@@ -579,7 +616,7 @@ mod tests {
 
         tokio::time::sleep(std::time::Duration::from_millis(300)).await;
 
-        let sub_actor = parent.actors.get("ChainedSubgraph").unwrap();
+        let sub_actor = parent.initialized_actors.get("chain_node").unwrap();
         let outport_receiver = sub_actor.get_outports().1;
 
         match outport_receiver.try_recv() {

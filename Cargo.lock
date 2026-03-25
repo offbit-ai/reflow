@@ -5682,6 +5682,7 @@ dependencies = [
  "reflow_pixel",
  "reflow_sdf",
  "reflow_server",
+ "reflow_shader",
  "reflow_tracing_protocol",
  "reflow_vector",
  "reqwest 0.12.22",
@@ -5978,6 +5979,14 @@ dependencies = [
  "tower-http 0.5.2",
  "uuid",
  "zeal-sdk",
+]
+
+[[package]]
+name = "reflow_shader"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

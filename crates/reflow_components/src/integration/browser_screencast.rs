@@ -52,8 +52,18 @@ struct FrameBuffer {
 pub enum BrowserCommand {
     Navigate(String),
     ClickSelector(String),
-    Mouse { event_type: String, x: f64, y: f64, button: String, delta_x: f64, delta_y: f64 },
-    Type { selector: String, text: String },
+    Mouse {
+        event_type: String,
+        x: f64,
+        y: f64,
+        button: String,
+        delta_x: f64,
+        delta_y: f64,
+    },
+    Type {
+        selector: String,
+        text: String,
+    },
     WaitForSelector(String),
     Evaluate(String),
     Screenshot,
@@ -116,8 +126,14 @@ pub async fn browser_screencast_actor(
     let vp_width = config.get("width").and_then(|v| v.as_u64()).unwrap_or(1280) as u32;
     let vp_height = config.get("height").and_then(|v| v.as_u64()).unwrap_or(720) as u32;
     let quality = config.get("quality").and_then(|v| v.as_u64()).unwrap_or(80) as i64;
-    let every_nth = config.get("everyNthFrame").and_then(|v| v.as_u64()).unwrap_or(1) as i64;
-    let wait_ms = config.get("waitBeforeCapture").and_then(|v| v.as_u64()).unwrap_or(2000);
+    let every_nth = config
+        .get("everyNthFrame")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(1) as i64;
+    let wait_ms = config
+        .get("waitBeforeCapture")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(2000);
 
     // ── First invocation: launch browser ──
 
@@ -162,9 +178,18 @@ pub async fn browser_screencast_actor(
         let outport_tx2 = outport_tx.clone();
         tokio::spawn(async move {
             if let Err(e) = run_browser(
-                url, vp_width, vp_height, quality, every_nth, wait_ms,
-                frame_buf, cmd_rx, result_tx, outport_tx2,
-                ss_request_rx, ss_response_tx,
+                url,
+                vp_width,
+                vp_height,
+                quality,
+                every_nth,
+                wait_ms,
+                frame_buf,
+                cmd_rx,
+                result_tx,
+                outport_tx2,
+                ss_request_rx,
+                ss_response_tx,
             )
             .await
             {
@@ -207,9 +232,10 @@ pub async fn browser_screencast_actor(
         eprintln!("[browser] action obj: {}", v);
         if let Some(action_type) = v.get("type").and_then(|t| t.as_str()) {
             let cmd = match action_type {
-                "navigate" => v.get("url").and_then(|u| u.as_str()).map(|u| {
-                    BrowserCommand::Navigate(u.to_string())
-                }),
+                "navigate" => v
+                    .get("url")
+                    .and_then(|u| u.as_str())
+                    .map(|u| BrowserCommand::Navigate(u.to_string())),
                 "click" => {
                     // Selector-based click: { type: "click", selector: "..." }
                     if let Some(sel) = v.get("selector").and_then(|s| s.as_str()) {
@@ -221,42 +247,66 @@ pub async fn browser_screencast_actor(
                             x: v.get("x").and_then(|n| n.as_f64()).unwrap_or(0.0),
                             y: v.get("y").and_then(|n| n.as_f64()).unwrap_or(0.0),
                             button: "left".to_string(),
-                            delta_x: 0.0, delta_y: 0.0,
+                            delta_x: 0.0,
+                            delta_y: 0.0,
                         })
                     }
                 }
                 // Raw mouse: { type: "mouse", event: "move"|"press"|"release"|"wheel", x, y, ... }
                 "mouse" => Some(BrowserCommand::Mouse {
-                    event_type: v.get("event").and_then(|s| s.as_str()).unwrap_or("move").to_string(),
+                    event_type: v
+                        .get("event")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("move")
+                        .to_string(),
                     x: v.get("x").and_then(|n| n.as_f64()).unwrap_or(0.0),
                     y: v.get("y").and_then(|n| n.as_f64()).unwrap_or(0.0),
-                    button: v.get("button").and_then(|s| s.as_str()).unwrap_or("left").to_string(),
+                    button: v
+                        .get("button")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("left")
+                        .to_string(),
                     delta_x: v.get("deltaX").and_then(|n| n.as_f64()).unwrap_or(0.0),
                     delta_y: v.get("deltaY").and_then(|n| n.as_f64()).unwrap_or(0.0),
                 }),
                 // Scroll shorthand: { type: "scroll", x: deltaX, y: deltaY }
                 "scroll" => Some(BrowserCommand::Mouse {
                     event_type: "wheel".to_string(),
-                    x: 0.0, y: 0.0,
+                    x: 0.0,
+                    y: 0.0,
                     button: "none".to_string(),
                     delta_x: v.get("x").and_then(|n| n.as_f64()).unwrap_or(0.0),
                     delta_y: v.get("y").and_then(|n| n.as_f64()).unwrap_or(0.0),
                 }),
                 "type" => {
-                    let sel = v.get("selector").and_then(|s| s.as_str()).unwrap_or("").to_string();
-                    let text = v.get("text").and_then(|s| s.as_str()).unwrap_or("").to_string();
-                    Some(BrowserCommand::Type { selector: sel, text })
+                    let sel = v
+                        .get("selector")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let text = v
+                        .get("text")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    Some(BrowserCommand::Type {
+                        selector: sel,
+                        text,
+                    })
                 }
-                "wait" => v.get("selector").and_then(|s| s.as_str()).map(|s| {
-                    BrowserCommand::WaitForSelector(s.to_string())
-                }),
-                "evaluate" => v.get("expression").and_then(|s| s.as_str()).map(|s| {
-                    BrowserCommand::Evaluate(s.to_string())
-                }),
+                "wait" => v
+                    .get("selector")
+                    .and_then(|s| s.as_str())
+                    .map(|s| BrowserCommand::WaitForSelector(s.to_string())),
+                "evaluate" => v
+                    .get("expression")
+                    .and_then(|s| s.as_str())
+                    .map(|s| BrowserCommand::Evaluate(s.to_string())),
                 "screenshot" => Some(BrowserCommand::Screenshot),
-                "insertText" => v.get("text").and_then(|s| s.as_str()).map(|s| {
-                    BrowserCommand::InsertText(s.to_string())
-                }),
+                "insertText" => v
+                    .get("text")
+                    .and_then(|s| s.as_str())
+                    .map(|s| BrowserCommand::InsertText(s.to_string())),
                 "stop" => Some(BrowserCommand::Stop),
                 _ => None,
             };
@@ -300,7 +350,11 @@ pub async fn browser_screencast_actor(
 
     let frame_pixels = rgba.len() / 4;
     let fw = vp_width;
-    let fh = if fw > 0 { frame_pixels as u32 / fw } else { vp_height };
+    let fh = if fw > 0 {
+        frame_pixels as u32 / fw
+    } else {
+        vp_height
+    };
     out.insert("frame".to_string(), Message::bytes(rgba));
     out.insert(
         "metadata".to_string(),
@@ -333,12 +387,11 @@ async fn run_browser(
     ss_response_tx: flume::Sender<Vec<u8>>,
 ) -> Result<()> {
     use chromiumoxide::browser::{Browser, BrowserConfig};
+    use chromiumoxide::cdp::browser_protocol::input::{
+        DispatchMouseEventParams, DispatchMouseEventType, InsertTextParams, MouseButton,
+    };
     use chromiumoxide::cdp::browser_protocol::page::{
         ScreencastFrameAckParams, StartScreencastFormat, StartScreencastParams,
-    };
-    use chromiumoxide::cdp::browser_protocol::input::{
-        DispatchMouseEventParams, DispatchMouseEventType, MouseButton,
-        InsertTextParams,
     };
     use futures::StreamExt;
 
@@ -354,9 +407,7 @@ async fn run_browser(
     let (mut browser, mut handler) = Browser::launch(config).await?;
 
     // Drive CDP handler
-    let handler_task = tokio::spawn(async move {
-        while handler.next().await.is_some() {}
-    });
+    let handler_task = tokio::spawn(async move { while handler.next().await.is_some() {} });
 
     let page = browser.new_page(&url).await?;
 
@@ -379,7 +430,9 @@ async fn run_browser(
     {
         tokio::spawn(async move {
             while let Some(evt) = console_events.next().await {
-                let args: Vec<String> = evt.args.iter()
+                let args: Vec<String> = evt
+                    .args
+                    .iter()
                     .filter_map(|a| a.value.as_ref().map(|v| v.to_string()))
                     .collect();
                 if !args.is_empty() {
@@ -442,13 +495,15 @@ async fn run_browser(
     let mut settle_deadline: Option<tokio::time::Instant> = None;
     // Global capture timeout — fallback if settle never triggers
     let capture_timeout = 15u64; // seconds
-    let global_deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(capture_timeout);
+    let global_deadline =
+        tokio::time::Instant::now() + std::time::Duration::from_secs(capture_timeout);
 
     // Take initial screenshot and signal ready BEFORE entering select loop.
     // This breaks the chicken-and-egg: tick needs ready, ready needs screenshot.
-    if let Ok(png_bytes) = page.screenshot(
-        chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
-    ).await {
+    if let Ok(png_bytes) = page
+        .screenshot(chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default())
+        .await
+    {
         if let Ok(img) = image::load_from_memory(&png_bytes) {
             let rgba_img = img.to_rgba8();
             let (w, h) = (rgba_img.width(), rgba_img.height());
@@ -463,7 +518,10 @@ async fn run_browser(
             drop(guard);
             eprintln!("[browser] initial screenshot {}x{}, signaling ready", w, h);
             let mut ready_msg = HashMap::new();
-            ready_msg.insert("ready".to_string(), Message::String(std::sync::Arc::new("LOADED".to_string())));
+            ready_msg.insert(
+                "ready".to_string(),
+                Message::String(std::sync::Arc::new("LOADED".to_string())),
+            );
             let _ = outport_tx.send(ready_msg);
         }
     }
@@ -475,10 +533,13 @@ async fn run_browser(
         let tx = outport_tx.clone();
         let screenshot_fps = 10; // ~10 screenshots/sec (100ms each is realistic)
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(std::time::Duration::from_millis(1000 / screenshot_fps));
+            let mut interval =
+                tokio::time::interval(std::time::Duration::from_millis(1000 / screenshot_fps));
             loop {
                 interval.tick().await;
-                if tx.is_disconnected() { break; }
+                if tx.is_disconnected() {
+                    break;
+                }
                 if let Ok(png_bytes) = page_ss.screenshot(
                     chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotParams::default()
                 ).await {
@@ -494,7 +555,9 @@ async fn run_browser(
     }
 
     loop {
-        if outport_tx.is_disconnected() { break; }
+        if outport_tx.is_disconnected() {
+            break;
+        }
 
         // Check settle timer
         let settle_sleep = if let Some(deadline) = settle_deadline {

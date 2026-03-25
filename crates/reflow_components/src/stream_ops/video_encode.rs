@@ -83,7 +83,10 @@ fn stream_encode(
                 if let Some(md) = metadata {
                     width = md.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
                     height = md.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
-                    fps = md.get("fps").and_then(|v| v.as_u64()).unwrap_or(target_fps as u64) as u32;
+                    fps = md
+                        .get("fps")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(target_fps as u64) as u32;
                 }
             }
             Ok(StreamFrame::Data(rgba)) => {
@@ -148,18 +151,28 @@ fn rgba_to_rgb(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
     for c in 0..chunks {
         let si = c * 16; // source: 4 pixels × 4 bytes
         let di = c * 12; // dest: 4 pixels × 3 bytes
-        // Batch copy — LLVM vectorizes this into SIMD shuffle
-        rgb[di]     = rgba[si];     rgb[di + 1]  = rgba[si + 1];  rgb[di + 2]  = rgba[si + 2];
-        rgb[di + 3] = rgba[si + 4]; rgb[di + 4]  = rgba[si + 5];  rgb[di + 5]  = rgba[si + 6];
-        rgb[di + 6] = rgba[si + 8]; rgb[di + 7]  = rgba[si + 9];  rgb[di + 8]  = rgba[si + 10];
-        rgb[di + 9] = rgba[si + 12]; rgb[di + 10] = rgba[si + 13]; rgb[di + 11] = rgba[si + 14];
+                         // Batch copy — LLVM vectorizes this into SIMD shuffle
+        rgb[di] = rgba[si];
+        rgb[di + 1] = rgba[si + 1];
+        rgb[di + 2] = rgba[si + 2];
+        rgb[di + 3] = rgba[si + 4];
+        rgb[di + 4] = rgba[si + 5];
+        rgb[di + 5] = rgba[si + 6];
+        rgb[di + 6] = rgba[si + 8];
+        rgb[di + 7] = rgba[si + 9];
+        rgb[di + 8] = rgba[si + 10];
+        rgb[di + 9] = rgba[si + 12];
+        rgb[di + 10] = rgba[si + 13];
+        rgb[di + 11] = rgba[si + 14];
     }
     // Remainder
     for i in (chunks * 4)..pixel_count {
         let si = i * 4;
         let di = i * 3;
         if si + 2 < rgba.len() {
-            rgb[di] = rgba[si]; rgb[di + 1] = rgba[si + 1]; rgb[di + 2] = rgba[si + 2];
+            rgb[di] = rgba[si];
+            rgb[di + 1] = rgba[si + 1];
+            rgb[di + 2] = rgba[si + 2];
         }
     }
     rgb

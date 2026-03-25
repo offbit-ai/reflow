@@ -23,19 +23,8 @@ use crate::flow_control::{
     SplitActor, SubscriberActor, SwitchCaseActor,
 };
 use crate::gpu::font_load::FontLoadActor;
-use crate::gpu::post_process::{BloomPostProcessActor, SSAOActor, ShadowMapActor, ToneMapActor};
 use crate::gpu::glyph_atlas::GlyphAtlasActor;
-use crate::gpu::shader::{
-    ShaderBrickTextureActor, ShaderBumpMapActor, ShaderCheckerTextureActor,
-    ShaderClampActor, ShaderColorMixActor, ShaderColorRampActor, ShaderCombineXYZActor,
-    ShaderCompilerActor, ShaderConstColorActor, ShaderConstFloatActor, ShaderFresnelActor,
-    ShaderGradientTextureActor, ShaderImageTextureActor, ShaderMapRangeActor,
-    ShaderMappingActor, ShaderMaterialOutputActor, ShaderMathActor,
-    ShaderMusgraveTextureActor, ShaderNoiseTextureActor, ShaderNormalInputActor,
-    ShaderNormalMapActor, ShaderPositionInputActor, ShaderPrincipledBsdfActor,
-    ShaderSeparateXYZActor, ShaderTexCoordActor, ShaderTimeInputActor,
-    ShaderVertexColorActor, ShaderVoronoiTextureActor, ShaderWaveTextureActor,
-};
+use crate::gpu::post_process::{BloomPostProcessActor, SSAOActor, ShadowMapActor, ToneMapActor};
 #[cfg(feature = "gpu")]
 use crate::gpu::scene_render::SceneRenderActor;
 use crate::gpu::sdf::SdfPathActor;
@@ -43,20 +32,32 @@ use crate::gpu::sdf::SdfPathActor;
 use crate::gpu::sdf::{MeshToSdfActor, SdfLiveRenderActor, SdfMarchingCubesActor, SdfRenderActor};
 use crate::gpu::sdf::{
     SdfBendActor, SdfBoxActor, SdfCapsuleActor, SdfConeActor, SdfCylinderActor, SdfDifferenceActor,
-    SdfDisplaceActor, SdfIntersectionActor, SdfMaterialActor, SdfMirrorActor, SdfPlaneActor, SdfPuddleActor,
-    SdfRepeatActor, SdfRotateActor, SdfRoundActor, SdfScaleActor, SdfSceneActor, SdfShellActor,
-    SdfSmoothDifferenceActor, SdfSmoothIntersectionActor, SdfSmoothUnionActor, SdfSphereActor,
-    SdfTorusActor, SdfTranslateActor, SdfTwistActor, SdfUnionActor,
+    SdfDisplaceActor, SdfEllipsoidActor, SdfInfRepeatActor, SdfIntersectionActor, SdfMaterialActor,
+    SdfMirrorActor, SdfPlaneActor, SdfPuddleActor, SdfRepeatActor, SdfRotateActor, SdfRoundActor,
+    SdfRoundBoxActor, SdfRoundBoxShellActor, SdfScaleActor, SdfSceneActor, SdfShadeSlotActor,
+    SdfShellActor, SdfSmoothDifferenceActor, SdfSmoothIntersectionActor, SdfSmoothUnionActor,
+    SdfSphereActor, SdfStampComposeActor, SdfTaperedCapsuleActor, SdfTorusActor, SdfTranslateActor,
+    SdfTubePathActor, SdfTwistActor, SdfUnionActor,
 };
 #[cfg(feature = "gpu")]
 use crate::gpu::sdf_2d::Gpu2DRenderActor;
+use crate::gpu::shader::{
+    ShaderBrickTextureActor, ShaderBumpMapActor, ShaderCheckerTextureActor, ShaderClampActor,
+    ShaderColorMixActor, ShaderColorRampActor, ShaderCombineXYZActor, ShaderCompilerActor,
+    ShaderConstColorActor, ShaderConstFloatActor, ShaderFresnelActor, ShaderGradientTextureActor,
+    ShaderImageTextureActor, ShaderMapRangeActor, ShaderMappingActor, ShaderMaterialOutputActor,
+    ShaderMathActor, ShaderMusgraveTextureActor, ShaderNoiseTextureActor, ShaderNormalInputActor,
+    ShaderNormalMapActor, ShaderPositionInputActor, ShaderPrincipledBsdfActor,
+    ShaderSeparateXYZActor, ShaderTexCoordActor, ShaderTimeInputActor, ShaderVertexColorActor,
+    ShaderVoronoiTextureActor, ShaderWaveTextureActor,
+};
 #[cfg(feature = "window-events")]
 use crate::input::{
     GamepadInputActor, KeyboardInputActor, MouseInputActor, TouchInputActor, WindowEventActor,
 };
-use crate::integration::HttpRequestActor;
 #[cfg(feature = "browser")]
 use crate::integration::BrowserScreencastActor;
+use crate::integration::HttpRequestActor;
 use crate::io::{
     FbxImportActor, FileLoadActor, FileSaveActor, GltfExportActor, GltfImportActor,
     MeshImportActor, ObjExportActor, ObjImportActor, SceneImportActor, StlExportActor,
@@ -360,11 +361,17 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         // SDF (always available — pure IR composition)
         "tpl_sdf_sphere" => Some(Arc::new(SdfSphereActor::new())),
         "tpl_sdf_box" => Some(Arc::new(SdfBoxActor::new())),
+        "tpl_sdf_round_box" => Some(Arc::new(SdfRoundBoxActor::new())),
+        "tpl_sdf_ellipsoid" => Some(Arc::new(SdfEllipsoidActor::new())),
+        "tpl_sdf_round_box_shell" => Some(Arc::new(SdfRoundBoxShellActor::new())),
         "tpl_sdf_cylinder" => Some(Arc::new(SdfCylinderActor::new())),
         "tpl_sdf_torus" => Some(Arc::new(SdfTorusActor::new())),
         "tpl_sdf_capsule" => Some(Arc::new(SdfCapsuleActor::new())),
         "tpl_sdf_cone" => Some(Arc::new(SdfConeActor::new())),
+        "tpl_sdf_tapered_capsule" => Some(Arc::new(SdfTaperedCapsuleActor::new())),
+        "tpl_sdf_tube_path" => Some(Arc::new(SdfTubePathActor::new())),
         "tpl_sdf_plane" => Some(Arc::new(SdfPlaneActor::new())),
+        "tpl_sdf_inf_repeat" => Some(Arc::new(SdfInfRepeatActor::new())),
         "tpl_sdf_puddle" => Some(Arc::new(SdfPuddleActor::new())),
         "tpl_sdf_union" => Some(Arc::new(SdfUnionActor::new())),
         "tpl_sdf_intersection" => Some(Arc::new(SdfIntersectionActor::new())),
@@ -372,6 +379,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_smooth_union" => Some(Arc::new(SdfSmoothUnionActor::new())),
         "tpl_sdf_smooth_intersection" => Some(Arc::new(SdfSmoothIntersectionActor::new())),
         "tpl_sdf_smooth_difference" => Some(Arc::new(SdfSmoothDifferenceActor::new())),
+        "tpl_sdf_stamp_compose" => Some(Arc::new(SdfStampComposeActor::new())),
         "tpl_sdf_translate" => Some(Arc::new(SdfTranslateActor::new())),
         "tpl_sdf_rotate" => Some(Arc::new(SdfRotateActor::new())),
         "tpl_sdf_scale" => Some(Arc::new(SdfScaleActor::new())),
@@ -383,6 +391,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_sdf_repeat" => Some(Arc::new(SdfRepeatActor::new())),
         "tpl_sdf_displace" => Some(Arc::new(SdfDisplaceActor::new())),
         "tpl_sdf_material" => Some(Arc::new(SdfMaterialActor::new())),
+        "tpl_sdf_shade_slot" => Some(Arc::new(SdfShadeSlotActor::new())),
         "tpl_sdf_scene" => Some(Arc::new(SdfSceneActor::new())),
 
         // SDF path (always available — pure IR composition)
@@ -572,28 +581,16 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "BrowserScreencastActor".to_string(),
     );
     mapping.insert("tpl_fsm".to_string(), "FsmActor".to_string());
-    mapping.insert(
-        "tpl_hit_test".to_string(),
-        "HitTestActor".to_string(),
-    );
-    mapping.insert(
-        "tpl_signal".to_string(),
-        "SignalActor".to_string(),
-    );
-    mapping.insert(
-        "tpl_subscriber".to_string(),
-        "SubscriberActor".to_string(),
-    );
+    mapping.insert("tpl_hit_test".to_string(), "HitTestActor".to_string());
+    mapping.insert("tpl_signal".to_string(), "SignalActor".to_string());
+    mapping.insert("tpl_subscriber".to_string(), "SubscriberActor".to_string());
     mapping.insert(
         "tpl_if_branch".to_string(),
         "ConditionalBranchActor".to_string(),
     );
     mapping.insert("tpl_switch".to_string(), "SwitchCaseActor".to_string());
     mapping.insert("tpl_loop".to_string(), "LoopActor".to_string());
-    mapping.insert(
-        "tpl_data_emit".to_string(),
-        "DataEmitActor".to_string(),
-    );
+    mapping.insert("tpl_data_emit".to_string(), "DataEmitActor".to_string());
     mapping.insert(
         "tpl_data_transformer".to_string(),
         "DataTransformActor".to_string(),
@@ -850,11 +847,17 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     for (id, name) in [
         ("tpl_sdf_sphere", "SdfSphereActor"),
         ("tpl_sdf_box", "SdfBoxActor"),
+        ("tpl_sdf_round_box", "SdfRoundBoxActor"),
+        ("tpl_sdf_ellipsoid", "SdfEllipsoidActor"),
+        ("tpl_sdf_round_box_shell", "SdfRoundBoxShellActor"),
         ("tpl_sdf_cylinder", "SdfCylinderActor"),
         ("tpl_sdf_torus", "SdfTorusActor"),
         ("tpl_sdf_capsule", "SdfCapsuleActor"),
         ("tpl_sdf_cone", "SdfConeActor"),
+        ("tpl_sdf_tapered_capsule", "SdfTaperedCapsuleActor"),
+        ("tpl_sdf_tube_path", "SdfTubePathActor"),
         ("tpl_sdf_plane", "SdfPlaneActor"),
+        ("tpl_sdf_inf_repeat", "SdfInfRepeatActor"),
         ("tpl_sdf_puddle", "SdfPuddleActor"),
         ("tpl_sdf_union", "SdfUnionActor"),
         ("tpl_sdf_intersection", "SdfIntersectionActor"),
@@ -862,6 +865,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_sdf_smooth_union", "SdfSmoothUnionActor"),
         ("tpl_sdf_smooth_intersection", "SdfSmoothIntersectionActor"),
         ("tpl_sdf_smooth_difference", "SdfSmoothDifferenceActor"),
+        ("tpl_sdf_stamp_compose", "SdfStampComposeActor"),
         ("tpl_sdf_translate", "SdfTranslateActor"),
         ("tpl_sdf_rotate", "SdfRotateActor"),
         ("tpl_sdf_scale", "SdfScaleActor"),
@@ -873,6 +877,7 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         ("tpl_sdf_repeat", "SdfRepeatActor"),
         ("tpl_sdf_displace", "SdfDisplaceActor"),
         ("tpl_sdf_material", "SdfMaterialActor"),
+        ("tpl_sdf_shade_slot", "SdfShadeSlotActor"),
         ("tpl_sdf_path", "SdfPathActor"),
         ("tpl_sdf_scene", "SdfSceneActor"),
     ] {

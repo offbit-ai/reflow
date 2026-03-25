@@ -67,7 +67,6 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         .unwrap_or(4) as usize;
     let bone_count = bone_bytes.len() / 64;
 
-
     // Parse bone matrices (safe LE decode into aligned arrays)
     let mut bone_matrices: Vec<[f32; 16]> = Vec::with_capacity(bone_count);
     for i in 0..bone_count {
@@ -101,12 +100,19 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         let mut total_weight = 0.0f32;
         for j in 0..max_influences {
             let w_off = skin_off + j * entry_size;
-            if w_off + entry_size > skin_bytes.len() { break; }
-            let bone_idx = u16::from_le_bytes(skin_bytes[w_off..w_off + 2].try_into().unwrap()) as usize;
+            if w_off + entry_size > skin_bytes.len() {
+                break;
+            }
+            let bone_idx =
+                u16::from_le_bytes(skin_bytes[w_off..w_off + 2].try_into().unwrap()) as usize;
             let weight = f32::from_le_bytes(skin_bytes[w_off + 2..w_off + 6].try_into().unwrap());
-            if weight < 1e-6 || bone_idx >= bone_count { continue; }
+            if weight < 1e-6 || bone_idx >= bone_count {
+                continue;
+            }
             let m = &bone_matrices[bone_idx];
-            for k in 0..16 { blended[k] += m[k] * weight; }
+            for k in 0..16 {
+                blended[k] += m[k] * weight;
+            }
             total_weight += weight;
         }
 
@@ -115,13 +121,13 @@ pub async fn skinning_actor(ctx: ActorContext) -> Result<HashMap<String, Message
         }
 
         // Inline transform (avoids function call overhead)
-        let npx = blended[0]*px + blended[4]*py + blended[8]*pz + blended[12];
-        let npy = blended[1]*px + blended[5]*py + blended[9]*pz + blended[13];
-        let npz = blended[2]*px + blended[6]*py + blended[10]*pz + blended[14];
-        let tnx = blended[0]*nx + blended[4]*ny + blended[8]*nz;
-        let tny = blended[1]*nx + blended[5]*ny + blended[9]*nz;
-        let tnz = blended[2]*nx + blended[6]*ny + blended[10]*nz;
-        let nlen = (tnx*tnx + tny*tny + tnz*tnz).sqrt().max(1e-8);
+        let npx = blended[0] * px + blended[4] * py + blended[8] * pz + blended[12];
+        let npy = blended[1] * px + blended[5] * py + blended[9] * pz + blended[13];
+        let npz = blended[2] * px + blended[6] * py + blended[10] * pz + blended[14];
+        let tnx = blended[0] * nx + blended[4] * ny + blended[8] * nz;
+        let tny = blended[1] * nx + blended[5] * ny + blended[9] * nz;
+        let tnz = blended[2] * nx + blended[6] * ny + blended[10] * nz;
+        let nlen = (tnx * tnx + tny * tny + tnz * tnz).sqrt().max(1e-8);
 
         // Write to pre-allocated output (indexed, not extend_from_slice)
         let out_off = i * stride;

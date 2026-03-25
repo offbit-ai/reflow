@@ -9,6 +9,7 @@
 //! variable shadowing needed.
 
 use crate::ir::*;
+use std::collections::HashMap;
 
 /// Compiled shader output.
 pub struct CompiledShader {
@@ -22,9 +23,54 @@ pub struct CompiledShader {
     pub uses_smooth_ops: bool,
 }
 
+#[derive(Clone)]
+struct MaterialEval {
+    dist: String,
+    material_id: String,
+}
+
+pub fn collect_material_slots(node: &SdfNode) -> Vec<String> {
+    let mut slots = Vec::new();
+    collect_material_slots_into(node, &mut slots);
+    slots
+}
+
+fn collect_material_slots_into(node: &SdfNode, slots: &mut Vec<String>) {
+    match node {
+        SdfNode::Primitive { material, .. } => {
+            if let Some(slot) = material
+                .as_ref()
+                .and_then(|material| material.slot.as_ref())
+            {
+                push_unique_slot(slots, slot);
+            }
+        }
+        SdfNode::Operation { left, right, .. } => {
+            collect_material_slots_into(left, slots);
+            collect_material_slots_into(right, slots);
+        }
+        SdfNode::Transform { child, .. } => collect_material_slots_into(child, slots),
+        SdfNode::Material { material, child } => {
+            if let Some(slot) = material.slot.as_ref() {
+                push_unique_slot(slots, slot);
+            }
+            collect_material_slots_into(child, slots);
+        }
+        SdfNode::Scene { root, .. } => collect_material_slots_into(root, slots),
+        SdfNode::Ref { .. } => {}
+    }
+}
+
+fn push_unique_slot(slots: &mut Vec<String>, slot: &str) {
+    if !slots.iter().any(|existing| existing == slot) {
+        slots.push(slot.to_string());
+    }
+}
+
 /// Compile an SdfNode tree into a complete WGSL ray marching shader.
 pub fn compile(node: &SdfNode) -> CompiledShader {
     let mut ctx = CodegenContext::new();
+    let material_slots = collect_material_slots(node);
 
     let (root, settings) = match node {
         SdfNode::Scene { root, settings } => (root.as_ref(), settings.clone()),
@@ -34,7 +80,17 @@ pub fn compile(node: &SdfNode) -> CompiledShader {
     // "p" is the initial position variable from the function parameter
     let sdf_expr = ctx.emit_node(root, "p");
 
-    let wgsl = build_shader(&ctx, &sdf_expr, &settings);
+    let material_slot_ids: HashMap<String, i32> = material_slots
+        .iter()
+        .enumerate()
+        .map(|(idx, slot)| (slot.clone(), idx as i32))
+        .collect();
+    let material_wgsl = if material_slots.is_empty() {
+        None
+    } else {
+        Some(build_material_id_function(root, &material_slot_ids))
+    };
+    let wgsl = build_shader(&ctx, &sdf_expr, material_wgsl.as_deref(), &settings);
 
     CompiledShader {
         wgsl,
@@ -110,23 +166,49 @@ impl CodegenContext {
     fn emit_primitive(&mut self, shape: &SdfPrimitive, pos: &str) -> String {
         let var = self.next_dist();
         let expr = match shape {
-            SdfPrimitive::Sphere { radius } =>
-                format!("length({}) - {:.6}", pos, radius),
-            SdfPrimitive::Box { size } =>
-                format!("sdf_box({}, vec3f({:.6}, {:.6}, {:.6}))", pos, size[0], size[1], size[2]),
-            SdfPrimitive::RoundBox { size, radius } =>
-                format!("sdf_box({}, vec3f({:.6}, {:.6}, {:.6})) - {:.6}", pos, size[0], size[1], size[2], radius),
-            SdfPrimitive::Cylinder { radius, height } =>
-                format!("sdf_cylinder({}, {:.6}, {:.6})", pos, radius, height),
-            SdfPrimitive::Capsule { radius, height } =>
-                format!("sdf_capsule({}, {:.6}, {:.6})", pos, height, radius),
-            SdfPrimitive::Torus { major_radius, minor_radius } =>
-                format!("sdf_torus({}, {:.6}, {:.6})", pos, major_radius, minor_radius),
-            SdfPrimitive::Cone { angle, height } =>
-                format!("sdf_cone({}, {:.6}, {:.6})", pos, angle, height),
-            SdfPrimitive::TaperedCapsule { a, b, radius_a, radius_b } =>
-                format!("sdf_tapered_capsule({}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
-                    pos, a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b),
+            SdfPrimitive::Sphere { radius } => format!("length({}) - {:.6}", pos, radius),
+            SdfPrimitive::Box { size } => format!(
+                "sdf_box({}, vec3f({:.6}, {:.6}, {:.6}))",
+                pos, size[0], size[1], size[2]
+            ),
+            SdfPrimitive::RoundBox { size, radius } => format!(
+                "sdf_round_box({}, vec3f({:.6}, {:.6}, {:.6}), {:.6})",
+                pos, size[0], size[1], size[2], radius
+            ),
+            SdfPrimitive::Ellipsoid { radii } => format!(
+                "sdf_ellipsoid({}, vec3f({:.6}, {:.6}, {:.6}))",
+                pos, radii[0], radii[1], radii[2]
+            ),
+            SdfPrimitive::RoundBoxShell {
+                size,
+                radius,
+                thickness,
+            } => format!(
+                "sdf_round_box_shell({}, vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
+                pos, size[0], size[1], size[2], radius, thickness
+            ),
+            SdfPrimitive::Cylinder { radius, height } => {
+                format!("sdf_cylinder({}, {:.6}, {:.6})", pos, radius, height)
+            }
+            SdfPrimitive::Capsule { radius, height } => {
+                format!("sdf_capsule({}, {:.6}, {:.6})", pos, height, radius)
+            }
+            SdfPrimitive::Torus {
+                major_radius,
+                minor_radius,
+            } => format!("sdf_torus({}, {:.6}, {:.6})", pos, major_radius, minor_radius),
+            SdfPrimitive::Cone { angle, height } => {
+                format!("sdf_cone({}, {:.6}, {:.6})", pos, angle, height)
+            }
+            SdfPrimitive::TaperedCapsule {
+                a,
+                b,
+                radius_a,
+                radius_b,
+            } => format!(
+                "sdf_tapered_capsule({}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
+                pos, a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b
+            ),
             SdfPrimitive::TubePath { points, radii, k: _ } => {
                 // Emit a function with constant arrays + loop for the tubular path.
                 // Uses closest-point on polyline with arc-length radius interpolation.
@@ -203,14 +285,24 @@ impl CodegenContext {
                     format!("{}({})", fn_name, pos)
                 }
             }
-            SdfPrimitive::Plane { normal, offset } =>
-                format!("dot({}, vec3f({:.6}, {:.6}, {:.6})) + {:.6}", pos, normal[0], normal[1], normal[2], offset),
-            SdfPrimitive::InfRepeat { spacing } =>
-                format!("length({p} - round({p} / vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}))",
-                    spacing[0], spacing[1], spacing[2], spacing[0], spacing[1], spacing[2], p = pos),
-            SdfPrimitive::Puddle { radius, height, noise_freq, noise_amp } => {
-                // 2D noise on XZ modulates the radius. Smoothstep tapers the
-                // height at the edges so the puddle thins naturally like real water.
+            SdfPrimitive::Plane { normal, offset } => format!(
+                "dot({}, vec3f({:.6}, {:.6}, {:.6})) + {:.6}",
+                pos, normal[0], normal[1], normal[2], offset
+            ),
+            SdfPrimitive::InfRepeat { spacing } => format!(
+                "length({p} - round({p} / vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}))",
+                spacing[0], spacing[1], spacing[2], spacing[0], spacing[1], spacing[2], p = pos
+            ),
+            SdfPrimitive::Puddle {
+                radius,
+                height,
+                noise_freq,
+                noise_amp,
+                bevel,
+                meniscus,
+            } => {
+                // Surface-resting puddle: flat underside, tapered beveled rim,
+                // and a slight meniscus lift near the edge.
                 self.uses_noise = true;
                 let v = self.next_dist();
                 self.lines.push(format!(
@@ -218,22 +310,38 @@ impl CodegenContext {
                     v = v, p = pos, f = noise_freq
                 ));
                 self.lines.push(format!(
-                    "  let {v}_r = {r} + {a} * {v}_n;",
+                    "  let {v}_r = max({r} + {a} * {v}_n, 0.001);",
                     v = v, r = radius, a = noise_amp
                 ));
                 self.lines.push(format!(
                     "  let {v}_d = length({p}.xz);",
                     v = v, p = pos
                 ));
-                // Taper height at edges: full height at center, zero at rim
                 self.lines.push(format!(
-                    "  let {v}_taper = {h} * smoothstep({v}_r, {v}_r * 0.5, {v}_d);",
+                    "  let {v}_bevel = clamp({b}, 0.0005, {v}_r * 0.7);",
+                    v = v, b = bevel
+                ));
+                self.lines.push(format!(
+                    "  let {v}_inner = max({v}_r - {v}_bevel, 0.0005);",
+                    v = v
+                ));
+                self.lines.push(format!(
+                    "  let {v}_edge = clamp(({v}_d - {v}_inner) / max({v}_bevel, 0.0001), 0.0, 1.0);",
+                    v = v
+                ));
+                self.lines.push(format!(
+                    "  let {v}_taper = {h} * (1.0 - smoothstep(0.0, 1.0, {v}_edge));",
                     v = v, h = height
                 ));
-                format!(
-                    "max({v}_d - {v}_r, abs({p}.y) - max({v}_taper, 0.001))",
-                    v = v, p = pos
-                )
+                self.lines.push(format!(
+                    "  let {v}_rim = {m} * smoothstep(0.18, 0.85, {v}_edge) * (1.0 - smoothstep(0.85, 1.0, {v}_edge));",
+                    v = v, m = meniscus
+                ));
+                self.lines.push(format!(
+                    "  let {v}_top = max({v}_taper, {v}_rim);",
+                    v = v
+                ));
+                format!("max({v}_d - {v}_r, max(-{p}.y, {p}.y - max({v}_top, 0.0004)))", v = v, p = pos)
             }
         };
         self.lines.push(format!("  let {} = {};", var, expr));
@@ -286,10 +394,15 @@ impl CodegenContext {
                 self.emit_node(child, &new_pos)
             }
             SdfTransform::Scale { factor } => {
-                let s = factor[0]; // uniform scale
+                let sx = factor[0].max(0.0001);
+                let sy = factor[1].max(0.0001);
+                let sz = factor[2].max(0.0001);
+                let s = sx.min(sy).min(sz);
                 let new_pos = self.next_pos();
-                self.lines
-                    .push(format!("  let {} = {} / {:.6};", new_pos, pos, s));
+                self.lines.push(format!(
+                    "  let {} = {} / vec3f({:.6}, {:.6}, {:.6});",
+                    new_pos, pos, sx, sy, sz
+                ));
                 let inner = self.emit_node(child, &new_pos);
                 let var = self.next_dist();
                 self.lines
@@ -377,7 +490,7 @@ impl CodegenContext {
                 let inner = self.emit_node(child, pos);
                 let var = self.next_dist();
                 self.lines.push(format!(
-                    "  let {} = {} + fbm({} * {:.6}, {}u) * {:.6};",
+                    "  let {} = {} + ((fbm({} * {:.6}, {}u) - 0.5) * 2.0) * {:.6};",
                     var, inner, pos, frequency, octaves, amplitude
                 ));
                 var
@@ -386,9 +499,463 @@ impl CodegenContext {
     }
 }
 
+struct MaterialCodegenContext<'a> {
+    var_counter: u32,
+    pos_counter: u32,
+    lines: Vec<String>,
+    slot_ids: &'a HashMap<String, i32>,
+}
+
+impl<'a> MaterialCodegenContext<'a> {
+    fn new(slot_ids: &'a HashMap<String, i32>) -> Self {
+        Self {
+            var_counter: 0,
+            pos_counter: 0,
+            lines: Vec::new(),
+            slot_ids,
+        }
+    }
+
+    fn next_dist(&mut self) -> String {
+        let name = format!("d{}", self.var_counter);
+        self.var_counter += 1;
+        name
+    }
+
+    fn next_pos(&mut self) -> String {
+        let name = format!("p{}", self.pos_counter);
+        self.pos_counter += 1;
+        name
+    }
+
+    fn material_id_for(
+        &self,
+        node_material: Option<&SdfMaterial>,
+        inherited_material: Option<i32>,
+    ) -> i32 {
+        node_material
+            .and_then(|material| material.slot.as_ref())
+            .and_then(|slot| self.slot_ids.get(slot))
+            .copied()
+            .or(inherited_material)
+            .unwrap_or(0)
+    }
+
+    fn overridden_material(
+        &self,
+        material: &SdfMaterial,
+        inherited_material: Option<i32>,
+    ) -> Option<i32> {
+        material
+            .slot
+            .as_ref()
+            .and_then(|slot| self.slot_ids.get(slot))
+            .copied()
+            .or(inherited_material)
+    }
+
+    fn emit_node(
+        &mut self,
+        node: &SdfNode,
+        pos: &str,
+        inherited_material: Option<i32>,
+    ) -> MaterialEval {
+        match node {
+            SdfNode::Primitive { shape, material } => {
+                let dist = self.emit_primitive(shape, pos);
+                let material_id = self.material_id_for(material.as_ref(), inherited_material);
+                MaterialEval {
+                    dist,
+                    material_id: format!("{material_id}"),
+                }
+            }
+            SdfNode::Operation { op, left, right } => {
+                let lhs = self.emit_node(left, pos, inherited_material);
+                let rhs = self.emit_node(right, pos, inherited_material);
+                self.emit_op(op, lhs, rhs)
+            }
+            SdfNode::Transform { transform, child } => {
+                self.emit_transform(transform, child, pos, inherited_material)
+            }
+            SdfNode::Material { material, child } => {
+                let inherited = self.overridden_material(material, inherited_material);
+                self.emit_node(child, pos, inherited)
+            }
+            SdfNode::Ref { name } => {
+                let dist = self.next_dist();
+                self.lines
+                    .push(format!("  let {dist} = sdf_{name}({pos});"));
+                MaterialEval {
+                    dist,
+                    material_id: format!("{}", inherited_material.unwrap_or(0)),
+                }
+            }
+            SdfNode::Scene { root, .. } => self.emit_node(root, pos, inherited_material),
+        }
+    }
+
+    fn emit_primitive(&mut self, shape: &SdfPrimitive, pos: &str) -> String {
+        let var = self.next_dist();
+        let expr = match shape {
+            SdfPrimitive::Sphere { radius } => format!("length({pos}) - {radius:.6}"),
+            SdfPrimitive::Box { size } => format!(
+                "sdf_box({pos}, vec3f({:.6}, {:.6}, {:.6}))",
+                size[0], size[1], size[2]
+            ),
+            SdfPrimitive::RoundBox { size, radius } => format!(
+                "sdf_round_box({pos}, vec3f({:.6}, {:.6}, {:.6}), {radius:.6})",
+                size[0], size[1], size[2]
+            ),
+            SdfPrimitive::Ellipsoid { radii } => format!(
+                "sdf_ellipsoid({pos}, vec3f({:.6}, {:.6}, {:.6}))",
+                radii[0], radii[1], radii[2]
+            ),
+            SdfPrimitive::RoundBoxShell {
+                size,
+                radius,
+                thickness,
+            } => format!(
+                "sdf_round_box_shell({pos}, vec3f({:.6}, {:.6}, {:.6}), {radius:.6}, {thickness:.6})",
+                size[0], size[1], size[2]
+            ),
+            SdfPrimitive::Cylinder { radius, height } => {
+                format!("sdf_cylinder({pos}, {radius:.6}, {height:.6})")
+            }
+            SdfPrimitive::Capsule { radius, height } => {
+                format!("sdf_capsule({pos}, {height:.6}, {radius:.6})")
+            }
+            SdfPrimitive::Torus {
+                major_radius,
+                minor_radius,
+            } => format!("sdf_torus({pos}, {major_radius:.6}, {minor_radius:.6})"),
+            SdfPrimitive::Cone { angle, height } => {
+                format!("sdf_cone({pos}, {angle:.6}, {height:.6})")
+            }
+            SdfPrimitive::TaperedCapsule {
+                a,
+                b,
+                radius_a,
+                radius_b,
+            } => format!(
+                "sdf_tapered_capsule({pos}, vec3f({:.6}, {:.6}, {:.6}), vec3f({:.6}, {:.6}, {:.6}), {:.6}, {:.6})",
+                a[0], a[1], a[2], b[0], b[1], b[2], radius_a, radius_b
+            ),
+            SdfPrimitive::TubePath { points, radii, .. } => {
+                let n = points.len().min(radii.len());
+                if n < 2 {
+                    "999.0".to_string()
+                } else {
+                    format!("sdf_tube_{var}({pos})")
+                }
+            }
+            SdfPrimitive::Plane { normal, offset } => format!(
+                "dot({pos}, vec3f({:.6}, {:.6}, {:.6})) + {:.6}",
+                normal[0], normal[1], normal[2], offset
+            ),
+            SdfPrimitive::InfRepeat { spacing } => format!(
+                "length({p} - round({p} / vec3f({:.6}, {:.6}, {:.6})) * vec3f({:.6}, {:.6}, {:.6}))",
+                spacing[0],
+                spacing[1],
+                spacing[2],
+                spacing[0],
+                spacing[1],
+                spacing[2],
+                p = pos
+            ),
+            SdfPrimitive::Puddle {
+                radius,
+                height,
+                noise_freq,
+                noise_amp,
+                bevel,
+                meniscus,
+            } => {
+                let temp = self.next_dist();
+                self.lines.push(format!(
+                    "  let {temp}_n = noise3d(vec3f({pos}.xz * {noise_freq}, 0.0)) * 2.0 - 1.0 + noise3d(vec3f({pos}.xz * {noise_freq} * 2.3, 5.0)) * 0.5;"
+                ));
+                self.lines.push(format!(
+                    "  let {temp}_r = max({radius} + {noise_amp} * {temp}_n, 0.001);"
+                ));
+                self.lines
+                    .push(format!("  let {temp}_d = length({pos}.xz);"));
+                self.lines.push(format!(
+                    "  let {temp}_bevel = clamp({bevel}, 0.0005, {temp}_r * 0.7);"
+                ));
+                self.lines.push(format!(
+                    "  let {temp}_inner = max({temp}_r - {temp}_bevel, 0.0005);"
+                ));
+                self.lines.push(format!(
+                    "  let {temp}_edge = clamp(({temp}_d - {temp}_inner) / max({temp}_bevel, 0.0001), 0.0, 1.0);"
+                ));
+                self.lines.push(format!(
+                    "  let {temp}_taper = {height} * (1.0 - smoothstep(0.0, 1.0, {temp}_edge));"
+                ));
+                self.lines.push(format!(
+                    "  let {temp}_rim = {meniscus} * smoothstep(0.18, 0.85, {temp}_edge) * (1.0 - smoothstep(0.85, 1.0, {temp}_edge));"
+                ));
+                self.lines.push(format!(
+                    "  let {temp}_top = max({temp}_taper, {temp}_rim);"
+                ));
+                format!("max({temp}_d - {temp}_r, max(-{pos}.y, {pos}.y - max({temp}_top, 0.0004)))")
+            }
+        };
+        self.lines.push(format!("  let {var} = {expr};"));
+        var
+    }
+
+    fn emit_op(&mut self, op: &SdfOp, lhs: MaterialEval, rhs: MaterialEval) -> MaterialEval {
+        match op {
+            SdfOp::Union => self.emit_select_op(
+                format!("min({}, {})", lhs.dist, rhs.dist),
+                format!("({} <= {})", lhs.dist, rhs.dist),
+                lhs,
+                rhs,
+            ),
+            SdfOp::Intersection => self.emit_select_op(
+                format!("max({}, {})", lhs.dist, rhs.dist),
+                format!("({} >= {})", lhs.dist, rhs.dist),
+                lhs,
+                rhs,
+            ),
+            SdfOp::Difference => {
+                let dist = self.next_dist();
+                self.lines
+                    .push(format!("  let {dist} = max({}, -{});", lhs.dist, rhs.dist));
+                MaterialEval {
+                    dist,
+                    material_id: lhs.material_id,
+                }
+            }
+            SdfOp::SmoothUnion { k } => {
+                let h = self.next_dist();
+                self.lines.push(format!(
+                    "  let {h} = clamp(0.5 + 0.5 * ({} - {}) / {:.6}, 0.0, 1.0);",
+                    rhs.dist, lhs.dist, k
+                ));
+                let dist = self.next_dist();
+                self.lines.push(format!(
+                    "  let {dist} = mix({}, {}, {h}) - {:.6} * {h} * (1.0 - {h});",
+                    rhs.dist, lhs.dist, k
+                ));
+                let material_id = self.next_dist();
+                self.lines.push(format!(
+                    "  let {material_id} = select({}, {}, {h} > 0.5);",
+                    rhs.material_id, lhs.material_id
+                ));
+                MaterialEval { dist, material_id }
+            }
+            SdfOp::SmoothIntersection { k } => {
+                let h = self.next_dist();
+                self.lines.push(format!(
+                    "  let {h} = clamp(0.5 - 0.5 * ({} - {}) / {:.6}, 0.0, 1.0);",
+                    rhs.dist, lhs.dist, k
+                ));
+                let dist = self.next_dist();
+                self.lines.push(format!(
+                    "  let {dist} = mix({}, {}, {h}) + {:.6} * {h} * (1.0 - {h});",
+                    rhs.dist, lhs.dist, k
+                ));
+                let material_id = self.next_dist();
+                self.lines.push(format!(
+                    "  let {material_id} = select({}, {}, {h} > 0.5);",
+                    rhs.material_id, lhs.material_id
+                ));
+                MaterialEval { dist, material_id }
+            }
+            SdfOp::SmoothDifference { k } => {
+                let h = self.next_dist();
+                self.lines.push(format!(
+                    "  let {h} = clamp(0.5 - 0.5 * ((-{}) - {}) / {:.6}, 0.0, 1.0);",
+                    rhs.dist, lhs.dist, k
+                ));
+                let dist = self.next_dist();
+                self.lines.push(format!(
+                    "  let {dist} = mix(-{}, {}, {h}) + {:.6} * {h} * (1.0 - {h});",
+                    rhs.dist, lhs.dist, k
+                ));
+                MaterialEval {
+                    dist,
+                    material_id: lhs.material_id,
+                }
+            }
+        }
+    }
+
+    fn emit_select_op(
+        &mut self,
+        dist_expr: String,
+        lhs_wins_expr: String,
+        lhs: MaterialEval,
+        rhs: MaterialEval,
+    ) -> MaterialEval {
+        let dist = self.next_dist();
+        self.lines.push(format!("  let {dist} = {dist_expr};"));
+        let material_id = self.next_dist();
+        self.lines.push(format!(
+            "  let {material_id} = select({}, {}, {});",
+            rhs.material_id, lhs.material_id, lhs_wins_expr
+        ));
+        MaterialEval { dist, material_id }
+    }
+
+    fn emit_transform(
+        &mut self,
+        transform: &SdfTransform,
+        child: &SdfNode,
+        pos: &str,
+        inherited_material: Option<i32>,
+    ) -> MaterialEval {
+        match transform {
+            SdfTransform::Translate { offset } => {
+                let new_pos = self.next_pos();
+                self.lines.push(format!(
+                    "  let {new_pos} = {pos} - vec3f({:.6}, {:.6}, {:.6});",
+                    offset[0], offset[1], offset[2]
+                ));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Rotate { angles } => {
+                let new_pos = self.next_pos();
+                self.lines.push(format!(
+                    "  let {new_pos} = rot_xyz({pos}, vec3f({:.6}, {:.6}, {:.6}));",
+                    angles[0].to_radians(),
+                    angles[1].to_radians(),
+                    angles[2].to_radians()
+                ));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Scale { factor } => {
+                let sx = factor[0].max(0.0001);
+                let sy = factor[1].max(0.0001);
+                let sz = factor[2].max(0.0001);
+                let s = sx.min(sy).min(sz);
+                let new_pos = self.next_pos();
+                self.lines.push(format!(
+                    "  let {new_pos} = {pos} / vec3f({:.6}, {:.6}, {:.6});",
+                    sx, sy, sz
+                ));
+                let inner = self.emit_node(child, &new_pos, inherited_material);
+                let dist = self.next_dist();
+                self.lines
+                    .push(format!("  let {dist} = {} * {:.6};", inner.dist, s));
+                MaterialEval {
+                    dist,
+                    material_id: inner.material_id,
+                }
+            }
+            SdfTransform::Twist { strength } => {
+                let new_pos = self.next_pos();
+                self.lines
+                    .push(format!("  let {new_pos} = twist({pos}, {:.6});", strength));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Bend { strength } => {
+                let new_pos = self.next_pos();
+                self.lines
+                    .push(format!("  let {new_pos} = bend({pos}, {:.6});", strength));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Elongate { amount } => {
+                let new_pos = self.next_pos();
+                self.lines.push(format!(
+                    "  let {new_pos} = {pos} - clamp({pos}, vec3f(-{:.6}, -{:.6}, -{:.6}), vec3f({:.6}, {:.6}, {:.6}));",
+                    amount[0], amount[1], amount[2], amount[0], amount[1], amount[2]
+                ));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Round { radius } => {
+                let inner = self.emit_node(child, pos, inherited_material);
+                let dist = self.next_dist();
+                self.lines
+                    .push(format!("  let {dist} = {} - {:.6};", inner.dist, radius));
+                MaterialEval {
+                    dist,
+                    material_id: inner.material_id,
+                }
+            }
+            SdfTransform::Shell { thickness } => {
+                let inner = self.emit_node(child, pos, inherited_material);
+                let dist = self.next_dist();
+                self.lines.push(format!(
+                    "  let {dist} = abs({}) - {:.6};",
+                    inner.dist, thickness
+                ));
+                MaterialEval {
+                    dist,
+                    material_id: inner.material_id,
+                }
+            }
+            SdfTransform::Repeat { spacing, count } => {
+                let new_pos = self.next_pos();
+                self.lines.push(format!(
+                    "  let {new_pos} = {pos} - clamp(round({pos} / vec3f({:.6}, {:.6}, {:.6})), vec3f(-{}.0, -{}.0, -{}.0), vec3f({}.0, {}.0, {}.0)) * vec3f({:.6}, {:.6}, {:.6});",
+                    spacing[0], spacing[1], spacing[2],
+                    count[0], count[1], count[2],
+                    count[0], count[1], count[2],
+                    spacing[0], spacing[1], spacing[2]
+                ));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Mirror { axis } => {
+                let new_pos = self.next_pos();
+                let mut components = Vec::new();
+                for (i, &component_mask) in axis.iter().enumerate() {
+                    let component = ["x", "y", "z"][i];
+                    if component_mask.abs() > 0.5 {
+                        components.push(format!("abs({pos}.{component})"));
+                    } else {
+                        components.push(format!("{pos}.{component}"));
+                    }
+                }
+                self.lines.push(format!(
+                    "  let {new_pos} = vec3f({}, {}, {});",
+                    components[0], components[1], components[2]
+                ));
+                self.emit_node(child, &new_pos, inherited_material)
+            }
+            SdfTransform::Displace {
+                frequency,
+                amplitude,
+                octaves,
+            } => {
+                let inner = self.emit_node(child, pos, inherited_material);
+                let dist = self.next_dist();
+                self.lines.push(format!(
+                    "  let {dist} = {} + ((fbm({pos} * {:.6}, {}u) - 0.5) * 2.0) * {:.6};",
+                    inner.dist, frequency, octaves, amplitude
+                ));
+                MaterialEval {
+                    dist,
+                    material_id: inner.material_id,
+                }
+            }
+        }
+    }
+}
+
+fn build_material_id_function(root: &SdfNode, slot_ids: &HashMap<String, i32>) -> String {
+    let mut ctx = MaterialCodegenContext::new(slot_ids);
+    let result = ctx.emit_node(root, "p", None);
+    let mut wgsl = String::new();
+    wgsl.push_str("fn sdf_material_id(p: vec3f) -> i32 {\n");
+    for line in &ctx.lines {
+        wgsl.push_str(line);
+        wgsl.push('\n');
+    }
+    wgsl.push_str(&format!("  return {};\n", result.material_id));
+    wgsl.push_str("}\n\n");
+    wgsl
+}
+
 // ─── Shader Template ─────────────────────────────────────────────────
 
-fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings) -> String {
+fn build_shader(
+    ctx: &CodegenContext,
+    result_var: &str,
+    material_wgsl: Option<&str>,
+    settings: &SceneSettings,
+) -> String {
     let mut shader = String::with_capacity(4096);
 
     // Uniforms
@@ -461,6 +1028,12 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     }
     shader.push_str(&format!("  return {};\n", result_var));
     shader.push_str("}\n\n");
+    if let Some(material_wgsl) = material_wgsl {
+        shader.push_str(material_wgsl);
+        if !material_wgsl.ends_with('\n') {
+            shader.push('\n');
+        }
+    }
 
     // Rendering functions
     shader.push_str(NORMAL_FUNCTION);
@@ -470,6 +1043,8 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
     }
     if settings.ao {
         shader.push_str(AO_FUNCTION);
+    } else if !settings.custom_shade_wgsl.is_empty() {
+        shader.push_str(AO_DISABLED_FUNCTION);
     }
     if !settings.custom_shade_wgsl.is_empty() {
         shader.push_str(&settings.custom_shade_wgsl);
@@ -489,6 +1064,25 @@ fn build_shader(ctx: &CodegenContext, result_var: &str, settings: &SceneSettings
 const HELPER_FUNCTIONS: &str = r#"fn sdf_box(p: vec3f, b: vec3f) -> f32 {
   let q = abs(p) - b;
   return length(max(q, vec3f(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+fn sdf_round_box(p: vec3f, b: vec3f, r: f32) -> f32 {
+  return sdf_box(p, b) - r;
+}
+
+fn sdf_ellipsoid(p: vec3f, r: vec3f) -> f32 {
+  let rr = max(r, vec3f(0.0001));
+  let q = p / rr;
+  let qq = p / (rr * rr);
+  let k0 = length(q);
+  let k1 = length(qq);
+  return k0 * (k0 - 1.0) / max(k1, 0.0001);
+}
+
+fn sdf_round_box_shell(p: vec3f, b: vec3f, r: f32, thickness: f32) -> f32 {
+  let outer = sdf_round_box(p, b, r);
+  let half_t = max(thickness, 0.0001) * 0.5;
+  return abs(outer + half_t) - half_t;
 }
 
 fn sdf_cylinder(p: vec3f, r: f32, h: f32) -> f32 {
@@ -611,6 +1205,18 @@ const RAY_MARCH_FUNCTION: &str = r#"fn ray_march(ro: vec3f, rd: vec3f) -> f32 {
   return -1.0;
 }
 
+fn ray_march_from(ro: vec3f, rd: vec3f, start_t: f32, max_t: f32) -> f32 {
+  var t = start_t;
+  for (var i = 0u; i < MAX_STEPS; i = i + 1u) {
+    let p = ro + rd * t;
+    let d = sdf_scene(p);
+    if d < EPSILON { return t; }
+    if t > max_t { break; }
+    t = t + max(d, EPSILON * 1.5);
+  }
+  return -1.0;
+}
+
 "#;
 
 const SOFT_SHADOW_FUNCTION: &str = r#"fn soft_shadow(ro: vec3f, rd: vec3f, mint: f32, maxt: f32, k: f32) -> f32 {
@@ -638,6 +1244,12 @@ const AO_FUNCTION: &str = r#"fn calc_ao(pos: vec3f, nor: vec3f) -> f32 {
     sca = sca * 0.95;
   }
   return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
+}
+
+"#;
+
+const AO_DISABLED_FUNCTION: &str = r#"fn calc_ao(_pos: vec3f, _nor: vec3f) -> f32 {
+  return 1.0;
 }
 
 "#;
@@ -679,6 +1291,39 @@ const CAMERA_FUNCTION: &str = r#"fn camera_ray(uv: vec2f, ro: vec3f, look_at: ve
   return normalize(uv.x * right + uv.y * up + focal * fwd);
 }
 
+fn sdf_scene_background(dir: vec3f) -> vec3f {
+  let up = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
+  let sky_low = clamp(BG_COLOR * vec3f(0.46, 0.62, 0.78) + vec3f(0.003, 0.008, 0.018), vec3f(0.0), vec3f(1.0));
+  let sky_high = clamp(BG_COLOR * vec3f(0.60, 0.72, 0.84) + vec3f(0.006, 0.012, 0.022), vec3f(0.0), vec3f(1.0));
+  let sky = mix(sky_low, sky_high, smoothstep(0.0, 1.0, up));
+  let hotspot_dir = normalize(vec3f(0.0, 0.35, 1.0));
+  let hotspot = exp((dot(normalize(dir), hotspot_dir) - 1.0) * 24.0) * 0.0006;
+  var ground = sky_low;
+  if dir.y < -0.01 {
+    let floor_y = -0.55;
+    let t = max((floor_y - u.camera_pos.y) / dir.y, 0.0);
+    let hit = u.camera_pos.xz + dir.xz * t;
+    let radial = clamp(length(hit) * 0.072, 0.0, 1.0);
+    let depth = smoothstep(-2.6, 6.8, hit.y);
+    let floor_near = clamp(BG_COLOR * vec3f(0.56, 0.70, 0.84) + vec3f(0.010, 0.018, 0.028), vec3f(0.0), vec3f(1.0));
+    let floor_far = clamp(BG_COLOR * vec3f(0.34, 0.48, 0.64) + vec3f(0.002, 0.004, 0.008), vec3f(0.0), vec3f(1.0));
+    let floor_mix = clamp(depth * 0.68 + radial * 0.46, 0.0, 1.0);
+    let gloss = exp(-dot(hit, hit) * 0.012) * 0.0008;
+    ground = clamp(mix(floor_near, floor_far, floor_mix) + vec3f(gloss), vec3f(0.0), vec3f(1.0));
+  }
+  let horizon = smoothstep(-0.035, 0.06, dir.y);
+  return clamp(mix(ground, sky, horizon) + vec3f(hotspot), vec3f(0.0), vec3f(1.0));
+}
+
+fn tone_map_aces(col: vec3f) -> vec3f {
+  let a = 2.51;
+  let b = 0.03;
+  let c = 2.43;
+  let d = 0.59;
+  let e = 0.14;
+  return clamp((col * (a * col + b)) / (col * (c * col + d) + e), vec3f(0.0), vec3f(1.0));
+}
+
 "#;
 
 const COMPUTE_ENTRY: &str = r#"@compute @workgroup_size(8, 8, 1)
@@ -697,9 +1342,11 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   if t > 0.0 {
     col = shade(ro, rd, t);
   } else {
-    col = BG_COLOR;
+    col = sdf_scene_background(rd);
   }
 
+  col = max(col, vec3f(0.0));
+  col = tone_map_aces(col);
   // Gamma correction
   col = pow(col, vec3f(1.0 / 2.2));
 
@@ -758,7 +1405,8 @@ mod tests {
         let result = compile(&SdfNode::sphere(1.0).displace(2.0, 0.1, 4));
         assert!(result.uses_noise);
         assert!(result.wgsl.contains("fn fbm"));
-        assert!(result.wgsl.contains("fbm(p * 2.0"));
+        assert!(result.wgsl.contains("((fbm(p * 2.0"));
+        assert!(result.wgsl.contains("- 0.5) * 2.0) * 0.1"));
     }
 
     #[test]
@@ -816,5 +1464,19 @@ mod tests {
     fn test_shell() {
         let result = compile(&SdfNode::sphere(1.0).shell(0.05));
         assert!(result.wgsl.contains("abs(d0) - 0.05"));
+    }
+
+    #[test]
+    fn test_compile_ellipsoid() {
+        let result = compile(&SdfNode::ellipsoid([1.2, 0.6, 0.9]));
+        assert!(result.wgsl.contains("fn sdf_ellipsoid"));
+        assert!(result.wgsl.contains("sdf_ellipsoid("));
+    }
+
+    #[test]
+    fn test_compile_round_box_shell() {
+        let result = compile(&SdfNode::round_box_shell([0.8, 0.8, 0.8], 0.12, 0.08));
+        assert!(result.wgsl.contains("fn sdf_round_box_shell"));
+        assert!(result.wgsl.contains("sdf_round_box_shell("));
     }
 }

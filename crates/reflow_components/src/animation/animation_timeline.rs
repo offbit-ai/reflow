@@ -194,7 +194,8 @@ pub async fn animation_timeline_actor(
             "reverse" => {
                 // Jump to end only if we've actually been played (completed or mid-play).
                 // Do NOT jump when paused/never-triggered (elapsed=0 from initial state).
-                if elapsed == 0.0 && (playback_state == "completed" || playback_state == "playing") {
+                if elapsed == 0.0 && (playback_state == "completed" || playback_state == "playing")
+                {
                     elapsed = duration;
                 }
                 completed_emitted = false;
@@ -216,14 +217,18 @@ pub async fn animation_timeline_actor(
         if let Some(cmd_str) = v.get("cmd").and_then(|c| c.as_str()) {
             match cmd_str {
                 "play" => {
-                    if playback_state == "completed" { elapsed = 0.0; }
+                    if playback_state == "completed" {
+                        elapsed = 0.0;
+                    }
                     completed_emitted = false;
                     speed = speed.abs();
                     playback_state = "playing".into();
                     control_changed = true;
                 }
                 "reverse" => {
-                    if elapsed == 0.0 && (playback_state == "completed" || playback_state == "playing") {
+                    if elapsed == 0.0
+                        && (playback_state == "completed" || playback_state == "playing")
+                    {
                         elapsed = duration;
                     }
                     completed_emitted = false;
@@ -231,8 +236,13 @@ pub async fn animation_timeline_actor(
                     playback_state = "playing".into();
                     control_changed = true;
                 }
-                "stop" => { playback_state = "paused".into(); elapsed = 0.0; }
-                "pause" => { playback_state = "paused".into(); }
+                "stop" => {
+                    playback_state = "paused".into();
+                    elapsed = 0.0;
+                }
+                "pause" => {
+                    playback_state = "paused".into();
+                }
                 _ if cmd_str.starts_with("seek:") => {
                     if let Ok(t) = cmd_str[5..].trim().parse::<f64>() {
                         elapsed = t.clamp(0.0, duration);
@@ -251,7 +261,6 @@ pub async fn animation_timeline_actor(
         completed_emitted = false;
         playback_state = "playing".into();
     }
-
 
     // ─── Advance time ───
     // Skip advance on the tick that received a control command so the first

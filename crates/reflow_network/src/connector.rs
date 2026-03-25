@@ -201,7 +201,10 @@ impl Connector {
             .initialized_actors
             .get(&to_process.id)
             .unwrap_or_else(|| {
-                panic!("Expected to find initialized Actor for id {}", to_process.id)
+                panic!(
+                    "Expected to find initialized Actor for id {}",
+                    to_process.id
+                )
             });
 
         let from_actor_id = self.from.actor.clone();
@@ -386,11 +389,7 @@ impl Connector {
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
                         eprintln!(
                             "[LAGGED] missed {} messages ({}:{} → {}:{})",
-                            n,
-                            from_actor_id,
-                            from_port,
-                            to_actor_id,
-                            to_port
+                            n, from_actor_id, from_port, to_actor_id, to_port
                         );
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => {

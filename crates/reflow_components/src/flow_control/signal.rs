@@ -62,7 +62,10 @@ pub async fn signal_actor(ctx: ActorContext) -> Result<HashMap<String, Message>,
         .unwrap_or("signal");
 
     // Data: config defaults merged with trigger payload
-    let mut data = config.get("data").cloned().unwrap_or(Value::Object(Default::default()));
+    let mut data = config
+        .get("data")
+        .cloned()
+        .unwrap_or(Value::Object(Default::default()));
 
     if let Some(Message::Object(obj)) = payload.get("trigger") {
         let trigger_v: Value = obj.as_ref().clone().into();
@@ -95,10 +98,7 @@ pub async fn subscriber_actor(ctx: ActorContext) -> Result<HashMap<String, Messa
     let payload = ctx.get_payload();
     let config = ctx.get_config_hashmap();
 
-    let listen_for = config
-        .get("event")
-        .and_then(|v| v.as_str())
-        .unwrap_or("*");
+    let listen_for = config.get("event").and_then(|v| v.as_str()).unwrap_or("*");
 
     let msg = match payload.get("signal") {
         Some(m) => m,
