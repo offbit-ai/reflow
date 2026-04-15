@@ -608,17 +608,19 @@ fn build_sdf_shade_function(
     shade.push_str(
         "    let transmitted_light = sdf_transmission_light(p, rd, N, ior, roughness, transmission, thickness, base_color);\n",
     );
+    // Opaque PBR surface (full base_color for non-transparent materials)
     shade.push_str(
-        "    let body_color = mix(base_color * 0.001, base_color * 0.008, clamp(density * 0.40, 0.0, 1.0));\n",
+        "    let opaque_surface = pbr_shade_sdf(base_color, metallic, roughness, N, V, ao, emission);\n",
+    );
+    // Glass interior: density-dependent body tint for internal scattering
+    shade.push_str(
+        "    let glass_body = mix(base_color * 0.001, base_color * 0.012, clamp(density * 0.5, 0.0, 1.0));\n",
     );
     shade.push_str(
-        "    let surface = pbr_shade_sdf(body_color * (1.0 - transmission) * mix(0.08, 0.82, roughness), metallic, roughness, N, V, ao, emission);\n",
+        "    let glass_interior = pbr_shade_sdf(glass_body * mix(0.08, 0.82, roughness), metallic, roughness, N, V, ao, emission);\n",
     );
-    shade.push_str("    let side_bias = pow(1.0 - abs(N.y), 0.78);\n");
-    shade.push_str(&format!(
-        "    let transmit_weight = clamp(transmission * (1.0 - alpha * 0.004) * (1.0 - density * 0.002) * mix(0.995, 1.0, thin_factor) * mix(1.0, 0.995, side_bias) * {}, 0.0, 1.0);\n",
-        if is_probe { "0.62" } else { "1.0" }
-    ));
+
+    // Reflection sampling
     if is_probe {
         shade.push_str("    let reflected = sdf_env_color(reflect(rd, N));\n");
     } else {
@@ -626,19 +628,39 @@ fn build_sdf_shade_function(
             "    let reflected = sdf_scene_reflection_color(p, rd, N, roughness, transmission);\n",
         );
     }
-    shade.push_str(&format!(
-        "    let reflection_weight = clamp((fresnel_strength * mix(0.003, 0.045, transmission) + fresnel_strength * transmission * (1.0 - roughness) * {}) * mix(1.02, 1.0, thin_factor), 0.0, 0.12);\n",
-        if is_probe { "0.015" } else { "0.008" }
-    ));
+
+    // Fresnel: Schlick + edge boost for visible rim on transparent surfaces
     shade.push_str(
-        "    let refracted_term = refracted * transmit_weight * (1.0 - reflection_weight);\n",
+        "    let edge_boost = transmission * pow(1.0 - NoV, 3.0) * 0.25;\n",
     );
-    shade.push_str(&format!(
-        "    let surface_weight = clamp((1.0 - transmission) * mix(0.003, 0.04, roughness) + alpha * 0.0006 + density * mix(0.0002, 0.0012, 1.0 - transmission) + transmission * (1.0 - roughness) * {}, 0.0, 1.0) * mix(0.03, 0.36, thin_factor) * (1.0 - reflection_weight * 0.05) * mix(1.0, 1.002, side_bias);\n",
-        if is_probe { "0.012" } else { "0.003" }
-    ));
-    shade.push_str("    let reflection_term = reflected * reflection_weight;\n");
-    shade.push_str("    var col = refracted_term + transmitted_light + surface * surface_weight + reflection_term;\n");
+    shade.push_str(
+        "    let F = clamp(fresnel_strength + edge_boost, 0.0, 1.0);\n",
+    );
+
+    // Glass path: refraction dominates; scattering only in dense/thick regions
+    shade.push_str(
+        "    let scatter_factor = clamp(density * 2.0, 0.0, 0.35);\n",
+    );
+    shade.push_str(
+        "    let glass_term = refracted + transmitted_light * scatter_factor + glass_interior * clamp(density * thin_factor * 0.3, 0.0, 0.12);\n",
+    );
+
+    shade.push_str(
+        "    let effective_T = transmission;\n",
+    );
+    // Physically-based compositing: opaque↔glass by transmission, then Fresnel reflection
+    shade.push_str(
+        "    let non_reflected = mix(opaque_surface, glass_term, effective_T);\n",
+    );
+    shade.push_str("    var col = mix(non_reflected, reflected, F);\n");
+    // Surface edge darkening: cube edges where normal transitions between faces
+    shade.push_str("    let entry_abs = abs(N_geom);\n");
+    shade.push_str("    let entry_max_n = max(max(entry_abs.x, entry_abs.y), entry_abs.z);\n");
+    shade.push_str("    let entry_mid_n = entry_abs.x + entry_abs.y + entry_abs.z - entry_max_n - min(min(entry_abs.x, entry_abs.y), entry_abs.z);\n");
+    // Inner shadow: thin dark lines at geometry edges (not broad gradients)
+    shade.push_str("    let edge_ratio = entry_mid_n / max(entry_max_n, 0.001);\n");
+    shade.push_str("    let inner_shadow = exp(-pow((edge_ratio - 0.45) / 0.12, 2.0)) * 0.65;\n");
+    shade.push_str("    col *= 1.0 - inner_shadow * transmission;\n");
     shade.push_str("    col *= mix(0.9, 1.0, ao);\n");
     shade.push_str("    return col;\n");
     shade.push_str("}\n\n");
@@ -1352,14 +1374,14 @@ fn pbr_shade_sdf(
 
 fn sdf_env_color(dir: vec3f) -> vec3f {
     let up = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
-    let base_low = clamp(BG_COLOR * vec3f(0.48, 0.64, 0.80) + vec3f(0.003, 0.008, 0.018), vec3f(0.0), vec3f(1.0));
-    let base_high = clamp(BG_COLOR * vec3f(0.62, 0.74, 0.86) + vec3f(0.006, 0.012, 0.022), vec3f(0.0), vec3f(1.0));
+    let base_low = clamp(BG_COLOR * vec3f(1.6, 1.8, 2.0) + vec3f(0.12, 0.16, 0.22), vec3f(0.0), vec3f(1.0));
+    let base_high = clamp(BG_COLOR * vec3f(2.0, 2.2, 2.4) + vec3f(0.18, 0.22, 0.28), vec3f(0.0), vec3f(1.0));
     let base = mix(base_low, base_high, smoothstep(0.0, 1.0, up));
     let key_dir = normalize(LIGHT_DIR + vec3f(0.0, 0.22, 0.0));
     let fill_dir = normalize(vec3f(-LIGHT_DIR.x * 0.65, 0.38, -LIGHT_DIR.z * 0.65));
-    let key = exp((dot(normalize(dir), key_dir) - 1.0) * 44.0) * 0.035;
-    let fill = exp((dot(normalize(dir), fill_dir) - 1.0) * 28.0) * 0.008;
-    let rim = exp(-pow(abs(dir.y) * 2.8, 2.0)) * 0.0004;
+    let key = exp((dot(normalize(dir), key_dir) - 1.0) * 44.0) * 0.06;
+    let fill = exp((dot(normalize(dir), fill_dir) - 1.0) * 28.0) * 0.02;
+    let rim = exp(-pow(abs(dir.y) * 2.8, 2.0)) * 0.002;
     return clamp(base + LIGHT_COLOR * key + vec3f(1.0) * fill + vec3f(rim), vec3f(0.0), vec3f(1.0));
 }
 
@@ -1477,9 +1499,9 @@ fn sdf_refract_micro_normal(
     let bitangent = normalize(cross(N, tangent));
     let thickness_factor = smoothstep(0.05, 0.34, thickness);
     let strength = clamp(
-        thickness * mix(0.10, 0.05, transmission) + thickness_factor * side_bias * mix(0.015, 0.035, transmission),
+        thickness * mix(0.10, 0.015, transmission) + thickness_factor * side_bias * mix(0.015, 0.008, transmission),
         0.0,
-        0.085
+        0.05
     );
     let warp = tangent * mix(nx, bx, 0.88) + bitangent * mix(nz, bz, 0.88) + N * ny * 0.02;
     return normalize(N + warp * strength);
@@ -1519,22 +1541,42 @@ fn sdf_refract_channel_env(
     if length(refr) < 0.001 { return sdf_env_color(reflect(rd, N)); }
     var pos = p + refr * 0.02;
     var dist = 0.0;
+    var ray_dir = refr;
     for (var i = 0u; i < 30u; i++) {
         let d = sdf_scene(pos);
         if d > 0.01 { break; }
-        pos += refr * max(abs(d), 0.008);
-        dist += max(abs(d), 0.008);
+        let step_len = max(abs(d), 0.008);
+        // Detect proximity to internal edges via SDF gradient
+        let local_grad = abs(calc_normal(pos));
+        let lg_max = max(max(local_grad.x, local_grad.y), local_grad.z);
+        let lg_mid = local_grad.x + local_grad.y + local_grad.z - lg_max - min(min(local_grad.x, local_grad.y), local_grad.z);
+        let near_edge_i = smoothstep(0.10, 0.50, lg_mid / max(lg_max, 0.001));
+        let edge_mult = 1.0 + near_edge_i * 4.0;
+        let n_bend = shade_fbm_noise(pos * 8.0 + vec3f(7.3, 2.1, 4.8));
+        let bend = (n_bend - 0.5) * 0.08 * edge_mult;
+        let n2 = shade_fbm_noise(pos * 4.0 + vec3f(1.4, 8.7, 3.2));
+        let bend2 = (n2 - 0.5) * 0.05 * edge_mult;
+        ray_dir = normalize(ray_dir + vec3f(bend, bend2, bend * 0.7 + bend2 * 0.3));
+        pos += ray_dir * step_len;
+        dist += step_len;
     }
     let exit_n = sdf_refract_micro_normal(pos, calc_normal(pos), thickness + dist * 0.25, transmission);
-    let exit_rd = refract(refr, -exit_n, ior_ch);
+    let exit_rd = refract(ray_dir, -exit_n, ior_ch);
     var sample_dir = exit_rd;
     if length(sample_dir) < 0.001 {
-        sample_dir = refr;
+        sample_dir = ray_dir;
     }
     let primary = sdf_refract_sample_env(pos, sample_dir, pos, dist);
     var col = primary * exp(-dist * absorption);
 
-    let exit_fresnel = pow(1.0 - max(dot(-refr, exit_n), 0.0), 2.4);
+    let exit_abs = abs(calc_normal(pos));
+    let exit_max_e = max(max(exit_abs.x, exit_abs.y), exit_abs.z);
+    let exit_mid_e = exit_abs.x + exit_abs.y + exit_abs.z - exit_max_e - min(min(exit_abs.x, exit_abs.y), exit_abs.z);
+    let exit_ratio_e = exit_mid_e / max(exit_max_e, 0.001);
+    let edge_line_e = exp(-pow((exit_ratio_e - 0.45) / 0.10, 2.0)) * 0.50;
+    col *= 1.0 - edge_line_e;
+
+    let exit_fresnel = pow(1.0 - max(dot(-ray_dir, exit_n), 0.0), 2.4);
     let bounce_weight = clamp(exit_fresnel * transmission * (0.004 + side_bias * 0.025) * smoothstep(0.10, 0.45, dist), 0.0, 0.035);
     if bounce_weight > 0.001 {
         let bounce = reflect(refr, -exit_n);
@@ -1578,26 +1620,48 @@ fn sdf_refract_channel_scene(
     if length(refr) < 0.001 { return sdf_env_color(reflect(rd, N)); }
     var pos = p + refr * 0.02;
     var dist = 0.0;
+    var ray_dir = refr;
     for (var i = 0u; i < 30u; i++) {
         let d = sdf_scene(pos);
         if d > 0.01 { break; }
-        pos += refr * max(abs(d), 0.008);
-        dist += max(abs(d), 0.008);
+        let step_len = max(abs(d), 0.008);
+        // Internal ice structure: noise-based concavities bend light
+        // Detect proximity to internal edges via SDF gradient
+        let local_grad = abs(calc_normal(pos));
+        let lg_max = max(max(local_grad.x, local_grad.y), local_grad.z);
+        let lg_mid = local_grad.x + local_grad.y + local_grad.z - lg_max - min(min(local_grad.x, local_grad.y), local_grad.z);
+        let near_edge_i = smoothstep(0.10, 0.50, lg_mid / max(lg_max, 0.001));
+        let edge_mult = 1.0 + near_edge_i * 4.0;
+        let n_bend = shade_fbm_noise(pos * 8.0 + vec3f(7.3, 2.1, 4.8));
+        let bend = (n_bend - 0.5) * 0.08 * edge_mult;
+        let n2 = shade_fbm_noise(pos * 4.0 + vec3f(1.4, 8.7, 3.2));
+        let bend2 = (n2 - 0.5) * 0.05 * edge_mult;
+        ray_dir = normalize(ray_dir + vec3f(bend, bend2, bend * 0.7 + bend2 * 0.3));
+        pos += ray_dir * step_len;
+        dist += step_len;
     }
     let exit_n = sdf_refract_micro_normal(pos, calc_normal(pos), thickness + dist * 0.25, transmission);
-    let exit_rd = refract(refr, -exit_n, ior_ch);
+    let exit_rd = refract(ray_dir, -exit_n, ior_ch);
     var sample_dir = exit_rd;
     if length(sample_dir) < 0.001 {
-        sample_dir = refr;
+        sample_dir = ray_dir;
     }
     let primary = sdf_refract_sample_scene(pos, sample_dir, pos, dist);
     var col = primary * exp(-dist * absorption);
 
+    // Internal edge detection: where exit normal is between faces, darken
+    let exit_abs = abs(calc_normal(pos));
+    let exit_max = max(max(exit_abs.x, exit_abs.y), exit_abs.z);
+    let exit_mid = exit_abs.x + exit_abs.y + exit_abs.z - exit_max - min(min(exit_abs.x, exit_abs.y), exit_abs.z);
+    let exit_ratio = exit_mid / max(exit_max, 0.001);
+    let edge_line = exp(-pow((exit_ratio - 0.45) / 0.10, 2.0)) * 0.50;
+    col *= 1.0 - edge_line;
+
     let face_edge = pow(1.0 - max(dot(-rd, N), 0.0), 1.6);
     let interior_lobe_weight = clamp(
-        transmission * face_edge * (0.0008 + side_bias * 0.006) * smoothstep(0.10, 0.38, dist),
+        transmission * (0.02 + face_edge * 0.06 + side_bias * 0.04) * smoothstep(0.08, 0.30, dist),
         0.0,
-        0.010
+        0.10
     );
     if interior_lobe_weight > 0.001 {
         let lobe_origin = p + refr * clamp(dist * 0.45, 0.035, 0.34);
@@ -1614,9 +1678,9 @@ fn sdf_refract_channel_scene(
     }
 
     let wall_face_weight = clamp(
-        transmission * face_edge * (0.001 + side_bias * 0.008) * smoothstep(0.10, 0.42, dist),
+        transmission * (0.02 + face_edge * 0.05 + side_bias * 0.03) * smoothstep(0.08, 0.35, dist),
         0.0,
-        0.012
+        0.08
     );
     if wall_face_weight > 0.001 {
         let wall_origin = p + refr * clamp(dist * 0.18, 0.028, 0.14);
@@ -1636,9 +1700,9 @@ fn sdf_refract_channel_scene(
 
     let exit_fresnel = pow(1.0 - max(dot(-refr, exit_n), 0.0), 2.4);
     let bounce_weight = clamp(
-        transmission * face_edge * (0.0015 + side_bias * 0.010 + exit_fresnel * 0.010) * smoothstep(0.12, 0.45, dist),
+        transmission * (0.01 + exit_fresnel * 0.08 + side_bias * 0.04) * smoothstep(0.08, 0.35, dist),
         0.0,
-        0.016
+        0.10
     );
     if bounce_weight > 0.001 {
         let bounce = reflect(refr, -exit_n);
@@ -1680,12 +1744,12 @@ fn sdf_refract_color_env(
     let thickness_factor = smoothstep(0.05, 0.42, thickness);
     let prism_factor = clamp(thickness_factor * mix(0.72, 1.0, side_bias), 0.0, 1.0);
     let dispersion = mix(0.0008, 0.010, prism_factor) * mix(0.9, 1.16, transmission);
-    let absorption = mix(vec3f(0.012, 0.005, 0.002), vec3f(0.0015, 0.0005, 0.00025), transmission);
+    let absorption = -log(max(base_tint, vec3f(0.01))) * mix(0.5, 1.4, transmission);
     let col_r = sdf_refract_channel_env(p, rd, N, max(1.01, ior - dispersion), absorption.x, thickness, transmission);
     let col_g = sdf_refract_channel_env(p, rd, N, ior, absorption.y, thickness, transmission);
     let col_b = sdf_refract_channel_env(p, rd, N, ior + dispersion, absorption.z, thickness, transmission);
     let col = vec3f(col_r.x, col_g.y, col_b.z);
-    let tint_strength = clamp(thickness * mix(0.003, 0.001, transmission), 0.0, 0.004);
+    let tint_strength = clamp(thickness * mix(0.05, 0.15, transmission), 0.0, 0.25);
     return col * mix(vec3f(1.0), base_tint, tint_strength);
 }
 
@@ -1702,12 +1766,12 @@ fn sdf_refract_color_scene(
     let thickness_factor = smoothstep(0.05, 0.42, thickness);
     let prism_factor = clamp(thickness_factor * mix(0.72, 1.0, side_bias), 0.0, 1.0);
     let dispersion = mix(0.0008, 0.010, prism_factor) * mix(0.9, 1.16, transmission);
-    let absorption = mix(vec3f(0.012, 0.005, 0.002), vec3f(0.0015, 0.0005, 0.00025), transmission);
+    let absorption = -log(max(base_tint, vec3f(0.01))) * mix(0.5, 1.4, transmission);
     let col_r = sdf_refract_channel_scene(p, rd, N, max(1.01, ior - dispersion), absorption.x, thickness, transmission);
     let col_g = sdf_refract_channel_scene(p, rd, N, ior, absorption.y, thickness, transmission);
     let col_b = sdf_refract_channel_scene(p, rd, N, ior + dispersion, absorption.z, thickness, transmission);
     let col = vec3f(col_r.x, col_g.y, col_b.z);
-    let tint_strength = clamp(thickness * mix(0.003, 0.001, transmission), 0.0, 0.004);
+    let tint_strength = clamp(thickness * mix(0.05, 0.15, transmission), 0.0, 0.25);
     return col * mix(vec3f(1.0), base_tint, tint_strength);
 }
 "#;

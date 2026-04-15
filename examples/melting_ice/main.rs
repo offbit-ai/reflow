@@ -310,8 +310,8 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "a": { "type": "constFloat", "c": 0.0025 },
-                    "b": { "type": "constFloat", "c": 0.008 },
+                    "a": { "type": "constFloat", "c": 0.005 },
+                    "b": { "type": "constFloat", "c": 0.015 },
                 })),
             ),
             sg_node(
@@ -319,8 +319,8 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "a": { "type": "constFloat", "c": 0.9994 },
-                    "b": { "type": "constFloat", "c": 0.9975 },
+                    "a": { "type": "constFloat", "c": 0.96 },
+                    "b": { "type": "constFloat", "c": 0.92 },
                 })),
             ),
             sg_node(
@@ -328,8 +328,8 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "a": { "type": "constFloat", "c": 0.0004 },
-                    "b": { "type": "constFloat", "c": 0.0020 },
+                    "a": { "type": "constFloat", "c": 0.04 },
+                    "b": { "type": "constFloat", "c": 0.08 },
                 })),
             ),
             sg_node(
@@ -341,7 +341,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "edge_mask",
                 "tpl_shader_map_range",
                 config(json!({
-                    "fromMin": 0.82, "fromMax": 1.12, "toMin": 0.0, "toMax": 1.0,
+                    "fromMin": 0.78, "fromMax": 1.10, "toMin": 0.0, "toMax": 1.0,
                 })),
             ),
             sg_node(
@@ -374,7 +374,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constFloat", "c": 0.008 },
+                    "b": { "type": "constFloat", "c": 0.30 },
                 })),
             ),
             sg_node(
@@ -382,7 +382,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constFloat", "c": 0.985 },
+                    "b": { "type": "constFloat", "c": 0.88 },
                 })),
             ),
             sg_node(
@@ -390,7 +390,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constFloat", "c": 0.0030 },
+                    "b": { "type": "constFloat", "c": 0.12 },
                 })),
             ),
             sg_node(
@@ -398,7 +398,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constVec3", "c": [0.90, 0.96, 1.0] },
+                    "b": { "type": "constVec3", "c": [0.60, 0.72, 0.84] },
                 })),
             ),
             sg_node(
@@ -406,7 +406,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constFloat", "c": 0.004 },
+                    "b": { "type": "constFloat", "c": 0.10 },
                 })),
             ),
             sg_node(
@@ -414,7 +414,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constFloat", "c": 0.998 },
+                    "b": { "type": "constFloat", "c": 0.92 },
                 })),
             ),
             sg_node(
@@ -422,7 +422,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "tpl_shader_color_mix",
                 config(json!({
                     "mode": "mix",
-                    "b": { "type": "constFloat", "c": 0.0009 },
+                    "b": { "type": "constFloat", "c": 0.08 },
                 })),
             ),
             sg_node(
@@ -461,7 +461,7 @@ fn build_ice_material_subgraph() -> Result<SubgraphActor> {
                 "surface_bump",
                 "tpl_shader_bump_map",
                 config(json!({
-                    "strength": { "type": "constFloat", "c": 0.010 },
+                    "strength": { "type": "constFloat", "c": 0.06 },
                 })),
             ),
             sg_node(
@@ -669,12 +669,12 @@ fn build_floor_material_subgraph() -> Result<SubgraphActor> {
             sg_node(
                 "floor_near_color",
                 "tpl_shader_const_color",
-                config(json!({ "r": 0.84, "g": 0.94, "b": 1.0 })),
+                config(json!({ "r": 0.92, "g": 0.95, "b": 0.98 })),
             ),
             sg_node(
                 "floor_far_color",
                 "tpl_shader_const_color",
-                config(json!({ "r": 0.64, "g": 0.84, "b": 0.97 })),
+                config(json!({ "r": 0.42, "g": 0.52, "b": 0.64 })),
             ),
             sg_node("floor_position", "tpl_shader_position", None),
             sg_node("floor_pos_z", "tpl_shader_separate_xyz", None),
@@ -705,7 +705,7 @@ fn build_floor_material_subgraph() -> Result<SubgraphActor> {
             sg_node(
                 "floor_emission_strength",
                 "tpl_shader_const_float",
-                config(json!({ "value": 0.18 })),
+                config(json!({ "value": 0.55 })),
             ),
             sg_node(
                 "floor_alpha",
@@ -796,22 +796,22 @@ fn build_backdrop_material_subgraph() -> Result<SubgraphActor> {
             sg_node(
                 "card_low_color",
                 "tpl_shader_const_color",
-                config(json!({ "r": 0.76, "g": 0.88, "b": 0.96 })),
+                config(json!({ "r": 0.88, "g": 0.93, "b": 0.98 })),
             ),
             sg_node(
                 "card_high_color",
                 "tpl_shader_const_color",
-                config(json!({ "r": 0.94, "g": 0.98, "b": 1.0 })),
+                config(json!({ "r": 0.96, "g": 0.98, "b": 1.0 })),
             ),
             sg_node(
                 "card_emission_low",
                 "tpl_shader_const_color",
-                config(json!({ "r": 0.78, "g": 0.90, "b": 0.98 })),
+                config(json!({ "r": 0.82, "g": 0.88, "b": 0.96 })),
             ),
             sg_node(
                 "card_emission_high",
                 "tpl_shader_const_color",
-                config(json!({ "r": 0.96, "g": 0.99, "b": 1.0 })),
+                config(json!({ "r": 0.92, "g": 0.96, "b": 1.0 })),
             ),
             sg_node(
                 "card_position",
@@ -849,7 +849,7 @@ fn build_backdrop_material_subgraph() -> Result<SubgraphActor> {
             sg_node(
                 "card_emission_strength",
                 "tpl_shader_const_float",
-                config(json!({ "value": 0.72 })),
+                config(json!({ "value": 1.2 })),
             ),
             sg_node(
                 "card_alpha",
@@ -946,7 +946,7 @@ fn build_ice_geometry_subgraph() -> Result<SubgraphActor> {
         "tpl_sdf_round_box",
         config(json!({
             "sizeX": 0.47, "sizeY": 0.47, "sizeZ": 0.47,
-            "radius": 0.024,
+            "radius": 0.028,
         })),
     );
     add_process(
@@ -954,7 +954,7 @@ fn build_ice_geometry_subgraph() -> Result<SubgraphActor> {
         "ice_displace_broad",
         "tpl_sdf_displace",
         config(json!({
-            "frequency": 0.82, "amplitude": 0.030, "octaves": 2,
+            "frequency": 2.2, "amplitude": 0.025, "octaves": 3,
         })),
     );
     add_process(
@@ -1433,8 +1433,8 @@ async fn main() -> Result<()> {
     let fps = env_u32("REFLOW_FPS", 24);
     let duration = env_f64("REFLOW_DURATION_SECS", 3.0);
     let total_frames = ((duration * fps as f64).round()).max(1.0) as usize;
-    let w = env_u32("REFLOW_WIDTH", 480);
-    let h = env_u32("REFLOW_HEIGHT", 480);
+    let w = env_u32("REFLOW_WIDTH", 960);
+    let h = env_u32("REFLOW_HEIGHT", 960);
     let max_steps = env_u32("REFLOW_MAX_STEPS", 220);
 
     let mut net = Network::new(NetworkConfig::default());
@@ -1497,13 +1497,14 @@ async fn main() -> Result<()> {
         config(json!({
             "width": w, "height": h,
             "maxSteps": max_steps, "fov": 50.0,
-            "cameraPosX": 4.15, "cameraPosY":1.12, "cameraPosZ": 4.7,
-            "cameraTargetX": 0.0, "cameraTargetY": -0.2, "cameraTargetZ": 0.0,
+            "cameraPosX": 3.8, "cameraPosY": 1.6, "cameraPosZ": 4.2,
+            "cameraTargetX": 0.0, "cameraTargetY": -0.15, "cameraTargetZ": 0.0,
             "softShadows": false, "shadowK": 10.0, "ao": false,
             "ambient": 0.015,
-            "lightDir": [-0.84, 0.26, -0.47],
-            "lightColor": [0.42, 0.52, 0.64],
-            "background": [0.06, 0.14, 0.28],
+            "lightDir": [-0.72, 0.48, -0.50],
+            "lightColor": [1.8, 1.85, 1.9],
+            "background": [0.38, 0.46, 0.56],
+            "shadowK": 16.0,
             "logProgress": true,
         })),
     )?;
