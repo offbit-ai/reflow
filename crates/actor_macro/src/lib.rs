@@ -4,20 +4,15 @@ use syn::punctuated::Punctuated;
 use syn::{ItemFn, LitInt, Token, parse::Parse, parse::ParseStream, parse_macro_input};
 
 /// Delivery semantics for a port connection.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 enum PortDelivery {
     /// Block if channel full. Messages never dropped. (default)
+    #[default]
     Reliable,
     /// try_send — drop if channel full. For ticks, signals.
     Latest,
     /// Write to shared FramePool, send slot index. For large binary data.
     Pool(String),
-}
-
-impl Default for PortDelivery {
-    fn default() -> Self {
-        PortDelivery::Reliable
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -220,7 +215,7 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     });
 
     let out_ports_cap = args.outports.capacity;
-    let in_ports_cap = args.inports.capacity;
+    let _in_ports_cap = args.inports.capacity;
     let await_all_inports = args.await_all_inports;
     let await_inports_list = &args.await_inports;
     let _has_selective_await = !await_inports_list.is_empty();

@@ -143,6 +143,16 @@ use crate::vector::{
     BackgroundActor, BlendModeActor, Canvas2DActor, GaussianBlurActor, Shape2DActor,
     VectorRasterizeActor,
 };
+#[cfg(feature = "ml")]
+use reflow_cv_ops::{
+    DetectionToRoiActor, ImageToTensorActor, NormalizeTensorActor, ResizeLetterboxActor,
+    TemporalSmootherActor, TensorCropRoiActor,
+};
+#[cfg(feature = "ml")]
+use reflow_ml_ops::{
+    DecodeDetectionsActor, DecodeLandmarksActor, LoadModelActor, PacketProbeActor,
+    RunInferenceActor,
+};
 
 /// Get an actor instance for a given Zeal template ID
 pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
@@ -497,6 +507,30 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_canvas_2d" => Some(Arc::new(Canvas2DActor::new())),
         "tpl_background" => Some(Arc::new(BackgroundActor::new())),
 
+        // Media / ML stack (feature-gated; mock-first inference boundary)
+        #[cfg(feature = "ml")]
+        "tpl_cv_image_to_tensor" => Some(Arc::new(ImageToTensorActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_cv_resize_letterbox" => Some(Arc::new(ResizeLetterboxActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_cv_normalize_tensor" => Some(Arc::new(NormalizeTensorActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_cv_tensor_crop_roi" => Some(Arc::new(TensorCropRoiActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_cv_detection_to_roi" => Some(Arc::new(DetectionToRoiActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_cv_temporal_smoother" => Some(Arc::new(TemporalSmootherActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_ml_load_model" => Some(Arc::new(LoadModelActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_ml_run_inference" => Some(Arc::new(RunInferenceActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_ml_decode_detections" => Some(Arc::new(DecodeDetectionsActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_ml_decode_landmarks" => Some(Arc::new(DecodeLandmarksActor::new())),
+        #[cfg(feature = "ml")]
+        "tpl_ml_packet_probe" => Some(Arc::new(PacketProbeActor::new())),
+
         // Fall through to generated API actors (api_slack_send_message, etc.)
         #[cfg(feature = "api")]
         other => crate::api::api_registry::get_api_actor_for_template(other),
@@ -677,6 +711,12 @@ pub fn get_template_mapping() -> HashMap<String, String> {
         "tpl_image_resize".to_string(),
         "ImageResizeActor".to_string(),
     );
+
+    // Media / ML stack (feature-gated)
+    #[cfg(feature = "ml")]
+    for (id, name) in reflow_taskpacks::ml_template_mapping() {
+        mapping.insert(id.to_string(), name.to_string());
+    }
 
     // Input Events (feature-gated)
     #[cfg(feature = "window-events")]

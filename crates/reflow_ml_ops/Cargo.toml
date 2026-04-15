@@ -1,0 +1,15 @@
+[package]
+name = "reflow_ml_ops"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actor_macro = { path = "../actor_macro" }
+anyhow = { workspace = true }
+flume = { workspace = true }
+reflow_actor = { path = "../reflow_actor" }
+reflow_asset_registry = { path = "../reflow_asset_registry" }
+reflow_litert = { path = "../reflow_litert" }
+reflow_media_codec = { path = "../reflow_media_codec" }
+reflow_media_types = { path = "../reflow_media_types" }
+serde_json = { workspace = true }

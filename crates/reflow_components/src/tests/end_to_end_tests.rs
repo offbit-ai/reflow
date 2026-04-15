@@ -157,18 +157,42 @@ mod tests {
             );
         }
 
-        let mapping = registry::get_template_mapping();
-        assert_eq!(
-            mapping.len(),
-            expected_templates.len(),
-            "Template mapping should have exactly {} entries",
-            expected_templates.len()
-        );
-
         for template in &expected_templates {
             assert!(
                 mapping.contains_key(*template),
                 "{} template should be mapped",
+                template
+            );
+        }
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "ml")]
+    async fn test_ml_template_mapping() {
+        let expected_templates = vec![
+            "tpl_cv_image_to_tensor",
+            "tpl_cv_resize_letterbox",
+            "tpl_cv_normalize_tensor",
+            "tpl_cv_tensor_crop_roi",
+            "tpl_cv_detection_to_roi",
+            "tpl_cv_temporal_smoother",
+            "tpl_ml_load_model",
+            "tpl_ml_run_inference",
+            "tpl_ml_decode_detections",
+            "tpl_ml_decode_landmarks",
+            "tpl_ml_packet_probe",
+        ];
+
+        let mapping = registry::get_template_mapping();
+        for template in &expected_templates {
+            assert!(
+                get_actor_for_template(template).is_some(),
+                "Missing ML actor implementation for template: {}",
+                template
+            );
+            assert!(
+                mapping.contains_key(*template),
+                "{} ML template should be mapped",
                 template
             );
         }

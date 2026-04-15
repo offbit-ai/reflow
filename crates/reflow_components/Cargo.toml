@@ -46,6 +46,11 @@ reflow_api = { path = "../reflow_api", optional = true }
 # Asset database (pure Rust, Wasm-safe)
 reflow_assets = { path = "../reflow_assets" }
 
+# Media / ML stack (optional; mock-first, no native LiteRT dependency by default)
+reflow_cv_ops = { path = "../reflow_cv_ops", optional = true }
+reflow_ml_ops = { path = "../reflow_ml_ops", optional = true }
+reflow_taskpacks = { path = "../reflow_taskpacks", optional = true }
+
 # Zero-cost byte↔float reinterpretation (always available for skinning SIMD)
 bytemuck = { version = "1.14", features = ["derive"] }
 
@@ -92,6 +97,7 @@ video-encode = ["dep:openh264"]
 browser = ["dep:chromiumoxide"]
 window-events = []
 browser-events = ["window-events"]
+ml = ["dep:reflow_cv_ops", "dep:reflow_ml_ops", "dep:reflow_taskpacks"]
 
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }

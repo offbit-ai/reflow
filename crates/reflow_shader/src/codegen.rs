@@ -106,7 +106,7 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
                 (MathOpType::Max, Some(vb)) => format!("max({va}, {vb})"),
                 (MathOpType::Modulo, Some(vb)) => format!("({va} % {vb})"),
                 (MathOpType::Atan2, Some(vb)) => format!("atan2({va}, {vb})"),
-                (MathOpType::Smoothstep, Some(vb)) => format!("smoothstep(0.0, 1.0, {va})"),
+                (MathOpType::Smoothstep, Some(_)) => format!("smoothstep(0.0, 1.0, {va})"),
                 (MathOpType::Lerp, Some(vb)) => format!("mix({va}, {vb}, 0.5)"),
                 (MathOpType::Step, Some(vb)) => format!("step({va}, {vb})"),
                 (MathOpType::Dot, Some(vb)) => format!("dot({va}, {vb})"),
@@ -260,8 +260,8 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
         // ═══ Procedural textures ═══
         ShaderNode::NoiseTexture {
             scale,
-            detail,
-            roughness,
+            detail: _,
+            roughness: _,
         } => {
             let vs = emit_node(ctx, scale);
             ctx.needs_uv = true;
@@ -344,10 +344,10 @@ fn emit_node(ctx: &mut Ctx, node: &ShaderNode) -> String {
             subsurface_color,
             sheen,
             sheen_tint,
-            anisotropic,
-            anisotropic_rotation,
-            transmission,
-            ior,
+            anisotropic: _,
+            anisotropic_rotation: _,
+            transmission: _,
+            ior: _,
         } => {
             let vbc = emit_node(ctx, base_color);
             let vm = emit_node(ctx, metallic);
@@ -503,6 +503,7 @@ pub fn compile(root: &ShaderNode) -> CompiledMaterial {
 /// - `LIGHT_DIR`, `LIGHT_COLOR`, `AMBIENT`: scene lighting constants
 /// - `soft_shadow(ro, rd, mint, maxt)`: if soft shadows enabled
 /// - `calc_ao(pos, nor)`: if AO enabled
+///
 /// Compile a ShaderNode tree into a `fn shade(ro, rd, t) -> vec3f` WGSL string
 /// for the SDF ray march renderer. Extracts material parameters from the IR
 /// and generates a shade function using SDF-context variables.
@@ -545,7 +546,7 @@ fn build_sdf_shade_function(
     shade.push_str("    let N_geom = calc_normal(p);\n");
     shade.push_str("    let V = -rd;\n");
     shade.push_str(setup_code);
-    shade.push_str("\n");
+    shade.push('\n');
 
     shade.push_str(&format!(
         "    let base_color = clamp({}, vec3f(0.0), vec3f(1.0));\n",
@@ -584,7 +585,7 @@ fn build_sdf_shade_function(
     } else {
         shade.push_str("    let N = N_geom;\n");
     }
-    shade.push_str("\n");
+    shade.push('\n');
 
     shade.push_str("    let NoV = max(dot(N, V), 0.0);\n");
     shade.push_str("    let dielectric_f0 = pow((ior - 1.0) / (ior + 1.0), 2.0);\n");
@@ -630,28 +631,18 @@ fn build_sdf_shade_function(
     }
 
     // Fresnel: Schlick + edge boost for visible rim on transparent surfaces
-    shade.push_str(
-        "    let edge_boost = transmission * pow(1.0 - NoV, 3.0) * 0.25;\n",
-    );
-    shade.push_str(
-        "    let F = clamp(fresnel_strength + edge_boost, 0.0, 1.0);\n",
-    );
+    shade.push_str("    let edge_boost = transmission * pow(1.0 - NoV, 3.0) * 0.25;\n");
+    shade.push_str("    let F = clamp(fresnel_strength + edge_boost, 0.0, 1.0);\n");
 
     // Glass path: refraction dominates; scattering only in dense/thick regions
-    shade.push_str(
-        "    let scatter_factor = clamp(density * 2.0, 0.0, 0.35);\n",
-    );
+    shade.push_str("    let scatter_factor = clamp(density * 2.0, 0.0, 0.35);\n");
     shade.push_str(
         "    let glass_term = refracted + transmitted_light * scatter_factor + glass_interior * clamp(density * thin_factor * 0.3, 0.0, 0.12);\n",
     );
 
-    shade.push_str(
-        "    let effective_T = transmission;\n",
-    );
+    shade.push_str("    let effective_T = transmission;\n");
     // Physically-based compositing: opaque↔glass by transmission, then Fresnel reflection
-    shade.push_str(
-        "    let non_reflected = mix(opaque_surface, glass_term, effective_T);\n",
-    );
+    shade.push_str("    let non_reflected = mix(opaque_surface, glass_term, effective_T);\n");
     shade.push_str("    var col = mix(non_reflected, reflected, F);\n");
     // Surface edge darkening: cube edges where normal transitions between faces
     shade.push_str("    let entry_abs = abs(N_geom);\n");

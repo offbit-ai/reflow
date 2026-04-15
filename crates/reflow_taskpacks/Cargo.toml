@@ -1,0 +1,14 @@
+[package]
+name = "reflow_taskpacks"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reflow_graph = { path = "../reflow_graph" }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+reflow_actor = { path = "../reflow_actor" }
+reflow_cv_ops = { path = "../reflow_cv_ops" }
+reflow_ml_ops = { path = "../reflow_ml_ops" }
+reflow_network = { path = "../reflow_network" }

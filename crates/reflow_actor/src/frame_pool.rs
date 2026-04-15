@@ -142,6 +142,11 @@ impl FramePool {
     pub fn capacity(&self) -> usize {
         self.slot_count
     }
+
+    /// Configured maximum bytes per fixed-size frame slot.
+    pub fn frame_size(&self) -> usize {
+        self.frame_size
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════

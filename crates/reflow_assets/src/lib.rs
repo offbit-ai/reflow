@@ -1133,8 +1133,8 @@ impl AssetDB {
         match q.sort {
             SortOrder::Newest => results.sort_by(|a, b| b.created_at.cmp(&a.created_at)),
             SortOrder::Oldest => results.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
-            SortOrder::Largest => results.sort_by(|a, b| b.blob_size.cmp(&a.blob_size)),
-            SortOrder::Smallest => results.sort_by(|a, b| a.blob_size.cmp(&b.blob_size)),
+            SortOrder::Largest => results.sort_by_key(|entry| std::cmp::Reverse(entry.blob_size)),
+            SortOrder::Smallest => results.sort_by_key(|entry| entry.blob_size),
             SortOrder::Name => results.sort_by(|a, b| a.name.cmp(&b.name)),
             SortOrder::None => {}
         }

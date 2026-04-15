@@ -1,0 +1,13 @@
+[package]
+name = "reflow_asset_registry"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+reflow_assets = { path = "../reflow_assets" }
+reflow_litert = { path = "../reflow_litert" }
+reflow_media_types = { path = "../reflow_media_types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"

@@ -46,7 +46,7 @@ pub async fn particle_emitter_actor(ctx: ActorContext) -> Result<HashMap<String,
         // Random position based on shape
         let r1 = reflow_sdf::noise::value_noise(fi * 1.37 + seed, 0.0, 0.0);
         let r2 = reflow_sdf::noise::value_noise(0.0, fi * 2.71 + seed, 0.0);
-        let r3 = reflow_sdf::noise::value_noise(0.0, 0.0, fi * 3.14 + seed);
+        let r3 = reflow_sdf::noise::value_noise(0.0, 0.0, fi * std::f64::consts::PI + seed);
 
         let (px, py, pz) = match shape.as_str() {
             "cube" => (

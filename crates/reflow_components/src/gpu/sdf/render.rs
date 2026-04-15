@@ -12,8 +12,8 @@ use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_sdf::ir::{SceneSettings, SdfNode};
 use serde_json::json;
-use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 /// Uniform buffer layout matching the WGSL struct.

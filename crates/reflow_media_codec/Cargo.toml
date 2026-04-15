@@ -1,0 +1,11 @@
+[package]
+name = "reflow_media_codec"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+reflow_actor = { path = "../reflow_actor" }
+reflow_media_types = { path = "../reflow_media_types" }
+serde = { workspace = true }
+serde_json = { workspace = true }

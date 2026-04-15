@@ -1,0 +1,14 @@
+[package]
+name = "reflow_litert"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+reflow_media_types = { path = "../reflow_media_types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = []
+external-litert = []

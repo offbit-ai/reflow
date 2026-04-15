@@ -5638,6 +5638,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_asset_registry"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reflow_assets",
+ "reflow_litert",
+ "reflow_media_types",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "reflow_assets"
 version = "0.1.0"
 dependencies = [
@@ -5677,12 +5690,15 @@ dependencies = [
  "reflow_actor",
  "reflow_api",
  "reflow_assets",
+ "reflow_cv_ops",
  "reflow_dsp",
  "reflow_graph",
+ "reflow_ml_ops",
  "reflow_pixel",
  "reflow_sdf",
  "reflow_server",
  "reflow_shader",
+ "reflow_taskpacks",
  "reflow_tracing_protocol",
  "reflow_vector",
  "reqwest 0.12.22",
@@ -5695,6 +5711,20 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "wgpu",
+]
+
+[[package]]
+name = "reflow_cv_ops"
+version = "0.1.0"
+dependencies = [
+ "actor_macro",
+ "anyhow",
+ "flume",
+ "reflow_actor",
+ "reflow_media_codec",
+ "reflow_media_types",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -5799,6 +5829,50 @@ dependencies = [
  "uuid",
  "walkdir",
  "which 4.4.2",
+]
+
+[[package]]
+name = "reflow_litert"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reflow_media_types",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "reflow_media_codec"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reflow_actor",
+ "reflow_media_types",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "reflow_media_types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "reflow_ml_ops"
+version = "0.1.0"
+dependencies = [
+ "actor_macro",
+ "anyhow",
+ "flume",
+ "reflow_actor",
+ "reflow_asset_registry",
+ "reflow_litert",
+ "reflow_media_codec",
+ "reflow_media_types",
+ "serde_json",
 ]
 
 [[package]]
@@ -5986,6 +6060,18 @@ name = "reflow_shader"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "reflow_taskpacks"
+version = "0.1.0"
+dependencies = [
+ "reflow_actor",
+ "reflow_cv_ops",
+ "reflow_graph",
+ "reflow_ml_ops",
+ "reflow_network",
  "serde_json",
 ]
 
