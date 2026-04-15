@@ -9,14 +9,15 @@ name = "reflow_server"
 path = "src/main.rs"
 
 [features]
-default = ["api", "gpu"]
-api = ["reflow_components/api"]
+default = []
+api_services = ["dep:reflow_api"]
 gpu = ["reflow_components/gpu"]
 
 [dependencies]
 reflow_network = { path = "../reflow_network" }
 reflow_graph = { path = "../reflow_graph" }
 reflow_components = { path = "../reflow_components", default-features = false }
+reflow_api = { path = "../reflow_api", optional = true }
 actor_macro = { path = "../actor_macro" }
 zeal-sdk = { path = "../../../zeal/packages/zeal-rust-sdk" }
 serde = { workspace = true }

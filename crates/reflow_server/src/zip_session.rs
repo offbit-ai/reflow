@@ -536,7 +536,7 @@ impl ZipSession {
         }
 
         // 2. Register pre-generated API actor templates with full metadata
-        #[cfg(feature = "api")]
+        #[cfg(feature = "api_services")]
         {
             let api_infos = reflow_components::get_api_template_infos();
             for info in api_infos {

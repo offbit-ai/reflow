@@ -157,6 +157,8 @@ mod tests {
             );
         }
 
+        let mapping = registry::get_template_mapping();
+
         for template in &expected_templates {
             assert!(
                 mapping.contains_key(*template),

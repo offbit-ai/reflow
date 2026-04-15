@@ -7,7 +7,7 @@ incremental = false
 # Configure the number of parallel jobs
 jobs = 8
 
-rustc-wrapper = "sccache"
+# rustc-wrapper = "sccache"
 
 
 [target.'cfg(all())']

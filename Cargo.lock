@@ -6041,6 +6041,7 @@ dependencies = [
  "futures-util",
  "log",
  "redis",
+ "reflow_api",
  "reflow_components",
  "reflow_graph",
  "reflow_network",

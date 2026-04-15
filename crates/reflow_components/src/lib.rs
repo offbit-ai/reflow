@@ -9,7 +9,7 @@
 //!   cargo test -p reflow_server --no-default-features
 
 pub mod animation;
-#[cfg(feature = "api")]
+#[cfg(feature = "api_services")]
 pub use reflow_api::api;
 pub mod assets;
 pub mod flow_control;
@@ -49,11 +49,11 @@ pub use reflow_actor::{
 pub use registry::{get_actor_for_template, get_template_mapping};
 
 // Re-export API template metadata for ZIP registration (only with api feature)
-#[cfg(feature = "api")]
+#[cfg(feature = "api_services")]
 pub use reflow_api::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};
 
 // Stubs when api feature is disabled — lets dependents compile without the heavy API modules
-#[cfg(not(feature = "api"))]
+#[cfg(not(feature = "api_services"))]
 mod api_stubs {
     use std::sync::Arc;
 
@@ -68,5 +68,5 @@ mod api_stubs {
     }
 }
 
-#[cfg(not(feature = "api"))]
+#[cfg(not(feature = "api_services"))]
 pub use api_stubs::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};

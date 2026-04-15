@@ -90,7 +90,7 @@ web-sys = { version = "0.3", features = ["Window"] }
 
 [features]
 default = ["av-core", "gpu", "window-events"]
-api = ["dep:reflow_api"]
+api_services = ["dep:reflow_api"]
 av-core = ["dep:reflow_dsp"]
 gpu = ["dep:wgpu", "dep:pollster", "dep:once_cell"]
 video-encode = ["dep:openh264"]

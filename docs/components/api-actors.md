@@ -32,7 +32,7 @@ match template_id {
     // ... native actors ...
 
     // Fall through to generated API actors
-    #[cfg(feature = "api")]
+    #[cfg(feature = "api_services")]
     other => crate::api::api_registry::get_api_actor_for_template(other),
 }
 ```
@@ -115,10 +115,10 @@ cargo test -p reflow_server --no-default-features
 When disabled, stub types ensure the rest of the codebase compiles:
 
 ```rust
-#[cfg(not(feature = "api"))]
+#[cfg(not(feature = "api_services"))]
 pub fn get_api_template_infos() -> &'static [ApiTemplateInfo] { &[] }
 
-#[cfg(not(feature = "api"))]
+#[cfg(not(feature = "api_services"))]
 pub fn get_api_actor_for_template(_: &str) -> Option<Arc<dyn Actor>> { None }
 ```
 

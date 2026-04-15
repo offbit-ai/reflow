@@ -532,9 +532,9 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_ml_packet_probe" => Some(Arc::new(PacketProbeActor::new())),
 
         // Fall through to generated API actors (api_slack_send_message, etc.)
-        #[cfg(feature = "api")]
+        #[cfg(feature = "api_services")]
         other => crate::api::api_registry::get_api_actor_for_template(other),
-        #[cfg(not(feature = "api"))]
+        #[cfg(not(feature = "api_services"))]
         _ => None,
     }
 }
