@@ -1,6 +1,5 @@
 //! Tests for Go WASM plugins
 
-use crate::utils::*;
 use reflow_actor::{message::Message, Actor, ActorConfig};
 use reflow_script::{ScriptActor, ScriptConfig, ScriptEnvironment, ScriptRuntime};
 use std::collections::HashMap;
@@ -20,8 +19,8 @@ async fn test_go_counter_actor() {
         .join("counter")
         .join("counter.wasm");
 
-    let wasm_bytes =
-        std::fs::read(&wasm_path).expect(&format!("Failed to read {}", wasm_path.display()));
+    let wasm_bytes = std::fs::read(&wasm_path)
+        .unwrap_or_else(|_| panic!("Failed to read {}", wasm_path.display()));
 
     // Create ScriptConfig
     let config = ScriptConfig {
@@ -40,7 +39,6 @@ async fn test_go_counter_actor() {
         id: "test_go_counter".to_string(),
         component: "GoCounter".to_string(),
         metadata: None,
-        ..Default::default()
     })
     .unwrap();
 
@@ -92,8 +90,8 @@ async fn test_go_async_processor() {
         .join("async_processor")
         .join("async_processor.wasm");
 
-    let wasm_bytes =
-        std::fs::read(&wasm_path).expect(&format!("Failed to read {}", wasm_path.display()));
+    let wasm_bytes = std::fs::read(&wasm_path)
+        .unwrap_or_else(|_| panic!("Failed to read {}", wasm_path.display()));
 
     // Create ScriptConfig
     let config = ScriptConfig {
@@ -116,7 +114,6 @@ async fn test_go_async_processor() {
         id: "test_go_async".to_string(),
         component: "GoAsyncProcessor".to_string(),
         metadata: Some(metadata),
-        ..Default::default()
     })
     .unwrap();
 

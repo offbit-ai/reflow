@@ -1,6 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use reflow_graph::Graph;
-use std::collections::HashMap;
 
 pub fn benchmark_graph_operations(c: &mut Criterion) {
     // Node Operations Benchmark

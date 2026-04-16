@@ -7,7 +7,7 @@ use std::{
 
 use crate::message::{
     COMPRESSION_THRESHOLD, CompressionConfig, CompressionStats, CompressionStrategy,
-    EncodableValue, EncodedMessage, Message, MessageError,
+    EncodedMessage, Message, MessageError,
 };
 use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -31,7 +31,7 @@ fn test_encode_string_message() {
 
 #[test]
 fn test_encode_float_message() {
-    let msg = Message::Float(3.14159);
+    let msg = Message::Float(3.25);
     let encoded = EncodedMessage::new(&msg);
     let decoded: Message = bitcode::decode(&encoded.0).unwrap();
     assert_eq!(msg, decoded);
@@ -262,7 +262,7 @@ fn test_compression_config_deserialize_defaults() {
 
     assert_eq!(config.size_threshold, 1024);
     assert_eq!(config.streaming_threshold, 1024 * 1024);
-    assert_eq!(config.enabled, true);
+    assert!(config.enabled);
     assert_eq!(config.level, 6);
     let is_empty = { config.type_strategies.is_empty() };
     assert!(is_empty);
@@ -280,7 +280,7 @@ fn test_compression_config_deserialize_partial_values() {
     let config: CompressionConfig = serde_json::from_value(json).unwrap();
     assert_eq!(config.size_threshold, 4096);
     assert_eq!(config.streaming_threshold, 1048576);
-    assert_eq!(config.enabled, true);
+    assert!(config.enabled);
     assert_eq!(config.level, 6);
 
     assert_eq!(config.type_strategies.len(), 1);
@@ -309,7 +309,7 @@ fn test_compression_config_deserialize_custom_values() {
 
     assert_eq!(config.size_threshold, 2048);
     assert_eq!(config.streaming_threshold, 2097152);
-    assert_eq!(config.enabled, false);
+    assert!(!config.enabled);
     assert_eq!(config.level, 9);
 
     assert_eq!(config.type_strategies.len(), 4);
@@ -362,7 +362,7 @@ fn test_compression_config_deserialize_invalid_types() {
     // Should fall back to defaults for invalid types
     assert_eq!(config.size_threshold, 1024);
     assert_eq!(config.streaming_threshold, 1024 * 1024);
-    assert_eq!(config.enabled, true);
+    assert!(config.enabled);
     assert_eq!(config.level, 6);
     let is_empty = { config.type_strategies.is_empty() };
     assert!(is_empty);
@@ -689,7 +689,7 @@ fn test_compression_strategy_display() {
 
 #[test]
 fn test_compression_strategy_to_string() {
-    let strategies = vec![
+    let strategies = [
         CompressionStrategy::Never,
         CompressionStrategy::Always,
         CompressionStrategy::SizeThreshold,
@@ -697,7 +697,7 @@ fn test_compression_strategy_to_string() {
         CompressionStrategy::Custom(Arc::new(|_| true)),
     ];
 
-    let expected = vec!["Never", "Always", "SizeThreshold", "Adaptive", "Custom(_)"];
+    let expected = ["Never", "Always", "SizeThreshold", "Adaptive", "Custom(_)"];
 
     for (strategy, expected) in strategies.iter().zip(expected.iter()) {
         assert_eq!(format!("{:?}", strategy), *expected);
@@ -709,7 +709,7 @@ fn test_update_with_threshold_small_data() {
     let mut stats = CompressionStats::default();
     let small_data = vec![1u8; 512]; // Data smaller than SAMPLE_SIZE
 
-    let result = stats.update_with_threshold(&small_data, 1.0);
+    let _ = stats.update_with_threshold(&small_data, 1.0);
 
     assert_eq!(stats.samples, 1);
     assert_eq!(stats.total_original, 512);
@@ -722,7 +722,7 @@ fn test_update_with_threshold_large_data() {
     let mut stats = CompressionStats::default();
     let large_data = vec![1u8; 2048]; // Data larger than SAMPLE_SIZE
 
-    let result = stats.update_with_threshold(&large_data, 1.0);
+    let _ = stats.update_with_threshold(&large_data, 1.0);
 
     assert_eq!(stats.samples, 1);
     assert_eq!(stats.total_original, 1024); // Should use SAMPLE_SIZE
@@ -734,8 +734,7 @@ fn test_update_with_threshold_large_data() {
 fn test_update_with_threshold_highly_compressible() {
     let mut stats = CompressionStats::default();
     // Create highly compressible data (repeated pattern)
-    let data: Vec<u8> = iter::repeat(&[0u8; 64][..])
-        .take(16)
+    let data: Vec<u8> = iter::repeat_n(&[0u8; 64][..], 16)
         .flatten()
         .copied()
         .collect();
@@ -913,7 +912,7 @@ fn test_decode_with_config_no_compression() {
     let test_data = test_msg.encode().unwrap();
     let result = Message::decode_with_config(&test_data, config);
     assert!(result.is_ok());
-    assert!(matches!(result.unwrap(), test_msg));
+    assert_eq!(result.unwrap(), test_msg);
 }
 
 #[test]
@@ -934,7 +933,7 @@ fn test_decode_with_config_zstd() {
     let result = Message::decode_with_config(&compressed, config);
 
     assert!(result.is_ok());
-    assert!(matches!(result.unwrap(), test_msg));
+    assert_eq!(result.unwrap(), test_msg);
 }
 
 #[test]
@@ -980,7 +979,7 @@ fn test_encoded_size_integer() {
 
 #[test]
 fn test_encoded_size_float() {
-    let msg = Message::Float(3.14);
+    let msg = Message::Float(3.25);
     assert!(msg.encoded_size().is_ok());
     assert_eq!(msg.encoded_size().unwrap(), msg.encode().unwrap().len());
 }
@@ -1056,7 +1055,7 @@ fn test_encode_compression_disabled() {
     };
 
     let result = message.encode_with_config(&config).unwrap();
-    assert!(result.0.len() > 0);
+    assert!(!result.0.is_empty());
 }
 
 #[test]
@@ -1124,7 +1123,7 @@ fn test_encode_adaptive() {
     };
 
     let result = message.encode_with_config(&config).unwrap();
-    assert!(result.0.len() > 0);
+    assert!(!result.0.is_empty());
 }
 
 #[test]
@@ -1171,7 +1170,7 @@ fn test_encode_json_values() {
     };
 
     let result = json_message.encode_with_config(&config).unwrap();
-    assert!(result.0.len() > 0);
+    assert!(!result.0.is_empty());
 }
 
 #[test]
@@ -1188,7 +1187,7 @@ fn test_compress_data_normal() {
     let result = message.compress_data(&small_data, &config);
     assert!(result.is_ok());
     let compressed = result.unwrap();
-    assert!(compressed.len() > 0);
+    assert!(!compressed.is_empty());
     assert!(compressed.len() <= small_data.len());
 }
 
@@ -1196,7 +1195,7 @@ fn test_compress_data_normal() {
 fn test_compress_data_streaming() {
     let message = Message::default();
     // Create data larger than threshold
-    let large_data: Vec<u8> = iter::repeat(42u8).take(2048).collect();
+    let large_data: Vec<u8> = iter::repeat_n(42u8, 2048).collect();
 
     let config = CompressionConfig {
         enabled: true,
@@ -1208,7 +1207,7 @@ fn test_compress_data_streaming() {
     let result = message.compress_data(&large_data, &config);
     assert!(result.is_ok());
     let compressed = result.unwrap();
-    assert!(compressed.len() > 0);
+    assert!(!compressed.is_empty());
     assert!(compressed.len() < large_data.len());
 }
 
@@ -1249,7 +1248,7 @@ fn test_compress_data_empty() {
 #[test]
 fn test_compress_data_different_levels() {
     let message = Message::default();
-    let data: Vec<u8> = iter::repeat(42u8).take(1000).collect();
+    let data: Vec<u8> = iter::repeat_n(42u8, 1000).collect();
 
     let mut sizes = Vec::new();
 
@@ -1385,7 +1384,7 @@ fn test_compress_streaming_invalid_level() {
 fn test_compress_streaming_chunk_boundaries() {
     let message = Message::default();
     // Create data exactly CHUNK_SIZE (64KB)
-    let data: Vec<u8> = iter::repeat(1u8).take(64 * 1024).collect();
+    let data: Vec<u8> = iter::repeat_n(1u8, 64 * 1024).collect();
     let config = CompressionConfig::default();
 
     let result = message.compress_streaming(&data, &config).unwrap();
@@ -1433,7 +1432,7 @@ fn test_compression_decision_stream() {
 #[test]
 fn test_compression_decision_string() {
     // Test case 1: Medium-sized repeated string (not compressible enough)
-    let msg = Message::String("test".repeat(200).into());
+    let _msg = Message::String("test".repeat(200).into());
     let data = "test".repeat(200).into_bytes();
     println!("Data size: {}", data.len());
     // assert!(!msg.should_compress_adaptive(&data));

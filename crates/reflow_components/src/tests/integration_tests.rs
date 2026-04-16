@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests {
     use crate::integration::HttpRequestActor;
-    use crate::{Actor, Message};
+    use crate::Actor;
     use parking_lot::Mutex;
     use reflow_actor::ActorLoad;
     use reflow_actor::{ActorConfig, ActorContext, MemoryState};
@@ -20,7 +20,6 @@ mod tests {
             id: "test_node".to_string(),
             component: "TestComponent".to_string(),
             metadata: Some(metadata.clone()),
-            ..Default::default()
         };
 
         let config = ActorConfig {
@@ -42,7 +41,6 @@ mod tests {
     #[tokio::test]
     async fn test_http_request_actor_creation() {
         let _actor = HttpRequestActor::new();
-        assert!(true);
     }
 
     #[tokio::test]

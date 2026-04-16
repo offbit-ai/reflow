@@ -27,7 +27,6 @@ mod tests {
                 );
                 metadata
             }),
-            ..Default::default()
         }
     }
 

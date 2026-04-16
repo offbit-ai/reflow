@@ -106,6 +106,7 @@ pub unsafe fn apply_window_neon(samples: &mut [f32], window: &[f32]) {
 /// Caller must ensure aarch64 NEON is available.
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
+#[allow(dead_code)]
 pub unsafe fn deinterleave_stereo_neon(interleaved: &[f32], left: &mut [f32], right: &mut [f32]) {
     let frames = left.len();
     debug_assert_eq!(interleaved.len(), frames * 2);
@@ -135,6 +136,7 @@ pub unsafe fn deinterleave_stereo_neon(interleaved: &[f32], left: &mut [f32], ri
 /// Caller must ensure aarch64 NEON is available.
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
+#[allow(dead_code)]
 pub unsafe fn interleave_stereo_neon(left: &[f32], right: &[f32], output: &mut [f32]) {
     let frames = left.len();
     debug_assert_eq!(left.len(), right.len());

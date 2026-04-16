@@ -28,16 +28,16 @@ mod tests {
 
             // Ensure target is installed
             std::process::Command::new("rustup")
-                .args(&["target", "add", "wasm32-unknown-unknown"])
+                .args(["target", "add", "wasm32-unknown-unknown"])
                 .output()
                 .expect("Failed to add wasm32 target");
 
             // Build the plugin
             let output = std::process::Command::new("cargo")
-                .args(&["build", "--release", "--target", "wasm32-unknown-unknown"])
+                .args(["build", "--release", "--target", "wasm32-unknown-unknown"])
                 .current_dir(&plugin_dir)
                 .output()
-                .expect(&format!("Failed to build {}", plugin_name));
+                .unwrap_or_else(|_| panic!("Failed to build {}", plugin_name));
 
             if !output.status.success() {
                 panic!(
@@ -48,7 +48,8 @@ mod tests {
             }
         }
 
-        std::fs::read(&wasm_path).expect(&format!("Failed to read {}", wasm_path.display()))
+        std::fs::read(&wasm_path)
+            .unwrap_or_else(|_| panic!("Failed to read {}", wasm_path.display()))
     }
 
     #[tokio::test]
@@ -76,7 +77,6 @@ mod tests {
             id: "test_multiply".to_string(),
             component: "MultiplyActor".to_string(),
             metadata: Some(metadata),
-            ..Default::default()
         })
         .unwrap();
 
@@ -153,7 +153,6 @@ mod tests {
             id: "test_counter".to_string(),
             component: "CounterActor".to_string(),
             metadata: Some(metadata),
-            ..Default::default()
         })
         .unwrap();
 
@@ -251,7 +250,6 @@ mod tests {
                 "factor".to_string(),
                 serde_json::json!(2.0),
             )])),
-            ..Default::default()
         })
         .unwrap();
 
@@ -326,7 +324,6 @@ mod tests {
                 "initial_value".to_string(),
                 serde_json::json!(0),
             )])),
-            ..Default::default()
         })
         .unwrap();
 
@@ -388,9 +385,8 @@ mod tests {
         println!("Test with extism CLI:");
         println!("extism call {} get_metadata", temp_path.display());
         println!(
-            "extism call {} process --input '{}'",
-            temp_path.display(),
-            r#"{"payload":{"value":{"type":"Integer","data":10}},"config":{"factor":2},"state":{}}"#
+            "extism call {} process --input '{{\"payload\":{{\"value\":{{\"type\":\"Integer\",\"data\":10}}}},\"config\":{{\"factor\":2}},\"state\":{{}}}}'",
+            temp_path.display()
         );
     }
 }

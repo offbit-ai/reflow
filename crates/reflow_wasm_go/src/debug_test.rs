@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod debug_tests {
     use extism::{Manifest, Plugin, Wasm, WasmMetadata};
-    use std::collections::HashMap;
 
     #[test]
     fn test_debug_wasm() {

@@ -21,7 +21,7 @@ mod go_integration_tests {
         if !wasm_path.exists() {
             println!("Building counter.wasm...");
             let build_result = std::process::Command::new("tinygo")
-                .args(&[
+                .args([
                     "build",
                     "-o",
                     "counter.wasm",
@@ -33,10 +33,10 @@ mod go_integration_tests {
                 .current_dir(&example_dir)
                 .status();
 
-            if let Err(_) = build_result {
+            if build_result.is_err() {
                 // Try with the full path to TinyGo
                 std::process::Command::new("/Users/amaterasu/tinygo/bin/tinygo")
-                    .args(&[
+                    .args([
                         "build",
                         "-o",
                         "counter.wasm",
@@ -71,7 +71,6 @@ mod go_integration_tests {
             id: "test_go_base64".to_string(),
             component: "GoCounter".to_string(),
             metadata: None,
-            ..Default::default()
         })
         .unwrap();
 

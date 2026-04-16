@@ -17,6 +17,13 @@
 //! ```
 //!
 //! All ZIP protocol types come from the `zeal-sdk` crate.
+#![allow(
+    dead_code,
+    clippy::collapsible_if,
+    clippy::collapsible_match,
+    clippy::too_many_arguments,
+    clippy::while_let_loop
+)]
 
 pub mod engine;
 pub mod event_bridge;

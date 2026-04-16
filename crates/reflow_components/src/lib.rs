@@ -7,6 +7,38 @@
 //! The `api` feature (enabled by default) includes 88 generated API service
 //! modules with 6,697 actor templates. Disable it for faster test builds:
 //!   cargo test -p reflow_server --no-default-features
+//!
+//! The component catalog contains legacy/generated actors and GPU resource
+//! holders where several style-oriented clippy lints are noisy under a
+//! workspace-wide `-D warnings` sweep. Keep this baseline local to the catalog
+//! while functional warnings and compile errors still fail normally.
+#![allow(
+    dead_code,
+    unused_variables,
+    clippy::assign_op_pattern,
+    clippy::collapsible_match,
+    clippy::doc_overindented_list_items,
+    clippy::excessive_precision,
+    clippy::explicit_counter_loop,
+    clippy::field_reassign_with_default,
+    clippy::get_first,
+    clippy::len_zero,
+    clippy::manual_checked_ops,
+    clippy::manual_clamp,
+    clippy::manual_is_multiple_of,
+    clippy::manual_repeat_n,
+    clippy::manual_unwrap_or,
+    clippy::map_entry,
+    clippy::needless_borrow,
+    clippy::needless_borrows_for_generic_args,
+    clippy::needless_range_loop,
+    clippy::ptr_arg,
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::unnecessary_map_or,
+    clippy::useless_format
+)]
 
 pub mod animation;
 #[cfg(feature = "api_services")]

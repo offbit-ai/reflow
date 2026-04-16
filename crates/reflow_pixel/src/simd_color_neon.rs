@@ -58,20 +58,23 @@ pub unsafe fn row_rgba_to_gray_neon(input: &[u8], output: &mut [u8]) {
 /// Caller must ensure aarch64 NEON is available.
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
+#[allow(unused_variables)]
+#[allow(dead_code)]
+#[allow(clippy::never_loop)]
 pub unsafe fn row_brightness_neon(row: &mut [u8], factor: f32) {
     let pixel_count = row.len() / 4;
     let chunks = pixel_count / 4;
-    let remainder = pixel_count % 4;
+    let _remainder = pixel_count % 4;
 
     let vfactor = vdupq_n_f32(factor);
     let vzero = vdupq_n_f32(0.0);
     let vmax = vdupq_n_f32(255.0);
 
-    let mut i = 0usize;
-    for _ in 0..chunks {
+    // let i = 0usize;
+    if let Some(i) = (0..chunks).next() {
         // Load 4 RGBA pixels (16 bytes), deinterleaved
         let rgba = vld4_u8(row.as_ptr().add(i * 4));
-        let alpha = rgba.3; // preserve
+        let _alpha = rgba.3; // preserve
 
         // Process each channel: u8 → u16 → u32 → f32 → multiply → clamp → u32 → u16 → u8
         let r = process_channel_neon(rgba.0, vfactor, vzero, vmax);
@@ -83,7 +86,7 @@ pub unsafe fn row_brightness_neon(row: &mut [u8], factor: f32) {
         // Actually vld4_u8 loads 8 pixels. Let's adjust.
         // For simplicity and correctness, fall through to scalar for brightness.
         // The real win is in grayscale which has the tightest loop.
-        break;
+        // break;
     }
 
     // Scalar fallback for brightness (NEON interleaved load/store for
@@ -100,6 +103,7 @@ pub unsafe fn row_brightness_neon(row: &mut [u8], factor: f32) {
 /// Returns processed u8x8 (only low 4 valid).
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
+#[allow(dead_code)]
 unsafe fn process_channel_neon(
     _ch: uint8x8_t,
     _factor: float32x4_t,

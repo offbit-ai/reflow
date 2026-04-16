@@ -20,9 +20,8 @@ use zeal_sdk::events::{
     create_node_executing_event, create_node_failed_event,
 };
 use zeal_sdk::types::{
-    CategoryRegistration, NodeTemplate, Port as ZealPort, PortPosition, PortType,
-    RegisterCategoriesRequest, RegisterTemplatesRequest, RuntimeRequirements,
-    SubcategoryRegistration, WebhookConfig,
+    CategoryRegistration, NodeTemplate, RegisterCategoriesRequest, RegisterTemplatesRequest,
+    RuntimeRequirements, SubcategoryRegistration, WebhookConfig,
 };
 use zeal_sdk::{ClientConfig, WS_PATH, ZealClient};
 

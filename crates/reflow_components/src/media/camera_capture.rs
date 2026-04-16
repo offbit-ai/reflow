@@ -245,7 +245,6 @@ mod tests {
             id: "camera".to_string(),
             component: "CameraCaptureActor".to_string(),
             metadata: Some(config.clone()),
-            ..Default::default()
         };
         ActorContext::new(
             HashMap::from([("start".to_string(), Message::Flow)]),

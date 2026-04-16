@@ -144,7 +144,7 @@ impl TraceStorage for MemoryStorage {
             .collect();
 
         // Sort by start_time (newest first)
-        results.sort_by(|a, b| b.start_time.cmp(&a.start_time));
+        results.sort_by_key(|trace| std::cmp::Reverse(trace.start_time));
 
         // Apply pagination
         if let Some(offset) = query.offset {
@@ -214,7 +214,6 @@ impl TraceStorage for MemoryStorage {
 mod tests {
     use super::*;
     use reflow_tracing_protocol::*;
-    use uuid::Uuid;
 
     fn create_test_trace() -> FlowTrace {
         FlowTrace {

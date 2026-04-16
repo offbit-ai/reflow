@@ -143,7 +143,7 @@ pub fn parse_path(s: &str) -> Vec<PathCmd> {
         match current_cmd.to_ascii_uppercase() {
             'M' | 'L' => {
                 if let Some((x, y)) = parse_pair(&mut chars) {
-                    let cmd = if current_cmd.to_ascii_uppercase() == 'M' {
+                    let cmd = if current_cmd.eq_ignore_ascii_case(&'M') {
                         PathCmd::MoveTo(x, y)
                     } else {
                         PathCmd::LineTo(x, y)

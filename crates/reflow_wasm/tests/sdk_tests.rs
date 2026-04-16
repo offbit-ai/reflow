@@ -49,7 +49,7 @@ fn test_message_conversions() {
 fn test_actor_config_helpers() {
     let mut config_map = HashMap::new();
     config_map.insert("string_val".to_string(), serde_json::json!("hello"));
-    config_map.insert("number_val".to_string(), serde_json::json!(3.14));
+    config_map.insert("number_val".to_string(), serde_json::json!(3.25));
     config_map.insert("bool_val".to_string(), serde_json::json!(true));
     config_map.insert("int_val".to_string(), serde_json::json!(42));
 
@@ -69,7 +69,7 @@ fn test_actor_config_helpers() {
     assert_eq!(config.get_string("missing"), None);
 
     // Test number access
-    assert_eq!(config.get_number("number_val"), Some(3.14));
+    assert_eq!(config.get_number("number_val"), Some(3.25));
 
     // Test boolean access
     assert_eq!(config.get_bool("bool_val"), Some(true));

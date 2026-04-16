@@ -61,7 +61,7 @@ async fn test_message_websocket_serialization() {
     // Test various Message types
     let test_messages = vec![
         ("integer", Message::Integer(42)),
-        ("float", Message::Float(3.14)),
+        ("float", Message::Float(3.25)),
         ("string", Message::string("hello world".to_string())),
         ("boolean", Message::Boolean(true)),
         (
@@ -166,41 +166,41 @@ async fn test_websocket_bidirectional() {
                 let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
                 while let Some(msg) = ws_receiver.next().await {
-                    if let Ok(WsMessage::Text(text)) = msg {
-                        if let Ok(request) = serde_json::from_str::<RpcRequest>(&text) {
-                            // Send response
-                            let response = RpcResponse {
-                                jsonrpc: "2.0".to_string(),
-                                id: request.id.clone(),
-                                result: Some(json!({"started": true})),
-                                error: None,
-                            };
+                    if let Ok(WsMessage::Text(text)) = msg
+                        && let Ok(request) = serde_json::from_str::<RpcRequest>(&text)
+                    {
+                        // Send response
+                        let response = RpcResponse {
+                            jsonrpc: "2.0".to_string(),
+                            id: request.id.clone(),
+                            result: Some(json!({"started": true})),
+                            error: None,
+                        };
+                        ws_sender
+                            .send(WsMessage::Text(
+                                serde_json::to_string(&response).unwrap().into(),
+                            ))
+                            .await
+                            .unwrap();
+
+                        // Send some notifications
+                        for i in 0..3 {
+                            let notification = json!({
+                                "jsonrpc": "2.0",
+                                "method": "script_output",
+                                "params": {
+                                    "actor_id": "test_actor",
+                                    "port": "output",
+                                    "data": format!("chunk_{}", i),
+                                    "timestamp": chrono::Utc::now().timestamp_millis() as u64
+                                }
+                            });
+
+                            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
                             ws_sender
-                                .send(WsMessage::Text(
-                                    serde_json::to_string(&response).unwrap().into(),
-                                ))
+                                .send(WsMessage::Text(notification.to_string().into()))
                                 .await
                                 .unwrap();
-
-                            // Send some notifications
-                            for i in 0..3 {
-                                let notification = json!({
-                                    "jsonrpc": "2.0",
-                                    "method": "script_output",
-                                    "params": {
-                                        "actor_id": "test_actor",
-                                        "port": "output",
-                                        "data": format!("chunk_{}", i),
-                                        "timestamp": chrono::Utc::now().timestamp_millis() as u64
-                                    }
-                                });
-
-                                tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-                                ws_sender
-                                    .send(WsMessage::Text(notification.to_string().into()))
-                                    .await
-                                    .unwrap();
-                            }
                         }
                     }
                 }

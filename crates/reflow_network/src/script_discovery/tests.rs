@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use std::fs;
     use std::path::PathBuf;
@@ -122,7 +123,7 @@ module.exports = processData;
         match result {
             Ok(discovered) => {
                 // JavaScript discovery might not work yet, so just check it doesn't crash
-                if discovered.actors.len() > 0 {
+                if !discovered.actors.is_empty() {
                     let actor = &discovered.actors[0];
                     assert_eq!(actor.component, "TestJSActor");
                     assert_eq!(actor.runtime, ScriptRuntime::JavaScript);
@@ -196,13 +197,10 @@ module.exports = processData;
 
         // Check registration
         assert!(registry.has_component("TestComponent"));
-        assert_eq!(
-            matches!(
-                registry.get_component_type("TestComponent"),
-                Some(ComponentType::Script(ScriptRuntime::Python))
-            ),
-            true
-        );
+        assert!(matches!(
+            registry.get_component_type("TestComponent"),
+            Some(ComponentType::Script(ScriptRuntime::Python))
+        ));
 
         // Check counts
         assert_eq!(registry.total_count(), 1);

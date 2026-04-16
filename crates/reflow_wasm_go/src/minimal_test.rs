@@ -48,7 +48,6 @@ mod minimal_tests {
             id: "test_minimal_go_counter".to_string(),
             component: "GoCounter".to_string(),
             metadata: None,
-            ..Default::default()
         })
         .unwrap();
 

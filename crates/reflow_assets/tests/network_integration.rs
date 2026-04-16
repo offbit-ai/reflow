@@ -8,7 +8,7 @@
 //!
 //! This test does NOT need a browser — it uses HeadlessLayoutBackend.
 
-use reflow_assets::layout::{HeadlessLayoutBackend, LayoutBackend, LayoutNode};
+use reflow_assets::layout::{HeadlessLayoutBackend, LayoutBackend};
 use reflow_assets::{get_or_create_db, layout};
 use serde_json::json;
 use std::sync::Arc;

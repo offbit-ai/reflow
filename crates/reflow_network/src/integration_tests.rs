@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::graph::types::{GraphConnection, GraphEdge, GraphExport, GraphNode};
+    use crate::graph::types::{GraphExport, GraphNode};
     use crate::multi_graph::*;
     use std::collections::HashMap;
 
@@ -29,7 +29,6 @@ mod tests {
                     id: pname.to_string(),
                     component: format!("{}Component", pname),
                     metadata: Some(HashMap::new()),
-                    ..Default::default()
                 },
             );
         }
@@ -317,7 +316,6 @@ mod tests {
     #[cfg(not(target_arch = "wasm32"))]
     mod distributed_composition_tests {
         use crate::distributed_composition::*;
-        use crate::multi_graph::{CompositionConnection, CompositionEndpoint, GraphSource};
         use std::collections::HashMap;
 
         #[test]

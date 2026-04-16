@@ -366,7 +366,6 @@ impl Actor for SubgraphActor {
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
     use super::*;
-    use crate::actor::{ActorContext, MemoryState};
     use crate::graph::types::{GraphConnection, GraphEdge, GraphNode};
 
     /// Simple pass-through actor: receives on "in", sends the same message on "out".

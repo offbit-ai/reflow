@@ -438,7 +438,6 @@ mod tests {
             id: "test_node".to_string(),
             component: "TestComponent".to_string(),
             metadata: None,
-            ..Default::default()
         };
 
         let actor_config = reflow_actor::ActorConfig {
@@ -446,6 +445,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: HashMap::new(),
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         let context = crate::context::ScriptContext::new(

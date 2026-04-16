@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::super::*;
     use crate::redis_state::RedisActorState;
@@ -45,7 +46,7 @@ mod tests {
         let rpc_client = Arc::new(WebSocketRpcClient::new("ws://localhost:8765".to_string()));
 
         // Create actor with Redis
-        let actor =
+        let _actor =
             WebSocketScriptActor::new(metadata.clone(), rpc_client, redis_url.to_string()).await;
 
         // Check if Redis state was initialized (we can't directly access private field)

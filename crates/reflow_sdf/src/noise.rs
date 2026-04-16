@@ -240,7 +240,7 @@ mod tests {
     fn test_value_noise_range() {
         for i in 0..100 {
             let v = value_noise_2d(i as f64 * 0.1, i as f64 * 0.13);
-            assert!(v >= 0.0 && v <= 1.0, "value_noise out of range: {}", v);
+            assert!((0.0..=1.0).contains(&v), "value_noise out of range: {}", v);
         }
     }
 

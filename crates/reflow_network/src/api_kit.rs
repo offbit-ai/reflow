@@ -1538,8 +1538,6 @@ impl RateLimiter for DefaultRateLimiter {
 mod tests {
     use std::{env, path::PathBuf};
 
-    use serde_json::json;
-
     use crate::actor::ActorLoad;
 
     use super::*;

@@ -469,7 +469,7 @@ mod tests {
     fn test_stream_registry_remove_and_close() {
         let registry = StreamRegistry::new();
         let (id1, _tx1) = registry.create_stream(None);
-        let (id2, _tx2) = registry.create_stream(None);
+        let (_id2, _tx2) = registry.create_stream(None);
         assert_eq!(registry.active_count(), 2);
 
         registry.remove(id1);

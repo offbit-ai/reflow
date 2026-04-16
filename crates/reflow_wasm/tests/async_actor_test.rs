@@ -25,8 +25,8 @@ mod tests {
             .join("release")
             .join("async_actor.wasm");
 
-        let wasm_bytes =
-            std::fs::read(&wasm_path).expect(&format!("Failed to read {}", wasm_path.display()));
+        let wasm_bytes = std::fs::read(&wasm_path)
+            .unwrap_or_else(|_| panic!("Failed to read {}", wasm_path.display()));
 
         // Create ScriptConfig
         let config = ScriptConfig {
@@ -49,7 +49,6 @@ mod tests {
             id: "test_async".to_string(),
             component: "AsyncActor".to_string(),
             metadata: Some(metadata),
-            ..Default::default()
         })
         .unwrap();
 
@@ -210,8 +209,8 @@ mod tests {
             .join("release")
             .join("async_actor.wasm");
 
-        let wasm_bytes =
-            std::fs::read(&wasm_path).expect(&format!("Failed to read {}", wasm_path.display()));
+        let wasm_bytes = std::fs::read(&wasm_path)
+            .unwrap_or_else(|_| panic!("Failed to read {}", wasm_path.display()));
 
         // Create ScriptConfig
         let config = ScriptConfig {
@@ -234,7 +233,6 @@ mod tests {
             id: "test_async_no_progress".to_string(),
             component: "AsyncActor".to_string(),
             metadata: Some(metadata),
-            ..Default::default()
         })
         .unwrap();
 

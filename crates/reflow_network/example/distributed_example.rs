@@ -101,7 +101,7 @@ impl Actor for BidirectionalActor {
     fn create_process(
         &self,
         actor_config: ActorConfig,
-        tracing_integration: Option<TracingIntegration>,
+        _tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
         use futures::StreamExt;
 
@@ -142,7 +142,7 @@ impl Actor for BidirectionalActor {
                                 prefix,
                                 result.len()
                             );
-                            let _ = outports
+                            outports
                                 .0
                                 .send(result)
                                 .expect("Expected to send message via outport");

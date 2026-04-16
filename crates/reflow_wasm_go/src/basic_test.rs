@@ -18,7 +18,7 @@ mod basic_tests {
 
         // Try to build with TinyGo
         let build_result = std::process::Command::new("/Users/amaterasu/tinygo/bin/tinygo")
-            .args(&[
+            .args([
                 "build",
                 "-o",
                 "counter.wasm",
@@ -40,7 +40,7 @@ mod basic_tests {
                 let go_result = std::process::Command::new("go")
                     .env("GOOS", "wasip1")
                     .env("GOARCH", "wasm")
-                    .args(&["build", "-o", "counter.wasm", "main.go"])
+                    .args(["build", "-o", "counter.wasm", "main.go"])
                     .current_dir(&example_dir)
                     .status()
                     .expect("Failed to run Go compiler");
@@ -83,7 +83,6 @@ mod basic_tests {
             id: "test_basic_go_counter".to_string(),
             component: "GoCounter".to_string(),
             metadata: None,
-            ..Default::default()
         })
         .unwrap();
 

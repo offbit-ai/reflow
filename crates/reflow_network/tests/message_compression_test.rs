@@ -60,7 +60,7 @@ fn test_message_round_trip() {
     // Test various message types
     let messages = vec![
         Message::Integer(42),
-        Message::Float(3.14),
+        Message::Float(3.25),
         Message::string("test string".to_string()),
         Message::Boolean(true),
         Message::array(vec![Value::from(1).into(), Value::from(2).into()]),
@@ -190,7 +190,7 @@ fn test_script_data_extraction() {
     // Test various message types
     let test_cases = vec![
         (Message::Integer(42), json!(42)),
-        (Message::Float(3.14), json!(3.14)),
+        (Message::Float(3.25), json!(3.25)),
         (Message::string("hello".to_string()), json!("hello")),
         (Message::Boolean(true), json!(true)),
         (

@@ -18,7 +18,7 @@ mod host_function_tests {
 
         // Build using TinyGo
         let build_result = std::process::Command::new("/Users/amaterasu/tinygo/bin/tinygo")
-            .args(&[
+            .args([
                 "build",
                 "-o",
                 "counter_with_state.wasm",
@@ -73,7 +73,6 @@ mod host_function_tests {
             id: "test_go_counter_with_state".to_string(),
             component: "GoCounterWithState".to_string(),
             metadata: None,
-            ..Default::default()
         })
         .unwrap();
 
@@ -87,7 +86,7 @@ mod host_function_tests {
 
         // Test 1: Initial state (should be 0)
         println!("\n=== Test 1: Initial State ===");
-        let mut payload = HashMap::new();
+        let payload = HashMap::new();
         inports.0.send_async(payload).await.unwrap();
 
         let result = timeout(Duration::from_secs(5), outports.1.recv_async())

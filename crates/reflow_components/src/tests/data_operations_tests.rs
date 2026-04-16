@@ -23,7 +23,6 @@ mod tests {
             id: "test_node".to_string(),
             component: "TestComponent".to_string(),
             metadata: Some(metadata.clone()),
-            ..Default::default()
         };
 
         let config = ActorConfig {

@@ -443,23 +443,19 @@ pub fn validate_registry(registry: &ServiceRegistry) -> Vec<ValidationIssue> {
 
         // Check for auth config completeness
         match service.authentication.primary_method {
-            AuthMethod::OAuth2 => {
-                if service.authentication.oauth2_config.is_none() {
-                    issues.push(ValidationIssue {
-                        service_id: service_id.clone(),
-                        severity: Severity::Warning,
-                        message: "OAuth2 primary method but no oauth2_config".to_string(),
-                    });
-                }
+            AuthMethod::OAuth2 if service.authentication.oauth2_config.is_none() => {
+                issues.push(ValidationIssue {
+                    service_id: service_id.clone(),
+                    severity: Severity::Warning,
+                    message: "OAuth2 primary method but no oauth2_config".to_string(),
+                });
             }
-            AuthMethod::ApiKey => {
-                if service.authentication.api_key_config.is_none() {
-                    issues.push(ValidationIssue {
-                        service_id: service_id.clone(),
-                        severity: Severity::Warning,
-                        message: "ApiKey primary method but no api_key_config".to_string(),
-                    });
-                }
+            AuthMethod::ApiKey if service.authentication.api_key_config.is_none() => {
+                issues.push(ValidationIssue {
+                    service_id: service_id.clone(),
+                    severity: Severity::Warning,
+                    message: "ApiKey primary method but no api_key_config".to_string(),
+                });
             }
             _ => {}
         }

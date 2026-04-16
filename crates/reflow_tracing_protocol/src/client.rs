@@ -841,8 +841,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_tracing_integration() {
-        let mut config = TracingConfig::default();
-        config.enabled = false; // Disable tracing for test
+        let config = TracingConfig {
+            enabled: false,
+            ..Default::default()
+        }; // Disable tracing for test
+
         let client = TracingClient::new(config);
         let integration = TracingIntegration::new(client);
 

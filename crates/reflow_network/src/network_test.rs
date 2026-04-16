@@ -1,25 +1,15 @@
-use crate::actor::ActorConfig;
 use crate::{
-    actor::{ActorContext, ActorPayload},
+    actor::ActorContext,
     connector::{ConnectionPoint, Connector, InitialPacket},
     network::{Network, NetworkConfig},
 };
 use actor_macro::actor;
-use parking_lot::Mutex;
-use reflow_tracing_protocol::client::TracingIntegration;
-use std::{
-    collections::HashMap,
-    net,
-    pin::Pin,
-    sync::Arc,
-    thread::{self, sleep},
-    time::Duration,
-};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 use crate::{
-    actor::{Actor, ActorBehavior, ActorLoad, ActorState, MemoryState, Port},
+    actor::{Actor, ActorBehavior, MemoryState, Port},
     message::Message,
 };
 
@@ -46,7 +36,7 @@ async fn sum_actor(context: ActorContext) -> Result<HashMap<String, Message>, an
         _ => 0,
     };
 
-    return Ok([("Out".to_owned(), Message::Integer(a + b))].into());
+    Ok([("Out".to_owned(), Message::Integer(a + b))].into())
 }
 
 #[actor(

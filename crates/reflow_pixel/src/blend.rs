@@ -395,7 +395,7 @@ mod tests {
         composite_at(&mut bg, 2, &fg, 2, 2, 1, 1);
 
         // Only pixel (1,1) should be white
-        let offset = (1 * 2 + 1) * 4;
+        let offset = 12;
         assert_eq!(bg[offset], 255);
         // Pixel (0,0) should still be black
         assert_eq!(bg[0], 0);

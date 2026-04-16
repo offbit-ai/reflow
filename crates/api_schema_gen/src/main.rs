@@ -485,7 +485,7 @@ fn cmd_stats(registry_path: PathBuf) -> Result<()> {
         *categories.entry(cat).or_default() += 1;
     }
     let mut cat_vec: Vec<_> = categories.into_iter().collect();
-    cat_vec.sort_by(|a, b| b.1.cmp(&a.1));
+    cat_vec.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
     for (cat, count) in cat_vec {
         println!("    {:<25} {}", cat, count);
     }
@@ -498,7 +498,7 @@ fn cmd_stats(registry_path: PathBuf) -> Result<()> {
         .iter()
         .map(|(id, s)| (id.clone(), s.operations.len()))
         .collect();
-    svc_ops.sort_by(|a, b| b.1.cmp(&a.1));
+    svc_ops.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
     for (id, count) in svc_ops.iter().take(15) {
         println!("    {:<30} {:>3} ops", id, count);
     }

@@ -299,7 +299,7 @@ pub async fn sdf_scene_actor(context: ActorContext) -> Result<HashMap<String, Me
             }
             return Ok(HashMap::new());
         }
-        if log_progress && cache.get("waiting_slots").is_some() {
+        if log_progress && cache.contains_key("waiting_slots") {
             eprintln!("[sdf_scene] all shade slots ready");
             context.pool_upsert("_scene", "waiting_slots", serde_json::Value::Null);
         }
