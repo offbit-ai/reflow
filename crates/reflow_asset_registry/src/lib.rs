@@ -1,7 +1,7 @@
 //! Model manifest helpers layered on top of `reflow_assets`.
 
 use anyhow::{bail, Result};
-use reflow_assets::{AssetDB, AssetEntry};
+use reflow_assets::{get_or_create_db, AssetDB, AssetEntry};
 use reflow_litert::{ModelInfo, TensorSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -34,15 +34,44 @@ pub struct ModelManifest {
 
 impl ModelManifest {
     pub fn to_model_info(&self) -> ModelInfo {
+        let mut metadata = self.metadata.clone();
+        if let Some(asset_id) = &self.asset_id {
+            metadata
+                .entry("assetId".to_string())
+                .or_insert_with(|| json!(asset_id));
+        }
+        metadata
+            .entry("license".to_string())
+            .or_insert_with(|| json!(self.license));
+        metadata
+            .entry("sourceUrl".to_string())
+            .or_insert_with(|| json!(self.source_url));
+        metadata
+            .entry("checksumSha256".to_string())
+            .or_insert_with(|| json!(self.checksum_sha256));
+        metadata
+            .entry("attributionRequired".to_string())
+            .or_insert_with(|| json!(self.attribution_required));
+        metadata
+            .entry("tags".to_string())
+            .or_insert_with(|| json!(self.tags));
+
         ModelInfo {
             id: self.model_id.clone(),
             backend: self.backend.clone(),
             task: self.task_kind.clone(),
             inputs: self.input_specs.clone(),
             outputs: self.output_specs.clone(),
-            metadata: self.metadata.clone(),
+            metadata,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoadedModelAsset {
+    pub asset_id: String,
+    pub manifest: ModelManifest,
+    pub data: Arc<Vec<u8>>,
 }
 
 pub fn allowed_licenses() -> HashSet<&'static str> {
@@ -126,24 +155,63 @@ pub fn store_model_asset(
     Ok(())
 }
 
+pub fn store_model_asset_at_path(
+    db_path: &str,
+    asset_id: &str,
+    model_bytes: &[u8],
+    manifest: &ModelManifest,
+) -> Result<()> {
+    let db = get_or_create_db(db_path)?;
+    store_model_asset(&db, asset_id, model_bytes, manifest)
+}
+
 pub fn load_model_manifest(db: &Arc<AssetDB>, asset_id: &str) -> Result<ModelManifest> {
     let entry = db.get_entry(asset_id)?;
     manifest_from_entry(&entry)
+}
+
+pub fn load_model_asset(db: &Arc<AssetDB>, asset_id: &str) -> Result<LoadedModelAsset> {
+    let manifest_entry_asset = db.get(asset_id)?;
+    let manifest = manifest_from_entry(&manifest_entry_asset.entry)?;
+    let data_asset_id = manifest.asset_id.as_deref().unwrap_or(asset_id);
+    let data = if data_asset_id == asset_id {
+        manifest_entry_asset.data
+    } else {
+        db.get(data_asset_id)?.data
+    };
+    validate_model_bytes(&manifest, &data)?;
+
+    Ok(LoadedModelAsset {
+        asset_id: data_asset_id.to_string(),
+        manifest,
+        data: Arc::new(data),
+    })
+}
+
+pub fn load_model_asset_from_path(db_path: &str, asset_id: &str) -> Result<LoadedModelAsset> {
+    let db = get_or_create_db(db_path)?;
+    load_model_asset(&db, asset_id)
 }
 
 pub fn validate_local_model_asset(db: &Arc<AssetDB>, manifest: &ModelManifest) -> Result<()> {
     validate_manifest(manifest)?;
     if let Some(asset_id) = &manifest.asset_id {
         let asset = db.get(asset_id)?;
-        let actual = sha256_hex(&asset.data);
-        if actual != manifest.checksum_sha256.to_ascii_lowercase() {
-            bail!(
-                "model asset '{}' checksum mismatch: expected {}, got {}",
-                asset_id,
-                manifest.checksum_sha256,
-                actual
-            );
-        }
+        validate_model_bytes(manifest, &asset.data)?;
+    }
+    Ok(())
+}
+
+pub fn validate_model_bytes(manifest: &ModelManifest, model_bytes: &[u8]) -> Result<()> {
+    validate_manifest(manifest)?;
+    let actual = sha256_hex(model_bytes);
+    if actual != manifest.checksum_sha256.to_ascii_lowercase() {
+        bail!(
+            "model checksum mismatch for '{}': expected {}, got {}",
+            manifest.model_id,
+            manifest.checksum_sha256,
+            actual
+        );
     }
     Ok(())
 }

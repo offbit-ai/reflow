@@ -5867,12 +5867,15 @@ dependencies = [
  "actor_macro",
  "anyhow",
  "flume",
+ "parking_lot 0.12.4",
  "reflow_actor",
  "reflow_asset_registry",
  "reflow_litert",
  "reflow_media_codec",
  "reflow_media_types",
  "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
