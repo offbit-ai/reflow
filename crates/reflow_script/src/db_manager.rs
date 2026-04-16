@@ -279,6 +279,7 @@ pub fn get_db_pool_manager() -> &'static DbPoolManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::RwLock;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     // Mock database connection for testing
@@ -305,7 +306,11 @@ mod tests {
         }
 
         fn get_status(&self) -> ConnectionStatus {
-            *self.status.read()
+            if let Ok(status) = self.status.read() {
+                *status
+            } else {
+                ConnectionStatus::Disconnected
+            }
         }
 
         async fn is_healthy(&self) -> bool {
@@ -313,12 +318,16 @@ mod tests {
         }
 
         async fn connect(&mut self) -> Result<()> {
-            *self.status.write() = ConnectionStatus::Connected;
+            if let Ok(mut status) = self.status.write() {
+                *status = ConnectionStatus::Connected;
+            }
             Ok(())
         }
 
         async fn reconnect(&mut self) -> Result<()> {
-            *self.status.write() = ConnectionStatus::Connected;
+            if let Ok(mut status) = self.status.write() {
+                *status = ConnectionStatus::Connected;
+            }
             self.is_healthy.store(true, Ordering::SeqCst);
             Ok(())
         }
@@ -349,7 +358,9 @@ mod tests {
         }
 
         async fn close(&mut self) -> Result<()> {
-            *self.status.write() = ConnectionStatus::Disconnected;
+            if let Ok(mut status) = self.status.write() {
+                *status = ConnectionStatus::Disconnected;
+            }
             Ok(())
         }
 

@@ -204,12 +204,11 @@ async fn main() -> Result<()> {
     );
     let users_result = users_behavior(context).await?;
     println!("\nUsers count after reconnection:");
-    if let Message::Array(rows) = &users_result["rows"] {
-        if let Some(row) = rows.first() {
-            if let serde_json::Value::Object(count_row) = row.clone().into() {
-                println!("Total users: {}", count_row["count"]);
-            }
-        }
+    if let Message::Array(rows) = &users_result["rows"]
+        && let Some(row) = rows.first()
+        && let serde_json::Value::Object(count_row) = row.clone().into()
+    {
+        println!("Total users: {}", count_row["count"]);
     }
 
     // Clean up

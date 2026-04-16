@@ -264,6 +264,7 @@ mod tests {
     }
 
     #[cfg(feature = "python")]
+    #[allow(clippy::let_unit_value)]
     #[tokio::test]
     async fn test_python_actor() -> Result<()> {
         use reflow_actor::{ActorContext, ActorLoad};

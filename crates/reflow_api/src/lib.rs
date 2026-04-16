@@ -4,7 +4,8 @@
 //! by `api-schema-gen codegen`. Extracted from `reflow_components` to avoid
 //! bloating build times for crates that don't need API integrations.
 
-#[allow(clippy::all, unused_variables)]
+// #[allow(clippy::all, unused_variables)]
+#[cfg(not(clippy))]
 pub mod api;
 
 // Re-export types that the generated api code references as `crate::*`
@@ -14,4 +15,5 @@ pub use reflow_actor::{
 };
 
 // Re-export registry functions
+#[cfg(not(clippy))]
 pub use api::api_registry::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};

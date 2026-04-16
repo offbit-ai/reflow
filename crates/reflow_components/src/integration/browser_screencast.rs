@@ -371,7 +371,7 @@ pub async fn browser_screencast_actor(
 // ═══════════════════════════════════════════════════════════════
 // Background browser task
 // ═══════════════════════════════════════════════════════════════
-
+#[allow(unused_assignments)]
 async fn run_browser(
     url: String,
     width: u32,

@@ -297,6 +297,7 @@ mod tests {
             resolved_env: HashMap::new(),
             config: HashMap::new(),
             namespace: None,
+            ..Default::default()
         };
 
         let context = ActorContext::new(

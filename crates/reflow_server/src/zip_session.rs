@@ -536,7 +536,11 @@ impl ZipSession {
 
         // 2. Register pre-generated API actor templates with full metadata
         #[cfg(feature = "api_services")]
+        #[cfg(not(clippy))]
         {
+            use crate::zeal_converter::ZealPort;
+            use zeal_sdk::{PortPosition, PortType};
+
             let api_infos = reflow_components::get_api_template_infos();
             for info in api_infos {
                 let mut ports = Vec::new();
