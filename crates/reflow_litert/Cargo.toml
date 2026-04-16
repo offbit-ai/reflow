@@ -8,10 +8,11 @@ anyhow = { workspace = true }
 # Optional local checkout of the Offbit LiteRT bindings.
 # Upstream: https://github.com/offbit-ai/LiteRT
 litert = { path = "../../../LiteRT/litert", optional = true }
+litert-sys = { path = "../../../LiteRT/litert-sys", optional = true }
 reflow_media_types = { path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
 default = []
-external-litert = ["dep:litert"]
+external-litert = ["dep:litert", "dep:litert-sys"]
