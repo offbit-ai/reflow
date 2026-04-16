@@ -111,8 +111,8 @@ use crate::math::{
     Vec3SubtractActor,
 };
 use crate::media::{
-    AudioInputActor, AudioStreamDisplayActor, ImageInputActor, ImageStreamDisplayActor,
-    VideoInputActor,
+    AudioInputActor, AudioStreamDisplayActor, CameraCaptureActor, ImageInputActor,
+    ImageStreamDisplayActor, VideoInputActor,
 };
 use crate::procedural::{
     HeightmapToImageActor, HeightmapToMeshActor, ImageToHeightmapActor, LSystemActor,
@@ -146,7 +146,7 @@ use crate::vector::{
 #[cfg(feature = "ml")]
 use reflow_cv_ops::{
     DetectionToRoiActor, ImageToTensorActor, NormalizeTensorActor, ResizeLetterboxActor,
-    TemporalSmootherActor, TensorCropRoiActor,
+    TemporalSmootherActor, TensorCropRoiActor, VideoStreamToFramesActor,
 };
 #[cfg(feature = "ml")]
 use reflow_ml_ops::{
@@ -245,6 +245,7 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_image_input" => Some(Arc::new(ImageInputActor::new())),
         "tpl_audio_input" => Some(Arc::new(AudioInputActor::new())),
         "tpl_video_input" => Some(Arc::new(VideoInputActor::new())),
+        "tpl_camera_capture" => Some(Arc::new(CameraCaptureActor::new())),
 
         // Math
         "tpl_math_add" => Some(Arc::new(MathAddActor::new())),
@@ -513,6 +514,8 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         #[cfg(feature = "ml")]
         "tpl_cv_resize_letterbox" => Some(Arc::new(ResizeLetterboxActor::new())),
         #[cfg(feature = "ml")]
+        "tpl_cv_video_stream_to_frames" => Some(Arc::new(VideoStreamToFramesActor::new())),
+        #[cfg(feature = "ml")]
         "tpl_cv_normalize_tensor" => Some(Arc::new(NormalizeTensorActor::new())),
         #[cfg(feature = "ml")]
         "tpl_cv_tensor_crop_roi" => Some(Arc::new(TensorCropRoiActor::new())),
@@ -641,6 +644,10 @@ pub fn get_template_mapping() -> HashMap<String, String> {
     mapping.insert("tpl_image_input".to_string(), "ImageInputActor".to_string());
     mapping.insert("tpl_audio_input".to_string(), "AudioInputActor".to_string());
     mapping.insert("tpl_video_input".to_string(), "VideoInputActor".to_string());
+    mapping.insert(
+        "tpl_camera_capture".to_string(),
+        "CameraCaptureActor".to_string(),
+    );
     mapping.insert(
         "tpl_image_stream_display".to_string(),
         "ImageStreamDisplayActor".to_string(),

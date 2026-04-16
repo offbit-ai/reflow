@@ -146,6 +146,7 @@ mod tests {
             "tpl_image_input",
             "tpl_audio_input",
             "tpl_video_input",
+            "tpl_camera_capture",
         ];
 
         for template in &expected_templates {
@@ -174,6 +175,7 @@ mod tests {
         let expected_templates = vec![
             "tpl_cv_image_to_tensor",
             "tpl_cv_resize_letterbox",
+            "tpl_cv_video_stream_to_frames",
             "tpl_cv_normalize_tensor",
             "tpl_cv_tensor_crop_roi",
             "tpl_cv_detection_to_roi",

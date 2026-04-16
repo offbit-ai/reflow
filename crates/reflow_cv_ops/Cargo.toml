@@ -13,4 +13,4 @@ reflow_media_types = { path = "../reflow_media_types" }
 serde_json = { workspace = true }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["macros", "rt"] }
+tokio = { version = "1", features = ["macros", "rt", "time"] }

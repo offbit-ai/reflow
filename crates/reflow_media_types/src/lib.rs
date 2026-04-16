@@ -133,10 +133,10 @@ impl ImageFormat {
 
     pub fn from_label(label: &str) -> Self {
         match label.to_ascii_lowercase().as_str() {
-            "rgba8" | "rgba" | "image/raw-rgba" => Self::Rgba8,
-            "rgb8" | "rgb" | "image/raw-rgb" => Self::Rgb8,
-            "bgra8" | "bgra" => Self::Bgra8,
-            "gray8" | "grey8" | "luma8" => Self::Gray8,
+            "rgba8" | "rgba" | "image/raw-rgba" | "video/raw-rgba" => Self::Rgba8,
+            "rgb8" | "rgb" | "image/raw-rgb" | "video/raw-rgb" => Self::Rgb8,
+            "bgra8" | "bgra" | "image/raw-bgra" | "video/raw-bgra" => Self::Bgra8,
+            "gray8" | "grey8" | "luma8" | "image/raw-gray" | "video/raw-gray" => Self::Gray8,
             "f32-rgb" | "float32-rgb" => Self::F32Rgb,
             "f32-rgba" | "float32-rgba" => Self::F32Rgba,
             other => Self::Unknown(other.to_string()),
@@ -411,5 +411,18 @@ mod tests {
 
         assert_eq!(lhs.timestamp.unwrap().micros, 7_000);
         assert_eq!(lhs.sequence, Some(3));
+    }
+
+    #[test]
+    fn image_format_accepts_video_raw_content_types() {
+        assert_eq!(
+            ImageFormat::from_label("video/raw-rgba"),
+            ImageFormat::Rgba8
+        );
+        assert_eq!(ImageFormat::from_label("video/raw-rgb"), ImageFormat::Rgb8);
+        assert_eq!(
+            ImageFormat::from_label("video/raw-gray"),
+            ImageFormat::Gray8
+        );
     }
 }

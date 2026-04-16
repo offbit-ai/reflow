@@ -10,5 +10,8 @@ serde_json = { workspace = true }
 [dev-dependencies]
 reflow_actor = { path = "../reflow_actor" }
 reflow_cv_ops = { path = "../reflow_cv_ops" }
+reflow_media_codec = { path = "../reflow_media_codec" }
+reflow_media_types = { path = "../reflow_media_types" }
 reflow_ml_ops = { path = "../reflow_ml_ops" }
 reflow_network = { path = "../reflow_network" }
+tokio = { version = "1", features = ["macros", "rt", "time"] }

@@ -20,7 +20,7 @@ use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
-use serde_json::{json, Value};
+use serde_json::json;
 use std::collections::HashMap;
 
 use super::math_helpers::MAT4_IDENTITY;

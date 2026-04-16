@@ -6071,9 +6071,12 @@ dependencies = [
  "reflow_actor",
  "reflow_cv_ops",
  "reflow_graph",
+ "reflow_media_codec",
+ "reflow_media_types",
  "reflow_ml_ops",
  "reflow_network",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

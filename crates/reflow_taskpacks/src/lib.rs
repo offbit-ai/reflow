@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 pub const TPL_CV_IMAGE_TO_TENSOR: &str = "tpl_cv_image_to_tensor";
 pub const TPL_CV_RESIZE_LETTERBOX: &str = "tpl_cv_resize_letterbox";
+pub const TPL_CV_VIDEO_STREAM_TO_FRAMES: &str = "tpl_cv_video_stream_to_frames";
 pub const TPL_CV_NORMALIZE_TENSOR: &str = "tpl_cv_normalize_tensor";
 pub const TPL_CV_TENSOR_CROP_ROI: &str = "tpl_cv_tensor_crop_roi";
 pub const TPL_CV_DETECTION_TO_ROI: &str = "tpl_cv_detection_to_roi";
@@ -157,6 +158,7 @@ pub fn ml_template_mapping() -> Vec<(&'static str, &'static str)> {
     vec![
         (TPL_CV_IMAGE_TO_TENSOR, "ImageToTensorActor"),
         (TPL_CV_RESIZE_LETTERBOX, "ResizeLetterboxActor"),
+        (TPL_CV_VIDEO_STREAM_TO_FRAMES, "VideoStreamToFramesActor"),
         (TPL_CV_NORMALIZE_TENSOR, "NormalizeTensorActor"),
         (TPL_CV_TENSOR_CROP_ROI, "TensorCropRoiActor"),
         (TPL_CV_DETECTION_TO_ROI, "DetectionToRoiActor"),
@@ -214,17 +216,19 @@ fn json_to_hash(value: Value) -> HashMap<String, Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use reflow_actor::Actor;
+    use reflow_actor::{Actor, ActorConfig};
     use reflow_cv_ops::{
         DetectionToRoiActor, ImageToTensorActor, NormalizeTensorActor, ResizeLetterboxActor,
         TemporalSmootherActor, TensorCropRoiActor,
     };
+    use reflow_media_codec::{frame_to_message, value_from_message_or_packet};
+    use reflow_media_types::{ImageFormat, LandmarkSet, PacketMetadata, Timestamp, VideoFrame};
     use reflow_ml_ops::{
         DecodeDetectionsActor, DecodeLandmarksActor, LoadModelActor, PacketProbeActor,
         RunInferenceActor,
     };
     use reflow_network::subgraph::SubgraphActor;
-    use std::sync::Arc;
+    use std::{sync::Arc, time::Duration};
 
     #[test]
     fn hand_landmark_graph_has_subgraph_boundary() {
@@ -241,7 +245,59 @@ mod tests {
     #[test]
     fn hand_landmark_graph_can_build_subgraph_actor() {
         let graph = hand_landmark_graph();
-        let actors: HashMap<String, Arc<dyn Actor>> = HashMap::from([
+        let subgraph =
+            SubgraphActor::from_graph_export(&graph, taskpack_actor_templates()).unwrap();
+
+        assert!(subgraph.inport_map().contains_key("frame"));
+        assert!(subgraph.outport_map().contains_key("landmarks"));
+    }
+
+    #[tokio::test]
+    async fn hand_landmark_subgraph_processes_frame() {
+        let graph = hand_landmark_graph();
+        let subgraph =
+            SubgraphActor::from_graph_export(&graph, taskpack_actor_templates()).unwrap();
+        let inport_sender = subgraph.get_inports().0;
+        let outport_receiver = subgraph.get_outports().1;
+
+        let handle = tokio::spawn(subgraph.create_process(ActorConfig::default(), None));
+        let frame = sample_frame();
+        inport_sender
+            .send_async(HashMap::from([(
+                "frame".to_string(),
+                frame_to_message(&frame).unwrap(),
+            )]))
+            .await
+            .unwrap();
+
+        let output = tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                let packet = outport_receiver
+                    .recv_async()
+                    .await
+                    .expect("subgraph outport closed before producing landmarks");
+                if packet.contains_key("landmarks") {
+                    break packet;
+                }
+            }
+        })
+        .await
+        .expect("hand landmark taskpack did not produce landmarks");
+
+        let landmarks: LandmarkSet =
+            value_from_message_or_packet(output.get("landmarks").unwrap()).unwrap();
+        assert_eq!(landmarks.landmarks.len(), 21);
+        assert_eq!(
+            landmarks.metadata.timestamp,
+            Some(Timestamp::from_millis(42))
+        );
+
+        subgraph.shutdown();
+        handle.abort();
+    }
+
+    fn taskpack_actor_templates() -> HashMap<String, Arc<dyn Actor>> {
+        HashMap::from([
             (
                 TPL_CV_IMAGE_TO_TENSOR.to_string(),
                 Arc::new(ImageToTensorActor::new()) as Arc<dyn Actor>,
@@ -286,11 +342,28 @@ mod tests {
                 TPL_ML_PACKET_PROBE.to_string(),
                 Arc::new(PacketProbeActor::new()) as Arc<dyn Actor>,
             ),
-        ]);
+        ])
+    }
 
-        let subgraph = SubgraphActor::from_graph_export(&graph, actors).unwrap();
+    fn sample_frame() -> VideoFrame {
+        let width = 32;
+        let height = 24;
+        let mut data = Vec::with_capacity(width * height * 4);
+        for y in 0..height {
+            for x in 0..width {
+                data.extend_from_slice(&[
+                    (x * 255 / width) as u8,
+                    (y * 255 / height) as u8,
+                    160,
+                    255,
+                ]);
+            }
+        }
 
-        assert!(subgraph.inport_map().contains_key("frame"));
-        assert!(subgraph.outport_map().contains_key("landmarks"));
+        let mut metadata = PacketMetadata::with_timestamp(Timestamp::from_millis(42));
+        metadata.sequence = Some(7);
+        let mut frame = VideoFrame::new(width as u32, height as u32, ImageFormat::Rgba8, data);
+        frame.metadata = metadata;
+        frame
     }
 }

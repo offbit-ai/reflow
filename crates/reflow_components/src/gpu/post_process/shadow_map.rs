@@ -27,9 +27,6 @@ use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-#[cfg(feature = "gpu")]
-use wgpu::util::DeviceExt;
-
 #[actor(
     ShadowMapActor,
     inports::<10>(meshes, lights, light_count),

@@ -4,7 +4,7 @@ use actor_macro::actor;
 use anyhow::{anyhow, bail, Error, Result};
 use reflow_actor::{
     message::{EncodableValue, Message},
-    stream::stream_collect,
+    stream::{spawn_stream_task, stream_collect, StreamFrame, StreamHandle},
     Actor, ActorBehavior, ActorContext, MemoryState, Port,
 };
 use reflow_media_codec::{
@@ -12,10 +12,12 @@ use reflow_media_codec::{
     value_from_message_or_packet, value_to_object_message,
 };
 use reflow_media_types::{
-    DetectionSet, ImageFormat, LandmarkSet, Roi, TensorDType, TensorPacket, TensorShape, VideoFrame,
+    DetectionSet, ImageFormat, LandmarkSet, PacketMetadata, Roi, TensorDType, TensorPacket,
+    TensorShape, Timestamp, VideoFrame,
 };
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[actor(
     ImageToTensorActor,
@@ -83,6 +85,44 @@ pub async fn resize_letterbox_actor(
         .into()),
         Err(err) => Ok(error_output(&err.to_string())),
     }
+}
+
+#[actor(
+    VideoStreamToFramesActor,
+    inports::<100>(stream),
+    outports::<100>(frame, metadata, done, error),
+    state(MemoryState)
+)]
+pub async fn video_stream_to_frames_actor(
+    context: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
+    let payload = context.get_payload();
+    let handle = match payload.get("stream") {
+        Some(Message::StreamHandle(handle)) => handle.clone(),
+        _ => return Ok(error_output("Expected StreamHandle message on stream port")),
+    };
+    let rx = match context.take_stream_receiver("stream") {
+        Some(rx) => rx,
+        None => return Ok(error_output("No StreamHandle receiver on stream port")),
+    };
+
+    let options = VideoStreamFrameOptions::from_config(&context.get_config_hashmap(), &handle);
+    let out_sender = context.get_outports().0;
+    let metadata = json!({
+        "attached": true,
+        "source": "videoStreamToFrames",
+        "streamId": handle.stream_id,
+        "originActor": handle.origin_actor,
+        "originPort": handle.origin_port,
+        "contentType": handle.content_type,
+        "dropPolicy": options.drop_policy,
+    });
+
+    spawn_stream_task(async move {
+        bridge_video_stream_to_frames(rx, out_sender, handle, options).await;
+    });
+
+    Ok([("metadata".to_string(), value_to_object_message(&metadata)?)].into())
 }
 
 #[actor(
@@ -199,6 +239,284 @@ pub async fn temporal_smoother_actor(
     let alpha = f32_config(&context.get_config_hashmap(), "alpha", 0.55).clamp(0.0, 1.0);
     let smoothed = smooth_landmarks(&context, landmarks, alpha);
     Ok([("landmarks".to_string(), value_to_object_message(&smoothed)?)].into())
+}
+
+#[derive(Clone)]
+struct VideoStreamFrameOptions {
+    width: Option<u32>,
+    height: Option<u32>,
+    format: Option<ImageFormat>,
+    fps: f64,
+    base_timestamp_micros: i64,
+    max_frames: u64,
+    strict_frame_size: bool,
+    emit_done: bool,
+    drop_policy: String,
+    source: String,
+}
+
+impl VideoStreamFrameOptions {
+    fn from_config(config: &HashMap<String, Value>, handle: &StreamHandle) -> Self {
+        Self {
+            width: optional_u32_config(config, "width"),
+            height: optional_u32_config(config, "height"),
+            format: config
+                .get("format")
+                .and_then(Value::as_str)
+                .or(handle.content_type.as_deref())
+                .map(ImageFormat::from_label),
+            fps: f64_config(config, "fps", 30.0).max(0.001),
+            base_timestamp_micros: i64_config(config, "timestampMicros", 0).max(i64_config(
+                config,
+                "startTimestampMicros",
+                0,
+            )),
+            max_frames: u64_config(config, "maxFrames", 0),
+            strict_frame_size: bool_config(config, "strictFrameSize", true),
+            emit_done: bool_config(config, "emitDone", true),
+            drop_policy: string_config(config, "dropPolicy", "block"),
+            source: string_config(config, "source", "video-stream"),
+        }
+    }
+
+    fn merge_begin_metadata(&mut self, metadata: Option<&Value>, content_type: Option<&str>) {
+        if let Some(metadata) = metadata {
+            self.width = metadata
+                .get("width")
+                .and_then(Value::as_u64)
+                .map(|value| value as u32)
+                .or(self.width);
+            self.height = metadata
+                .get("height")
+                .and_then(Value::as_u64)
+                .map(|value| value as u32)
+                .or(self.height);
+            self.format = metadata
+                .get("format")
+                .and_then(Value::as_str)
+                .map(ImageFormat::from_label)
+                .or_else(|| content_type.map(ImageFormat::from_label))
+                .or_else(|| self.format.clone());
+            self.fps = metadata
+                .get("fps")
+                .and_then(Value::as_f64)
+                .unwrap_or(self.fps)
+                .max(0.001);
+            self.base_timestamp_micros = metadata
+                .get("timestampMicros")
+                .or_else(|| metadata.get("startTimestampMicros"))
+                .and_then(Value::as_i64)
+                .unwrap_or(self.base_timestamp_micros);
+        } else if self.format.is_none() {
+            self.format = content_type.map(ImageFormat::from_label);
+        }
+    }
+}
+
+async fn bridge_video_stream_to_frames(
+    rx: flume::Receiver<StreamFrame>,
+    out_sender: flume::Sender<HashMap<String, Message>>,
+    handle: Arc<StreamHandle>,
+    mut options: VideoStreamFrameOptions,
+) {
+    let mut frame_index = 0u64;
+    let mut dropped_frames = 0u64;
+    while let Ok(stream_frame) = rx.recv_async().await {
+        match stream_frame {
+            StreamFrame::Begin {
+                content_type,
+                metadata,
+                ..
+            } => {
+                options.merge_begin_metadata(metadata.as_ref(), content_type.as_deref());
+                let begin_metadata = json!({
+                    "source": "videoStreamToFrames",
+                    "streamId": handle.stream_id,
+                    "width": options.width,
+                    "height": options.height,
+                    "format": options.format,
+                    "fps": options.fps,
+                    "contentType": content_type,
+                    "streamMetadata": metadata,
+                });
+                if !send_bridge_packet(
+                    &out_sender,
+                    HashMap::from([(
+                        "metadata".to_string(),
+                        value_to_object_message(&begin_metadata).unwrap_or_else(error_message),
+                    )]),
+                    &options.drop_policy,
+                )
+                .await
+                {
+                    break;
+                }
+            }
+            StreamFrame::Data(bytes) => {
+                let Some(width) = options.width else {
+                    let _ = send_stream_error(&out_sender, "video stream is missing width").await;
+                    if options.strict_frame_size {
+                        break;
+                    }
+                    continue;
+                };
+                let Some(height) = options.height else {
+                    let _ = send_stream_error(&out_sender, "video stream is missing height").await;
+                    if options.strict_frame_size {
+                        break;
+                    }
+                    continue;
+                };
+                let format = options.format.clone().unwrap_or(ImageFormat::Rgba8);
+                let bytes_per_frame = width as usize
+                    * height as usize
+                    * format.channels()
+                    * format.bytes_per_channel();
+                if bytes_per_frame == 0 {
+                    let _ =
+                        send_stream_error(&out_sender, "video frame dimensions are invalid").await;
+                    break;
+                }
+                if bytes.len() % bytes_per_frame != 0 {
+                    let _ = send_stream_error(
+                        &out_sender,
+                        &format!(
+                            "video chunk has {} bytes, not a multiple of expected frame size {}",
+                            bytes.len(),
+                            bytes_per_frame
+                        ),
+                    )
+                    .await;
+                    if options.strict_frame_size {
+                        break;
+                    }
+                    continue;
+                }
+
+                for frame_bytes in bytes.chunks(bytes_per_frame) {
+                    if options.max_frames > 0 && frame_index >= options.max_frames {
+                        break;
+                    }
+                    let timestamp = timestamp_for_frame(
+                        options.base_timestamp_micros,
+                        frame_index,
+                        options.fps,
+                    );
+                    let mut frame =
+                        VideoFrame::new(width, height, format.clone(), frame_bytes.to_vec());
+                    frame.metadata =
+                        frame_packet_metadata(&handle, &options, frame_index, timestamp);
+
+                    let frame_message = match frame_to_message(&frame) {
+                        Ok(message) => message,
+                        Err(err) => {
+                            let _ = send_stream_error(&out_sender, &err.to_string()).await;
+                            continue;
+                        }
+                    };
+                    let frame_meta = json!({
+                        "frameIndex": frame_index,
+                        "sequence": frame_index,
+                        "timestampMicros": timestamp,
+                        "streamId": handle.stream_id,
+                        "width": width,
+                        "height": height,
+                        "format": format,
+                    });
+                    let packet = HashMap::from([
+                        ("frame".to_string(), frame_message),
+                        (
+                            "metadata".to_string(),
+                            value_to_object_message(&frame_meta).unwrap_or_else(error_message),
+                        ),
+                    ]);
+                    if !send_bridge_packet(&out_sender, packet, &options.drop_policy).await {
+                        dropped_frames += 1;
+                    }
+                    frame_index += 1;
+                }
+            }
+            StreamFrame::End => {
+                if options.emit_done {
+                    let done = json!({
+                        "done": true,
+                        "streamId": handle.stream_id,
+                        "frames": frame_index,
+                        "droppedFrames": dropped_frames,
+                    });
+                    let _ = send_bridge_packet(
+                        &out_sender,
+                        HashMap::from([(
+                            "done".to_string(),
+                            value_to_object_message(&done).unwrap_or_else(error_message),
+                        )]),
+                        &options.drop_policy,
+                    )
+                    .await;
+                }
+                break;
+            }
+            StreamFrame::Error(err) => {
+                let _ = send_stream_error(&out_sender, &err).await;
+                break;
+            }
+        }
+    }
+}
+
+fn frame_packet_metadata(
+    handle: &StreamHandle,
+    options: &VideoStreamFrameOptions,
+    frame_index: u64,
+    timestamp_micros: i64,
+) -> PacketMetadata {
+    let mut metadata = PacketMetadata {
+        timestamp: Some(Timestamp::from_micros(timestamp_micros)),
+        sequence: Some(frame_index),
+        stream_id: Some(handle.stream_id.to_string()),
+        source: Some(options.source.clone()),
+        fields: HashMap::new(),
+    };
+    metadata
+        .fields
+        .insert("sourceStreamId".to_string(), json!(handle.stream_id));
+    metadata
+        .fields
+        .insert("originActor".to_string(), json!(handle.origin_actor));
+    metadata
+        .fields
+        .insert("originPort".to_string(), json!(handle.origin_port));
+    metadata
+        .fields
+        .insert("frameIndex".to_string(), json!(frame_index));
+    metadata
+}
+
+fn timestamp_for_frame(base_timestamp_micros: i64, frame_index: u64, fps: f64) -> i64 {
+    base_timestamp_micros + ((frame_index as f64 * 1_000_000.0) / fps).round() as i64
+}
+
+async fn send_bridge_packet(
+    out_sender: &flume::Sender<HashMap<String, Message>>,
+    packet: HashMap<String, Message>,
+    drop_policy: &str,
+) -> bool {
+    if drop_policy == "drop" || drop_policy == "latest" {
+        out_sender.try_send(packet).is_ok()
+    } else {
+        out_sender.send_async(packet).await.is_ok()
+    }
+}
+
+async fn send_stream_error(
+    out_sender: &flume::Sender<HashMap<String, Message>>,
+    message: &str,
+) -> bool {
+    out_sender.send_async(error_output(message)).await.is_ok()
+}
+
+fn error_message(err: anyhow::Error) -> Message {
+    Message::Error(err.to_string().into())
 }
 
 async fn frame_from_context(context: &ActorContext, port: &str) -> Result<VideoFrame> {
@@ -601,6 +919,21 @@ fn u32_config(config: &HashMap<String, Value>, key: &str, default: u32) -> u32 {
         .unwrap_or(default)
 }
 
+fn optional_u32_config(config: &HashMap<String, Value>, key: &str) -> Option<u32> {
+    config
+        .get(key)
+        .and_then(Value::as_u64)
+        .map(|value| value as u32)
+}
+
+fn u64_config(config: &HashMap<String, Value>, key: &str, default: u64) -> u64 {
+    config.get(key).and_then(Value::as_u64).unwrap_or(default)
+}
+
+fn i64_config(config: &HashMap<String, Value>, key: &str, default: i64) -> i64 {
+    config.get(key).and_then(Value::as_i64).unwrap_or(default)
+}
+
 fn usize_config(config: &HashMap<String, Value>, key: &str, default: usize) -> usize {
     config
         .get(key)
@@ -623,6 +956,10 @@ fn f32_config(config: &HashMap<String, Value>, key: &str, default: f32) -> f32 {
         .and_then(Value::as_f64)
         .map(|v| v as f32)
         .unwrap_or(default)
+}
+
+fn f64_config(config: &HashMap<String, Value>, key: &str, default: f64) -> f64 {
+    config.get(key).and_then(Value::as_f64).unwrap_or(default)
 }
 
 fn bool_config(config: &HashMap<String, Value>, key: &str, default: bool) -> bool {
@@ -652,7 +989,12 @@ fn error_output(msg: &str) -> HashMap<String, Message> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use reflow_media_codec::message_to_tensor;
+    use reflow_actor::{
+        stream::{StreamFrame, StreamHandle, STREAM_REGISTRY},
+        ActorConfig,
+    };
+    use reflow_media_codec::{message_to_frame, message_to_tensor};
+    use std::{sync::Arc, time::Duration};
 
     #[test]
     fn image_to_tensor_uses_nhwc_layout() {
@@ -706,5 +1048,92 @@ mod tests {
         let message = tensor_to_message(&tensor).unwrap();
 
         assert_eq!(message_to_tensor(&message).unwrap().data, vec![1, 2, 3]);
+    }
+
+    #[tokio::test]
+    async fn video_stream_to_frames_emits_timestamped_frame_packets() {
+        let actor = VideoStreamToFramesActor::new();
+        let inport = actor.get_inports().0;
+        let outport = actor.get_outports().1;
+        let process = tokio::spawn(actor.create_process(ActorConfig::default(), None));
+
+        let (stream_id, tx) = STREAM_REGISTRY.create_stream(None);
+        let stream_handle = StreamHandle {
+            stream_id,
+            origin_actor: "camera".to_string(),
+            origin_port: "stream".to_string(),
+            content_type: Some("video/raw-rgba".to_string()),
+            size_hint: None,
+        };
+
+        inport
+            .send_async(HashMap::from([(
+                "stream".to_string(),
+                Message::stream_handle(stream_handle),
+            )]))
+            .await
+            .unwrap();
+        tx.send_async(StreamFrame::Begin {
+            content_type: Some("video/raw-rgba".to_string()),
+            size_hint: None,
+            metadata: Some(json!({
+                "width": 2,
+                "height": 1,
+                "fps": 25.0,
+                "timestampMicros": 1_000,
+            })),
+        })
+        .await
+        .unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![
+            1, 2, 3, 255, 4, 5, 6, 255,
+        ])))
+        .await
+        .unwrap();
+        tx.send_async(StreamFrame::Data(Arc::new(vec![
+            7, 8, 9, 255, 10, 11, 12, 255,
+        ])))
+        .await
+        .unwrap();
+        tx.send_async(StreamFrame::End).await.unwrap();
+
+        let first_packet = recv_packet_with(&outport, "frame").await;
+        let first = message_to_frame(first_packet.get("frame").unwrap()).unwrap();
+        assert_eq!(first.width, 2);
+        assert_eq!(first.height, 1);
+        assert_eq!(first.metadata.sequence, Some(0));
+        assert_eq!(
+            first.metadata.timestamp,
+            Some(Timestamp::from_micros(1_000))
+        );
+        assert_eq!(first.metadata.stream_id, Some(stream_id.to_string()));
+
+        let second_packet = recv_packet_with(&outport, "frame").await;
+        let second = message_to_frame(second_packet.get("frame").unwrap()).unwrap();
+        assert_eq!(second.metadata.sequence, Some(1));
+        assert_eq!(
+            second.metadata.timestamp,
+            Some(Timestamp::from_micros(41_000))
+        );
+
+        let done_packet = recv_packet_with(&outport, "done").await;
+        assert!(done_packet.contains_key("done"));
+        process.abort();
+    }
+
+    async fn recv_packet_with(
+        outport: &flume::Receiver<HashMap<String, Message>>,
+        port: &str,
+    ) -> HashMap<String, Message> {
+        tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                let packet = outport.recv_async().await.unwrap();
+                if packet.contains_key(port) {
+                    break packet;
+                }
+            }
+        })
+        .await
+        .expect("timed out waiting for frame bridge output")
     }
 }

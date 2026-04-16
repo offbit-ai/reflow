@@ -18,7 +18,6 @@ use actor_macro::actor;
 use anyhow::{Error, Result};
 use parking_lot::Mutex as ParkMutex;
 use reflow_actor::ActorContext;
-use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 
