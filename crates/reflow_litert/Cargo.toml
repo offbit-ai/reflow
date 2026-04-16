@@ -5,10 +5,13 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+# Optional local checkout of the Offbit LiteRT bindings.
+# Upstream: https://github.com/offbit-ai/LiteRT
+litert = { path = "../../../LiteRT/litert", optional = true }
 reflow_media_types = { path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
 default = []
-external-litert = []
+external-litert = ["dep:litert"]

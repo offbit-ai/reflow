@@ -9,6 +9,8 @@ use reflow_actor::{
 use reflow_asset_registry::{
     load_model_asset_from_path, manifest_from_metadata, validate_model_bytes, ModelManifest,
 };
+#[cfg(feature = "external-litert")]
+use reflow_litert::LiteRtBackend;
 use reflow_litert::{InferenceBackend, InferenceInput, MockBackend, ModelInfo, TensorSpec};
 use reflow_media_codec::{
     message_to_tensor, message_to_value, tensor_summary, tensor_to_message, value_to_object_message,
@@ -81,8 +83,7 @@ pub async fn run_inference_actor(context: ActorContext) -> Result<HashMap<String
         None => None,
     };
 
-    let backend = MockBackend::new();
-    let session = match backend.load_model(model.clone(), model_data) {
+    let session = match load_inference_session(model.clone(), model_data) {
         Ok(session) => session,
         Err(err) => return Ok(error_output(&err.to_string())),
     };
@@ -111,6 +112,27 @@ pub async fn run_inference_actor(context: ActorContext) -> Result<HashMap<String
     );
     results.insert("inference".to_string(), value_to_object_message(&output)?);
     Ok(results)
+}
+
+fn load_inference_session(
+    model: ModelInfo,
+    model_data: Option<Arc<Vec<u8>>>,
+) -> Result<Box<dyn reflow_litert::InferenceSession>> {
+    if model.backend.eq_ignore_ascii_case("litert") {
+        #[cfg(feature = "external-litert")]
+        {
+            return LiteRtBackend::new().load_model(model, model_data);
+        }
+        #[cfg(not(feature = "external-litert"))]
+        {
+            bail!(
+                "LiteRT backend requested for model '{}' but reflow_ml_ops was built without the external-litert feature",
+                model.id
+            );
+        }
+    }
+
+    MockBackend::new().load_model(model, model_data)
 }
 
 #[derive(Debug, Clone)]

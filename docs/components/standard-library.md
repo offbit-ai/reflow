@@ -15,6 +15,7 @@ The component library is organized into these modules:
 | **Integration** | `HttpRequestActor` | `tpl_http_request` |
 | **Logic** | `RulesEngineActor` | `tpl_rules_engine` |
 | **Media** | `ImageInputActor`, `AudioInputActor`, `VideoInputActor` | `tpl_image_input`, `tpl_audio_input`, `tpl_video_input` |
+| **Media / ML** (feature-gated) | CV preprocess, inference, decode, taskpack actors | `tpl_ml_*`, `tpl_cv_*` |
 | **API** (feature-gated) | 6,697 generated actors | `api_*` (88 services) |
 
 ## Template Registry
@@ -125,6 +126,14 @@ Handles video input with metadata extraction (duration, resolution, codec).
 - Input: `In` (video data or URL)
 - Output: `Out` (video with metadata), `Error`
 
+## Media / ML Stack
+
+The optional `ml` feature registers graph-driven media and ML actors for tensor packets, CV preprocessing, model loading, inference, detection/landmark decoding, temporal smoothing, and taskpack subgraphs.
+
+The stack is mock-first by default. Real LiteRT execution is available through a separate `external-litert` feature on the ML crates, behind Reflow's inference backend traits.
+
+See [Media / ML Stack](./ml-stack.md) for the architecture, feature flags, and verification commands.
+
 ## API Service Actors
 
 When the `api` Cargo feature is enabled (default), 6,697 pre-generated actors for 88 API services are available. These are code-generated from OpenAPI specifications.
@@ -133,7 +142,7 @@ See [API Service Actors](./api-actors.md) for the full list.
 
 ## Feature Flags
 
-The `api` feature controls compilation of the generated API modules:
+The `api` feature controls compilation of the generated API modules. The `ml` feature enables the optional Media / ML actor catalog.
 
 ```toml
 # Cargo.toml
@@ -142,6 +151,9 @@ reflow_components = { path = "../reflow_components" }  # api enabled by default
 
 # For faster test builds, disable api:
 reflow_components = { path = "../reflow_components", default-features = false }
+
+# For Media / ML templates:
+reflow_components = { path = "../reflow_components", features = ["ml"] }
 ```
 
 When `api` is disabled, stub types are provided so dependents compile without the heavy API modules:
@@ -156,4 +168,5 @@ pub fn get_api_actor_for_template(_: &str) -> Option<Arc<dyn Actor>> { None }
 
 - [API Service Actors](./api-actors.md) - 6,697 generated actors across 88 services
 - [Media Actors](./media-actors.md) - Image, audio, and video processing
+- [Media / ML Stack](./ml-stack.md) - Tensor, CV, inference, and taskpack actors
 - [Architecture Overview](../architecture/overview.md) - How components fit into the system

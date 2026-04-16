@@ -77,6 +77,7 @@
 - [Standard Component Library](components/standard-library.md)
 - [API Service Actors](components/api-actors.md)
 - [Media Actors](components/media-actors.md)
+- [Media / ML Stack](components/ml-stack.md)
 - [JavaScript & Deno Runtime](scripting/javascript/deno-runtime.md)
 - [WASM Actor Plugin Runtime](scripting/wasm/wasm-runtime.md)
 ---

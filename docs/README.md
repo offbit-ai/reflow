@@ -11,7 +11,7 @@ Reflow is a modular workflow engine that uses the actor model for concurrent, me
 - **Actor-Based Architecture**: Isolated, concurrent actors with message passing
 - **Graph-Based Workflows**: Visual workflow representation with history/undo
 - **Real-Time Observability**: EventBridge pipeline forwarding execution events to TraceCollector and ZipSession
-- **Media Processing**: Image, audio, and video input actors with metadata extraction
+- **Media Processing**: Image, audio, video, and optional graph-driven ML pipelines
 - **REST API + WebSocket**: HTTP and WebSocket interfaces for headless workflow execution
 - **Cross-Platform**: Native Rust execution + WebAssembly for browsers
 
@@ -33,7 +33,7 @@ HTTP and WebSocket API for direct workflow execution
 Detailed API documentation for actors, messaging, and graphs
 
 ### [Components](./components/standard-library.md)
-Standard component library: flow control, transforms, logic, media, and 6,700+ API actors
+Standard component library: flow control, transforms, logic, media, optional ML, and 6,700+ API actors
 
 ### [Observability](./observability/architecture.md)
 EventBridge, TraceCollector, ZIP event translation, and trace sessions

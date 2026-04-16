@@ -83,4 +83,5 @@ NodeTemplate {
 ## Next Steps
 
 - [Standard Component Library](./standard-library.md) - All native actors
+- [Media / ML Stack](./ml-stack.md) - Tensor, CV, inference, and taskpack actors
 - [API Service Actors](./api-actors.md) - Generated API actors

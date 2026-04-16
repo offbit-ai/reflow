@@ -18,3 +18,7 @@ serde_json = { workspace = true }
 parking_lot = "0.12.3"
 tempfile = "3.21.0"
 tokio = { version = "1", features = ["macros", "rt"] }
+
+[features]
+default = []
+external-litert = ["reflow_litert/external-litert"]
