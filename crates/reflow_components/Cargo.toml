@@ -87,6 +87,7 @@ reflow_vector = { path = "../reflow_vector" }
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window"] }
+nokhwa = { version = "0.10.10", features = ["js-sys"], optional = true }
 
 [features]
 default = ["av-core", "gpu", "window-events"]
@@ -98,6 +99,13 @@ browser = ["dep:chromiumoxide"]
 window-events = []
 browser-events = ["window-events"]
 ml = ["dep:reflow_cv_ops", "dep:reflow_ml_ops", "dep:reflow_taskpacks"]
+camera-native = ["dep:nokhwa"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Native camera capture (optional; Linux V4L2, macOS AVFoundation, Windows MSMF via nokhwa)
+nokhwa = { version = "0.10.10", features = ["input-native"], optional = true }
+
+
 
 [dev-dependencies]
 reflow_server = { path = "../reflow_server" }

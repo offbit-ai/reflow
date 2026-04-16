@@ -14,7 +14,7 @@ The component library is organized into these modules:
 | **Transform** | `DataTransformActor`, `DataOperationsActor` | `tpl_data_transformer`, `tpl_data_operations` |
 | **Integration** | `HttpRequestActor` | `tpl_http_request` |
 | **Logic** | `RulesEngineActor` | `tpl_rules_engine` |
-| **Media** | `ImageInputActor`, `AudioInputActor`, `VideoInputActor` | `tpl_image_input`, `tpl_audio_input`, `tpl_video_input` |
+| **Media** | `ImageInputActor`, `AudioInputActor`, `VideoInputActor`, `CameraCaptureActor` | `tpl_image_input`, `tpl_audio_input`, `tpl_video_input`, `tpl_camera_capture` |
 | **Media / ML** (feature-gated) | CV preprocess, inference, decode, taskpack actors | `tpl_ml_*`, `tpl_cv_*` |
 | **API** (feature-gated) | 6,697 generated actors | `api_*` (88 services) |
 
@@ -126,6 +126,14 @@ Handles video input with metadata extraction (duration, resolution, codec).
 - Input: `In` (video data or URL)
 - Output: `Out` (video with metadata), `Error`
 
+### CameraCaptureActor (`tpl_camera_capture`)
+
+Produces `video/raw-rgba` streams from a deterministic mock camera by default. Native device capture is available with the `camera-native` feature and `backend: "native"`.
+
+**Ports:**
+- Input: `start`, `stop`
+- Output: `stream`, `metadata`, `error`
+
 ## Media / ML Stack
 
 The optional `ml` feature registers graph-driven media and ML actors for tensor packets, CV preprocessing, model loading, inference, detection/landmark decoding, temporal smoothing, and taskpack subgraphs.
@@ -154,6 +162,9 @@ reflow_components = { path = "../reflow_components", default-features = false }
 
 # For Media / ML templates:
 reflow_components = { path = "../reflow_components", features = ["ml"] }
+
+# For native camera capture:
+reflow_components = { path = "../reflow_components", features = ["camera-native"] }
 ```
 
 When `api` is disabled, stub types are provided so dependents compile without the heavy API modules:

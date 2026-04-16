@@ -2,8 +2,8 @@
 //!
 //! V1 establishes the graph-facing contract for camera frames without binding
 //! Reflow's default build to a native camera SDK. The default backend is a
-//! deterministic test-pattern source; native/browser capture adapters can feed
-//! the same `video/raw-rgba` stream contract behind feature flags later.
+//! deterministic test-pattern source; enabling `camera-native` adds a Nokhwa
+//! native backend that feeds the same `video/raw-rgba` stream contract.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
@@ -21,6 +21,13 @@ use std::{
         Arc, OnceLock,
     },
     time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+use nokhwa::{
+    pixel_format::RgbFormat,
+    utils::{CameraFormat, CameraIndex, FrameFormat, RequestedFormat, RequestedFormatType},
+    Camera,
 };
 
 static CAPTURE_CANCEL: OnceLock<parking_lot::Mutex<HashMap<u64, Arc<AtomicBool>>>> =
@@ -41,11 +48,26 @@ pub async fn camera_capture_actor(
     }
 
     let config = context.get_config_hashmap();
-    let backend = string_config(&config, "backend", "mock");
-    if !matches!(backend.as_str(), "mock" | "test-pattern" | "test_pattern") {
+    let backend = string_config(&config, "backend", "mock").to_ascii_lowercase();
+    if is_native_backend(&backend) {
+        #[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+        {
+            return start_native_capture(context, &config, backend);
+        }
+
+        #[cfg(not(all(feature = "camera-native", not(target_arch = "wasm32"))))]
+        {
+            return Ok(error_output(format!(
+                "Camera backend '{}' is not available in this build. Use backend='mock' or provide a native capture adapter.",
+                backend
+            )));
+        }
+    }
+    if !is_mock_backend(&backend) {
         return Ok(error_output(format!(
-            "Camera backend '{}' is not available in this build. Use backend='mock' or provide a native capture adapter.",
-            backend
+            "Camera backend '{}' is not available in this build. Use backend='mock'{}.",
+            backend,
+            native_backend_hint()
         )));
     }
 
@@ -111,6 +133,182 @@ pub async fn camera_capture_actor(
         ),
     ]
     .into())
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+fn start_native_capture(
+    context: ActorContext,
+    config: &HashMap<String, Value>,
+    backend: String,
+) -> Result<HashMap<String, Message>, Error> {
+    let width = u32_config(config, "width", 640).max(1);
+    let height = u32_config(config, "height", 480).max(1);
+    let fps = u32_config(config, "fps", 30).max(1);
+    let frame_count = u64_config(config, "frameCount", 0);
+    let buffer_size = usize_config(config, "bufferSize", 4).max(1);
+    let device_id = string_config(config, "deviceId", "0");
+    let bytes_per_frame = width as u64 * height as u64 * 4;
+    let size_hint = (frame_count > 0).then_some(bytes_per_frame.saturating_mul(frame_count));
+    let (tx, handle) = context.create_stream(
+        "stream",
+        Some("video/raw-rgba".to_string()),
+        size_hint,
+        Some(buffer_size),
+    );
+    let stream_id = handle.stream_id;
+    let cancel = Arc::new(AtomicBool::new(false));
+    capture_cancel_registry()
+        .lock()
+        .insert(stream_id, cancel.clone());
+    context.pool_upsert("_camera_capture", "stream_id", json!(stream_id));
+
+    let metadata = camera_metadata(&backend, &device_id, width, height, fps, frame_count);
+    let options = NativeCaptureOptions {
+        backend,
+        device_id,
+        width,
+        height,
+        fps,
+        frame_count,
+        size_hint,
+    };
+    spawn_native_capture_loop(tx, stream_id, cancel, options);
+
+    Ok([
+        ("stream".to_string(), Message::stream_handle(handle)),
+        (
+            "metadata".to_string(),
+            Message::object(EncodableValue::from(metadata)),
+        ),
+    ]
+    .into())
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+#[derive(Debug, Clone)]
+struct NativeCaptureOptions {
+    backend: String,
+    device_id: String,
+    width: u32,
+    height: u32,
+    fps: u32,
+    frame_count: u64,
+    size_hint: Option<u64>,
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+fn spawn_native_capture_loop(
+    tx: flume::Sender<StreamFrame>,
+    stream_id: u64,
+    cancel: Arc<AtomicBool>,
+    options: NativeCaptureOptions,
+) {
+    std::thread::spawn(move || {
+        let result = run_native_capture_loop(&tx, &cancel, &options);
+        if let Err(err) = result {
+            let _ = tx.send(StreamFrame::Error(err.to_string()));
+        } else {
+            let _ = tx.send(StreamFrame::End);
+        }
+        capture_cancel_registry().lock().remove(&stream_id);
+    });
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+fn run_native_capture_loop(
+    tx: &flume::Sender<StreamFrame>,
+    cancel: &AtomicBool,
+    options: &NativeCaptureOptions,
+) -> Result<()> {
+    let mut camera = Camera::new(
+        native_camera_index(&options.device_id),
+        requested_format(options),
+    )
+    .map_err(|err| anyhow::anyhow!("open native camera: {err}"))?;
+    camera
+        .open_stream()
+        .map_err(|err| anyhow::anyhow!("start native camera stream: {err}"))?;
+    let actual = camera.camera_format();
+    let resolution = actual.resolution();
+    let width = resolution.width();
+    let height = resolution.height();
+    let fps = actual.frame_rate();
+    let begin_metadata = json!({
+        "source": "camera",
+        "backend": options.backend,
+        "deviceId": options.device_id,
+        "width": width,
+        "height": height,
+        "fps": fps,
+        "format": "rgba8",
+        "contentType": "video/raw-rgba",
+        "frameCount": options.frame_count,
+        "nativeFrameFormat": format!("{:?}", actual.format()),
+        "timestampMicros": now_micros(),
+    });
+    tx.send(StreamFrame::Begin {
+        content_type: Some("video/raw-rgba".to_string()),
+        size_hint: options.size_hint,
+        metadata: Some(begin_metadata),
+    })
+    .map_err(|err| anyhow::anyhow!("send native camera stream begin: {err}"))?;
+
+    let frame_delay = Duration::from_secs_f64(1.0 / fps.max(1) as f64);
+    let mut frame_index = 0;
+    while !cancel.load(Ordering::Relaxed)
+        && (options.frame_count == 0 || frame_index < options.frame_count)
+    {
+        let frame_start = std::time::Instant::now();
+        let frame = camera
+            .frame()
+            .map_err(|err| anyhow::anyhow!("capture native camera frame: {err}"))?;
+        let rgb = frame
+            .decode_image::<RgbFormat>()
+            .map_err(|err| anyhow::anyhow!("decode native camera frame: {err}"))?
+            .into_raw();
+        let rgba = rgb_to_rgba(&rgb);
+        tx.send(StreamFrame::Data(Arc::new(rgba)))
+            .map_err(|err| anyhow::anyhow!("send native camera frame: {err}"))?;
+        frame_index += 1;
+
+        if options.frame_count == 0 || frame_index < options.frame_count {
+            let elapsed = frame_start.elapsed();
+            if elapsed < frame_delay {
+                std::thread::sleep(frame_delay - elapsed);
+            }
+        }
+    }
+
+    let _ = camera.stop_stream();
+    Ok(())
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+fn native_camera_index(device_id: &str) -> CameraIndex {
+    device_id
+        .parse::<u32>()
+        .map(CameraIndex::Index)
+        .unwrap_or_else(|_| CameraIndex::String(device_id.to_string()))
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+fn requested_format(options: &NativeCaptureOptions) -> RequestedFormat<'static> {
+    let format = CameraFormat::new_from(
+        options.width,
+        options.height,
+        FrameFormat::MJPEG,
+        options.fps,
+    );
+    RequestedFormat::new::<RgbFormat>(RequestedFormatType::Closest(format))
+}
+
+#[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+fn rgb_to_rgba(rgb: &[u8]) -> Vec<u8> {
+    let mut rgba = Vec::with_capacity(rgb.len() / 3 * 4);
+    for pixel in rgb.chunks_exact(3) {
+        rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
+    }
+    rgba
 }
 
 fn capture_cancel_registry() -> &'static parking_lot::Mutex<HashMap<u64, Arc<AtomicBool>>> {
@@ -180,6 +378,25 @@ fn mock_camera_frame(width: u32, height: u32, frame_index: u64) -> Vec<u8> {
         }
     }
     data
+}
+
+fn is_mock_backend(backend: &str) -> bool {
+    matches!(backend, "mock" | "test-pattern" | "test_pattern")
+}
+
+fn is_native_backend(backend: &str) -> bool {
+    matches!(backend, "native" | "nokhwa" | "auto")
+}
+
+fn native_backend_hint() -> &'static str {
+    #[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+    {
+        " or backend='native'"
+    }
+    #[cfg(not(all(feature = "camera-native", not(target_arch = "wasm32"))))]
+    {
+        " or enable the camera-native feature for backend='native'"
+    }
 }
 
 fn now_micros() -> u64 {
@@ -305,5 +522,21 @@ mod tests {
         let second = mock_camera_frame(4, 4, 1);
         assert_eq!(first.len(), 4 * 4 * 4);
         assert_ne!(first, second);
+    }
+
+    #[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+    #[test]
+    fn native_device_id_accepts_index_or_string() {
+        assert_eq!(native_camera_index("2").as_index().unwrap(), 2);
+        assert!(native_camera_index("camera://demo").is_string());
+    }
+
+    #[cfg(all(feature = "camera-native", not(target_arch = "wasm32")))]
+    #[test]
+    fn rgb_to_rgba_adds_opaque_alpha() {
+        assert_eq!(
+            rgb_to_rgba(&[1, 2, 3, 4, 5, 6]),
+            vec![1, 2, 3, 255, 4, 5, 6, 255]
+        );
     }
 }

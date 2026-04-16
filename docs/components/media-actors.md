@@ -54,12 +54,29 @@ Handles video input with metadata extraction.
 - Frame rate
 - File size
 
+### CameraCaptureActor (`tpl_camera_capture`)
+
+Produces a live `video/raw-rgba` stream from either a deterministic test-pattern source or, when compiled with native camera support, a platform camera device.
+
+**Template ID:** `tpl_camera_capture`
+
+**Ports:**
+- Input: `start`, `stop`
+- Output: `stream`, `metadata`, `error`
+
+**Common config:**
+- `backend`: `mock` by default; use `native` or `nokhwa` when the `camera-native` feature is enabled
+- `deviceId`: camera index or device identifier
+- `width`, `height`, `fps`: requested capture format
+- `frameCount`: number of frames to emit; `0` means continuous capture
+- `bufferSize`: stream backpressure buffer size
+
 ## Usage in Workflows
 
 Media actors are registered as Zeal templates and appear in the Zeal IDE palette under the "reflow" category. They can be connected to other actors in a workflow graph:
 
 ```
-[Image URL] → [ImageInputActor] → [DataTransformActor] → [HttpRequestActor]
+[CameraCaptureActor] → [VideoStreamToFramesActor] → [ImageToTensorActor] → [RunInferenceActor]
 ```
 
 ## Template Registration
