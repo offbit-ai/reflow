@@ -1,11 +1,11 @@
 //! Generic ML actors for Reflow graphs.
 
-use reflow_actor_macro::actor;
 use anyhow::{anyhow, bail, Error, Result};
 use reflow_actor::{
     message::{EncodableValue, Message},
     Actor, ActorBehavior, ActorContext, Port,
 };
+use reflow_actor_macro::actor;
 use reflow_asset_registry::{
     load_model_asset_from_path, manifest_from_metadata, validate_model_bytes, ModelManifest,
 };

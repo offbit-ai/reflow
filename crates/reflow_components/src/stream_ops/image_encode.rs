@@ -4,9 +4,9 @@
 //! buffer, and encodes to the configured format. Outputs Message::Bytes.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 

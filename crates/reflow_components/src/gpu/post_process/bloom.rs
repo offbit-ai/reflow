@@ -15,9 +15,9 @@
 //! - `output` — composited RGBA8 pixel bytes
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 

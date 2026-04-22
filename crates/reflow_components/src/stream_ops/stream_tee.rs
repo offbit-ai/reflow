@@ -5,9 +5,9 @@
 //! consumers. Use this when both outputs need every frame.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{stream::StreamBroadcaster, ActorContext};
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 #[actor(

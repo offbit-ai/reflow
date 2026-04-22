@@ -10,9 +10,9 @@
 //!   noiseScale: f32 — how much the noise UV is scaled (default 5.0)
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 

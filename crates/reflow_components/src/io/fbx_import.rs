@@ -19,11 +19,11 @@
 //! - `error` — error message if import fails
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use fbxcel::low::v7400::AttributeValue;
 use fbxcel::pull_parser::v7400::attribute::loaders::DirectLoader;
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::io::{BufReader, Cursor};

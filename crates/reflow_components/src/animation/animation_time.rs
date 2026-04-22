@@ -4,9 +4,9 @@
 //! elapsed time by `1/fps * speed`. Outputs current time and frame number.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 

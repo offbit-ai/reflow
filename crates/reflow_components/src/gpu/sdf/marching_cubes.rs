@@ -4,9 +4,9 @@
 //! dispatches on GPU, reads back vertex buffer (pos3+normal3 per vertex).
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use reflow_sdf::ir::{SceneSettings, SdfNode};
 use serde_json::json;
 use std::collections::HashMap;

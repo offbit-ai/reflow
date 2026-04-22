@@ -4,9 +4,9 @@
 //! and outputs mesh data in Reflow's internal format.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 #[actor(

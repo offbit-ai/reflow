@@ -9,9 +9,9 @@
 //! ```
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 

@@ -1,9 +1,9 @@
 //! SDF operation actors — combine two SDF inputs via CSG operations.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use reflow_sdf::ir::SdfNode;
 use serde::Deserialize;
 use serde_json::Value;

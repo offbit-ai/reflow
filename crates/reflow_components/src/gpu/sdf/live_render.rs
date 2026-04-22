@@ -10,13 +10,13 @@
 //! - Resolution change → recreate texture + readback buffers (rare)
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     message::EncodableValue,
     stream::{StreamFrame, STREAM_REGISTRY},
     ActorContext,
 };
+use reflow_actor_macro::actor;
 use reflow_sdf::ir::{SceneSettings, SdfNode};
 use serde_json::json;
 use std::collections::HashMap;

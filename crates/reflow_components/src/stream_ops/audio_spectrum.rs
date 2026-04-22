@@ -7,7 +7,6 @@
 //! Designed for Zeal's spectrum visualization node.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{
@@ -15,6 +14,7 @@ use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;

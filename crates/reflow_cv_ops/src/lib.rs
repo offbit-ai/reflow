@@ -1,12 +1,12 @@
 //! Graph-friendly computer-vision actors for Reflow ML pipelines.
 
-use reflow_actor_macro::actor;
 use anyhow::{anyhow, bail, Error, Result};
 use reflow_actor::{
     message::{EncodableValue, Message},
     stream::{spawn_stream_task, stream_collect, StreamFrame, StreamHandle},
     Actor, ActorBehavior, ActorContext, MemoryState, Port,
 };
+use reflow_actor_macro::actor;
 use reflow_media_codec::{
     frame_to_message, message_to_frame, message_to_tensor, tensor_to_message,
     value_from_message_or_packet, value_to_object_message,

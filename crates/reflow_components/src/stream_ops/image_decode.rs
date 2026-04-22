@@ -4,13 +4,13 @@
 //! StreamHandle on `stream` with rows of RGBA pixels.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use image::GenericImageView;
 use reflow_actor::{
     stream::{spawn_stream_task, StreamFrame},
     ActorContext,
 };
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;

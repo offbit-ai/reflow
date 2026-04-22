@@ -9,13 +9,13 @@
 //! multiple actor invocations via the stream ID stored in MemoryState.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     message::EncodableValue,
     stream::{StreamFrame, STREAM_REGISTRY},
     ActorContext,
 };
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;

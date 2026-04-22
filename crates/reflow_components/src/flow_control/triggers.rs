@@ -8,9 +8,9 @@
 //! pipeline repeatedly without requiring external re-invocation.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 // ── Cross-platform helpers ──────────────────────────────────────

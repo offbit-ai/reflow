@@ -5,9 +5,9 @@
 //! usable, while this crate provides one stable import surface and feature map
 //! for applications.
 
-pub use reflow_actor_macro::{actor, actor_display};
 pub use reflow_actor;
 pub use reflow_actor as actor_runtime;
+pub use reflow_actor_macro::{actor, actor_display};
 pub use reflow_assets;
 pub use reflow_assets as assets;
 pub use reflow_components;
@@ -68,13 +68,13 @@ pub use reflow_taskpacks as taskpacks;
 /// the crate namespace re-exports such as `reflow_rt::components`,
 /// `reflow_rt::media_types`, or `reflow_rt::taskpacks`.
 pub mod prelude {
-    pub use reflow_actor_macro::{actor, actor_display};
     pub use reflow_actor::{
         Actor, ActorBehavior, ActorChannel, ActorConfig, ActorContext, ActorLoad, ActorPayload,
         ActorState, MemoryState, Port,
         message::Message,
         stream::{StreamFrame, StreamHandle},
     };
+    pub use reflow_actor_macro::{actor, actor_display};
     pub use reflow_components::{get_actor_for_template, get_template_mapping};
     pub use reflow_graph::{Graph, types::GraphExport};
     #[cfg(target_arch = "wasm32")]

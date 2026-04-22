@@ -24,9 +24,9 @@
 //! - `events` — Array of all events that fired this frame
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::Arc;

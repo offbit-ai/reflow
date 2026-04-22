@@ -1,9 +1,9 @@
 //! Video input actor — fetches, validates, and extracts metadata from video.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;

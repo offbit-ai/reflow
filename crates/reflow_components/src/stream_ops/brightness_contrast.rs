@@ -4,12 +4,12 @@
 //! with adjusted values. Uses SIMD-accelerated path when available.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     stream::{spawn_stream_task, stream_transform},
     ActorContext,
 };
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 #[actor(

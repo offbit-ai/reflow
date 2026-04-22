@@ -4,9 +4,9 @@
 //! 24-byte stride (pos3+normal3 f32 per vertex) format.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 

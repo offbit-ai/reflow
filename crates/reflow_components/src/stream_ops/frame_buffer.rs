@@ -14,10 +14,10 @@
 //! - `bufferSize` (usize, default 60): Max buffered frames before dropping oldest
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use parking_lot::Mutex as ParkMutex;
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 use std::sync::Arc;
 

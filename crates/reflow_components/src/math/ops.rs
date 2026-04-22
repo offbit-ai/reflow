@@ -1,9 +1,9 @@
 //! All math operation actors.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 fn get_float(msg: Option<&Message>) -> f64 {

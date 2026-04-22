@@ -15,9 +15,9 @@
 //! - `output` — tone-mapped RGBA8 pixel bytes
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 #[actor(

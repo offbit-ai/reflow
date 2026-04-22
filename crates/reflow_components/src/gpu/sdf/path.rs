@@ -18,9 +18,9 @@
 //!   plane: "xz" | "xy" | "yz" — which plane the 2D path maps to (default "xz")
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use reflow_sdf::ir::SdfNode;
 use std::collections::HashMap;
 

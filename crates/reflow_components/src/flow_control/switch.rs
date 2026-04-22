@@ -1,9 +1,9 @@
 //! Switch/case routing actor for multi-way branching.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
+use reflow_actor_macro::actor;
 use std::collections::HashMap;
 
 /// Switch Case Actor - Compatible with tpl_switch

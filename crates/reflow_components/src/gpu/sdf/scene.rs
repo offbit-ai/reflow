@@ -4,9 +4,9 @@
 //! - SdfSceneActor: wraps root SDF + scene settings, compiles to WGSL
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use reflow_sdf::ir::{SceneSettings, SdfMaterial, SdfNode};
 use serde_json::json;
 use std::collections::HashMap;

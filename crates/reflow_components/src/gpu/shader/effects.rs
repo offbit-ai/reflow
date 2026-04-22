@@ -2,9 +2,9 @@
 
 use super::{cached_shader_input, connected_shader_inputs_ready, update_shader_input_cache};
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_actor_macro::actor;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 

@@ -4,9 +4,9 @@
 //! data flow through the actor graph.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext, MemoryState};
+use reflow_actor_macro::actor;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;

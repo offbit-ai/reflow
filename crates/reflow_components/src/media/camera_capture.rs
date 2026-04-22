@@ -6,13 +6,13 @@
 //! native backend that feeds the same `video/raw-rgba` stream contract.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     message::EncodableValue,
     stream::{spawn_stream_task, StreamFrame, STREAM_REGISTRY},
     ActorContext,
 };
+use reflow_actor_macro::actor;
 use serde_json::{json, Value};
 use std::{
     collections::HashMap,
