@@ -26,6 +26,8 @@ use zeal_sdk::types::{
 use zeal_sdk::{ClientConfig, WS_PATH, ZealClient};
 
 use crate::engine::{EngineEvent, EngineEventType, ExecutionEngine};
+use crate::template_adapter::to_zeal_template;
+use reflow_network::template::TemplateRegistry;
 
 // ============================================================================
 // Session Configuration
@@ -495,14 +497,17 @@ impl ZipSession {
         let version = Some(env!("CARGO_PKG_VERSION").to_string());
         let capabilities = Some(self.config.capabilities.clone());
 
-        // 1. Register native actor templates with rich metadata
-        let stream_templates =
-            crate::template_metadata::build_stream_actor_templates(&version, &capabilities);
+        // 1. Register native actor templates with rich metadata. The catalog is
+        // owned by reflow_components; this server only adapts it to Zeal.
+        let mut template_registry = TemplateRegistry::new();
+        template_registry
+            .register_catalog(reflow_components::template_catalog(&version, &capabilities));
+        let stream_templates = template_registry.into_catalog().templates;
 
         // Track which templates have rich metadata
         let rich_ids: std::collections::HashSet<String> =
             stream_templates.iter().map(|t| t.id.clone()).collect();
-        templates.extend(stream_templates);
+        templates.extend(stream_templates.into_iter().map(to_zeal_template));
 
         // For any template_mappings not covered by rich metadata, add basic entries
         for template_id in template_mappings.keys() {

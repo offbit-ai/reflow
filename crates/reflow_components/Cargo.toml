@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 reflow_actor = { path = "../reflow_actor" }
 reflow_graph = { path = "../reflow_graph" }
+reflow_network = { path = "../reflow_network" }
 reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
 actor_macro = { path = "../actor_macro" }
 

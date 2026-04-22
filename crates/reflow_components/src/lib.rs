@@ -65,6 +65,7 @@ pub mod registry;
 pub mod scene;
 pub mod stream_ops;
 pub mod systems;
+pub mod template_metadata;
 pub mod text;
 pub mod transform;
 pub mod vector;
@@ -80,6 +81,10 @@ pub use reflow_actor::{
 
 // Re-export registry functions
 pub use registry::{get_actor_for_template, get_template_mapping};
+pub use template_metadata::{
+    build_stream_actor_templates, display_component_sources, get_display_component_sources,
+    template_catalog,
+};
 
 // Re-export API template metadata for ZIP registration (only with api feature)
 #[cfg(feature = "api_services")]

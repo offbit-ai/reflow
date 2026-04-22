@@ -6069,6 +6069,7 @@ dependencies = [
  "reflow_dsp",
  "reflow_graph",
  "reflow_ml_ops",
+ "reflow_network",
  "reflow_pixel",
  "reflow_sdf",
  "reflow_server",

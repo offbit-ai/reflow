@@ -29,7 +29,7 @@ pub mod engine;
 pub mod event_bridge;
 pub mod peer_mesh;
 pub mod rest_api;
-pub mod template_metadata;
+pub mod template_adapter;
 pub mod trace_collector;
 pub mod workflow_store;
 pub mod zeal_converter;

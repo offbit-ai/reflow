@@ -1,19 +1,20 @@
-//! Rich template metadata for Zeal node registration.
+//! Rich template metadata for Reflow node registration.
 //!
 //! Provides proper titles, descriptions, ports, properties, and display
 //! components for all native actor templates. This replaces the empty
 //! defaults that were previously registered via `get_template_mapping()`.
 
+use reflow_network::template::{
+    DisplayComponent, DisplayComponentSource, NodeShape, NodeSize, NodeTemplate,
+    Port as TemplatePort, PortPosition, PortType, PropertyDefinition, PropertyType,
+    PropertyValidation, RuntimeRequirements, TemplateCatalog,
+};
 use serde_json::json;
 use std::collections::HashMap;
-use zeal_sdk::types::{
-    DisplayComponent, NodeShape, NodeSize, NodeTemplate, Port as ZealPort, PortPosition, PortType,
-    PropertyDefinition, PropertyType, PropertyValidation, RuntimeRequirements,
-};
 
 /// Helper to build an input port.
-fn inport(id: &str, label: &str, data_type: &str) -> ZealPort {
-    ZealPort {
+fn inport(id: &str, label: &str, data_type: &str) -> TemplatePort {
+    TemplatePort {
         id: id.to_string(),
         label: label.to_string(),
         port_type: PortType::Input,
@@ -25,8 +26,8 @@ fn inport(id: &str, label: &str, data_type: &str) -> ZealPort {
 }
 
 /// Helper to build an output port.
-fn outport(id: &str, label: &str, data_type: &str) -> ZealPort {
-    ZealPort {
+fn outport(id: &str, label: &str, data_type: &str) -> TemplatePort {
+    TemplatePort {
         id: id.to_string(),
         label: label.to_string(),
         port_type: PortType::Output,
@@ -122,7 +123,7 @@ fn tpl(
     desc: &str,
     icon: &str,
     variant: &str,
-    ports: Vec<ZealPort>,
+    ports: Vec<TemplatePort>,
     properties: Option<HashMap<String, PropertyDefinition>>,
     version: &Option<String>,
     capabilities: &Option<Vec<String>>,
@@ -162,7 +163,7 @@ fn tpl_display(
     desc: &str,
     icon: &str,
     variant: &str,
-    ports: Vec<ZealPort>,
+    ports: Vec<TemplatePort>,
     properties: Option<HashMap<String, PropertyDefinition>>,
     display: DisplayComponent,
     version: &Option<String>,
@@ -223,11 +224,8 @@ const WAVEFORM_JS: &str = include_str!("../../../display_components/waveform.js"
 const IR_JS: &str = include_str!("../../../display_components/ir.js");
 const TEXTURE_PREVIEW_JS: &str = include_str!("../../../display_components/texture_preview.js");
 
-/// Returns display component sources to be uploaded via upload_bundle.
-/// Map of element name → JS source file content.
-/// Returns display component sources for upload via upload_bundle.
-/// These are only for actors that need unique visualization.
-/// Audio/image stream display is handled by Zeal's built-in renderers.
+/// Returns display component sources for editor integrations that upload
+/// component bundles separately from inline template metadata.
 pub fn get_display_component_sources() -> Vec<(&'static str, &'static str)> {
     vec![
         ("reflow-spectrum", SPECTRUM_JS),
@@ -243,6 +241,28 @@ pub fn get_display_component_sources() -> Vec<(&'static str, &'static str)> {
         ("reflow-ir", IR_JS),
         ("reflow-texture-preview", TEXTURE_PREVIEW_JS),
     ]
+}
+
+/// Returns display component sources as runtime-neutral catalog entries.
+pub fn display_component_sources() -> Vec<DisplayComponentSource> {
+    get_display_component_sources()
+        .into_iter()
+        .map(|(element, source)| DisplayComponentSource {
+            element: element.to_string(),
+            source: source.to_string(),
+        })
+        .collect()
+}
+
+/// Returns the complete native component template catalog owned by this crate.
+pub fn template_catalog(
+    version: &Option<String>,
+    capabilities: &Option<Vec<String>>,
+) -> TemplateCatalog {
+    TemplateCatalog {
+        templates: build_stream_actor_templates(version, capabilities),
+        display_components: display_component_sources(),
+    }
 }
 
 /// Returns rich template metadata for all native stream actors.

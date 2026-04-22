@@ -32,6 +32,7 @@ pub mod router;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod script_discovery;
 pub mod subgraph;
+pub mod template;
 pub mod tracing;
 pub mod types;
 pub mod websocket_rpc;
