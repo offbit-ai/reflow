@@ -4,7 +4,7 @@
 //! extractable components: mesh, skeleton, animation, skin weights.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
 use std::collections::HashMap;

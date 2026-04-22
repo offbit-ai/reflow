@@ -35,7 +35,7 @@
 //! the DAG invokes it. Bind is convenience, not replacement.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::{get_or_create_db, layout};

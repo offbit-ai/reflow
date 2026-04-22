@@ -43,7 +43,7 @@
 pub mod animation;
 #[cfg(feature = "api_services")]
 #[cfg(not(clippy))]
-pub use reflow_api::api;
+pub use reflow_api_services::api;
 pub mod assets;
 mod display;
 pub mod flow_control;
@@ -90,7 +90,7 @@ pub use template_metadata::{
 // Re-export API template metadata for ZIP registration (only with api_services feature)
 #[cfg(feature = "api_services")]
 #[cfg(not(clippy))]
-pub use reflow_api::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};
+pub use reflow_api_services::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};
 
 // Stubs when api_services feature is disabled — lets dependents compile without the heavy API modules
 #[cfg(not(feature = "api_services"))]

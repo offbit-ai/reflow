@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-actor_macro = { path = "../actor_macro" }
+reflow_actor_macro = { path = "../reflow_actor_macro" }
 anyhow = { workspace = true }
 flume = { workspace = true }
 reflow_actor = { path = "../reflow_actor" }

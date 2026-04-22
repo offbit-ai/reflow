@@ -19,7 +19,7 @@
 //! - `output` — RGBA8 with AO applied
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
 use serde_json::json;

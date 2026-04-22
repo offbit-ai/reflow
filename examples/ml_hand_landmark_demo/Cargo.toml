@@ -8,7 +8,7 @@ build = "build.rs"
 
 [dependencies]
 anyhow = "1"
-actor_macro = { path = "../../crates/actor_macro" }
+reflow_actor_macro = { path = "../../crates/reflow_actor_macro" }
 flume = "0.11"
 litert = "0.2.1"
 litert-sys = "0.2.1"

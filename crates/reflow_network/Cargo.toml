@@ -19,7 +19,7 @@ anyhow = { workspace = true }
 thiserror = {workspace = true}
 reflow_graph ={ path = "../reflow_graph" }
 reflow_actor ={ path = "../reflow_actor" }
-actor_macro = { path = "../actor_macro" }
+reflow_actor_macro = { path = "../reflow_actor_macro" }
 parking_lot = {workspace = true}
 flate2 = "1.0.35"
 flume = {workspace = true}

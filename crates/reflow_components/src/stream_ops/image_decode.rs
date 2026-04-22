@@ -4,7 +4,7 @@
 //! StreamHandle on `stream` with rows of RGBA pixels.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use image::GenericImageView;
 use reflow_actor::{

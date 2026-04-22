@@ -10,7 +10,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = {workspace = true}
 reflow_graph ={ path = "../reflow_graph" }
-actor_macro = { path = "../actor_macro" }
+reflow_actor_macro = { path = "../reflow_actor_macro" }
 reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
 parking_lot = {workspace = true}
 flate2 = "1.0.35"

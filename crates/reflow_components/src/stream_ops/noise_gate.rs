@@ -4,7 +4,7 @@
 //! compressor tames peaks, gate silences noise floor.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{

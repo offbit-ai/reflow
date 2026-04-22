@@ -1,6 +1,6 @@
 //! Graph-friendly computer-vision actors for Reflow ML pipelines.
 
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{anyhow, bail, Error, Result};
 use reflow_actor::{
     message::{EncodableValue, Message},

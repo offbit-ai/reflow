@@ -23,7 +23,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use reflow_network::{
     actor::{Actor, ActorBehavior, ActorContext, ActorLoad, MemoryState, Port},
     connector::{ConnectionPoint, Connector, InitialPacket},

@@ -14,7 +14,7 @@ repository = "https://github.com/offbit-ai/reflow"
 rust-version = "1.85"
 
 [dependencies]
-actor_macro = { version = "0.1.0", path = "../actor_macro" }
+reflow_actor_macro = { version = "0.1.0", path = "../reflow_actor_macro" }
 reflow_actor = { version = "0.1.0", path = "../reflow_actor" }
 reflow_assets = { version = "0.1.0", path = "../reflow_assets" }
 reflow_components = { version = "0.1.0", path = "../reflow_components", default-features = false }
@@ -25,7 +25,7 @@ reflow_sdf = { version = "0.1.0", path = "../reflow_sdf" }
 reflow_shader = { version = "0.1.0", path = "../reflow_shader" }
 reflow_vector = { version = "0.1.0", path = "../reflow_vector" }
 
-reflow_api = { version = "0.1.0", path = "../reflow_api", optional = true }
+reflow_api_services = { version = "0.1.0", path = "../reflow_api_services", optional = true }
 reflow_asset_registry = { version = "0.1.0", path = "../reflow_asset_registry", optional = true }
 reflow_cv_ops = { version = "0.1.0", path = "../reflow_cv_ops", optional = true }
 reflow_dsp = { version = "0.1.0", path = "../reflow_dsp", optional = true }
@@ -40,7 +40,7 @@ default = ["components-core"]
 components-core = []
 components-default = ["av-core", "gpu", "window-events"]
 
-api-services = ["dep:reflow_api", "reflow_components/api_services"]
+api-services = ["dep:reflow_api_services", "reflow_components/api_services"]
 api_services = ["api-services"]
 av-core = ["dep:reflow_dsp", "reflow_components/av-core"]
 browser = ["reflow_components/browser"]

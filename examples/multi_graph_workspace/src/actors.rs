@@ -3,7 +3,7 @@
 //! These are simple, tested actors that work specifically for this demo.
 
 use std::{collections::HashMap, sync::Arc};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::Error;
 use reflow_network::{
     actor::{Actor, ActorConfig, ActorBehavior, ActorContext, ActorLoad, MemoryState, Port},

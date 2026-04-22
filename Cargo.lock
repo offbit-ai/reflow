@@ -13,15 +13,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actor_macro"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.104",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5963,7 +5954,6 @@ dependencies = [
 name = "reflow_actor"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "anyhow",
  "bitcode",
  "chrono",
@@ -5979,6 +5969,7 @@ dependencies = [
  "ordered-float 5.0.0",
  "parking_lot 0.12.4",
  "rayon",
+ "reflow_actor_macro",
  "reflow_graph",
  "reflow_tracing_protocol",
  "serde",
@@ -5995,16 +5986,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "reflow_api"
+name = "reflow_actor_macro"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "reflow_api_services"
+version = "0.1.0"
+dependencies = [
  "anyhow",
  "chrono",
  "flume",
  "futures 0.3.31",
  "parking_lot 0.12.4",
  "reflow_actor",
+ "reflow_actor_macro",
  "reflow_graph",
  "reqwest 0.12.22",
  "serde",
@@ -6043,7 +6043,6 @@ dependencies = [
 name = "reflow_components"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "anyhow",
  "base64 0.22.1",
  "bytemuck",
@@ -6063,7 +6062,8 @@ dependencies = [
  "pollster",
  "rapier3d",
  "reflow_actor",
- "reflow_api",
+ "reflow_actor_macro",
+ "reflow_api_services",
  "reflow_assets",
  "reflow_cv_ops",
  "reflow_dsp",
@@ -6072,7 +6072,6 @@ dependencies = [
  "reflow_network",
  "reflow_pixel",
  "reflow_sdf",
- "reflow_server",
  "reflow_shader",
  "reflow_taskpacks",
  "reflow_tracing_protocol",
@@ -6093,10 +6092,10 @@ dependencies = [
 name = "reflow_cv_ops"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "anyhow",
  "flume",
  "reflow_actor",
+ "reflow_actor_macro",
  "reflow_media_codec",
  "reflow_media_types",
  "serde_json",
@@ -6242,11 +6241,11 @@ dependencies = [
 name = "reflow_ml_ops"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "anyhow",
  "flume",
  "parking_lot 0.12.4",
  "reflow_actor",
+ "reflow_actor_macro",
  "reflow_asset_registry",
  "reflow_litert",
  "reflow_media_codec",
@@ -6260,7 +6259,6 @@ dependencies = [
 name = "reflow_network"
 version = "0.1.1"
 dependencies = [
- "actor_macro",
  "anyhow",
  "async-trait",
  "base64 0.21.7",
@@ -6290,6 +6288,7 @@ dependencies = [
  "rayon",
  "redis",
  "reflow_actor",
+ "reflow_actor_macro",
  "reflow_graph",
  "reflow_tracing_protocol",
  "reqwest 0.12.22",
@@ -6371,9 +6370,9 @@ dependencies = [
 name = "reflow_rt"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "reflow_actor",
- "reflow_api",
+ "reflow_actor_macro",
+ "reflow_api_services",
  "reflow_asset_registry",
  "reflow_assets",
  "reflow_components",
@@ -6396,7 +6395,6 @@ dependencies = [
 name = "reflow_script"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "anyhow",
  "async-trait",
  "base64 0.22.1",
@@ -6411,6 +6409,7 @@ dependencies = [
  "once_cell",
  "parking_lot 0.12.4",
  "reflow_actor",
+ "reflow_actor_macro",
  "reflow_py",
  "reflow_tracing_protocol",
  "serde",
@@ -6436,7 +6435,6 @@ dependencies = [
 name = "reflow_server"
 version = "0.1.0"
 dependencies = [
- "actor_macro",
  "anyhow",
  "axum",
  "chrono",
@@ -6447,7 +6445,8 @@ dependencies = [
  "futures-util",
  "log",
  "redis",
- "reflow_api",
+ "reflow_actor_macro",
+ "reflow_api_services",
  "reflow_components",
  "reflow_graph",
  "reflow_network",

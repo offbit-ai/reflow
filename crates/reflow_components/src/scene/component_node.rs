@@ -39,7 +39,7 @@
 //! into multiple Component nodes to build a complete entity.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_assets::get_or_create_db;

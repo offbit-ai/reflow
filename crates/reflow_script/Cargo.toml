@@ -20,7 +20,7 @@ required-features = ["sqlite"]
 
 [dependencies]
 reflow_actor= { path = "../reflow_actor" }
-actor_macro = { path = "../actor_macro" }
+reflow_actor_macro = { path = "../reflow_actor_macro" }
 reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
 serde = { workspace = true }
 serde_json = { workspace = true }

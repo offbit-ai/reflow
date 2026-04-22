@@ -4,7 +4,7 @@
 //! types. Data frames are raw PCM f32 samples (little-endian).
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{

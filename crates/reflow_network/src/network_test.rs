@@ -3,7 +3,7 @@ use crate::{
     connector::{ConnectionPoint, Connector, InitialPacket},
     network::{Network, NetworkConfig},
 };
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use serde_json::Value;

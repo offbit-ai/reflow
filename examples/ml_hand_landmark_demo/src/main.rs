@@ -1,4 +1,4 @@
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{bail, Context, Result};
 use reflow_asset_registry::{sha256_hex, validate_model_bytes, ModelManifest};
 use reflow_litert::{InferenceOutput, TensorSpec};

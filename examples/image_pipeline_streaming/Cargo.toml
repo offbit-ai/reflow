@@ -12,7 +12,7 @@ path = "main.rs"
 [dependencies]
 reflow_network = { path = "../../crates/reflow_network" }
 reflow_actor = { path = "../../crates/reflow_actor" }
-actor_macro = { path = "../../crates/actor_macro" }
+reflow_actor_macro = { path = "../../crates/reflow_actor_macro" }
 anyhow = "1.0"
 tokio = { version = "1.0", features = ["full"] }
 serde_json = "1.0"

@@ -5,7 +5,7 @@
 //! incrementally.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     stream::{spawn_stream_task, stream_from_bytes},

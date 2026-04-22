@@ -4,7 +4,7 @@
 //! (default 5 Hz) to only affect the DC component.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{

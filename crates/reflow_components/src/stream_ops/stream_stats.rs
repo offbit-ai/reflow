@@ -4,7 +4,7 @@
 //! outport after the stream terminates.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::{actor, actor_display};
+use reflow_actor_macro::{actor, actor_display};
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{

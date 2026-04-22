@@ -4,7 +4,7 @@
 //! container. No system FFmpeg dependency required.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use openh264::encoder::{Encoder, EncoderConfig};
 use openh264::formats::{RgbSliceU8, YUVBuffer};

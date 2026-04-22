@@ -8,7 +8,7 @@ reflow_actor = { path = "../reflow_actor" }
 reflow_graph = { path = "../reflow_graph" }
 reflow_network = { path = "../reflow_network" }
 reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
-actor_macro = { path = "../actor_macro" }
+reflow_actor_macro = { path = "../reflow_actor_macro" }
 
 # Core dependencies
 serde = { workspace = true }
@@ -42,7 +42,7 @@ base64 = "0.22"
 reflow_sdf = { path = "../reflow_sdf" }
 
 # API actors (optional — large, 88 services / ~6700 actors)
-reflow_api = { path = "../reflow_api", optional = true }
+reflow_api_services = { path = "../reflow_api_services", optional = true }
 
 # Asset database (pure Rust, Wasm-safe)
 reflow_assets = { path = "../reflow_assets" }
@@ -92,7 +92,7 @@ nokhwa = { version = "0.10.10", features = ["js-sys"], optional = true }
 
 [features]
 default = ["av-core", "gpu", "window-events"]
-api_services = ["dep:reflow_api"]
+api_services = ["dep:reflow_api_services"]
 av-core = ["dep:reflow_dsp"]
 gpu = ["dep:wgpu", "dep:pollster", "dep:once_cell"]
 video-encode = ["dep:openh264"]
@@ -108,5 +108,3 @@ nokhwa = { version = "0.10.10", features = ["input-native"], optional = true }
 
 
 
-[dev-dependencies]
-reflow_server = { path = "../reflow_server" }

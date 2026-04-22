@@ -7,7 +7,7 @@
 //! Designed for Zeal's spectrum visualization node.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{

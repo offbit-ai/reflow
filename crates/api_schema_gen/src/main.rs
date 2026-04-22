@@ -151,7 +151,7 @@ enum Commands {
         registry: PathBuf,
 
         /// Output directory for generated Rust source files
-        #[arg(short, long, default_value = "../reflow_api/src/api")]
+        #[arg(short, long, default_value = "../reflow_api_services/src/api")]
         output: PathBuf,
     },
 }

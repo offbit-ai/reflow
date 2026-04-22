@@ -303,7 +303,7 @@ fn generate_service_module(service_id: &str, service: &Service) -> Result<String
 
     // Imports
     writeln!(out, "use crate::{{Actor, ActorBehavior, Message, Port}};")?;
-    writeln!(out, "use actor_macro::actor;")?;
+    writeln!(out, "use reflow_actor_macro::actor;")?;
     writeln!(out, "use anyhow::{{Error, Result}};")?;
     writeln!(
         out,

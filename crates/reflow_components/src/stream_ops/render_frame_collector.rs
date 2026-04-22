@@ -9,7 +9,7 @@
 //! multiple actor invocations via the stream ID stored in MemoryState.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{
     message::EncodableValue,

@@ -18,7 +18,7 @@
 //!   plane: "xz" | "xy" | "yz" — which plane the 2D path maps to (default "xz")
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use reflow_sdf::ir::SdfNode;

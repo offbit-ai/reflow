@@ -9,7 +9,7 @@
 //! 4. Outputs image metadata on `metadata` for downstream nodes
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext};
 use serde_json::json;

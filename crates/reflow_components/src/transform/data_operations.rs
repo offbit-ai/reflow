@@ -5,7 +5,7 @@ use super::js_eval::{
     evaluate_js_expression_with_inputs, evaluate_js_filter_with_inputs, resolve_template_string,
 };
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::ActorContext;
 use serde_json::{json, Value};

@@ -19,7 +19,7 @@
 //! - `error` — error message if import fails
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use fbxcel::low::v7400::AttributeValue;
 use fbxcel::pull_parser::v7400::attribute::loaders::DirectLoader;

@@ -16,7 +16,7 @@
 //! - `bone_transforms` — blended result
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use reflow_actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
 use serde_json::{json, Value};
