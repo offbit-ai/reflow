@@ -6368,6 +6368,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_rt"
+version = "0.1.0"
+dependencies = [
+ "actor_macro",
+ "reflow_actor",
+ "reflow_api",
+ "reflow_asset_registry",
+ "reflow_assets",
+ "reflow_components",
+ "reflow_cv_ops",
+ "reflow_dsp",
+ "reflow_graph",
+ "reflow_litert",
+ "reflow_media_codec",
+ "reflow_media_types",
+ "reflow_ml_ops",
+ "reflow_network",
+ "reflow_pixel",
+ "reflow_sdf",
+ "reflow_shader",
+ "reflow_taskpacks",
+ "reflow_vector",
+]
+
+[[package]]
 name = "reflow_script"
 version = "0.1.0"
 dependencies = [
