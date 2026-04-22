@@ -265,7 +265,7 @@ impl TensorPacket {
     }
 
     pub fn as_f32_vec(&self) -> Option<Vec<f32>> {
-        if self.dtype != TensorDType::F32 || !self.data.len().is_multiple_of(4) {
+        if self.dtype != TensorDType::F32 || self.data.len() % 4 != 0 {
             return None;
         }
         Some(

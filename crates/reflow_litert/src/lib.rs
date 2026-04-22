@@ -607,7 +607,7 @@ mod external_litert {
         data: &[u8],
         decode: impl Fn([u8; N]) -> T,
     ) -> Result<Vec<T>> {
-        if !data.len().is_multiple_of(N) {
+        if data.len() % N != 0 {
             bail!("tensor byte length {} is not divisible by {N}", data.len());
         }
         Ok(data
