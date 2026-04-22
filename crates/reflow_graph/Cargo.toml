@@ -1,8 +1,17 @@
 [package]
 name = "reflow_graph"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
+description = "Graph data structures for Reflow — nodes, edges, IIPs, exports, and analysis."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_graph"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "graph", "dag", "workflow", "actor"]
+categories = ["data-structures", "development-tools", "concurrency"]
 
 
 [dependencies]

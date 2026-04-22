@@ -1,14 +1,24 @@
 [package]
 name = "reflow_components"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Standard component catalog for Reflow — procedural, media, GPU, animation, I/O, and stream actors."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_components"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "actor", "dag", "gpu", "workflow"]
+categories = ["multimedia", "rendering", "development-tools"]
 
 [dependencies]
-reflow_actor = { path = "../reflow_actor" }
-reflow_graph = { path = "../reflow_graph" }
-reflow_network = { path = "../reflow_network" }
-reflow_tracing_protocol = { path = "../reflow_tracing_protocol" }
-reflow_actor_macro = { path = "../reflow_actor_macro" }
+reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
+reflow_network = { version = "0.2.0", path = "../reflow_network" }
+reflow_tracing_protocol = { version = "0.2.0", path = "../reflow_tracing_protocol" }
+reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
 
 # Core dependencies
 serde = { workspace = true }
@@ -31,26 +41,26 @@ chrono = { version = "0.4", features = ["serde"] }
 rquickjs = { version = "0.6", features = ["array-buffer", "bindgen", "classes", "futures", "loader", "macro", "parallel", "properties"] }
 
 # AV processing (pure-Rust, Wasm-safe)
-reflow_dsp = { path = "../reflow_dsp", optional = true }
-reflow_pixel = { path = "../reflow_pixel" }
+reflow_dsp = { version = "0.2.0", path = "../reflow_dsp", optional = true }
+reflow_pixel = { version = "0.2.0", path = "../reflow_pixel" }
 
 # Image codecs (PNG, JPEG, WebP, GIF — pure Rust, Wasm-safe)
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 base64 = "0.22"
 
 # SDF / Noise (pure Rust, Wasm-safe — always available)
-reflow_sdf = { path = "../reflow_sdf" }
+reflow_sdf = { version = "0.2.0", path = "../reflow_sdf" }
 
 # API actors (optional — large, 88 services / ~6700 actors)
-reflow_api_services = { path = "../reflow_api_services", optional = true }
+reflow_api_services = { version = "0.2.0", path = "../reflow_api_services", optional = true }
 
 # Asset database (pure Rust, Wasm-safe)
-reflow_assets = { path = "../reflow_assets" }
+reflow_assets = { version = "0.2.0", path = "../reflow_assets" }
 
 # Media / ML stack (optional; mock-first, no native LiteRT dependency by default)
-reflow_cv_ops = { path = "../reflow_cv_ops", optional = true }
-reflow_ml_ops = { path = "../reflow_ml_ops", optional = true }
-reflow_taskpacks = { path = "../reflow_taskpacks", optional = true }
+reflow_cv_ops = { version = "0.2.0", path = "../reflow_cv_ops", optional = true }
+reflow_ml_ops = { version = "0.2.0", path = "../reflow_ml_ops", optional = true }
+reflow_taskpacks = { version = "0.2.0", path = "../reflow_taskpacks", optional = true }
 
 # Zero-cost byte↔float reinterpretation (always available for skinning SIMD)
 bytemuck = { version = "1.14", features = ["derive"] }
@@ -72,7 +82,7 @@ tobj = "4"
 fbxcel = "0.9"
 
 # Shader graph (node-based materials → WGSL codegen)
-reflow_shader = { path = "../reflow_shader" }
+reflow_shader = { version = "0.2.0", path = "../reflow_shader" }
 
 # Physics (pure Rust, Wasm-safe)
 rapier3d = { version = "0.22", features = ["serde-serialize"] }
@@ -82,7 +92,7 @@ fontdue = "0.9"
 
 # 2D vector rasterization (pure Rust, Wasm-safe)
 tiny-skia = "0.11"
-reflow_vector = { path = "../reflow_vector" }
+reflow_vector = { version = "0.2.0", path = "../reflow_vector" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"

@@ -1,9 +1,17 @@
 [package]
 name = "reflow_tracing_protocol"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
-description = "Shared protocol definitions for Reflow tracing system"
+description = "Shared tracing-protocol types for the Reflow runtime."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_tracing_protocol"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "tracing", "protocol", "actor", "dag"]
+categories = ["development-tools", "development-tools::debugging"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

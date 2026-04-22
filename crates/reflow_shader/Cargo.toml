@@ -1,7 +1,17 @@
 [package]
 name = "reflow_shader"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Shader graph IR and WGSL material code generation for Reflow."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_shader"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "shader", "wgsl", "pbr", "rendering"]
+categories = ["rendering", "rendering::graphics-api", "graphics"]
 
 [dependencies]
 serde = { workspace = true }

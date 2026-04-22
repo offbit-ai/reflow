@@ -1,8 +1,17 @@
 [package]
 name = "reflow_pixel"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Pure-Rust pixel operations for Reflow image/video processing actors. Wasm-safe."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_pixel"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "pixel", "image", "graphics", "wasm"]
+categories = ["multimedia::images", "graphics", "wasm"]
 
 [dependencies]
 

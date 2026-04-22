@@ -1,15 +1,25 @@
 [package]
 name = "reflow_cv_ops"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Computer-vision preprocessing actors for Reflow — resize, normalize, colorspace, letterbox."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_cv_ops"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "cv", "preprocess", "ml", "vision"]
+categories = ["multimedia::images", "science", "computer-vision"]
 
 [dependencies]
-reflow_actor_macro = { path = "../reflow_actor_macro" }
+reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
 anyhow = { workspace = true }
 flume = { workspace = true }
-reflow_actor = { path = "../reflow_actor" }
-reflow_media_codec = { path = "../reflow_media_codec" }
-reflow_media_types = { path = "../reflow_media_types" }
+reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+reflow_media_codec = { version = "0.2.0", path = "../reflow_media_codec" }
+reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
 serde_json = { workspace = true }
 
 [dev-dependencies]

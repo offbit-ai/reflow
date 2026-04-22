@@ -1,12 +1,22 @@
 [package]
 name = "reflow_api_services"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Generated API-service actor catalog for Reflow — thousands of actors across ~90 third-party services."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_api_services"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "api", "services", "actors", "integration"]
+categories = ["api-bindings", "web-programming", "development-tools"]
 
 [dependencies]
-reflow_actor = { path = "../reflow_actor" }
-reflow_graph = { path = "../reflow_graph" }
-reflow_actor_macro = { path = "../reflow_actor_macro" }
+reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
+reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
 
 # Core
 serde = { workspace = true }

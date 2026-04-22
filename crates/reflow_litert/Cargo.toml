@@ -1,14 +1,24 @@
 [package]
 name = "reflow_litert"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "LiteRT backend boundary for Reflow ML actors; optional real LiteRT adapter behind a feature flag."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_litert"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "litert", "ml", "inference", "tflite"]
+categories = ["science", "api-bindings"]
 
 [dependencies]
 anyhow = { workspace = true }
 # Optional Offbit LiteRT bindings from crates.io.
 litert = { version = "0.2.1", optional = true }
 litert-sys = { version = "0.2.1", optional = true }
-reflow_media_types = { path = "../reflow_media_types" }
+reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

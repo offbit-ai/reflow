@@ -1,8 +1,17 @@
 [package]
 name = "reflow_dsp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Pure-Rust DSP primitives for Reflow audio/signal processing actors. Wasm-safe."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_dsp"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "dsp", "audio", "signal-processing", "wasm"]
+categories = ["multimedia::audio", "algorithms", "wasm"]
 
 [dependencies]
 # FFT support (pure Rust, no SIMD required, Wasm-compatible)

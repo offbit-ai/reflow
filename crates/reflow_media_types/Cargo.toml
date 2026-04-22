@@ -1,7 +1,17 @@
 [package]
 name = "reflow_media_types"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Typed media and ML packet types (frames, tensors, detections, landmarks) for Reflow."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_media_types"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "media", "tensor", "frame", "ml"]
+categories = ["multimedia", "data-structures", "science"]
 
 [dependencies]
 serde = { workspace = true }

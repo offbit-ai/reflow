@@ -1,13 +1,23 @@
 [package]
 name = "reflow_asset_registry"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Asset registry client for Reflow — resolves content-addressed URIs and ML model manifests."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_asset_registry"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "registry", "assets", "ml", "manifest"]
+categories = ["caching", "data-structures", "science"]
 
 [dependencies]
 anyhow = { workspace = true }
-reflow_assets = { path = "../reflow_assets" }
-reflow_litert = { path = "../reflow_litert" }
-reflow_media_types = { path = "../reflow_media_types" }
+reflow_assets = { version = "0.2.0", path = "../reflow_assets" }
+reflow_litert = { version = "0.2.0", path = "../reflow_litert" }
+reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10"

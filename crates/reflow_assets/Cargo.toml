@@ -1,8 +1,17 @@
 [package]
 name = "reflow_assets"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "Content-addressed asset database for Reflow workflows"
+description = "Content-addressed asset database conventions for Reflow workflows."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_assets"
+readme = "README.md"
+authors = ["Damilare Akinlaja"]
+rust-version = "1.85"
+keywords = ["reflow", "assets", "content-addressed", "blake3", "workflow"]
+categories = ["data-structures", "caching", "wasm"]
 
 [dependencies]
 anyhow = { workspace = true }
