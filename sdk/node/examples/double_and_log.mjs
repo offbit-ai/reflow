@@ -1,47 +1,44 @@
 // Two-node pipeline: a Doubler actor emits 2×N into a Log actor.
 // Run with:  node examples/double_and_log.mjs
-// (requires `npm run build:debug` first so the native addon is built)
-import {
-  ReflowNetwork,
-  ReflowActor,
-  ReflowMessage,
-} from "../index.js";
+// (requires `npm run build` or `npm run build:debug` first)
+import { Actor, Network, Message } from "../reflow.mjs";
 
-const double = ReflowActor.fromCallback(
-  { component: "double", inports: ["in"], outports: ["out"] },
-  (ctx) => {
-    const inMsg = ctx.inputs?.in;
-    const n = inMsg?.data ?? 0;
-    ctx.done({ out: ReflowMessage.integer(n * 2).asJson() });
+class Doubler extends Actor {
+  static component = "doubler";
+  static inports = ["in"];
+  static outports = ["out"];
+
+  run(ctx) {
+    const n = Number(ctx.inputs?.in?.data ?? 0);
+    ctx.done({ out: Message.integer(n * 2) });
   }
-);
+}
 
-const log = ReflowActor.fromCallback(
-  { component: "log", inports: ["in"], outports: [] },
-  (ctx) => {
-    console.log("got:", ctx.inputs?.in);
+class Log extends Actor {
+  static component = "log";
+  static inports = ["in"];
+  static outports = [];
+
+  constructor(label) {
+    super();
+    this.label = label ?? "got";
+  }
+
+  run(ctx) {
+    console.log(`${this.label}:`, ctx.inputs?.in);
     ctx.done();
   }
-);
+}
 
-const net = new ReflowNetwork();
-net.registerActor("tpl_double", double);
-net.registerActor("tpl_log", log);
+const net = new Network();
+net.registerActor("tpl_doubler", new Doubler());
+net.registerActor("tpl_log", new Log("doubled"));
 
-net.addNode("a", "tpl_double");
+net.addNode("a", "tpl_doubler");
 net.addNode("b", "tpl_log");
 net.addConnection("a", "out", "b", "in");
 net.addInitial("a", "in", { type: "Integer", data: 21 });
 
-const events = net.events();
-(async () => {
-  for (let i = 0; i < 5; i++) {
-    const evt = await events.recv();
-    if (!evt) break;
-    console.log("event:", evt);
-  }
-})();
-
 net.start();
-await new Promise((r) => setTimeout(r, 500));
+await new Promise((r) => setTimeout(r, 200));
 net.shutdown();

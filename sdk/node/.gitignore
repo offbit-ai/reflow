@@ -1,0 +1,11 @@
+# napi-rs auto-generated artifacts
+index.js
+index.d.ts
+*.node
+
+# npm
+node_modules/
+npm-debug.log
+
+# cargo
+target/

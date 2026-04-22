@@ -24,6 +24,9 @@ use parking_lot::Mutex as PlMutex;
 use std::sync::Mutex;
 
 use reflow_rt::actor_runtime::message::Message;
+use reflow_rt::actor_runtime::stream::{
+    STREAM_REGISTRY, StreamFrame, StreamHandle as RtStreamHandle, StreamId,
+};
 use reflow_rt::actor_runtime::{
     Actor as RtActor, ActorBehavior, ActorContext, ActorLoad, ActorState, MemoryState, Port,
 };
@@ -213,6 +216,253 @@ impl ReflowMessage {
     pub fn as_json(&self) -> Result<serde_json::Value> {
         serde_json::to_value(&self.inner)
             .map_err(|e| Error::from_reason(format!("serialize: {e}")))
+    }
+
+    /// For `StreamHandle` messages, take the receiver. Throws if the
+    /// message is not a stream, or if the receiver has already been taken.
+    #[napi(js_name = "takeStream")]
+    pub fn take_stream(&self) -> Result<StreamReader> {
+        match &self.inner {
+            Message::StreamHandle(h) => {
+                let rx = STREAM_REGISTRY.take_receiver(h.stream_id).ok_or_else(|| {
+                    Error::from_reason(format!(
+                        "no receiver for stream {} (already taken?)",
+                        h.stream_id
+                    ))
+                })?;
+                Ok(StreamReader { rx })
+            }
+            _ => Err(Error::from_reason("message is not a StreamHandle")),
+        }
+    }
+}
+
+// ─── Stream producer / consumer ────────────────────────────────────────────
+
+/// Producer-side handle for a `Message::StreamHandle`. Create with
+/// `ReflowStream.create`, push frames with `sendBytes` / `sendBegin`,
+/// terminate with `end` or `error`, and convert to a `ReflowMessage`
+/// with `intoMessage`.
+#[napi]
+pub struct ReflowStream {
+    inner: PlMutex<Option<StreamInner>>,
+}
+
+struct StreamInner {
+    id: StreamId,
+    sender: flume::Sender<StreamFrame>,
+    origin_actor: String,
+    origin_port: String,
+    content_type: Option<String>,
+}
+
+/// Options accepted by `ReflowStream.create`.
+#[napi(object)]
+pub struct StreamOptions {
+    pub buffer_size: Option<u32>,
+    pub origin_actor: Option<String>,
+    pub origin_port: Option<String>,
+    pub content_type: Option<String>,
+}
+
+/// Options accepted by `ReflowStream.sendBegin`.
+#[napi(object)]
+pub struct StreamBeginOptions {
+    pub content_type: Option<String>,
+    pub size_hint: Option<u32>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+#[napi]
+impl ReflowStream {
+    /// Allocate a new stream. `bufferSize == 0` creates an unbounded
+    /// channel; any positive value enables backpressure with that
+    /// bound. Default: 0 (unbounded).
+    #[napi(factory)]
+    pub fn create(opts: Option<StreamOptions>) -> Self {
+        let opts = opts.unwrap_or(StreamOptions {
+            buffer_size: None,
+            origin_actor: None,
+            origin_port: None,
+            content_type: None,
+        });
+        let bs = opts.buffer_size.unwrap_or(0);
+        let buf = if bs == 0 { None } else { Some(bs as usize) };
+        let (id, sender) = STREAM_REGISTRY.create_stream(buf);
+        Self {
+            inner: PlMutex::new(Some(StreamInner {
+                id,
+                sender,
+                origin_actor: opts.origin_actor.unwrap_or_default(),
+                origin_port: opts.origin_port.unwrap_or_default(),
+                content_type: opts.content_type,
+            })),
+        }
+    }
+
+    fn with_inner<F, R>(&self, f: F) -> Result<R>
+    where
+        F: FnOnce(&StreamInner) -> Result<R>,
+    {
+        let guard = self.inner.lock();
+        match guard.as_ref() {
+            Some(i) => f(i),
+            None => Err(Error::from_reason("stream has already been consumed")),
+        }
+    }
+
+    #[napi(js_name = "sendBegin")]
+    pub fn send_begin(&self, opts: Option<StreamBeginOptions>) -> Result<()> {
+        let opts = opts.unwrap_or(StreamBeginOptions {
+            content_type: None,
+            size_hint: None,
+            metadata: None,
+        });
+        self.with_inner(|i| {
+            i.sender
+                .send(StreamFrame::Begin {
+                    content_type: opts.content_type.clone(),
+                    size_hint: opts.size_hint.map(|v| v as u64),
+                    metadata: opts.metadata.clone(),
+                })
+                .map_err(|e| Error::from_reason(format!("stream send: {e}")))
+        })
+    }
+
+    #[napi(js_name = "sendBytes")]
+    pub fn send_bytes(&self, data: Buffer) -> Result<()> {
+        self.with_inner(|i| {
+            i.sender
+                .send(StreamFrame::Data(Arc::new(data.to_vec())))
+                .map_err(|e| Error::from_reason(format!("stream send: {e}")))
+        })
+    }
+
+    #[napi]
+    pub fn end(&self) -> Result<()> {
+        self.with_inner(|i| {
+            i.sender
+                .send(StreamFrame::End)
+                .map_err(|e| Error::from_reason(format!("stream end: {e}")))
+        })
+    }
+
+    #[napi]
+    pub fn error(&self, message: String) -> Result<()> {
+        self.with_inner(|i| {
+            i.sender
+                .send(StreamFrame::Error(message.clone()))
+                .map_err(|e| Error::from_reason(format!("stream error: {e}")))
+        })
+    }
+
+    /// Consume this producer and return a `Message::StreamHandle` the
+    /// runtime can route on an output port. After this call, the
+    /// stream cannot send more frames via `sendBytes` / `end` — the
+    /// actor on the other side of the port owns lifetime.
+    #[napi(js_name = "intoMessage")]
+    pub fn into_message(&self) -> Result<ReflowMessage> {
+        let mut guard = self.inner.lock();
+        let inner = guard
+            .take()
+            .ok_or_else(|| Error::from_reason("stream has already been consumed"))?;
+        let handle = RtStreamHandle {
+            stream_id: inner.id,
+            origin_actor: inner.origin_actor,
+            origin_port: inner.origin_port,
+            content_type: inner.content_type,
+            size_hint: None,
+        };
+        Ok(ReflowMessage {
+            inner: Message::StreamHandle(Arc::new(handle)),
+        })
+    }
+}
+
+/// Consumer-side reader for a stream. Obtained via
+/// `ReflowMessage.takeStream()`.
+#[napi]
+pub struct StreamReader {
+    rx: flume::Receiver<StreamFrame>,
+}
+
+/// Shape of each frame emitted by `StreamReader.recv`. `kind` is one of
+/// `"begin" | "data" | "end" | "error" | "timeout" | "closed"`.
+#[napi(object)]
+pub struct StreamFrameValue {
+    pub kind: String,
+    pub data: Option<Buffer>,
+    pub error: Option<String>,
+    pub content_type: Option<String>,
+    pub size_hint: Option<u32>,
+}
+
+#[napi]
+impl StreamReader {
+    /// Await the next frame, blocking up to `timeoutMs` milliseconds.
+    /// Resolves to a frame whose `kind` distinguishes all possible
+    /// outcomes. `kind === "closed"` means the producer has been dropped
+    /// without terminating; iteration should stop.
+    #[napi]
+    pub async fn recv(&self, timeout_ms: u32) -> Result<StreamFrameValue> {
+        let d = std::time::Duration::from_millis(timeout_ms as u64);
+        let fut = self.rx.recv_async();
+        let outcome = tokio::time::timeout(d, fut).await;
+        let frame = match outcome {
+            Err(_) => {
+                return Ok(StreamFrameValue {
+                    kind: "timeout".into(),
+                    data: None,
+                    error: None,
+                    content_type: None,
+                    size_hint: None,
+                });
+            }
+            Ok(Err(_)) => {
+                return Ok(StreamFrameValue {
+                    kind: "closed".into(),
+                    data: None,
+                    error: None,
+                    content_type: None,
+                    size_hint: None,
+                });
+            }
+            Ok(Ok(f)) => f,
+        };
+        Ok(match frame {
+            StreamFrame::Begin {
+                content_type,
+                size_hint,
+                ..
+            } => StreamFrameValue {
+                kind: "begin".into(),
+                data: None,
+                error: None,
+                content_type,
+                size_hint: size_hint.map(|v| v as u32),
+            },
+            StreamFrame::Data(buf) => StreamFrameValue {
+                kind: "data".into(),
+                data: Some(buf.as_slice().into()),
+                error: None,
+                content_type: None,
+                size_hint: None,
+            },
+            StreamFrame::End => StreamFrameValue {
+                kind: "end".into(),
+                data: None,
+                error: None,
+                content_type: None,
+                size_hint: None,
+            },
+            StreamFrame::Error(msg) => StreamFrameValue {
+                kind: "error".into(),
+                data: None,
+                error: Some(msg),
+                content_type: None,
+                size_hint: None,
+            },
+        })
     }
 }
 
