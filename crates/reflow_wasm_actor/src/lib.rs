@@ -5,7 +5,7 @@
 //! # Quick Start
 //!
 //! ```rust,no_run
-//! use reflow_wasm::*;
+//! use reflow_wasm_actor::*;
 //! use anyhow::Result;
 //! use std::collections::HashMap;
 //!
@@ -401,7 +401,7 @@ pub mod host {
     ///
     /// # Example
     /// ```no_run
-    /// use reflow_wasm::host::send_output;
+    /// use reflow_wasm_actor::host::send_output;
     /// use std::collections::HashMap;
     ///
     /// let mut outputs = HashMap::new();
@@ -451,7 +451,7 @@ pub mod host {
     ///
     /// # Example
     /// ```no_run
-    /// use reflow_wasm::host::get_state;
+    /// use reflow_wasm_actor::host::get_state;
     ///
     /// let count: i64 = get_state("count")
     ///     .and_then(|v| v.as_i64())
@@ -476,7 +476,7 @@ pub mod host {
     ///
     /// # Example
     /// ```no_run
-    /// use reflow_wasm::host::set_state;
+    /// use reflow_wasm_actor::host::set_state;
     ///
     /// set_state("count", serde_json::json!(42)).unwrap();
     /// ```

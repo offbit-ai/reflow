@@ -110,7 +110,7 @@ This workspace contains multiple crates that work together:
 ### Language Runtimes  
 - **`reflow_js`** - JavaScript/Deno runtime integration
 - **`reflow_py`** - Python runtime integration  
-- **`reflow_wasm`** - WebAssembly runtime and browser support
+- **`reflow_wasm_actor`** - WebAssembly runtime and browser support
 
 ### Execution & Deployment
 - **`reflow_script`** - Multi-language script execution

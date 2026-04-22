@@ -228,8 +228,8 @@ __return_value = data.sum()
 
 #### WebAssembly
 ```rust
-// WASM actor using Reflow Plugin SDK (reflow_wasm)
-use reflow_wasm::*;
+// WASM actor using Reflow Plugin SDK (reflow_wasm_actor)
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 // Define plugin metadata

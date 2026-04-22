@@ -1,6 +1,6 @@
 //! Stateful counter actor plugin demonstrating state management
 
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 /// Plugin metadata

@@ -1,6 +1,6 @@
 //! Async actor demonstrating host function usage for asynchronous outputs
 
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 /// Plugin metadata

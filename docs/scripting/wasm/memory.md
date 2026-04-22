@@ -127,7 +127,7 @@ for line in reader.lines() {
 ### Efficient State Storage
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
@@ -256,7 +256,7 @@ fn monitor_plugin_memory() {
 ### Efficient Binary Operations
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 
 fn process_binary(context: ActorContext) -> Result<ActorResult, Box<dyn std::error::Error>> {
     let mut outputs = HashMap::new();

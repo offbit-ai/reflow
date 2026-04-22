@@ -33,10 +33,10 @@ Reflow's WASM runtime is built on [Extism](https://extism.org/), a cross-languag
 
 ## Plugin SDK
 
-Reflow provides a Rust SDK (`reflow_wasm`) for building WASM plugins:
+Reflow provides a Rust SDK (`reflow_wasm_actor`) for building WASM plugins:
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 // Define plugin metadata
@@ -140,7 +140,7 @@ The WASM runtime provides several security features:
 ## Example: Stateful Counter (Rust)
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 fn metadata() -> PluginMetadata {

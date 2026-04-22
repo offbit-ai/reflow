@@ -1,5 +1,5 @@
 [package]
-name = "reflow_wasm"
+name = "reflow_wasm_actor"
 version = "0.1.0"
 edition = "2021"
 description = "WebAssembly Plugin SDK for Reflow - Build actors as WASM plugins"

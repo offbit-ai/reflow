@@ -1,6 +1,6 @@
 //! Unit tests for the WASM plugin SDK
 
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 #[test]

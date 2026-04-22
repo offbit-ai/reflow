@@ -416,7 +416,7 @@ mod tests {
     #[tokio::test]
     async fn test_wasm_actor() -> Result<()> {
         let wasm_binary = include_bytes!(
-            "../../../crates/reflow_wasm/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm"
+            "../../../crates/reflow_wasm_actor/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm"
         );
 
         let mut engine = ExtismEngine::new();

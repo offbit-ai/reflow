@@ -8,7 +8,7 @@ This guide explains how the WASM plugin system integrates with Reflow's actor sy
 ┌─────────────────────────┐     ┌──────────────────────┐
 │   WASM Plugin (SDK)     │     │   Reflow Host       │
 ├─────────────────────────┤     ├──────────────────────┤
-│ • reflow_wasm crate     │     │ • ScriptActor       │
+│ • reflow_wasm_actor crate     │     │ • ScriptActor       │
 │ • Extism PDK            │────▶│ • ExtismEngine      │
 │ • Plugin code           │     │ • Host functions    │
 └─────────────────────────┘     └──────────────────────┘
@@ -16,12 +16,12 @@ This guide explains how the WASM plugin system integrates with Reflow's actor sy
 
 ## How It Works
 
-### 1. Plugin Development (reflow_wasm)
+### 1. Plugin Development (reflow_wasm_actor)
 
-Developers use the `reflow_wasm` SDK to create WASM plugins:
+Developers use the `reflow_wasm_actor` SDK to create WASM plugins:
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 
 // Define metadata
 fn metadata() -> PluginMetadata {
@@ -191,7 +191,7 @@ async fn test_plugin() {
 
 ## Example Workflow
 
-1. Developer creates plugin using `reflow_wasm` SDK
+1. Developer creates plugin using `reflow_wasm_actor` SDK
 2. Builds to WASM: `cargo build --target wasm32-unknown-unknown`
 3. Deploys WASM file with Reflow application
 4. Configures graph to use ExtismActor

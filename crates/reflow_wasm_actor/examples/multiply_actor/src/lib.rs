@@ -1,6 +1,6 @@
 //! Example Reflow actor plugin that multiplies input by a configurable factor
 
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use std::collections::HashMap;
 
 /// Define the plugin metadata

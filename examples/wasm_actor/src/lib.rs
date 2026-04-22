@@ -1,4 +1,4 @@
-use reflow_wasm::{actor_fn, FnResult, Context, Input, Output, Json};
+use reflow_wasm_actor::{actor_fn, FnResult, Context, Input, Output, Json};
 use std::collections::HashMap;
 
 /// A simple counter actor that demonstrates state management

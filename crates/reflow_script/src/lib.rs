@@ -356,7 +356,7 @@ __return_value=np.array(inputs.get("packet").data).sum()
         let config = ScriptConfig {
             environment: ScriptEnvironment::SYSTEM,
             runtime: ScriptRuntime::Extism,
-            source: include_bytes!("../../../crates/reflow_wasm/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm").to_vec(),
+            source: include_bytes!("../../../crates/reflow_wasm_actor/examples/counter_actor/target/wasm32-unknown-unknown/release/counter_actor.wasm").to_vec(),
             entry_point: "process".to_string(),
             packages: None,
         };

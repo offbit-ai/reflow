@@ -23,7 +23,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-reflow_wasm = "0.1"
+reflow_wasm_actor = "0.1"
 anyhow = "1.0"
 serde_json = "1.0"
 
@@ -34,7 +34,7 @@ lto = true
 
 3. Implement your actor in `src/lib.rs`:
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use anyhow::Result;
 use std::collections::HashMap;
 
@@ -190,7 +190,7 @@ fn process_actor(mut context: ActorContext) -> Result<ActorResult> {
 The SDK provides helper functions for common operations:
 
 ```rust
-use reflow_wasm::helpers::*;
+use reflow_wasm_actor::helpers::*;
 
 // Get typed input
 let value: i64 = get_input(&context, "input").unwrap_or(0);
@@ -212,7 +212,7 @@ return Ok(success_result("output", Message::String("Done".to_string())));
 ### Stateful Counter Actor
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use anyhow::Result;
 use std::collections::HashMap;
 
@@ -271,7 +271,7 @@ actor_plugin!(
 ### HTTP Request Actor
 
 ```rust
-use reflow_wasm::*;
+use reflow_wasm_actor::*;
 use anyhow::Result;
 use std::collections::HashMap;
 

@@ -189,7 +189,7 @@ deploy_rust() {
     "crates/reflow_network"
     "crates/reflow_script"
     "crates/pyexec"
-    "crates/reflow_wasm"
+    "crates/reflow_wasm_actor"
     "crates/reflow_wasm_go"
     "crates/reflow_node"
     "crates/reflow_server"
