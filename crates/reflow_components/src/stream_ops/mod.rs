@@ -1,5 +1,6 @@
 // Plumbing
 mod bytes_to_stream;
+mod display;
 mod stream_buffer;
 mod stream_stats;
 mod stream_tee;
@@ -93,3 +94,7 @@ pub use frame_buffer::FrameBufferActor;
 pub use render_frame_collector::RenderFrameCollectorActor;
 #[cfg(feature = "video-encode")]
 pub use video_encode::VideoEncoderActor;
+
+pub(crate) use display::{
+    attach_display_components, display_catalog_entries, display_component_sources,
+};

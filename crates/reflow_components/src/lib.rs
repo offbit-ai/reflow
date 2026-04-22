@@ -45,6 +45,7 @@ pub mod animation;
 #[cfg(not(clippy))]
 pub use reflow_api::api;
 pub mod assets;
+mod display;
 pub mod flow_control;
 pub mod gpu;
 #[cfg(feature = "window-events")]

@@ -8,9 +8,60 @@ use crate::{Actor, ActorBehavior, Message, Port};
 use actor_macro::actor;
 use anyhow::{Error, Result};
 use reflow_actor::{message::EncodableValue, ActorContext};
+use reflow_network::template::{DisplayComponentSource, NodeTemplate};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::Cursor;
+
+const TEXTURE_PREVIEW_JS: &str = include_str!("display/texture_preview.js");
+
+pub(crate) fn display_component_sources() -> Vec<(&'static str, &'static str)> {
+    vec![("reflow-texture-preview", TEXTURE_PREVIEW_JS)]
+}
+
+pub(crate) fn display_catalog_entries() -> Vec<DisplayComponentSource> {
+    display_component_sources()
+        .into_iter()
+        .map(|(element, source)| DisplayComponentSource {
+            element: element.to_string(),
+            source: source.to_string(),
+        })
+        .collect()
+}
+
+pub(crate) fn attach_display_components(templates: &mut [NodeTemplate]) {
+    for template in templates {
+        template.display = match template.id.as_str() {
+            "tpl_triplanar_texture" => Some(crate::display::inline_display(
+                "reflow-texture-preview",
+                TEXTURE_PREVIEW_JS,
+                &[
+                    "scale",
+                    "sharpness",
+                    "thumbnail",
+                    "textureWidth",
+                    "textureHeight",
+                    "mapping",
+                ],
+                None,
+            )),
+            "tpl_uv_texture" => Some(crate::display::inline_display(
+                "reflow-texture-preview",
+                TEXTURE_PREVIEW_JS,
+                &[
+                    "stride",
+                    "uvOffset",
+                    "thumbnail",
+                    "textureWidth",
+                    "textureHeight",
+                    "mapping",
+                ],
+                None,
+            )),
+            _ => template.display.take(),
+        };
+    }
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────
 

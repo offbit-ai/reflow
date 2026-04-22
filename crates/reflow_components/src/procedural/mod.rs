@@ -21,3 +21,7 @@ pub use texture::{TriplanarTextureActor, UVTextureActor};
 pub use tube_mesh::TubeMeshActor;
 pub use vertex_color::VertexColorActor;
 pub use voronoi::VoronoiActor;
+
+pub(crate) use texture::{
+    attach_display_components, display_catalog_entries, display_component_sources,
+};

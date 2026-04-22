@@ -29,12 +29,7 @@ use std::collections::HashMap;
     outputs(stream = "stream", stats = "object", error = "string"),
     display(
         element = "reflow-stats",
-        source = concat!(
-            "if(!globalThis.ReflowUI){",
-            include_str!("../../../../display_components/reflow-ui.js"),
-            "}\n",
-            include_str!("../../../../display_components/stats.js")
-        ),
+        source = crate::display::inline_source(include_str!("display/stats.js")),
         shadow = true
     )
 )]

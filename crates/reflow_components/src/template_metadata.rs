@@ -5,9 +5,9 @@
 //! defaults that were previously registered via `get_template_mapping()`.
 
 use reflow_network::template::{
-    DisplayComponent, DisplayComponentSource, NodeShape, NodeSize, NodeTemplate,
-    Port as TemplatePort, PortPosition, PortType, PropertyDefinition, PropertyType,
-    PropertyValidation, RuntimeRequirements, TemplateCatalog,
+    DisplayComponentSource, NodeShape, NodeSize, NodeTemplate, Port as TemplatePort, PortPosition,
+    PortType, PropertyDefinition, PropertyType, PropertyValidation, RuntimeRequirements,
+    TemplateCatalog,
 };
 use serde_json::json;
 use std::collections::HashMap;
@@ -153,105 +153,21 @@ fn tpl(
     }
 }
 
-/// Build a NodeTemplate with a display component.
-fn tpl_display(
-    id: &str,
-    title: &str,
-    subtitle: &str,
-    category: &str,
-    subcategory: &str,
-    desc: &str,
-    icon: &str,
-    variant: &str,
-    ports: Vec<TemplatePort>,
-    properties: Option<HashMap<String, PropertyDefinition>>,
-    display: DisplayComponent,
-    version: &Option<String>,
-    capabilities: &Option<Vec<String>>,
-) -> NodeTemplate {
-    let mut t = tpl(
-        id,
-        title,
-        subtitle,
-        category,
-        subcategory,
-        desc,
-        icon,
-        variant,
-        ports,
-        properties,
-        version,
-        capabilities,
-    );
-    t.display = Some(display);
-    t
-}
-
-/// Creates a DisplayComponent with inline JS source.
-/// Prepends the shared ReflowUI library so components can extend ReflowComponent.
-fn display_inline(
-    element: &str,
-    source: &str,
-    observed: &[&str],
-    width: Option<&str>,
-) -> DisplayComponent {
-    // Only prepend UI lib if not already present (avoid double-loading via customElements guard)
-    let full_source = format!("if(!globalThis.ReflowUI){{{}}}\n{}", UI_LIB_JS, source);
-    DisplayComponent {
-        element: element.to_string(),
-        bundle_id: None,
-        source: Some(full_source),
-        shadow: Some(true),
-        observed_props: Some(observed.iter().map(|s| s.to_string()).collect()),
-        width: width.map(|w| w.to_string()),
-    }
-}
-
-// Display component sources (compiled into binary via include_str!)
-// Shared UI library — prepended to each component's inline source
-const UI_LIB_JS: &str = include_str!("../../../display_components/reflow-ui.js");
-
-const SPECTRUM_JS: &str = include_str!("../../../display_components/spectrum.js");
-const DYNAMICS_JS: &str = include_str!("../../../display_components/dynamics.js");
-const EQ_JS: &str = include_str!("../../../display_components/eq.js");
-const STATS_JS: &str = include_str!("../../../display_components/stats.js");
-const CROSSOVER_JS: &str = include_str!("../../../display_components/crossover.js");
-const GAIN_JS: &str = include_str!("../../../display_components/gain.js");
-const FILTER_RESPONSE_JS: &str = include_str!("../../../display_components/filter_response.js");
-const BUFFER_JS: &str = include_str!("../../../display_components/buffer.js");
-const IMAGE_PREVIEW_JS: &str = include_str!("../../../display_components/image_preview.js");
-const WAVEFORM_JS: &str = include_str!("../../../display_components/waveform.js");
-const IR_JS: &str = include_str!("../../../display_components/ir.js");
-const TEXTURE_PREVIEW_JS: &str = include_str!("../../../display_components/texture_preview.js");
-
 /// Returns display component sources for editor integrations that upload
 /// component bundles separately from inline template metadata.
 pub fn get_display_component_sources() -> Vec<(&'static str, &'static str)> {
-    vec![
-        ("reflow-spectrum", SPECTRUM_JS),
-        ("reflow-dynamics", DYNAMICS_JS),
-        ("reflow-eq", EQ_JS),
-        ("reflow-stats", STATS_JS),
-        ("reflow-crossover", CROSSOVER_JS),
-        ("reflow-gain", GAIN_JS),
-        ("reflow-filter-response", FILTER_RESPONSE_JS),
-        ("reflow-buffer", BUFFER_JS),
-        ("reflow-image-preview", IMAGE_PREVIEW_JS),
-        ("reflow-waveform", WAVEFORM_JS),
-        ("reflow-ir", IR_JS),
-        ("reflow-texture-preview", TEXTURE_PREVIEW_JS),
-    ]
+    let mut sources = Vec::new();
+    sources.extend(crate::stream_ops::display_component_sources());
+    sources.extend(crate::procedural::display_component_sources());
+    sources
 }
 
 /// Returns display component sources as runtime-neutral catalog entries.
 pub fn display_component_sources() -> Vec<DisplayComponentSource> {
-    get_display_component_sources()
-        .into_iter()
-        .map(|(element, source)| DisplayComponentSource {
-            element: element.to_string(),
-            source: source.to_string(),
-        })
-        .collect()
+    let mut sources = Vec::new();
+    sources.extend(crate::stream_ops::display_catalog_entries());
+    sources.extend(crate::procedural::display_catalog_entries());
+    sources
 }
 
 /// Returns the complete native component template catalog owned by this crate.
@@ -2761,179 +2677,8 @@ pub fn build_stream_actor_templates(
         ),
     ];
 
-    // Attach display components to the templates that have visual UI
-    let display_map: HashMap<&str, DisplayComponent> = HashMap::from([
-        // Spectrum analyzer — frequency bar chart with peak hold
-        (
-            "tpl_audio_spectrum",
-            display_inline("reflow-spectrum", SPECTRUM_JS, &["fftSize"], Some("360px")),
-        ),
-        // Compressor, Limiter, Noise Gate, De-Esser — gain reduction + transfer curve
-        (
-            "tpl_compressor",
-            display_inline(
-                "reflow-dynamics",
-                DYNAMICS_JS,
-                &["thresholdDb", "ratio", "kneeDb"],
-                None,
-            ),
-        ),
-        (
-            "tpl_limiter",
-            display_inline("reflow-dynamics", DYNAMICS_JS, &["ceilingDb"], None),
-        ),
-        (
-            "tpl_noise_gate",
-            display_inline(
-                "reflow-dynamics",
-                DYNAMICS_JS,
-                &["thresholdDb", "ratio"],
-                None,
-            ),
-        ),
-        (
-            "tpl_de_esser",
-            display_inline(
-                "reflow-dynamics",
-                DYNAMICS_JS,
-                &["thresholdDb", "ratio"],
-                None,
-            ),
-        ),
-        // Equalizer — interactive frequency response curve
-        (
-            "tpl_equalizer",
-            display_inline("reflow-eq", EQ_JS, &["bands", "sampleRate"], Some("360px")),
-        ),
-        // Audio gain — VU meter with editable gain
-        (
-            "tpl_audio_gain",
-            display_inline("reflow-gain", GAIN_JS, &["gainDb", "gainLinear"], None),
-        ),
-        // Biquad filter — frequency response curve with editable cutoff
-        (
-            "tpl_biquad_filter",
-            display_inline(
-                "reflow-filter-response",
-                FILTER_RESPONSE_JS,
-                &["filterType", "frequency", "q", "gainDb", "sampleRate"],
-                Some("300px"),
-            ),
-        ),
-        // Stream buffer — fill gauge with editable buffer size
-        (
-            "tpl_stream_buffer",
-            display_inline("reflow-buffer", BUFFER_JS, &["bufferBytes"], None),
-        ),
-        // Image processing actors — live preview
-        (
-            "tpl_grayscale_filter",
-            display_inline("reflow-image-preview", IMAGE_PREVIEW_JS, &[], None),
-        ),
-        (
-            "tpl_brightness_contrast",
-            display_inline(
-                "reflow-image-preview",
-                IMAGE_PREVIEW_JS,
-                &["brightness", "contrast", "saturation"],
-                None,
-            ),
-        ),
-        (
-            "tpl_chroma_key",
-            display_inline(
-                "reflow-image-preview",
-                IMAGE_PREVIEW_JS,
-                &["keyColor", "tolerance"],
-                None,
-            ),
-        ),
-        (
-            "tpl_image_resize",
-            display_inline(
-                "reflow-image-preview",
-                IMAGE_PREVIEW_JS,
-                &["width", "height"],
-                None,
-            ),
-        ),
-        // Waveform-based actors — scrolling waveform
-        (
-            "tpl_envelope_follower",
-            display_inline(
-                "reflow-waveform",
-                WAVEFORM_JS,
-                &["attackMs", "releaseMs"],
-                None,
-            ),
-        ),
-        (
-            "tpl_silence_detect",
-            display_inline("reflow-waveform", WAVEFORM_JS, &["thresholdDb"], None),
-        ),
-        (
-            "tpl_peak_detect",
-            display_inline("reflow-waveform", WAVEFORM_JS, &["sensitivity"], None),
-        ),
-        // Convolution — IR waveform display
-        (
-            "tpl_convolve",
-            display_inline("reflow-ir", IR_JS, &[], None),
-        ),
-        // Texture actors — preview thumbnail.
-        // observedProps must include output metadata fields (thumbnail, textureWidth,
-        // textureHeight, mapping) so Zeal forwards them to the display component
-        // when the EventBridge pushes node.output via update_node_properties().
-        (
-            "tpl_triplanar_texture",
-            display_inline(
-                "reflow-texture-preview",
-                TEXTURE_PREVIEW_JS,
-                &[
-                    "scale",
-                    "sharpness",
-                    "thumbnail",
-                    "textureWidth",
-                    "textureHeight",
-                    "mapping",
-                ],
-                None,
-            ),
-        ),
-        (
-            "tpl_uv_texture",
-            display_inline(
-                "reflow-texture-preview",
-                TEXTURE_PREVIEW_JS,
-                &[
-                    "stride",
-                    "uvOffset",
-                    "thumbnail",
-                    "textureWidth",
-                    "textureHeight",
-                    "mapping",
-                ],
-                None,
-            ),
-        ),
-        // Crossover — 3-band frequency response with draggable points
-        (
-            "tpl_crossover",
-            display_inline(
-                "reflow-crossover",
-                CROSSOVER_JS,
-                &["lowFrequency", "highFrequency"],
-                Some("320px"),
-            ),
-        ),
-    ]);
-
-    // Apply display components to matching templates
-    for template in &mut templates {
-        if let Some(dc) = display_map.get(template.id.as_str()) {
-            template.display = Some(dc.clone());
-        }
-    }
+    crate::stream_ops::attach_display_components(&mut templates);
+    crate::procedural::attach_display_components(&mut templates);
 
     templates
 }
