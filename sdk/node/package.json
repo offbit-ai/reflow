@@ -1,0 +1,56 @@
+{
+  "name": "@offbit-ai/reflow",
+  "version": "0.2.0",
+  "description": "Reflow is a modular flow-based programming runtime that executes actor-model DAGs for data pipelines, real-time media, visual tooling, and optional ML/CV workloads. This package is the official Node.js SDK.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "MIT OR Apache-2.0",
+  "author": "Offbit AI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/offbit-ai/reflow.git",
+    "directory": "sdk/node"
+  },
+  "bugs": {
+    "url": "https://github.com/offbit-ai/reflow/issues"
+  },
+  "homepage": "https://github.com/offbit-ai/reflow#readme",
+  "keywords": [
+    "reflow",
+    "flow-based-programming",
+    "fbp",
+    "actor-model",
+    "dag",
+    "workflow",
+    "napi"
+  ],
+  "napi": {
+    "name": "reflow-runtime",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+        "aarch64-unknown-linux-gnu",
+        "x86_64-pc-windows-msvc"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "test": "node --test test/*.mjs"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ]
+}

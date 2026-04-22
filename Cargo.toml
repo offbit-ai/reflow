@@ -3,7 +3,11 @@ resolver = "2"
 members = [
   "crates/*",
 ]
-exclude = ["crates/reflow_components_archived", "crates/reflow_py"]
+exclude = [
+  "crates/reflow_components_archived",
+  "crates/reflow_py",
+  "sdk/node",
+]
 
 [workspace.dependencies]
 serde_json = "1.0.133"
