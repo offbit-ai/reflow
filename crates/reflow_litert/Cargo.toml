@@ -5,10 +5,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
-# Optional local checkout of the Offbit LiteRT bindings.
-# Upstream: https://github.com/offbit-ai/LiteRT
-litert = { path = "../../../LiteRT/litert", optional = true }
-litert-sys = { path = "../../../LiteRT/litert-sys", optional = true }
+# Optional Offbit LiteRT bindings. Kept as a git dependency so downstream
+# builds do not rely on a sibling checkout being present.
+litert = { git = "https://github.com/offbit-ai/LiteRT", package = "litert", optional = true }
+litert-sys = { git = "https://github.com/offbit-ai/LiteRT", package = "litert-sys", optional = true }
 reflow_media_types = { path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -1,0 +1,45 @@
+{
+  "kind": "reflow.modelManifest",
+  "version": 1,
+  "manifest": {
+    "modelId": "mediapipe-palm-detection-full",
+    "taskKind": "palm_detection",
+    "backend": "litert",
+    "assetId": "mediapipe:palm_detection_full",
+    "inputSpecs": [
+      {
+        "name": "image",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 192, 192, 3]
+        }
+      }
+    ],
+    "outputSpecs": [
+      {
+        "name": "boxes",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 2016, 18]
+        }
+      },
+      {
+        "name": "scores",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 2016, 1]
+        }
+      }
+    ],
+    "license": "Apache-2.0",
+    "sourceUrl": "https://storage.googleapis.com/mediapipe-assets/palm_detection_full.tflite",
+    "checksumSha256": "1b14e9422c6ad006cde6581a46c8b90dd573c07ab7f3934b5589e7cea3f89a54",
+    "attributionRequired": true,
+    "tags": ["mediapipe", "hand", "palm", "detector", "litert"],
+    "metadata": {
+      "inputColorSpace": "rgb",
+      "inputValueRange": [0.0, 1.0],
+      "outputOrder": ["boxes", "scores"]
+    }
+  }
+}

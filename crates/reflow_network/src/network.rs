@@ -769,11 +769,7 @@ impl Network {
     /// currently sitting in the actor's outport channel. Useful for
     /// inspecting results after a pipeline has finished.
     pub fn read_actor_output(&self, id: &str) -> Vec<(String, Message)> {
-        let component = match self.nodes.get(id) {
-            Some(node) => &node.component,
-            None => return Vec::new(),
-        };
-        let actor = match self.actors.get(component) {
+        let actor = match self.initialized_actors.get(id) {
             Some(a) => a,
             None => return Vec::new(),
         };

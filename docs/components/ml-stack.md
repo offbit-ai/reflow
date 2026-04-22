@@ -26,7 +26,7 @@ The stack keeps the same Reflow principles as the rest of the component system:
 
 Reflow owns the backend boundary, not the native LiteRT implementation. By default, `reflow_litert` uses `MockBackend`, which keeps graph authoring, examples, and non-ML workflows free from native ML runtime requirements.
 
-Real LiteRT execution is available through the optional `external-litert` feature. The adapter targets Offbit's separate LiteRT Rust bindings, which will be published at `https://github.com/offbit-ai/LiteRT` when stable. With that feature enabled, models configured with `backend: "litert"` are loaded through the LiteRT adapter. Without it, Reflow returns a clear graph error instead of silently falling back to mock inference.
+Real LiteRT execution is available through the optional `external-litert` feature. The adapter targets Offbit's separate LiteRT Rust bindings from `https://github.com/offbit-ai/LiteRT`. With that feature enabled, models configured with `backend: "litert"` are loaded through the LiteRT adapter. Without it, Reflow returns a clear graph error instead of silently falling back to mock inference.
 
 The graph contract does not change when switching from mock inference to LiteRT. Frames, tensors, model metadata, ROI packets, and decoded outputs continue to move through the same actors and ports.
 
@@ -61,3 +61,14 @@ reflow_ml_ops = { path = "../reflow_ml_ops", features = ["external-litert"] }
 ```
 
 This split lets existing users opt into ML/CV graph templates without inheriting native LiteRT build and runtime requirements unless they explicitly need real LiteRT execution.
+
+## Hand Landmark Demo Assets
+
+The native hand-landmark smoke demo uses the official MediaPipe hand model assets as two ordinary LiteRT model manifests rather than treating the MediaPipe task bundle as privileged runtime behavior:
+
+| Role | File | Input | Outputs |
+| --- | --- | --- | --- |
+| Palm detector | `palm_detection_full.tflite` | `f32[1, 192, 192, 3]` | `f32[1, 2016, 18]`, `f32[1, 2016, 1]` |
+| Hand landmark tracker | `hand_landmark_full.tflite` | `f32[1, 224, 224, 3]` | `f32[1, 63]`, `f32[1, 1]`, `f32[1, 1]`, `f32[1, 63]` |
+
+See `examples/ml_hand_landmark_demo` for download checksums, manifests, and a real LiteRT backend smoke test.

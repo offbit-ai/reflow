@@ -1,0 +1,61 @@
+{
+  "kind": "reflow.modelManifest",
+  "version": 1,
+  "manifest": {
+    "modelId": "mediapipe-hand-landmark-full",
+    "taskKind": "hand_landmark",
+    "backend": "litert",
+    "assetId": "mediapipe:hand_landmark_full",
+    "inputSpecs": [
+      {
+        "name": "roi_image",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 224, 224, 3]
+        }
+      }
+    ],
+    "outputSpecs": [
+      {
+        "name": "landmarks",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 63]
+        }
+      },
+      {
+        "name": "hand_presence",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 1]
+        }
+      },
+      {
+        "name": "handedness",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 1]
+        }
+      },
+      {
+        "name": "world_landmarks",
+        "dtype": "f32",
+        "shape": {
+          "dims": [1, 63]
+        }
+      }
+    ],
+    "license": "Apache-2.0",
+    "sourceUrl": "https://storage.googleapis.com/mediapipe-assets/hand_landmark_full.tflite",
+    "checksumSha256": "11c272b891e1a99ab034208e23937a8008388cf11ed2a9d776ed3d01d0ba00e3",
+    "attributionRequired": true,
+    "tags": ["mediapipe", "hand", "landmark", "tracker", "litert"],
+    "metadata": {
+      "inputColorSpace": "rgb",
+      "inputValueRange": [0.0, 1.0],
+      "landmarkCount": 21,
+      "landmarkCoordinateSpace": "model_input_pixels",
+      "outputOrder": ["landmarks", "hand_presence", "handedness", "world_landmarks"]
+    }
+  }
+}
