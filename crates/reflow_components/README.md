@@ -16,11 +16,17 @@ Every `tpl_*` template this crate registers, grouped by category, is documented 
 
 **→ [Standard Component Library catalog](https://github.com/offbit-ai/reflow/blob/main/docs/components/standard-library.md)**
 
-Additional references:
+### Per feature-gate references
 
-- [API services catalog](https://github.com/offbit-ai/reflow/blob/main/docs/components/api-actors.md) — the ~6,700 `api_*` templates behind the `api_services` feature (lives in `reflow_api_services`).
-- [Media / ML stack](https://github.com/offbit-ai/reflow/blob/main/docs/components/ml-stack.md) — inference boundary, preprocess, decode, taskpacks.
-- [Media actors](https://github.com/offbit-ai/reflow/blob/main/docs/components/media-actors.md).
+| Feature | Reference |
+|---------|-----------|
+| `gpu` | [GPU actors](https://github.com/offbit-ai/reflow/blob/main/docs/components/gpu-actors.md) — SDF ray march, scene render, 2D render, shader graph, post-processing. |
+| `av-core` | [Audio / DSP actors](https://github.com/offbit-ai/reflow/blob/main/docs/components/audio-actors.md) — filters, dynamics, spectral, time/pitch. |
+| `window-events` | [Input / window event actors](https://github.com/offbit-ai/reflow/blob/main/docs/components/input-actors.md) — keyboard, mouse, gamepad, touch, window. |
+| `browser` / `browser-events` | [Browser actors](https://github.com/offbit-ai/reflow/blob/main/docs/components/browser-actors.md) — headless screencast and browser DOM input events. |
+| `ml` | [Media / ML stack](https://github.com/offbit-ai/reflow/blob/main/docs/components/ml-stack.md) — inference boundary, preprocess, decode, taskpacks. |
+| media / `camera-native` / `video-encode` | [Media actors](https://github.com/offbit-ai/reflow/blob/main/docs/components/media-actors.md) — image / audio / video input, camera capture, video encode. |
+| `api_services` | [API services catalog](https://github.com/offbit-ai/reflow/blob/main/docs/components/api-actors.md) — ~6,700 `api_*` templates (lives in `reflow_api_services`). |
 
 ## Feature gates
 
