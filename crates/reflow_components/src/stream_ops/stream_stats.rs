@@ -4,7 +4,7 @@
 //! outport after the stream terminates.
 
 use crate::{Actor, ActorBehavior, Message, Port};
-use actor_macro::actor;
+use actor_macro::{actor, actor_display};
 use anyhow::{Error, Result};
 use futures::StreamExt;
 use reflow_actor::{
@@ -15,6 +15,29 @@ use reflow_actor::{
 use serde_json::json;
 use std::collections::HashMap;
 
+#[actor_display(
+    actor = StreamStatsActor,
+    id = "tpl_stream_stats",
+    title = "Stream Stats",
+    subtitle = "Measure throughput",
+    category = "stream",
+    subcategory = "plumbing",
+    description = "Passthrough that measures total bytes, frame count, duration, and throughput without modifying the stream.",
+    icon = "bar-chart-2",
+    variant = "blue-500",
+    inputs(stream = "stream"),
+    outputs(stream = "stream", stats = "object", error = "string"),
+    display(
+        element = "reflow-stats",
+        source = concat!(
+            "if(!globalThis.ReflowUI){",
+            include_str!("../../../../display_components/reflow-ui.js"),
+            "}\n",
+            include_str!("../../../../display_components/stats.js")
+        ),
+        shadow = true
+    )
+)]
 #[actor(
     StreamStatsActor,
     inports::<100>(stream),

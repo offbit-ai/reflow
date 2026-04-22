@@ -425,25 +425,7 @@ pub fn build_stream_actor_templates(
             v,
             c,
         ),
-        tpl(
-            "tpl_stream_stats",
-            "Stream Stats",
-            "Measure throughput",
-            "stream",
-            "plumbing",
-            "Passthrough that measures total bytes, frame count, duration, and throughput without modifying the stream.",
-            "bar-chart-2",
-            "blue-500",
-            vec![
-                inport("stream", "Stream", "stream"),
-                outport("stream", "Stream", "stream"),
-                outport("stats", "Stats", "object"),
-                outport("error", "Error", "string"),
-            ],
-            None,
-            v,
-            c,
-        ),
+        crate::stream_ops::StreamStatsActor::actor_template(v, c),
         // ── Image DSP ─────────────────────────────────────────────────
         tpl(
             "tpl_grayscale_filter",
@@ -2822,11 +2804,6 @@ pub fn build_stream_actor_templates(
         (
             "tpl_equalizer",
             display_inline("reflow-eq", EQ_JS, &["bands", "sampleRate"], Some("360px")),
-        ),
-        // Stream Stats — live throughput counters
-        (
-            "tpl_stream_stats",
-            display_inline("reflow-stats", STATS_JS, &[], None),
         ),
         // Audio gain — VU meter with editable gain
         (

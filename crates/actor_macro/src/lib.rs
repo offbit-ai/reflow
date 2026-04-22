@@ -1,7 +1,10 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
-use syn::{ItemFn, LitInt, Token, parse::Parse, parse::ParseStream, parse_macro_input};
+use syn::{
+    Expr, ItemFn, LitBool, LitInt, LitStr, Token, parse::Parse, parse::ParseStream,
+    parse_macro_input,
+};
 
 /// Delivery semantics for a port connection.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -174,6 +177,218 @@ impl Parse for ActorArgs {
             await_all_inports,
             await_inports,
         })
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DisplayPort {
+    name: String,
+    data_type: String,
+}
+
+#[derive(Debug, Default)]
+struct DisplayPortList {
+    ports: Vec<DisplayPort>,
+}
+
+impl Parse for DisplayPortList {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let content;
+        syn::parenthesized!(content in input);
+        let mut ports = Vec::new();
+
+        while !content.is_empty() {
+            let name = content.parse::<syn::Ident>()?.to_string();
+            content.parse::<Token![=]>()?;
+            let data_type = content.parse::<LitStr>()?.value();
+            ports.push(DisplayPort { name, data_type });
+            if !content.is_empty() {
+                content.parse::<Token![,]>()?;
+            }
+        }
+
+        Ok(Self { ports })
+    }
+}
+
+#[derive(Default)]
+struct DisplayComponentArgs {
+    element: Option<String>,
+    bundle_id: Option<String>,
+    source: Option<Expr>,
+    shadow: Option<bool>,
+    observed_props: Vec<String>,
+    width: Option<String>,
+}
+
+impl Parse for DisplayComponentArgs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let content;
+        syn::parenthesized!(content in input);
+        let mut display = Self::default();
+
+        while !content.is_empty() {
+            let key = content.parse::<syn::Ident>()?;
+            match key.to_string().as_str() {
+                "element" => {
+                    content.parse::<Token![=]>()?;
+                    display.element = Some(content.parse::<LitStr>()?.value());
+                }
+                "bundle_id" => {
+                    content.parse::<Token![=]>()?;
+                    display.bundle_id = Some(content.parse::<LitStr>()?.value());
+                }
+                "source" => {
+                    content.parse::<Token![=]>()?;
+                    display.source = Some(content.parse::<Expr>()?);
+                }
+                "shadow" => {
+                    content.parse::<Token![=]>()?;
+                    display.shadow = Some(content.parse::<LitBool>()?.value);
+                }
+                "observed_props" => {
+                    let props;
+                    syn::parenthesized!(props in content);
+                    let parsed = Punctuated::<LitStr, Token![,]>::parse_terminated(&props)?;
+                    display.observed_props = parsed.into_iter().map(|prop| prop.value()).collect();
+                }
+                "width" => {
+                    content.parse::<Token![=]>()?;
+                    display.width = Some(content.parse::<LitStr>()?.value());
+                }
+                other => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!(
+                            "Unknown display key '{}'. Expected element, bundle_id, source, shadow, observed_props, or width",
+                            other
+                        ),
+                    ));
+                }
+            }
+
+            if !content.is_empty() {
+                content.parse::<Token![,]>()?;
+            }
+        }
+
+        Ok(display)
+    }
+}
+
+struct ActorDisplayArgs {
+    actor: Option<syn::Ident>,
+    id: String,
+    title: String,
+    subtitle: Option<String>,
+    category: String,
+    subcategory: Option<String>,
+    description: String,
+    icon: String,
+    variant: Option<String>,
+    inputs: DisplayPortList,
+    outputs: DisplayPortList,
+    display: Option<DisplayComponentArgs>,
+}
+
+impl Default for ActorDisplayArgs {
+    fn default() -> Self {
+        Self {
+            actor: None,
+            id: String::new(),
+            title: String::new(),
+            subtitle: None,
+            category: "reflow".to_string(),
+            subcategory: None,
+            description: String::new(),
+            icon: "cpu".to_string(),
+            variant: None,
+            inputs: DisplayPortList::default(),
+            outputs: DisplayPortList::default(),
+            display: None,
+        }
+    }
+}
+
+impl Parse for ActorDisplayArgs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut args = Self::default();
+
+        while !input.is_empty() {
+            let key = input.parse::<syn::Ident>()?;
+            match key.to_string().as_str() {
+                "actor" => {
+                    input.parse::<Token![=]>()?;
+                    args.actor = Some(input.parse::<syn::Ident>()?);
+                }
+                "id" | "template_id" => {
+                    input.parse::<Token![=]>()?;
+                    args.id = input.parse::<LitStr>()?.value();
+                }
+                "title" => {
+                    input.parse::<Token![=]>()?;
+                    args.title = input.parse::<LitStr>()?.value();
+                }
+                "subtitle" => {
+                    input.parse::<Token![=]>()?;
+                    args.subtitle = Some(input.parse::<LitStr>()?.value());
+                }
+                "category" => {
+                    input.parse::<Token![=]>()?;
+                    args.category = input.parse::<LitStr>()?.value();
+                }
+                "subcategory" => {
+                    input.parse::<Token![=]>()?;
+                    args.subcategory = Some(input.parse::<LitStr>()?.value());
+                }
+                "description" => {
+                    input.parse::<Token![=]>()?;
+                    args.description = input.parse::<LitStr>()?.value();
+                }
+                "icon" => {
+                    input.parse::<Token![=]>()?;
+                    args.icon = input.parse::<LitStr>()?.value();
+                }
+                "variant" => {
+                    input.parse::<Token![=]>()?;
+                    args.variant = Some(input.parse::<LitStr>()?.value());
+                }
+                "inputs" => {
+                    args.inputs = input.parse::<DisplayPortList>()?;
+                }
+                "outputs" => {
+                    args.outputs = input.parse::<DisplayPortList>()?;
+                }
+                "display" => {
+                    args.display = Some(input.parse::<DisplayComponentArgs>()?);
+                }
+                other => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!(
+                            "Unknown actor_display key '{}'. Expected actor, id, title, subtitle, category, subcategory, description, icon, variant, inputs, outputs, or display",
+                            other
+                        ),
+                    ));
+                }
+            }
+
+            if !input.is_empty() {
+                input.parse::<Token![,]>()?;
+            }
+        }
+
+        if args.id.is_empty() {
+            return Err(input.error("actor_display requires id = \"tpl_...\""));
+        }
+        if args.title.is_empty() {
+            return Err(input.error("actor_display requires title = \"...\""));
+        }
+        if args.description.is_empty() {
+            return Err(input.error("actor_display requires description = \"...\""));
+        }
+
+        Ok(args)
     }
 }
 
@@ -356,4 +571,171 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(expanded)
+}
+
+#[proc_macro_attribute]
+pub fn actor_display(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(attr as ActorDisplayArgs);
+    let input_fn = parse_macro_input!(item as ItemFn);
+    let fn_name = &input_fn.sig.ident;
+    let fn_vis = &input_fn.vis;
+    let template_fn = format_ident!("{}_template", fn_name);
+
+    let actor_struct = args.actor.unwrap_or_else(|| {
+        format_ident!(
+            "{}Actor",
+            fn_name
+                .to_string()
+                .chars()
+                .next()
+                .unwrap()
+                .to_uppercase()
+                .to_string()
+                + &fn_name.to_string()[1..]
+        )
+    });
+
+    let id = args.id;
+    let title = args.title;
+    let subtitle = args.subtitle;
+    let category = args.category;
+    let subcategory = args.subcategory;
+    let description = args.description;
+    let icon = args.icon;
+    let variant = args.variant;
+
+    let subtitle_tokens = option_string_tokens(subtitle);
+    let subcategory_tokens = option_string_tokens(subcategory);
+    let variant_tokens = option_string_tokens(variant);
+
+    let input_ports = args.inputs.ports.iter().map(|port| {
+        let name = &port.name;
+        let label = label_from_port_name(name);
+        let data_type = &port.data_type;
+        quote! {
+            ::reflow_network::template::Port {
+                id: #name.to_string(),
+                label: #label.to_string(),
+                port_type: ::reflow_network::template::PortType::Input,
+                position: ::reflow_network::template::PortPosition::Left,
+                data_type: Some(#data_type.to_string()),
+                required: None,
+                multiple: None,
+            }
+        }
+    });
+
+    let output_ports = args.outputs.ports.iter().map(|port| {
+        let name = &port.name;
+        let label = label_from_port_name(name);
+        let data_type = &port.data_type;
+        quote! {
+            ::reflow_network::template::Port {
+                id: #name.to_string(),
+                label: #label.to_string(),
+                port_type: ::reflow_network::template::PortType::Output,
+                position: ::reflow_network::template::PortPosition::Right,
+                data_type: Some(#data_type.to_string()),
+                required: None,
+                multiple: None,
+            }
+        }
+    });
+
+    let ports = input_ports.chain(output_ports).collect::<Vec<_>>();
+
+    let display = match args.display {
+        Some(display) => {
+            let element = display.element.unwrap_or_default();
+            let bundle_id_tokens = option_string_tokens(display.bundle_id);
+            let source = display.source;
+            let shadow_tokens = match display.shadow {
+                Some(value) => quote! { Some(#value) },
+                None => quote! { None },
+            };
+            let observed_props = display.observed_props;
+            let width_tokens = option_string_tokens(display.width);
+
+            let source_tokens = match source {
+                Some(source) => quote! { Some((#source).to_string()) },
+                None => quote! { None },
+            };
+
+            quote! {
+                Some(::reflow_network::template::DisplayComponent {
+                    element: #element.to_string(),
+                    bundle_id: #bundle_id_tokens,
+                    source: #source_tokens,
+                    shadow: #shadow_tokens,
+                    observed_props: Some(vec![#(#observed_props.to_string()),*]),
+                    width: #width_tokens,
+                })
+            }
+        }
+        None => quote! { None },
+    };
+
+    let expanded = quote! {
+        #input_fn
+
+        #fn_vis fn #template_fn(
+            version: &Option<String>,
+            capabilities: &Option<Vec<String>>,
+        ) -> ::reflow_network::template::NodeTemplate {
+            ::reflow_network::template::NodeTemplate {
+                id: #id.to_string(),
+                type_name: #id.to_string(),
+                title: #title.to_string(),
+                subtitle: #subtitle_tokens,
+                category: #category.to_string(),
+                subcategory: #subcategory_tokens,
+                description: #description.to_string(),
+                icon: #icon.to_string(),
+                variant: #variant_tokens,
+                shape: Some(::reflow_network::template::NodeShape::Rectangle),
+                size: Some(::reflow_network::template::NodeSize::Medium),
+                ports: vec![#(#ports),*],
+                properties: None,
+                property_rules: None,
+                runtime: Some(::reflow_network::template::RuntimeRequirements {
+                    executor: "reflow".to_string(),
+                    version: version.clone(),
+                    required_env_vars: None,
+                    capabilities: capabilities.clone(),
+                }),
+                display: #display,
+            }
+        }
+
+        impl #actor_struct {
+            pub fn actor_template(
+                version: &Option<String>,
+                capabilities: &Option<Vec<String>>,
+            ) -> ::reflow_network::template::NodeTemplate {
+                #template_fn(version, capabilities)
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+fn label_from_port_name(name: &str) -> String {
+    name.split('_')
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn option_string_tokens(value: Option<String>) -> proc_macro2::TokenStream {
+    match value {
+        Some(value) => quote! { Some(#value.to_string()) },
+        None => quote! { None },
+    }
 }
