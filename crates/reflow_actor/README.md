@@ -14,17 +14,51 @@ Actor trait, message types, ports, state, and stream handles used by the Reflow 
 
 ## Quick glance
 
+Most actors are declared with `#[actor(...)]` from `reflow_actor_macro`. It
+generates the `Actor` impl, port setup, and registration glue.
+
 ```rust
-use reflow_actor::{ActorContext, message::Message};
+use reflow_actor::{ActorContext, MemoryState, message::Message};
+use reflow_actor_macro::actor;
+use anyhow::Error;
 use std::collections::HashMap;
 
-async fn passthrough(ctx: ActorContext) -> anyhow::Result<HashMap<String, Message>> {
-    let inputs = ctx.get_payload();
-    Ok(inputs.clone())
+/// Doubles every `number` packet and emits the result on `doubled`.
+#[actor(
+    DoubleActor,
+    inports::<50>(number),
+    outports::<50>(doubled),
+    state(MemoryState)
+)]
+pub async fn double_actor(
+    ctx: ActorContext,
+) -> Result<HashMap<String, Message>, Error> {
+    let n = ctx
+        .get_payload()
+        .get("number")
+        .and_then(|m| m.as_f64())
+        .unwrap_or(0.0);
+
+    Ok(HashMap::from([
+        ("doubled".into(), Message::Float(n * 2.0)),
+    ]))
 }
 ```
 
-Use `StreamHandle` when moving large or continuous payloads (e.g. raw video frames) — handles are cheap to copy through the message bus while the bytes travel out-of-band.
+Key ideas the example shows:
+
+- **Named ports.** `inports` / `outports` declare the schema; the network
+  routes packets to this actor only on listed ports.
+- **Selective emission.** Returning `{"doubled": …}` means "emit one packet on
+  the `doubled` port". Return an empty `HashMap` to consume inputs silently.
+- **State.** `state(MemoryState)` gives each actor instance its own mutable
+  scratch area; swap for a custom `ActorState` to persist across ticks.
+- **Backpressure.** `inports::<50>` sizes the per-port channel — bound it low
+  for latency-sensitive flows, high for burst-friendly pipelines.
+
+Use `StreamHandle` when moving large or continuous payloads (e.g. raw video
+frames) — handles are cheap to copy through the message bus while the bytes
+travel out-of-band.
 
 ## Relationship to other crates
 
