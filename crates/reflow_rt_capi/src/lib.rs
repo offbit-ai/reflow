@@ -34,6 +34,15 @@
 mod actor;
 pub use actor::*;
 
+mod message;
+pub use message::*;
+
+mod stream;
+pub use stream::*;
+
+mod subgraph;
+pub use subgraph::*;
+
 #[cfg(feature = "components")]
 mod catalog;
 #[cfg(feature = "components")]
@@ -217,11 +226,42 @@ pub struct rfl_network {
     net: Arc<Mutex<Network>>,
 }
 
-/// Create a new network. Currently uses `NetworkConfig::default()`.
+/// Create a new network with `NetworkConfig::default()`.
 #[no_mangle]
 pub extern "C" fn rfl_network_new() -> *mut rfl_network {
     clear_last_error();
     let net = Network::new(NetworkConfig::default());
+    Box::into_raw(Box::new(rfl_network {
+        net: Arc::new(Mutex::new(net)),
+    }))
+}
+
+/// Create a new network from a serialized `NetworkConfig` JSON. Returns
+/// NULL on parse error. Unknown fields are rejected.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_network_new_with_config(
+    config_json: *const c_char,
+) -> *mut rfl_network {
+    clear_last_error();
+    if config_json.is_null() {
+        set_last_error("config_json is null");
+        return std::ptr::null_mut();
+    }
+    let s = match unsafe { CStr::from_ptr(config_json) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            set_last_error("config_json is not valid UTF-8");
+            return std::ptr::null_mut();
+        }
+    };
+    let cfg: NetworkConfig = match serde_json::from_str(s) {
+        Ok(v) => v,
+        Err(e) => {
+            set_last_error(format!("NetworkConfig parse: {e}"));
+            return std::ptr::null_mut();
+        }
+    };
+    let net = Network::new(cfg);
     Box::into_raw(Box::new(rfl_network {
         net: Arc::new(Mutex::new(net)),
     }))

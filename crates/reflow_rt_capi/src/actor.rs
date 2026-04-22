@@ -327,6 +327,31 @@ pub unsafe extern "C" fn rfl_ctx_has_input(
     }
 }
 
+/// Take the input packet on `port` as a typed message handle, removing
+/// it from the context. Returns NULL if no packet is available. Caller
+/// frees via `rfl_message_free` (or transfers ownership via
+/// `rfl_ctx_emit_message`).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_take_input_message(
+    ctx: *mut rfl_actor_ctx,
+    port: *const c_char,
+) -> *mut crate::message::rfl_message {
+    crate::clear_last_error();
+    if ctx.is_null() || port.is_null() {
+        return std::ptr::null_mut();
+    }
+    let port = match unsafe { CStr::from_ptr(port) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    // SAFETY: payload is only accessed from the single callback thread.
+    let payload = &mut unsafe { &mut *ctx }.payload;
+    match payload.remove(port) {
+        Some(m) => Box::into_raw(Box::new(crate::message::rfl_message { inner: m })),
+        None => std::ptr::null_mut(),
+    }
+}
+
 /// Return the input packet on `port` as a JSON-encoded `Message`, or NULL
 /// if no packet is available. Caller frees via `rfl_string_free`.
 #[no_mangle]
@@ -461,8 +486,35 @@ pub unsafe extern "C" fn rfl_ctx_state_set(
     }
 }
 
+/// Emit a typed message on `port`. Transfers ownership of the message —
+/// do **not** call `rfl_message_free` afterwards. Prefer this over the
+/// JSON variant for hot-path emits.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_emit_message(
+    ctx: *mut rfl_actor_ctx,
+    port: *const c_char,
+    msg: *mut crate::message::rfl_message,
+) -> rfl_status {
+    crate::clear_last_error();
+    if ctx.is_null() || port.is_null() || msg.is_null() {
+        return rfl_status::NullArg;
+    }
+    let port = match unsafe { CStr::from_ptr(port) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            set_last_error("port is not valid UTF-8");
+            return rfl_status::InvalidUtf8;
+        }
+    };
+    let msg = unsafe { Box::from_raw(msg) }.into_message();
+    unsafe { &*ctx }.outputs.lock().insert(port.to_string(), msg);
+    rfl_status::Ok
+}
+
 /// Emit a packet on `port`. `message_json` must parse as a Reflow
-/// `Message` (e.g. `"\"Flow\""`, `{"Integer": 1}`, `{"String": "x"}`).
+/// `Message` (e.g. `{"type":"Flow"}`, `{"type":"Integer","data":1}`).
+/// Prefer `rfl_ctx_emit_message` for hot-path emits — this variant
+/// serializes JSON per call.
 #[no_mangle]
 pub unsafe extern "C" fn rfl_ctx_emit(
     ctx: *mut rfl_actor_ctx,

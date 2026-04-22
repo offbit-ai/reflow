@@ -8,6 +8,27 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * Variant tag — matches the `Message` enum in `reflow_actor`.
+ */
+typedef enum rfl_message_kind {
+  Flow = 0,
+  Boolean = 1,
+  Integer = 2,
+  Float = 3,
+  String = 4,
+  Object = 5,
+  Array = 6,
+  Bytes = 7,
+  Error = 8,
+  StreamHandle = 9,
+  Optional = 10,
+  /**
+   * Anything else — use `rfl_message_as_json` to inspect.
+   */
+  Other = 99,
+} rfl_message_kind;
+
 typedef enum rfl_status {
   /**
    * Success.
@@ -37,6 +58,18 @@ typedef enum rfl_status {
 } rfl_status;
 
 /**
+ * Variant tag returned by `rfl_stream_recv_next`.
+ */
+typedef enum rfl_stream_frame_kind {
+  Begin = 0,
+  Data = 1,
+  End = 2,
+  Error = 3,
+  Timeout = 4,
+  Closed = 5,
+} rfl_stream_frame_kind;
+
+/**
  * Opaque handle to an actor template. Produced by `rfl_actor_new`
  * (callback-driven actor), `rfl_template_actor_new` (bundled component),
  * or `rfl_subgraph_actor_new_from_json` (embedded subgraph). Hand to
@@ -62,10 +95,32 @@ typedef struct rfl_events rfl_events;
 typedef struct rfl_graph rfl_graph;
 
 /**
+ * Opaque Reflow message handle.
+ */
+typedef struct rfl_message rfl_message;
+
+/**
  * Opaque handle to a `reflow_network::Network`, wrapped so the C side can
  * share it across threads without touching its internal `Arc<Mutex<_>>`.
  */
 typedef struct rfl_network rfl_network;
+
+/**
+ * Opaque producer handle to a stream. Create with `rfl_stream_new`, hand
+ * chunks in via `rfl_stream_send_bytes`, terminate with
+ * `rfl_stream_end` / `rfl_stream_error`. Free with `rfl_stream_free`.
+ */
+typedef struct rfl_stream rfl_stream;
+
+/**
+ * Opaque receiver for a stream's data channel.
+ */
+typedef struct rfl_stream_recv rfl_stream_recv;
+
+/**
+ * Builder for a `SubgraphActor` with an explicit actor map.
+ */
+typedef struct rfl_subgraph_builder rfl_subgraph_builder;
 
 /**
  * Function pointer: the body of a callback actor.
@@ -128,9 +183,15 @@ struct rfl_graph *rfl_graph_load_json(const char *json);
 void rfl_graph_free(struct rfl_graph *g);
 
 /**
- * Create a new network. Currently uses `NetworkConfig::default()`.
+ * Create a new network with `NetworkConfig::default()`.
  */
 struct rfl_network *rfl_network_new(void);
+
+/**
+ * Create a new network from a serialized `NetworkConfig` JSON. Returns
+ * NULL on parse error. Unknown fields are rejected.
+ */
+struct rfl_network *rfl_network_new_with_config(const char *config_json);
 
 /**
  * Create a network from an already-loaded graph. The graph is consumed.
@@ -318,6 +379,14 @@ enum rfl_status rfl_network_register_actor(struct rfl_network *n,
 int rfl_ctx_has_input(struct rfl_actor_ctx *ctx, const char *port);
 
 /**
+ * Take the input packet on `port` as a typed message handle, removing
+ * it from the context. Returns NULL if no packet is available. Caller
+ * frees via `rfl_message_free` (or transfers ownership via
+ * `rfl_ctx_emit_message`).
+ */
+struct rfl_message *rfl_ctx_take_input_message(struct rfl_actor_ctx *ctx, const char *port);
+
+/**
  * Return the input packet on `port` as a JSON-encoded `Message`, or NULL
  * if no packet is available. Caller frees via `rfl_string_free`.
  */
@@ -346,10 +415,213 @@ enum rfl_status rfl_ctx_state_set(struct rfl_actor_ctx *ctx,
                                   const char *value_json);
 
 /**
+ * Emit a typed message on `port`. Transfers ownership of the message —
+ * do **not** call `rfl_message_free` afterwards. Prefer this over the
+ * JSON variant for hot-path emits.
+ */
+enum rfl_status rfl_ctx_emit_message(struct rfl_actor_ctx *ctx,
+                                     const char *port,
+                                     struct rfl_message *msg);
+
+/**
  * Emit a packet on `port`. `message_json` must parse as a Reflow
- * `Message` (e.g. `"\"Flow\""`, `{"Integer": 1}`, `{"String": "x"}`).
+ * `Message` (e.g. `{"type":"Flow"}`, `{"type":"Integer","data":1}`).
+ * Prefer `rfl_ctx_emit_message` for hot-path emits — this variant
+ * serializes JSON per call.
  */
 enum rfl_status rfl_ctx_emit(struct rfl_actor_ctx *ctx, const char *port, const char *message_json);
+
+struct rfl_message *rfl_message_flow(void);
+
+struct rfl_message *rfl_message_boolean(int v);
+
+struct rfl_message *rfl_message_integer(int64_t v);
+
+struct rfl_message *rfl_message_float(double v);
+
+/**
+ * UTF-8 string; copied.
+ */
+struct rfl_message *rfl_message_string(const char *s);
+
+/**
+ * Binary payload; the buffer is copied into a refcounted allocation.
+ */
+struct rfl_message *rfl_message_bytes(const uint8_t *data, uintptr_t len);
+
+/**
+ * Object from JSON. The JSON must parse as any valid serde value.
+ */
+struct rfl_message *rfl_message_object_from_json(const char *json);
+
+/**
+ * Array from a JSON array string.
+ */
+struct rfl_message *rfl_message_array_from_json(const char *json);
+
+struct rfl_message *rfl_message_error(const char *msg);
+
+/**
+ * Fallback: parse a fully-tagged `Message` JSON (i.e. the same shape the
+ * legacy `rfl_ctx_emit`-by-JSON path consumes). Useful for tests /
+ * debugging — prefer the typed constructors in production.
+ */
+struct rfl_message *rfl_message_from_json(const char *json);
+
+enum rfl_message_kind rfl_message_get_kind(const struct rfl_message *m);
+
+/**
+ * If the message is a Boolean, writes its value into `*out` and returns 1.
+ * Returns 0 otherwise.
+ */
+int rfl_message_as_boolean(const struct rfl_message *m, int *out);
+
+int rfl_message_as_integer(const struct rfl_message *m, int64_t *out);
+
+int rfl_message_as_float(const struct rfl_message *m, double *out);
+
+/**
+ * String access — returns a newly allocated C string on String/Error
+ * variants, else NULL. Caller frees via `rfl_string_free`.
+ */
+char *rfl_message_as_string(const struct rfl_message *m);
+
+/**
+ * Full message serialized as JSON. Always succeeds for representable
+ * variants. Caller frees via `rfl_string_free`.
+ */
+char *rfl_message_as_json(const struct rfl_message *m);
+
+/**
+ * Zero-copy borrow of a `Bytes` payload. Writes a pointer into the
+ * Arc'd buffer and its length. The pointer is valid until the message
+ * handle is freed (or ownership transferred). Returns 1 on success, 0
+ * if the message is not a Bytes variant.
+ */
+int rfl_message_bytes_borrow(const struct rfl_message *m,
+                             const uint8_t **out_data,
+                             uintptr_t *out_len);
+
+/**
+ * Free a message handle. Safe on NULL.
+ *
+ * Do **not** call this after handing the message to `rfl_ctx_emit`
+ * (which transfers ownership).
+ */
+void rfl_message_free(struct rfl_message *m);
+
+/**
+ * Allocate a new stream. `buffer_size == 0` creates an unbounded channel;
+ * any positive value sets a bounded buffer (backpressure).
+ *
+ * `origin_actor` and `origin_port` are metadata attached to the
+ * StreamHandle that lets consumers trace where the stream came from.
+ * Either may be NULL to use empty strings.
+ *
+ * `content_type` is an optional MIME hint (NULL for none).
+ */
+struct rfl_stream *rfl_stream_new(uintptr_t buffer_size,
+                                  const char *origin_actor,
+                                  const char *origin_port,
+                                  const char *content_type);
+
+/**
+ * Send a Data frame. The buffer is copied into a refcounted allocation.
+ */
+enum rfl_status rfl_stream_send_bytes(struct rfl_stream *s, const uint8_t *data, uintptr_t len);
+
+/**
+ * Send a Begin frame (stream metadata). Optional — use before the first
+ * `send_bytes` if you want consumers to see `content_type` / `size_hint`
+ * / `metadata_json` before any data.
+ */
+enum rfl_status rfl_stream_send_begin(struct rfl_stream *s,
+                                      const char *content_type,
+                                      uint64_t size_hint,
+                                      int has_size_hint,
+                                      const char *metadata_json);
+
+/**
+ * Terminate the stream with success.
+ */
+enum rfl_status rfl_stream_end(struct rfl_stream *s);
+
+/**
+ * Terminate the stream with an error.
+ */
+enum rfl_status rfl_stream_error(struct rfl_stream *s, const char *message);
+
+/**
+ * Convert this stream producer into a `Message::StreamHandle` that can be
+ * emitted on an output port. The producer is **consumed** — free is not
+ * necessary after this call.
+ */
+struct rfl_message *rfl_stream_into_message(struct rfl_stream *s);
+
+/**
+ * Free a producer handle without emitting it as a message. If the stream
+ * has live consumers, they will see an `End` frame when the sender is
+ * dropped.
+ */
+void rfl_stream_free(struct rfl_stream *s);
+
+/**
+ * Take the receiver for a `StreamHandle` message. Transfers ownership —
+ * only one call succeeds per stream. Returns NULL if the message is not
+ * a StreamHandle or the receiver has already been taken.
+ */
+struct rfl_stream_recv *rfl_message_stream_take(struct rfl_message *m);
+
+/**
+ * Block up to `timeout_ms` for the next frame.
+ *
+ * Writes the frame kind into `*out_kind`. On `Data` / `Error`, also
+ * populates `*out_data` / `*out_len` / `*out_err` as appropriate. The
+ * pointers are valid until the next call to `rfl_stream_recv_next` on
+ * the same receiver.
+ */
+enum rfl_status rfl_stream_recv_next(struct rfl_stream_recv *r,
+                                     uint32_t timeout_ms,
+                                     enum rfl_stream_frame_kind *out_kind,
+                                     const uint8_t **out_data,
+                                     uintptr_t *out_len,
+                                     char **out_err);
+
+/**
+ * Free a stream receiver. Safe on NULL.
+ */
+void rfl_stream_recv_free(struct rfl_stream_recv *r);
+
+/**
+ * Start a subgraph builder over a `GraphExport` JSON document. Returns
+ * NULL on parse error.
+ */
+struct rfl_subgraph_builder *rfl_subgraph_builder_new(const char *graph_export_json);
+
+/**
+ * Register an actor under `component_name`. The builder takes ownership
+ * of the actor handle — do not free it afterwards. Replacing an existing
+ * registration silently overwrites it.
+ */
+enum rfl_status rfl_subgraph_builder_register_actor(struct rfl_subgraph_builder *b,
+                                                    const char *component_name,
+                                                    struct rfl_actor *actor);
+
+/**
+ * Resolve any still-unregistered components from the bundled catalog.
+ * Gated on the `components` feature; no-op (returns Ok) otherwise.
+ */
+enum rfl_status rfl_subgraph_builder_fill_from_catalog(struct rfl_subgraph_builder *b);
+
+/**
+ * Build the subgraph into an actor handle. Consumes the builder.
+ */
+struct rfl_actor *rfl_subgraph_builder_build(struct rfl_subgraph_builder *b);
+
+/**
+ * Abandon a builder without building. Safe on NULL.
+ */
+void rfl_subgraph_builder_free(struct rfl_subgraph_builder *b);
 
 /**
  * Instantiate an actor from the bundled `reflow_components` catalog.

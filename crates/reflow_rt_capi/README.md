@@ -138,6 +138,82 @@ JNI `AttachCurrentThread`, etc.).
 `user_data_drop` fires exactly once, when the last reference to the actor
 is released by the runtime — use it to release your GC root.
 
+### Typed messages
+
+Skip the JSON tax for hot paths. `rfl_message*` is an opaque handle; pass
+it to `rfl_ctx_emit_message` or `rfl_ctx_take_input_message` on the way
+in and out.
+
+```c
+rfl_message* rfl_message_flow(void);
+rfl_message* rfl_message_boolean(int);
+rfl_message* rfl_message_integer(int64_t);
+rfl_message* rfl_message_float(double);
+rfl_message* rfl_message_string(const char*);
+rfl_message* rfl_message_bytes(const uint8_t*, size_t);
+rfl_message* rfl_message_object_from_json(const char*);
+rfl_message* rfl_message_array_from_json(const char*);
+rfl_message* rfl_message_error(const char*);
+rfl_message* rfl_message_from_json(const char*);    /* fallback */
+
+rfl_message_kind rfl_message_get_kind(const rfl_message*);
+int   rfl_message_as_boolean (const rfl_message*, int* out);
+int   rfl_message_as_integer (const rfl_message*, int64_t* out);
+int   rfl_message_as_float   (const rfl_message*, double* out);
+char* rfl_message_as_string  (const rfl_message*);     /* rfl_string_free */
+char* rfl_message_as_json    (const rfl_message*);     /* rfl_string_free */
+int   rfl_message_bytes_borrow(const rfl_message*, const uint8_t** out, size_t* len);
+void  rfl_message_free(rfl_message*);
+
+rfl_status   rfl_ctx_emit_message     (rfl_actor_ctx*, const char* port, rfl_message*); /* transfers ownership */
+rfl_message* rfl_ctx_take_input_message(rfl_actor_ctx*, const char* port);
+```
+
+### Streams
+
+Producer + consumer sides for `Message::StreamHandle`. Frames travel
+through bounded flume channels; the message carries only the handle.
+
+```c
+rfl_stream*  rfl_stream_new(size_t buffer_size, const char* origin_actor,
+                            const char* origin_port, const char* content_type);
+rfl_status   rfl_stream_send_begin(rfl_stream*, const char* content_type,
+                                   uint64_t size_hint, int has_size_hint,
+                                   const char* metadata_json);
+rfl_status   rfl_stream_send_bytes(rfl_stream*, const uint8_t*, size_t);
+rfl_status   rfl_stream_end       (rfl_stream*);
+rfl_status   rfl_stream_error     (rfl_stream*, const char* message);
+rfl_message* rfl_stream_into_message(rfl_stream*);   /* consumes, emit via rfl_ctx_emit_message */
+void         rfl_stream_free     (rfl_stream*);
+
+rfl_stream_recv* rfl_message_stream_take(rfl_message*);    /* one-shot */
+rfl_status       rfl_stream_recv_next   (rfl_stream_recv*, uint32_t timeout_ms,
+                                         rfl_stream_frame_kind* out_kind,
+                                         const uint8_t** out_data, size_t* out_len,
+                                         char** out_err);
+void             rfl_stream_recv_free   (rfl_stream_recv*);
+```
+
+### Subgraph builder
+
+For subgraphs whose referenced components aren't all in the bundled
+catalog (e.g. callback actors registered by the SDK):
+
+```c
+rfl_subgraph_builder* rfl_subgraph_builder_new(const char* graph_export_json);
+rfl_status            rfl_subgraph_builder_register_actor(rfl_subgraph_builder*,
+                                                          const char* component_name,
+                                                          rfl_actor*);     /* transfers ownership */
+rfl_status            rfl_subgraph_builder_fill_from_catalog(rfl_subgraph_builder*);
+rfl_actor*            rfl_subgraph_builder_build(rfl_subgraph_builder*);   /* consumes builder */
+void                  rfl_subgraph_builder_free(rfl_subgraph_builder*);
+```
+
+### NetworkConfig
+
+`rfl_network_new_with_config(const char* json)` — parse a serialized
+`NetworkConfig`. Default is still available via `rfl_network_new()`.
+
 ### Template catalog + subgraph (gated on the `components` feature)
 
 Enabled by default; compile with `--no-default-features` to drop
@@ -157,12 +233,19 @@ All three return an `rfl_actor*` you can hand to
 bundled standard library (~300 templates) and composes graph exports as
 first-class subgraph nodes.
 
-### Not yet in the ABI (next passes)
+### Not yet in the ABI
 
-- **Typed message / stream handles**: zero-copy byte payloads,
-  `rfl_stream_frame_next` for `StreamHandle` consumption.
-- **Subgraph builder with custom actor maps** (for templates that aren't
-  in the bundled catalog).
+- **Structured event types** — events currently arrive as JSON via
+  `rfl_events_recv`. Could be promoted to an `rfl_event*` handle with
+  typed accessors; deferred until an SDK asks.
+- **Graph introspection without JSON round-trip** — today SDKs call
+  `rfl_graph_to_json` and parse client-side. Fine for cold paths; not
+  fine for frequent reads. Could add `rfl_graph_node_ids`,
+  `rfl_graph_node_component`, `rfl_graph_connections` when that's a
+  real hotspot.
+- **Template metadata introspection** — port shapes, description,
+  config schema. Currently accessible only by instantiating the actor
+  or consulting the published catalog docs.
 
 ## License
 
