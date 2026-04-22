@@ -952,6 +952,25 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cbindgen"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fce8dd7fcfcbf3a0a87d8f515194b49d6135acab73e18bd380d1d93bb1a15eb"
+dependencies = [
+ "clap",
+ "heck 0.4.1",
+ "indexmap 2.10.0",
+ "log",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 2.0.104",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
+name = "cbindgen"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "975982cdb7ad6a142be15bdf84aea7ec6a9e5d4d797c004d43185b24cfe4e684"
@@ -2261,7 +2280,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f31c722fa8daeff5d56594856c9147490ad0f37c3a5192e929509c75361a931"
 dependencies = [
  "anyhow",
- "cbindgen",
+ "cbindgen 0.29.0",
  "extism-convert",
  "extism-manifest",
  "glob",
@@ -6392,6 +6411,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_rt_capi"
+version = "0.2.0"
+dependencies = [
+ "cbindgen 0.27.0",
+ "flume",
+ "libc",
+ "once_cell",
+ "parking_lot 0.12.4",
+ "reflow_rt",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "reflow_script"
 version = "0.1.0"
 dependencies = [
@@ -6560,7 +6593,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "reflow_wasm"
+name = "reflow_wasm_actor"
 version = "0.1.0"
 dependencies = [
  "anyhow",

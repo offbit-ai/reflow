@@ -88,22 +88,11 @@ crate_version() {
 is_published() {
   local crate="$1" version="$2"
   # crates.io returns 200 if the (crate,version) exists, 404 otherwise.
+  # `-s` silences progress, drop `-f`/`-S` so 4xx doesn't spew errors.
   local code
-  code=$(curl -fsS -o /dev/null -w '%{http_code}' \
-           "https://crates.io/api/v1/crates/$crate/$version" || true)
+  code=$(curl -s -o /dev/null -w '%{http_code}' \
+           "https://crates.io/api/v1/crates/$crate/$version" 2>/dev/null || true)
   [[ "$code" == "200" ]]
-}
-
-wait_for_index() {
-  local crate="$1" version="$2"
-  local tries=0
-  # up to ~20 s; sparse index usually propagates in seconds.
-  while (( tries < 10 )); do
-    if is_published "$crate" "$version"; then return 0; fi
-    sleep 2
-    ((tries++))
-  done
-  warn "$crate $version not visible in index after $((tries*2))s — continuing, downstream publish may need a manual retry"
 }
 
 publish_one() {
@@ -128,9 +117,51 @@ publish_one() {
     return 0
   fi
 
-  cargo publish -p "$crate"
-  wait_for_index "$crate" "$version"
-  ok "published $crate $version"
+  # Check whether this is a first-time publish of the crate name (triggers
+  # the stricter "new crate" rate limit on crates.io) or a version update.
+  local is_new_crate=false
+  local head_code
+  head_code=$(curl -s -o /dev/null -w '%{http_code}' \
+                "https://crates.io/api/v1/crates/$crate" 2>/dev/null || true)
+  if [[ "$head_code" == "404" ]]; then is_new_crate=true; fi
+
+  # cargo publish waits internally for the new version to appear in the
+  # sparse index before returning, so downstream tiers resolve the fresh
+  # version. On HTTP 429 we retry with a cool-down — see the loop below.
+  local tmp; tmp=$(mktemp)
+  local max_retries=4 attempt=0
+  while (( attempt < max_retries )); do
+    if cargo publish -p "$crate" 2>&1 | tee "$tmp"; then
+      rm -f "$tmp"
+      ok "published $crate $version"
+      break
+    fi
+
+    if grep -qE '429 Too Many Requests|too many new crates' "$tmp"; then
+      # crates.io's new-crate limit is 1 per 10 minutes. Wait 10 min and retry.
+      warn "rate-limited by crates.io; sleeping 10 min before retry ($((attempt+1))/$max_retries)"
+      sleep 600
+      ((attempt++))
+      continue
+    fi
+
+    rm -f "$tmp"
+    err "cargo publish failed for $crate (non-rate-limit error)"
+    return 1
+  done
+  if (( attempt == max_retries )); then
+    err "gave up on $crate after $max_retries rate-limit retries"
+    return 1
+  fi
+
+  # Between successful new-crate publishes, pace at 20s so we don't burn
+  # the 5-crate burst budget on a short first run; actual refill is 1 per
+  # 10 min, so the retry loop above is what keeps the full workspace
+  # publishable in one go.
+  if [[ "$is_new_crate" == true ]]; then
+    say "sleeping 20s between new-crate publishes"
+    sleep 20
+  fi
 }
 
 should_skip_until_start() {
