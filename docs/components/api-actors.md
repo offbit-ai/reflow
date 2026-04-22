@@ -4,7 +4,7 @@ Reflow includes 6,697 pre-generated actor templates spanning 88 API services. Th
 
 ## Overview
 
-API actors are gated behind the `api` Cargo feature (enabled by default). Each actor maps to a single API endpoint and is registered with Zeal as a template with:
+API actors are gated behind the `api-services` feature in `reflow_rt`, which forwards to `reflow_components/api_services`. Each actor maps to a single API endpoint and is registered with Zeal as a template with:
 
 - A template ID (e.g., `api_slack_send_message`)
 - A human-readable title (e.g., "Send Message")
@@ -102,11 +102,11 @@ Each service generates multiple actors corresponding to its API endpoints.
 
 ## Feature Flag
 
-The `api` feature controls compilation of all generated API modules. Disabling it dramatically reduces compile times — useful for test builds:
+The `api-services` feature controls compilation of all generated API modules. Leaving it disabled reduces compile times for applications that do not need API-service actors:
 
 ```bash
-# Full build with API actors (default)
-cargo build -p reflow_server
+# Server build with API actors
+cargo build -p reflow_server --features api_services
 
 # Fast test build without API actors
 cargo test -p reflow_server --no-default-features

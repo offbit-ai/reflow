@@ -24,7 +24,7 @@ Reflow is an actor-based workflow engine that allows you to:
 
 Before getting started with Reflow, you should have:
 
-- **Rust** (1.70 or later) - for building and running Reflow
+- **Rust** (1.85 or later) - for building and running Reflow
 - **Basic understanding** of concurrent programming concepts
 - **Familiarity** with at least one of: JavaScript, Python, or Rust
 

@@ -4,7 +4,7 @@ Get Reflow's observability framework running in under 5 minutes. This guide will
 
 ## Prerequisites
 
-- Rust 1.70 or later
+- Rust 1.85 or later
 - Basic familiarity with Reflow actors
 
 ## Step 1: Start the Tracing Server

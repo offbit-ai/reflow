@@ -50,16 +50,16 @@ The inference actor does not know about hand landmarks, palm detection, or any o
 
 ## Feature Flags
 
-`reflow_components` exposes the catalog surface through the optional `ml` feature:
+`reflow_rt` exposes the catalog surface through the optional `media` and `ml` features:
 
 ```toml
-reflow_components = { path = "../reflow_components", features = ["ml"] }
+reflow_rt = { version = "0.1", features = ["media", "ml"] }
 ```
 
 The native LiteRT adapter is separate:
 
 ```toml
-reflow_ml_ops = { path = "../reflow_ml_ops", features = ["external-litert"] }
+reflow_rt = { version = "0.1", features = ["media", "ml", "external-litert"] }
 ```
 
 This split lets existing users opt into ML/CV graph templates without inheriting native LiteRT build and runtime requirements unless they explicitly need real LiteRT execution.

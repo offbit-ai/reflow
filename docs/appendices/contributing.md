@@ -17,7 +17,7 @@ Before contributing, ensure you have:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-org/reflow.git
+   git clone https://github.com/offbit-ai/reflow.git
    cd reflow
    ```
 
@@ -41,7 +41,7 @@ Before contributing, ensure you have:
 
 ### Reporting Issues
 
-- Use the [GitHub Issues](https://github.com/your-org/reflow/issues) page
+- Use the [GitHub Issues](https://github.com/offbit-ai/reflow/issues) page
 - Provide detailed information about the bug or feature request
 - Include relevant code examples and error messages
 - Search existing issues before creating new ones
@@ -216,8 +216,8 @@ When designing APIs:
 If you need help with contributing:
 
 1. Check the [documentation](../README.md)
-2. Search [existing issues](https://github.com/your-org/reflow/issues)
-3. Ask in [GitHub Discussions](https://github.com/your-org/reflow/discussions)
+2. Search [existing issues](https://github.com/offbit-ai/reflow/issues)
+3. Ask in [GitHub Discussions](https://github.com/offbit-ai/reflow/discussions)
 4. Join our [Discord community](discord-invite-link)
 
 ## Recognition

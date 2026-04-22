@@ -7,7 +7,7 @@ This guide covers installing and setting up Reflow on your system.
 Before installing Reflow, ensure you have:
 
 ### Required
-- **Rust** 1.70 or later
+- **Rust** 1.85 or later
 - **Git** for cloning the repository
 
 ### Optional (for scripting support)
@@ -17,17 +17,20 @@ Before installing Reflow, ensure you have:
 
 ## Installation Methods
 
-### Method 1: Install from Crates.io (Recommended)
+### Method 1: Use Reflow as a Rust Library
 
-```bash
-cargo install reflow
+For application code, depend on the unified runtime crate:
+
+```toml
+[dependencies]
+reflow_rt = "0.1"
 ```
 
 ### Method 2: Build from Source
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-org/reflow.git
+   git clone https://github.com/offbit-ai/reflow.git
    cd reflow
    ```
 
@@ -36,46 +39,46 @@ cargo install reflow
    cargo build --release
    ```
 
-3. **Install globally (optional):**
+3. **Run examples or package crates locally:**
    ```bash
-   cargo install --path .
+   cargo test -p reflow_rt
+   cargo package -p reflow_rt --list
    ```
 
-### Method 3: Use as a Library
+### Method 3: Use Lower-Level Crates Directly
 
-Add Reflow to your `Cargo.toml`:
+`reflow_rt` is the recommended user-facing entry point. Lower-level crates remain available when a project needs a narrower dependency surface:
 
 ```toml
 [dependencies]
-reflow_network = "0.1.0"
-reflow_script = { version = "0.1.0", features = ["deno"] }
-reflow_components = "0.1.0"
+reflow_graph = "0.1"
+reflow_actor = "0.1"
+reflow_network = "0.1"
+reflow_components = { version = "0.1", default-features = false }
 ```
 
 ## Feature Flags
 
-Reflow uses feature flags to control which runtimes are included:
+`reflow_rt` keeps optional component families out of the default install path:
 
 ```toml
 [dependencies]
-reflow_script = { 
-    version = "0.1.0", 
-    features = [
-        "deno",      # JavaScript/TypeScript support via Deno
-        "python",    # Python script support
-        "extism"     # WebAssembly plugin support
-    ] 
-}
+reflow_rt = { version = "0.1", features = ["gpu", "media", "ml"] }
 ```
 
 ### Available Features
 
 | Feature | Description | Requirements |
 |---------|-------------|--------------|
-| `deno` | JavaScript/TypeScript runtime | Deno installed |
-| `python` | Python script execution | Python 3.8+ |
-| `extism` | WebAssembly plugin support | None |
-| `flowtrace` | Debug tracing support | None |
+| `gpu` | GPU-backed rendering and compute components | Native GPU backend |
+| `av-core` | Audio/signal processing components | None |
+| `window-events` | Window/input event components | None |
+| `camera-native` | Native camera capture | Platform camera backend |
+| `media` | Typed frame/tensor packet crates | None |
+| `ml` | CV/ML actors, model manifests, taskpacks, and mock inference | None |
+| `external-litert` | Real LiteRT adapter support | LiteRT native runtime |
+| `api-services` | Generated API-service actors | Larger compile surface |
+| `network-flowtrace` | Debug tracing support in `reflow_network` | None |
 
 ## Runtime Dependencies
 
@@ -126,14 +129,11 @@ sudo apt install docker.io  # Ubuntu/Debian
 Verify your installation:
 
 ```bash
-# If installed globally
-reflow --version
+# Check the user-facing runtime crate
+cargo check -p reflow_rt
 
-# If built from source
-./target/release/reflow --version
-
-# Test basic functionality
-reflow test-actors
+# Verify the crate package contents
+cargo package -p reflow_rt --list
 ```
 
 ## Platform-Specific Notes

@@ -3,9 +3,15 @@ name = "reflow_rt"
 version = "0.1.0"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
-description = "Unified user-facing runtime API for Reflow graphs, actors, networks, and components."
+description = "The public Rust runtime crate for building and running Reflow graph workflows."
+documentation = "https://docs.rs/reflow_rt"
+homepage = "https://github.com/offbit-ai/reflow"
+keywords = ["workflow", "actor", "dag", "runtime", "media"]
+categories = ["concurrency", "development-tools", "wasm"]
 license = "MIT OR Apache-2.0"
+readme = "README.md"
 repository = "https://github.com/offbit-ai/reflow"
+rust-version = "1.85"
 
 [dependencies]
 actor_macro = { version = "0.1.0", path = "../actor_macro" }
@@ -68,3 +74,7 @@ full = [
 ]
 network-flowtrace = ["reflow_network/flowtrace"]
 network-wasm = ["reflow_network/wasm"]
+
+[package.metadata.docs.rs]
+features = ["media", "ml"]
+rustdoc-args = ["--cfg", "docsrs"]

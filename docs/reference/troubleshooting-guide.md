@@ -12,7 +12,7 @@ error[E0432]: unresolved import `reflow_network::Graph`
 ```
 
 **Solution**: 
-1. Ensure you have the latest Rust version (1.70+)
+1. Ensure you have the latest Rust version (1.85+)
 2. Update dependencies: `cargo update`
 3. Clean build cache: `cargo clean && cargo build`
 

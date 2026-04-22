@@ -4,9 +4,9 @@
 //! Script execution (JavaScript, Python, SQL, etc.) is handled by dynASB
 //! via ComponentSpec::Script — this crate only contains native actors.
 //!
-//! The `api` feature (enabled by default) includes 88 generated API service
-//! modules with 6,697 actor templates. Disable it for faster test builds:
-//!   cargo test -p reflow_server --no-default-features
+//! The `api_services` feature includes 88 generated API service modules with
+//! 6,697 actor templates. It is opt-in so component users do not inherit the
+//! generated API catalog unless they need it.
 //!
 //! The component catalog contains legacy/generated actors and GPU resource
 //! holders where several style-oriented clippy lints are noisy under a
@@ -87,12 +87,12 @@ pub use template_metadata::{
     template_catalog,
 };
 
-// Re-export API template metadata for ZIP registration (only with api feature)
+// Re-export API template metadata for ZIP registration (only with api_services feature)
 #[cfg(feature = "api_services")]
 #[cfg(not(clippy))]
 pub use reflow_api::{get_api_actor_for_template, get_api_template_infos, ApiTemplateInfo};
 
-// Stubs when api feature is disabled — lets dependents compile without the heavy API modules
+// Stubs when api_services feature is disabled — lets dependents compile without the heavy API modules
 #[cfg(not(feature = "api_services"))]
 mod api_stubs {
     use std::sync::Arc;

@@ -28,7 +28,7 @@ use reflow_components::get_actor_for_template;
 // Returns Some(Arc<dyn Actor>) for known templates
 let actor = get_actor_for_template("tpl_http_request");
 
-// Falls through to API actors when the `api` feature is enabled
+// Falls through to API actors when the `api_services` feature is enabled
 let api_actor = get_actor_for_template("api_slack_send_message");
 ```
 
@@ -144,33 +144,36 @@ See [Media / ML Stack](./ml-stack.md) for the architecture, feature flags, and v
 
 ## API Service Actors
 
-When the `api` Cargo feature is enabled (default), 6,697 pre-generated actors for 88 API services are available. These are code-generated from OpenAPI specifications.
+When the `api_services` Cargo feature is enabled, 6,697 pre-generated actors for 88 API services are available. These are code-generated from OpenAPI specifications.
 
 See [API Service Actors](./api-actors.md) for the full list.
 
 ## Feature Flags
 
-The `api` feature controls compilation of the generated API modules. The `ml` feature enables the optional Media / ML actor catalog.
+The `api_services` feature controls compilation of the generated API modules. The `ml` feature enables the optional Media / ML actor catalog.
 
 ```toml
 # Cargo.toml
 [dependencies]
-reflow_components = { path = "../reflow_components" }  # api enabled by default
+reflow_rt = "0.1"  # recommended user-facing crate
 
-# For faster test builds, disable api:
-reflow_components = { path = "../reflow_components", default-features = false }
+# To match reflow_components' historical default bundle:
+reflow_rt = { version = "0.1", features = ["components-default"] }
 
 # For Media / ML templates:
-reflow_components = { path = "../reflow_components", features = ["ml"] }
+reflow_rt = { version = "0.1", features = ["media", "ml"] }
 
 # For native camera capture:
-reflow_components = { path = "../reflow_components", features = ["camera-native"] }
+reflow_rt = { version = "0.1", features = ["camera-native"] }
+
+# If depending on reflow_components directly:
+reflow_components = { version = "0.1", default-features = false, features = ["ml"] }
 ```
 
-When `api` is disabled, stub types are provided so dependents compile without the heavy API modules:
+When `api_services` is disabled, stub types are provided so dependents compile without the heavy API modules:
 
 ```rust
-// Stubs when api feature is disabled
+// Stubs when api_services feature is disabled
 pub fn get_api_template_infos() -> &'static [ApiTemplateInfo] { &[] }
 pub fn get_api_actor_for_template(_: &str) -> Option<Arc<dyn Actor>> { None }
 ```

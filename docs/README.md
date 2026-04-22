@@ -10,6 +10,7 @@ Reflow is a modular workflow engine that uses the actor model for concurrent, me
 - **6,700+ API Actors**: Pre-generated actors for 88 API services (Slack, GitHub, Stripe, etc.)
 - **Actor-Based Architecture**: Isolated, concurrent actors with message passing
 - **Graph-Based Workflows**: Visual workflow representation with history/undo
+- **Unified Rust Runtime Crate**: `reflow_rt` is the crates.io-facing API surface for graph, actor, network, and component crates
 - **Real-Time Observability**: EventBridge pipeline forwarding execution events to TraceCollector and ZipSession
 - **Media Processing**: Image, audio, video, and optional graph-driven ML pipelines
 - **REST API + WebSocket**: HTTP and WebSocket interfaces for headless workflow execution
@@ -19,6 +20,9 @@ Reflow is a modular workflow engine that uses the actor model for concurrent, me
 
 ### [Getting Started](./getting-started/README.md)
 Quick start guide, installation, and basic concepts
+
+### [Runtime Crate](../crates/reflow_rt/README.md)
+The public Rust runtime API surface, feature flags, and graph/component re-exports
 
 ### [Architecture](./architecture/overview.md)
 System architecture, actor model, execution engine, and event pipeline
@@ -47,6 +51,7 @@ Complete API reference and configuration options
 ## Quick Links
 
 - [Installation Guide](./getting-started/installation.md)
+- [Runtime Crate](../crates/reflow_rt/README.md)
 - [First Workflow Tutorial](./getting-started/first-workflow.md)
 - [Component Library](./components/standard-library.md)
 - [API Service Actors](./components/api-actors.md)
@@ -61,4 +66,4 @@ Complete API reference and configuration options
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is dual-licensed under MIT or Apache-2.0 - see the LICENSE files for details.

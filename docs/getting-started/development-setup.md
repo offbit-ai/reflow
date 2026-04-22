@@ -37,7 +37,9 @@ cargo new my-reflow-app
 cd my-reflow-app
 
 # Add Reflow dependencies
-cargo add reflow_network reflow_script reflow_components
+cargo add reflow_rt
+cargo add tokio --features rt-multi-thread,macros
+cargo add serde_json anyhow
 ```
 
 ### Recommended Project Structure
@@ -73,13 +75,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reflow_network = "0.1.0"
-reflow_script = { version = "0.1.0", features = ["deno", "python"] }
-reflow_components = "0.1.0"
-tokio = { version = "1.0", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-anyhow = "1.0"
+reflow_rt = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+serde_json = "1"
+anyhow = "1"
 
 [dev-dependencies]
 tokio-test = "0.4"
@@ -96,24 +95,15 @@ path = "examples/basic_workflow.rs"
 Create `src/main.rs`:
 
 ```rust
-use reflow_network::network::Network;
-use reflow_script::{ScriptActor, ScriptConfig, ScriptRuntime, ScriptEnvironment};
-use tokio;
+use reflow_rt::prelude::*;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize logging
-    env_logger::init();
-    
-    // Create a network
-    let mut network = Network::new();
-    
-    // Add actors to the network
-    // ... your workflow setup
-    
-    // Start the network
-    network.start().await?;
-    
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut graph = Graph::new("development", false, None);
+    graph.add_node("tap", "tpl_passthrough", None);
+
+    let network = Network::with_graph(NetworkConfig::default(), &graph);
+    let _ = network;
+
     Ok(())
 }
 ```
@@ -131,8 +121,8 @@ pub use custom_actor::CustomActor;
 Create `src/actors/custom_actor.rs`:
 
 ```rust
-use reflow_network::actor::{Actor, ActorBehavior, ActorContext, Port};
-use reflow_network::message::Message;
+use reflow_rt::actor_runtime::{Actor, ActorBehavior, ActorContext, Port};
+use reflow_rt::actor_runtime::message::Message;
 use std::collections::HashMap;
 
 pub struct CustomActor {

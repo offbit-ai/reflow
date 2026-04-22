@@ -35,7 +35,7 @@ Reflow's WebAssembly (WASM) bindings provide a complete JavaScript interface for
 
 ```bash
 # Clone the repository
-git clone https://github.com/reflow-project/reflow
+git clone https://github.com/offbit-ai/reflow
 cd reflow
 
 # Build WASM bindings

@@ -2,88 +2,69 @@
 
 <div align="center">
 
-**A powerful, actor-based workflow execution engine built in Rust**
+**A graph-driven actor runtime for workflows, media pipelines, and visual systems**
 
-[![Build Status](https://img.shields.io/github/workflow/status/reflow-project/reflow/CI)](https://github.com/reflow-project/reflow/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/offbit-ai/reflow/ci.yml?branch=main)](https://github.com/offbit-ai/reflow/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust Version](https://img.shields.io/badge/rust-1.70+-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.85+-blue.svg)](https://www.rust-lang.org)
 [![WebAssembly](https://img.shields.io/badge/WebAssembly-compatible-green.svg)](https://webassembly.org/)
 
-[📖 Documentation](./docs/README.md) | [🚀 Quick Start](./docs/getting-started/README.md) | [💡 Examples](./examples/) | [🔧 API Reference](./docs/reference/api-reference.md)
+[Documentation](./docs/README.md) | [Runtime Crate](./crates/reflow_rt/README.md) | [Quick Start](./docs/getting-started/README.md) | [Examples](./examples/) | [API Reference](./docs/reference/api-reference.md)
 
 </div>
 
 ## What is Reflow?
 
-Reflow is a modular, high-performance workflow execution engine that uses the **actor model** for concurrent, message-passing computation. It enables you to build complex data processing pipelines, real-time systems, and distributed workflows with **multi-language scripting support** and **cross-platform deployment**.
+Reflow is a modular workflow execution engine that uses the **actor model** for concurrent, message-passing computation. It enables graph-authored DAGs for data processing, real-time media, visual tooling, distributed workflows, and optional ML/CV taskpacks.
 
 ### Key Features
 
-🎭 **Actor-Based Architecture** - Isolated, concurrent actors communicate via message passing  
-🌍 **Multi-Language Support** - JavaScript (Deno), Python, and WebAssembly runtimes  
-📊 **Visual Workflows** - Graph-based workflow representation with history and undo  
-⚡ **High Performance** - Rust-powered execution with zero-copy optimizations  
-🌐 **Cross-Platform** - Native execution + WebAssembly for browsers  
-🔄 **Real-Time Processing** - Built-in networking, WebSockets, and live data streams  
-📦 **Extensible** - Rich component library + custom component creation  
-🛠️ **Developer Friendly** - Hot reloading, debugging tools, and comprehensive APIs
+🎭 **Actor-Based Architecture** - Isolated, concurrent actors communicate via typed messages  
+📊 **Graph-Authored Workflows** - DAG representation with subgraphs, IIPs, history, and undo  
+📦 **The Reflow Runtime API** - `reflow_rt` is the public Rust crate for building and running Reflow applications  
+🎛️ **Optional Component Families** - GPU, AV, window events, camera, API services, media, and ML are feature gated  
+🌍 **Multi-Language Support** - JavaScript, Python, and WebAssembly actor paths  
+🌐 **Cross-Platform** - Native Rust execution plus WebAssembly-oriented runtime surfaces  
+🔄 **Real-Time Processing** - Networking, WebSockets, streams, and live graph events  
+🧠 **Media / ML Ready** - Typed media packets, mockable inference, LiteRT backend boundary, and taskpack subgraphs
 
 ## Quick Start
 
-### Installation
+### Use Reflow In Rust
 
-```bash
-# Install Rust (if not already installed)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+For application code, start with the unified runtime crate:
 
-# Clone and build Reflow
-git clone https://github.com/reflow-project/reflow.git
-cd reflow
-cargo build --release
+```toml
+[dependencies]
+reflow_rt = "0.1"
 ```
 
-### Your First Workflow
+The default `reflow_rt` feature set is intentionally lightweight: runtime plus core utility components. Optional stacks are selected explicitly:
+
+```toml
+# Runtime + core component catalog only.
+reflow_rt = "0.1"
+
+# Add GPU rendering/compute components.
+reflow_rt = { version = "0.1", features = ["gpu"] }
+
+# Add typed media packets and graph-driven ML/CV taskpacks.
+reflow_rt = { version = "0.1", features = ["media", "ml"] }
+```
 
 ```rust
-use reflow_network::{Graph, Network};
-use reflow_components::prelude::*;
+use reflow_rt::prelude::*;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a new graph
-    let mut graph = Graph::new("MyWorkflow", true, HashMap::new());
-    
-    // Add actors to the graph
-    graph.add_node("source", "DataSource", json!({
-        "data": [1, 2, 3, 4, 5]
-    }));
-    
-    graph.add_node("processor", "MapActor", json!({
-        "function": "x => x * 2"
-    }));
-    
-    graph.add_node("sink", "Logger", json!({}));
-    
-    // Connect the actors
-    graph.add_connection("source", "output", "processor", "input", json!({}));
-    graph.add_connection("processor", "output", "sink", "input", json!({}));
-    
-    // Execute the workflow
-    let network = Network::from_graph(graph).await?;
-    network.execute().await?;
-    
-    Ok(())
+fn main() {
+    let mut graph = Graph::new("example", false, None);
+    graph.add_node("tap", "tpl_passthrough", None);
+
+    let network = Network::with_graph(NetworkConfig::default(), &graph);
+    let _ = network;
 }
 ```
 
-**Output:**
-```
-[INFO] sink: 2
-[INFO] sink: 4
-[INFO] sink: 6
-[INFO] sink: 8
-[INFO] sink: 10
-```
+See the [`reflow_rt` README](./crates/reflow_rt/README.md) for the runtime API surface and feature map.
 
 ## Architecture Overview
 
@@ -110,9 +91,21 @@ Reflow's architecture is built around three core concepts:
 This workspace contains multiple crates that work together:
 
 ### Core Engine
+- **`reflow_rt`** - The public Rust runtime crate for Reflow applications
 - **`reflow_network`** - Core actor runtime and message routing
 - **`reflow_components`** - Standard library of reusable actors
+- **`reflow_graph`** - Graph data model, exports, nodes, connections, and IIPs
+- **`reflow_actor`** - Actor traits, contexts, messages, streams, and state
 - **`actor_macro`** - Procedural macros for actor creation
+
+### Media, Graphics & Assets
+- **`reflow_assets`** - Content-addressed asset database conventions
+- **`reflow_pixel`** - Pixel/image helpers for media components
+- **`reflow_sdf`** - SDF primitives and procedural geometry/codegen support
+- **`reflow_shader`** - Shader graph IR and WGSL generation
+- **`reflow_vector`** - 2D vector paths, booleans, and rasterization
+- **`reflow_media_types` / `reflow_media_codec`** - Optional typed media and tensor packet contracts
+- **`reflow_litert` / `reflow_ml_ops` / `reflow_cv_ops` / `reflow_taskpacks`** - Optional ML/CV stack and taskpack graph builders
 
 ### Language Runtimes  
 - **`reflow_js`** - JavaScript/Deno runtime integration
@@ -195,7 +188,7 @@ Demonstrates how to create and deploy actors as WebAssembly modules.
 
 ```bash
 # Clone the repository
-git clone https://github.com/reflow-project/reflow.git
+git clone https://github.com/offbit-ai/reflow.git
 cd reflow
 
 # Build all crates
@@ -274,8 +267,6 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 ## Community
 
 - **GitHub Discussions** - Ask questions and share ideas
-<!-- - **Discord** - Real-time chat with the community   -->
-<!-- - **Twitter** - Follow [@ReflowEngine](https://twitter.com/ReflowEngine) for updates -->
 
 ## License
 
@@ -286,8 +277,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Built with ❤️ using:
 - [Rust](https://rust-lang.org) - Systems programming language
 - [Tokio](https://tokio.rs) - Asynchronous runtime  
-- [Deno](https://deno.land) - JavaScript/TypeScript runtime
-- [WebAssembly](https://webassembly.org) - Portable binary format
 
 ---
 
