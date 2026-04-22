@@ -12,61 +12,61 @@
  * Variant tag — matches the `Message` enum in `reflow_actor`.
  */
 typedef enum rfl_message_kind {
-  Flow = 0,
-  Boolean = 1,
-  Integer = 2,
-  Float = 3,
-  String = 4,
-  Object = 5,
-  Array = 6,
-  Bytes = 7,
-  Error = 8,
-  StreamHandle = 9,
-  Optional = 10,
+  rfl_message_kind_Flow = 0,
+  rfl_message_kind_Boolean = 1,
+  rfl_message_kind_Integer = 2,
+  rfl_message_kind_Float = 3,
+  rfl_message_kind_String = 4,
+  rfl_message_kind_Object = 5,
+  rfl_message_kind_Array = 6,
+  rfl_message_kind_Bytes = 7,
+  rfl_message_kind_Error = 8,
+  rfl_message_kind_StreamHandle = 9,
+  rfl_message_kind_Optional = 10,
   /**
    * Anything else — use `rfl_message_as_json` to inspect.
    */
-  Other = 99,
+  rfl_message_kind_Other = 99,
 } rfl_message_kind;
 
 typedef enum rfl_status {
   /**
    * Success.
    */
-  Ok = 0,
+  rfl_status_Ok = 0,
   /**
    * A required argument was NULL.
    */
-  NullArg = -1,
+  rfl_status_NullArg = -1,
   /**
    * A C string was not valid UTF-8.
    */
-  InvalidUtf8 = -2,
+  rfl_status_InvalidUtf8 = -2,
   /**
    * A JSON payload failed to parse or deserialize.
    */
-  InvalidJson = -3,
+  rfl_status_InvalidJson = -3,
   /**
    * The runtime refused the operation (see `rfl_last_error_message`).
    */
-  Runtime = -4,
+  rfl_status_Runtime = -4,
   /**
    * The network has already been started or is in a state that forbids
    * the operation.
    */
-  InvalidState = -5,
+  rfl_status_InvalidState = -5,
 } rfl_status;
 
 /**
  * Variant tag returned by `rfl_stream_recv_next`.
  */
 typedef enum rfl_stream_frame_kind {
-  Begin = 0,
-  Data = 1,
-  End = 2,
-  Error = 3,
-  Timeout = 4,
-  Closed = 5,
+  rfl_stream_frame_kind_Begin = 0,
+  rfl_stream_frame_kind_Data = 1,
+  rfl_stream_frame_kind_End = 2,
+  rfl_stream_frame_kind_Error = 3,
+  rfl_stream_frame_kind_Timeout = 4,
+  rfl_stream_frame_kind_Closed = 5,
 } rfl_stream_frame_kind;
 
 /**

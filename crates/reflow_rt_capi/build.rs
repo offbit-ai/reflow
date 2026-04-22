@@ -11,6 +11,13 @@ fn main() {
             "/* GENERATED FILE — edit src/lib.rs and rerun `cargo build --features generate-header`. */"
                 .into(),
         ),
+        enumeration: cbindgen::EnumConfig {
+            // Prefix every enum variant with the enum's C name so `Error` in
+            // rfl_stream_frame_kind doesn't collide with `Error` in
+            // rfl_message_kind at the translation-unit level.
+            prefix_with_name: true,
+            ..Default::default()
+        },
         ..Default::default()
     };
 
