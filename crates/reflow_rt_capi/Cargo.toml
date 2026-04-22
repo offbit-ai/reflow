@@ -19,6 +19,8 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 reflow_rt = { version = "0.2.0", path = "../reflow_rt" }
+reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false, optional = true }
+anyhow = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time"] }
 flume = { workspace = true }
@@ -30,6 +32,10 @@ libc = "0.2"
 cbindgen = { version = "0.27", optional = true }
 
 [features]
-default = []
+default = ["components"]
+# Ship the reflow_components standard actor catalog so SDKs can instantiate
+# bundled templates by name and embed subgraphs without the caller supplying
+# an actor map. Turn off for a thinner shared library.
+components = ["dep:reflow_components"]
 # Regenerate the C header on build. Off by default so CI builds don't need cbindgen.
 generate-header = ["dep:cbindgen"]

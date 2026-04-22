@@ -31,6 +31,14 @@
 #![allow(non_camel_case_types)]
 #![allow(clippy::missing_safety_doc)]
 
+mod actor;
+pub use actor::*;
+
+#[cfg(feature = "components")]
+mod catalog;
+#[cfg(feature = "components")]
+pub use catalog::*;
+
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -52,12 +60,12 @@ thread_local! {
     static LAST_ERROR: RefCell<Option<CString>> = const { RefCell::new(None) };
 }
 
-fn set_last_error(msg: impl Into<String>) {
+pub(crate) fn set_last_error(msg: impl Into<String>) {
     let s = CString::new(msg.into()).unwrap_or_else(|_| CString::new("<invalid>").unwrap());
     LAST_ERROR.with(|cell| *cell.borrow_mut() = Some(s));
 }
 
-fn clear_last_error() {
+pub(crate) fn clear_last_error() {
     LAST_ERROR.with(|cell| *cell.borrow_mut() = None);
 }
 
@@ -242,6 +250,8 @@ pub unsafe extern "C" fn rfl_network_start(n: *mut rfl_network) -> rfl_status {
         return rfl_status::NullArg;
     }
     let handle = unsafe { &*n };
+    let rt = runtime();
+    let _enter = rt.enter();
     match handle.net.lock().unwrap().start() {
         Ok(_) => rfl_status::Ok,
         Err(e) => to_status_runtime(e),
@@ -256,6 +266,8 @@ pub unsafe extern "C" fn rfl_network_shutdown(n: *mut rfl_network) -> rfl_status
         return rfl_status::NullArg;
     }
     let handle = unsafe { &*n };
+    let rt = runtime();
+    let _enter = rt.enter();
     handle.net.lock().unwrap().shutdown();
     rfl_status::Ok
 }
@@ -265,6 +277,8 @@ pub unsafe extern "C" fn rfl_network_shutdown(n: *mut rfl_network) -> rfl_status
 pub unsafe extern "C" fn rfl_network_free(n: *mut rfl_network) {
     if !n.is_null() {
         let handle = unsafe { Box::from_raw(n) };
+        let rt = runtime();
+        let _enter = rt.enter();
         handle.net.lock().unwrap().shutdown();
     }
 }

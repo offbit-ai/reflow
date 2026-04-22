@@ -98,12 +98,71 @@ void  rfl_string_free(char*);
 void  rfl_runtime_shutdown(void);
 ```
 
+### Callback-driven actors
+
+Language SDKs can register native functions as actors. The runtime calls
+them on every tick with a per-call `rfl_actor_ctx*` that exposes inputs,
+config, state, and an emitter.
+
+```c
+typedef enum rfl_status (*rfl_actor_fn)(void* user_data, rfl_actor_ctx* ctx);
+typedef void            (*rfl_actor_drop_fn)(void* user_data);
+
+rfl_actor* rfl_actor_new(const char* component_name,
+                         const char* const* inports,  size_t n_inports,
+                         const char* const* outports, size_t n_outports,
+                         int await_all_inports,
+                         rfl_actor_fn callback,
+                         void* user_data,
+                         rfl_actor_drop_fn user_data_drop); /* may be NULL */
+void       rfl_actor_free(rfl_actor*);
+
+rfl_status rfl_network_register_actor(rfl_network*, const char* template_id, rfl_actor*);
+```
+
+Inside the callback (all returned strings are `rfl_string_free`-owned):
+
+```c
+int        rfl_ctx_has_input   (rfl_actor_ctx*, const char* port);
+char*      rfl_ctx_input_json  (rfl_actor_ctx*, const char* port);
+char*      rfl_ctx_config_json (rfl_actor_ctx*);
+char*      rfl_ctx_state_get   (rfl_actor_ctx*, const char* key);
+rfl_status rfl_ctx_state_set   (rfl_actor_ctx*, const char* key, const char* value_json);
+rfl_status rfl_ctx_emit        (rfl_actor_ctx*, const char* port, const char* message_json);
+```
+
+Threading: callbacks run on a tokio worker. Language SDKs must arrange
+their own synchronization (Node ThreadSafeFunction, Python GIL acquire,
+JNI `AttachCurrentThread`, etc.).
+
+`user_data_drop` fires exactly once, when the last reference to the actor
+is released by the runtime — use it to release your GC root.
+
+### Template catalog + subgraph (gated on the `components` feature)
+
+Enabled by default; compile with `--no-default-features` to drop
+`reflow_components` for a thinner shared library.
+
+```c
+/* Bundled component instantiation */
+rfl_actor* rfl_template_actor_new(const char* template_id);
+char*      rfl_template_list_json(void);         /* JSON array of ids */
+
+/* Subgraph embedding — resolves referenced components from the catalog */
+rfl_actor* rfl_subgraph_actor_new_from_json(const char* graph_export_json);
+```
+
+All three return an `rfl_actor*` you can hand to
+`rfl_network_register_actor`. This is how a non-Rust SDK registers the
+bundled standard library (~300 templates) and composes graph exports as
+first-class subgraph nodes.
+
 ### Not yet in the ABI (next passes)
 
-- **Callback actors**: `rfl_actor_register`, `rfl_network_register_actor`, `rfl_actor_ctx`, and the message/state handle types language SDKs invoke from inside a callback.
-- **Message / state / stream-handle accessors**: `rfl_message_*`, `rfl_state_*`, `rfl_stream_*`.
-- **Template catalog**: `rfl_template_actor_new`, `rfl_template_mapping` — needed for SDKs that want to register the bundled `reflow_components` actors by id.
-- **Subgraph embedding**: `rfl_subgraph_new` over a `GraphExport`.
+- **Typed message / stream handles**: zero-copy byte payloads,
+  `rfl_stream_frame_next` for `StreamHandle` consumption.
+- **Subgraph builder with custom actor maps** (for templates that aren't
+  in the bundled catalog).
 
 ## License
 

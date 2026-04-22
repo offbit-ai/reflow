@@ -6414,11 +6414,13 @@ dependencies = [
 name = "reflow_rt_capi"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "cbindgen 0.27.0",
  "flume",
  "libc",
  "once_cell",
  "parking_lot 0.12.4",
+ "reflow_components",
  "reflow_rt",
  "serde_json",
  "tokio",

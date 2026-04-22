@@ -37,6 +37,20 @@ typedef enum rfl_status {
 } rfl_status;
 
 /**
+ * Opaque handle to an actor template. Produced by `rfl_actor_new`
+ * (callback-driven actor), `rfl_template_actor_new` (bundled component),
+ * or `rfl_subgraph_actor_new_from_json` (embedded subgraph). Hand to
+ * `rfl_network_register_actor` to publish under a template id, or to
+ * `rfl_actor_free` to release without registering.
+ */
+typedef struct rfl_actor rfl_actor;
+
+/**
+ * Opaque per-call context handed to a callback actor.
+ */
+typedef struct rfl_actor_ctx rfl_actor_ctx;
+
+/**
  * Opaque handle to a subscriber on the network's event stream. One
  * subscriber per handle — create as many as you need.
  */
@@ -52,6 +66,22 @@ typedef struct rfl_graph rfl_graph;
  * share it across threads without touching its internal `Arc<Mutex<_>>`.
  */
 typedef struct rfl_network rfl_network;
+
+/**
+ * Function pointer: the body of a callback actor.
+ *
+ * The callback is invoked every time the runtime has inputs for the actor.
+ * Return `rfl_status::Ok` to commit whatever was emitted via
+ * `rfl_ctx_emit`; any other status aborts the tick with an error in the
+ * network event stream.
+ */
+typedef enum rfl_status (*rfl_actor_fn)(void *user_data, struct rfl_actor_ctx *ctx);
+
+/**
+ * Function pointer: released when the runtime drops the last reference to
+ * the actor. Use it to decrement a Node/Python/JVM GC root.
+ */
+typedef void (*rfl_actor_drop_fn)(void *user_data);
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,6 +278,107 @@ enum rfl_status rfl_network_add_initial(struct rfl_network *n,
                                         const char *actor,
                                         const char *port,
                                         const char *message_json);
+
+/**
+ * Create a callback-driven actor.
+ *
+ * `inports` / `outports` arrays point to `n_*` C strings each (UTF-8).
+ * `await_all_inports` = 1 makes the runtime buffer packets until every
+ * declared inport has data; 0 fires on any input.
+ *
+ * `user_data_drop` may be NULL if no cleanup is needed.
+ */
+struct rfl_actor *rfl_actor_new(const char *component_name,
+                                const char *const *inports,
+                                uintptr_t n_inports,
+                                const char *const *outports,
+                                uintptr_t n_outports,
+                                int await_all_inports,
+                                rfl_actor_fn callback,
+                                void *user_data,
+                                rfl_actor_drop_fn user_data_drop);
+
+/**
+ * Free an actor handle that was never registered. NULL-safe.
+ */
+void rfl_actor_free(struct rfl_actor *a);
+
+/**
+ * Register a callback actor as a template on the network. The network
+ * takes ownership; the caller must **not** continue to use the handle
+ * afterwards (treat it as freed).
+ */
+enum rfl_status rfl_network_register_actor(struct rfl_network *n,
+                                           const char *template_id,
+                                           struct rfl_actor *a);
+
+/**
+ * 1 if a packet is available on `port`, 0 otherwise. Does not consume.
+ */
+int rfl_ctx_has_input(struct rfl_actor_ctx *ctx, const char *port);
+
+/**
+ * Return the input packet on `port` as a JSON-encoded `Message`, or NULL
+ * if no packet is available. Caller frees via `rfl_string_free`.
+ */
+char *rfl_ctx_input_json(struct rfl_actor_ctx *ctx, const char *port);
+
+/**
+ * Return the current config as a JSON object string. Caller frees via
+ * `rfl_string_free`. Returns NULL on error.
+ */
+char *rfl_ctx_config_json(struct rfl_actor_ctx *ctx);
+
+/**
+ * Fetch a state entry as JSON. Returns NULL if absent.
+ * Caller frees via `rfl_string_free`.
+ *
+ * Only works against `MemoryState` (the default state backend) — custom
+ * backends will yield NULL.
+ */
+char *rfl_ctx_state_get(struct rfl_actor_ctx *ctx, const char *key);
+
+/**
+ * Set a state entry. `value_json` is a JSON value (any shape).
+ */
+enum rfl_status rfl_ctx_state_set(struct rfl_actor_ctx *ctx,
+                                  const char *key,
+                                  const char *value_json);
+
+/**
+ * Emit a packet on `port`. `message_json` must parse as a Reflow
+ * `Message` (e.g. `"\"Flow\""`, `{"Integer": 1}`, `{"String": "x"}`).
+ */
+enum rfl_status rfl_ctx_emit(struct rfl_actor_ctx *ctx, const char *port, const char *message_json);
+
+/**
+ * Instantiate an actor from the bundled `reflow_components` catalog.
+ *
+ * Returns an `rfl_actor*` that can be handed to `rfl_network_register_actor`
+ * exactly like a callback-driven actor. Returns NULL if the template id is
+ * not recognised.
+ *
+ * Available only when the crate is compiled with the `components` feature
+ * (on by default).
+ */
+struct rfl_actor *rfl_template_actor_new(const char *template_id);
+
+/**
+ * Return a JSON array of every template id the bundled catalog knows
+ * about. Caller frees via `rfl_string_free`.
+ */
+char *rfl_template_list_json(void);
+
+/**
+ * Build a SubgraphActor from a `GraphExport` JSON document. Each component
+ * referenced inside the export is resolved against the bundled
+ * `reflow_components` catalog. Returns NULL on parse error or on unknown
+ * component references.
+ *
+ * The resulting `rfl_actor*` can be handed to `rfl_network_register_actor`
+ * exactly like any other actor template.
+ */
+struct rfl_actor *rfl_subgraph_actor_new_from_json(const char *graph_export_json);
 
 #ifdef __cplusplus
 }  // extern "C"
