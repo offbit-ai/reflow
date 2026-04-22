@@ -26,7 +26,9 @@ The stack keeps the same Reflow principles as the rest of the component system:
 
 Reflow owns the backend boundary, not the native LiteRT implementation. By default, `reflow_litert` uses `MockBackend`, which keeps graph authoring, examples, and non-ML workflows free from native ML runtime requirements.
 
-Real LiteRT execution is available through the optional `external-litert` feature. The adapter targets Offbit's separate LiteRT Rust bindings from `https://github.com/offbit-ai/LiteRT`. With that feature enabled, models configured with `backend: "litert"` are loaded through the LiteRT adapter. Without it, Reflow returns a clear graph error instead of silently falling back to mock inference.
+Real LiteRT execution is available through the optional `external-litert` feature. The adapter targets Offbit's published `litert` and `litert-sys` crates. With that feature enabled, models configured with `backend: "litert"` are loaded through the LiteRT adapter. Without it, Reflow returns a clear graph error instead of silently falling back to mock inference.
+
+`litertlm` is a separate LiteRT-LM surface and is intentionally not part of the V1 vision inference adapter. It should land behind dedicated LLM/chat/generation actors when those graph contracts are scoped.
 
 The graph contract does not change when switching from mock inference to LiteRT. Frames, tensors, model metadata, ROI packets, and decoded outputs continue to move through the same actors and ports.
 

@@ -2,9 +2,9 @@
 //!
 //! The default build remains deterministic and mock-first so CI and graph
 //! authoring do not require native ML libraries. The real LiteRT adapter is
-//! optional and targets the separate Offbit LiteRT Rust bindings
-//! (https://github.com/offbit-ai/LiteRT), wiring them in behind the same backend
-//! traits without changing graph-facing actors or taskpacks.
+//! optional and targets the published Offbit `litert` crates, wiring them in
+//! behind the same backend traits without changing graph-facing actors or
+//! taskpacks.
 
 use anyhow::{anyhow, bail, Result};
 use reflow_media_types::{PacketMetadata, TensorDType, TensorPacket, TensorShape};

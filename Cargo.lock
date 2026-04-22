@@ -4071,8 +4071,9 @@ checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
 
 [[package]]
 name = "litert"
-version = "0.1.0"
-source = "git+https://github.com/offbit-ai/LiteRT#4042524482031b14804b68eca2efd81e0f330459"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4ac64cd3ffcea06cbc82e8811e602e128b76995d9b042937e886a45edd816e3"
 dependencies = [
  "libloading",
  "litert-sys",
@@ -4081,8 +4082,9 @@ dependencies = [
 
 [[package]]
 name = "litert-sys"
-version = "0.1.0"
-source = "git+https://github.com/offbit-ai/LiteRT#4042524482031b14804b68eca2efd81e0f330459"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0343008601f3da705192cc55e152a45239ee08516381c13e20fa1b164fd8908f"
 dependencies = [
  "dirs 5.0.1",
  "serde",

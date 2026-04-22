@@ -10,8 +10,8 @@ build = "build.rs"
 anyhow = "1"
 actor_macro = { path = "../../crates/actor_macro" }
 flume = "0.11"
-litert = { git = "https://github.com/offbit-ai/LiteRT", package = "litert" }
-litert-sys = { git = "https://github.com/offbit-ai/LiteRT", package = "litert-sys" }
+litert = "0.2.1"
+litert-sys = "0.2.1"
 reflow_asset_registry = { path = "../../crates/reflow_asset_registry" }
 reflow_litert = { path = "../../crates/reflow_litert", features = ["external-litert"] }
 reflow_media_codec = { path = "../../crates/reflow_media_codec" }

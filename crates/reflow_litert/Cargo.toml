@@ -5,10 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
-# Optional Offbit LiteRT bindings. Kept as a git dependency so downstream
-# builds do not rely on a sibling checkout being present.
-litert = { git = "https://github.com/offbit-ai/LiteRT", package = "litert", optional = true }
-litert-sys = { git = "https://github.com/offbit-ai/LiteRT", package = "litert-sys", optional = true }
+# Optional Offbit LiteRT bindings from crates.io.
+litert = { version = "0.2.1", optional = true }
+litert-sys = { version = "0.2.1", optional = true }
 reflow_media_types = { path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
