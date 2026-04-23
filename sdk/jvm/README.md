@@ -2,7 +2,7 @@
 
 Reflow is a **modular flow-based programming runtime built on the actor model**. Graphs are declarative DAGs: each node is an actor with named in/out ports, edges route messages, and a network executor runs the whole thing with bounded backpressure and a tracing stream. It ships a standard library of ~300 actors covering data, media, GPU rendering, animation, I/O, and optional ML / CV — plus the hooks to register your own.
 
-This module is the **JVM binding** (Java + Kotlin-friendly) to that runtime. It links to a native shared library built from `sdk/jvm/src/native` via JNI (written in Rust) and exposes idiomatic Java classes that mirror the Node / Go / Python SDKs one-for-one.
+This module is the **JVM binding** (Java + Kotlin-friendly) to that runtime. It links to a native shared library built from `sdk/jvm/src/native` via JNI (written in Rust) and exposes idiomatic Java classes that mirror the Node / Go / Python SDKs one-for-one. Kotlin users get a trailing-lambda DSL and coroutine-friendly adapters on top.
 
 - Group: `ai.offbit`
 - Package: `ai.offbit.reflow`
@@ -34,6 +34,45 @@ try (var net = new Network()) {
     // ...
     net.shutdown();
 }
+```
+
+## Kotlin DSL
+
+```kotlin
+import ai.offbit.reflow.*
+
+val doubler = actor {
+    component = "doubler"
+    inports = listOf("in")
+    outports = listOf("out")
+    onRun { ctx ->
+        val n = parseIntegerInput(ctx.inputsJson(), "in")
+        ctx.emit("out", Message.integer(n * 2))
+        ctx.done()
+    }
+}
+
+network {
+    registerActor("tpl_doubler", doubler)
+    addNode("a", "tpl_doubler")
+    addInitial("a", "in", """{"type":"Integer","data":21}""")
+    start()
+}
+```
+
+With coroutines:
+
+```kotlin
+val events = net.events()
+events.asFlow(pollMs = 200)
+    .filter { "NetworkStarted" in it || "ActorStarted" in it }
+    .collect(::println)
+```
+
+Destructure stream frames:
+
+```kotlin
+val (kind, data, error) = reader.recv(500)
 ```
 
 ## Authoring actors
