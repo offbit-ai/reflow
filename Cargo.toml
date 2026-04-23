@@ -8,6 +8,7 @@ exclude = [
   "crates/reflow_py",
   "sdk/node",
   "sdk/python",
+  "sdk/jvm/src/native",
 ]
 
 [workspace.dependencies]
