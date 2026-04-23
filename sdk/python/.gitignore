@@ -1,0 +1,16 @@
+# venv / caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# maturin-generated extension module
+offbit_reflow/_native*.so
+offbit_reflow/_native*.pyd
+offbit_reflow/_native*.dylib
+
+# build
+target/
+build/
+dist/
+*.egg-info/
