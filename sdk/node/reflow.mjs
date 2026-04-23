@@ -15,6 +15,7 @@ export const {
   ActorCallContext,
   templateActor,
   templateList,
+  composeGraphs,
   ReflowActor,
   ReflowNetwork,
   ReflowGraph,

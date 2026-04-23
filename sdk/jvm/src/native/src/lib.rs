@@ -34,7 +34,12 @@ use reflow_rt::network::connector::{ConnectionPoint, Connector, InitialPacket};
 use reflow_rt::network::network::{
     Network as RtNetwork, NetworkConfig, NetworkEvent,
 };
+use reflow_rt::network::multi_graph::{
+    CompositionConnection, CompositionEndpoint, GraphComposition, GraphComposer,
+    GraphSource, SharedResource,
+};
 use reflow_rt::network::subgraph::SubgraphActor;
+use serde::Deserialize;
 
 // ─── shared tokio runtime ──────────────────────────────────────────────────
 
@@ -929,6 +934,111 @@ pub extern "system" fn Java_ai_offbit_reflow_Templates_nativeTemplateList<'local
         .into_keys()
         .collect();
     let raw = serde_json::to_string(&ids).unwrap_or_default();
+    env.new_string(&raw).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut())
+}
+
+// ─── Multi-graph composition ───────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct JvmComposeRequest {
+    #[serde(default)]
+    graphs: Vec<GraphExport>,
+    #[serde(default)]
+    connections: Vec<JvmComposeConn>,
+    #[serde(default)]
+    shared_resources: Vec<JvmComposeShared>,
+    #[serde(default)]
+    properties: HashMap<String, serde_json::Value>,
+    #[serde(default)]
+    case_sensitive: Option<bool>,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+#[derive(Debug, Deserialize)]
+struct JvmComposeConn {
+    from: JvmComposeEndpoint,
+    to: JvmComposeEndpoint,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+#[derive(Debug, Deserialize)]
+struct JvmComposeEndpoint {
+    process: String,
+    port: String,
+    #[serde(default)]
+    index: Option<usize>,
+}
+#[derive(Debug, Deserialize)]
+struct JvmComposeShared {
+    name: String,
+    component: String,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_MultiGraph_nativeCompose<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    composition_json: JString<'local>,
+) -> jobject {
+    let s = match jstring_to_string(&mut env, &composition_json) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, &e);
+            return std::ptr::null_mut();
+        }
+    };
+    let req: JvmComposeRequest = match serde_json::from_str(&s) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, format!("composition parse: {e}"));
+            return std::ptr::null_mut();
+        }
+    };
+
+    let composition = GraphComposition {
+        sources: req.graphs.into_iter().map(GraphSource::GraphExport).collect(),
+        connections: req
+            .connections
+            .into_iter()
+            .map(|c| CompositionConnection {
+                from: CompositionEndpoint { process: c.from.process, port: c.from.port, index: c.from.index },
+                to:   CompositionEndpoint { process: c.to.process,   port: c.to.port,   index: c.to.index },
+                metadata: c.metadata,
+            })
+            .collect(),
+        shared_resources: req
+            .shared_resources
+            .into_iter()
+            .map(|r| SharedResource { name: r.name, component: r.component, metadata: r.metadata })
+            .collect(),
+        properties: req.properties,
+        case_sensitive: req.case_sensitive,
+        metadata: req.metadata,
+    };
+
+    let composed = enter_runtime(|| {
+        RUNTIME.block_on(async {
+            let mut composer = GraphComposer::new();
+            composer.compose_graphs(composition).await
+        })
+    });
+    let g = match composed {
+        Ok(g) => g,
+        Err(e) => {
+            throw_runtime(&mut env, format!("compose_graphs: {e}"));
+            return std::ptr::null_mut();
+        }
+    };
+    let export = g.export();
+    let raw = match serde_json::to_string(&export) {
+        Ok(s) => s,
+        Err(e) => {
+            throw_runtime(&mut env, format!("serialize composed: {e}"));
+            return std::ptr::null_mut();
+        }
+    };
     env.new_string(&raw).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut())
 }
 

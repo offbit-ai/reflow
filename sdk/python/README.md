@@ -77,6 +77,28 @@ Inside `run(ctx)`:
 
 Exactly one of `done` / `fail` must be called per tick. If `run` raises, the SDK calls `fail` with the exception's message.
 
+## Multi-graph composition
+
+Merge N `GraphExport` dicts into a single runnable graph:
+
+```python
+from offbit_reflow import compose_graphs, Graph, Network
+
+composed = compose_graphs({
+    "graphs": [left_export, right_export],   # dicts
+    "connections": [
+        {"from": {"process": "gsrc/src",   "port": "out"},
+         "to":   {"process": "gsink/sink", "port": "in"}},
+    ],
+    "shared_resources": [],
+    "properties": {"name": "pipeline"},
+    "case_sensitive": False,
+})
+
+g = Graph.from_json(composed)
+net = Network.from_graph(g)
+```
+
 ## Standard component catalog
 
 ```python

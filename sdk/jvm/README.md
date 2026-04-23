@@ -93,6 +93,30 @@ Inside `run(ctx)`:
 Exactly one of `done` / `fail` must be called per tick. Exceptions thrown
 from `run` are automatically converted to `fail(...)` by the SDK.
 
+## Multi-graph composition
+
+Merge N `GraphExport` documents into a single runnable graph. The input
+is a JSON string describing the composition; the result is the composed
+`GraphExport` JSON, ready for `Graph.fromJson(...)`.
+
+```java
+String request = """
+{
+  "graphs": [<GraphExport>, <GraphExport>],
+  "connections": [{
+    "from": { "process": "gsrc/src",   "port": "out" },
+    "to":   { "process": "gsink/sink", "port": "in"  }
+  }],
+  "properties": { "name": "pipeline" },
+  "case_sensitive": false
+}
+""";
+
+String composedJson = MultiGraph.compose(request);
+Graph composed = Graph.fromJson(composedJson);
+Network net = Network.fromGraph(composed);
+```
+
 ## Standard component catalog
 
 ```java

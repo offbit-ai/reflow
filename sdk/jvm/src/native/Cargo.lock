@@ -2617,6 +2617,7 @@ dependencies = [
  "parking_lot",
  "reflow_components",
  "reflow_rt",
+ "serde",
  "serde_json",
  "tokio",
 ]

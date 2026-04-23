@@ -21,6 +21,7 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 reflow_rt = { version = "0.2.0", path = "../reflow_rt" }
 reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false, optional = true }
 anyhow = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time"] }
 flume = { workspace = true }

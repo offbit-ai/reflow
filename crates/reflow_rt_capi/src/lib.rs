@@ -43,6 +43,9 @@ pub use stream::*;
 mod subgraph;
 pub use subgraph::*;
 
+mod multi_graph;
+pub use multi_graph::*;
+
 #[cfg(feature = "components")]
 mod catalog;
 #[cfg(feature = "components")]
@@ -124,7 +127,7 @@ fn to_status_runtime(e: impl std::fmt::Display) -> rfl_status {
 static RUNTIME: Lazy<PlMutex<Option<Arc<tokio::runtime::Runtime>>>> =
     Lazy::new(|| PlMutex::new(None));
 
-fn runtime() -> Arc<tokio::runtime::Runtime> {
+pub(crate) fn runtime() -> Arc<tokio::runtime::Runtime> {
     let mut guard = RUNTIME.lock();
     if let Some(rt) = guard.as_ref() {
         return Arc::clone(rt);

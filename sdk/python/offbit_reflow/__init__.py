@@ -43,6 +43,7 @@ EventStream = _n.EventStream
 ActorCallContext = _n.ActorCallContext
 template_actor = _n.template_actor
 template_list = _n.template_list
+compose_graphs = _n.compose_graphs
 
 
 class Actor:
@@ -164,4 +165,5 @@ __all__ = [
     "SubgraphBuilder",
     "template_actor",
     "template_list",
+    "compose_graphs",
 ]

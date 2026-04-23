@@ -99,6 +99,29 @@ Inside `Run`:
 
 Return `nil` on success, or an error to fail this tick.
 
+## Multi-graph composition
+
+Merge N `GraphExport` documents into a single runnable graph:
+
+```go
+left  := []byte(`{"caseSensitive":false,"processes":{...},...}`)
+right := []byte(`{"caseSensitive":false,"processes":{...},...}`)
+
+composed, err := reflow.ComposeGraphs(reflow.ComposeRequest{
+    Graphs: []json.RawMessage{left, right},
+    Connections: []reflow.ComposeConnection{
+        {
+            From: reflow.ComposeEndpoint{Process: "gsrc/src",   Port: "out"},
+            To:   reflow.ComposeEndpoint{Process: "gsink/sink", Port: "in"},
+        },
+    },
+    Properties: map[string]any{"name": "pipeline"},
+})
+
+g, _ := reflow.LoadGraph(composed)
+net := reflow.NewNetworkFromGraph(g)
+```
+
 ## Standard component catalog
 
 ```go

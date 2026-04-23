@@ -33,7 +33,12 @@ use reflow_rt::network::connector::{ConnectionPoint, Connector, InitialPacket};
 use reflow_rt::network::network::{
     Network as RtNetwork, NetworkConfig, NetworkEvent,
 };
+use reflow_rt::network::multi_graph::{
+    CompositionConnection, CompositionEndpoint, GraphComposition, GraphComposer,
+    GraphSource, SharedResource,
+};
 use reflow_rt::network::subgraph::SubgraphActor;
+use serde::Deserialize;
 
 // ─── shared tokio runtime ──────────────────────────────────────────────────
 
@@ -551,6 +556,97 @@ fn template_list() -> Vec<String> {
         .collect()
 }
 
+// ─── Multi-graph composition ───────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct PyComposeRequest {
+    #[serde(default)]
+    graphs: Vec<reflow_rt::graph::types::GraphExport>,
+    #[serde(default)]
+    connections: Vec<PyComposeConn>,
+    #[serde(default)]
+    shared_resources: Vec<PyComposeShared>,
+    #[serde(default)]
+    properties: HashMap<String, serde_json::Value>,
+    #[serde(default)]
+    case_sensitive: Option<bool>,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PyComposeConn {
+    from: PyComposeEndpoint,
+    to: PyComposeEndpoint,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PyComposeEndpoint {
+    process: String,
+    port: String,
+    #[serde(default)]
+    index: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PyComposeShared {
+    name: String,
+    component: String,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+/// Compose N `GraphExport` dicts into a single `GraphExport` dict.
+#[pyfunction]
+fn compose_graphs<'py>(
+    py: Python<'py>,
+    composition: &Bound<'_, PyAny>,
+) -> PyResult<Bound<'py, PyAny>> {
+    let v = py_to_json(py, composition)?;
+    let req: PyComposeRequest = serde_json::from_value(v).map_err(|e| {
+        PyValueError::new_err(format!("composition parse: {e}"))
+    })?;
+
+    let composition = GraphComposition {
+        sources: req
+            .graphs
+            .into_iter()
+            .map(GraphSource::GraphExport)
+            .collect(),
+        connections: req
+            .connections
+            .into_iter()
+            .map(|c| CompositionConnection {
+                from: CompositionEndpoint { process: c.from.process, port: c.from.port, index: c.from.index },
+                to:   CompositionEndpoint { process: c.to.process,   port: c.to.port,   index: c.to.index },
+                metadata: c.metadata,
+            })
+            .collect(),
+        shared_resources: req
+            .shared_resources
+            .into_iter()
+            .map(|r| SharedResource { name: r.name, component: r.component, metadata: r.metadata })
+            .collect(),
+        properties: req.properties,
+        case_sensitive: req.case_sensitive,
+        metadata: req.metadata,
+    };
+
+    let composed = enter_runtime(|| {
+        RUNTIME.block_on(async {
+            let mut composer = GraphComposer::new();
+            composer.compose_graphs(composition).await
+        })
+    })
+    .map_err(|e| map_err(format!("compose_graphs: {e}")))?;
+
+    let export = composed.export();
+    let raw = serde_json::to_value(&export).map_err(map_err)?;
+    pythonize(py, &raw).map_err(map_err)
+}
+
 // ─── Graph ─────────────────────────────────────────────────────────────────
 
 #[pyclass(module = "reflow._native", name = "Graph")]
@@ -874,6 +970,7 @@ fn _native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyEventStream>()?;
     m.add_function(wrap_pyfunction!(template_actor, m)?)?;
     m.add_function(wrap_pyfunction!(template_list, m)?)?;
+    m.add_function(wrap_pyfunction!(compose_graphs, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

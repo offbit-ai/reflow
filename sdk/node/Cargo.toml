@@ -15,6 +15,7 @@ reflow_rt = { version = "0.2.0", path = "../../crates/reflow_rt", default-featur
 reflow_components = { version = "0.2.0", path = "../../crates/reflow_components", default-features = false, features = ["av-core"] }
 napi = { version = "2", default-features = false, features = ["napi9", "async", "serde-json", "tokio_rt"] }
 napi-derive = "2"
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 parking_lot = "0.12"

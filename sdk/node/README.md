@@ -99,6 +99,31 @@ class Counter extends Actor {
 }
 ```
 
+## Multi-graph composition
+
+Merge N `GraphExport` documents (what visual editors emit, or what
+`Graph.toJson()` returns) into a single runnable graph. Namespaces are
+resolved automatically; cross-graph connections are wired through the
+`connections` array.
+
+```ts
+import { composeGraphs, Graph, Network } from "@offbit-ai/reflow";
+
+const composed = composeGraphs({
+  graphs: [leftExport, rightExport],
+  connections: [
+    { from: { process: "gsrc/src",   port: "out" },
+      to:   { process: "gsink/sink", port: "in"  } },
+  ],
+  shared_resources: [],
+  properties: { name: "pipeline" },
+  case_sensitive: false,
+});
+
+const graph = Graph.fromJson(composed);
+const net = Network.fromGraph(graph);
+```
+
 ## Standard component catalog
 
 Register bundled actors by id:

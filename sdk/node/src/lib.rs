@@ -36,7 +36,12 @@ use reflow_rt::network::connector::{ConnectionPoint, Connector, InitialPacket};
 use reflow_rt::network::network::{
     Network as RtNetwork, NetworkConfig, NetworkEvent,
 };
+use reflow_rt::network::multi_graph::{
+    CompositionConnection, CompositionEndpoint, GraphComposition, GraphComposer,
+    GraphSource, SharedResource,
+};
 use reflow_rt::network::subgraph::SubgraphActor;
+use serde::Deserialize;
 
 // ─── shared tokio runtime ──────────────────────────────────────────────────
 
@@ -678,6 +683,89 @@ pub fn template_actor(template_id: String) -> Result<ReflowActor> {
 #[napi(js_name = "templateList")]
 pub fn template_list() -> Vec<String> {
     reflow_components::get_template_mapping().into_keys().collect()
+}
+
+// ─── Multi-graph composition ───────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct ComposeRequest {
+    #[serde(default)]
+    graphs: Vec<reflow_rt::graph::types::GraphExport>,
+    #[serde(default)]
+    connections: Vec<ComposeConn>,
+    #[serde(default)]
+    shared_resources: Vec<ComposeShared>,
+    #[serde(default)]
+    properties: HashMap<String, serde_json::Value>,
+    #[serde(default)]
+    case_sensitive: Option<bool>,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ComposeConn {
+    from: ComposeEndpoint,
+    to: ComposeEndpoint,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ComposeEndpoint {
+    process: String,
+    port: String,
+    #[serde(default)]
+    index: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ComposeShared {
+    name: String,
+    component: String,
+    #[serde(default)]
+    metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+/// Compose N `GraphExport` objects into a single `GraphExport`, merging
+/// namespaces and wiring cross-graph connections. See the C ABI docs
+/// for the request shape.
+#[napi(js_name = "composeGraphs")]
+pub fn compose_graphs(composition: serde_json::Value) -> Result<serde_json::Value> {
+    let req: ComposeRequest = serde_json::from_value(composition)
+        .map_err(|e| Error::from_reason(format!("composition parse: {e}")))?;
+    let composition = GraphComposition {
+        sources: req.graphs.into_iter().map(GraphSource::GraphExport).collect(),
+        connections: req
+            .connections
+            .into_iter()
+            .map(|c| CompositionConnection {
+                from: CompositionEndpoint { process: c.from.process, port: c.from.port, index: c.from.index },
+                to:   CompositionEndpoint { process: c.to.process,   port: c.to.port,   index: c.to.index },
+                metadata: c.metadata,
+            })
+            .collect(),
+        shared_resources: req
+            .shared_resources
+            .into_iter()
+            .map(|r| SharedResource { name: r.name, component: r.component, metadata: r.metadata })
+            .collect(),
+        properties: req.properties,
+        case_sensitive: req.case_sensitive,
+        metadata: req.metadata,
+    };
+
+    let composed = enter_runtime(|| {
+        RUNTIME.block_on(async {
+            let mut composer = GraphComposer::new();
+            composer.compose_graphs(composition).await
+        })
+    })
+    .map_err(|e| Error::from_reason(format!("compose_graphs: {e}")))?;
+
+    let export = composed.export();
+    serde_json::to_value(&export)
+        .map_err(|e| Error::from_reason(format!("serialize composed graph: {e}")))
 }
 
 // ─── Graph ─────────────────────────────────────────────────────────────────

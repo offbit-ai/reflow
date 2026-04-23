@@ -126,6 +126,9 @@ module.exports = {
   templateActor: native.templateActor,
   templateList: native.templateList,
 
+  // Multi-graph composition
+  composeGraphs: native.composeGraphs,
+
   // Raw bindings (escape hatch)
   ReflowActor: native.ReflowActor,
   ReflowNetwork: native.ReflowNetwork,

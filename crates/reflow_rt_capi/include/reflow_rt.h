@@ -624,6 +624,15 @@ struct rfl_actor *rfl_subgraph_builder_build(struct rfl_subgraph_builder *b);
 void rfl_subgraph_builder_free(struct rfl_subgraph_builder *b);
 
 /**
+ * Compose N graph exports into a single `GraphExport` JSON document.
+ *
+ * The returned string is a heap-allocated C string owned by the caller;
+ * free with `rfl_string_free`. Returns NULL on failure; read the error
+ * message via `rfl_last_error_message`.
+ */
+char *rfl_compose_graphs(const char *composition_json);
+
+/**
  * Instantiate an actor from the bundled `reflow_components` catalog.
  *
  * Returns an `rfl_actor*` that can be handed to `rfl_network_register_actor`
