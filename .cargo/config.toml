@@ -11,8 +11,14 @@ rustc-wrapper = "sccache"
 
 
 [target.'cfg(all())']
-# Use the faster linker; suppress compiler warnings
-rustflags = ["-C", "target-cpu=native", "-A", "warnings"]
+# Suppress compiler warnings.
+#
+# Deliberately no `-C target-cpu=native` here: it breaks portable
+# release builds (CI runners can crash rustc with SIGILL when sccache
+# replays wrapped commands, and shipped artifacts must stay compatible
+# with every target CPU). Set RUSTFLAGS in your shell if you want
+# native-cpu tuning for local dev.
+rustflags = ["-A", "warnings"]
 
 # macOS specific configuration
 # Note: custom LLVM linker removed due to version mismatch between lld/llvm homebrew packages.
