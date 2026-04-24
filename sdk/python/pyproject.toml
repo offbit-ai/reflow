@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "Reflow is a modular flow-based programming runtime that executes actor-model DAGs for data pipelines, real-time media, visual tooling, and optional ML/CV workloads. This package is the official Python SDK."
 authors = [{ name = "Offbit AI" }]
 readme = "README.md"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",

@@ -4,7 +4,11 @@ version = "0.2.0"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "Python bindings for the Reflow runtime (pyo3)."
-license = "MIT OR Apache-2.0"
+# MIT (instead of "MIT OR Apache-2.0") so maturin emits the classic
+# `License:` metadata field. twine still flags the PEP 639
+# `license-expression` form on some versions — stick with the
+# widely-understood format for published wheels.
+license = "MIT"
 publish = false
 
 [lib]
