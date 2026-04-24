@@ -47,14 +47,18 @@ jobs:
           args: --release --out dist
           working-directory: sdk/python
           sccache: 'true'
-          manylinux: auto
+          # Force manylinux_2_28 (gcc 12, glibc 2.28). The `auto` default
+          # picks manylinux2014 whose aarch64 cross-toolchain predates
+          # reliable <stdatomic.h> shipped from the cross-sysroot, which
+          # quickjs requires. 2_28 is supported by every pip on Python
+          # 3.9+ with a recent pip — good enough for our audience.
+          manylinux: '2_28'
         env:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
           # ring's pregenerated ARMv8 assembly requires __ARM_ARCH to
-          # be defined. The manylinux aarch64 cross-gcc doesn't pre-
-          # define it when invoked through sccache, so we set it
-          # explicitly. `-march=armv8-a` would do it on its own but we
-          # also pass -D as a belt-and-braces fallback.
+          # be defined. The cross-gcc doesn't pre-define it when invoked
+          # through sccache, so we set it explicitly on the aarch64 leg.
+          # `-march=armv8-a` would do it alone but `-D` is belt-and-braces.
           CFLAGS_aarch64_unknown_linux_gnu: '-march=armv8-a -D__ARM_ARCH=8'
       - uses: actions/upload-artifact@v4
         with:
