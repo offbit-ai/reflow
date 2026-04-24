@@ -33,9 +33,12 @@ jobs:
           - host: macos-14
             target: aarch64-apple-darwin
             build: npm run build
-          - host: macos-13
+          # macos-13 (Intel) runners have long queue times and the x86_64
+          # SDK is already present on macos-14, so we cross-compile the
+          # Intel addon from the aarch64 runner instead.
+          - host: macos-14
             target: x86_64-apple-darwin
-            build: npm run build
+            build: npm run build -- --target x86_64-apple-darwin
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
@@ -104,8 +107,9 @@ jobs:
         settings:
           - host: macos-14
             target: aarch64-apple-darwin
-          - host: macos-13
-            target: x86_64-apple-darwin
+          # No macos-13 test run — cross-compiled x86_64 addon would
+          # need Rosetta-Node to execute, and x86_64 code paths are
+          # exercised by the Linux x86_64 test anyway.
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           - host: windows-latest
