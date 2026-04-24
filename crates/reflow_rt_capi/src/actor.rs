@@ -95,6 +95,7 @@ impl CapiActor {
 }
 
 impl Actor for CapiActor {
+    #[allow(clippy::type_complexity)]
     fn get_behavior(&self) -> ActorBehavior {
         let cb = Arc::clone(&self.cb);
         Box::new(

@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use reflow_rt::actor_runtime::message::{EncodableValue, Message};
 
-use crate::{rfl_status, set_last_error};
+use crate::set_last_error;
 
 /// Opaque Reflow message handle.
 pub struct rfl_message {

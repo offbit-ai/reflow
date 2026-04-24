@@ -111,7 +111,7 @@ pub unsafe extern "C" fn rfl_subgraph_actor_new_from_json(
     // Collect every referenced component name and resolve from catalog.
     let mut actors: std::collections::HashMap<String, Arc<dyn Actor>> =
         std::collections::HashMap::new();
-    for (_id, node) in &export.processes {
+    for node in export.processes.values() {
         if actors.contains_key(&node.component) {
             continue;
         }

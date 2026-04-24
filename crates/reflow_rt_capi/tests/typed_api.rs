@@ -3,7 +3,6 @@
 use reflow_rt_capi::*;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-use std::ptr;
 
 fn cstr(s: &str) -> CString {
     CString::new(s).unwrap()

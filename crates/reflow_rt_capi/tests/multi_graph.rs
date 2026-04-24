@@ -36,7 +36,7 @@ fn compose_two_graphs_produces_merged_export() {
     let out = unsafe { rfl_compose_graphs(input.as_ptr()) };
 
     if out.is_null() {
-        let err = unsafe { rfl_last_error_message() };
+        let err = rfl_last_error_message();
         let msg = if err.is_null() {
             "(no error message)".into()
         } else {
@@ -118,7 +118,7 @@ fn compose_rejects_invalid_json() {
     let input = cstr("not json");
     let out = unsafe { rfl_compose_graphs(input.as_ptr()) };
     assert!(out.is_null());
-    let err = unsafe { rfl_last_error_message() };
+    let err = rfl_last_error_message();
     assert!(!err.is_null());
     unsafe {
         let msg = CStr::from_ptr(err).to_str().unwrap().to_owned();
