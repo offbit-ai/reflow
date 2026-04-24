@@ -185,7 +185,11 @@ jobs:
           merge-multiple: true
       - name: Verify metadata
         run: |
-          python -m pip install --upgrade pip twine
+          # twine >= 6.1 understands PEP 639's SPDX `license-expression`
+          # field, which maturin emits from our `license = "MIT OR
+          # Apache-2.0"` pyproject entry. Older twine flags it as
+          # "unrecognized or malformed" and blocks the release.
+          python -m pip install --upgrade pip 'twine>=6.1'
           python -m twine check dist/*
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
