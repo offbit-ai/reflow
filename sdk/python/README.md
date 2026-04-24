@@ -175,6 +175,19 @@ maturin develop
 pytest -q
 ```
 
+## Releasing
+
+Releases are built and published by CI — see
+`.github/workflows/publish-python.yml`. Tag a commit with
+`python-v<version>` (e.g. `python-v0.2.0`) and the workflow builds
+wheels for every supported triple (linux x86_64/aarch64, macOS
+x86_64/aarch64, windows x64), plus an sdist, verifies metadata,
+smoke-tests the wheel on each host, and uploads everything to PyPI.
+
+Publishing currently uses an API token stored as the `PYPI_API_TOKEN`
+repository secret. Migration to PyPI trusted publishing (OIDC) is a
+one-line swap once the first release is live.
+
 ## License
 
 MIT OR Apache-2.0.

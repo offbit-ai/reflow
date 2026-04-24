@@ -89,16 +89,30 @@ a `WorkspaceComposition`.
 Today every SDK expects a locally built native library. Before
 publishing, each needs a prebuilt-binary matrix.
 
-| SDK | Distribution mechanism | Target triples |
-|-----|------------------------|----------------|
-| Node (`@offbit-ai/reflow`) | prebuilt `.node` via `@napi-rs/cli` | linux-x64, linux-arm64, darwin-x64, darwin-arm64, win32-x64 |
-| Python (`offbit-reflow`) | cibuildwheel / maturin `--release` wheels | same triples, per Python version (3.9–3.13) |
-| Go (`github.com/offbit-ai/reflow/sdk/go`) | cgo static-link bundle or download-on-install | same triples |
-| JVM (`ai.offbit:offbit-reflow`) | fat JAR with per-triple `.so/.dylib/.dll`, extracted at `System.loadLibrary` | same triples |
+| SDK | Distribution mechanism | Target triples | CI status |
+|-----|------------------------|----------------|-----------|
+| Node (`@offbit-ai/reflow`) | prebuilt `.node` via `@napi-rs/cli` | linux-x64, linux-arm64, darwin-x64, darwin-arm64, win32-x64 | ⬜ |
+| Python (`offbit-reflow`) | maturin wheels + sdist | same triples, per Python version | 🟡 workflows in `.github/workflows/{ci,publish}-python.yml` — needs `PYPI_API_TOKEN` to publish |
+| Go (`github.com/offbit-ai/reflow/sdk/go`) | cgo static-link bundle or download-on-install | same triples | ⬜ |
+| JVM (`ai.offbit:offbit-reflow`) | fat JAR with per-triple `.so/.dylib/.dll`, extracted at `System.loadLibrary` | same triples | ⬜ |
 
-CI jobs: `release.yml` with a matrix that builds each triple, uploads
-artifacts per-SDK, then publishes to npm / PyPI / Maven Central (via
-staging repo) / Go proxy on tag push.
+### Python publish workflow
+
+Triggered by tag push matching `python-v*` (e.g. `python-v0.2.0`). The
+workflow builds:
+
+- linux wheels (x86_64, aarch64) under manylinux
+- macos wheels (x86_64, aarch64)
+- windows wheel (x64)
+- sdist (source distribution, compiled on install)
+
+Every wheel is metadata-verified via `twine check` and smoke-tested
+against each host's architecture before the publish step. PyPI upload
+uses an API token today; migration to PyPI trusted publishing (OIDC)
+is a one-line swap once the first release is live.
+
+A lighter `ci-python.yml` runs on every push/PR and only exercises the
+current host's triple for fast feedback.
 
 ---
 
