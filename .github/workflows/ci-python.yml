@@ -58,5 +58,10 @@ jobs:
           # Install whatever wheel was produced for the active interpreter.
           python -m pip install --force-reinstall sdk/python/dist/*.whl
       - name: Run tests
-        working-directory: sdk/python
-        run: python -m pytest -q
+        shell: bash
+        # Run from a tmpdir so the source `sdk/python/offbit_reflow`
+        # directory isn't picked up by pytest's sys.path insertion —
+        # we want imports to resolve to the wheel installed above.
+        run: |
+          cd "$RUNNER_TEMP"
+          python -m pytest -q "$GITHUB_WORKSPACE/sdk/python/tests"

@@ -144,7 +144,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip pytest
           python -m pip install --find-links dist 'offbit-reflow'
-          python -m pytest -q sdk/python/tests
+          # Run from a tmpdir so pytest resolves `offbit_reflow` from
+          # site-packages, not from the source directory (which only
+          # carries the Python shim, not `_native.so`).
+          cd "$RUNNER_TEMP"
+          python -m pytest -q "$GITHUB_WORKSPACE/sdk/python/tests"
 
   publish:
     name: publish to PyPI
