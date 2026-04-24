@@ -37,8 +37,12 @@ tokio = { version = "1", features = ["fs", "io-util", "macros", "rt", "time"] }
 # Data processing
 chrono = { version = "0.4", features = ["serde"] }
 
-# JavaScript runtime
-rquickjs = { version = "0.6", features = ["array-buffer", "bindgen", "classes", "futures", "loader", "macro", "parallel", "properties"] }
+# JavaScript runtime.
+#
+# Deliberately no `bindgen` feature: it invokes libclang at build time,
+# which the manylinux / napi / jni cross-compile containers don't
+# ship. Pre-generated bindings cover every triple we target.
+rquickjs = { version = "0.6", features = ["array-buffer", "classes", "futures", "loader", "macro", "parallel", "properties"] }
 
 # AV processing (pure-Rust, Wasm-safe)
 reflow_dsp = { version = "0.2.0", path = "../reflow_dsp", optional = true }
