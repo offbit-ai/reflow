@@ -14,7 +14,7 @@
 ### SDK build status
 
 [![Python CI](https://github.com/offbit-ai/reflow/actions/workflows/ci-python.yml/badge.svg?branch=main)](https://github.com/offbit-ai/reflow/actions/workflows/ci-python.yml)
-[![Python Publish](https://github.com/offbit-ai/reflow/actions/workflows/publish-python.yml/badge.svg)](https://github.com/offbit-ai/reflow/actions/workflows/publish-python.yml)
+[![PyPI - offbit-reflow](https://img.shields.io/pypi/v/offbit-reflow?label=offbit-reflow)](https://pypi.org/project/offbit-reflow/)
 [![Node SDK](https://img.shields.io/badge/Node-workflow_TBD-lightgrey)](./sdk/node)
 [![Go SDK](https://img.shields.io/badge/Go-workflow_TBD-lightgrey)](./sdk/go)
 [![JVM SDK](https://img.shields.io/badge/JVM-workflow_TBD-lightgrey)](./sdk/jvm)
