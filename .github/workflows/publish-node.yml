@@ -1,0 +1,158 @@
+# Build and publish the @offbit-ai/reflow Node SDK.
+#
+# Triggers
+# --------
+# - Tag push matching `node-v*` (e.g. `node-v0.2.0`) → build every
+#   platform addon, run tests, then publish to npm.
+# - Manual `workflow_dispatch` → build + test only.
+#
+# Publishing auth
+# ---------------
+# Uses an automation token stored as the `NPM_TOKEN` secret. Flip to
+# npm trusted publishing (OIDC) once the first release is up.
+
+name: publish-node
+
+on:
+  push:
+    tags:
+      - 'node-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build / ${{ matrix.settings.target }}
+    runs-on: ${{ matrix.settings.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-14
+            target: aarch64-apple-darwin
+            build: npm run build
+          - host: macos-13
+            target: x86_64-apple-darwin
+            build: npm run build
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: npm run build -- --target x86_64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            build: npm run build -- --target aarch64-unknown-linux-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+            build: npm run build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Rust toolchain
+        if: ${{ !matrix.settings.docker }}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.settings.target }}
+      - uses: mozilla-actions/sccache-action@v0.0.5
+        if: ${{ !matrix.settings.docker }}
+      - name: Install npm deps
+        working-directory: sdk/node
+        run: npm ci || npm install
+      - name: Build addon (host)
+        if: ${{ !matrix.settings.docker }}
+        working-directory: sdk/node
+        run: ${{ matrix.settings.build }}
+      - name: Build addon (docker)
+        if: ${{ matrix.settings.docker }}
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ${{ matrix.settings.docker }}
+          options: -v ${{ github.workspace }}:/build -w /build/sdk/node
+          run: |
+            set -euxo pipefail
+            npm ci || npm install
+            ${{ matrix.settings.build }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: sdk/node/*.node
+          if-no-files-found: error
+
+  test:
+    name: test / ${{ matrix.settings.host }}
+    needs: build
+    runs-on: ${{ matrix.settings.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-14
+            target: aarch64-apple-darwin
+          - host: macos-13
+            target: x86_64-apple-darwin
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Download addon for host
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: sdk/node
+      - name: Install + run tests
+        working-directory: sdk/node
+        shell: bash
+        run: |
+          npm ci || npm install
+          npm test
+
+  publish:
+    name: publish to npm
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/node-v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install + download all addons
+        working-directory: sdk/node
+        run: npm ci || npm install
+      - uses: actions/download-artifact@v4
+        with:
+          path: sdk/node/artifacts
+      - name: Distribute addons to per-platform npm packages
+        working-directory: sdk/node
+        # `napi artifacts` lifts every `bindings-*` dir into
+        # `npm/<platform>/` with a matching package.json, which the main
+        # package depends on via optionalDependencies. `napi prepublish`
+        # then creates the publish manifests.
+        run: |
+          npx napi artifacts --dir artifacts
+          npx napi prepublish -t npm --skip-gh-release
+      - name: Publish platform packages
+        working-directory: sdk/node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for dir in npm/*/; do
+            if [ -f "$dir/package.json" ]; then
+              (cd "$dir" && npm publish --access public --provenance || true)
+            fi
+          done
+      - name: Publish main package
+        working-directory: sdk/node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance

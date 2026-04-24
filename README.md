@@ -15,7 +15,8 @@
 
 [![Python CI](https://github.com/offbit-ai/reflow/actions/workflows/ci-python.yml/badge.svg?branch=main)](https://github.com/offbit-ai/reflow/actions/workflows/ci-python.yml)
 [![offbit-reflow on PyPI](https://img.shields.io/pypi/v/offbit-reflow?label=offbit-reflow&logo=python&logoColor=white&color=3775A9)](https://pypi.org/project/offbit-reflow/)
-[![Node SDK](https://img.shields.io/badge/Node-workflow_TBD-lightgrey)](./sdk/node)
+[![Node CI](https://github.com/offbit-ai/reflow/actions/workflows/ci-node.yml/badge.svg?branch=main)](https://github.com/offbit-ai/reflow/actions/workflows/ci-node.yml)
+[![@offbit-ai/reflow on npm](https://img.shields.io/npm/v/%40offbit-ai%2Freflow?label=%40offbit-ai%2Freflow&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@offbit-ai/reflow)
 [![Go SDK](https://img.shields.io/badge/Go-workflow_TBD-lightgrey)](./sdk/go)
 [![JVM SDK](https://img.shields.io/badge/JVM-workflow_TBD-lightgrey)](./sdk/jvm)
 

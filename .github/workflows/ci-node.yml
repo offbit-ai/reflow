@@ -1,0 +1,61 @@
+# Fast CI for the Node SDK: builds + runs tests on a single host
+# triple per OS on every push/PR. The full cross-build matrix only
+# runs on tag push (see publish-node.yml).
+
+name: ci-node
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/reflow_rt/**'
+      - 'crates/reflow_components/**'
+      - 'crates/reflow_network/**'
+      - 'crates/reflow_graph/**'
+      - 'crates/reflow_actor/**'
+      - 'crates/reflow_actor_macro/**'
+      - 'sdk/node/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/ci-node.yml'
+  pull_request:
+    paths:
+      - 'sdk/node/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/ci-node.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mozilla-actions/sccache-action@v0.0.5
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            sdk/node
+      - name: Install deps + build
+        working-directory: sdk/node
+        run: |
+          npm ci || npm install
+          npm run build
+      - name: Run tests
+        working-directory: sdk/node
+        run: npm test
