@@ -6,6 +6,11 @@ members = [
 exclude = [
   "crates/reflow_components_archived",
   "crates/reflow_py",
+  # reflow_server pulls a path dep (`zeal-sdk`) from outside this
+  # repository. Exclude it from the workspace so `cargo metadata`
+  # (and therefore `maturin sdist`) doesn't require a sibling Zeal
+  # checkout to resolve.
+  "crates/reflow_server",
   "sdk/node",
   "sdk/python",
   "sdk/jvm/src/native",

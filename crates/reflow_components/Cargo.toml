@@ -29,7 +29,7 @@ flume = { workspace = true }
 futures = { workspace = true }
 
 # HTTP/Network
-reqwest = { version = "0.12", features = ["json", "stream"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 
 # File operations and async stream source tasks
 tokio = { version = "1", features = ["fs", "io-util", "macros", "rt", "time"] }

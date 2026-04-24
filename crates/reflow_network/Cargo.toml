@@ -51,7 +51,7 @@ chrono = { version = "0.4", features = ["serde"] }
 serde_with = { version = "2.1" , default-features = false, features = ["alloc", "std"]}
 tracing ={ workspace = true}
 async-trait = "0.1.88"
-reqwest = {version = "0.12.20", features = ["json"], optional = true }
+reqwest = {version = "0.12.20", default-features = false, features = ["json", "rustls-tls"], optional = true }
 serde_yaml = "0.9.30"
 lazy_static = "1.4.0"
 
@@ -59,7 +59,7 @@ lazy_static = "1.4.0"
 tokio = { version = "1", features = ["full"] }
 zstd = "0.13.2"
 rayon = "1.10.0"
-reqwest = {version = "0.12.20", features = ["json"]}
+reqwest = {version = "0.12.20", default-features = false, features = ["json", "rustls-tls"]}
 tokio-tungstenite = "0.27.0"
 uuid = {workspace = true, features = ["v4"]}
 hostname = "0.4.1"
