@@ -51,7 +51,12 @@ jobs:
         run: python -m pip install --upgrade pip maturin pytest
       - name: Build wheel
         working-directory: sdk/python
-        run: maturin build --release --out dist --find-interpreter
+        # abi3-py39 produces one wheel per platform that covers every
+        # CPython >= 3.9, so we build against the single setup-python
+        # above instead of enumerating interpreters with --find-interpreter.
+        run: maturin build --release --out dist
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
       - name: Install wheel
         shell: bash
         run: |

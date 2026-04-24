@@ -43,10 +43,13 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          # abi3-py39 yields one wheel per platform valid for Python >= 3.9.
+          args: --release --out dist
           working-directory: sdk/python
           sccache: 'true'
           manylinux: auto
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
@@ -68,9 +71,12 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
+          # abi3-py39 yields one wheel per platform valid for Python >= 3.9.
+          args: --release --out dist
           working-directory: sdk/python
           sccache: 'true'
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.target }}
@@ -93,9 +99,12 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
+          # abi3-py39 yields one wheel per platform valid for Python >= 3.9.
+          args: --release --out dist
           working-directory: sdk/python
           sccache: 'true'
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.target }}
