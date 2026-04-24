@@ -38,6 +38,10 @@ jobs:
         with:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
+      # The macos-14 runner image presets RUSTC_WRAPPER=sccache but
+      # doesn't always put sccache on the PATH. Install it so the
+      # wrapper works; on linux the action is a cheap no-op install.
+      - uses: mozilla-actions/sccache-action@v0.0.5
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
