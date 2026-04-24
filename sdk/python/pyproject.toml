@@ -8,7 +8,11 @@ version = "0.2.0"
 description = "Reflow is a modular flow-based programming runtime that executes actor-model DAGs for data pipelines, real-time media, visual tooling, and optional ML/CV workloads. This package is the official Python SDK."
 authors = [{ name = "Offbit AI" }]
 readme = "README.md"
-license = "MIT"
+# PEP 621: a plain string is interpreted as an SPDX expression and
+# emitted as `License-Expression:` under Metadata-Version 2.4. Use the
+# table form to force the legacy `License:` header, which every twine
+# and pip release accepts.
+license = { text = "MIT" }
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
