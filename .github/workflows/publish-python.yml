@@ -50,6 +50,12 @@ jobs:
           manylinux: auto
         env:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
+          # ring's pregenerated ARMv8 assembly requires __ARM_ARCH to
+          # be defined. The manylinux aarch64 cross-gcc doesn't pre-
+          # define it when invoked through sccache, so we set it
+          # explicitly. `-march=armv8-a` would do it on its own but we
+          # also pass -D as a belt-and-braces fallback.
+          CFLAGS_aarch64_unknown_linux_gnu: '-march=armv8-a -D__ARM_ARCH=8'
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
