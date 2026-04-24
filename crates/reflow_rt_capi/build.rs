@@ -1,7 +1,9 @@
 #[cfg(feature = "generate-header")]
 fn main() {
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let out = std::path::PathBuf::from(&crate_dir).join("include").join("reflow_rt.h");
+    let out = std::path::PathBuf::from(&crate_dir)
+        .join("include")
+        .join("reflow_rt.h");
 
     let config = cbindgen::Config {
         language: cbindgen::Language::C,

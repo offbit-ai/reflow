@@ -31,8 +31,8 @@ use std::os::raw::c_char;
 
 use reflow_rt::graph::types::GraphExport;
 use reflow_rt::network::multi_graph::{
-    CompositionConnection, CompositionEndpoint, GraphComposition, GraphComposer,
-    GraphSource, SharedResource,
+    CompositionConnection, CompositionEndpoint, GraphComposer, GraphComposition, GraphSource,
+    SharedResource,
 };
 use serde::Deserialize;
 
@@ -163,12 +163,10 @@ pub unsafe extern "C" fn rfl_compose_graphs(composition_json: *const c_char) -> 
 
     let export = composed.export();
     match serde_json::to_string(&export) {
-        Ok(s) => CString::new(s)
-            .map(|c| c.into_raw())
-            .unwrap_or_else(|_| {
-                set_last_error("composed graph JSON contained a NUL byte");
-                std::ptr::null_mut()
-            }),
+        Ok(s) => CString::new(s).map(|c| c.into_raw()).unwrap_or_else(|_| {
+            set_last_error("composed graph JSON contained a NUL byte");
+            std::ptr::null_mut()
+        }),
         Err(e) => {
             set_last_error(format!("serialize composed graph: {e}"));
             std::ptr::null_mut()

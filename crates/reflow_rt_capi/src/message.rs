@@ -100,10 +100,7 @@ pub unsafe extern "C" fn rfl_message_string(s: *const c_char) -> *mut rfl_messag
 
 /// Binary payload; the buffer is copied into a refcounted allocation.
 #[no_mangle]
-pub unsafe extern "C" fn rfl_message_bytes(
-    data: *const u8,
-    len: usize,
-) -> *mut rfl_message {
+pub unsafe extern "C" fn rfl_message_bytes(data: *const u8, len: usize) -> *mut rfl_message {
     crate::clear_last_error();
     let buf: Vec<u8> = if len == 0 {
         Vec::new()
@@ -163,10 +160,7 @@ pub unsafe extern "C" fn rfl_message_array_from_json(json: *const c_char) -> *mu
         }
     };
     let arr = match v {
-        serde_json::Value::Array(a) => a
-            .into_iter()
-            .map(EncodableValue::from)
-            .collect::<Vec<_>>(),
+        serde_json::Value::Array(a) => a.into_iter().map(EncodableValue::from).collect::<Vec<_>>(),
         _ => {
             set_last_error("json value is not an array");
             return std::ptr::null_mut();
@@ -243,10 +237,7 @@ pub unsafe extern "C" fn rfl_message_get_kind(m: *const rfl_message) -> rfl_mess
 /// If the message is a Boolean, writes its value into `*out` and returns 1.
 /// Returns 0 otherwise.
 #[no_mangle]
-pub unsafe extern "C" fn rfl_message_as_boolean(
-    m: *const rfl_message,
-    out: *mut c_int,
-) -> c_int {
+pub unsafe extern "C" fn rfl_message_as_boolean(m: *const rfl_message, out: *mut c_int) -> c_int {
     if m.is_null() || out.is_null() {
         return 0;
     }
@@ -259,10 +250,7 @@ pub unsafe extern "C" fn rfl_message_as_boolean(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rfl_message_as_integer(
-    m: *const rfl_message,
-    out: *mut i64,
-) -> c_int {
+pub unsafe extern "C" fn rfl_message_as_integer(m: *const rfl_message, out: *mut i64) -> c_int {
     if m.is_null() || out.is_null() {
         return 0;
     }
@@ -275,10 +263,7 @@ pub unsafe extern "C" fn rfl_message_as_integer(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rfl_message_as_float(
-    m: *const rfl_message,
-    out: *mut f64,
-) -> c_int {
+pub unsafe extern "C" fn rfl_message_as_float(m: *const rfl_message, out: *mut f64) -> c_int {
     if m.is_null() || out.is_null() {
         return 0;
     }

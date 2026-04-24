@@ -13,7 +13,7 @@ use std::os::raw::{c_char, c_int};
 use std::sync::Arc;
 
 use reflow_rt::actor_runtime::message::Message;
-use reflow_rt::actor_runtime::stream::{STREAM_REGISTRY, StreamFrame, StreamHandle, StreamId};
+use reflow_rt::actor_runtime::stream::{StreamFrame, StreamHandle, StreamId, STREAM_REGISTRY};
 
 use crate::message::rfl_message;
 use crate::{rfl_status, set_last_error};
@@ -137,7 +137,11 @@ pub unsafe extern "C" fn rfl_stream_send_begin(
             .ok()
             .map(str::to_owned)
     };
-    let sh = if has_size_hint != 0 { Some(size_hint) } else { None };
+    let sh = if has_size_hint != 0 {
+        Some(size_hint)
+    } else {
+        None
+    };
     let meta = if metadata_json.is_null() {
         None
     } else {
@@ -266,9 +270,7 @@ pub enum rfl_stream_frame_kind {
 /// only one call succeeds per stream. Returns NULL if the message is not
 /// a StreamHandle or the receiver has already been taken.
 #[no_mangle]
-pub unsafe extern "C" fn rfl_message_stream_take(
-    m: *mut rfl_message,
-) -> *mut rfl_stream_recv {
+pub unsafe extern "C" fn rfl_message_stream_take(m: *mut rfl_message) -> *mut rfl_stream_recv {
     crate::clear_last_error();
     if m.is_null() {
         return std::ptr::null_mut();
@@ -351,16 +353,14 @@ pub unsafe extern "C" fn rfl_stream_recv_next(
         StreamFrame::End => {
             unsafe { *out_kind = rfl_stream_frame_kind::End };
         }
-        StreamFrame::Error(msg) => {
-            unsafe {
-                *out_kind = rfl_stream_frame_kind::Error;
-                if !out_err.is_null() {
-                    let c = std::ffi::CString::new(msg)
-                        .unwrap_or_else(|_| std::ffi::CString::new("").unwrap());
-                    *out_err = c.into_raw();
-                }
+        StreamFrame::Error(msg) => unsafe {
+            *out_kind = rfl_stream_frame_kind::Error;
+            if !out_err.is_null() {
+                let c = std::ffi::CString::new(msg)
+                    .unwrap_or_else(|_| std::ffi::CString::new("").unwrap());
+                *out_err = c.into_raw();
             }
-        }
+        },
     }
     rfl_status::Ok
 }

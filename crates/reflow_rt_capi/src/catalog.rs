@@ -11,7 +11,7 @@
 #![allow(clippy::missing_safety_doc)]
 #![cfg(feature = "components")]
 
-use std::ffi::{CStr, CString, c_void};
+use std::ffi::{c_void, CStr, CString};
 use std::os::raw::c_char;
 use std::sync::Arc;
 
@@ -33,9 +33,7 @@ use crate::{rfl_status, set_last_error};
 /// Available only when the crate is compiled with the `components` feature
 /// (on by default).
 #[no_mangle]
-pub unsafe extern "C" fn rfl_template_actor_new(
-    template_id: *const c_char,
-) -> *mut rfl_actor {
+pub unsafe extern "C" fn rfl_template_actor_new(template_id: *const c_char) -> *mut rfl_actor {
     crate::clear_last_error();
     if template_id.is_null() {
         set_last_error("template_id is null");

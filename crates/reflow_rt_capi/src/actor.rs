@@ -13,7 +13,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 use std::collections::HashMap;
-use std::ffi::{CStr, CString, c_void};
+use std::ffi::{c_void, CStr, CString};
 use std::future::Future;
 use std::os::raw::c_char;
 use std::pin::Pin;
@@ -43,9 +43,8 @@ pub struct rfl_actor_ctx {
 /// Return `rfl_status::Ok` to commit whatever was emitted via
 /// `rfl_ctx_emit`; any other status aborts the tick with an error in the
 /// network event stream.
-pub type rfl_actor_fn = Option<
-    unsafe extern "C" fn(user_data: *mut c_void, ctx: *mut rfl_actor_ctx) -> rfl_status,
->;
+pub type rfl_actor_fn =
+    Option<unsafe extern "C" fn(user_data: *mut c_void, ctx: *mut rfl_actor_ctx) -> rfl_status>;
 
 /// Function pointer: released when the runtime drops the last reference to
 /// the actor. Use it to decrement a Node/Python/JVM GC root.
@@ -98,39 +97,47 @@ impl CapiActor {
 impl Actor for CapiActor {
     fn get_behavior(&self) -> ActorBehavior {
         let cb = Arc::clone(&self.cb);
-        Box::new(move |ctx: ActorContext| -> Pin<Box<dyn Future<Output = Result<HashMap<String, Message>, anyhow::Error>> + Send + 'static>> {
-            let cb = Arc::clone(&cb);
-            Box::pin(async move {
-                let payload = ctx.get_payload().clone();
-                let config = ctx.get_config().clone();
-                let state = ctx.get_state();
+        Box::new(
+            move |ctx: ActorContext| -> Pin<
+                Box<
+                    dyn Future<Output = Result<HashMap<String, Message>, anyhow::Error>>
+                        + Send
+                        + 'static,
+                >,
+            > {
+                let cb = Arc::clone(&cb);
+                Box::pin(async move {
+                    let payload = ctx.get_payload().clone();
+                    let config = ctx.get_config().clone();
+                    let state = ctx.get_state();
 
-                let mut capi_ctx = Box::new(rfl_actor_ctx {
-                    payload,
-                    config,
-                    state,
-                    outputs: Mutex::new(HashMap::new()),
-                });
-                let ctx_ptr: *mut rfl_actor_ctx = capi_ctx.as_mut();
+                    let mut capi_ctx = Box::new(rfl_actor_ctx {
+                        payload,
+                        config,
+                        state,
+                        outputs: Mutex::new(HashMap::new()),
+                    });
+                    let ctx_ptr: *mut rfl_actor_ctx = capi_ctx.as_mut();
 
-                let status = match cb.callback {
-                    Some(f) => unsafe { f(cb.user_data.0, ctx_ptr) },
-                    None => rfl_status::Runtime,
-                };
+                    let status = match cb.callback {
+                        Some(f) => unsafe { f(cb.user_data.0, ctx_ptr) },
+                        None => rfl_status::Runtime,
+                    };
 
-                match status {
-                    rfl_status::Ok => {
-                        let outputs = std::mem::take(&mut *capi_ctx.outputs.lock());
-                        Ok(outputs)
+                    match status {
+                        rfl_status::Ok => {
+                            let outputs = std::mem::take(&mut *capi_ctx.outputs.lock());
+                            Ok(outputs)
+                        }
+                        other => Err(anyhow::anyhow!(
+                            "capi actor '{}' callback returned status {:?}",
+                            cb.component,
+                            other
+                        )),
                     }
-                    other => Err(anyhow::anyhow!(
-                        "capi actor '{}' callback returned status {:?}",
-                        cb.component,
-                        other
-                    )),
-                }
-            })
-        })
+                })
+            },
+        )
     }
 
     fn get_outports(&self) -> Port {
@@ -276,10 +283,7 @@ pub unsafe extern "C" fn rfl_network_register_actor(
     }
 }
 
-unsafe fn cstr_array(
-    ptr: *const *const c_char,
-    n: usize,
-) -> Result<Vec<String>, ()> {
+unsafe fn cstr_array(ptr: *const *const c_char, n: usize) -> Result<Vec<String>, ()> {
     if n == 0 {
         return Ok(Vec::new());
     }
@@ -507,7 +511,10 @@ pub unsafe extern "C" fn rfl_ctx_emit_message(
         }
     };
     let msg = unsafe { Box::from_raw(msg) }.into_message();
-    unsafe { &*ctx }.outputs.lock().insert(port.to_string(), msg);
+    unsafe { &*ctx }
+        .outputs
+        .lock()
+        .insert(port.to_string(), msg);
     rfl_status::Ok
 }
 

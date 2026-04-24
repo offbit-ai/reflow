@@ -126,4 +126,3 @@ fn compose_rejects_invalid_json() {
         assert!(msg.contains("parse"), "unexpected error: {msg}");
     }
 }
-

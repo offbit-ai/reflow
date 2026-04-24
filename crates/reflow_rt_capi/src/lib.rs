@@ -59,7 +59,7 @@ use std::sync::Arc;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex as PlMutex;
 use reflow_rt::actor_runtime::message::Message;
-use reflow_rt::graph::{Graph, types::GraphExport};
+use reflow_rt::graph::{types::GraphExport, Graph};
 use reflow_rt::network::connector::{ConnectionPoint, Connector, InitialPacket};
 use reflow_rt::network::network::{Network, NetworkConfig, NetworkEvent};
 use serde_json::Value;
@@ -167,7 +167,10 @@ pub struct rfl_graph {
 /// `name` and `case_sensitive` follow `Graph::new`. Pass NULL for `name`
 /// to use an empty name.
 #[no_mangle]
-pub unsafe extern "C" fn rfl_graph_new(name: *const c_char, case_sensitive: c_int) -> *mut rfl_graph {
+pub unsafe extern "C" fn rfl_graph_new(
+    name: *const c_char,
+    case_sensitive: c_int,
+) -> *mut rfl_graph {
     clear_last_error();
     let name = if name.is_null() {
         String::new()
@@ -424,9 +427,7 @@ unsafe fn cstr_to_str<'a>(p: *const c_char, name: &str) -> Result<&'a str, rfl_s
 }
 
 /// Parse a nullable JSON string into `Option<HashMap<String, Value>>`.
-unsafe fn parse_metadata(
-    p: *const c_char,
-) -> Result<Option<HashMap<String, Value>>, rfl_status> {
+unsafe fn parse_metadata(p: *const c_char) -> Result<Option<HashMap<String, Value>>, rfl_status> {
     if p.is_null() {
         return Ok(None);
     }
@@ -440,10 +441,7 @@ unsafe fn parse_metadata(
     }
 }
 
-unsafe fn parse_message(
-    p: *const c_char,
-    name: &str,
-) -> Result<Message, rfl_status> {
+unsafe fn parse_message(p: *const c_char, name: &str) -> Result<Message, rfl_status> {
     let s = unsafe { cstr_to_str(p, name)? };
     match serde_json::from_str::<Message>(s) {
         Ok(m) => Ok(m),
@@ -469,24 +467,33 @@ pub unsafe extern "C" fn rfl_graph_add_node(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let id = match unsafe { cstr_to_str(id, "id") } { Ok(v) => v, Err(s) => return s };
-    let component = match unsafe { cstr_to_str(component, "component") } { Ok(v) => v, Err(s) => return s };
-    let metadata = match unsafe { parse_metadata(metadata_json) } { Ok(v) => v, Err(s) => return s };
+    let id = match unsafe { cstr_to_str(id, "id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let component = match unsafe { cstr_to_str(component, "component") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
     unsafe { &mut *g }.inner.add_node(id, component, metadata);
     rfl_status::Ok
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rfl_graph_remove_node(
-    g: *mut rfl_graph,
-    id: *const c_char,
-) -> rfl_status {
+pub unsafe extern "C" fn rfl_graph_remove_node(g: *mut rfl_graph, id: *const c_char) -> rfl_status {
     clear_last_error();
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let id = match unsafe { cstr_to_str(id, "id") } { Ok(v) => v, Err(s) => return s };
+    let id = match unsafe { cstr_to_str(id, "id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
     unsafe { &mut *g }.inner.remove_node(id);
     rfl_status::Ok
 }
@@ -502,7 +509,10 @@ pub unsafe extern "C" fn rfl_graph_set_node_metadata(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let id = match unsafe { cstr_to_str(id, "id") } { Ok(v) => v, Err(s) => return s };
+    let id = match unsafe { cstr_to_str(id, "id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
     let metadata = match unsafe { parse_metadata(metadata_json) } {
         Ok(Some(m)) => m,
         Ok(None) => HashMap::new(),
@@ -525,13 +535,30 @@ pub unsafe extern "C" fn rfl_graph_add_connection(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let out_node = match unsafe { cstr_to_str(out_node, "out_node") } { Ok(v) => v, Err(s) => return s };
-    let out_port = match unsafe { cstr_to_str(out_port, "out_port") } { Ok(v) => v, Err(s) => return s };
-    let in_node = match unsafe { cstr_to_str(in_node, "in_node") } { Ok(v) => v, Err(s) => return s };
-    let in_port = match unsafe { cstr_to_str(in_port, "in_port") } { Ok(v) => v, Err(s) => return s };
-    let metadata = match unsafe { parse_metadata(metadata_json) } { Ok(v) => v, Err(s) => return s };
+    let out_node = match unsafe { cstr_to_str(out_node, "out_node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let out_port = match unsafe { cstr_to_str(out_port, "out_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let in_node = match unsafe { cstr_to_str(in_node, "in_node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let in_port = match unsafe { cstr_to_str(in_port, "in_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
-    unsafe { &mut *g }.inner.add_connection(out_node, out_port, in_node, in_port, metadata);
+    unsafe { &mut *g }
+        .inner
+        .add_connection(out_node, out_port, in_node, in_port, metadata);
     rfl_status::Ok
 }
 
@@ -547,12 +574,26 @@ pub unsafe extern "C" fn rfl_graph_remove_connection(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let out_node = match unsafe { cstr_to_str(out_node, "out_node") } { Ok(v) => v, Err(s) => return s };
-    let out_port = match unsafe { cstr_to_str(out_port, "out_port") } { Ok(v) => v, Err(s) => return s };
-    let in_node = match unsafe { cstr_to_str(in_node, "in_node") } { Ok(v) => v, Err(s) => return s };
-    let in_port = match unsafe { cstr_to_str(in_port, "in_port") } { Ok(v) => v, Err(s) => return s };
+    let out_node = match unsafe { cstr_to_str(out_node, "out_node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let out_port = match unsafe { cstr_to_str(out_port, "out_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let in_node = match unsafe { cstr_to_str(in_node, "in_node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let in_port = match unsafe { cstr_to_str(in_port, "in_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
-    unsafe { &mut *g }.inner.remove_connection(out_node, out_port, in_node, in_port);
+    unsafe { &mut *g }
+        .inner
+        .remove_connection(out_node, out_port, in_node, in_port);
     rfl_status::Ok
 }
 
@@ -570,9 +611,18 @@ pub unsafe extern "C" fn rfl_graph_add_initial(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let node = match unsafe { cstr_to_str(node, "node") } { Ok(v) => v, Err(s) => return s };
-    let port = match unsafe { cstr_to_str(port, "port") } { Ok(v) => v, Err(s) => return s };
-    let data_s = match unsafe { cstr_to_str(data_json, "data_json") } { Ok(v) => v, Err(s) => return s };
+    let node = match unsafe { cstr_to_str(node, "node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port = match unsafe { cstr_to_str(port, "port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let data_s = match unsafe { cstr_to_str(data_json, "data_json") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
     let data: Value = match serde_json::from_str(data_s) {
         Ok(v) => v,
         Err(e) => {
@@ -580,9 +630,14 @@ pub unsafe extern "C" fn rfl_graph_add_initial(
             return rfl_status::InvalidJson;
         }
     };
-    let metadata = match unsafe { parse_metadata(metadata_json) } { Ok(v) => v, Err(s) => return s };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
-    unsafe { &mut *g }.inner.add_initial(data, node, port, metadata);
+    unsafe { &mut *g }
+        .inner
+        .add_initial(data, node, port, metadata);
     rfl_status::Ok
 }
 
@@ -596,8 +651,14 @@ pub unsafe extern "C" fn rfl_graph_remove_initial(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let node = match unsafe { cstr_to_str(node, "node") } { Ok(v) => v, Err(s) => return s };
-    let port = match unsafe { cstr_to_str(port, "port") } { Ok(v) => v, Err(s) => return s };
+    let node = match unsafe { cstr_to_str(node, "node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port = match unsafe { cstr_to_str(port, "port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
     unsafe { &mut *g }.inner.remove_initial(node, port);
     rfl_status::Ok
 }
@@ -618,13 +679,30 @@ pub unsafe extern "C" fn rfl_graph_add_inport(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } { Ok(v) => v, Err(s) => return s };
-    let node_id = match unsafe { cstr_to_str(node_id, "node_id") } { Ok(v) => v, Err(s) => return s };
-    let port_key = match unsafe { cstr_to_str(port_key, "port_key") } { Ok(v) => v, Err(s) => return s };
-    let port_type = match unsafe { parse_port_type(port_type_json) } { Ok(v) => v, Err(s) => return s };
-    let metadata = match unsafe { parse_metadata(metadata_json) } { Ok(v) => v, Err(s) => return s };
+    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let node_id = match unsafe { cstr_to_str(node_id, "node_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port_key = match unsafe { cstr_to_str(port_key, "port_key") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port_type = match unsafe { parse_port_type(port_type_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
-    unsafe { &mut *g }.inner.add_inport(port_id, node_id, port_key, port_type, metadata);
+    unsafe { &mut *g }
+        .inner
+        .add_inport(port_id, node_id, port_key, port_type, metadata);
     rfl_status::Ok
 }
 
@@ -641,13 +719,30 @@ pub unsafe extern "C" fn rfl_graph_add_outport(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } { Ok(v) => v, Err(s) => return s };
-    let node_id = match unsafe { cstr_to_str(node_id, "node_id") } { Ok(v) => v, Err(s) => return s };
-    let port_key = match unsafe { cstr_to_str(port_key, "port_key") } { Ok(v) => v, Err(s) => return s };
-    let port_type = match unsafe { parse_port_type(port_type_json) } { Ok(v) => v, Err(s) => return s };
-    let metadata = match unsafe { parse_metadata(metadata_json) } { Ok(v) => v, Err(s) => return s };
+    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let node_id = match unsafe { cstr_to_str(node_id, "node_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port_key = match unsafe { cstr_to_str(port_key, "port_key") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port_type = match unsafe { parse_port_type(port_type_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
-    unsafe { &mut *g }.inner.add_outport(port_id, node_id, port_key, port_type, metadata);
+    unsafe { &mut *g }
+        .inner
+        .add_outport(port_id, node_id, port_key, port_type, metadata);
     rfl_status::Ok
 }
 
@@ -660,7 +755,10 @@ pub unsafe extern "C" fn rfl_graph_remove_inport(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } { Ok(v) => v, Err(s) => return s };
+    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
     unsafe { &mut *g }.inner.remove_inport(port_id);
     rfl_status::Ok
 }
@@ -674,7 +772,10 @@ pub unsafe extern "C" fn rfl_graph_remove_outport(
     if g.is_null() {
         return rfl_status::NullArg;
     }
-    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } { Ok(v) => v, Err(s) => return s };
+    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
     unsafe { &mut *g }.inner.remove_outport(port_id);
     rfl_status::Ok
 }
@@ -690,12 +791,10 @@ pub unsafe extern "C" fn rfl_graph_to_json(g: *mut rfl_graph) -> *mut c_char {
     }
     let export = unsafe { &*g }.inner.export();
     match serde_json::to_string(&export) {
-        Ok(s) => CString::new(s)
-            .map(|c| c.into_raw())
-            .unwrap_or_else(|_| {
-                set_last_error("graph json contained a NUL byte");
-                std::ptr::null_mut()
-            }),
+        Ok(s) => CString::new(s).map(|c| c.into_raw()).unwrap_or_else(|_| {
+            set_last_error("graph json contained a NUL byte");
+            std::ptr::null_mut()
+        }),
         Err(e) => {
             set_last_error(format!("graph export: {e}"));
             std::ptr::null_mut()
@@ -736,11 +835,25 @@ pub unsafe extern "C" fn rfl_network_add_node(
     if n.is_null() {
         return rfl_status::NullArg;
     }
-    let id = match unsafe { cstr_to_str(id, "id") } { Ok(v) => v, Err(s) => return s };
-    let template_id = match unsafe { cstr_to_str(template_id, "template_id") } { Ok(v) => v, Err(s) => return s };
-    let metadata = match unsafe { parse_metadata(config_json) } { Ok(v) => v, Err(s) => return s };
+    let id = match unsafe { cstr_to_str(id, "id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let template_id = match unsafe { cstr_to_str(template_id, "template_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(config_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
-    match unsafe { &*n }.net.lock().unwrap().add_node(id, template_id, metadata) {
+    match unsafe { &*n }
+        .net
+        .lock()
+        .unwrap()
+        .add_node(id, template_id, metadata)
+    {
         Ok(_) => rfl_status::Ok,
         Err(e) => to_status_runtime(e),
     }
@@ -758,14 +871,34 @@ pub unsafe extern "C" fn rfl_network_add_connection(
     if n.is_null() {
         return rfl_status::NullArg;
     }
-    let from_actor = match unsafe { cstr_to_str(from_actor, "from_actor") } { Ok(v) => v, Err(s) => return s };
-    let from_port = match unsafe { cstr_to_str(from_port, "from_port") } { Ok(v) => v, Err(s) => return s };
-    let to_actor = match unsafe { cstr_to_str(to_actor, "to_actor") } { Ok(v) => v, Err(s) => return s };
-    let to_port = match unsafe { cstr_to_str(to_port, "to_port") } { Ok(v) => v, Err(s) => return s };
+    let from_actor = match unsafe { cstr_to_str(from_actor, "from_actor") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let from_port = match unsafe { cstr_to_str(from_port, "from_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let to_actor = match unsafe { cstr_to_str(to_actor, "to_actor") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let to_port = match unsafe { cstr_to_str(to_port, "to_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
     let conn = Connector {
-        from: ConnectionPoint { actor: from_actor.into(), port: from_port.into(), initial_data: None },
-        to:   ConnectionPoint { actor: to_actor.into(),   port: to_port.into(),   initial_data: None },
+        from: ConnectionPoint {
+            actor: from_actor.into(),
+            port: from_port.into(),
+            initial_data: None,
+        },
+        to: ConnectionPoint {
+            actor: to_actor.into(),
+            port: to_port.into(),
+            initial_data: None,
+        },
     };
     unsafe { &*n }.net.lock().unwrap().add_connection(conn);
     rfl_status::Ok
@@ -784,9 +917,18 @@ pub unsafe extern "C" fn rfl_network_add_initial(
     if n.is_null() {
         return rfl_status::NullArg;
     }
-    let actor = match unsafe { cstr_to_str(actor, "actor") } { Ok(v) => v, Err(s) => return s };
-    let port = match unsafe { cstr_to_str(port, "port") } { Ok(v) => v, Err(s) => return s };
-    let msg = match unsafe { parse_message(message_json, "message_json") } { Ok(v) => v, Err(s) => return s };
+    let actor = match unsafe { cstr_to_str(actor, "actor") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port = match unsafe { cstr_to_str(port, "port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let msg = match unsafe { parse_message(message_json, "message_json") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
 
     let iip = InitialPacket {
         to: ConnectionPoint::new(actor, port, Some(msg)),

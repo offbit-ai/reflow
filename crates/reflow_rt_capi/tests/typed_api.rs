@@ -73,10 +73,7 @@ fn stream_producer_consumer_roundtrip() {
         // Convert to a message, then recover the receiver from the message.
         let msg = rfl_stream_into_message(s);
         assert!(!msg.is_null());
-        assert_eq!(
-            rfl_message_get_kind(msg),
-            rfl_message_kind::StreamHandle
-        );
+        assert_eq!(rfl_message_get_kind(msg), rfl_message_kind::StreamHandle);
         let rx = rfl_message_stream_take(msg);
         assert!(!rx.is_null());
 

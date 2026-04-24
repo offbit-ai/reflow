@@ -5,7 +5,7 @@
 //! the event stream, shut down cleanly, ensure the drop hook fires.
 
 use reflow_rt_capi::*;
-use std::ffi::{CString, c_void};
+use std::ffi::{c_void, CString};
 use std::os::raw::c_char;
 use std::ptr;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -13,10 +13,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 static DROP_CALLS: AtomicU32 = AtomicU32::new(0);
 static CALLBACK_CALLS: AtomicU32 = AtomicU32::new(0);
 
-unsafe extern "C" fn my_callback(
-    _user_data: *mut c_void,
-    ctx: *mut rfl_actor_ctx,
-) -> rfl_status {
+unsafe extern "C" fn my_callback(_user_data: *mut c_void, ctx: *mut rfl_actor_ctx) -> rfl_status {
     CALLBACK_CALLS.fetch_add(1, Ordering::SeqCst);
 
     let port = CString::new("in").unwrap();
