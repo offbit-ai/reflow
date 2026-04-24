@@ -74,8 +74,15 @@ jobs:
           options: -v ${{ github.workspace }}:/build -w /build/sdk/node
           # The napi-rs nodejs-rust images invoke scripts through sh
           # (dash), which rejects `set -o pipefail`. `-eux` is portable.
+          #
+          # The lts-debian images ship an older Rust (1.82 at time of
+          # writing); reflow_network requires edition 2024, which
+          # stabilized in 1.85. Bump the toolchain before building.
           run: |
             set -eux
+            rustup update stable
+            rustup default stable
+            rustup target add ${{ matrix.settings.target }}
             npm ci || npm install
             ${{ matrix.settings.build }}
       - uses: actions/upload-artifact@v4
