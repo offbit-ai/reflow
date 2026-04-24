@@ -72,8 +72,10 @@ jobs:
         with:
           image: ${{ matrix.settings.docker }}
           options: -v ${{ github.workspace }}:/build -w /build/sdk/node
+          # The napi-rs nodejs-rust images invoke scripts through sh
+          # (dash), which rejects `set -o pipefail`. `-eux` is portable.
           run: |
-            set -euxo pipefail
+            set -eux
             npm ci || npm install
             ${{ matrix.settings.build }}
       - uses: actions/upload-artifact@v4
