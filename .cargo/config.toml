@@ -7,7 +7,11 @@ incremental = false
 # Configure the number of parallel jobs
 jobs = 8
 
-rustc-wrapper = "sccache"
+# Deliberately no global `rustc-wrapper = "sccache"`: that breaks any
+# environment that hasn't installed sccache (e.g. the sdist step of
+# our Python publish workflow). If you want sccache locally, either
+# set `CARGO_BUILD_RUSTC_WRAPPER=sccache` in your shell, or add a
+# `~/.cargo/config.toml` override outside this repository.
 
 
 [target.'cfg(all())']
