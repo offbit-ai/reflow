@@ -80,6 +80,9 @@ jobs:
           # stabilized in 1.85. Bump the toolchain before building.
           run: |
             set -eux
+            # rquickjs-sys's build script patches QuickJS sources with
+            # `patch`, which isn't installed in the napi-rs base images.
+            (command -v patch >/dev/null) || (apt-get update && apt-get install -y patch)
             rustup update stable
             rustup default stable
             rustup target add ${{ matrix.settings.target }}
