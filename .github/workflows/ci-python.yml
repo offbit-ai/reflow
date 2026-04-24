@@ -15,11 +15,18 @@ on:
       - 'crates/reflow_actor/**'
       - 'crates/reflow_actor_macro/**'
       - 'sdk/python/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/ci-python.yml'
   pull_request:
     paths:
       - 'sdk/python/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/ci-python.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
