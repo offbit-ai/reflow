@@ -7,10 +7,17 @@
 
 **A graph-driven actor runtime for workflows, media pipelines, and visual systems**
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/offbit-ai/reflow/ci.yml?branch=main)](https://github.com/offbit-ai/reflow/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust Version](https://img.shields.io/badge/rust-1.85+-blue.svg)](https://www.rust-lang.org)
 [![WebAssembly](https://img.shields.io/badge/WebAssembly-compatible-green.svg)](https://webassembly.org/)
+
+### SDK build status
+
+[![Python CI](https://github.com/offbit-ai/reflow/actions/workflows/ci-python.yml/badge.svg?branch=main)](https://github.com/offbit-ai/reflow/actions/workflows/ci-python.yml)
+[![Python Publish](https://github.com/offbit-ai/reflow/actions/workflows/publish-python.yml/badge.svg)](https://github.com/offbit-ai/reflow/actions/workflows/publish-python.yml)
+[![Node SDK](https://img.shields.io/badge/Node-workflow_TBD-lightgrey)](./sdk/node)
+[![Go SDK](https://img.shields.io/badge/Go-workflow_TBD-lightgrey)](./sdk/go)
+[![JVM SDK](https://img.shields.io/badge/JVM-workflow_TBD-lightgrey)](./sdk/jvm)
 
 [Documentation](./docs/README.md) | [Runtime Crate](./crates/reflow_rt/README.md) | [Quick Start](./docs/getting-started/README.md) | [Examples](./examples/) | [API Reference](./docs/reference/api-reference.md)
 
