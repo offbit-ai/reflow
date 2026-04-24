@@ -43,11 +43,16 @@ jobs:
           workspaces: |
             .
             sdk/python
-      - name: Build + install SDK
+      - name: Install build tools
+        run: python -m pip install --upgrade pip maturin pytest
+      - name: Build wheel
         working-directory: sdk/python
+        run: maturin build --release --out dist --find-interpreter
+      - name: Install wheel
+        shell: bash
         run: |
-          python -m pip install --upgrade pip maturin pytest
-          maturin develop --release
+          # Install whatever wheel was produced for the active interpreter.
+          python -m pip install --force-reinstall sdk/python/dist/*.whl
       - name: Run tests
         working-directory: sdk/python
         run: python -m pytest -q
