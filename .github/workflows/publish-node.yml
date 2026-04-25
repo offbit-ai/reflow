@@ -161,26 +161,42 @@ jobs:
       - name: Distribute addons to per-platform npm packages
         working-directory: sdk/node
         # `napi create-npm-dir` scaffolds `npm/<platform>/` (one
-        # package.json per triple in package.json's napi.triples). It
-        # must run before `napi artifacts`, which expects those dirs
-        # to exist when it copies `.node` files in. We don't commit
-        # those scaffolds, so we generate them fresh here.
+        # package.json per triple in package.json's napi.triples) with
+        # versions already matching the main package. `napi artifacts`
+        # copies the per-triple `.node` files in. After this step,
+        # each `npm/<platform>/` is a publishable package — we then
+        # `npm publish` them one by one in the next step.
+        #
+        # We deliberately don't run `napi prepublish` here: in v2.18 it
+        # also tries to `npm publish` each platform itself, doubling up
+        # with our manual loop and obscuring real failures.
         run: |
           npx napi create-npm-dir -t .
           npx napi artifacts --dir artifacts
-          npx napi prepublish -t npm --skip-gh-release
       - name: Publish platform packages
         working-directory: sdk/node
+        # No `--provenance`: would require `id-token: write` and a
+        # trusted-publisher OIDC token. We use a classic NPM_TOKEN here
+        # which can't sign provenance attestations. Add provenance once
+        # the org is set up for npm trusted publishing.
+        #
+        # First-publish of a new scoped package needs the NPM_TOKEN to
+        # have *write access to the scope* (granular tokens scoped to
+        # specific packages will return 404 here). Use a classic
+        # Automation token, or a granular token with the full scope.
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: sdk/node
         run: |
+          set -e
           for dir in npm/*/; do
-            if [ -f "$dir/package.json" ]; then
-              (cd "$dir" && npm publish --access public --provenance || true)
-            fi
+            [ -f "$dir/package.json" ] || continue
+            echo "::group::publish $(basename "$dir")"
+            (cd "$dir" && npm publish --access public)
+            echo "::endgroup::"
           done
       - name: Publish main package
         working-directory: sdk/node
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        run: npm publish --access public
