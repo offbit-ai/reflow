@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
@@ -7,6 +9,12 @@ plugins {
     // staging-then-release dance against the Sonatype Central Portal.
     // See sdk/jvm/PUBLISHING.md for the one-time account + key setup.
     id("com.vanniktech.maven.publish") version "0.30.0"
+    // Generates the HTML API reference that ships as the
+    // `-javadoc.jar` and is rendered on javadoc.io. We feed it the
+    // SDK README as the module landing page so javadoc.io shows the
+    // full README content (Maven Central's overview only renders
+    // POM metadata and can't display markdown).
+    id("org.jetbrains.dokka") version "1.9.20"
 }
 
 group = "ai.offbit"
@@ -66,6 +74,40 @@ val buildNative by tasks.registering(Exec::class) {
 tasks.named("compileJava") { dependsOn(buildNative) }
 tasks.named("test") { dependsOn(buildNative) }
 
+// ─── Dokka — README as module overview ────────────────────────────────────
+//
+// Dokka's `includes.from(...)` file is rendered on the module's landing
+// page. The first line MUST be `# Module <name>` for Dokka to attribute
+// it correctly. Synthesize the file from README.md at build time so the
+// README stays single-source.
+
+val prepareDokkaIncludes by tasks.registering {
+    val src = file("README.md")
+    val dst = layout.buildDirectory.file("dokka-includes/Module.md")
+    inputs.file(src)
+    outputs.file(dst)
+    doLast {
+        val out = dst.get().asFile
+        out.parentFile.mkdirs()
+        out.writeText("# Module reflow\n\n" + src.readText())
+    }
+}
+
+tasks.dokkaHtml.configure {
+    dependsOn(prepareDokkaIncludes)
+    moduleName.set("reflow")
+    dokkaSourceSets.named("main") {
+        includes.from(layout.buildDirectory.file("dokka-includes/Module.md"))
+        // Source links so reading a function in the rendered docs
+        // jumps to the corresponding GitHub blob.
+        sourceLink {
+            localDirectory.set(file("src/main"))
+            remoteUrl.set(uri("https://github.com/offbit-ai/reflow/blob/main/sdk/jvm/src/main").toURL())
+            remoteLineSuffix.set("#L")
+        }
+    }
+}
+
 // ─── Maven Central publishing ──────────────────────────────────────────────
 //
 // The actual upload runs in CI (.github/workflows/publish-jvm.yml) where
@@ -80,9 +122,12 @@ mavenPublishing {
 
     coordinates("ai.offbit", "reflow", project.version.toString())
 
-    // The plugin auto-detects `java-library` + `kotlin("jvm")` and
-    // wires up sources jar + an (empty) javadoc jar Maven Central
-    // requires; no extra configure() needed.
+    // Build the `-javadoc.jar` from `dokkaHtml` instead of the empty
+    // stub. This is what javadoc.io serves at
+    // https://javadoc.io/doc/ai.offbit/reflow/latest — the SDK README
+    // becomes the landing page (see prepareDokkaIncludes above), with
+    // every Java + Kotlin symbol cross-linked underneath.
+    configure(JavaLibrary(javadocJar = JavadocJar.Dokka("dokkaHtml"), sourcesJar = true))
 
     pom {
         name.set("Reflow JVM SDK")

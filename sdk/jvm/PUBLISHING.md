@@ -217,9 +217,13 @@ The `publish-jvm` workflow:
 2. Stages them into `src/main/resources/native/<res>/` on the publish
    runner.
 3. `./gradlew publishToMavenCentral` builds the jar (now containing
-   all 5 native libs as resources), signs it, signs the
-   `-sources.jar`/`-javadoc.jar`, and uploads to the Sonatype Central
-   Portal.
+   all 5 native libs as resources), runs Dokka to generate the
+   `-javadoc.jar` (with `sdk/jvm/README.md` as the module landing
+   page), signs everything, and uploads to the Sonatype Central
+   Portal. The Dokka HTML is what javadoc.io serves on
+   `https://javadoc.io/doc/ai.offbit/reflow/latest` — that's the
+   place users get the full README + browsable API in one tree,
+   since Maven Central's overview only renders POM metadata.
 4. With `automaticRelease = true`, the staging repo is closed and
    released to Maven Central in one step. (Set to `false` for the
    first release if you want to verify the staged artifacts manually
