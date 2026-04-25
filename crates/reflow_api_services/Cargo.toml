@@ -26,8 +26,9 @@ parking_lot = { workspace = true }
 flume = { workspace = true }
 futures = { workspace = true }
 
-# HTTP (required for all API actors)
-reqwest = { version = "0.12", features = ["json", "stream"] }
+# HTTP (required for all API actors). Use rustls so cross-compiles
+# (e.g. aarch64-unknown-linux-gnu in CI) don't need a system OpenSSL.
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 
 # Data processing
 chrono = { version = "0.4", features = ["serde"] }
