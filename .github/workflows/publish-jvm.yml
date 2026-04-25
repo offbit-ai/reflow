@@ -97,7 +97,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # No gradle wrapper checked in (sdk/jvm/gradlew). Install the
+      # Gradle CLI directly via setup-gradle's `gradle-version` input
+      # and invoke it as `gradle` below.
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
 
       - name: Download every triple's native lib
         uses: actions/download-artifact@v4
@@ -125,4 +130,4 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-        run: ./gradlew --no-daemon publishAndReleaseToMavenCentral
+        run: gradle --no-daemon publishAndReleaseToMavenCentral
