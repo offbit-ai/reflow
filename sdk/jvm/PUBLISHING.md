@@ -78,11 +78,8 @@ gpg --keyserver keys.openpgp.org --send-keys AB12CD34EF567890
 gpg --keyserver keyserver.ubuntu.com --send-keys AB12CD34EF567890
 
 # Export the secret key in ASCII for CI.
-# Export armored, then base64-encode to a single line. We use base64
-# because GitHub-secret multi-line values occasionally come back with
-# CR-LF / trimmed whitespace, which makes the vanniktech plugin
-# fail with "Could not read PGP secret key".
-gpg --armor --export-secret-keys AB12CD34EF567890 | base64 | tr -d '\n' > /tmp/signing.key.b64
+# Export the secret key in ASCII for CI.
+gpg --armor --export-secret-keys AB12CD34EF567890 > /tmp/signing.key
 ```
 
 Add three secrets to the GitHub repo:
@@ -90,12 +87,10 @@ Add three secrets to the GitHub repo:
 | Secret name        | Value |
 |--------------------|-------|
 | `SIGNING_KEY_ID`   | The 16-char id (last 16 hex chars of the long key id) |
-| `SIGNING_KEY`      | The single-line base64 content of `/tmp/signing.key.b64` (no newlines) |
+| `SIGNING_KEY`      | Contents of `/tmp/signing.key` (the full ASCII-armored block, paste verbatim) |
 | `SIGNING_PASSWORD` | The passphrase you typed during `gpg --full-generate-key` |
 
-Delete `/tmp/signing.key.b64` from disk afterwards. The CI workflow
-decodes the secret back to the multi-line PGP block before invoking
-gradle.
+Delete `/tmp/signing.key` from disk afterwards.
 
 ## Gradle publish plugin
 
@@ -247,10 +242,9 @@ unzip -l ~/.m2/repository/ai/offbit/reflow/0.2.0/reflow-0.2.0.jar | grep native/
 If the publish fails with `gpg: signing failed: No secret key`, the
 in-memory key isn't being decoded. Common causes:
 
-- The `SIGNING_KEY` secret isn't valid base64 (e.g. line-wrapped to
-  multiple lines, or pasted with a trailing newline). Re-encode with
-  `gpg --armor --export-secret-keys KEY_ID | base64 | tr -d '\n'`
-  and paste the resulting single line into the GitHub secret.
+- The `SIGNING_KEY` secret was pasted with a trailing/leading newline
+  trimmed — re-export with `gpg --armor --export-secret-keys`, paste
+  raw into the GitHub secret (multi-line values are preserved).
 - The `SIGNING_KEY_ID` is wrong length. Use the **last 16 hex
   characters** of the long-form id, not the short 8-char id.
 - The passphrase has a special character that GitHub's secret store
