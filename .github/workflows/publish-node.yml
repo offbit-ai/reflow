@@ -186,7 +186,6 @@ jobs:
         # Automation token, or a granular token with the full scope.
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: sdk/node
         run: |
           set -e
           for dir in npm/*/; do
