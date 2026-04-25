@@ -7,7 +7,6 @@ description = "Reflow actor pack — 6,700+ generated API-service actors (Slack,
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/offbit-ai/reflow"
 homepage = "https://github.com/offbit-ai/reflow"
-readme = "README.md"
 rust-version = "1.85"
 keywords = ["reflow", "actor", "pack", "api", "services"]
 categories = ["development-tools", "api-bindings"]

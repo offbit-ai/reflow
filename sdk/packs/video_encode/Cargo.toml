@@ -7,7 +7,6 @@ description = "Reflow actor pack — H.264 video encoding (openh264). Publishes 
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/offbit-ai/reflow"
 homepage = "https://github.com/offbit-ai/reflow"
-readme = "README.md"
 rust-version = "1.85"
 keywords = ["reflow", "actor", "pack", "video", "h264"]
 categories = ["development-tools", "multimedia::encoding"]
