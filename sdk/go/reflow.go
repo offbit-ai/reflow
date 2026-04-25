@@ -41,9 +41,23 @@
 //	}
 package reflow
 
-// #cgo CFLAGS: -I${SRCDIR}/../../crates/reflow_rt_capi/include
-// #cgo darwin LDFLAGS: -L${SRCDIR}/../../target/debug -lreflow_rt_capi -Wl,-rpath,${SRCDIR}/../../target/debug
-// #cgo linux LDFLAGS:  -L${SRCDIR}/../../target/debug -lreflow_rt_capi -Wl,-rpath,${SRCDIR}/../../target/debug
+// Both dev and published paths share the same module-local layout:
+//
+//	sdk/go/include/reflow_rt.h        C header
+//	sdk/go/lib/<goos>_<goarch>/...    libreflow_rt_capi.{so,dylib,dll}
+//
+// For repo-local dev, run scripts/link_dev_lib.sh to symlink the
+// just-built target/<profile>/libreflow_rt_capi.* into the right
+// triple dir. For published use, scripts/install_lib.sh <version>
+// fetches the matching tarball from a GitHub Release and unpacks it
+// here.
+
+// #cgo CFLAGS: -I${SRCDIR}/include
+// #cgo darwin,arm64  LDFLAGS: -L${SRCDIR}/lib/darwin_arm64  -lreflow_rt_capi -Wl,-rpath,${SRCDIR}/lib/darwin_arm64
+// #cgo darwin,amd64  LDFLAGS: -L${SRCDIR}/lib/darwin_amd64  -lreflow_rt_capi -Wl,-rpath,${SRCDIR}/lib/darwin_amd64
+// #cgo linux,amd64   LDFLAGS: -L${SRCDIR}/lib/linux_amd64   -lreflow_rt_capi -Wl,-rpath,${SRCDIR}/lib/linux_amd64
+// #cgo linux,arm64   LDFLAGS: -L${SRCDIR}/lib/linux_arm64   -lreflow_rt_capi -Wl,-rpath,${SRCDIR}/lib/linux_arm64
+// #cgo windows,amd64 LDFLAGS: -L${SRCDIR}/lib/windows_amd64 -lreflow_rt_capi
 // #include <stdlib.h>
 // #include "reflow_rt.h"
 import "C"

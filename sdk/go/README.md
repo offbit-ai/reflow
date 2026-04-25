@@ -11,13 +11,38 @@ import reflow "github.com/offbit-ai/reflow/sdk/go"
 ## Requirements
 
 - Go 1.21+
-- The `reflow_rt_capi` shared library built from the parent repository:
+- A C toolchain (for cgo)
+- `libreflow_rt_capi` for your platform — installed via one of two paths:
 
-  ```sh
-  cargo build -p reflow_rt_capi --release
-  ```
+### Install (published)
 
-  During development the SDK links against `target/debug/libreflow_rt_capi.dylib` / `.so` relative to this directory. For production, point `CGO_LDFLAGS` at the release artifact shipped with your release.
+```sh
+go get github.com/offbit-ai/reflow/sdk/go@v0.2.0
+cd "$(go env GOMODCACHE)/github.com/offbit-ai/reflow/sdk/go@v0.2.0"
+./scripts/install_lib.sh v0.2.0
+```
+
+`install_lib.sh` downloads the matching tarball from the
+[`sdk/go/vX.Y.Z` GitHub Release](https://github.com/offbit-ai/reflow/releases?q=sdk%2Fgo)
+and unpacks it into `lib/<goos>_<goarch>/` and `include/` next to the
+Go sources, where cgo can find them. The install is per-version, so
+upgrading the module re-runs the script.
+
+### Install (repo-local development)
+
+If you've cloned the monorepo and want to test against your local
+Rust changes:
+
+```sh
+cargo build -p reflow_rt_capi          # or --release
+sdk/go/scripts/link_dev_lib.sh debug   # symlinks target/debug into sdk/go/lib/...
+go test ./sdk/go/...
+```
+
+`link_dev_lib.sh` symlinks `target/<profile>/libreflow_rt_capi.*`
+plus `crates/reflow_rt_capi/include/reflow_rt.h` into the same
+`sdk/go/{lib,include}/` layout the published install uses, so cgo
+sees identical paths in both setups.
 
 ## Quick start
 

@@ -1,0 +1,4 @@
+# Native runtime artifacts — populated by scripts/install_lib.sh (release)
+# or scripts/link_dev_lib.sh (repo-local dev). Never committed.
+lib/
+include/
