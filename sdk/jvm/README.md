@@ -9,7 +9,7 @@ This module is the **JVM binding** (Java + Kotlin-friendly) to that runtime. It 
 
 ```kotlin
 // Gradle
-dependencies { implementation("ai.offbit:reflow:0.2.0") }
+dependencies { implementation("ai.offbit:reflow:0.2.1") }
 ```
 
 ```xml
@@ -17,7 +17,7 @@ dependencies { implementation("ai.offbit:reflow:0.2.0") }
 <dependency>
     <groupId>ai.offbit</groupId>
     <artifactId>reflow</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
 </dependency>
 ```
 
