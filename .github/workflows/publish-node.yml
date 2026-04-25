@@ -94,7 +94,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: sdk/node/*.node
+          # napi build emits the .node addon plus a small JS/TS loader
+          # shim (index.js / index.d.ts) that tests `require()` to find
+          # the right native binary. Both are gitignored, so test jobs
+          # need them shipped via the artifact.
+          path: |
+            sdk/node/*.node
+            sdk/node/index.js
+            sdk/node/index.d.ts
           if-no-files-found: error
 
   test:
