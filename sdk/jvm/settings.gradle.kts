@@ -1,1 +1,1 @@
-rootProject.name = "offbit-reflow"
+rootProject.name = "reflow"

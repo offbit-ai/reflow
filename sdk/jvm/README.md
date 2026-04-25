@@ -4,8 +4,22 @@ Reflow is a **modular flow-based programming runtime built on the actor model**.
 
 This module is the **JVM binding** (Java + Kotlin-friendly) to that runtime. It links to a native shared library built from `sdk/jvm/src/native` via JNI (written in Rust) and exposes idiomatic Java classes that mirror the Node / Go / Python SDKs one-for-one. Kotlin users get a trailing-lambda DSL and coroutine-friendly adapters on top.
 
-- Group: `ai.offbit`
-- Package: `ai.offbit.reflow`
+- Maven coordinates: `ai.offbit:reflow:<version>`
+- Java/Kotlin package: `ai.offbit.reflow`
+
+```kotlin
+// Gradle
+dependencies { implementation("ai.offbit:reflow:0.2.0") }
+```
+
+```xml
+<!-- Maven -->
+<dependency>
+    <groupId>ai.offbit</groupId>
+    <artifactId>reflow</artifactId>
+    <version>0.2.0</version>
+</dependency>
+```
 
 ## Quick start
 
