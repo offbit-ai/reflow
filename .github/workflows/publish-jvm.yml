@@ -124,10 +124,12 @@ jobs:
 
       - name: Publish to Maven Central
         working-directory: sdk/jvm
+        # No `signingInMemoryKeyId` — gradle's PGP plugin is strict
+        # about the format (last 8 hex chars only) and the safer
+        # path is to let it derive the id from the key block itself.
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: gradle --no-daemon --stacktrace publishAndReleaseToMavenCentral

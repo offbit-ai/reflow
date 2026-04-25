@@ -82,13 +82,17 @@ gpg --keyserver keyserver.ubuntu.com --send-keys AB12CD34EF567890
 gpg --armor --export-secret-keys AB12CD34EF567890 > /tmp/signing.key
 ```
 
-Add three secrets to the GitHub repo:
+Add two secrets to the GitHub repo:
 
 | Secret name        | Value |
 |--------------------|-------|
-| `SIGNING_KEY_ID`   | The 16-char id (last 16 hex chars of the long key id) |
 | `SIGNING_KEY`      | Contents of `/tmp/signing.key` (the full ASCII-armored block, paste verbatim) |
 | `SIGNING_PASSWORD` | The passphrase you typed during `gpg --full-generate-key` |
+
+The plugin derives the key ID from the key block itself, so there's
+no separate `SIGNING_KEY_ID` to set. (Gradle's signing plugin would
+reject the 16-char long ID anyway — it expects the legacy 8-char
+short ID, which is fragile.)
 
 Delete `/tmp/signing.key` from disk afterwards.
 
@@ -245,7 +249,9 @@ in-memory key isn't being decoded. Common causes:
 - The `SIGNING_KEY` secret was pasted with a trailing/leading newline
   trimmed — re-export with `gpg --armor --export-secret-keys`, paste
   raw into the GitHub secret (multi-line values are preserved).
-- The `SIGNING_KEY_ID` is wrong length. Use the **last 16 hex
-  characters** of the long-form id, not the short 8-char id.
 - The passphrase has a special character that GitHub's secret store
   decoded oddly — regenerate without `$`, `&`, or unicode.
+- A different `SIGNING_KEY_ID` secret is set in the repo. Delete it;
+  this workflow no longer reads it. Setting it would route through
+  gradle's strict PGP id validator and fail with "The key ID must
+  be in a valid form (eg 00B5050F)".
