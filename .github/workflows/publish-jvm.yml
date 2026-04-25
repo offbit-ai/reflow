@@ -122,12 +122,40 @@ jobs:
           done
           ls -laR src/main/resources/native
 
+      - name: Decode signing key from base64 secret
+        # The SIGNING_KEY secret is the base64-encoded ASCII-armored
+        # GPG private key (one line, no whitespace). We decode it
+        # back to the multi-line PGP block here and feed it into a
+        # multi-line env var for gradle. Storing it base64 sidesteps
+        # GitHub-secret quirks with embedded newlines / CR-LF that
+        # otherwise produce "Could not read PGP secret key".
+        env:
+          SIGNING_KEY_B64: ${{ secrets.SIGNING_KEY }}
+        run: |
+          set -e
+          if ! echo "$SIGNING_KEY_B64" | base64 -d > /tmp/signing.key 2>/dev/null; then
+            echo "::error::SIGNING_KEY secret is not valid base64 — re-export with"
+            echo "::error::    gpg --armor --export-secret-keys KEY_ID | base64 -w0"
+            exit 1
+          fi
+          if ! head -1 /tmp/signing.key | grep -q "BEGIN PGP PRIVATE KEY BLOCK"; then
+            echo "::error::Decoded key doesn't start with BEGIN PGP PRIVATE KEY BLOCK"
+            exit 1
+          fi
+          {
+            echo "ORG_GRADLE_PROJECT_signingInMemoryKey<<__REFLOW_KEY_EOF__"
+            cat /tmp/signing.key
+            echo "__REFLOW_KEY_EOF__"
+          } >> "$GITHUB_ENV"
+          rm -f /tmp/signing.key
+
       - name: Publish to Maven Central
         working-directory: sdk/jvm
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-        run: gradle --no-daemon publishAndReleaseToMavenCentral
+          # ORG_GRADLE_PROJECT_signingInMemoryKey is set via $GITHUB_ENV
+          # in the previous step.
+        run: gradle --no-daemon --stacktrace publishAndReleaseToMavenCentral

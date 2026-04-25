@@ -41,6 +41,14 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Maven Central requires a -javadoc.jar but JDK 9+ runs javadoc with
+// strict doclint by default — any broken @link or missing @param
+// fails the publish task. Disable doclint so the publish job is not
+// gated on perfect javadoc.
+tasks.withType<Javadoc>().configureEach {
+    (options as StandardJavadocDocletOptions).addBooleanOption("Xdoclint:none", true)
+}
+
 // Point the JVM at the locally built native library so tests can run
 // without installing it globally.
 val nativeLibPath = rootDir.resolve("src/native/target/release/libreflow_rt_jvm.dylib")

@@ -24,8 +24,9 @@ public final class Packs {
 
     /**
      * Read the manifest of a {@code .rflpack} without loading its code.
-     * Returns JSON matching {@link PackManifest}. Fails for raw dylibs
-     * (they have no manifest).
+     * Returns JSON matching the PackManifest schema documented in
+     * {@code sdk/packs/README.md}. Fails for raw dylibs (they have no
+     * manifest).
      */
     public static String inspectPack(String path) {
         return nativeInspectPack(path);
