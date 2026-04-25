@@ -160,11 +160,13 @@ jobs:
           path: sdk/node/artifacts
       - name: Distribute addons to per-platform npm packages
         working-directory: sdk/node
-        # `napi artifacts` lifts every `bindings-*` dir into
-        # `npm/<platform>/` with a matching package.json, which the main
-        # package depends on via optionalDependencies. `napi prepublish`
-        # then creates the publish manifests.
+        # `napi create-npm-dir` scaffolds `npm/<platform>/` (one
+        # package.json per triple in package.json's napi.triples). It
+        # must run before `napi artifacts`, which expects those dirs
+        # to exist when it copies `.node` files in. We don't commit
+        # those scaffolds, so we generate them fresh here.
         run: |
+          npx napi create-npm-dir -t .
           npx napi artifacts --dir artifacts
           npx napi prepublish -t npm --skip-gh-release
       - name: Publish platform packages
