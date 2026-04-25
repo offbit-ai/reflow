@@ -17,8 +17,8 @@
 [![offbit-reflow on PyPI](https://img.shields.io/pypi/v/offbit-reflow?label=offbit-reflow&logo=python&logoColor=white&color=3775A9)](https://pypi.org/project/offbit-reflow/)
 [![Node CI](https://github.com/offbit-ai/reflow/actions/workflows/ci-node.yml/badge.svg?branch=main)](https://github.com/offbit-ai/reflow/actions/workflows/ci-node.yml)
 [![@offbit-ai/reflow on npm](https://img.shields.io/npm/v/%40offbit-ai%2Freflow?label=%40offbit-ai%2Freflow&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@offbit-ai/reflow)
-[![Go SDK](https://img.shields.io/badge/Go-workflow_TBD-lightgrey)](./sdk/go)
-[![JVM SDK](https://img.shields.io/badge/JVM-workflow_TBD-lightgrey)](./sdk/jvm)
+[![Go SDK release](https://img.shields.io/github/v/release/offbit-ai/reflow?filter=sdk%2Fgo%2Fv*&label=Go%20SDK&logo=go&logoColor=white&color=00ADD8)](https://github.com/offbit-ai/reflow/releases?q=sdk%2Fgo)
+[![ai.offbit:reflow on Maven Central](https://img.shields.io/maven-central/v/ai.offbit/reflow?label=ai.offbit%3Areflow&logo=gradle&logoColor=white&color=02303A)](https://central.sonatype.com/artifact/ai.offbit/reflow)
 
 [Documentation](./docs/README.md) | [Runtime Crate](./crates/reflow_rt/README.md) | [Quick Start](./docs/getting-started/README.md) | [Examples](./examples/) | [API Reference](./docs/reference/api-reference.md)
 
@@ -34,7 +34,7 @@ Reflow is a modular workflow execution engine that uses the **actor model** for 
 📊 **Graph-Authored Workflows** - DAG representation with subgraphs, IIPs, history, and undo  
 📦 **The Reflow Runtime API** - `reflow_rt` is the public Rust crate for building and running Reflow applications  
 🎛️ **Optional Component Families** - GPU, AV, window events, camera, API services, media, and ML are feature gated  
-🌍 **Multi-Language Support** - JavaScript, Python, and WebAssembly actor paths  
+🌍 **Multi-Language SDKs** - first-party bindings for Node.js, Python, Go, and the JVM (Java + Kotlin)  
 🌐 **Cross-Platform** - Native Rust execution plus WebAssembly-oriented runtime surfaces  
 🔄 **Real-Time Processing** - Networking, WebSockets, streams, and live graph events  
 🧠 **Media / ML Ready** - Typed media packets, mockable inference, LiteRT backend boundary, and taskpack subgraphs
@@ -76,6 +76,39 @@ fn main() {
 ```
 
 See the [`reflow_rt` README](./crates/reflow_rt/README.md) for the runtime API surface and feature map.
+
+### Use Reflow from another language
+
+The runtime is the same Rust core; each SDK is a thin native binding plus an idiomatic surface in that language. Pick the published artifact for your runtime, then jump to that SDK's README for quick-start code.
+
+```sh
+# Node.js — npm install pulls the right per-platform .node addon automatically
+npm install @offbit-ai/reflow
+```
+```sh
+# Python — pre-built wheels for darwin / linux / windows on PyPI
+pip install offbit-reflow
+```
+```sh
+# Go — install the module, then drop the platform-specific
+# libreflow_rt_capi tarball into the module via the bundled script.
+# See sdk/go/README.md for full instructions.
+go get github.com/offbit-ai/reflow/sdk/go@v0.2.0
+```
+```kotlin
+// Gradle (Kotlin DSL) — JVM SDK is the fat jar; native libs are
+// bundled as classpath resources.
+dependencies { implementation("ai.offbit:reflow:0.2.0") }
+```
+
+| SDK | Package | Docs |
+|---|---|---|
+| Node.js | [`@offbit-ai/reflow`](https://www.npmjs.com/package/@offbit-ai/reflow) | [sdk/node/README.md](./sdk/node/README.md) |
+| Python | [`offbit-reflow`](https://pypi.org/project/offbit-reflow/) | [sdk/python/README.md](./sdk/python/README.md) |
+| Go | [`github.com/offbit-ai/reflow/sdk/go`](https://github.com/offbit-ai/reflow/releases?q=sdk%2Fgo) | [sdk/go/README.md](./sdk/go/README.md) |
+| JVM | [`ai.offbit:reflow`](https://central.sonatype.com/artifact/ai.offbit/reflow) | [sdk/jvm/README.md](./sdk/jvm/README.md) |
+
+Optional [`.rflpack`](./sdk/packs/README.md) bundles plug additional actor palettes (GPU renderers, ML, browser automation, ~6,700 SaaS API actors) into any SDK at runtime — load via `loadPack()` / `load_pack()` / `LoadPack()` / `Packs.loadPack()`.
 
 ## Architecture Overview
 
