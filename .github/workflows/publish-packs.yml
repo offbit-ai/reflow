@@ -62,7 +62,9 @@ jobs:
             triple: aarch64-unknown-linux-gnu
             dylib_prefix: lib
             dylib_ext: so
-            linker_pkg: gcc-aarch64-linux-gnu
+            # openh264-sys2 (used by reflow_pack_video_encode) compiles
+            # C++ sources, so install g++ alongside gcc.
+            linker_pkg: gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           - host: windows-latest
             triple: x86_64-pc-windows-msvc
             dylib_prefix: ""
