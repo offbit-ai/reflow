@@ -1,0 +1,166 @@
+# Builds every first-party Reflow actor pack (sdk/packs/*) as a
+# multi-triple `.rflpack` bundle and attaches the results to a GitHub
+# Release.
+#
+# Triggers
+# --------
+# - Tag push matching `pack-v*` (e.g. `pack-v0.2.0`) → build, bundle,
+#   and publish.
+# - Manual `workflow_dispatch` → build + bundle only (no release).
+#
+# ABI lockstep
+# ------------
+# All pack cdylibs and the `reflow-pack` assembly tool are built with
+# `dtolnay/rust-toolchain@stable` so every artifact in a single release
+# shares one `REFLOW_PACK_ABI_VERSION`. Matching SDK releases
+# (publish-node, publish-python, …) also use `stable` on host runners,
+# so the pinned stable toolchain gives both sides the same ABI hash.
+
+name: publish-packs
+
+on:
+  push:
+    tags:
+      - 'pack-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # required to create releases
+
+env:
+  # Every first-party pack we build. Keep in sync with sdk/packs/.
+  # Space-separated list: <crate-name>:<pack-name>:<manifest-dir>
+  PACKS: >-
+    reflow_pack_browser:reflow.pack.browser:sdk/packs/browser
+    reflow_pack_video_encode:reflow.pack.video_encode:sdk/packs/video_encode
+    reflow_pack_ml:reflow.pack.ml:sdk/packs/ml
+    reflow_pack_gpu:reflow.pack.gpu:sdk/packs/gpu
+    reflow_pack_window_events:reflow.pack.window_events:sdk/packs/window_events
+    reflow_pack_api_services:reflow.pack.api_services:sdk/packs/api_services
+
+jobs:
+  build:
+    name: build / ${{ matrix.triple }}
+    runs-on: ${{ matrix.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos-14
+            triple: aarch64-apple-darwin
+            dylib_prefix: lib
+            dylib_ext: dylib
+          - host: macos-14
+            triple: x86_64-apple-darwin
+            dylib_prefix: lib
+            dylib_ext: dylib
+          - host: ubuntu-latest
+            triple: x86_64-unknown-linux-gnu
+            dylib_prefix: lib
+            dylib_ext: so
+          - host: ubuntu-latest
+            triple: aarch64-unknown-linux-gnu
+            dylib_prefix: lib
+            dylib_ext: so
+            linker_pkg: gcc-aarch64-linux-gnu
+          - host: windows-latest
+            triple: x86_64-pc-windows-msvc
+            dylib_prefix: ""
+            dylib_ext: dll
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.triple }}
+      - uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Install aarch64 linux cross toolchain
+        if: ${{ matrix.linker_pkg }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.linker_pkg }}
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+          # ring's prebuilt ARM assembly needs `__ARM_ARCH` defined.
+          echo "CFLAGS_aarch64_unknown_linux_gnu=-march=armv8-a -D__ARM_ARCH=8" >> $GITHUB_ENV
+
+      - name: Build every pack cdylib for ${{ matrix.triple }}
+        shell: bash
+        run: |
+          set -eux
+          for entry in $PACKS; do
+            crate="${entry%%:*}"
+            cargo build --release --target "${{ matrix.triple }}" -p "$crate"
+          done
+
+      - name: Stage cdylibs for upload
+        shell: bash
+        run: |
+          set -eux
+          mkdir -p staging
+          for entry in $PACKS; do
+            crate="${entry%%:*}"
+            # Windows MSVC does not use a `lib` prefix on cdylib output.
+            src="target/${{ matrix.triple }}/release/${{ matrix.dylib_prefix }}${crate}.${{ matrix.dylib_ext }}"
+            dst="staging/${crate}.${{ matrix.dylib_ext }}"
+            cp "$src" "$dst"
+          done
+          ls -la staging
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pack-cdylibs-${{ matrix.triple }}
+          path: staging/
+          if-no-files-found: error
+
+  assemble:
+    name: assemble + release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Build reflow-pack CLI
+        run: cargo build --release -p reflow_pack_cli
+
+      - name: Read host pack ABI version
+        id: abi
+        run: |
+          line=$(target/release/reflow-pack abi | grep abi_version)
+          abi=${line#*= }
+          echo "abi=$abi" >> "$GITHUB_OUTPUT"
+          echo "host pack ABI: $abi"
+
+      - name: Extract release version from tag
+        id: ver
+        if: startsWith(github.ref, 'refs/tags/pack-v')
+        run: echo "version=${GITHUB_REF_NAME#pack-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download every triple's cdylibs
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: pack-cdylibs-*
+
+      - name: Assemble each `.rflpack`
+        shell: bash
+        env:
+          REFLOW_PACK_ABI_VERSION: ${{ steps.abi.outputs.abi }}
+        run: |
+          set -eux
+          mkdir -p packs
+          python3 .github/scripts/assemble_packs.py
+          ls -la packs
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/pack-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Packs ${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          files: packs/*.rflpack
+          fail_on_unmatched_files: true

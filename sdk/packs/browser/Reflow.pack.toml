@@ -1,0 +1,12 @@
+[pack]
+name = "reflow.pack.browser"
+version = "0.2.0"
+description = "Browser automation actors backed by chromiumoxide"
+authors = ["Offbit AI"]
+license = "MIT OR Apache-2.0"
+templates = ["tpl_browser_screencast"]
+
+# Add one entry per triple you've built before running `reflow-pack build`.
+# Paths are relative to this file.
+[targets.files]
+aarch64-apple-darwin = "../../../target/release/libreflow_pack_browser.dylib"

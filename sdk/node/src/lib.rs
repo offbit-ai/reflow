@@ -679,10 +679,55 @@ pub fn template_actor(template_id: String) -> Result<ReflowActor> {
     }
 }
 
-/// Enumerate every template id registered in the bundled catalog.
+/// Enumerate every template id registered in the bundled catalog and
+/// any loaded `.rflpack` packs.
 #[napi(js_name = "templateList")]
 pub fn template_list() -> Vec<String> {
-    reflow_components::get_template_mapping().into_keys().collect()
+    let mut ids: Vec<String> = reflow_rt::pack_loader::PACK_REGISTRY.template_ids();
+    for k in reflow_components::get_template_mapping().into_keys() {
+        if !ids.contains(&k) {
+            ids.push(k);
+        }
+    }
+    ids.sort();
+    ids
+}
+
+// ─── Actor packs ───────────────────────────────────────────────────────────
+
+/// Load a Reflow actor pack from either a `.rflpack` bundle or a raw
+/// cdylib path. Returns the list of template ids the pack published.
+/// Safe to call repeatedly with the same pack name — the second call is
+/// a no-op.
+#[napi(js_name = "loadPack")]
+pub fn load_pack(path: String) -> Result<Vec<String>> {
+    reflow_rt::pack_loader::load_pack(&path)
+        .map_err(|e| Error::from_reason(format!("load pack '{path}': {e:#}")))
+}
+
+/// Read the manifest from a `.rflpack` without loading its code. Useful
+/// for showing a pack's contents in UI before the user accepts it.
+#[napi(js_name = "inspectPack")]
+pub fn inspect_pack(path: String) -> Result<serde_json::Value> {
+    let manifest = reflow_rt::pack_loader::inspect_pack(&path)
+        .map_err(|e| Error::from_reason(format!("inspect pack '{path}': {e:#}")))?;
+    serde_json::to_value(&manifest)
+        .map_err(|e| Error::from_reason(format!("serialize manifest: {e}")))
+}
+
+/// List every pack currently loaded into this process, with their
+/// manifest name / version / templates.
+#[napi(js_name = "listPacks")]
+pub fn list_packs() -> Result<serde_json::Value> {
+    let list = reflow_rt::pack_loader::PACK_REGISTRY.loaded_packs();
+    serde_json::to_value(&list).map_err(|e| Error::from_reason(format!("serialize list: {e}")))
+}
+
+/// The pack ABI version this SDK was compiled against. Pack authors
+/// must build their `.rflpack` with a matching value.
+#[napi(js_name = "packAbiVersion")]
+pub fn pack_abi_version() -> u32 {
+    reflow_rt::pack_loader::REFLOW_PACK_ABI_VERSION
 }
 
 // ─── Multi-graph composition ───────────────────────────────────────────────

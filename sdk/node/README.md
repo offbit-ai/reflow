@@ -126,7 +126,12 @@ const net = Network.fromGraph(graph);
 
 ## Standard component catalog
 
-Register bundled actors by id:
+The SDK ships the pure-Rust + `av-core` slice of `reflow_components` —
+roughly 270 templates covering animation, flow control, math, vector,
+2D graphics, asset DB, scene graph, HTTP integration, stream ops, DSP,
+and procedural generation. Heavy optional palettes (GPU, ML, browser
+automation, video encoding, window events, ~6,700 API-service wrappers)
+are **not bundled** and install as [actor packs](#actor-packs).
 
 ```ts
 import { templateActor, templateList } from "@offbit-ai/reflow";
@@ -135,7 +140,66 @@ net.registerActor("tpl_http_request", templateActor("tpl_http_request"));
 console.log(templateList().filter((id) => id.startsWith("tpl_math_")));
 ```
 
-Catalog reference: [docs/components/standard-library.md](https://github.com/offbit-ai/reflow/blob/main/docs/components/standard-library.md) (274 templates).
+Full catalog reference: [docs/components/standard-library.md](https://github.com/offbit-ai/reflow/blob/main/docs/components/standard-library.md).
+
+## Actor packs
+
+Packs are `.rflpack` bundles that publish additional templates into
+this SDK at runtime — the GPU renderer palette, the ML stack, browser
+automation, etc. `templateActor(id)` and `templateList()` transparently
+include pack-supplied templates after load.
+
+```ts
+import { loadPack, inspectPack, listPacks, packAbiVersion, templateActor } from "@offbit-ai/reflow";
+
+// Peek before committing.
+console.log(inspectPack("./reflow.pack.ml-0.2.0.rflpack"));
+
+// Load (idempotent; safe to call repeatedly).
+loadPack("./reflow.pack.ml-0.2.0.rflpack");
+
+// Pack-owned templates now resolve normally.
+net.registerActor("tpl_ml_run_inference", templateActor("tpl_ml_run_inference"));
+
+console.log(listPacks());
+console.log(packAbiVersion());   // ABI the SDK expects from a .rflpack
+```
+
+First-party packs live under [`sdk/packs/`](https://github.com/offbit-ai/reflow/tree/main/sdk/packs):
+
+| Pack                | Templates | Pulls in                                    |
+|---------------------|:---------:|---------------------------------------------|
+| `reflow.pack.browser`      | 1    | chromiumoxide                              |
+| `reflow.pack.video_encode` | 1    | openh264                                   |
+| `reflow.pack.ml`           | 12   | CV ops, LiteRT inference                   |
+| `reflow.pack.gpu`          | 6    | wgpu SDF / scene / 2D renderers            |
+| `reflow.pack.window_events`| 5    | Keyboard / mouse / gamepad / touch / window|
+| `reflow.pack.api_services` | ~6700| Generated Slack / Stripe / Jira / Notion / …|
+
+### Where to get `.rflpack` files
+
+First-party bundles ship as assets on every [GitHub Release](https://github.com/offbit-ai/reflow/releases)
+whose tag starts with `pack-v`. Grab the one you want and hand its
+path to `loadPack()`:
+
+```sh
+VER=0.2.0
+curl -LO https://github.com/offbit-ai/reflow/releases/download/pack-v$VER/reflow.pack.ml-$VER.rflpack
+```
+
+Each `.rflpack` bundles every supported triple in one file — the
+loader picks the right dylib at runtime. Catalog + per-pack contents:
+[`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md).
+
+Third-party packs are distributed however their author chooses (npm
+tarball, GitHub Releases, internal registry) — any local file path
+works with `loadPack()`.
+
+**ABI lockstep.** A pack is pinned to the rustc version of the SDK it
+was built against. Pick the `pack-v*` release whose version matches
+your `@offbit-ai/reflow`; rebuild from source
+([`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md))
+if you need a pack for a different SDK version.
 
 ## Subgraphs
 

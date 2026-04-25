@@ -1,0 +1,10 @@
+[pack]
+name = "reflow.pack.video_encode"
+version = "0.2.0"
+description = "H.264 video encoding (openh264)"
+authors = ["Offbit AI"]
+license = "MIT OR Apache-2.0"
+templates = ["tpl_video_encoder"]
+
+[targets.files]
+aarch64-apple-darwin = "../../../target/release/libreflow_pack_video_encode.dylib"

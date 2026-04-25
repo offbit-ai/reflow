@@ -1,0 +1,17 @@
+[pack]
+name = "reflow.pack.gpu"
+version = "0.2.0"
+description = "wgpu-backed SDF / scene / 2D renderer templates"
+authors = ["Offbit AI"]
+license = "MIT OR Apache-2.0"
+templates = [
+  "tpl_sdf_live_render",
+  "tpl_sdf_render",
+  "tpl_sdf_marching_cubes",
+  "tpl_mesh_to_sdf",
+  "tpl_scene_render",
+  "tpl_gpu_2d_render",
+]
+
+[targets.files]
+aarch64-apple-darwin = "../../../target/release/libreflow_pack_gpu.dylib"

@@ -1,0 +1,26 @@
+[package]
+name = "reflow_pack_cli"
+version = "0.2.0"
+edition = "2021"
+authors = ["Damilare Akinlaja"]
+description = "`reflow-pack` — command-line tool to build, inspect, and unpack .rflpack actor bundles."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "plugin", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "reflow-pack"
+path = "src/main.rs"
+
+[dependencies]
+reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = "0.8"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+clap = { version = "4", features = ["derive"] }

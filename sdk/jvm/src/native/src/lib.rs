@@ -916,10 +916,16 @@ pub extern "system" fn Java_ai_offbit_reflow_Templates_nativeTemplateActor<'loca
             return 0;
         }
     };
+    if let Some(a) = reflow_rt::pack_loader::instantiate(&id) {
+        return Box::into_raw(Box::new(ActorHandle { inner: a })) as jlong;
+    }
     match reflow_components::get_actor_for_template(&id) {
         Some(a) => Box::into_raw(Box::new(ActorHandle { inner: a })) as jlong,
         None => {
-            throw_runtime(&mut env, format!("unknown template id: '{id}'"));
+            throw_runtime(
+                &mut env,
+                format!("unknown template id: '{id}' — no loaded pack or bundled catalog entry"),
+            );
             0
         }
     }
@@ -930,11 +936,91 @@ pub extern "system" fn Java_ai_offbit_reflow_Templates_nativeTemplateList<'local
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jobject {
-    let ids: Vec<String> = reflow_components::get_template_mapping()
-        .into_keys()
-        .collect();
+    let mut ids: Vec<String> = reflow_rt::pack_loader::PACK_REGISTRY.template_ids();
+    for k in reflow_components::get_template_mapping().into_keys() {
+        if !ids.contains(&k) {
+            ids.push(k);
+        }
+    }
+    ids.sort();
     let raw = serde_json::to_string(&ids).unwrap_or_default();
     env.new_string(&raw).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut())
+}
+
+// ─── Actor packs ───────────────────────────────────────────────────────────
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Packs_nativeLoadPack<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    path: JString<'local>,
+) -> jobject {
+    let path = match jstring_to_string(&mut env, &path) {
+        Ok(s) => s,
+        Err(e) => {
+            throw_runtime(&mut env, &e);
+            return std::ptr::null_mut();
+        }
+    };
+    match reflow_rt::pack_loader::load_pack(&path) {
+        Ok(templates) => {
+            let raw = serde_json::to_string(&templates).unwrap_or_default();
+            env.new_string(&raw)
+                .map(|j| j.into_raw())
+                .unwrap_or(std::ptr::null_mut())
+        }
+        Err(e) => {
+            throw_runtime(&mut env, format!("load pack '{path}': {e:#}"));
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Packs_nativeInspectPack<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    path: JString<'local>,
+) -> jobject {
+    let path = match jstring_to_string(&mut env, &path) {
+        Ok(s) => s,
+        Err(e) => {
+            throw_runtime(&mut env, &e);
+            return std::ptr::null_mut();
+        }
+    };
+    match reflow_rt::pack_loader::inspect_pack(&path) {
+        Ok(m) => {
+            let raw = serde_json::to_string(&m).unwrap_or_default();
+            env.new_string(&raw)
+                .map(|j| j.into_raw())
+                .unwrap_or(std::ptr::null_mut())
+        }
+        Err(e) => {
+            throw_runtime(&mut env, format!("inspect pack '{path}': {e:#}"));
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Packs_nativeListPacks<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+) -> jobject {
+    let list = reflow_rt::pack_loader::PACK_REGISTRY.loaded_packs();
+    let raw = serde_json::to_string(&list).unwrap_or_default();
+    env.new_string(&raw)
+        .map(|j| j.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Packs_nativePackAbiVersion<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+) -> jint {
+    reflow_rt::pack_loader::REFLOW_PACK_ABI_VERSION as jint
 }
 
 // ─── Multi-graph composition ───────────────────────────────────────────────

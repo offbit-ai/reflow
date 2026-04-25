@@ -19,6 +19,7 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 reflow_rt = { version = "0.2.0", path = "../reflow_rt" }
+reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
 reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false, optional = true }
 anyhow = { workspace = true }
 serde = { workspace = true }

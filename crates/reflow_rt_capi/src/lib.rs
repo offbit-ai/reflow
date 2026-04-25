@@ -46,9 +46,10 @@ pub use subgraph::*;
 mod multi_graph;
 pub use multi_graph::*;
 
-#[cfg(feature = "components")]
+mod pack;
+pub use pack::*;
+
 mod catalog;
-#[cfg(feature = "components")]
 pub use catalog::*;
 
 use std::cell::RefCell;

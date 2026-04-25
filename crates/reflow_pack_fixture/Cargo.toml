@@ -1,0 +1,17 @@
+[package]
+name = "reflow_pack_fixture"
+version = "0.0.1"
+edition = "2024"
+description = "Test fixture for reflow_pack_loader — a tiny pack cdylib used by roundtrip tests."
+license = "MIT OR Apache-2.0"
+publish = false
+rust-version = "1.85"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+reflow_pack_sdk = { version = "0.2.0", path = "../reflow_pack_sdk" }
+anyhow = { workspace = true }
+flume = { workspace = true }
+parking_lot = { workspace = true }

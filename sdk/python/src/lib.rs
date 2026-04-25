@@ -541,19 +541,63 @@ impl PyActor {
 
 #[pyfunction]
 fn template_actor(template_id: String) -> PyResult<PyActor> {
+    // Packs win over the bundled catalog — matches the C ABI order in
+    // `rfl_template_actor_new`.
+    if let Some(a) = reflow_rt::pack_loader::instantiate(&template_id) {
+        return Ok(PyActor { inner: a });
+    }
     match reflow_components::get_actor_for_template(&template_id) {
         Some(a) => Ok(PyActor { inner: a }),
         None => Err(PyValueError::new_err(format!(
-            "unknown template id: '{template_id}'"
+            "unknown template id: '{template_id}' — no loaded pack or bundled catalog entry"
         ))),
     }
 }
 
 #[pyfunction]
 fn template_list() -> Vec<String> {
-    reflow_components::get_template_mapping()
-        .into_keys()
-        .collect()
+    let mut ids: Vec<String> = reflow_rt::pack_loader::PACK_REGISTRY.template_ids();
+    for k in reflow_components::get_template_mapping().into_keys() {
+        if !ids.contains(&k) {
+            ids.push(k);
+        }
+    }
+    ids.sort();
+    ids
+}
+
+// ─── Actor packs ───────────────────────────────────────────────────────────
+
+#[pyfunction]
+fn load_pack(path: String) -> PyResult<Vec<String>> {
+    reflow_rt::pack_loader::load_pack(&path)
+        .map_err(|e| PyRuntimeError::new_err(format!("load pack '{path}': {e:#}")))
+}
+
+#[pyfunction]
+fn inspect_pack(py: Python<'_>, path: String) -> PyResult<PyObject> {
+    let manifest = reflow_rt::pack_loader::inspect_pack(&path)
+        .map_err(|e| PyRuntimeError::new_err(format!("inspect pack '{path}': {e:#}")))?;
+    let value = serde_json::to_value(&manifest)
+        .map_err(|e| PyRuntimeError::new_err(format!("serialize manifest: {e}")))?;
+    Ok(pythonize(py, &value)
+        .map_err(|e| PyRuntimeError::new_err(format!("pythonize manifest: {e}")))?
+        .into())
+}
+
+#[pyfunction]
+fn list_packs(py: Python<'_>) -> PyResult<PyObject> {
+    let list = reflow_rt::pack_loader::PACK_REGISTRY.loaded_packs();
+    let value = serde_json::to_value(&list)
+        .map_err(|e| PyRuntimeError::new_err(format!("serialize list: {e}")))?;
+    Ok(pythonize(py, &value)
+        .map_err(|e| PyRuntimeError::new_err(format!("pythonize list: {e}")))?
+        .into())
+}
+
+#[pyfunction]
+fn pack_abi_version() -> u32 {
+    reflow_rt::pack_loader::REFLOW_PACK_ABI_VERSION
 }
 
 // ─── Multi-graph composition ───────────────────────────────────────────────
@@ -970,6 +1014,10 @@ fn _native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyEventStream>()?;
     m.add_function(wrap_pyfunction!(template_actor, m)?)?;
     m.add_function(wrap_pyfunction!(template_list, m)?)?;
+    m.add_function(wrap_pyfunction!(load_pack, m)?)?;
+    m.add_function(wrap_pyfunction!(inspect_pack, m)?)?;
+    m.add_function(wrap_pyfunction!(list_packs, m)?)?;
+    m.add_function(wrap_pyfunction!(pack_abi_version, m)?)?;
     m.add_function(wrap_pyfunction!(compose_graphs, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())

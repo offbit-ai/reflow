@@ -1,0 +1,13 @@
+[pack]
+name = "reflow.pack.api_services"
+version = "0.2.0"
+description = "~6,700 generated API-service actors (Slack, Stripe, Jira, Notion, …)"
+authors = ["Offbit AI"]
+license = "MIT OR Apache-2.0"
+# The generated list is long and volatile — this field is advisory only.
+# `reflow_rt::pack_loader::PACK_REGISTRY::template_ids()` enumerates the
+# full, authoritative set after load.
+templates = []
+
+[targets.files]
+aarch64-apple-darwin = "../../../target/release/libreflow_pack_api_services.dylib"

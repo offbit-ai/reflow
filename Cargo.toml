@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "crates/*",
+  "sdk/packs/*",
 ]
 exclude = [
   "crates/reflow_components_archived",

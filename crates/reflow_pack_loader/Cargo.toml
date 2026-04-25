@@ -1,0 +1,33 @@
+[package]
+name = "reflow_pack_loader"
+version = "0.2.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+description = "Runtime loader for .rflpack actor bundles — dlopens pack cdylibs and publishes their templates to the runtime registry."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_pack_loader"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "plugin", "dlopen", "bundle"]
+categories = ["development-tools", "concurrency"]
+
+[dependencies]
+reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = "1"
+libloading = "0.8"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+sha2 = "0.10"
+hex = "0.4"
+
+[build-dependencies]
+anyhow = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+zip = { version = "2", default-features = false, features = ["deflate"] }

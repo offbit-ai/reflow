@@ -1,0 +1,27 @@
+[package]
+name = "reflow_pack_ml"
+version = "0.2.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+description = "Reflow actor pack — computer vision ops + LiteRT inference. Publishes the `tpl_cv_*` and `tpl_ml_*` template palette."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "pack", "ml", "litert"]
+categories = ["development-tools", "science"]
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = []
+# Propagates `external-litert` down to `reflow_components` — link against
+# a system LiteRT instead of compiling the bundled mock.
+external-litert = ["reflow_components/ml", "reflow_components/av-core"]
+
+[dependencies]
+reflow_pack_sdk = { version = "0.2.0", path = "../../../crates/reflow_pack_sdk" }
+reflow_components = { version = "0.2.0", path = "../../../crates/reflow_components", default-features = false, features = ["ml"] }

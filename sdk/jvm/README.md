@@ -119,11 +119,80 @@ Network net = Network.fromGraph(composed);
 
 ## Standard component catalog
 
+The JNI native library ships the pure-Rust + `av-core` slice of
+`reflow_components` — roughly 270 templates covering animation, flow
+control, math, vector, 2D graphics, asset DB, scene graph, HTTP
+integration, stream ops, DSP, and procedural generation. Heavy optional
+palettes (GPU, ML, browser automation, video encoding, window events,
+~6,700 API-service wrappers) are **not bundled** and install as
+[actor packs](#actor-packs).
+
 ```java
 long httpActor = Templates.templateActor("tpl_http_request");
 net.registerActor("tpl_http_request", httpActor);
 String ids = Templates.templateListJson();   // JSON array
 ```
+
+Full catalog reference: [docs/components/standard-library.md](https://github.com/offbit-ai/reflow/blob/main/docs/components/standard-library.md).
+
+## Actor packs
+
+Packs are `.rflpack` bundles that publish additional templates into the
+runtime. `Templates.templateActor(id)` and `Templates.templateListJson()`
+transparently include pack-supplied templates after load.
+
+```kotlin
+import ai.offbit.reflow.Packs
+import ai.offbit.reflow.Templates
+
+// Peek before committing.
+println(Packs.inspectPack("./reflow.pack.ml-0.2.0.rflpack"))
+
+// Load (idempotent).
+Packs.loadPack("./reflow.pack.ml-0.2.0.rflpack")
+
+val actor = Templates.templateActor("tpl_ml_run_inference")
+net.registerActor("tpl_ml_run_inference", actor)
+
+println(Packs.listPacks())
+println(Packs.packAbiVersion())
+```
+
+First-party packs live under [`sdk/packs/`](https://github.com/offbit-ai/reflow/tree/main/sdk/packs):
+
+| Pack                | Templates | Pulls in                                    |
+|---------------------|:---------:|---------------------------------------------|
+| `reflow.pack.browser`      | 1    | chromiumoxide                              |
+| `reflow.pack.video_encode` | 1    | openh264                                   |
+| `reflow.pack.ml`           | 12   | CV ops, LiteRT inference                   |
+| `reflow.pack.gpu`          | 6    | wgpu SDF / scene / 2D renderers            |
+| `reflow.pack.window_events`| 5    | Keyboard / mouse / gamepad / touch / window|
+| `reflow.pack.api_services` | ~6700| Generated Slack / Stripe / Jira / Notion / …|
+
+### Where to get `.rflpack` files
+
+First-party bundles ship as assets on every [GitHub Release](https://github.com/offbit-ai/reflow/releases)
+whose tag starts with `pack-v`. Grab the one you want and hand its
+path to `Packs.loadPack()`:
+
+```sh
+VER=0.2.0
+curl -LO https://github.com/offbit-ai/reflow/releases/download/pack-v$VER/reflow.pack.ml-$VER.rflpack
+```
+
+Each `.rflpack` bundles every supported triple in one file — the
+loader picks the right dylib at runtime. Catalog + per-pack contents:
+[`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md).
+
+Third-party packs are distributed however their author chooses (Maven
+classified artifact, GitHub Releases, internal registry) — any local
+file path works with `Packs.loadPack()`.
+
+**ABI lockstep.** A pack is pinned to the rustc version of the JNI
+library it was built against. Pick the `pack-v*` release whose version
+matches your `libreflow_rt_jvm`; rebuild from source
+([`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md))
+if you need a pack for a different JNI version.
 
 ## Subgraphs
 

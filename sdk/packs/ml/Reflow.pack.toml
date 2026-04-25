@@ -1,0 +1,23 @@
+[pack]
+name = "reflow.pack.ml"
+version = "0.2.0"
+description = "Computer-vision ops and LiteRT inference templates"
+authors = ["Offbit AI"]
+license = "MIT OR Apache-2.0"
+templates = [
+  "tpl_cv_image_to_tensor",
+  "tpl_cv_resize_letterbox",
+  "tpl_cv_video_stream_to_frames",
+  "tpl_cv_normalize_tensor",
+  "tpl_cv_tensor_crop_roi",
+  "tpl_cv_detection_to_roi",
+  "tpl_cv_temporal_smoother",
+  "tpl_ml_load_model",
+  "tpl_ml_run_inference",
+  "tpl_ml_decode_detections",
+  "tpl_ml_decode_landmarks",
+  "tpl_ml_packet_probe",
+]
+
+[targets.files]
+aarch64-apple-darwin = "../../../target/release/libreflow_pack_ml.dylib"

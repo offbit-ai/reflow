@@ -608,8 +608,9 @@ enum rfl_status rfl_subgraph_builder_register_actor(struct rfl_subgraph_builder 
                                                     struct rfl_actor *actor);
 
 /**
- * Resolve any still-unregistered components from the bundled catalog.
- * Gated on the `components` feature; no-op (returns Ok) otherwise.
+ * Resolve any still-unregistered components: packs first, then the
+ * bundled catalog (if the `components` feature is on). Components still
+ * missing after both lookups cause the call to fail.
  */
 enum rfl_status rfl_subgraph_builder_fill_from_catalog(struct rfl_subgraph_builder *b);
 
@@ -633,31 +634,77 @@ void rfl_subgraph_builder_free(struct rfl_subgraph_builder *b);
 char *rfl_compose_graphs(const char *composition_json);
 
 /**
- * Instantiate an actor from the bundled `reflow_components` catalog.
+ * Load an actor pack from `path`. `path` can point at either:
+ * - a `.rflpack` bundle (detected by zip magic), or
+ * - a raw cdylib (`.so`, `.dylib`, `.dll`) — useful during pack
+ *   development.
  *
- * Returns an `rfl_actor*` that can be handed to `rfl_network_register_actor`
- * exactly like a callback-driven actor. Returns NULL if the template id is
- * not recognised.
+ * Returns `rfl_status::Ok` and, on success, writes a JSON array of newly
+ * registered template ids into `*out_templates_json`. Caller frees the
+ * JSON via `rfl_string_free`.
  *
- * Available only when the crate is compiled with the `components` feature
- * (on by default).
+ * Loading the same pack twice (by manifest name, or by file stem for
+ * raw dylibs) is a no-op — the existing template set is returned
+ * unchanged. This makes the call safe to invoke from repeated workflow
+ * boots.
+ */
+enum rfl_status rfl_pack_load(const char *path, char **out_templates_json);
+
+/**
+ * Return a JSON array describing every loaded pack:
+ * `[{ "name": ..., "version": ..., "source_path": ..., "templates": [...] }]`.
+ * Caller frees via `rfl_string_free`.
+ */
+char *rfl_pack_list_json(void);
+
+/**
+ * Read a `.rflpack` manifest without loading the pack. Fails for raw
+ * dylibs (they have no manifest). Caller frees the returned JSON via
+ * `rfl_string_free`.
+ */
+char *rfl_pack_inspect_json(const char *path);
+
+/**
+ * The pack ABI version this host was compiled with. Pack authors can
+ * stamp the same number into their `.rflpack` manifests via
+ * `reflow-pack build` (which reads the `REFLOW_PACK_ABI_VERSION` env var
+ * or `[abi]` section).
+ */
+uint32_t rfl_pack_abi_version(void);
+
+/**
+ * Instantiate an actor from a template id.
+ *
+ * Lookup order:
+ * 1. Templates registered by loaded `.rflpack` packs (see
+ *    `rfl_pack_load`).
+ * 2. The bundled `reflow_components` catalog, if this build includes the
+ *    `components` feature (on by default).
+ *
+ * Returns an `rfl_actor*` that can be handed to
+ * `rfl_network_register_actor`. Returns NULL with
+ * `rfl_last_error_message` set if no loaded pack and no bundled catalog
+ * owns the id.
  */
 struct rfl_actor *rfl_template_actor_new(const char *template_id);
 
 /**
- * Return a JSON array of every template id the bundled catalog knows
- * about. Caller frees via `rfl_string_free`.
+ * Return a JSON array of every template id reachable through this
+ * runtime — loaded packs plus (when compiled) the bundled catalog.
+ * Caller frees via `rfl_string_free`.
  */
 char *rfl_template_list_json(void);
 
 /**
- * Build a SubgraphActor from a `GraphExport` JSON document. Each component
- * referenced inside the export is resolved against the bundled
- * `reflow_components` catalog. Returns NULL on parse error or on unknown
- * component references.
+ * Build a SubgraphActor from a `GraphExport` JSON document. Each
+ * component referenced inside the export is resolved against the pack
+ * registry first, then the bundled `reflow_components` catalog.
+ * Returns NULL on parse error or on unknown component references.
  *
  * The resulting `rfl_actor*` can be handed to `rfl_network_register_actor`
  * exactly like any other actor template.
+ *
+ * Requires the `components` feature (gives us `SubgraphActor`).
  */
 struct rfl_actor *rfl_subgraph_actor_new_from_json(const char *graph_export_json);
 

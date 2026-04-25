@@ -16,6 +16,8 @@ pub use reflow_graph;
 pub use reflow_graph as graph;
 pub use reflow_network;
 pub use reflow_network as network;
+pub use reflow_pack_loader;
+pub use reflow_pack_loader as pack_loader;
 pub use reflow_pixel;
 pub use reflow_pixel as pixel;
 pub use reflow_sdf;

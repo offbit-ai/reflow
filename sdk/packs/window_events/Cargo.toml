@@ -1,0 +1,21 @@
+[package]
+name = "reflow_pack_window_events"
+version = "0.2.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+description = "Reflow actor pack — keyboard / mouse / gamepad / touch / window input event sources."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "pack", "input", "window"]
+categories = ["development-tools", "gui"]
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+reflow_pack_sdk = { version = "0.2.0", path = "../../../crates/reflow_pack_sdk" }
+reflow_components = { version = "0.2.0", path = "../../../crates/reflow_components", default-features = false, features = ["window-events"] }

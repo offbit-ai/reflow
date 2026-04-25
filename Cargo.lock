@@ -202,6 +202,9 @@ name = "arbitrary"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dde20b3d026af13f561bdd0f15edf01fc734f0dafcedbaf42bba506a9517f223"
+dependencies = [
+ "derive_arbitrary",
+]
 
 [[package]]
 name = "arc-swap"
@@ -1910,6 +1913,17 @@ checksum = "9c9e6a11ca8224451684bc0d7d5a7adbf8f2fd6887261a1cfc3c0432f9d4068e"
 dependencies = [
  "powerfmt",
  "serde",
+]
+
+[[package]]
+name = "derive_arbitrary"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e567bd82dcff979e4b03460c307b3cdc9e96fde3d73bed1496d2bc75d9dd62a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
 ]
 
 [[package]]
@@ -4008,7 +4022,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "ureq 2.12.1",
- "zip",
+ "zip 0.6.6",
 ]
 
 [[package]]
@@ -6259,6 +6273,111 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_pack_api_services"
+version = "0.2.0"
+dependencies = [
+ "reflow_components",
+ "reflow_pack_sdk",
+]
+
+[[package]]
+name = "reflow_pack_browser"
+version = "0.2.0"
+dependencies = [
+ "reflow_components",
+ "reflow_pack_sdk",
+]
+
+[[package]]
+name = "reflow_pack_cli"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "reflow_pack_loader",
+ "serde",
+ "serde_json",
+ "toml",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "reflow_pack_fixture"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "flume",
+ "parking_lot 0.12.4",
+ "reflow_pack_sdk",
+]
+
+[[package]]
+name = "reflow_pack_gpu"
+version = "0.2.0"
+dependencies = [
+ "reflow_components",
+ "reflow_pack_sdk",
+]
+
+[[package]]
+name = "reflow_pack_loader"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "hex",
+ "libloading",
+ "once_cell",
+ "parking_lot 0.12.4",
+ "reflow_actor",
+ "serde",
+ "serde_json",
+ "sha2",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "reflow_pack_macro"
+version = "0.2.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "reflow_pack_ml"
+version = "0.2.0"
+dependencies = [
+ "reflow_components",
+ "reflow_pack_sdk",
+]
+
+[[package]]
+name = "reflow_pack_sdk"
+version = "0.2.0"
+dependencies = [
+ "reflow_actor",
+ "reflow_pack_loader",
+ "reflow_pack_macro",
+]
+
+[[package]]
+name = "reflow_pack_video_encode"
+version = "0.2.0"
+dependencies = [
+ "reflow_components",
+ "reflow_pack_sdk",
+]
+
+[[package]]
+name = "reflow_pack_window_events"
+version = "0.2.0"
+dependencies = [
+ "reflow_components",
+ "reflow_pack_sdk",
+]
+
+[[package]]
 name = "reflow_pixel"
 version = "0.2.0"
 dependencies = [
@@ -6304,6 +6423,7 @@ dependencies = [
  "reflow_media_types",
  "reflow_ml_ops",
  "reflow_network",
+ "reflow_pack_loader",
  "reflow_pixel",
  "reflow_sdf",
  "reflow_shader",
@@ -6322,6 +6442,7 @@ dependencies = [
  "once_cell",
  "parking_lot 0.12.4",
  "reflow_components",
+ "reflow_pack_loader",
  "reflow_rt",
  "serde",
  "serde_json",
@@ -10787,6 +10908,35 @@ dependencies = [
  "sha1",
  "time",
  "zstd 0.11.2+zstd.1.5.2",
+]
+
+[[package]]
+name = "zip"
+version = "2.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
+dependencies = [
+ "arbitrary",
+ "crc32fast",
+ "crossbeam-utils 0.8.21",
+ "displaydoc",
+ "flate2",
+ "indexmap 2.10.0",
+ "memchr",
+ "thiserror 2.0.12",
+ "zopfli",
+]
+
+[[package]]
+name = "zopfli"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edfc5ee405f504cd4984ecc6f14d02d55cfda60fa4b689434ef4102aae150cd7"
+dependencies = [
+ "bumpalo",
+ "crc32fast",
+ "log",
+ "simd-adler32",
 ]
 
 [[package]]

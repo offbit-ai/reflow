@@ -1,0 +1,22 @@
+[package]
+name = "reflow_pack_macro"
+version = "0.2.0"
+edition = "2021"
+authors = ["Damilare Akinlaja"]
+description = "Proc macro for authoring Reflow actor packs — emits the cdylib entrypoints required by reflow_pack_loader."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_pack_macro"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "plugin", "macro"]
+categories = ["development-tools::procedural-macro-helpers"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }

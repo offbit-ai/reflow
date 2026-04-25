@@ -1,0 +1,19 @@
+[package]
+name = "reflow_pack_sdk"
+version = "0.2.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+description = "Author-facing crate for building Reflow actor packs — safe wrapper over the pack ABI plus the #[reflow_pack] macro."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_pack_sdk"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "plugin", "sdk"]
+categories = ["development-tools", "concurrency"]
+
+[dependencies]
+reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
+reflow_pack_macro = { version = "0.2.0", path = "../reflow_pack_macro" }

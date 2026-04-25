@@ -1,0 +1,23 @@
+[pack]
+name = "reflow.pack.window_events"
+version = "0.2.0"
+description = "Keyboard / mouse / gamepad / touch / window-event input sources"
+authors = ["Offbit AI"]
+license = "MIT OR Apache-2.0"
+# Template ids the pack publishes. reflow-pack build stamps these into
+# the manifest so SDK UIs can enumerate the pack's contents without
+# loading the cdylib.
+templates = [
+  "tpl_keyboard_input",
+  "tpl_mouse_input",
+  "tpl_gamepad_input",
+  "tpl_touch_input",
+  "tpl_window_event",
+]
+
+# Paths are relative to this file. For CI, add one entry per triple
+# you've built. The build runs
+# `cargo build --release -p reflow_pack_window_events --target <triple>`
+# before invoking `reflow-pack build`.
+[targets.files]
+aarch64-apple-darwin = "../../../target/release/libreflow_pack_window_events.dylib"

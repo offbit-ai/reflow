@@ -85,8 +85,9 @@ pub unsafe extern "C" fn rfl_subgraph_builder_register_actor(
     rfl_status::Ok
 }
 
-/// Resolve any still-unregistered components from the bundled catalog.
-/// Gated on the `components` feature; no-op (returns Ok) otherwise.
+/// Resolve any still-unregistered components: packs first, then the
+/// bundled catalog (if the `components` feature is on). Components still
+/// missing after both lookups cause the call to fail.
 #[no_mangle]
 pub unsafe extern "C" fn rfl_subgraph_builder_fill_from_catalog(
     b: *mut rfl_subgraph_builder,
@@ -96,36 +97,35 @@ pub unsafe extern "C" fn rfl_subgraph_builder_fill_from_catalog(
         return rfl_status::NullArg;
     }
 
-    #[cfg(feature = "components")]
-    {
-        let builder = unsafe { &mut *b };
-        // Collect component names referenced in the export but not yet
-        // registered on the builder.
-        let needed: Vec<String> = builder
-            .export
-            .processes
-            .values()
-            .map(|n| n.component.clone())
-            .filter(|c| !builder.actors.contains_key(c))
-            .collect();
-        for name in needed {
-            match reflow_components::get_actor_for_template(&name) {
-                Some(actor) => {
-                    builder.actors.insert(name, actor);
-                }
-                None => {
-                    set_last_error(format!(
-                        "subgraph references unknown component '{name}' — register \
-                         it on the builder with rfl_subgraph_builder_register_actor"
-                    ));
-                    return rfl_status::Runtime;
-                }
+    let builder = unsafe { &mut *b };
+    let needed: Vec<String> = builder
+        .export
+        .processes
+        .values()
+        .map(|n| n.component.clone())
+        .filter(|c| !builder.actors.contains_key(c))
+        .collect();
+    for name in needed {
+        if let Some(actor) = reflow_pack_loader::instantiate(&name) {
+            builder.actors.insert(name, actor);
+            continue;
+        }
+
+        #[cfg(feature = "components")]
+        {
+            if let Some(actor) = reflow_components::get_actor_for_template(&name) {
+                builder.actors.insert(name, actor);
+                continue;
             }
         }
-    }
 
-    #[cfg(not(feature = "components"))]
-    let _ = b;
+        set_last_error(format!(
+            "subgraph references unknown component '{name}' — register it on \
+             the builder with rfl_subgraph_builder_register_actor, or load a \
+             pack that owns it"
+        ));
+        return rfl_status::Runtime;
+    }
 
     rfl_status::Ok
 }

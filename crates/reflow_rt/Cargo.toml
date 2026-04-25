@@ -20,6 +20,7 @@ reflow_assets = { version = "0.2.0", path = "../reflow_assets" }
 reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false }
 reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
 reflow_network = { version = "0.2.0", path = "../reflow_network" }
+reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
 reflow_pixel = { version = "0.2.0", path = "../reflow_pixel" }
 reflow_sdf = { version = "0.2.0", path = "../reflow_sdf" }
 reflow_shader = { version = "0.2.0", path = "../reflow_shader" }
