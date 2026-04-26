@@ -20,6 +20,32 @@ manifest:
 | `x86_64-pc-windows-msvc` | every pack |
 | `wasm32-unknown-unknown` | every pack except `browser` (which drives a real Chrome instance over TCP via CDP — impossible from inside a browser tab). Native rendering uses `wgpu`'s WebGPU backend; HTTP uses Fetch via `reqwest`'s wasm support; H.264 video encoding falls back to the [WebCodecs `VideoEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder) API (Chromium / Edge / Safari ship it; Firefox-on-Android does not). Native loaders ignore the `.wasm` entry; the browser-side pack loader in `@offbit-ai/reflow` picks it up via `WebAssembly.instantiate`. |
 
+## Pack ABI
+
+A pack `cdylib`'s exported symbols depend on the target — the
+`#[reflow_pack]` macro picks the right shape automatically.
+
+### Native (`dlopen` / `LoadLibrary`)
+
+| Symbol | Direction | Purpose |
+|---|---|---|
+| `reflow_pack_abi_version() -> u32` | export | ABI handshake |
+| `reflow_pack_register(host: *mut PackHostVtable) -> i32` | export | Loader passes a vtable; pack registers templates by calling vtable function pointers |
+
+### Wasm (`WebAssembly.instantiate`)
+
+| Symbol | Direction | Purpose |
+|---|---|---|
+| `reflow_pack_abi_version() -> u32` | export | ABI handshake (same as native) |
+| `__reflow_pack_register() -> i32` | export | Loader calls once after instantiate; pack walks its register fn and emits one `__reflow_pack_register_template` import per template |
+| `__reflow_pack_create_actor(factory_id: u32) -> *mut PackActorHandle` | export | Loader calls per actor instantiation |
+| `env.__reflow_pack_register_template(name_ptr, name_len, factory_id)` | **import** | Loader provides; pack calls once per registered template during `__reflow_pack_register` |
+
+The ABI version is computed identically on both sides (FNV-1a hash
+of the rustc verbose version + a manually bumped revision in
+`reflow_pack_loader/build.rs`). A pack built against an older
+toolchain than the runtime is rejected at load time on either ABI.
+
 ```sh
 VER=0.2.0
 curl -LO https://github.com/offbit-ai/reflow/releases/download/pack-v$VER/reflow.pack.ml-$VER.rflpack

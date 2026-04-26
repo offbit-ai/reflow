@@ -302,7 +302,14 @@ fn generate_service_module(service_id: &str, service: &Service) -> Result<String
     writeln!(out)?;
 
     // Imports
-    writeln!(out, "use crate::{{Actor, ActorBehavior, Message, Port}};")?;
+    // ClientBuilderExt::timeout_compat lives on `crate` so generated
+    // modules pick it up via the same import. The trait is no-op on
+    // wasm and a passthrough to `.timeout(d)` on native — see
+    // reflow_api_services/src/lib.rs.
+    writeln!(
+        out,
+        "use crate::{{Actor, ActorBehavior, ClientBuilderExt, Message, Port}};"
+    )?;
     writeln!(out, "use reflow_actor_macro::actor;")?;
     writeln!(out, "use anyhow::{{Error, Result}};")?;
     writeln!(
@@ -499,7 +506,10 @@ fn generate_operation_actor(
 
     // Build HTTP client + request
     writeln!(out, "    let client = reqwest::Client::builder()")?;
-    writeln!(out, "        .timeout(Duration::from_secs(30))")?;
+    writeln!(
+        out,
+        "        .timeout_compat(Duration::from_secs(30))"
+    )?;
     writeln!(out, "        .build()?;")?;
     writeln!(out)?;
 
