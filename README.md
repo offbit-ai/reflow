@@ -19,6 +19,7 @@
 [![@offbit-ai/reflow on npm](https://img.shields.io/npm/v/%40offbit-ai%2Freflow?label=%40offbit-ai%2Freflow&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@offbit-ai/reflow)
 [![Go SDK release](https://img.shields.io/github/v/release/offbit-ai/reflow?filter=sdk%2Fgo%2Fv*&label=Go%20SDK&logo=go&logoColor=white&color=00ADD8)](https://github.com/offbit-ai/reflow/releases?q=sdk%2Fgo)
 [![ai.offbit:reflow on Maven Central](https://img.shields.io/maven-central/v/ai.offbit/reflow?label=ai.offbit%3Areflow&logo=gradle&logoColor=white&color=02303A)](https://central.sonatype.com/artifact/ai.offbit/reflow)
+[![C++ SDK header-only](https://img.shields.io/badge/C%2B%2B-header--only-00599C?logo=cplusplus&logoColor=white)](./sdk/cpp)
 
 [Documentation](./docs/README.md) | [Runtime Crate](./crates/reflow_rt/README.md) | [Quick Start](./docs/getting-started/README.md) | [Examples](./examples/) | [API Reference](./docs/reference/api-reference.md)
 
@@ -100,6 +101,12 @@ go get github.com/offbit-ai/reflow/sdk/go@v0.2.1
 // bundled as classpath resources.
 dependencies { implementation("ai.offbit:reflow:0.2.2") }
 ```
+```cmake
+# C++ — header-only over libreflow_rt_capi; install the matching
+# native lib from a sdk/go/v* GitHub Release and point CMake at it.
+add_subdirectory(third_party/reflow/sdk/cpp)
+target_link_libraries(myapp PRIVATE reflow::cpp)
+```
 
 | SDK | Package | Docs |
 |---|---|---|
@@ -107,6 +114,7 @@ dependencies { implementation("ai.offbit:reflow:0.2.2") }
 | Python | [`offbit-reflow`](https://pypi.org/project/offbit-reflow/) | [sdk/python/README.md](./sdk/python/README.md) |
 | Go | [`github.com/offbit-ai/reflow/sdk/go`](https://github.com/offbit-ai/reflow/releases?q=sdk%2Fgo) | [sdk/go/README.md](./sdk/go/README.md) |
 | JVM | [`ai.offbit:reflow`](https://central.sonatype.com/artifact/ai.offbit/reflow) | [sdk/jvm/README.md](./sdk/jvm/README.md) |
+| C++ | header-only at [`sdk/cpp/`](./sdk/cpp/) (links `libreflow_rt_capi`) | [sdk/cpp/README.md](./sdk/cpp/README.md) |
 
 Optional [`.rflpack`](./sdk/packs/README.md) bundles plug additional actor palettes (GPU renderers, ML, browser automation, ~6,700 SaaS API actors) into any SDK at runtime — load via `loadPack()` / `load_pack()` / `LoadPack()` / `Packs.loadPack()`.
 
