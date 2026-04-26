@@ -1291,6 +1291,580 @@ pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeFree(
     unsafe { let _ = box_from_ptr::<GraphHandle>(ptr); }
 }
 
+// ─── Graph: full API extensions (mutators) ─────────────────────────────────
+
+fn parse_metadata_required_arg(
+    env: &mut JNIEnv,
+    json: JString,
+) -> HashMap<String, serde_json::Value> {
+    parse_metadata_arg(env, json).unwrap_or_default()
+}
+
+fn parse_port_type_arg(
+    env: &mut JNIEnv,
+    json: JString,
+) -> reflow_rt::graph::types::PortType {
+    use reflow_rt::graph::types::PortType;
+    if json.is_null() {
+        return PortType::Any;
+    }
+    let s = match jstring_to_string(env, &json) {
+        Ok(s) if !s.is_empty() && s != "null" => s,
+        _ => return PortType::Any,
+    };
+    serde_json::from_str::<PortType>(&s).unwrap_or(PortType::Any)
+}
+
+fn graph_with<F>(env: &mut JNIEnv, ptr: jlong, f: F)
+where
+    F: FnOnce(&mut RtGraph),
+{
+    if let Some(h) = unsafe { as_ref::<GraphHandle>(ptr) } {
+        let mut guard = h.inner.lock();
+        f(&mut *guard);
+    } else {
+        throw_runtime(env, "graph pointer is null");
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRenameNode<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    old_id: JString<'local>,
+    new_id: JString<'local>,
+) {
+    let old = jstring_to_string(&mut env, &old_id).unwrap_or_default();
+    let new = jstring_to_string(&mut env, &new_id).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.rename_node(&old, &new);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRenameInport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    old_port: JString<'local>,
+    new_port: JString<'local>,
+) {
+    let old = jstring_to_string(&mut env, &old_port).unwrap_or_default();
+    let new = jstring_to_string(&mut env, &new_port).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.rename_inport(&old, &new);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRenameOutport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    old_port: JString<'local>,
+    new_port: JString<'local>,
+) {
+    let old = jstring_to_string(&mut env, &old_port).unwrap_or_default();
+    let new = jstring_to_string(&mut env, &new_port).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.rename_outport(&old, &new);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddInport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port_id: JString<'local>,
+    node_id: JString<'local>,
+    port_key: JString<'local>,
+    port_type_json: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let pid = jstring_to_string(&mut env, &port_id).unwrap_or_default();
+    let nid = jstring_to_string(&mut env, &node_id).unwrap_or_default();
+    let pk = jstring_to_string(&mut env, &port_key).unwrap_or_default();
+    let pt = parse_port_type_arg(&mut env, port_type_json);
+    let md = parse_metadata_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.add_inport(&pid, &nid, &pk, pt, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddOutport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port_id: JString<'local>,
+    node_id: JString<'local>,
+    port_key: JString<'local>,
+    port_type_json: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let pid = jstring_to_string(&mut env, &port_id).unwrap_or_default();
+    let nid = jstring_to_string(&mut env, &node_id).unwrap_or_default();
+    let pk = jstring_to_string(&mut env, &port_key).unwrap_or_default();
+    let pt = parse_port_type_arg(&mut env, port_type_json);
+    let md = parse_metadata_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.add_outport(&pid, &nid, &pk, pt, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveInport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port_id: JString<'local>,
+) {
+    let p = jstring_to_string(&mut env, &port_id).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_inport(&p);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveOutport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port_id: JString<'local>,
+) {
+    let p = jstring_to_string(&mut env, &port_id).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_outport(&p);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddGroup<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    group_id: JString<'local>,
+    nodes_json: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let gid = jstring_to_string(&mut env, &group_id).unwrap_or_default();
+    let nodes_s = jstring_to_string(&mut env, &nodes_json).unwrap_or_default();
+    let nodes: Vec<String> = match serde_json::from_str(&nodes_s) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, format!("nodes_json: {e}"));
+            return;
+        }
+    };
+    let md = parse_metadata_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.add_group(&gid, nodes, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveGroup<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    group_id: JString<'local>,
+) {
+    let gid = jstring_to_string(&mut env, &group_id).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_group(&gid);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddToGroup<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    group_id: JString<'local>,
+    node_id: JString<'local>,
+) {
+    let gid = jstring_to_string(&mut env, &group_id).unwrap_or_default();
+    let nid = jstring_to_string(&mut env, &node_id).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.add_to_group(&gid, &nid);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveFromGroup<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    group_id: JString<'local>,
+    node_id: JString<'local>,
+) {
+    let gid = jstring_to_string(&mut env, &group_id).unwrap_or_default();
+    let nid = jstring_to_string(&mut env, &node_id).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_from_group(&gid, &nid);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveConnection<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    out_node: JString<'local>,
+    out_port: JString<'local>,
+    in_node: JString<'local>,
+    in_port: JString<'local>,
+) {
+    let a = jstring_to_string(&mut env, &out_node).unwrap_or_default();
+    let b = jstring_to_string(&mut env, &out_port).unwrap_or_default();
+    let c = jstring_to_string(&mut env, &in_node).unwrap_or_default();
+    let d = jstring_to_string(&mut env, &in_port).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_connection(&a, &b, &c, &d);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveInitial<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    node: JString<'local>,
+    port: JString<'local>,
+) {
+    let n = jstring_to_string(&mut env, &node).unwrap_or_default();
+    let p = jstring_to_string(&mut env, &port).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_initial(&n, &p);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddInitialIndex<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    node: JString<'local>,
+    port: JString<'local>,
+    data_json: JString<'local>,
+    index: jlong,
+    metadata_json: JString<'local>,
+) {
+    let n = jstring_to_string(&mut env, &node).unwrap_or_default();
+    let p = jstring_to_string(&mut env, &port).unwrap_or_default();
+    let data_s = jstring_to_string(&mut env, &data_json).unwrap_or_default();
+    let data: serde_json::Value = match serde_json::from_str(&data_s) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, format!("data_json: {e}"));
+            return;
+        }
+    };
+    let md = parse_metadata_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.add_initial_index(data, &n, &p, index as usize, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddGraphInitial<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    inport: JString<'local>,
+    data_json: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let i = jstring_to_string(&mut env, &inport).unwrap_or_default();
+    let data_s = jstring_to_string(&mut env, &data_json).unwrap_or_default();
+    let data: serde_json::Value = match serde_json::from_str(&data_s) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, format!("data_json: {e}"));
+            return;
+        }
+    };
+    let md = parse_metadata_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.add_graph_initial(data, &i, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeAddGraphInitialIndex<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    inport: JString<'local>,
+    data_json: JString<'local>,
+    index: jlong,
+    metadata_json: JString<'local>,
+) {
+    let i = jstring_to_string(&mut env, &inport).unwrap_or_default();
+    let data_s = jstring_to_string(&mut env, &data_json).unwrap_or_default();
+    let data: serde_json::Value = match serde_json::from_str(&data_s) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, format!("data_json: {e}"));
+            return;
+        }
+    };
+    let md = parse_metadata_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.add_graph_initial_index(data, &i, index as usize, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeRemoveGraphInitial<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    inport: JString<'local>,
+) {
+    let i = jstring_to_string(&mut env, &inport).unwrap_or_default();
+    graph_with(&mut env, ptr, |g| {
+        g.remove_graph_initial(&i);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeSetNodeMetadata<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    id: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let id = jstring_to_string(&mut env, &id).unwrap_or_default();
+    let md = parse_metadata_required_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.set_node_metadata(&id, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeSetConnectionMetadata<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    out_node: JString<'local>,
+    out_port: JString<'local>,
+    in_node: JString<'local>,
+    in_port: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let a = jstring_to_string(&mut env, &out_node).unwrap_or_default();
+    let b = jstring_to_string(&mut env, &out_port).unwrap_or_default();
+    let c = jstring_to_string(&mut env, &in_node).unwrap_or_default();
+    let d = jstring_to_string(&mut env, &in_port).unwrap_or_default();
+    let md = parse_metadata_required_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.set_connection_metadata(&a, &b, &c, &d, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeSetInportMetadata<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port_id: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let p = jstring_to_string(&mut env, &port_id).unwrap_or_default();
+    let md = parse_metadata_required_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.set_inport_metadata(&p, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeSetOutportMetadata<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port_id: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let p = jstring_to_string(&mut env, &port_id).unwrap_or_default();
+    let md = parse_metadata_required_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.set_outport_metadata(&p, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeSetGroupMetadata<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    group_id: JString<'local>,
+    metadata_json: JString<'local>,
+) {
+    let gid = jstring_to_string(&mut env, &group_id).unwrap_or_default();
+    let md = parse_metadata_required_arg(&mut env, metadata_json);
+    graph_with(&mut env, ptr, |g| {
+        g.set_group_metadata(&gid, md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeSetProperties<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    properties_json: JString<'local>,
+) {
+    let md = parse_metadata_required_arg(&mut env, properties_json);
+    graph_with(&mut env, ptr, |g| {
+        g.set_properties(md);
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeImport<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    export_json: JString<'local>,
+) {
+    let s = jstring_to_string(&mut env, &export_json).unwrap_or_default();
+    let export: GraphExport = match serde_json::from_str(&s) {
+        Ok(v) => v,
+        Err(e) => {
+            throw_runtime(&mut env, format!("export_json: {e}"));
+            return;
+        }
+    };
+    graph_with(&mut env, ptr, |g| {
+        g.import(export);
+    });
+}
+
+// ─── Graph: full API extensions (queries, return JSON strings) ─────────────
+
+fn graph_query<F>(env: &mut JNIEnv, ptr: jlong, f: F) -> jobject
+where
+    F: FnOnce(&RtGraph) -> Option<String>,
+{
+    let h = match unsafe { as_ref::<GraphHandle>(ptr) } {
+        Some(h) => h,
+        None => {
+            throw_runtime(env, "graph pointer is null");
+            return std::ptr::null_mut();
+        }
+    };
+    let guard = h.inner.lock();
+    match f(&*guard) {
+        Some(s) => env
+            .new_string(&s)
+            .map(|j| j.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
+        None => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeGetNodeJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    id: JString<'local>,
+) -> jobject {
+    let id = jstring_to_string(&mut env, &id).unwrap_or_default();
+    graph_query(&mut env, ptr, |g| {
+        g.get_node(&id).and_then(|n| serde_json::to_string(n).ok())
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeNodesJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| serde_json::to_string(&g.get_nodes()).ok())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeGetConnectionJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    out_node: JString<'local>,
+    out_port: JString<'local>,
+    in_node: JString<'local>,
+    in_port: JString<'local>,
+) -> jobject {
+    let a = jstring_to_string(&mut env, &out_node).unwrap_or_default();
+    let b = jstring_to_string(&mut env, &out_port).unwrap_or_default();
+    let c = jstring_to_string(&mut env, &in_node).unwrap_or_default();
+    let d = jstring_to_string(&mut env, &in_port).unwrap_or_default();
+    graph_query(&mut env, ptr, |g| {
+        g.get_connection(&a, &b, &c, &d)
+            .and_then(|conn| serde_json::to_string(&conn).ok())
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeConnectionsJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| {
+        serde_json::to_string(&g.get_connections()).ok()
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeGroupsJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| serde_json::to_string(&g.groups).ok())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeInportsJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| serde_json::to_string(&g.export().inports).ok())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeOutportsJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| serde_json::to_string(&g.export().outports).ok())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativeInitializersJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| serde_json::to_string(&g.initializers).ok())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Graph_nativePropertiesJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    graph_query(&mut env, ptr, |g| serde_json::to_string(&g.get_properties()).ok())
+}
+
 // ─── Network ───────────────────────────────────────────────────────────────
 
 pub struct NetworkHandle {

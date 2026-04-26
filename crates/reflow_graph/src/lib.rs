@@ -1207,6 +1207,20 @@ impl Graph {
             list.push(in_node.to_owned())
         }
 
+        // Maintain connection_port_indices incrementally — without
+        // this, remove_connection's lookup misses freshly-added
+        // edges (it keys by ((from_node, from_port), (to_node,
+        // to_port)) and the index is only otherwise rebuilt after
+        // bulk operations).
+        let port_key = (
+            (out_node.to_owned(), out_port_id.clone()),
+            (in_node.to_owned(), in_port_id.clone()),
+        );
+        self.connection_port_indices
+            .entry(port_key)
+            .or_default()
+            .push(connection_idx);
+
         self.event_channel
             .0
             .send(GraphEvents::AddConnection(json!(connection)))
@@ -1348,10 +1362,18 @@ impl Graph {
     }
 
     pub fn add_to_group(&mut self, group_id: &str, node_id: &str) {
+        // Inverse index for O(1) "what groups does this node belong to?".
         self.node_groups
             .entry(node_id.to_owned())
             .or_default()
             .insert(group_id.to_owned());
+        // Forward list — the visible field on GraphGroup. Without
+        // this, callers reading `groups[id].nodes` see stale data.
+        if let Some(group) = self.groups.iter_mut().find(|g| g.id == group_id) {
+            if !group.nodes.iter().any(|n| n == node_id) {
+                group.nodes.push(node_id.to_owned());
+            }
+        }
     }
 
     pub fn remove_from_group(&mut self, group_id: &str, node_id: &str) {
@@ -1360,6 +1382,9 @@ impl Graph {
             if groups.is_empty() {
                 self.node_groups.remove(node_id);
             }
+        }
+        if let Some(group) = self.groups.iter_mut().find(|g| g.id == group_id) {
+            group.nodes.retain(|n| n != node_id);
         }
     }
 
@@ -1590,8 +1615,12 @@ impl Graph {
     ///
     /// Nodes IDs can be changed by calling this method.
     pub fn rename_node(&mut self, old_id: &str, new_id: &str) -> &mut Self {
-        if let Some(node) = self.get_node_mut(old_id) {
+        // Re-key the `nodes` HashMap so `processes[new_id]` resolves
+        // after export. Just mutating `node.id` left the HashMap key
+        // pointing at the old id and broke every downstream consumer.
+        if let Some(mut node) = self.nodes.remove(old_id) {
             node.id = new_id.to_owned();
+            self.nodes.insert(new_id.to_owned(), node);
 
             self.connections.iter_mut().for_each(|edge| {
                 if edge.from.node_id == old_id {
@@ -1628,6 +1657,24 @@ impl Graph {
                     group.nodes[index] = new_id.to_owned();
                 }
             });
+
+            // The connection vec was rewritten with the new id, but
+            // `connection_indices` / `connection_port_indices` /
+            // `adjacency_lists` are still keyed by the old id.
+            // Rebuild from scratch so subsequent
+            // `get_connection`, `remove_connection`, etc. resolve.
+            self.rebuild_connection_indices();
+            for indices in self.connection_indices.values_mut() {
+                indices.clear();
+            }
+            self.connection_indices.clear();
+            for (idx, conn) in self.connections.iter().enumerate() {
+                self.connection_indices
+                    .entry((conn.from.node_id.clone(), conn.to.node_id.clone()))
+                    .or_default()
+                    .push(idx);
+            }
+            self.rebuild_adjacency_lists();
 
             self.event_channel
                 .0

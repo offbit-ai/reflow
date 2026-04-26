@@ -893,6 +893,315 @@ impl ReflowGraph {
         self.inner.lock().add_initial(data, &node, &port, md);
         Ok(())
     }
+
+    // ── mutators (renames) ────────────────────────────────────────────────
+
+    #[napi(js_name = "renameNode")]
+    pub fn rename_node(&self, old_id: String, new_id: String) {
+        self.inner.lock().rename_node(&old_id, &new_id);
+    }
+
+    #[napi(js_name = "renameInport")]
+    pub fn rename_inport(&self, old_port: String, new_port: String) {
+        self.inner.lock().rename_inport(&old_port, &new_port);
+    }
+
+    #[napi(js_name = "renameOutport")]
+    pub fn rename_outport(&self, old_port: String, new_port: String) {
+        self.inner.lock().rename_outport(&old_port, &new_port);
+    }
+
+    // ── mutators (port lifecycle) ─────────────────────────────────────────
+
+    #[napi(js_name = "addInport")]
+    pub fn add_inport(
+        &self,
+        port_id: String,
+        node_id: String,
+        port_key: String,
+        port_type: Option<serde_json::Value>,
+        metadata: Option<serde_json::Value>,
+    ) -> Result<()> {
+        let pt = parse_port_type(port_type)?;
+        let md = parse_metadata(metadata)?;
+        self.inner
+            .lock()
+            .add_inport(&port_id, &node_id, &port_key, pt, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "addOutport")]
+    pub fn add_outport(
+        &self,
+        port_id: String,
+        node_id: String,
+        port_key: String,
+        port_type: Option<serde_json::Value>,
+        metadata: Option<serde_json::Value>,
+    ) -> Result<()> {
+        let pt = parse_port_type(port_type)?;
+        let md = parse_metadata(metadata)?;
+        self.inner
+            .lock()
+            .add_outport(&port_id, &node_id, &port_key, pt, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "removeInport")]
+    pub fn remove_inport(&self, port_id: String) {
+        self.inner.lock().remove_inport(&port_id);
+    }
+
+    #[napi(js_name = "removeOutport")]
+    pub fn remove_outport(&self, port_id: String) {
+        self.inner.lock().remove_outport(&port_id);
+    }
+
+    // ── mutators (groups) ─────────────────────────────────────────────────
+
+    #[napi(js_name = "addGroup")]
+    pub fn add_group(
+        &self,
+        group_id: String,
+        nodes: Vec<String>,
+        metadata: Option<serde_json::Value>,
+    ) -> Result<()> {
+        let md = parse_metadata(metadata)?;
+        self.inner.lock().add_group(&group_id, nodes, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "removeGroup")]
+    pub fn remove_group(&self, group_id: String) {
+        self.inner.lock().remove_group(&group_id);
+    }
+
+    #[napi(js_name = "addToGroup")]
+    pub fn add_to_group(&self, group_id: String, node_id: String) {
+        self.inner.lock().add_to_group(&group_id, &node_id);
+    }
+
+    #[napi(js_name = "removeFromGroup")]
+    pub fn remove_from_group(&self, group_id: String, node_id: String) {
+        self.inner.lock().remove_from_group(&group_id, &node_id);
+    }
+
+    // ── mutators (connection / initial removal) ───────────────────────────
+
+    #[napi(js_name = "removeConnection")]
+    pub fn remove_connection(
+        &self,
+        out_node: String,
+        out_port: String,
+        in_node: String,
+        in_port: String,
+    ) {
+        self.inner
+            .lock()
+            .remove_connection(&out_node, &out_port, &in_node, &in_port);
+    }
+
+    #[napi(js_name = "removeInitial")]
+    pub fn remove_initial(&self, node: String, port: String) {
+        self.inner.lock().remove_initial(&node, &port);
+    }
+
+    #[napi(js_name = "addInitialIndex")]
+    pub fn add_initial_index(
+        &self,
+        node: String,
+        port: String,
+        data: serde_json::Value,
+        index: u32,
+        metadata: Option<serde_json::Value>,
+    ) -> Result<()> {
+        let md = parse_metadata(metadata)?;
+        self.inner
+            .lock()
+            .add_initial_index(data, &node, &port, index as usize, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "addGraphInitial")]
+    pub fn add_graph_initial(
+        &self,
+        inport: String,
+        data: serde_json::Value,
+        metadata: Option<serde_json::Value>,
+    ) -> Result<()> {
+        let md = parse_metadata(metadata)?;
+        self.inner.lock().add_graph_initial(data, &inport, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "addGraphInitialIndex")]
+    pub fn add_graph_initial_index(
+        &self,
+        inport: String,
+        data: serde_json::Value,
+        index: u32,
+        metadata: Option<serde_json::Value>,
+    ) -> Result<()> {
+        let md = parse_metadata(metadata)?;
+        self.inner
+            .lock()
+            .add_graph_initial_index(data, &inport, index as usize, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "removeGraphInitial")]
+    pub fn remove_graph_initial(&self, inport: String) {
+        self.inner.lock().remove_graph_initial(&inport);
+    }
+
+    // ── mutators (metadata setters) ───────────────────────────────────────
+
+    #[napi(js_name = "setNodeMetadata")]
+    pub fn set_node_metadata(&self, id: String, metadata: serde_json::Value) -> Result<()> {
+        let md = parse_metadata_required(metadata)?;
+        self.inner.lock().set_node_metadata(&id, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "setConnectionMetadata")]
+    pub fn set_connection_metadata(
+        &self,
+        out_node: String,
+        out_port: String,
+        in_node: String,
+        in_port: String,
+        metadata: serde_json::Value,
+    ) -> Result<()> {
+        let md = parse_metadata_required(metadata)?;
+        self.inner.lock().set_connection_metadata(
+            &out_node, &out_port, &in_node, &in_port, md,
+        );
+        Ok(())
+    }
+
+    #[napi(js_name = "setInportMetadata")]
+    pub fn set_inport_metadata(
+        &self,
+        port_id: String,
+        metadata: serde_json::Value,
+    ) -> Result<()> {
+        let md = parse_metadata_required(metadata)?;
+        self.inner.lock().set_inport_metadata(&port_id, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "setOutportMetadata")]
+    pub fn set_outport_metadata(
+        &self,
+        port_id: String,
+        metadata: serde_json::Value,
+    ) -> Result<()> {
+        let md = parse_metadata_required(metadata)?;
+        self.inner.lock().set_outport_metadata(&port_id, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "setGroupMetadata")]
+    pub fn set_group_metadata(
+        &self,
+        group_id: String,
+        metadata: serde_json::Value,
+    ) -> Result<()> {
+        let md = parse_metadata_required(metadata)?;
+        self.inner.lock().set_group_metadata(&group_id, md);
+        Ok(())
+    }
+
+    #[napi(js_name = "setProperties")]
+    pub fn set_properties(&self, properties: serde_json::Value) -> Result<()> {
+        let md = parse_metadata_required(properties)?;
+        self.inner.lock().set_properties(md);
+        Ok(())
+    }
+
+    /// Replace this graph's state with another GraphExport. Existing
+    /// nodes, connections, properties, etc. are cleared first.
+    #[napi(js_name = "import")]
+    pub fn import_graph(&self, export: serde_json::Value) -> Result<()> {
+        let exp: GraphExport = serde_json::from_value(export)
+            .map_err(|e| Error::from_reason(format!("GraphExport parse: {e}")))?;
+        self.inner.lock().import(exp);
+        Ok(())
+    }
+
+    // ── queries ───────────────────────────────────────────────────────────
+
+    #[napi(js_name = "getNode")]
+    pub fn get_node(&self, id: String) -> Result<Option<serde_json::Value>> {
+        let g = self.inner.lock();
+        match g.get_node(&id) {
+            Some(n) => serde_json::to_value(n)
+                .map(Some)
+                .map_err(|e| Error::from_reason(format!("serialize node: {e}"))),
+            None => Ok(None),
+        }
+    }
+
+    #[napi(js_name = "nodes")]
+    pub fn nodes(&self) -> Result<serde_json::Value> {
+        serde_json::to_value(self.inner.lock().get_nodes())
+            .map_err(|e| Error::from_reason(format!("serialize nodes: {e}")))
+    }
+
+    #[napi(js_name = "getConnection")]
+    pub fn get_connection(
+        &self,
+        out_node: String,
+        out_port: String,
+        in_node: String,
+        in_port: String,
+    ) -> Result<Option<serde_json::Value>> {
+        let g = self.inner.lock();
+        match g.get_connection(&out_node, &out_port, &in_node, &in_port) {
+            Some(c) => serde_json::to_value(&c)
+                .map(Some)
+                .map_err(|e| Error::from_reason(format!("serialize connection: {e}"))),
+            None => Ok(None),
+        }
+    }
+
+    #[napi(js_name = "connections")]
+    pub fn connections(&self) -> Result<serde_json::Value> {
+        serde_json::to_value(self.inner.lock().get_connections())
+            .map_err(|e| Error::from_reason(format!("serialize connections: {e}")))
+    }
+
+    #[napi(js_name = "groups")]
+    pub fn groups(&self) -> Result<serde_json::Value> {
+        serde_json::to_value(&self.inner.lock().groups)
+            .map_err(|e| Error::from_reason(format!("serialize groups: {e}")))
+    }
+
+    #[napi(js_name = "inports")]
+    pub fn inports(&self) -> Result<serde_json::Value> {
+        let exp = self.inner.lock().export();
+        serde_json::to_value(&exp.inports)
+            .map_err(|e| Error::from_reason(format!("serialize inports: {e}")))
+    }
+
+    #[napi(js_name = "outports")]
+    pub fn outports(&self) -> Result<serde_json::Value> {
+        let exp = self.inner.lock().export();
+        serde_json::to_value(&exp.outports)
+            .map_err(|e| Error::from_reason(format!("serialize outports: {e}")))
+    }
+
+    #[napi(js_name = "initializers")]
+    pub fn initializers(&self) -> Result<serde_json::Value> {
+        serde_json::to_value(&self.inner.lock().initializers)
+            .map_err(|e| Error::from_reason(format!("serialize initializers: {e}")))
+    }
+
+    #[napi(js_name = "properties")]
+    pub fn properties(&self) -> Result<serde_json::Value> {
+        serde_json::to_value(self.inner.lock().get_properties())
+            .map_err(|e| Error::from_reason(format!("serialize properties: {e}")))
+    }
 }
 
 fn parse_metadata(
@@ -903,6 +1212,32 @@ fn parse_metadata(
         Some(serde_json::Value::Null) => Ok(None),
         Some(serde_json::Value::Object(m)) => Ok(Some(m.into_iter().collect())),
         Some(_) => Err(Error::from_reason("metadata must be an object or null")),
+    }
+}
+
+/// Like `parse_metadata` but requires a non-null object — `set_*_metadata`
+/// and `set_properties` on the underlying Graph take an owned HashMap.
+fn parse_metadata_required(
+    md: serde_json::Value,
+) -> Result<HashMap<String, serde_json::Value>> {
+    match md {
+        serde_json::Value::Null => Ok(HashMap::new()),
+        serde_json::Value::Object(m) => Ok(m.into_iter().collect()),
+        _ => Err(Error::from_reason("metadata must be an object")),
+    }
+}
+
+/// `null` / undefined → `PortType::Any`. Anything else must be a JSON
+/// payload that deserializes to `PortType` (e.g. `"All"`, `"Flow"`,
+/// `{"Event":"click"}`).
+fn parse_port_type(
+    pt: Option<serde_json::Value>,
+) -> Result<reflow_rt::graph::types::PortType> {
+    use reflow_rt::graph::types::PortType;
+    match pt {
+        None | Some(serde_json::Value::Null) => Ok(PortType::Any),
+        Some(v) => serde_json::from_value::<PortType>(v)
+            .map_err(|e| Error::from_reason(format!("port_type parse: {e}"))),
     }
 }
 

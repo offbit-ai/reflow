@@ -820,6 +820,635 @@ unsafe fn parse_port_type(
     }
 }
 
+/// Coerce parse_metadata's `Option<HashMap<...>>` into the
+/// `HashMap<...>` shape that `set_*_metadata` and `set_properties`
+/// expect (NULL → empty map).
+unsafe fn parse_metadata_required(p: *const c_char) -> Result<HashMap<String, Value>, rfl_status> {
+    match unsafe { parse_metadata(p) } {
+        Ok(Some(m)) => Ok(m),
+        Ok(None) => Ok(HashMap::new()),
+        Err(s) => Err(s),
+    }
+}
+
+unsafe fn parse_value_json(p: *const c_char, name: &str) -> Result<Value, rfl_status> {
+    let s = unsafe { cstr_to_str(p, name)? };
+    match serde_json::from_str::<Value>(s) {
+        Ok(v) => Ok(v),
+        Err(e) => {
+            set_last_error(format!("{name} parse: {e}"));
+            Err(rfl_status::InvalidJson)
+        }
+    }
+}
+
+fn json_to_cstring(value: &impl serde::Serialize, what: &str) -> *mut c_char {
+    match serde_json::to_string(value) {
+        Ok(s) => CString::new(s).map(|c| c.into_raw()).unwrap_or_else(|_| {
+            set_last_error(format!("{what} contained a NUL byte"));
+            std::ptr::null_mut()
+        }),
+        Err(e) => {
+            set_last_error(format!("{what} serialize: {e}"));
+            std::ptr::null_mut()
+        }
+    }
+}
+
+// ─── graph mutators (rename / port-rename) ────────────────────────────────
+
+/// Rename a node. Updates every connection that referenced the old id.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_rename_node(
+    g: *mut rfl_graph,
+    old_id: *const c_char,
+    new_id: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let old = match unsafe { cstr_to_str(old_id, "old_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let new = match unsafe { cstr_to_str(new_id, "new_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.rename_node(old, new);
+    rfl_status::Ok
+}
+
+/// Rename an exposed inport (subgraph boundary).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_rename_inport(
+    g: *mut rfl_graph,
+    old_port: *const c_char,
+    new_port: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let old = match unsafe { cstr_to_str(old_port, "old_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let new = match unsafe { cstr_to_str(new_port, "new_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.rename_inport(old, new);
+    rfl_status::Ok
+}
+
+/// Rename an exposed outport (subgraph boundary).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_rename_outport(
+    g: *mut rfl_graph,
+    old_port: *const c_char,
+    new_port: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let old = match unsafe { cstr_to_str(old_port, "old_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let new = match unsafe { cstr_to_str(new_port, "new_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.rename_outport(old, new);
+    rfl_status::Ok
+}
+
+// ─── graph mutators (initial packets) ──────────────────────────────────────
+
+/// `add_initial` with an explicit slot index for arrays/streams. Mirrors
+/// `Graph::add_initial_index`.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_add_initial_index(
+    g: *mut rfl_graph,
+    node: *const c_char,
+    port: *const c_char,
+    data_json: *const c_char,
+    index: usize,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let node = match unsafe { cstr_to_str(node, "node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let port = match unsafe { cstr_to_str(port, "port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let data = match unsafe { parse_value_json(data_json, "data_json") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }
+        .inner
+        .add_initial_index(data, node, port, index, metadata);
+    rfl_status::Ok
+}
+
+/// Push a packet into one of the graph's exposed inports.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_add_graph_initial(
+    g: *mut rfl_graph,
+    inport: *const c_char,
+    data_json: *const c_char,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let inport = match unsafe { cstr_to_str(inport, "inport") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let data = match unsafe { parse_value_json(data_json, "data_json") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }
+        .inner
+        .add_graph_initial(data, inport, metadata);
+    rfl_status::Ok
+}
+
+/// Indexed variant of `rfl_graph_add_graph_initial`.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_add_graph_initial_index(
+    g: *mut rfl_graph,
+    inport: *const c_char,
+    data_json: *const c_char,
+    index: usize,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let inport = match unsafe { cstr_to_str(inport, "inport") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let data = match unsafe { parse_value_json(data_json, "data_json") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }
+        .inner
+        .add_graph_initial_index(data, inport, index, metadata);
+    rfl_status::Ok
+}
+
+/// Remove an initial packet attached to a graph-level inport.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_remove_graph_initial(
+    g: *mut rfl_graph,
+    inport: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let inport = match unsafe { cstr_to_str(inport, "inport") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.remove_graph_initial(inport);
+    rfl_status::Ok
+}
+
+// ─── graph mutators (groups) ───────────────────────────────────────────────
+
+/// Create a group containing the given node ids.
+/// `nodes_json` must be a JSON array of strings, e.g. `["a","b"]`.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_add_group(
+    g: *mut rfl_graph,
+    group_id: *const c_char,
+    nodes_json: *const c_char,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let group_id = match unsafe { cstr_to_str(group_id, "group_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let nodes_s = match unsafe { cstr_to_str(nodes_json, "nodes_json") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let nodes: Vec<String> = match serde_json::from_str(nodes_s) {
+        Ok(v) => v,
+        Err(e) => {
+            set_last_error(format!("nodes_json parse: {e}"));
+            return rfl_status::InvalidJson;
+        }
+    };
+    let metadata = match unsafe { parse_metadata(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.add_group(group_id, nodes, metadata);
+    rfl_status::Ok
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_remove_group(
+    g: *mut rfl_graph,
+    group_id: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let group_id = match unsafe { cstr_to_str(group_id, "group_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.remove_group(group_id);
+    rfl_status::Ok
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_add_to_group(
+    g: *mut rfl_graph,
+    group_id: *const c_char,
+    node_id: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let group_id = match unsafe { cstr_to_str(group_id, "group_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let node_id = match unsafe { cstr_to_str(node_id, "node_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.add_to_group(group_id, node_id);
+    rfl_status::Ok
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_remove_from_group(
+    g: *mut rfl_graph,
+    group_id: *const c_char,
+    node_id: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let group_id = match unsafe { cstr_to_str(group_id, "group_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let node_id = match unsafe { cstr_to_str(node_id, "node_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.remove_from_group(group_id, node_id);
+    rfl_status::Ok
+}
+
+// ─── graph mutators (metadata) ─────────────────────────────────────────────
+
+/// Replace the metadata on a connection. NULL `metadata_json` clears it.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_set_connection_metadata(
+    g: *mut rfl_graph,
+    out_node: *const c_char,
+    out_port: *const c_char,
+    in_node: *const c_char,
+    in_port: *const c_char,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let out_node = match unsafe { cstr_to_str(out_node, "out_node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let out_port = match unsafe { cstr_to_str(out_port, "out_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let in_node = match unsafe { cstr_to_str(in_node, "in_node") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let in_port = match unsafe { cstr_to_str(in_port, "in_port") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata_required(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }
+        .inner
+        .set_connection_metadata(out_node, out_port, in_node, in_port, metadata);
+    rfl_status::Ok
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_set_inport_metadata(
+    g: *mut rfl_graph,
+    port_id: *const c_char,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata_required(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.set_inport_metadata(port_id, metadata);
+    rfl_status::Ok
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_set_outport_metadata(
+    g: *mut rfl_graph,
+    port_id: *const c_char,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let port_id = match unsafe { cstr_to_str(port_id, "port_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata_required(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }
+        .inner
+        .set_outport_metadata(port_id, metadata);
+    rfl_status::Ok
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_set_group_metadata(
+    g: *mut rfl_graph,
+    group_id: *const c_char,
+    metadata_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let group_id = match unsafe { cstr_to_str(group_id, "group_id") } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    let metadata = match unsafe { parse_metadata_required(metadata_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }
+        .inner
+        .set_group_metadata(group_id, metadata);
+    rfl_status::Ok
+}
+
+/// Replace the graph's properties dict. NULL clears it.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_set_properties(
+    g: *mut rfl_graph,
+    properties_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let props = match unsafe { parse_metadata_required(properties_json) } {
+        Ok(v) => v,
+        Err(s) => return s,
+    };
+    unsafe { &mut *g }.inner.set_properties(props);
+    rfl_status::Ok
+}
+
+/// Merge a `GraphExport` JSON document into the existing graph
+/// (additive — does not clear).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_import(
+    g: *mut rfl_graph,
+    export_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if g.is_null() {
+        return rfl_status::NullArg;
+    }
+    let s = match unsafe { cstr_to_str(export_json, "export_json") } {
+        Ok(v) => v,
+        Err(st) => return st,
+    };
+    let export: GraphExport = match serde_json::from_str(s) {
+        Ok(v) => v,
+        Err(e) => {
+            set_last_error(format!("export_json parse: {e}"));
+            return rfl_status::InvalidJson;
+        }
+    };
+    unsafe { &mut *g }.inner.import(export);
+    rfl_status::Ok
+}
+
+// ─── graph queries (return JSON, caller frees with rfl_string_free) ───────
+
+/// Look up a node by id. Returns the JSON of the GraphNode, or NULL if
+/// the id is unknown (last error explains).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_get_node_json(
+    g: *mut rfl_graph,
+    id: *const c_char,
+) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let id = match unsafe { cstr_to_str(id, "id") } {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    match unsafe { &*g }.inner.get_node(id) {
+        Some(n) => json_to_cstring(n, "node"),
+        None => {
+            set_last_error(format!("no node with id '{id}'"));
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// JSON array of every node in the graph.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_list_nodes_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let nodes = unsafe { &*g }.inner.get_nodes();
+    json_to_cstring(&nodes, "nodes")
+}
+
+/// Look up a connection by both endpoints. NULL if no such edge.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_get_connection_json(
+    g: *mut rfl_graph,
+    out_node: *const c_char,
+    out_port: *const c_char,
+    in_node: *const c_char,
+    in_port: *const c_char,
+) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let out_node = match unsafe { cstr_to_str(out_node, "out_node") } {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let out_port = match unsafe { cstr_to_str(out_port, "out_port") } {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let in_node = match unsafe { cstr_to_str(in_node, "in_node") } {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let in_port = match unsafe { cstr_to_str(in_port, "in_port") } {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    match unsafe { &*g }
+        .inner
+        .get_connection(out_node, out_port, in_node, in_port)
+    {
+        Some(c) => json_to_cstring(&c, "connection"),
+        None => {
+            set_last_error(format!(
+                "no connection {out_node}.{out_port} -> {in_node}.{in_port}"
+            ));
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_list_connections_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let conns = unsafe { &*g }.inner.get_connections();
+    json_to_cstring(&conns, "connections")
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_list_groups_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let groups = &unsafe { &*g }.inner.groups;
+    json_to_cstring(groups, "groups")
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_list_inports_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    // `inports` is `pub(crate)`. Round-trip through `export()` to read it.
+    let export = unsafe { &*g }.inner.export();
+    json_to_cstring(&export.inports, "inports")
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_list_outports_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let export = unsafe { &*g }.inner.export();
+    json_to_cstring(&export.outports, "outports")
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_list_initializers_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let inits = &unsafe { &*g }.inner.initializers;
+    json_to_cstring(inits, "initializers")
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rfl_graph_get_properties_json(g: *mut rfl_graph) -> *mut c_char {
+    clear_last_error();
+    if g.is_null() {
+        set_last_error("graph pointer is null");
+        return std::ptr::null_mut();
+    }
+    let props = unsafe { &*g }.inner.get_properties();
+    json_to_cstring(&props, "properties")
+}
+
 // ─── network builder ───────────────────────────────────────────────────────
 
 /// Add a node to a running or pending network. The `template_id`'s actor

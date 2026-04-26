@@ -316,6 +316,142 @@ enum rfl_status rfl_graph_remove_outport(struct rfl_graph *g, const char *port_i
 char *rfl_graph_to_json(struct rfl_graph *g);
 
 /**
+ * Rename a node. Updates every connection that referenced the old id.
+ */
+enum rfl_status rfl_graph_rename_node(struct rfl_graph *g, const char *old_id, const char *new_id);
+
+/**
+ * Rename an exposed inport (subgraph boundary).
+ */
+enum rfl_status rfl_graph_rename_inport(struct rfl_graph *g,
+                                        const char *old_port,
+                                        const char *new_port);
+
+/**
+ * Rename an exposed outport (subgraph boundary).
+ */
+enum rfl_status rfl_graph_rename_outport(struct rfl_graph *g,
+                                         const char *old_port,
+                                         const char *new_port);
+
+/**
+ * `add_initial` with an explicit slot index for arrays/streams. Mirrors
+ * `Graph::add_initial_index`.
+ */
+enum rfl_status rfl_graph_add_initial_index(struct rfl_graph *g,
+                                            const char *node,
+                                            const char *port,
+                                            const char *data_json,
+                                            uintptr_t index,
+                                            const char *metadata_json);
+
+/**
+ * Push a packet into one of the graph's exposed inports.
+ */
+enum rfl_status rfl_graph_add_graph_initial(struct rfl_graph *g,
+                                            const char *inport,
+                                            const char *data_json,
+                                            const char *metadata_json);
+
+/**
+ * Indexed variant of `rfl_graph_add_graph_initial`.
+ */
+enum rfl_status rfl_graph_add_graph_initial_index(struct rfl_graph *g,
+                                                  const char *inport,
+                                                  const char *data_json,
+                                                  uintptr_t index,
+                                                  const char *metadata_json);
+
+/**
+ * Remove an initial packet attached to a graph-level inport.
+ */
+enum rfl_status rfl_graph_remove_graph_initial(struct rfl_graph *g, const char *inport);
+
+/**
+ * Create a group containing the given node ids.
+ * `nodes_json` must be a JSON array of strings, e.g. `["a","b"]`.
+ */
+enum rfl_status rfl_graph_add_group(struct rfl_graph *g,
+                                    const char *group_id,
+                                    const char *nodes_json,
+                                    const char *metadata_json);
+
+enum rfl_status rfl_graph_remove_group(struct rfl_graph *g, const char *group_id);
+
+enum rfl_status rfl_graph_add_to_group(struct rfl_graph *g,
+                                       const char *group_id,
+                                       const char *node_id);
+
+enum rfl_status rfl_graph_remove_from_group(struct rfl_graph *g,
+                                            const char *group_id,
+                                            const char *node_id);
+
+/**
+ * Replace the metadata on a connection. NULL `metadata_json` clears it.
+ */
+enum rfl_status rfl_graph_set_connection_metadata(struct rfl_graph *g,
+                                                  const char *out_node,
+                                                  const char *out_port,
+                                                  const char *in_node,
+                                                  const char *in_port,
+                                                  const char *metadata_json);
+
+enum rfl_status rfl_graph_set_inport_metadata(struct rfl_graph *g,
+                                              const char *port_id,
+                                              const char *metadata_json);
+
+enum rfl_status rfl_graph_set_outport_metadata(struct rfl_graph *g,
+                                               const char *port_id,
+                                               const char *metadata_json);
+
+enum rfl_status rfl_graph_set_group_metadata(struct rfl_graph *g,
+                                             const char *group_id,
+                                             const char *metadata_json);
+
+/**
+ * Replace the graph's properties dict. NULL clears it.
+ */
+enum rfl_status rfl_graph_set_properties(struct rfl_graph *g, const char *properties_json);
+
+/**
+ * Merge a `GraphExport` JSON document into the existing graph
+ * (additive — does not clear).
+ */
+enum rfl_status rfl_graph_import(struct rfl_graph *g, const char *export_json);
+
+/**
+ * Look up a node by id. Returns the JSON of the GraphNode, or NULL if
+ * the id is unknown (last error explains).
+ */
+char *rfl_graph_get_node_json(struct rfl_graph *g, const char *id);
+
+/**
+ * JSON array of every node in the graph.
+ */
+char *rfl_graph_list_nodes_json(struct rfl_graph *g);
+
+/**
+ * Look up a connection by both endpoints. NULL if no such edge.
+ */
+char *rfl_graph_get_connection_json(struct rfl_graph *g,
+                                    const char *out_node,
+                                    const char *out_port,
+                                    const char *in_node,
+                                    const char *in_port);
+
+char *rfl_graph_list_connections_json(struct rfl_graph *g);
+
+char *rfl_graph_list_groups_json(struct rfl_graph *g);
+
+char *rfl_graph_list_inports_json(struct rfl_graph *g);
+
+char *rfl_graph_list_outports_json(struct rfl_graph *g);
+
+char *rfl_graph_list_initializers_json(struct rfl_graph *g);
+
+char *rfl_graph_get_properties_json(struct rfl_graph *g);
+
+/**
  * Add a node to a running or pending network. The `template_id`'s actor
  * must have been registered first (via the component catalog or a custom
  * `rfl_actor_register` once available).

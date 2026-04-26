@@ -769,6 +769,315 @@ impl PyGraph {
         self.inner.lock().add_initial(data_v, &node, &port, md);
         Ok(())
     }
+
+    // ── mutators (renames) ────────────────────────────────────────────────
+
+    fn rename_node(&self, old_id: String, new_id: String) {
+        self.inner.lock().rename_node(&old_id, &new_id);
+    }
+
+    fn rename_inport(&self, old_port: String, new_port: String) {
+        self.inner.lock().rename_inport(&old_port, &new_port);
+    }
+
+    fn rename_outport(&self, old_port: String, new_port: String) {
+        self.inner.lock().rename_outport(&old_port, &new_port);
+    }
+
+    // ── mutators (port lifecycle) ─────────────────────────────────────────
+
+    #[pyo3(signature = (port_id, node_id, port_key, port_type=None, metadata=None))]
+    fn add_inport(
+        &self,
+        py: Python<'_>,
+        port_id: String,
+        node_id: String,
+        port_key: String,
+        port_type: Option<&Bound<'_, PyAny>>,
+        metadata: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<()> {
+        let pt = parse_port_type(py, port_type)?;
+        let md = parse_metadata(py, metadata)?;
+        self.inner.lock().add_inport(&port_id, &node_id, &port_key, pt, md);
+        Ok(())
+    }
+
+    #[pyo3(signature = (port_id, node_id, port_key, port_type=None, metadata=None))]
+    fn add_outport(
+        &self,
+        py: Python<'_>,
+        port_id: String,
+        node_id: String,
+        port_key: String,
+        port_type: Option<&Bound<'_, PyAny>>,
+        metadata: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<()> {
+        let pt = parse_port_type(py, port_type)?;
+        let md = parse_metadata(py, metadata)?;
+        self.inner.lock().add_outport(&port_id, &node_id, &port_key, pt, md);
+        Ok(())
+    }
+
+    fn remove_inport(&self, port_id: String) {
+        self.inner.lock().remove_inport(&port_id);
+    }
+
+    fn remove_outport(&self, port_id: String) {
+        self.inner.lock().remove_outport(&port_id);
+    }
+
+    // ── mutators (groups) ─────────────────────────────────────────────────
+
+    #[pyo3(signature = (group_id, nodes, metadata=None))]
+    fn add_group(
+        &self,
+        py: Python<'_>,
+        group_id: String,
+        nodes: Vec<String>,
+        metadata: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<()> {
+        let md = parse_metadata(py, metadata)?;
+        self.inner.lock().add_group(&group_id, nodes, md);
+        Ok(())
+    }
+
+    fn remove_group(&self, group_id: String) {
+        self.inner.lock().remove_group(&group_id);
+    }
+
+    fn add_to_group(&self, group_id: String, node_id: String) {
+        self.inner.lock().add_to_group(&group_id, &node_id);
+    }
+
+    fn remove_from_group(&self, group_id: String, node_id: String) {
+        self.inner.lock().remove_from_group(&group_id, &node_id);
+    }
+
+    // ── mutators (connection / initial removal + indexed initials) ────────
+
+    fn remove_connection(
+        &self,
+        out_node: String,
+        out_port: String,
+        in_node: String,
+        in_port: String,
+    ) {
+        self.inner
+            .lock()
+            .remove_connection(&out_node, &out_port, &in_node, &in_port);
+    }
+
+    fn remove_initial(&self, node: String, port: String) {
+        self.inner.lock().remove_initial(&node, &port);
+    }
+
+    #[pyo3(signature = (node, port, data, index, metadata=None))]
+    fn add_initial_index(
+        &self,
+        py: Python<'_>,
+        node: String,
+        port: String,
+        data: &Bound<'_, PyAny>,
+        index: usize,
+        metadata: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<()> {
+        let data_v = py_to_json(py, data)?;
+        let md = parse_metadata(py, metadata)?;
+        self.inner
+            .lock()
+            .add_initial_index(data_v, &node, &port, index, md);
+        Ok(())
+    }
+
+    #[pyo3(signature = (inport, data, metadata=None))]
+    fn add_graph_initial(
+        &self,
+        py: Python<'_>,
+        inport: String,
+        data: &Bound<'_, PyAny>,
+        metadata: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<()> {
+        let data_v = py_to_json(py, data)?;
+        let md = parse_metadata(py, metadata)?;
+        self.inner.lock().add_graph_initial(data_v, &inport, md);
+        Ok(())
+    }
+
+    #[pyo3(signature = (inport, data, index, metadata=None))]
+    fn add_graph_initial_index(
+        &self,
+        py: Python<'_>,
+        inport: String,
+        data: &Bound<'_, PyAny>,
+        index: usize,
+        metadata: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<()> {
+        let data_v = py_to_json(py, data)?;
+        let md = parse_metadata(py, metadata)?;
+        self.inner
+            .lock()
+            .add_graph_initial_index(data_v, &inport, index, md);
+        Ok(())
+    }
+
+    fn remove_graph_initial(&self, inport: String) {
+        self.inner.lock().remove_graph_initial(&inport);
+    }
+
+    // ── mutators (metadata setters + properties) ──────────────────────────
+
+    fn set_node_metadata(
+        &self,
+        py: Python<'_>,
+        id: String,
+        metadata: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let md = parse_metadata_required(py, metadata)?;
+        self.inner.lock().set_node_metadata(&id, md);
+        Ok(())
+    }
+
+    fn set_connection_metadata(
+        &self,
+        py: Python<'_>,
+        out_node: String,
+        out_port: String,
+        in_node: String,
+        in_port: String,
+        metadata: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let md = parse_metadata_required(py, metadata)?;
+        self.inner
+            .lock()
+            .set_connection_metadata(&out_node, &out_port, &in_node, &in_port, md);
+        Ok(())
+    }
+
+    fn set_inport_metadata(
+        &self,
+        py: Python<'_>,
+        port_id: String,
+        metadata: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let md = parse_metadata_required(py, metadata)?;
+        self.inner.lock().set_inport_metadata(&port_id, md);
+        Ok(())
+    }
+
+    fn set_outport_metadata(
+        &self,
+        py: Python<'_>,
+        port_id: String,
+        metadata: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let md = parse_metadata_required(py, metadata)?;
+        self.inner.lock().set_outport_metadata(&port_id, md);
+        Ok(())
+    }
+
+    fn set_group_metadata(
+        &self,
+        py: Python<'_>,
+        group_id: String,
+        metadata: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let md = parse_metadata_required(py, metadata)?;
+        self.inner.lock().set_group_metadata(&group_id, md);
+        Ok(())
+    }
+
+    fn set_properties(
+        &self,
+        py: Python<'_>,
+        properties: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let md = parse_metadata_required(py, properties)?;
+        self.inner.lock().set_properties(md);
+        Ok(())
+    }
+
+    /// Replace this graph's state with another GraphExport.
+    /// (`reflow_graph::Graph::import` is destructive.)
+    fn import_graph(
+        &self,
+        py: Python<'_>,
+        export: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let v = py_to_json(py, export)?;
+        let exp: GraphExport = serde_json::from_value(v).map_err(map_err)?;
+        self.inner.lock().import(exp);
+        Ok(())
+    }
+
+    // ── queries ───────────────────────────────────────────────────────────
+
+    fn get_node<'py>(&self, py: Python<'py>, id: String) -> PyResult<Bound<'py, PyAny>> {
+        match self.inner.lock().get_node(&id) {
+            Some(n) => {
+                let v = serde_json::to_value(n).map_err(map_err)?;
+                pythonize(py, &v).map_err(map_err)
+            }
+            None => Ok(py.None().into_bound(py)),
+        }
+    }
+
+    fn nodes<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let v = serde_json::to_value(self.inner.lock().get_nodes()).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
+
+    fn get_connection<'py>(
+        &self,
+        py: Python<'py>,
+        out_node: String,
+        out_port: String,
+        in_node: String,
+        in_port: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        match self
+            .inner
+            .lock()
+            .get_connection(&out_node, &out_port, &in_node, &in_port)
+        {
+            Some(c) => {
+                let v = serde_json::to_value(&c).map_err(map_err)?;
+                pythonize(py, &v).map_err(map_err)
+            }
+            None => Ok(py.None().into_bound(py)),
+        }
+    }
+
+    fn connections<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let v = serde_json::to_value(self.inner.lock().get_connections()).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
+
+    fn groups<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let v = serde_json::to_value(&self.inner.lock().groups).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
+
+    fn inports<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let exp = self.inner.lock().export();
+        let v = serde_json::to_value(&exp.inports).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
+
+    fn outports<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let exp = self.inner.lock().export();
+        let v = serde_json::to_value(&exp.outports).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
+
+    fn initializers<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let v = serde_json::to_value(&self.inner.lock().initializers).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
+
+    fn properties<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let v = serde_json::to_value(self.inner.lock().get_properties()).map_err(map_err)?;
+        pythonize(py, &v).map_err(map_err)
+    }
 }
 
 fn parse_metadata(
@@ -785,6 +1094,43 @@ fn parse_metadata(
                 serde_json::Value::Object(m) => Ok(Some(m.into_iter().collect())),
                 _ => Err(PyValueError::new_err("metadata must be a dict or None")),
             }
+        }
+    }
+}
+
+/// `set_*_metadata` and `set_properties` on the underlying Graph
+/// take an owned HashMap, not Option. Coerce None / empty to empty.
+fn parse_metadata_required(
+    py: Python<'_>,
+    v: &Bound<'_, PyAny>,
+) -> PyResult<HashMap<String, serde_json::Value>> {
+    if v.is_none() {
+        return Ok(HashMap::new());
+    }
+    match py_to_json(py, v)? {
+        serde_json::Value::Null => Ok(HashMap::new()),
+        serde_json::Value::Object(m) => Ok(m.into_iter().collect()),
+        _ => Err(PyValueError::new_err("metadata must be a dict")),
+    }
+}
+
+/// `None`/`null` → `PortType::Any`. Otherwise must deserialize to a
+/// `PortType` (e.g. `{"type":"flow"}`, `"All"` is NOT valid since the
+/// enum is adjacently tagged).
+fn parse_port_type(
+    py: Python<'_>,
+    v: Option<&Bound<'_, PyAny>>,
+) -> PyResult<reflow_rt::graph::types::PortType> {
+    use reflow_rt::graph::types::PortType;
+    match v {
+        None => Ok(PortType::Any),
+        Some(b) if b.is_none() => Ok(PortType::Any),
+        Some(b) => {
+            let j = py_to_json(py, b)?;
+            if j.is_null() {
+                return Ok(PortType::Any);
+            }
+            serde_json::from_value::<PortType>(j).map_err(map_err)
         }
     }
 }
