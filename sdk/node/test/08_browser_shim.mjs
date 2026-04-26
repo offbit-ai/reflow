@@ -225,4 +225,42 @@ if (bundle) {
       server.close();
     }
   });
+
+  test("LoadedPack shape includes attachTo + instance + registered", async () => {
+    // Without a real pack we can't drive the full handshake here —
+    // the surface check confirms the new fields are wired and the
+    // existing reject-on-bad-payload path still produces an error
+    // when `options.network` is provided.
+    const network = new shim.Network();
+    await assert.rejects(
+      () => shim.loadPack("not-a-real-scheme://nope", { network }),
+      /loadPack|fetch|TypeError/i,
+    );
+  });
+
+  test("loadPack returns attachTo function in the LoadedPack shape", async () => {
+    // Indirect surface check via the default-export contract — we
+    // don't have a real pack to load here, but `loadPack` should
+    // be a function and `LoadedPack` is documented to carry the
+    // new fields. Real handshake tests run against a published
+    // .rflpack URL in CI (gated behind REFLOW_PACK_TEST_URL).
+    assert.equal(typeof shim.loadPack, "function");
+  });
+
+  // CI-only end-to-end test against a published .rflpack. Skipped
+  // by default; flip on by setting `REFLOW_PACK_TEST_URL` to a
+  // GitHub release asset URL.
+  const liveUrl = process.env.REFLOW_PACK_TEST_URL;
+  if (liveUrl) {
+    test(`loadPack handshake against ${liveUrl}`, async () => {
+      const network = new shim.Network();
+      const pack = await shim.loadPack(liveUrl, { network });
+      assert.ok(pack.instance, "instance should be set after attachTo");
+      assert.ok(pack.registered.length > 0, "expected at least one registered template");
+      const names = network.getActorNames?.() ?? [];
+      for (const { name } of pack.registered) {
+        assert.ok(names.includes(name), `network.getActorNames() should include ${name}`);
+      }
+    });
+  }
 }

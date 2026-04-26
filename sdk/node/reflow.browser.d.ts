@@ -66,18 +66,43 @@ export interface LoadedPack {
   templates: string[];
   wasm: Uint8Array;
   module: WebAssembly.Module;
+  /** Set after `attachTo()` succeeds. `null` until the pack is wired. */
+  instance: WebAssembly.Instance | null;
+  /** `(name, factoryId)` pairs the pack registered with the network. */
+  registered: ReadonlyArray<{ name: string; factoryId: number }>;
+  /**
+   * Instantiate the pack and register every template it publishes
+   * with the given `Network`. Idempotent — calling twice returns
+   * the existing registration list.
+   */
+  attachTo(network: Network): Promise<ReadonlyArray<{ name: string; factoryId: number }>>;
+}
+
+/** Options accepted by [`loadPack`]. */
+export interface LoadPackOptions {
+  /**
+   * If provided, the pack is attached to this network before
+   * `loadPack` resolves — equivalent to calling
+   * `pack.attachTo(network)` afterwards.
+   */
+  network?: Network;
 }
 
 /**
  * Fetch a `.rflpack` from a URL (typically a GitHub release asset),
- * verify its manifest, and compile its wasm32 entry into a
- * `WebAssembly.Module`. Native loaders ignore the wasm entry; this
- * is the browser-side equivalent.
+ * verify its manifest, compile its wasm32 entry, and optionally
+ * register every template it publishes with a running `Network`.
  *
  * @param url Anything `fetch` accepts. GitHub release assets serve
  *   permissive CORS so cross-origin browser fetches work.
+ * @param options Optional. Pass `{ network }` to immediately wire
+ *   the pack into a network — equivalent to calling
+ *   `pack.attachTo(network)` after `loadPack` returns.
  */
-export function loadPack(url: string | URL | Request): Promise<LoadedPack>;
+export function loadPack(
+  url: string | URL | Request,
+  options?: LoadPackOptions,
+): Promise<LoadedPack>;
 
 /** Pack ABI version this runtime was built against. */
 export function packAbiVersion(): number;

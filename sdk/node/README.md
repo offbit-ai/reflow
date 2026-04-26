@@ -370,24 +370,50 @@ fetches the bundle, validates the manifest, and compiles the
 wasm32 entry into a `WebAssembly.Module`.
 
 ```js
-import { ready, loadPack } from "@offbit-ai/reflow";
+import { ready, loadPack, Network } from "@offbit-ai/reflow";
 
 await ready();
 
+const network = new Network();
 const pack = await loadPack(
   "https://github.com/offbit-ai/reflow/releases/download/" +
   "pack-v0.2/reflow.pack.gpu-0.2.0.rflpack",
+  { network },
 );
 
 console.log(pack.name);       // "reflow.pack.gpu"
 console.log(pack.version);    // "0.2.0"
 console.log(pack.templates);  // ["tpl_sdf_render", ...]
-console.log(pack.module);     // WebAssembly.Module
+console.log(pack.registered); // [{ name: "tpl_sdf_render", factoryId: 0 }, ...]
+console.log(network.getActorNames()); // includes "tpl_sdf_render"
 ```
 
+Pass `{ network }` to immediately wire the pack into a `Network`,
+or call `pack.attachTo(network)` later. The handshake:
+
+1. Compile the pack's wasm32 entry into a `WebAssembly.Module`.
+2. Instantiate it with an `env.__reflow_pack_register_template`
+   import that captures `(name, factoryId)` pairs as the pack
+   walks its `#[reflow_pack]` register function.
+3. Call the pack's exported `__reflow_pack_register()`. Each
+   `host.register("name", factory)` inside the pack fires our
+   import callback once.
+4. For every registered template, register a JS adapter actor on
+   `network` whose `run(ctx)` calls back into
+   `instance.exports.__reflow_pack_create_actor(factoryId)`.
+
 Returned object: `{ manifest, name, version, templates, wasm,
-module }`. `wasm` is the raw `Uint8Array`; `module` is the
-already-compiled WebAssembly module ready for instantiation.
+module, instance, registered, attachTo }`. `instance` is `null`
+until `attachTo` succeeds.
+
+> **Status of actor execution.** The registration handshake is
+> wired end-to-end, but pack-side `__reflow_pack_create_actor(id)`
+> returns a pointer into the pack's wasm linear memory. The
+> runtime lives in a separate wasm module with a separate memory,
+> so the actor adapter today does the registration call and then
+> `ctx.fail`s with a clear "wasm pack actor execution not yet
+> wired" message. Wiring full message-passing across the pack ↔
+> runtime memory boundary is the next milestone.
 
 **ABI handshake.** `loadPack` rejects packs whose
 `reflow_pack_abi_version` doesn't match the runtime's. The match

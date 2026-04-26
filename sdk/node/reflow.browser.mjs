@@ -640,38 +640,60 @@ export class EventStream {
 
 /**
  * Load a `.rflpack` from a URL, extract its `wasm32-unknown-unknown`
- * binary, and compile it into a `WebAssembly.Module`.
+ * binary, compile it, and (optionally) register every template it
+ * publishes against a running `Network`.
  *
  * Designed to point straight at a GitHub release asset:
  *
  *     await ready();
+ *     const net = new Network();
  *     const pack = await loadPack(
  *       "https://github.com/offbit-ai/reflow/releases/download/" +
  *       "pack-v0.2/reflow.pack.gpu-0.2.0.rflpack",
+ *       { network: net },
  *     );
- *     // pack.manifest, pack.module, pack.wasm — registration TBD.
+ *     console.log(pack.registered); // ["tpl_sdf_render", ...]
  *
- * `url` accepts anything `fetch` does: a string URL, a `URL`, or
+ * `url` accepts anything `fetch` does — a string URL, a `URL`, or
  * a pre-built `Request`. GitHub release assets serve permissive
- * CORS headers so cross-origin fetches from a browser context
- * just work.
+ * CORS headers so cross-origin browser fetches just work.
  *
- * Returns `{ manifest, name, version, templates, wasm, module }`:
+ * The optional `options.network` triggers the pack-ABI handshake:
+ *   1. Compile + instantiate the wasm with the
+ *      `env.__reflow_pack_register_template` import wired to a
+ *      callback that captures `(name, factoryId)` pairs as the pack
+ *      walks its `#[reflow_pack]` register function.
+ *   2. Call the pack's exported `__reflow_pack_register()`. Each
+ *      `host.register("name", factory)` inside the pack fires our
+ *      import callback once.
+ *   3. For every captured pair, register a JS adapter actor with
+ *      `network` whose `run(ctx)` calls back into
+ *      `instance.exports.__reflow_pack_create_actor(factoryId)`.
  *
- *  - `manifest`  — parsed `manifest.json` from the pack.
- *  - `name`      — pack name (`manifest.name`).
- *  - `version`   — pack version (`manifest.version`).
- *  - `templates` — actor template ids the pack publishes.
- *  - `wasm`      — raw `Uint8Array` of the wasm32 binary.
- *  - `module`    — compiled `WebAssembly.Module`. Instantiation
- *    and the registration handshake happen in a follow-up — for
- *    now this gives you a verified, ABI-checked module ready to
- *    instantiate against the runtime.
+ * **Status of the actor adapter (TBD).** The pack-side
+ * `__reflow_pack_create_actor(id)` returns a `*mut PackActorHandle`
+ * — a pointer into the pack's wasm linear memory. The runtime
+ * lives in a separate wasm module with a separate memory, so a raw
+ * pointer can't cross the boundary. Wiring full message-passing
+ * across pack ↔ runtime needs a serialization protocol over the
+ * pack's exported memory; that's the next milestone. For now the
+ * adapter calls `__reflow_pack_create_actor`, leaks the returned
+ * pointer (the pack tracks it internally), and `ctx.fail`s with a
+ * clear "wasm pack actor execution not yet wired" message. The
+ * registration plumbing is still useful: it proves the
+ * import/export handshake works and `network.getActorNames()`
+ * reflects the loaded templates.
+ *
+ * Returns `{ manifest, name, version, templates, wasm, module,
+ * instance, registered }`. `instance` is `null` if no network was
+ * provided — the caller can call `attachToNetwork(network)` on the
+ * returned pack later.
  *
  * Throws if the URL fetch fails, the pack lacks a wasm32 build,
- * or its `reflow_pack_abi_version` doesn't match the runtime's.
+ * its `reflow_pack_abi_version` doesn't match the runtime's, or
+ * the pack-side register function returns non-zero.
  */
-export async function loadPack(url) {
+export async function loadPack(url, options = {}) {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(
@@ -688,14 +710,88 @@ export async function loadPack(url) {
   const wasmBytes = extracted.wasm;
   const module = await WebAssembly.compile(wasmBytes);
 
-  return {
+  const pack = {
     manifest,
     name: manifest.name,
     version: manifest.version,
     templates: manifest.templates ?? [],
     wasm: wasmBytes,
     module,
+    instance: null,
+    registered: [],
+
+    /**
+     * Instantiate the pack and register its templates with `network`.
+     * Idempotent: a second call returns the existing registration list.
+     */
+    async attachTo(network) {
+      if (this.instance) return this.registered;
+      const result = await attachPackToNetwork(this.module, network);
+      this.instance = result.instance;
+      this.registered = result.registered;
+      return this.registered;
+    },
   };
+
+  if (options.network) {
+    await pack.attachTo(options.network);
+  }
+  return pack;
+}
+
+// Internal: walk the pack's register fn and wire it to the network.
+// Split out so `attachTo` can also call it post-hoc.
+async function attachPackToNetwork(module, network) {
+  const registered = [];
+
+  const importObject = {
+    env: {
+      // The pack's `host.register("name", factory)` inside its
+      // `#[reflow_pack]` function fires this once per template.
+      __reflow_pack_register_template: (namePtr, nameLen, factoryId) => {
+        const memory = instance.exports.memory;
+        const view = new Uint8Array(memory.buffer, namePtr, nameLen);
+        const name = new TextDecoder().decode(view);
+        registered.push({ name, factoryId });
+      },
+    },
+  };
+
+  // `instance` is captured by the closure above. We assign it after
+  // `WebAssembly.instantiate` returns; the import callbacks only
+  // fire from inside `__reflow_pack_register()` which we call
+  // explicitly below, so the binding is set in time.
+  let instance;
+  ({ instance } = await WebAssembly.instantiate(module, importObject));
+
+  const status = instance.exports.__reflow_pack_register();
+  if (status !== 0) {
+    throw new Error(`pack __reflow_pack_register returned status ${status}`);
+  }
+
+  // Adapter actor for each registered template. The execution side
+  // is stubbed for now — see the loadPack docstring for why and
+  // what comes next.
+  for (const { name, factoryId } of registered) {
+    network.registerActor(name, {
+      inports: [],
+      outports: ["error"],
+      run(ctx) {
+        const handle = instance.exports.__reflow_pack_create_actor(factoryId);
+        ctx.send({
+          error: Message.error(
+            `wasm pack '${name}' actor execution is not wired yet ` +
+              `(factoryId=${factoryId}, handle=${handle}). ` +
+              `The pack-ABI registration handshake succeeded — runtime` +
+              ` ↔ pack message marshaling is the next milestone.`,
+          ),
+        });
+        ctx.done();
+      },
+    });
+  }
+
+  return { instance, registered };
 }
 
 // ─── Pass-through wasm exports ─────────────────────────────────────────────
