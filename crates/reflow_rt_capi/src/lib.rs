@@ -283,6 +283,13 @@ pub unsafe extern "C" fn rfl_network_from_graph(g: *mut rfl_graph) -> *mut rfl_n
         return std::ptr::null_mut();
     }
     let graph = unsafe { Box::from_raw(g) }.inner;
+    // `Network::with_graph` spawns subgraph worker tasks via
+    // `tokio::spawn` during construction, so we must enter the
+    // runtime context here. Without this guard the call panics with
+    // "there is no reactor running" the moment any internal subgraph
+    // setup runs.
+    let rt = runtime();
+    let _enter = rt.enter();
     let net_arc = Network::with_graph(NetworkConfig::default(), &graph);
     // `Network::with_graph` returns `Arc<Mutex<Network>>` already.
     Box::into_raw(Box::new(rfl_network { net: net_arc }))

@@ -34,7 +34,7 @@ Reflow is a modular workflow execution engine that uses the **actor model** for 
 📊 **Graph-Authored Workflows** - DAG representation with subgraphs, IIPs, history, and undo  
 📦 **The Reflow Runtime API** - `reflow_rt` is the public Rust crate for building and running Reflow applications  
 🎛️ **Optional Component Families** - GPU, AV, window events, camera, API services, media, and ML are feature gated  
-🌍 **Multi-Language SDKs** - first-party bindings for Node.js, Python, Go, and the JVM (Java + Kotlin)  
+🌍 **Multi-Language SDKs** - first-party bindings for Node.js, Python, Go, JVM (Java + Kotlin), and C++  
 🌐 **Cross-Platform** - Native Rust execution plus WebAssembly-oriented runtime surfaces  
 🔄 **Real-Time Processing** - Networking, WebSockets, streams, and live graph events  
 🧠 **Media / ML Ready** - Typed media packets, mockable inference, LiteRT backend boundary, and taskpack subgraphs
