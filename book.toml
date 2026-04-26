@@ -9,8 +9,8 @@ description = "Comprehensive documentation for the Reflow workflow automation en
 [output.html]
 default-theme = "navy"
 preferred-dark-theme = "navy"
-git-repository-url = "https://github.com/reflow-project/reflow"
-edit-url-template = "https://github.com/reflow-project/reflow/edit/main/docs/{path}"
+git-repository-url = "https://github.com/offbit-ai/reflow"
+edit-url-template = "https://github.com/offbit-ai/reflow/edit/main/docs/{path}"
 
 [output.html.search]
 enable = true

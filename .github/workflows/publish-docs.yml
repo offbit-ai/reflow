@@ -1,0 +1,73 @@
+# Build the mdBook in docs/ and deploy it to GitHub Pages.
+#
+# Triggers
+# --------
+# - Push to `main` that touches docs sources (docs/**, book.toml, or
+#   this workflow file).
+# - Manual workflow_dispatch — useful for ad-hoc rebuilds.
+#
+# One-time setup on github.com
+# ----------------------------
+# Repo Settings → Pages → "Build and deployment" → Source: GitHub Actions.
+# Without that toggle, the deploy job errors with "Get Pages site failed".
+
+name: publish-docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'book.toml'
+      - '.github/workflows/publish-docs.yml'
+  workflow_dispatch:
+
+# Required for actions/deploy-pages to mint an OIDC token + push to
+# the Pages environment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Single in-flight deploy at a time. If a newer commit lands while a
+# build is mid-flight, cancel the older one — the latest main always
+# wins.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build mdbook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mdBook
+        uses: peaceiris/actions-mdbook@v2
+        with:
+          # Pin a stable version. Bump as needed; mdBook respects
+          # backward compatibility on the SUMMARY.md / preprocessor
+          # surface, so this is mostly cosmetic.
+          mdbook-version: '0.4.40'
+
+      - name: Build site
+        run: mdbook build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: book
+
+  deploy:
+    name: deploy to github pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

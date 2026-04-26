@@ -13,3 +13,6 @@ crawl_output/
 .DS_Store
 examples/sdf_render/sdf_output.*
 examples/skeleton_animation/animation.mp4
+
+# mdBook build output
+/book/
