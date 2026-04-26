@@ -31,6 +31,10 @@ pub mod redis_state;
 pub mod router;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod script_discovery;
+// SubgraphActor uses tokio::sync::watch + tokio::select! for its
+// inbound routing loop. Native-only until those are replaced with
+// flume signals + futures::select for the wasm path.
+#[cfg(not(target_arch = "wasm32"))]
 pub mod subgraph;
 pub mod template;
 pub mod tracing;

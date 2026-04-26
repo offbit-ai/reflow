@@ -104,6 +104,15 @@ web-sys = { version = "0.3.77", features = [
     "CloseEvent",
     "ErrorEvent",
     "BinaryType",
+    # input_events.rs uses these to read DOM input events from JS.
+    "KeyboardEvent",
+    "MouseEvent",
+    "WheelEvent",
+    "TouchEvent",
+    "TouchList",
+    "Touch",
+    "EventTarget",
+    "Event",
 ] }
 tsify = { version = "0.4.5", features = ["js"] }
 wasm-bindgen-futures = "0.4.42"

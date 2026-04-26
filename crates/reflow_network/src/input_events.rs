@@ -26,7 +26,7 @@ use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = bindInputEvents)]
 pub fn bind_input_events(
-    network: &crate::network::GraphNetwork,
+    network: crate::network::GraphNetwork,
     target: web_sys::EventTarget,
 ) -> Result<js_sys::Function, JsValue> {
     use std::cell::RefCell;
@@ -35,7 +35,9 @@ pub fn bind_input_events(
     let closures: Rc<RefCell<Vec<(String, Closure<dyn FnMut(web_sys::Event)>)>>> =
         Rc::new(RefCell::new(Vec::new()));
 
-    let net = network.clone();
+    // Take ownership to give every spawned closure a 'static handle to
+    // the network. Clone is cheap (the Network is internally Arc'd).
+    let net = network;
 
     // Helper to add a listener and store the closure for cleanup
     macro_rules! add_listener {

@@ -360,7 +360,7 @@ impl Network {
         if let Some(actor) = self.nodes.get(actor_id) {
             use wasm_bindgen_test::__rt::wasm_bindgen::JsValue;
 
-            return JsValue::from_serde(&json!(actor)).unwrap_or(JsValue::null());
+            return JsValue::from_serde(&serde_json::json!(actor)).unwrap_or(JsValue::null());
         }
         JsValue::null()
     }
@@ -1382,6 +1382,7 @@ impl Network {
 /// GraphNetwork is a wrapper to a Network that binds to changes in a Graph
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct GraphNetwork {
     network: Arc<Mutex<Network>>,
 }
