@@ -6320,9 +6320,14 @@ dependencies = [
 name = "reflow_pack_sdk"
 version = "0.2.0"
 dependencies = [
+ "flume",
+ "parking_lot 0.12.4",
+ "pollster",
  "reflow_actor",
  "reflow_pack_loader",
  "reflow_pack_macro",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

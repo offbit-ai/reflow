@@ -16,3 +16,12 @@ categories = ["development-tools", "concurrency"]
 reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
 reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
 reflow_pack_macro = { version = "0.2.0", path = "../reflow_pack_macro" }
+
+# Required by the wasm32 ABI's `__reflow_pack_actor_run` to drive the
+# actor's behavior future to completion. Native packs link these too,
+# so the dep stays unconditional — they're tiny.
+serde_json = { workspace = true }
+serde = { workspace = true }
+flume = { workspace = true }
+parking_lot = { workspace = true }
+pollster = "0.4"

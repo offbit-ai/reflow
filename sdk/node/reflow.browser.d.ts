@@ -58,6 +58,18 @@ export interface PackManifest {
   templates?: string[];
 }
 
+/** Per-template metadata captured during the pack ABI handshake. */
+export interface PackTemplateRegistration {
+  /** Template id the pack published. */
+  name: string;
+  /** Opaque factory index used internally by the pack ABI. */
+  factoryId: number;
+  /** Inport names the pack-side actor declares. */
+  inports: string[];
+  /** Outport names the pack-side actor declares. */
+  outports: string[];
+}
+
 /** A loaded `.rflpack` ready to be wired into the runtime. */
 export interface LoadedPack {
   manifest: PackManifest;
@@ -68,14 +80,14 @@ export interface LoadedPack {
   module: WebAssembly.Module;
   /** Set after `attachTo()` succeeds. `null` until the pack is wired. */
   instance: WebAssembly.Instance | null;
-  /** `(name, factoryId)` pairs the pack registered with the network. */
-  registered: ReadonlyArray<{ name: string; factoryId: number }>;
+  /** Templates the pack registered with the network. */
+  registered: ReadonlyArray<PackTemplateRegistration>;
   /**
    * Instantiate the pack and register every template it publishes
    * with the given `Network`. Idempotent — calling twice returns
    * the existing registration list.
    */
-  attachTo(network: Network): Promise<ReadonlyArray<{ name: string; factoryId: number }>>;
+  attachTo(network: Network): Promise<ReadonlyArray<PackTemplateRegistration>>;
 }
 
 /** Options accepted by [`loadPack`]. */

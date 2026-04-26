@@ -37,9 +37,28 @@ A pack `cdylib`'s exported symbols depend on the target — the
 | Symbol | Direction | Purpose |
 |---|---|---|
 | `reflow_pack_abi_version() -> u32` | export | ABI handshake (same as native) |
-| `__reflow_pack_register() -> i32` | export | Loader calls once after instantiate; pack walks its register fn and emits one `__reflow_pack_register_template` import per template |
-| `__reflow_pack_create_actor(factory_id: u32) -> *mut PackActorHandle` | export | Loader calls per actor instantiation |
-| `env.__reflow_pack_register_template(name_ptr, name_len, factory_id)` | **import** | Loader provides; pack calls once per registered template during `__reflow_pack_register` |
+| `__reflow_pack_register() -> i32` | export | Loader calls once after instantiate; pack walks its register fn and fires one `__reflow_pack_register_template` import per template |
+| `__reflow_pack_create_actor(factory_id: u32) -> u32` | export | Returns an opaque `instance_id` the pack tracks in a static table. The runtime keeps this id and routes every tick through it |
+| `__reflow_pack_destroy_actor(instance_id: u32)` | export | Drops the pack-side actor instance |
+| `__reflow_pack_alloc(size: u32) -> u32` | export | Memory allocator the loader uses to write payload buffers into the pack's linear memory |
+| `__reflow_pack_free(ptr: u32, size: u32)` | export | Pair with `__reflow_pack_alloc` |
+| `__reflow_pack_actor_run(instance_id, payload_ptr, payload_len, out_ptr_ptr, out_len_ptr) -> i32` | export | Run one tick. Payload is JSON `{ input: { port: Message } }`; result JSON is allocated by the pack and pointed at via the two `out_*` slots. Returns 0 on success |
+| `env.__reflow_pack_register_template(metadata_ptr, metadata_len, factory_id)` | **import** | Loader provides; pack calls once per registered template. `metadata` is JSON `{ name, inports, outports }` so the loader knows the actor's port shape without a second round-trip |
+
+The wire format for `__reflow_pack_actor_run` is JSON in / JSON out
+across the pack's linear memory — chosen for ABI simplicity at
+the cost of per-tick serialization. The pack and runtime live in
+separate wasm modules with separate memories, so any cross-boundary
+data has to be marshalled. JSON is what the rest of the runtime
+already speaks.
+
+**Sync-execution-only.** The current pack-side implementation drives
+the actor's behavior future via `pollster::block_on`. That works
+for actors whose futures don't await JS Promises (math, transforms,
+sync GPU work). Actors that `.await` `fetch` or
+`wgpu::map_async` will hang the call site. The next milestone
+integrates `wasm-bindgen-futures` so async pack actors can yield
+to the JS event loop.
 
 The ABI version is computed identically on both sides (FNV-1a hash
 of the rustc verbose version + a manually bumped revision in

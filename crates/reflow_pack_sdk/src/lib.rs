@@ -164,49 +164,91 @@ pub use reflow_actor::{ActorBehavior, ActorLoad, ActorPayload, ActorState, Memor
 #[cfg(target_arch = "wasm32")]
 mod wasm_abi {
     use super::*;
+    use std::collections::HashMap;
     use std::sync::Mutex;
+    use reflow_actor::message::Message;
 
     type Factory = Box<dyn Fn() -> std::sync::Arc<dyn Actor> + Send + Sync>;
 
-    // Single-thread on wasm; Mutex picked for `Send + Sync` rather
-    // than for actual locking. `std::sync::OnceLock` is in
-    // core/std and avoids pulling once_cell into a SDK that pack
-    // authors depend on.
-    static WASM_FACTORIES: std::sync::OnceLock<Mutex<Vec<Factory>>> =
+    /// Cached per-template metadata captured at registration time so
+    /// the JS adapter can declare the right inports/outports without
+    /// having to instantiate the actor itself.
+    struct TemplateEntry {
+        factory: Factory,
+        inports: Vec<String>,
+        outports: Vec<String>,
+    }
+
+    /// Live actor instance held inside the pack. The runtime keeps a
+    /// 1:1 mapping `(network node) ↔ (instance_id)` and routes every
+    /// tick's payload through `__reflow_pack_actor_run(instance_id)`.
+    struct InstanceEntry {
+        actor: std::sync::Arc<dyn Actor>,
+        state: std::sync::Arc<parking_lot::Mutex<dyn ActorState>>,
+        load: std::sync::Arc<reflow_actor::ActorLoad>,
+    }
+
+    /// `Arc<dyn Actor>` is `!Send + !Sync` on wasm (the actor's
+    /// behavior future contains JS handles), but `static` items
+    /// need `Sync`. wasm32 is single-threaded so the bound is just
+    /// typechecking — wrap the table in a transparent newtype with
+    /// `unsafe impl Sync` to satisfy it. The runtime borrow checks
+    /// inside Mutex/RefCell still police reentrancy on the one
+    /// thread.
+    #[repr(transparent)]
+    struct WasmSync<T>(T);
+    // OnceLock additionally requires Send (for cross-thread init);
+    // wasm has only one thread so neither bound is observable at
+    // runtime, but both have to be present for the type to compile.
+    unsafe impl<T> Sync for WasmSync<T> {}
+    unsafe impl<T> Send for WasmSync<T> {}
+    impl<T> std::ops::Deref for WasmSync<T> {
+        type Target = T;
+        fn deref(&self) -> &T {
+            &self.0
+        }
+    }
+
+    static TEMPLATES: std::sync::OnceLock<WasmSync<Mutex<Vec<TemplateEntry>>>> =
         std::sync::OnceLock::new();
-    fn factories() -> &'static Mutex<Vec<Factory>> {
-        WASM_FACTORIES.get_or_init(|| Mutex::new(Vec::new()))
+    static INSTANCES: std::sync::OnceLock<WasmSync<Mutex<HashMap<u32, InstanceEntry>>>> =
+        std::sync::OnceLock::new();
+    static NEXT_INSTANCE_ID: std::sync::atomic::AtomicU32 =
+        std::sync::atomic::AtomicU32::new(1);
+
+    fn templates() -> &'static Mutex<Vec<TemplateEntry>> {
+        &TEMPLATES.get_or_init(|| WasmSync(Mutex::new(Vec::new()))).0
+    }
+    fn instances() -> &'static Mutex<HashMap<u32, InstanceEntry>> {
+        &INSTANCES.get_or_init(|| WasmSync(Mutex::new(HashMap::new()))).0
     }
 
     // The browser pack loader provides this import under the `env`
     // module — `WebAssembly.instantiate(module, { env: { … } })`.
-    // Without `wasm_import_module` the linker emits an unresolved
-    // symbol error instead of a wasm import entry.
     #[link(wasm_import_module = "env")]
     unsafe extern "C" {
         /// Provided by the JS pack loader at instantiation time.
-        /// Receives a UTF-8 name pointer + length plus the factory
-        /// id assigned by `WasmPackHost`. JS uses the id later to
-        /// route actor-creation requests back through
+        /// `metadata` is a UTF-8 JSON string of shape
+        /// `{ "name": "...", "inports": [...], "outports": [...] }`,
+        /// captured at registration so the JS-side adapter can
+        /// declare the right ports without instantiating the actor.
+        /// `factory_id` is what JS hands back through
         /// `__reflow_pack_create_actor`.
         fn __reflow_pack_register_template(
-            name_ptr: *const u8,
-            name_len: u32,
+            metadata_ptr: *const u8,
+            metadata_len: u32,
             factory_id: u32,
         );
     }
 
     /// Browser-side counterpart to the native [`PackHost`]. Same
-    /// surface — the user calls `host.register("name", factory)`
-    /// from inside their `#[reflow_pack]` function — but instead of
-    /// writing into a C-ABI vtable, the registration call is
-    /// forwarded to JS via the imported
-    /// `__reflow_pack_register_template` function.
+    /// `host.register("name", factory)` surface; instead of writing
+    /// into a C-ABI vtable, the registration call is forwarded to
+    /// JS via the imported `__reflow_pack_register_template`.
     ///
-    /// The lifetime parameter is a `PhantomData` here so the wasm
-    /// `PackHost<'a>` alias matches the native struct's signature
-    /// — pack source code writes `fn register(host: &mut PackHost)`
-    /// either way.
+    /// The phantom lifetime makes `PackHost<'a>` line up with the
+    /// native struct's signature so pack source code writes
+    /// `fn register(host: &mut PackHost)` either way.
     pub struct WasmPackHost<'a> {
         status: i32,
         _phantom: std::marker::PhantomData<&'a ()>,
@@ -226,23 +268,45 @@ mod wasm_abi {
             self.status
         }
 
-        /// Register a template id against a factory closure. Same
-        /// shape as the native `PackHost::register`.
+        /// Register a template id against a factory closure. We
+        /// instantiate the actor once here to read its declared
+        /// inport / outport names — that lets the JS-side adapter
+        /// publish the correct port shape to the runtime without
+        /// any second round-trip.
         pub fn register<F>(&mut self, template_id: &str, factory: F)
         where
             F: Fn() -> std::sync::Arc<dyn Actor> + Send + Sync + 'static,
         {
-            let mut table = match factories().lock() {
+            let probe = factory();
+            let inports = probe.inport_names();
+            let outports = probe.outport_names();
+            drop(probe);
+
+            let mut table = match templates().lock() {
                 Ok(g) => g,
                 Err(p) => p.into_inner(),
             };
             let factory_id = table.len() as u32;
-            table.push(Box::new(factory));
+            table.push(TemplateEntry {
+                factory: Box::new(factory),
+                inports: inports.clone(),
+                outports: outports.clone(),
+            });
             drop(table);
 
-            let bytes = template_id.as_bytes();
+            let metadata = serde_json::json!({
+                "name": template_id,
+                "inports": inports,
+                "outports": outports,
+            })
+            .to_string();
+            let bytes = metadata.as_bytes();
             unsafe {
-                __reflow_pack_register_template(bytes.as_ptr(), bytes.len() as u32, factory_id);
+                __reflow_pack_register_template(
+                    bytes.as_ptr(),
+                    bytes.len() as u32,
+                    factory_id,
+                );
             }
         }
     }
@@ -253,30 +317,260 @@ mod wasm_abi {
         }
     }
 
-    /// Browser-side actor-creation entrypoint. JS calls this with
-    /// the factory id it stashed during `__reflow_pack_register` and
-    /// receives a `*mut PackActorHandle` it can route through the
-    /// runtime's existing `PackActorHandle::unbox` path.
-    ///
-    /// Returns null if the id is out of bounds.
+    // ─── Memory helpers ────────────────────────────────────────────
+
+    /// Allocate `size` bytes inside the pack's wasm memory.
+    /// JS uses this to write actor payloads where the pack can read
+    /// them. Pair with `__reflow_pack_free` once the pack has copied
+    /// out / serialized whatever it needed.
     #[unsafe(no_mangle)]
-    pub extern "C" fn __reflow_pack_create_actor(factory_id: u32) -> *mut PackActorHandle {
-        let table = match factories().lock() {
+    pub extern "C" fn __reflow_pack_alloc(size: u32) -> u32 {
+        if size == 0 {
+            return 0;
+        }
+        let layout = match std::alloc::Layout::from_size_align(size as usize, 8) {
+            Ok(l) => l,
+            Err(_) => return 0,
+        };
+        // SAFETY: layout has size > 0; alloc returns null on failure.
+        let ptr = unsafe { std::alloc::alloc(layout) };
+        ptr as u32
+    }
+
+    /// Free a buffer previously returned by `__reflow_pack_alloc`
+    /// (or by a successful `__reflow_pack_actor_run` result write).
+    /// `size` MUST match the allocation size.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn __reflow_pack_free(ptr: u32, size: u32) {
+        if ptr == 0 || size == 0 {
+            return;
+        }
+        let layout = match std::alloc::Layout::from_size_align(size as usize, 8) {
+            Ok(l) => l,
+            Err(_) => return,
+        };
+        // SAFETY: caller asserts ptr came from `__reflow_pack_alloc`
+        // with this same size.
+        unsafe { std::alloc::dealloc(ptr as *mut u8, layout) };
+    }
+
+    // ─── Actor lifecycle ───────────────────────────────────────────
+
+    /// Create a fresh actor instance for `factory_id`. The pack keeps
+    /// the instance alive in a static table keyed by a unique
+    /// `instance_id` (returned). JS hands the id back to
+    /// `__reflow_pack_actor_run` on every tick.
+    ///
+    /// Returns 0 on bad factory id.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn __reflow_pack_create_actor(factory_id: u32) -> u32 {
+        let table = match templates().lock() {
             Ok(g) => g,
             Err(p) => p.into_inner(),
         };
-        match table.get(factory_id as usize) {
-            Some(factory) => {
-                let actor = factory();
-                PackActorHandle::new(actor)
+        let entry = match table.get(factory_id as usize) {
+            Some(e) => e,
+            None => return 0,
+        };
+        let actor = (entry.factory)();
+        let state = actor.create_state();
+        let load = actor.load_count();
+        drop(table);
+
+        let id = NEXT_INSTANCE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let mut map = match instances().lock() {
+            Ok(g) => g,
+            Err(p) => p.into_inner(),
+        };
+        map.insert(id, InstanceEntry { actor, state, load });
+        id
+    }
+
+    /// Drop the actor instance owned by `instance_id`. Any future
+    /// `__reflow_pack_actor_run(instance_id, ...)` returns an error.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn __reflow_pack_destroy_actor(instance_id: u32) {
+        let mut map = match instances().lock() {
+            Ok(g) => g,
+            Err(p) => p.into_inner(),
+        };
+        map.remove(&instance_id);
+    }
+
+    // ─── Tick: run an actor against a JSON-encoded payload ─────────
+
+    /// Run the actor `instance_id` once with the given JSON payload.
+    ///
+    /// Wire shape — JSON in, JSON out — chosen for ABI simplicity at
+    /// the cost of per-tick serialization. The pack and runtime
+    /// memories don't share an address space, so any cross-boundary
+    /// data has to be marshalled; JSON is what the rest of the
+    /// runtime already speaks.
+    ///
+    /// **Input** (`payload_ptr` / `payload_len`):
+    /// ```json
+    /// {
+    ///   "input":  { "<port>": <Message>, ... },
+    ///   "config": <ActorConfig>          // optional
+    /// }
+    /// ```
+    ///
+    /// **Output** — `out_ptr_ptr` and `out_len_ptr` each point at a
+    /// 4-byte slot that this function writes:
+    /// - on success: `*out_ptr_ptr` = ptr to a freshly-allocated
+    ///   buffer holding the result JSON
+    ///   (`{ "<port>": <Message>, ... }`); `*out_len_ptr` = its size.
+    ///   Caller frees with `__reflow_pack_free(ptr, size)`.
+    /// - on failure: same buffer holds `{ "error": "<msg>" }`;
+    ///   the return value is non-zero.
+    ///
+    /// **Sync execution.** The actor's behavior future is driven via
+    /// `pollster::block_on`. That works for actors whose futures
+    /// don't await JS Promises (math, transforms, sync GPU work).
+    /// Actors that `.await` `fetch` / `wgpu::map_async` will hang
+    /// the call site; the next milestone integrates wasm-bindgen
+    /// futures so async actors can yield to the JS event loop.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn __reflow_pack_actor_run(
+        instance_id: u32,
+        payload_ptr: u32,
+        payload_len: u32,
+        out_ptr_ptr: u32,
+        out_len_ptr: u32,
+    ) -> i32 {
+        // Helper: write a JSON byte buffer to the out slots.
+        fn write_out(json: String, out_ptr_ptr: u32, out_len_ptr: u32) {
+            let bytes = json.into_bytes();
+            let len = bytes.len() as u32;
+            let buf_ptr = __reflow_pack_alloc(len.max(1));
+            if buf_ptr != 0 {
+                // SAFETY: just allocated `len` bytes at buf_ptr.
+                unsafe {
+                    std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf_ptr as *mut u8, bytes.len());
+                }
             }
-            None => std::ptr::null_mut(),
+            // SAFETY: out_ptr_ptr / out_len_ptr point at JS-managed
+            // memory inside the pack's wasm linear memory; JS allocated
+            // them via __reflow_pack_alloc before calling.
+            unsafe {
+                std::ptr::write_unaligned(out_ptr_ptr as *mut u32, buf_ptr);
+                std::ptr::write_unaligned(out_len_ptr as *mut u32, len);
+            }
         }
+
+        // ── Look up the actor instance.
+        let instance = {
+            let map = match instances().lock() {
+                Ok(g) => g,
+                Err(p) => p.into_inner(),
+            };
+            match map.get(&instance_id) {
+                Some(e) => (e.actor.clone(), e.state.clone(), e.load.clone()),
+                None => {
+                    write_out(
+                        format!(r#"{{"error":"unknown instance_id {}"}}"#, instance_id),
+                        out_ptr_ptr,
+                        out_len_ptr,
+                    );
+                    return -1;
+                }
+            }
+        };
+
+        // ── Read + parse the payload.
+        let payload_bytes = if payload_len == 0 {
+            &[][..]
+        } else {
+            // SAFETY: JS owns this region for the duration of the
+            // call; it allocated via __reflow_pack_alloc.
+            unsafe { std::slice::from_raw_parts(payload_ptr as *const u8, payload_len as usize) }
+        };
+        let payload_str = match std::str::from_utf8(payload_bytes) {
+            Ok(s) => s,
+            Err(e) => {
+                write_out(
+                    format!(r#"{{"error":"invalid utf-8 in payload: {}"}}"#, e),
+                    out_ptr_ptr,
+                    out_len_ptr,
+                );
+                return -2;
+            }
+        };
+
+        // The runtime currently only needs `input` over the wire —
+        // `ActorConfig` carries channel topology and env that are
+        // managed runtime-side and don't round-trip through JSON.
+        // Adding serde to ActorConfig is a follow-up; for now an
+        // empty config + the input payload is enough for actors
+        // that don't read config-tied metadata.
+        #[derive(serde::Deserialize, Default)]
+        struct ActorRunPayload {
+            #[serde(default)]
+            input: HashMap<String, Message>,
+        }
+
+        let parsed: ActorRunPayload = match serde_json::from_str(payload_str) {
+            Ok(p) => p,
+            Err(e) => {
+                write_out(
+                    format!(r#"{{"error":"parse payload: {}"}}"#, e),
+                    out_ptr_ptr,
+                    out_len_ptr,
+                );
+                return -3;
+            }
+        };
+
+        // ── Build a fresh ActorContext per tick.
+        let (actor, state, load) = instance;
+        let channel = flume::unbounded();
+        let context = reflow_actor::ActorContext::new(
+            parsed.input,
+            channel,
+            state,
+            reflow_actor::ActorConfig::default(),
+            load,
+        );
+
+        // ── Drive the future to completion. Sync-only for now.
+        let future = actor.get_behavior()(context);
+        let result = match pollster::block_on(future) {
+            Ok(out) => out,
+            Err(e) => {
+                write_out(
+                    format!(
+                        r#"{{"error":"actor run failed: {}"}}"#,
+                        e.to_string().replace('"', "\\\"")
+                    ),
+                    out_ptr_ptr,
+                    out_len_ptr,
+                );
+                return -4;
+            }
+        };
+
+        // ── Serialize outputs.
+        let json = match serde_json::to_string(&result) {
+            Ok(s) => s,
+            Err(e) => {
+                write_out(
+                    format!(r#"{{"error":"serialize output: {}"}}"#, e),
+                    out_ptr_ptr,
+                    out_len_ptr,
+                );
+                return -5;
+            }
+        };
+        write_out(json, out_ptr_ptr, out_len_ptr);
+        0
     }
 }
 
 #[cfg(target_arch = "wasm32")]
-pub use wasm_abi::{WasmPackHost, __reflow_pack_create_actor};
+pub use wasm_abi::{
+    WasmPackHost, __reflow_pack_actor_run, __reflow_pack_alloc, __reflow_pack_create_actor,
+    __reflow_pack_destroy_actor, __reflow_pack_free,
+};
 
 /// Cross-target alias: pack authors always write
 /// `fn register(host: &mut PackHost)`. Native binds it to the

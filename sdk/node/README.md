@@ -406,14 +406,19 @@ Returned object: `{ manifest, name, version, templates, wasm,
 module, instance, registered, attachTo }`. `instance` is `null`
 until `attachTo` succeeds.
 
-> **Status of actor execution.** The registration handshake is
-> wired end-to-end, but pack-side `__reflow_pack_create_actor(id)`
-> returns a pointer into the pack's wasm linear memory. The
-> runtime lives in a separate wasm module with a separate memory,
-> so the actor adapter today does the registration call and then
-> `ctx.fail`s with a clear "wasm pack actor execution not yet
-> wired" message. Wiring full message-passing across the pack ↔
-> runtime memory boundary is the next milestone.
+**Sync actor execution wired.** Each tick, the JS adapter
+JSON-encodes the input port map, allocates space in the pack's
+linear memory via `__reflow_pack_alloc`, calls
+`__reflow_pack_actor_run(instance_id, ...)`, decodes the JSON
+result, and forwards it through `ctx.send` / `ctx.done`. The
+pack-side implementation drives the actor's behavior future
+synchronously via `pollster::block_on` — works for actors whose
+futures don't await JS Promises (math, transforms, sync GPU
+work). Actors that `.await` `fetch` or `wgpu::map_async` will
+hang the call site; the next milestone integrates
+`wasm-bindgen-futures` so async pack actors can yield to the JS
+event loop. See [pack ABI](../packs/README.md#pack-abi) for the
+full wire format.
 
 **ABI handshake.** `loadPack` rejects packs whose
 `reflow_pack_abi_version` doesn't match the runtime's. The match

@@ -742,25 +742,43 @@ export async function loadPack(url, options = {}) {
 // Internal: walk the pack's register fn and wire it to the network.
 // Split out so `attachTo` can also call it post-hoc.
 async function attachPackToNetwork(module, network) {
+  /** Captured at registration time:
+   *   { name: string, factoryId: number, inports: string[], outports: string[] }
+   */
   const registered = [];
+
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+
+  // Helper: build a fresh view over the pack's current linear memory
+  // (the buffer can be detached after a wasm grow, so re-fetch each
+  // time rather than caching `Uint8Array`).
+  const memBytes = () => new Uint8Array(instance.exports.memory.buffer);
+  const memView = () => new DataView(instance.exports.memory.buffer);
 
   const importObject = {
     env: {
-      // The pack's `host.register("name", factory)` inside its
-      // `#[reflow_pack]` function fires this once per template.
-      __reflow_pack_register_template: (namePtr, nameLen, factoryId) => {
-        const memory = instance.exports.memory;
-        const view = new Uint8Array(memory.buffer, namePtr, nameLen);
-        const name = new TextDecoder().decode(view);
-        registered.push({ name, factoryId });
+      // Fired once per `host.register("name", factory)` inside the
+      // pack's `#[reflow_pack]` function. The metadata blob is JSON
+      // `{name, inports, outports}` so the adapter can declare the
+      // right ports without a second round-trip.
+      __reflow_pack_register_template: (metaPtr, metaLen, factoryId) => {
+        const view = memBytes().subarray(metaPtr, metaPtr + metaLen);
+        const meta = JSON.parse(decoder.decode(view));
+        registered.push({
+          name: meta.name,
+          factoryId,
+          inports: Array.isArray(meta.inports) ? meta.inports : [],
+          outports: Array.isArray(meta.outports) ? meta.outports : [],
+        });
       },
     },
   };
 
-  // `instance` is captured by the closure above. We assign it after
-  // `WebAssembly.instantiate` returns; the import callbacks only
-  // fire from inside `__reflow_pack_register()` which we call
-  // explicitly below, so the binding is set in time.
+  // `instance` is captured by the closures above. The
+  // import callback only fires from inside the explicit
+  // `__reflow_pack_register()` call below, so the binding is set
+  // by then.
   let instance;
   ({ instance } = await WebAssembly.instantiate(module, importObject));
 
@@ -769,29 +787,111 @@ async function attachPackToNetwork(module, network) {
     throw new Error(`pack __reflow_pack_register returned status ${status}`);
   }
 
-  // Adapter actor for each registered template. The execution side
-  // is stubbed for now — see the loadPack docstring for why and
-  // what comes next.
-  for (const { name, factoryId } of registered) {
+  for (const { name, factoryId, inports, outports } of registered) {
+    // One pack-side actor instance per template registration. The
+    // pack maintains the instance in its static `INSTANCES` table.
+    // We treat the returned `instanceId` as opaque.
+    const instanceId = instance.exports.__reflow_pack_create_actor(factoryId);
+    if (instanceId === 0) {
+      throw new Error(
+        `pack __reflow_pack_create_actor(${factoryId}) returned 0 — ` +
+          `factory id out of range`,
+      );
+    }
+
     network.registerActor(name, {
-      inports: [],
-      outports: ["error"],
+      inports,
+      outports,
       run(ctx) {
-        const handle = instance.exports.__reflow_pack_create_actor(factoryId);
-        ctx.send({
-          error: Message.error(
-            `wasm pack '${name}' actor execution is not wired yet ` +
-              `(factoryId=${factoryId}, handle=${handle}). ` +
-              `The pack-ABI registration handshake succeeded — runtime` +
-              ` ↔ pack message marshaling is the next milestone.`,
-          ),
-        });
-        ctx.done();
+        const out = invokePackActor(instance, instanceId, ctx.input ?? {});
+        if (out.ok) {
+          ctx.send(out.outputs);
+          ctx.done();
+        } else {
+          ctx.fail(out.error);
+        }
       },
     });
   }
 
   return { instance, registered };
+}
+
+/**
+ * One tick of execution against a pack-side actor instance.
+ *
+ * Wire shape (pack ABI v1, sync execution only):
+ *   1. JSON-encode the input port map.
+ *   2. `__reflow_pack_alloc` enough bytes in pack memory; copy in.
+ *   3. `__reflow_pack_alloc(8)` for two output slots (ptr, len).
+ *   4. `__reflow_pack_actor_run(instance_id, in_ptr, in_len,
+ *       out_ptr_slot, out_len_slot)` returns 0 on success.
+ *   5. Read the result ptr+len, slice out the JSON, decode.
+ *   6. `__reflow_pack_free` everything.
+ *
+ * Async actors (those that `.await` JS Promises like fetch / wgpu
+ * map_async) currently hang the pack-side `pollster::block_on`. The
+ * follow-up milestone integrates wasm-bindgen-futures so async
+ * packs can yield to the JS event loop.
+ *
+ * @returns `{ ok: true, outputs }` or `{ ok: false, error }`
+ */
+function invokePackActor(instance, instanceId, inputMap) {
+  const exp = instance.exports;
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const payloadJson = JSON.stringify({ input: inputMap });
+  const payloadBytes = encoder.encode(payloadJson);
+  const payloadLen = payloadBytes.length;
+
+  // Allocate input buffer + 8-byte slot pair for the output ptr/len.
+  const payloadPtr = exp.__reflow_pack_alloc(payloadLen || 1);
+  const outBlock = exp.__reflow_pack_alloc(8);
+  if (!payloadPtr || !outBlock) {
+    return { ok: false, error: "pack OOM during alloc" };
+  }
+
+  try {
+    // Copy payload into pack memory.
+    new Uint8Array(exp.memory.buffer, payloadPtr, payloadLen).set(payloadBytes);
+
+    const status = exp.__reflow_pack_actor_run(
+      instanceId,
+      payloadPtr,
+      payloadLen,
+      outBlock,
+      outBlock + 4,
+    );
+
+    const dv = new DataView(exp.memory.buffer);
+    const resultPtr = dv.getUint32(outBlock, true);
+    const resultLen = dv.getUint32(outBlock + 4, true);
+    let resultJson = "";
+    if (resultPtr && resultLen) {
+      const view = new Uint8Array(exp.memory.buffer, resultPtr, resultLen);
+      // .slice() detaches from the live wasm buffer so a later
+      // grow() doesn't invalidate our reference.
+      resultJson = decoder.decode(view.slice());
+      exp.__reflow_pack_free(resultPtr, resultLen);
+    }
+
+    if (status !== 0) {
+      let msg = `pack actor run failed (status ${status})`;
+      try {
+        const parsed = JSON.parse(resultJson);
+        if (parsed?.error) msg = parsed.error;
+      } catch {
+        /* keep default msg */
+      }
+      return { ok: false, error: msg };
+    }
+
+    return { ok: true, outputs: resultJson ? JSON.parse(resultJson) : {} };
+  } finally {
+    exp.__reflow_pack_free(payloadPtr, payloadLen || 1);
+    exp.__reflow_pack_free(outBlock, 8);
+  }
 }
 
 // ─── Pass-through wasm exports ─────────────────────────────────────────────
