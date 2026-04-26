@@ -1,6 +1,24 @@
 # Installation
 
-This guide covers installing and setting up Reflow on your system.
+This guide covers installing and setting up Reflow on your system. Pick a path based on the language you're integrating from.
+
+## Quickest path: a language SDK
+
+Most users start with one of the [language SDKs](../sdks/README.md). They wrap the Rust runtime in idiomatic shapes and ship pre-built native binaries for darwin / linux / windows — **no Rust toolchain required to use them**.
+
+| Language | Install | Native lib |
+|---|---|---|
+| Node.js | `npm install @offbit-ai/reflow` | bundled per-platform via `optionalDependencies` |
+| Python | `pip install offbit-reflow` | bundled in the wheel (abi3-py39) |
+| Go | `go get github.com/offbit-ai/reflow/sdk/go@v0.2.1` + run `scripts/install_lib.sh` | external `libreflow_rt_capi`, fetched by the install script |
+| JVM (Java + Kotlin) | `dependencies { implementation("ai.offbit:reflow:0.2.2") }` | bundled in the fat jar (classpath resource) |
+| C++ | `add_subdirectory(third_party/reflow/sdk/cpp)` | external `libreflow_rt_capi` from the [`sdk/go/v*` release tarball](https://github.com/offbit-ai/reflow/releases?q=sdk%2Fgo) |
+
+The [SDK chapters](../sdks/README.md) walk through each one with a hello-world example. Optional [actor packs](../packs/README.md) (`loadPack(...)`) bring heavier palettes — GPU, ML, browser automation, ~6,700 SaaS API actors — into any SDK install at runtime.
+
+## Building from source (Rust)
+
+The rest of this page covers building the Rust runtime from source — what you'll want if you're embedding Reflow in your own native host, contributing to the runtime itself, or rebuilding `libreflow_rt_capi` for a platform we don't ship pre-built.
 
 ## Prerequisites
 

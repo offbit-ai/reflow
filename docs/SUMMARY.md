@@ -14,6 +14,24 @@
 
 ---
 
+# Language SDKs
+
+- [SDK Overview](sdks/README.md)
+  - [Node.js](sdks/node.md)
+  - [Python](sdks/python.md)
+  - [Go](sdks/go.md)
+  - [JVM (Java + Kotlin)](sdks/jvm.md)
+  - [C++](sdks/cpp.md)
+
+---
+
+# Actor Packs
+
+- [Pack Overview](packs/README.md)
+  - [Authoring a Pack](packs/authoring.md)
+
+---
+
 # Architecture
 
 - [Architecture Overview](architecture/overview.md)
