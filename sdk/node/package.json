@@ -1,6 +1,6 @@
 {
   "name": "@offbit-ai/reflow",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Reflow is a modular flow-based programming runtime that executes actor-model DAGs for data pipelines, real-time media, visual tooling, and optional ML/CV workloads. This package is the official Node.js SDK.",
   "main": "reflow.js",
   "module": "reflow.mjs",

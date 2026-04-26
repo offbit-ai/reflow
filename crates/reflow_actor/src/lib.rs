@@ -658,6 +658,7 @@ impl BrowserActorContext {
             resolved_env: HashMap::new(),
             config: config_map,
             namespace: None,
+            inport_connection_counts: HashMap::new(),
         };
 
         Ok(BrowserActorContext {
