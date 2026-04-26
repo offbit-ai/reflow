@@ -76,8 +76,8 @@ once_cell = { version = "1", optional = true }
 wgpu = { version = "24", optional = true }
 pollster = { version = "0.4", optional = true }
 
-# Video encoding (optional, native-only)
-openh264 = { version = "0.6", optional = true }
+# (openh264 declared in the native-only target deps — wasm uses
+# WebCodecs via web-sys instead.)
 
 # Headless browser automation (optional, native-only)
 chromiumoxide = { version = "0.7", features = ["tokio-runtime"], optional = true }
@@ -111,6 +111,24 @@ web-sys = { version = "0.3", features = [
     "HtmlCanvasElement",
     # Console for the wgpu init log so adapter info surfaces in DevTools.
     "console",
+    # WebCodecs — used by the wasm video_encode fallback. These types
+    # are gated behind `--cfg=web_sys_unstable_apis` (wired in
+    # `.cargo/config.toml`); the codec itself is widely supported in
+    # Chromium/Edge/Safari but Firefox-on-Android lacks it.
+    "VideoEncoder",
+    "VideoEncoderConfig",
+    "VideoEncoderInit",
+    "VideoEncoderEncodeOptions",
+    "VideoFrame",
+    "VideoFrameInit",
+    "VideoFrameBufferInit",
+    "EncodedVideoChunk",
+    "EncodedVideoChunkInit",
+    "EncodedVideoChunkType",
+    "EncodedVideoChunkMetadata",
+    "VideoPixelFormat",
+    "VideoColorSpaceInit",
+    "DomException",
 ] }
 nokhwa = { version = "0.10.10", features = ["js-sys"], optional = true }
 # Browser RNG. Pinned alongside the .cargo/config.toml rustflag
@@ -135,6 +153,13 @@ nokhwa = { version = "0.10.10", features = ["input-native"], optional = true }
 
 # tokio::fs is native-only — file actors gate themselves on this.
 tokio = { version = "1", features = ["fs"] }
+
+# H.264 encoder for the video_encode actor on native. Wasm uses
+# WebCodecs `VideoEncoder` (web-sys, declared above). The
+# `video-encode` feature pulls this dep on native via `dep:openh264`;
+# on wasm the same feature is on but openh264 isn't in the dep
+# graph because the declaration here is target-conditional.
+openh264 = { version = "0.6", optional = true }
 
 # JavaScript runtime — native only.
 #

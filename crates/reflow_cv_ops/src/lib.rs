@@ -836,10 +836,14 @@ fn smooth_landmarks(context: &ActorContext, mut current: LandmarkSet, alpha: f32
     let previous = {
         let state = context.get_state();
         let state = state.lock();
+        // `MemoryState::get` returns `Option<&Value>` on native and
+        // `JsValue` on wasm (the JS side wants direct access). Use
+        // the cross-target `value()` accessor instead, which is
+        // `Option<&Value>` on both targets.
         state
             .as_any()
             .downcast_ref::<MemoryState>()
-            .and_then(|memory| memory.get("previous_landmarks"))
+            .and_then(|memory| memory.value("previous_landmarks"))
             .and_then(|value| serde_json::from_value::<LandmarkSet>(value.clone()).ok())
     };
 

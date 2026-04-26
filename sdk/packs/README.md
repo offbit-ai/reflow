@@ -18,7 +18,7 @@ manifest:
 | `x86_64-unknown-linux-gnu` | every pack |
 | `aarch64-unknown-linux-gnu` | every pack |
 | `x86_64-pc-windows-msvc` | every pack |
-| `wasm32-unknown-unknown` | only packs whose deps compile to wasm — currently `gpu` and `window_events`. wgpu's WebGPU backend handles GPU rendering in the browser. Native loaders ignore the `.wasm` entry; the browser-side pack loader (in `@offbit-ai/reflow`) picks it up via `WebAssembly.instantiate`. |
+| `wasm32-unknown-unknown` | every pack except `browser` (which drives a real Chrome instance over TCP via CDP — impossible from inside a browser tab). Native rendering uses `wgpu`'s WebGPU backend; HTTP uses Fetch via `reqwest`'s wasm support; H.264 video encoding falls back to the [WebCodecs `VideoEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder) API (Chromium / Edge / Safari ship it; Firefox-on-Android does not). Native loaders ignore the `.wasm` entry; the browser-side pack loader in `@offbit-ai/reflow` picks it up via `WebAssembly.instantiate`. |
 
 ```sh
 VER=0.2.0

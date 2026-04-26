@@ -70,19 +70,20 @@ jobs:
             dylib_prefix: ""
             dylib_ext: dll
           # Browser target. wgpu uses the WebGPU backend, reqwest uses
-          # Fetch. Several packs are inherently native-only (video_encode
-          # → openh264, browser → chromiumoxide+mio, ml → reflow_cv_ops,
-          # api_services → in-progress) — for them the build step
-          # fails, the assemble script (.github/scripts/assemble_packs.py)
-          # discovers no .wasm in the artifact, and the pack ships
-          # without a wasm32 entry in its manifest.
+          # Fetch, video_encode falls back to the WebCodecs `VideoEncoder`
+          # API. The `browser` pack stays native-only — chromiumoxide
+          # drives a real Chrome instance over TCP via CDP, which is
+          # impossible from inside a browser tab.
           - host: ubuntu-latest
             triple: wasm32-unknown-unknown
             dylib_prefix: ""
             dylib_ext: wasm
-            # The packs we know compile to wasm32 today. Update as more
-            # become wasm-compatible (api_services, ml — tracked).
-            wasm_packs: reflow_pack_gpu reflow_pack_window_events
+            wasm_packs: >-
+              reflow_pack_gpu
+              reflow_pack_window_events
+              reflow_pack_api_services
+              reflow_pack_ml
+              reflow_pack_video_encode
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

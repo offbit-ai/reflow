@@ -2,7 +2,15 @@
 runner = "wasm-server-runner"
 # getrandom 0.3 needs a backend cfg for browser; without it the wasm32
 # build fails at link time on a `compile_error!`.
-rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
+#
+# `web_sys_unstable_apis` opts in to web-sys bindings for browser
+# APIs that haven't been merged into the stable WHATWG/W3C surface
+# yet — currently WebCodecs (VideoEncoder, VideoFrame, …), used by
+# the wasm video_encode fallback. Stable APIs are unaffected.
+rustflags = [
+    '--cfg', 'getrandom_backend="wasm_js"',
+    '--cfg', 'web_sys_unstable_apis',
+]
 
 [build]
 # Enable incremental compilation

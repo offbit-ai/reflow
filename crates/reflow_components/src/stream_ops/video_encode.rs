@@ -1,11 +1,20 @@
 //! Video encoder actor — consumes RGBA frame stream, outputs H.264 MP4.
 //!
-//! Uses openh264 for H.264 encoding and a minimal ISOBMFF muxer for MP4
-//! container. No system FFmpeg dependency required.
+//! Backend per target:
+//! - **Native**: openh264 (pure Rust H.264 encoder, no system FFmpeg).
+//! - **wasm32**: WebCodecs `VideoEncoder` via web-sys (Chromium /
+//!   Edge / Safari ship hardware acceleration; Firefox-on-Android
+//!   does not, see <https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder>).
+//!
+//! Both paths produce AVCC-framed H.264 NALs that the shared
+//! `mux_mp4` ISOBMFF muxer wraps into an MP4 — the on-the-wire
+//! output is identical.
 
 use crate::{Actor, ActorBehavior, Message, Port};
 use anyhow::{Error, Result};
+#[cfg(not(target_arch = "wasm32"))]
 use openh264::encoder::{Encoder, EncoderConfig};
+#[cfg(not(target_arch = "wasm32"))]
 use openh264::formats::{RgbSliceU8, YUVBuffer};
 use reflow_actor::{message::EncodableValue, stream::StreamFrame, ActorContext};
 use reflow_actor_macro::actor;
@@ -37,13 +46,24 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 
     let tfps = target_fps;
 
-    // Stream-encode: encode each frame as it arrives, keeping only compressed NALs.
-    // No raw RGBA frames are accumulated — memory stays constant.
+    // Stream-encode: encode each frame as it arrives, keeping only
+    // compressed NALs. No raw RGBA frames are accumulated — memory
+    // stays constant.
+    //
+    // Native: openh264 is sync + CPU-heavy, so we hand it to
+    // `spawn_blocking` to keep the tokio reactor responsive. Wasm:
+    // WebCodecs is event-driven and the runtime is single-threaded
+    // (`spawn_local`), so we just await the encoder pipeline directly.
+    #[cfg(not(target_arch = "wasm32"))]
     let (mp4_bytes, width, height, fps, frame_count) =
         tokio::task::spawn_blocking(move || stream_encode(rx, tfps, bitrate_kbps))
             .await
             .map_err(|e| anyhow::anyhow!("Spawn failed: {}", e))?
             .map_err(|e| anyhow::anyhow!("{}", e))?;
+    #[cfg(target_arch = "wasm32")]
+    let (mp4_bytes, width, height, fps, frame_count) = stream_encode_wasm(rx, tfps, bitrate_kbps)
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
 
     let mut out = HashMap::new();
     out.insert("output".to_string(), Message::bytes(mp4_bytes.clone()));
@@ -65,6 +85,7 @@ pub async fn video_encoder_actor(ctx: ActorContext) -> Result<HashMap<String, Me
 /// Stream-encode: process each RGBA frame as it arrives from the stream,
 /// encode to H.264 immediately, and keep only the compressed NALs.
 /// Raw RGBA frames are never accumulated — memory stays constant.
+#[cfg(not(target_arch = "wasm32"))]
 fn stream_encode(
     rx: flume::Receiver<StreamFrame>,
     target_fps: u32,
@@ -138,6 +159,178 @@ fn stream_encode(
     }
 
     let mp4 = mux_mp4(&nal_units, &avcc_sizes, width, height, fps);
+    Ok((mp4, width, height, fps, frame_count))
+}
+
+// ─── wasm32: WebCodecs VideoEncoder ────────────────────────────────────────
+
+/// Stream-encode via the browser's `VideoEncoder` (WebCodecs).
+///
+/// Mirrors the openh264 path: read `Begin` for resolution/fps,
+/// encode each `Data` frame as it arrives, accumulate AVCC NALs,
+/// flush on `End`, then mux to MP4. The flush/encode cycle is
+/// driven by Promises that we await via wasm-bindgen-futures.
+///
+/// The `output` callback fires asynchronously as the encoder
+/// produces chunks; we collect them into a shared `RefCell<Vec<…>>`
+/// (sound under wasm32's single-thread invariant).
+#[cfg(target_arch = "wasm32")]
+async fn stream_encode_wasm(
+    rx: flume::Receiver<StreamFrame>,
+    target_fps: u32,
+    bitrate_kbps: u32,
+) -> Result<(Vec<u8>, u32, u32, u32, usize), String> {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use wasm_bindgen::prelude::*;
+    use wasm_bindgen::JsCast;
+    use wasm_bindgen_futures::JsFuture;
+    use web_sys::{
+        EncodedVideoChunk, VideoEncoder, VideoEncoderConfig, VideoEncoderInit, VideoFrame,
+        VideoFrameBufferInit, VideoPixelFormat,
+    };
+
+    // Buffer encoder output. WebCodecs invokes our output callback
+    // asynchronously; the runtime is single-threaded so a `Rc<RefCell<…>>`
+    // is sound here.
+    let nal_units: Rc<RefCell<Vec<Vec<u8>>>> = Rc::new(RefCell::new(Vec::new()));
+    let avcc_sizes: Rc<RefCell<Vec<u32>>> = Rc::new(RefCell::new(Vec::new()));
+    let encoder_error: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
+
+    let nals_for_cb = nal_units.clone();
+    let sizes_for_cb = avcc_sizes.clone();
+    let output_cb = Closure::<dyn FnMut(EncodedVideoChunk, JsValue)>::new(
+        move |chunk: EncodedVideoChunk, _meta: JsValue| {
+            let len = chunk.byte_length() as usize;
+            let mut buf = vec![0u8; len];
+            if chunk.copy_to_with_u8_slice(&mut buf).is_err() {
+                return;
+            }
+            // WebCodecs emits Annex-B by default; convert to AVCC
+            // to match the openh264 path's framing.
+            let avcc = annex_b_to_avcc(&buf);
+            sizes_for_cb.borrow_mut().push(avcc.len() as u32);
+            nals_for_cb.borrow_mut().push(avcc);
+        },
+    );
+
+    let err_cell = encoder_error.clone();
+    let error_cb = Closure::<dyn FnMut(JsValue)>::new(move |err: JsValue| {
+        let msg = err
+            .dyn_ref::<js_sys::Error>()
+            .map(|e| e.message().as_string().unwrap_or_else(|| format!("{:?}", err)))
+            .unwrap_or_else(|| format!("{:?}", err));
+        *err_cell.borrow_mut() = Some(msg);
+    });
+
+    let init = VideoEncoderInit::new(
+        error_cb.as_ref().unchecked_ref(),
+        output_cb.as_ref().unchecked_ref(),
+    );
+    let encoder = VideoEncoder::new(&init).map_err(|e| format!("VideoEncoder::new: {:?}", e))?;
+    // The closures must outlive every encoder callback. forget()
+    // leaks them deliberately — the encoder is dropped at end of
+    // function and the runtime cleans up on actor shutdown.
+    output_cb.forget();
+    error_cb.forget();
+
+    let mut width = 0u32;
+    let mut height = 0u32;
+    let mut fps = target_fps;
+    let mut configured = false;
+    let mut timestamp_us: f64 = 0.0;
+
+    loop {
+        // Yield to the event loop so encoder callbacks can fire
+        // between frames. flume's recv_async is the wasm-friendly
+        // sibling of recv().
+        let frame = match rx.recv_async().await {
+            Ok(f) => f,
+            Err(_) => break,
+        };
+        match frame {
+            StreamFrame::Begin { metadata, .. } => {
+                if let Some(md) = metadata {
+                    width = md.get("width").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
+                    height = md.get("height").and_then(|v| v.as_u64()).unwrap_or(512) as u32;
+                    fps = md
+                        .get("fps")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(target_fps as u64) as u32;
+                }
+            }
+            StreamFrame::Data(rgba) => {
+                if !configured && width > 0 && height > 0 {
+                    // avc1.42E01F = H.264 Baseline profile, level 3.1.
+                    // Widely supported across browsers / hardware
+                    // decoders; matches what openh264 emits with
+                    // default settings.
+                    let config = VideoEncoderConfig::new("avc1.42E01F", width, height);
+                    config.set_bitrate(bitrate_kbps as f64 * 1000.0);
+                    config.set_framerate(fps as f64);
+                    encoder
+                        .configure(&config)
+                        .map_err(|e| format!("configure: {:?}", e))?;
+                    configured = true;
+                }
+                if configured {
+                    // web-sys signature: (coded_height, coded_width,
+                    // format, timestamp_microseconds).
+                    let buffer_init =
+                        VideoFrameBufferInit::new(height, width, VideoPixelFormat::Rgba, timestamp_us);
+                    // SAFETY: `as_slice()` returns a `&[u8]` view of
+                    // the Rc<Vec<u8>>; the JS side copies into its
+                    // own buffer before returning, so the lifetime
+                    // is fine.
+                    let array = js_sys::Uint8Array::from(rgba.as_ref().as_slice());
+                    let frame = VideoFrame::new_with_buffer_source_and_video_frame_buffer_init(
+                        &array.into(),
+                        &buffer_init,
+                    )
+                    .map_err(|e| format!("VideoFrame::new: {:?}", e))?;
+
+                    encoder
+                        .encode(&frame)
+                        .map_err(|e| format!("encode: {:?}", e))?;
+                    frame.close();
+                    timestamp_us += 1_000_000.0 / fps as f64;
+                }
+            }
+            StreamFrame::End => break,
+            StreamFrame::Error(e) => return Err(e),
+        }
+
+        if let Some(err) = encoder_error.borrow_mut().take() {
+            return Err(err);
+        }
+    }
+
+    // Drain the encoder so any in-flight chunks make it to our
+    // output callback before we collect them.
+    JsFuture::from(encoder.flush())
+        .await
+        .map_err(|e| format!("flush: {:?}", e))?;
+    encoder.close();
+
+    if let Some(err) = encoder_error.borrow_mut().take() {
+        return Err(err);
+    }
+
+    // Drop the Rc layer — at this point only `nal_units` is alive
+    // (the closure was forgotten and dropped its ref).
+    let nals = Rc::try_unwrap(nal_units)
+        .map_err(|_| "encoder still holds nal_units ref".to_string())?
+        .into_inner();
+    let sizes = Rc::try_unwrap(avcc_sizes)
+        .map_err(|_| "encoder still holds avcc_sizes ref".to_string())?
+        .into_inner();
+
+    let frame_count = nals.len();
+    if frame_count == 0 {
+        return Err("No frames received".to_string());
+    }
+
+    let mp4 = mux_mp4(&nals, &sizes, width, height, fps);
     Ok((mp4, width, height, fps, frame_count))
 }
 
