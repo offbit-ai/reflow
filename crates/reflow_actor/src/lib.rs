@@ -516,11 +516,17 @@ impl ActorContext {
     /// // Later, read all:
     /// let all_objects = context.get_pool("objects"); // Vec<Value>
     /// ```
+    ///
+    /// Pool helpers are native-only — the wasm `MemoryState` exposes a
+    /// JS-shaped API (`get(key) -> JsValue`) instead of the
+    /// `Option<&Value>` shape these helpers were written against.
+    /// Browser actors can implement equivalent logic on top of
+    /// `MemoryState::get` / `set` directly.
     pub fn pool_upsert(&self, pool_name: &str, id: &str, value: serde_json::Value) {
         let mut state_lock = self.state.lock();
         if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
-            let pool = memory.get_mut(&key).and_then(|v| v.as_object_mut());
+            let pool = memory.value_mut(&key).and_then(|v| v.as_object_mut());
             if let Some(pool) = pool {
                 pool.insert(id.to_string(), value);
             } else {
@@ -536,7 +542,7 @@ impl ActorContext {
         let mut state_lock = self.state.lock();
         if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
-            if let Some(pool) = memory.get_mut(&key).and_then(|v| v.as_object_mut()) {
+            if let Some(pool) = memory.value_mut(&key).and_then(|v| v.as_object_mut()) {
                 pool.remove(id);
             }
         }
@@ -548,7 +554,7 @@ impl ActorContext {
         let state_lock = self.state.lock();
         if let Some(memory) = state_lock.as_any().downcast_ref::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
-            if let Some(pool) = memory.get(&key).and_then(|v| v.as_object()) {
+            if let Some(pool) = memory.value(&key).and_then(|v| v.as_object()) {
                 return pool.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
             }
         }
@@ -560,7 +566,7 @@ impl ActorContext {
         let state_lock = self.state.lock();
         if let Some(memory) = state_lock.as_any().downcast_ref::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
-            if let Some(pool) = memory.get(&key).and_then(|v| v.as_object()) {
+            if let Some(pool) = memory.value(&key).and_then(|v| v.as_object()) {
                 return pool.len();
             }
         }
@@ -572,7 +578,7 @@ impl ActorContext {
         let mut state_lock = self.state.lock();
         if let Some(memory) = state_lock.as_mut_any().downcast_mut::<MemoryState>() {
             let key = format!("_pool:{}", pool_name);
-            memory.remove(&key);
+            memory.remove_value(&key);
         }
     }
 
@@ -778,6 +784,12 @@ impl MemoryState {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    // Aliases for cross-target use — match the wasm-side accessor names
+    // so the shared pool helpers (above) compile on both targets.
+    pub fn value(&self, key: &str) -> Option<&Value> { self.get(key) }
+    pub fn value_mut(&mut self, key: &str) -> Option<&mut Value> { self.get_mut(key) }
+    pub fn remove_value(&mut self, key: &str) -> Option<Value> { self.0.remove(key) }
 }
 
 // WASM-specific MemoryState using HashMap (Send + Sync safe)
@@ -804,6 +816,7 @@ impl ActorState for MemoryState {
 unsafe impl Send for MemoryState {}
 #[cfg(target_arch = "wasm32")]
 unsafe impl Sync for MemoryState {}
+
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
@@ -875,13 +888,30 @@ impl MemoryState {
 
 #[cfg(target_arch = "wasm32")]
 impl MemoryState {
-    // Internal methods for Rust code
-    pub fn get_value(&self, key: &str) -> Option<&Value> {
+    // Rust-side accessors that the shared pool helpers call. Names
+    // match the native MemoryState aliases (`value`, `value_mut`,
+    // `remove_value`) so the same code compiles on both targets
+    // without cfg-gating per call site.
+    pub fn value(&self, key: &str) -> Option<&Value> {
         self.data.get(key)
+    }
+
+    pub fn value_mut(&mut self, key: &str) -> Option<&mut Value> {
+        self.data.get_mut(key)
     }
 
     pub fn insert(&mut self, key: &str, value: Value) {
         self.data.insert(key.to_string(), value);
+    }
+
+    pub fn remove_value(&mut self, key: &str) -> Option<Value> {
+        self.data.remove(key)
+    }
+
+    // Older alias, kept so out-of-tree code that picked it up
+    // continues to compile. New code should use `value`.
+    pub fn get_value(&self, key: &str) -> Option<&Value> {
+        self.data.get(key)
     }
 
     pub fn get_hashmap(&self) -> HashMap<String, Value> {

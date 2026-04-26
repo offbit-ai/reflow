@@ -85,6 +85,16 @@ struct ClientState {
     websocket: Option<WebSocket>,
 }
 
+// `web_sys::WebSocket` (and other wasm-bindgen types) are `!Send`
+// because they're handles into the JS heap. The browser is
+// single-threaded, so concurrent access through the auto-trait check
+// is moot — we only need this marker to satisfy generic bounds in
+// downstream async code (e.g. `Box::pin(future) where Future: Send`).
+#[cfg(target_arch = "wasm32")]
+unsafe impl Send for ClientState {}
+#[cfg(target_arch = "wasm32")]
+unsafe impl Sync for ClientState {}
+
 #[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 enum ConnectionStatus {
