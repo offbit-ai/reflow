@@ -14,7 +14,7 @@
     },
     "./browser": {
       "import": "./reflow.browser.mjs",
-      "types": "./wasm/reflow_rt_wasm.d.ts"
+      "types": "./reflow.browser.d.ts"
     },
     "./native": {
       "require": "./index.js",
@@ -69,6 +69,7 @@
     "reflow.js",
     "reflow.mjs",
     "reflow.browser.mjs",
+    "reflow.browser.d.ts",
     "reflow.d.ts",
     "index.js",
     "index.d.ts",

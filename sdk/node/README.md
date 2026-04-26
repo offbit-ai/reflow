@@ -278,39 +278,57 @@ export in `package.json` makes Vite/webpack/esbuild resolve
 bundle when bundling for the browser; Node continues to load the
 napi `.node` addon.
 
+The browser surface uses the same class names, method names, and
+argument order as Node — the entry file (`reflow.browser.mjs`)
+wraps the wasm-bindgen build behind a thin shim. Isomorphic code
+reads the same in both targets:
+
 ```js
-import { Graph, Network, ready } from "@offbit-ai/reflow";
+import { Graph, Network, Actor, Message, ready } from "@offbit-ai/reflow";
 
-await ready();                    // initialize the wasm module once
+// Browser only — call once before constructing anything.
+// (No-op shape on Node; the `ready` helper resolves immediately.)
+await ready();
 
-const g = new Graph("demo");
-g.add_node("a", "tpl_doubler");
-g.add_node("b", "tpl_collector");
-g.add_connection("a", "out", "b", "in");
+class Doubler extends Actor {
+  static component = "doubler";
+  static inports = ["in"];
+  static outports = ["out"];
+  run(ctx) {
+    ctx.send({ out: Message.integer(2 * ctx.input.in.data) });
+    ctx.done();
+  }
+}
 
-const net = Network.from_graph(g);
-net.register_actor_js("tpl_doubler", { /* JS class with run(ctx) */ });
-net.start();
+const net = new Network();
+net.addNode("a", "tpl_doubler");
+net.addNode("b", "tpl_collector");
+net.addConnection("a", "out", "b", "in");
+net.addInitial("a", "in", Message.integer(21));
+net.registerActor("tpl_doubler", new Doubler());
+await net.start();
+
+const events = net.events();
+console.log(await events.recv()); // { type: "NetworkStarted", ... }
 ```
 
-Browser-side scope (current):
+Browser-side scope:
 
-- `Graph` — full Tier-1 + Tier-2 mutators and queries
-- `Network` (alias for `GraphNetwork`) — runtime execution of JS
-  actors registered via `register_actor_js(name, klass)`
-- `bindInputEvents(network, target)` — routes DOM events
-  (keyboard, mouse, touch, wheel, resize) to input actors
+- `Graph` — full Tier-1 + Tier-2 mutator and query API
+- `Network` — same constructor + imperative API as Node
+  (`new Network()`, `addNode`, `addConnection`, `addInitial`,
+  `registerActor`, `start`, `shutdown`, `events`)
+- `Actor` — same authoring base class as Node
+- `Message` — same payload constructors as Node
+- `EventStream` — Promise-based `.recv()` over network events
+- `bindInputEvents(network, target)` — routes DOM events to input actors
 - `version()` — runtime version string
 
 Native-only stacks (file I/O, GPU, video encode, headless browser
 automation, ML/CV taskpacks) are not in the wasm bundle — those
-remain in the Node-side reflow_components catalog.
-
-The wasm module method names follow wasm-bindgen conventions
-(snake_case, `Network.from_graph(g)` rather than `new Network(g)`).
-A future minor release will add a JS shim that aligns naming with
-the Node SDK; for now isomorphic code uses the browser-side names
-where they differ.
+remain in the Node-side reflow_components catalog. Browser code
+that calls a native-only template will fail at registration time
+with a clear "template not found" error.
 
 ## License
 
