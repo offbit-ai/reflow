@@ -267,6 +267,50 @@ npm test                   # runs test/*.mjs against the built addon
 
 - `import { ... } from "@offbit-ai/reflow"` → high-level API with the `Actor` class.
 - `import { ... } from "@offbit-ai/reflow/native"` → raw napi-rs bindings (`ReflowActor`, `ReflowNetwork`, ...) if you want to skip the class layer.
+- `import { ... } from "@offbit-ai/reflow/browser"` → explicit browser-WASM build (rarely needed; bundlers route the default import here automatically).
+
+## Browser target
+
+The same package ships a wasm-bindgen build of the runtime under
+[`wasm/`](./wasm) for browser use. The `"browser"` conditional
+export in `package.json` makes Vite/webpack/esbuild resolve
+`import { Graph, Network } from "@offbit-ai/reflow"` to the wasm
+bundle when bundling for the browser; Node continues to load the
+napi `.node` addon.
+
+```js
+import { Graph, Network, ready } from "@offbit-ai/reflow";
+
+await ready();                    // initialize the wasm module once
+
+const g = new Graph("demo");
+g.add_node("a", "tpl_doubler");
+g.add_node("b", "tpl_collector");
+g.add_connection("a", "out", "b", "in");
+
+const net = Network.from_graph(g);
+net.register_actor_js("tpl_doubler", { /* JS class with run(ctx) */ });
+net.start();
+```
+
+Browser-side scope (current):
+
+- `Graph` — full Tier-1 + Tier-2 mutators and queries
+- `Network` (alias for `GraphNetwork`) — runtime execution of JS
+  actors registered via `register_actor_js(name, klass)`
+- `bindInputEvents(network, target)` — routes DOM events
+  (keyboard, mouse, touch, wheel, resize) to input actors
+- `version()` — runtime version string
+
+Native-only stacks (file I/O, GPU, video encode, headless browser
+automation, ML/CV taskpacks) are not in the wasm bundle — those
+remain in the Node-side reflow_components catalog.
+
+The wasm module method names follow wasm-bindgen conventions
+(snake_case, `Network.from_graph(g)` rather than `new Network(g)`).
+A future minor release will add a JS shim that aligns naming with
+the Node SDK; for now isomorphic code uses the browser-side names
+where they differ.
 
 ## License
 

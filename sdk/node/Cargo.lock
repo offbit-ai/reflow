@@ -2336,6 +2336,7 @@ dependencies = [
  "flume",
  "fontdue",
  "futures",
+ "getrandom 0.3.4",
  "gltf",
  "image",
  "js-sys",
@@ -2359,6 +2360,7 @@ dependencies = [
  "tiny-skia",
  "tobj",
  "tokio",
+ "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
 ]
@@ -2497,7 +2499,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt_node"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "flume",

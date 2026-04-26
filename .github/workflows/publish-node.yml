@@ -158,6 +158,31 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: sdk/node/artifacts
+
+      # Build the wasm32 browser bundle and stage it into sdk/node/wasm/
+      # so it ships inside the same `@offbit-ai/reflow` npm package.
+      # The `"browser"` conditional export in package.json picks this
+      # up when bundlers target the browser; Node imports the napi
+      # addon as before.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+      - name: Build browser-WASM bundle
+        # `--target web` emits an ES module + .wasm pair that loads
+        # via `await init()`. wasm-pack also writes a per-package
+        # `package.json` and `.gitignore` into the out-dir; we strip
+        # them so the wasm/ subtree doesn't shadow the parent
+        # package.json or look like a standalone npm package.
+        run: |
+          wasm-pack build crates/reflow_rt_wasm \
+            --target web \
+            --release \
+            --out-dir ../../sdk/node/wasm
+          rm -f sdk/node/wasm/package.json sdk/node/wasm/.gitignore
+
       - name: Distribute addons to per-platform npm packages
         working-directory: sdk/node
         # `napi create-npm-dir` scaffolds `npm/<platform>/` (one

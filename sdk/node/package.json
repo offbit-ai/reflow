@@ -7,9 +7,14 @@
   "types": "reflow.d.ts",
   "exports": {
     ".": {
+      "browser": "./reflow.browser.mjs",
       "import": "./reflow.mjs",
       "require": "./reflow.js",
       "types": "./reflow.d.ts"
+    },
+    "./browser": {
+      "import": "./reflow.browser.mjs",
+      "types": "./wasm/reflow_rt_wasm.d.ts"
     },
     "./native": {
       "require": "./index.js",
@@ -63,9 +68,11 @@
   "files": [
     "reflow.js",
     "reflow.mjs",
+    "reflow.browser.mjs",
     "reflow.d.ts",
     "index.js",
     "index.d.ts",
-    "*.node"
+    "*.node",
+    "wasm/"
   ]
 }
