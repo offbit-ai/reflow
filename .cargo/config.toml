@@ -1,5 +1,8 @@
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"
+# getrandom 0.3 needs a backend cfg for browser; without it the wasm32
+# build fails at link time on a `compile_error!`.
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
 
 [build]
 # Enable incremental compilation

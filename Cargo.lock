@@ -6412,6 +6412,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_rt_wasm"
+version = "0.2.0"
+dependencies = [
+ "console_error_panic_hook",
+ "getrandom 0.3.3",
+ "js-sys",
+ "reflow_actor",
+ "reflow_graph",
+ "reflow_network",
+ "serde",
+ "serde-wasm-bindgen 0.6.5",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
 name = "reflow_script"
 version = "0.1.0"
 dependencies = [

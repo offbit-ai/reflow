@@ -1,0 +1,39 @@
+[package]
+name = "reflow_rt_wasm"
+version = "0.2.0"
+edition = "2024"
+authors = ["Damilare Akinlaja"]
+description = "Browser-WASM distribution of the Reflow runtime — exposes Graph, Network, Actor, Message to JS via wasm-bindgen."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/offbit-ai/reflow"
+homepage = "https://github.com/offbit-ai/reflow"
+documentation = "https://docs.rs/reflow_rt_wasm"
+readme = "README.md"
+rust-version = "1.85"
+keywords = ["reflow", "actor", "wasm", "browser", "wasm-bindgen"]
+categories = ["wasm", "concurrency", "development-tools"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
+reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+reflow_network = { version = "0.2.0", path = "../reflow_network" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = "0.2.100"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+
+# Browser RNG (getrandom in transitive deps).
+getrandom = { version = "0.3", default-features = false, features = ["wasm_js"] }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(getrandom_backend, values("wasm_js"))'] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-Os']
