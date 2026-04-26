@@ -10,6 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust Version](https://img.shields.io/badge/rust-1.85+-blue.svg)](https://www.rust-lang.org)
 [![WebAssembly](https://img.shields.io/badge/WebAssembly-compatible-green.svg)](https://webassembly.org/)
+[![Docs](https://img.shields.io/badge/docs-offbit--ai.github.io%2Freflow-blue?logo=readthedocs&logoColor=white)](https://offbit-ai.github.io/reflow/)
 
 ### SDK build status
 
@@ -21,7 +22,7 @@
 [![ai.offbit:reflow on Maven Central](https://img.shields.io/maven-central/v/ai.offbit/reflow?label=ai.offbit%3Areflow&logo=gradle&logoColor=white&color=02303A)](https://central.sonatype.com/artifact/ai.offbit/reflow)
 [![C++ SDK header-only](https://img.shields.io/badge/C%2B%2B-header--only-00599C?logo=cplusplus&logoColor=white)](./sdk/cpp)
 
-[Documentation](./docs/README.md) | [Runtime Crate](./crates/reflow_rt/README.md) | [Quick Start](./docs/getting-started/README.md) | [Examples](./examples/) | [API Reference](./docs/reference/api-reference.md)
+[Documentation](https://offbit-ai.github.io/reflow/) | [Runtime Crate](./crates/reflow_rt/README.md) | [Quick Start](https://offbit-ai.github.io/reflow/getting-started/README.html) | [SDKs](https://offbit-ai.github.io/reflow/sdks/README.html) | [Examples](./examples/) | [API Reference](https://offbit-ai.github.io/reflow/reference/api-reference.html)
 
 </div>
 
