@@ -91,6 +91,10 @@ struct LoadedPack {
     manifest: Option<PackManifest>,
     source_path: PathBuf,
     templates: parking_lot::Mutex<Vec<String>>,
+    /// The dlopen handle. Native-only — wasm packs are loaded via
+    /// `WebAssembly.instantiate` from JS and registered through a
+    /// separate path that doesn't keep a Rust-side handle.
+    #[cfg(not(target_arch = "wasm32"))]
     _lib: libloading::Library,
 }
 
@@ -172,6 +176,11 @@ pub static PACK_REGISTRY: Lazy<PackRegistry> = Lazy::new(PackRegistry::new);
 /// Idempotent per pack name: loading the same pack twice is a no-op (returns
 /// `Ok` with the previously-registered template set reported via
 /// [`PackRegistry::loaded_packs`]).
+///
+/// **Native only.** wasm32 targets load packs through
+/// `WebAssembly.instantiate` from the JS side; this `dlopen`-based
+/// path is excluded there because `libloading` itself doesn't compile.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_pack<P: AsRef<Path>>(path: P) -> Result<Vec<String>> {
     let path = path.as_ref();
     let canonical =

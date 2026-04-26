@@ -38,6 +38,12 @@ TRIPLE_EXT = {
     "x86_64-unknown-linux-gnu":  "so",
     "aarch64-unknown-linux-gnu": "so",
     "x86_64-pc-windows-msvc":    "dll",
+    # Browser bundle. Only present for packs that compile to
+    # wasm32-unknown-unknown — see the wasm_packs allow-list in
+    # publish-packs.yml. Native loaders skip this entry; the
+    # browser-side pack loader uses WebAssembly.instantiate
+    # against the .wasm bytes.
+    "wasm32-unknown-unknown":    "wasm",
 }
 
 ROOT = Path(os.environ.get("GITHUB_WORKSPACE", os.getcwd())).resolve()

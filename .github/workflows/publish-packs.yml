@@ -69,6 +69,20 @@ jobs:
             triple: x86_64-pc-windows-msvc
             dylib_prefix: ""
             dylib_ext: dll
+          # Browser target. wgpu uses the WebGPU backend, reqwest uses
+          # Fetch. Several packs are inherently native-only (video_encode
+          # → openh264, browser → chromiumoxide+mio, ml → reflow_cv_ops,
+          # api_services → in-progress) — for them the build step
+          # fails, the assemble script (.github/scripts/assemble_packs.py)
+          # discovers no .wasm in the artifact, and the pack ships
+          # without a wasm32 entry in its manifest.
+          - host: ubuntu-latest
+            triple: wasm32-unknown-unknown
+            dylib_prefix: ""
+            dylib_ext: wasm
+            # The packs we know compile to wasm32 today. Update as more
+            # become wasm-compatible (api_services, ml — tracked).
+            wasm_packs: reflow_pack_gpu reflow_pack_window_events
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -88,11 +102,22 @@ jobs:
           echo "CFLAGS_aarch64_unknown_linux_gnu=-march=armv8-a -D__ARM_ARCH=8" >> $GITHUB_ENV
 
       - name: Build every pack cdylib for ${{ matrix.triple }}
+        # On wasm32 we iterate only the explicit `wasm_packs` allow-list —
+        # the others depend on native-only crates (openh264, mio,
+        # reflow_cv_ops, …). On every other triple we build the full
+        # PACKS set.
         shell: bash
         run: |
           set -eux
-          for entry in $PACKS; do
-            crate="${entry%%:*}"
+          if [ -n "${{ matrix.wasm_packs }}" ]; then
+            crates="${{ matrix.wasm_packs }}"
+          else
+            crates=""
+            for entry in $PACKS; do
+              crates="$crates ${entry%%:*}"
+            done
+          fi
+          for crate in $crates; do
             cargo build --release --target "${{ matrix.triple }}" -p "$crate"
           done
 
@@ -101,9 +126,17 @@ jobs:
         run: |
           set -eux
           mkdir -p staging
-          for entry in $PACKS; do
-            crate="${entry%%:*}"
-            # Windows MSVC does not use a `lib` prefix on cdylib output.
+          if [ -n "${{ matrix.wasm_packs }}" ]; then
+            crates="${{ matrix.wasm_packs }}"
+          else
+            crates=""
+            for entry in $PACKS; do
+              crates="$crates ${entry%%:*}"
+            done
+          fi
+          for crate in $crates; do
+            # Cargo's wasm32 cdylib output substitutes `_` for `-` in the
+            # filename, same as native — no per-target rewriting needed.
             src="target/${{ matrix.triple }}/release/${{ matrix.dylib_prefix }}${crate}.${{ matrix.dylib_ext }}"
             dst="staging/${crate}.${{ matrix.dylib_ext }}"
             cp "$src" "$dst"

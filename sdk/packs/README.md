@@ -7,15 +7,18 @@ template catalog with additional actors — no SDK rebuild required.
 ## Where to download
 
 First-party packs ship as assets on every [GitHub Release](https://github.com/offbit-ai/reflow/releases)
-whose tag starts with `pack-v`. Each release contains every pack listed
-in this catalog, built for **all five supported triples** in a single
-`.rflpack`:
+whose tag starts with `pack-v`. Each `.rflpack` is a single zip
+containing the cdylib for every triple the pack supports plus the
+manifest:
 
-- `aarch64-apple-darwin`
-- `x86_64-apple-darwin`
-- `x86_64-unknown-linux-gnu`
-- `aarch64-unknown-linux-gnu`
-- `x86_64-pc-windows-msvc`
+| Triple | Notes |
+|---|---|
+| `aarch64-apple-darwin` | every pack |
+| `x86_64-apple-darwin` | every pack |
+| `x86_64-unknown-linux-gnu` | every pack |
+| `aarch64-unknown-linux-gnu` | every pack |
+| `x86_64-pc-windows-msvc` | every pack |
+| `wasm32-unknown-unknown` | only packs whose deps compile to wasm — currently `gpu` and `window_events`. wgpu's WebGPU backend handles GPU rendering in the browser. Native loaders ignore the `.wasm` entry; the browser-side pack loader (in `@offbit-ai/reflow`) picks it up via `WebAssembly.instantiate`. |
 
 ```sh
 VER=0.2.0
