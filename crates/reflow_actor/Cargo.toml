@@ -1,6 +1,6 @@
 [package]
 name = "reflow_actor"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Actor trait, message types, ports, state, and stream handles for the Reflow runtime."
@@ -18,9 +18,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = {workspace = true}
-reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
-reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
-reflow_tracing_protocol = { version = "0.2.0", path = "../reflow_tracing_protocol" }
+reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
+reflow_actor_macro = { version = "0.2.1", path = "../reflow_actor_macro" }
+reflow_tracing_protocol = { version = "0.2.1", path = "../reflow_tracing_protocol" }
 parking_lot = {workspace = true}
 flate2 = "1.0.35"
 flume = {workspace = true}

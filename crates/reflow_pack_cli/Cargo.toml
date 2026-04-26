@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_cli"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "`reflow-pack` — command-line tool to build, inspect, and unpack .rflpack actor bundles."
@@ -16,7 +16,7 @@ name = "reflow-pack"
 path = "src/main.rs"
 
 [dependencies]
-reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
+reflow_pack_loader = { version = "0.2.1", path = "../reflow_pack_loader" }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

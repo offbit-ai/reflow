@@ -22,5 +22,5 @@ default = []
 external-litert = ["reflow_components/ml", "reflow_components/av-core"]
 
 [dependencies]
-reflow_pack_sdk = { version = "0.2.0", path = "../../../crates/reflow_pack_sdk" }
-reflow_components = { version = "0.2.0", path = "../../../crates/reflow_components", default-features = false, features = ["ml"] }
+reflow_pack_sdk = { version = "0.2.1", path = "../../../crates/reflow_pack_sdk" }
+reflow_components = { version = "0.2.1", path = "../../../crates/reflow_components", default-features = false, features = ["ml"] }

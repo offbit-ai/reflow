@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pixel"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Pure-Rust pixel operations for Reflow image/video processing actors. Wasm-safe."
 license = "MIT OR Apache-2.0"

@@ -1,6 +1,6 @@
 [package]
 name = "reflow_dsp"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Pure-Rust DSP primitives for Reflow audio/signal processing actors. Wasm-safe."
 license = "MIT OR Apache-2.0"

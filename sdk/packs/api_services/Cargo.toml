@@ -16,7 +16,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-reflow_pack_sdk = { version = "0.2.0", path = "../../../crates/reflow_pack_sdk" }
+reflow_pack_sdk = { version = "0.2.1", path = "../../../crates/reflow_pack_sdk" }
 # `api_services` is the underscore-named reflow_components feature.
 # Also pulls in `av-core` defaults so the registry compiles cleanly.
-reflow_components = { version = "0.2.0", path = "../../../crates/reflow_components", default-features = false, features = ["api_services"] }
+reflow_components = { version = "0.2.1", path = "../../../crates/reflow_components", default-features = false, features = ["api_services"] }

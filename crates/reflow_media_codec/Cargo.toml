@@ -1,6 +1,6 @@
 [package]
 name = "reflow_media_codec"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Media codec boundary shared by Reflow media and ML actors."
 license = "MIT OR Apache-2.0"
@@ -15,7 +15,7 @@ categories = ["multimedia", "multimedia::video", "multimedia::audio"]
 
 [dependencies]
 anyhow = { workspace = true }
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_media_types = { version = "0.2.1", path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }

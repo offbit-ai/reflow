@@ -1,6 +1,6 @@
 [package]
 name = "reflow_tracing_protocol"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "Shared tracing-protocol types for the Reflow runtime."

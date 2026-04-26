@@ -1,6 +1,6 @@
 [package]
 name = "reflow_media_types"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Typed media and ML packet types (frames, tensors, detections, landmarks) for Reflow."
 license = "MIT OR Apache-2.0"

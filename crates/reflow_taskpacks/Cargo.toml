@@ -1,6 +1,6 @@
 [package]
 name = "reflow_taskpacks"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Reusable Reflow graph packages for higher-level CV/ML/media workflows."
 license = "MIT OR Apache-2.0"
@@ -14,14 +14,14 @@ keywords = ["reflow", "taskpack", "ml", "cv", "workflow"]
 categories = ["science", "multimedia", "development-tools"]
 
 [dependencies]
-reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
+reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
 serde_json = { workspace = true }
 
 [dev-dependencies]
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_cv_ops = { version = "0.2.0", path = "../reflow_cv_ops" }
-reflow_media_codec = { version = "0.2.0", path = "../reflow_media_codec" }
-reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
-reflow_ml_ops = { version = "0.2.0", path = "../reflow_ml_ops" }
-reflow_network = { version = "0.2.0", path = "../reflow_network" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_cv_ops = { version = "0.2.1", path = "../reflow_cv_ops" }
+reflow_media_codec = { version = "0.2.1", path = "../reflow_media_codec" }
+reflow_media_types = { version = "0.2.1", path = "../reflow_media_types" }
+reflow_ml_ops = { version = "0.2.1", path = "../reflow_ml_ops" }
+reflow_network = { version = "0.2.1", path = "../reflow_network" }
 tokio = { version = "1", features = ["macros", "rt", "time"] }

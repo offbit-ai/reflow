@@ -2,7 +2,7 @@
 
 [package]
 name = "reflow_actor_macro"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Procedural macros for declaring Reflow actors."

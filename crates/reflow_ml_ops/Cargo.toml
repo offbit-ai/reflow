@@ -1,6 +1,6 @@
 [package]
 name = "reflow_ml_ops"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "ML inference and decode actors for Reflow, using reflow_litert as the backend boundary."
 license = "MIT OR Apache-2.0"
@@ -14,14 +14,14 @@ keywords = ["reflow", "ml", "inference", "detection", "landmarks"]
 categories = ["science", "multimedia"]
 
 [dependencies]
-reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
+reflow_actor_macro = { version = "0.2.1", path = "../reflow_actor_macro" }
 anyhow = { workspace = true }
 flume = { workspace = true }
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_asset_registry = { version = "0.2.0", path = "../reflow_asset_registry" }
-reflow_litert = { version = "0.2.0", path = "../reflow_litert" }
-reflow_media_codec = { version = "0.2.0", path = "../reflow_media_codec" }
-reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_asset_registry = { version = "0.2.1", path = "../reflow_asset_registry" }
+reflow_litert = { version = "0.2.1", path = "../reflow_litert" }
+reflow_media_codec = { version = "0.2.1", path = "../reflow_media_codec" }
+reflow_media_types = { version = "0.2.1", path = "../reflow_media_types" }
 serde_json = { workspace = true }
 
 [dev-dependencies]

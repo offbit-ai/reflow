@@ -1,6 +1,6 @@
 [package]
 name = "reflow_rt"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "The public Rust runtime crate for building and running Reflow graph workflows."
@@ -14,27 +14,27 @@ repository = "https://github.com/offbit-ai/reflow"
 rust-version = "1.85"
 
 [dependencies]
-reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_assets = { version = "0.2.0", path = "../reflow_assets" }
-reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false }
-reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
-reflow_network = { version = "0.2.0", path = "../reflow_network" }
-reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
-reflow_pixel = { version = "0.2.0", path = "../reflow_pixel" }
-reflow_sdf = { version = "0.2.0", path = "../reflow_sdf" }
-reflow_shader = { version = "0.2.0", path = "../reflow_shader" }
-reflow_vector = { version = "0.2.0", path = "../reflow_vector" }
+reflow_actor_macro = { version = "0.2.1", path = "../reflow_actor_macro" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_assets = { version = "0.2.1", path = "../reflow_assets" }
+reflow_components = { version = "0.2.1", path = "../reflow_components", default-features = false }
+reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
+reflow_network = { version = "0.2.1", path = "../reflow_network" }
+reflow_pack_loader = { version = "0.2.1", path = "../reflow_pack_loader" }
+reflow_pixel = { version = "0.2.1", path = "../reflow_pixel" }
+reflow_sdf = { version = "0.2.1", path = "../reflow_sdf" }
+reflow_shader = { version = "0.2.1", path = "../reflow_shader" }
+reflow_vector = { version = "0.2.1", path = "../reflow_vector" }
 
-reflow_api_services = { version = "0.2.0", path = "../reflow_api_services", optional = true }
-reflow_asset_registry = { version = "0.2.0", path = "../reflow_asset_registry", optional = true }
-reflow_cv_ops = { version = "0.2.0", path = "../reflow_cv_ops", optional = true }
-reflow_dsp = { version = "0.2.0", path = "../reflow_dsp", optional = true }
-reflow_litert = { version = "0.2.0", path = "../reflow_litert", optional = true }
-reflow_media_codec = { version = "0.2.0", path = "../reflow_media_codec", optional = true }
-reflow_media_types = { version = "0.2.0", path = "../reflow_media_types", optional = true }
-reflow_ml_ops = { version = "0.2.0", path = "../reflow_ml_ops", optional = true }
-reflow_taskpacks = { version = "0.2.0", path = "../reflow_taskpacks", optional = true }
+reflow_api_services = { version = "0.2.1", path = "../reflow_api_services", optional = true }
+reflow_asset_registry = { version = "0.2.1", path = "../reflow_asset_registry", optional = true }
+reflow_cv_ops = { version = "0.2.1", path = "../reflow_cv_ops", optional = true }
+reflow_dsp = { version = "0.2.1", path = "../reflow_dsp", optional = true }
+reflow_litert = { version = "0.2.1", path = "../reflow_litert", optional = true }
+reflow_media_codec = { version = "0.2.1", path = "../reflow_media_codec", optional = true }
+reflow_media_types = { version = "0.2.1", path = "../reflow_media_types", optional = true }
+reflow_ml_ops = { version = "0.2.1", path = "../reflow_ml_ops", optional = true }
+reflow_taskpacks = { version = "0.2.1", path = "../reflow_taskpacks", optional = true }
 
 [features]
 default = ["components-core"]

@@ -1,6 +1,6 @@
 [package]
 name = "reflow_litert"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "LiteRT backend boundary for Reflow ML actors; optional real LiteRT adapter behind a feature flag."
 license = "MIT OR Apache-2.0"
@@ -18,7 +18,7 @@ anyhow = { workspace = true }
 # Optional Offbit LiteRT bindings from crates.io.
 litert = { version = "0.2.1", optional = true }
 litert-sys = { version = "0.2.1", optional = true }
-reflow_media_types = { version = "0.2.0", path = "../reflow_media_types" }
+reflow_media_types = { version = "0.2.1", path = "../reflow_media_types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

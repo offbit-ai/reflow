@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_macro"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "Proc macro for authoring Reflow actor packs — emits the cdylib entrypoints required by reflow_pack_loader."

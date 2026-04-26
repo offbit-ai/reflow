@@ -5848,7 +5848,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_actor"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "bitcode",
@@ -5883,7 +5883,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_actor_macro"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5892,7 +5892,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_api_services"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5909,7 +5909,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_asset_registry"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "reflow_assets",
@@ -5922,7 +5922,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_assets"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5937,7 +5937,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_components"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -5988,7 +5988,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_cv_ops"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "flume",
@@ -6002,7 +6002,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_dsp"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "approx",
  "realfft",
@@ -6011,7 +6011,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_graph"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6106,7 +6106,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_litert"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "litert",
@@ -6118,7 +6118,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_media_codec"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "reflow_actor",
@@ -6129,7 +6129,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_media_types"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6137,7 +6137,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_ml_ops"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "flume",
@@ -6155,7 +6155,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_network"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6254,7 +6254,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -6285,7 +6285,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_loader"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -6301,7 +6301,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_macro"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6318,7 +6318,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_sdk"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "flume",
  "parking_lot 0.12.4",
@@ -6348,7 +6348,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pixel"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "approx",
 ]
@@ -6376,7 +6376,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "reflow_actor",
  "reflow_actor_macro",
@@ -6402,7 +6402,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt_capi"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "cbindgen 0.27.0",
@@ -6420,7 +6420,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt_wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "console_error_panic_hook",
  "getrandom 0.3.3",
@@ -6471,7 +6471,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_sdf"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6479,7 +6479,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_shader"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6487,7 +6487,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_taskpacks"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "reflow_actor",
  "reflow_cv_ops",
@@ -6541,7 +6541,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_tracing_protocol"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6569,7 +6569,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_vector"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",

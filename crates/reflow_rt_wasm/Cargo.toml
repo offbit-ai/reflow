@@ -1,6 +1,6 @@
 [package]
 name = "reflow_rt_wasm"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Browser-WASM distribution of the Reflow runtime — exposes Graph, Network, Actor, Message to JS via wasm-bindgen."
@@ -17,18 +17,18 @@ categories = ["wasm", "concurrency", "development-tools"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_network = { version = "0.2.0", path = "../reflow_network" }
+reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_network = { version = "0.2.1", path = "../reflow_network" }
 # reflow_components carries the GPU context init so JS can call
 # `initGpuContext(canvasSelector)` before any wgpu actor runs.
 # `default-features = false` drops unrelated features (av-core,
 # window-events) that aren't browser-relevant in this bundle.
-reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false, features = ["gpu"] }
+reflow_components = { version = "0.2.1", path = "../reflow_components", default-features = false, features = ["gpu"] }
 # Pack loader for the in-memory wasm-extraction helpers used by
 # `loadPack(url)`. libloading is auto-gated to native, so on wasm
 # this is just the manifest types + zip parser.
-reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
+reflow_pack_loader = { version = "0.2.1", path = "../reflow_pack_loader" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }

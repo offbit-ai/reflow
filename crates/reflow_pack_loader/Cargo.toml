@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_loader"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Runtime loader for .rflpack actor bundles — dlopens pack cdylibs and publishes their templates to the runtime registry."
@@ -13,7 +13,7 @@ keywords = ["reflow", "actor", "plugin", "dlopen", "bundle"]
 categories = ["development-tools", "concurrency"]
 
 [dependencies]
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

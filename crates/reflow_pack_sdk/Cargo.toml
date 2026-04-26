@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_sdk"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Author-facing crate for building Reflow actor packs — safe wrapper over the pack ABI plus the #[reflow_pack] macro."
@@ -13,9 +13,9 @@ keywords = ["reflow", "actor", "plugin", "sdk"]
 categories = ["development-tools", "concurrency"]
 
 [dependencies]
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
-reflow_pack_macro = { version = "0.2.0", path = "../reflow_pack_macro" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_pack_loader = { version = "0.2.1", path = "../reflow_pack_loader" }
+reflow_pack_macro = { version = "0.2.1", path = "../reflow_pack_macro" }
 
 # Required by the wasm32 ABI's `__reflow_pack_actor_run` to drive the
 # actor's behavior future to completion. Native packs link these too,

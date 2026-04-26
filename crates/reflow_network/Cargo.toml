@@ -2,7 +2,7 @@
 
 [package]
 name = "reflow_network"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Network executor for Reflow — routes messages between actors, manages subgraphs, and emits runtime events."
@@ -21,14 +21,14 @@ path = "src/lib.rs"
 doctest = false
 
 [dependencies]
-reflow_tracing_protocol = { version = "0.2.0", path = "../reflow_tracing_protocol" }
+reflow_tracing_protocol = { version = "0.2.1", path = "../reflow_tracing_protocol" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = {workspace = true}
-reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
+reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_actor_macro = { version = "0.2.1", path = "../reflow_actor_macro" }
 parking_lot = {workspace = true}
 flate2 = "1.0.35"
 flume = {workspace = true}

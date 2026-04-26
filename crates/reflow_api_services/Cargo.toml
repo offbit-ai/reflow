@@ -1,6 +1,6 @@
 [package]
 name = "reflow_api_services"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Generated API-service actor catalog for Reflow — thousands of actors across ~90 third-party services."
 license = "MIT OR Apache-2.0"
@@ -14,9 +14,9 @@ keywords = ["reflow", "api", "services", "actors", "integration"]
 categories = ["api-bindings", "web-programming", "development-tools"]
 
 [dependencies]
-reflow_actor = { version = "0.2.0", path = "../reflow_actor" }
-reflow_graph = { version = "0.2.0", path = "../reflow_graph" }
-reflow_actor_macro = { version = "0.2.0", path = "../reflow_actor_macro" }
+reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
+reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
+reflow_actor_macro = { version = "0.2.1", path = "../reflow_actor_macro" }
 
 # Core
 serde = { workspace = true }
