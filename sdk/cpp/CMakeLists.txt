@@ -18,7 +18,7 @@
 # tarballs published from sdk/go/v* tags).
 
 cmake_minimum_required(VERSION 3.16)
-project(reflow_cpp VERSION 0.2.2 LANGUAGES CXX)
+project(reflow_cpp VERSION 0.2.3 LANGUAGES CXX)
 
 option(REFLOW_CPP_BUILD_EXAMPLES "Build the bundled C++ examples" OFF)
 

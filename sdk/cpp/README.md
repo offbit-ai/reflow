@@ -33,7 +33,7 @@ SDK needs — `lib/libreflow_rt_capi.{dylib,so,dll}` and
 `include/reflow_rt.h`. Download, untar, and point CMake at it.
 
 ```sh
-VER=0.2.1
+VER=0.2.2
 TRIPLE=aarch64-apple-darwin   # or x86_64-apple-darwin, x86_64-unknown-linux-gnu, …
 curl -LO https://github.com/offbit-ai/reflow/releases/download/sdk/go/v$VER/reflow-rt-capi-$TRIPLE-v$VER.tar.gz
 tar -xzf reflow-rt-capi-$TRIPLE-v$VER.tar.gz -C /usr/local

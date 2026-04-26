@@ -96,12 +96,12 @@ pip install offbit-reflow
 # Go — install the module, then drop the platform-specific
 # libreflow_rt_capi tarball into the module via the bundled script.
 # See sdk/go/README.md for full instructions.
-go get github.com/offbit-ai/reflow/sdk/go@v0.2.1
+go get github.com/offbit-ai/reflow/sdk/go@v0.2.2
 ```
 ```kotlin
 // Gradle (Kotlin DSL) — JVM SDK is the fat jar; native libs are
 // bundled as classpath resources.
-dependencies { implementation("ai.offbit:reflow:0.2.2") }
+dependencies { implementation("ai.offbit:reflow:0.2.3") }
 ```
 ```cmake
 # C++ — header-only over libreflow_rt_capi; install the matching
