@@ -72,3 +72,50 @@ pub async fn init_gpu_context(canvas_selector: Option<String>) -> Result<(), JsV
         .await
         .map_err(|e| JsValue::from_str(&e))
 }
+
+// ─── .rflpack loading ──────────────────────────────────────────────────────
+
+/// Extract the wasm32 binary from a `.rflpack` byte buffer.
+///
+/// Used by the JS `loadPack(url)` shim. Validates the manifest
+/// (`manifest_version` + `reflow_pack_abi_version`) and pulls the
+/// `wasm32-unknown-unknown` entry out of the zip. Returns a JS
+/// object `{ manifestJson: string, wasm: Uint8Array }` so the
+/// caller can compile via `WebAssembly.compile(result.wasm)`.
+///
+/// Errors:
+/// - The zip can't be parsed.
+/// - `manifest.json` is missing or malformed.
+/// - The pack was built against a different `reflow_pack_abi_version`.
+/// - The pack has no `wasm32-unknown-unknown` target (its `Reflow.pack.toml`
+///   author didn't opt-in to a wasm build, or the build failed in CI).
+#[wasm_bindgen(js_name = extractPackWasm)]
+pub fn extract_pack_wasm(bytes: &[u8]) -> Result<JsValue, JsValue> {
+    let host_abi = reflow_pack_loader::REFLOW_PACK_ABI_VERSION;
+    let extracted = reflow_pack_loader::bundle::extract_wasm_from_bytes(bytes, host_abi)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+
+    let manifest_json = serde_json::to_string(&extracted.manifest)
+        .map_err(|e| JsValue::from_str(&format!("serialize manifest: {}", e)))?;
+
+    let obj = js_sys::Object::new();
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("manifestJson"),
+        &JsValue::from_str(&manifest_json),
+    )?;
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("wasm"),
+        &js_sys::Uint8Array::from(extracted.wasm.as_slice()),
+    )?;
+    Ok(obj.into())
+}
+
+/// The pack ABI version this runtime was built against. Packs whose
+/// `manifest.reflow_pack_abi_version` doesn't match cannot be loaded.
+/// Surfaced for diagnostics — `loadPack` already enforces it.
+#[wasm_bindgen(js_name = packAbiVersion)]
+pub fn pack_abi_version() -> u32 {
+    reflow_pack_loader::REFLOW_PACK_ABI_VERSION
+}

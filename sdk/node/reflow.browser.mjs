@@ -636,10 +636,75 @@ export class EventStream {
   }
 }
 
+// ─── Pack loading ──────────────────────────────────────────────────────────
+
+/**
+ * Load a `.rflpack` from a URL, extract its `wasm32-unknown-unknown`
+ * binary, and compile it into a `WebAssembly.Module`.
+ *
+ * Designed to point straight at a GitHub release asset:
+ *
+ *     await ready();
+ *     const pack = await loadPack(
+ *       "https://github.com/offbit-ai/reflow/releases/download/" +
+ *       "pack-v0.2/reflow.pack.gpu-0.2.0.rflpack",
+ *     );
+ *     // pack.manifest, pack.module, pack.wasm — registration TBD.
+ *
+ * `url` accepts anything `fetch` does: a string URL, a `URL`, or
+ * a pre-built `Request`. GitHub release assets serve permissive
+ * CORS headers so cross-origin fetches from a browser context
+ * just work.
+ *
+ * Returns `{ manifest, name, version, templates, wasm, module }`:
+ *
+ *  - `manifest`  — parsed `manifest.json` from the pack.
+ *  - `name`      — pack name (`manifest.name`).
+ *  - `version`   — pack version (`manifest.version`).
+ *  - `templates` — actor template ids the pack publishes.
+ *  - `wasm`      — raw `Uint8Array` of the wasm32 binary.
+ *  - `module`    — compiled `WebAssembly.Module`. Instantiation
+ *    and the registration handshake happen in a follow-up — for
+ *    now this gives you a verified, ABI-checked module ready to
+ *    instantiate against the runtime.
+ *
+ * Throws if the URL fetch fails, the pack lacks a wasm32 build,
+ * or its `reflow_pack_abi_version` doesn't match the runtime's.
+ */
+export async function loadPack(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `loadPack: fetch ${url} → ${response.status} ${response.statusText}`,
+    );
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+
+  // wasm-bindgen helper: validates manifest_version + ABI, then
+  // returns the embedded wasm bytes. Throws a JS Error string on
+  // any mismatch.
+  const extracted = wasm.extractPackWasm(bytes);
+  const manifest = JSON.parse(extracted.manifestJson);
+  const wasmBytes = extracted.wasm;
+  const module = await WebAssembly.compile(wasmBytes);
+
+  return {
+    manifest,
+    name: manifest.name,
+    version: manifest.version,
+    templates: manifest.templates ?? [],
+    wasm: wasmBytes,
+    module,
+  };
+}
+
 // ─── Pass-through wasm exports ─────────────────────────────────────────────
 
 export const bindInputEvents = wasm.bindInputEvents;
 export const version = wasm.version;
+
+/** Pack ABI version this runtime was built against. Diagnostic only. */
+export const packAbiVersion = wasm.packAbiVersion;
 
 /**
  * Initialize the shared wgpu context against an HTML `<canvas>`.
@@ -673,4 +738,6 @@ export default {
   version,
   ready,
   initGpuContext,
+  loadPack,
+  packAbiVersion,
 };

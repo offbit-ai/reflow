@@ -361,6 +361,54 @@ surface. Subsequent calls are no-ops; on native runtimes the
 argument is ignored and the GPU context is initialized lazily on
 first actor use.
 
+### Loading actor packs in the browser
+
+`.rflpack` bundles ship the wasm32 binary alongside the native
+cdylibs (see [pack format](../packs/README.md)). Browser code
+loads them straight from a GitHub release URL — `loadPack(url)`
+fetches the bundle, validates the manifest, and compiles the
+wasm32 entry into a `WebAssembly.Module`.
+
+```js
+import { ready, loadPack } from "@offbit-ai/reflow";
+
+await ready();
+
+const pack = await loadPack(
+  "https://github.com/offbit-ai/reflow/releases/download/" +
+  "pack-v0.2/reflow.pack.gpu-0.2.0.rflpack",
+);
+
+console.log(pack.name);       // "reflow.pack.gpu"
+console.log(pack.version);    // "0.2.0"
+console.log(pack.templates);  // ["tpl_sdf_render", ...]
+console.log(pack.module);     // WebAssembly.Module
+```
+
+Returned object: `{ manifest, name, version, templates, wasm,
+module }`. `wasm` is the raw `Uint8Array`; `module` is the
+already-compiled WebAssembly module ready for instantiation.
+
+**ABI handshake.** `loadPack` rejects packs whose
+`reflow_pack_abi_version` doesn't match the runtime's. The match
+is enforced by hashing the rustc toolchain version + a manually
+bumped revision constant, so a pack built against an older Reflow
+release won't silently load against a newer one.
+
+**CORS.** GitHub release assets serve permissive CORS headers, so
+cross-origin browser fetches "just work". For other hosts you
+may need to proxy or set headers explicitly.
+
+**Pack target coverage.** Not every first-party pack ships a wasm32
+build today — see the [pack catalog](../packs/README.md) for the
+matrix. Loading a pack that lacks a wasm32 entry fails fast with a
+"no wasm32 build" error instead of trying a native fallback.
+
+> Note: the registration handshake (instantiating the compiled
+> module against the runtime's actor registry) is on a follow-up
+> milestone. `loadPack` today gives you the verified, ABI-checked
+> module — wiring it into a running `Network` is TBD.
+
 ## License
 
 MIT OR Apache-2.0.

@@ -167,6 +167,73 @@ pub fn extract_bundle(path: &Path, host_abi: u32, host_triple: &str) -> Result<E
     })
 }
 
+/// In-memory result of extracting a `.rflpack`'s wasm32 entry.
+///
+/// Used by the browser-side pack loader, which fetches a `.rflpack`
+/// over HTTP and instantiates the embedded wasm via
+/// `WebAssembly.instantiate` — there is no filesystem on the path.
+pub struct ExtractedWasm {
+    pub manifest: PackManifest,
+    /// Raw wasm module bytes from `manifest.targets["wasm32-unknown-unknown"].file`.
+    pub wasm: Vec<u8>,
+}
+
+/// Extract the wasm32 binary from a `.rflpack` byte buffer.
+///
+/// Performs the same manifest validation as [`extract_bundle`] but
+/// keeps everything in memory and only returns the `wasm32-unknown-unknown`
+/// target entry. Returns an error if the pack doesn't carry a wasm
+/// build, the manifest version doesn't match, or the ABI version
+/// disagrees with `host_abi`.
+pub fn extract_wasm_from_bytes(bundle_bytes: &[u8], host_abi: u32) -> Result<ExtractedWasm> {
+    let reader = std::io::Cursor::new(bundle_bytes);
+    let mut archive = zip::ZipArchive::new(reader).context("parse .rflpack zip")?;
+
+    let manifest: PackManifest = {
+        let mut m = archive
+            .by_name("manifest.json")
+            .context("manifest.json missing from .rflpack")?;
+        let mut buf = String::new();
+        m.read_to_string(&mut buf)?;
+        serde_json::from_str(&buf).context("parse manifest.json")?
+    };
+
+    if manifest.manifest_version != MANIFEST_VERSION {
+        bail!(
+            "manifest_version {} not supported (host expects {})",
+            manifest.manifest_version,
+            MANIFEST_VERSION
+        );
+    }
+    if manifest.reflow_pack_abi_version != host_abi {
+        bail!(
+            "pack '{}' ABI {} != host ABI {} — rebuild pack against current toolchain",
+            manifest.name,
+            manifest.reflow_pack_abi_version,
+            host_abi
+        );
+    }
+
+    const WASM_TRIPLE: &str = "wasm32-unknown-unknown";
+    let target = manifest.targets.get(WASM_TRIPLE).cloned().ok_or_else(|| {
+        let have: Vec<&str> = manifest.targets.keys().map(String::as_str).collect();
+        anyhow!(
+            "pack '{}' has no wasm32 build (bundle includes: {})",
+            manifest.name,
+            have.join(", ")
+        )
+    })?;
+
+    let mut entry = archive
+        .by_name(&target.file)
+        .with_context(|| format!("entry {} missing from .rflpack", target.file))?;
+    let mut wasm = Vec::with_capacity(entry.size() as usize);
+    std::io::copy(&mut entry, &mut wasm)
+        .with_context(|| format!("read {} from .rflpack", target.file))?;
+
+    Ok(ExtractedWasm { manifest, wasm })
+}
+
 /// Read just the manifest without extracting dylibs. For `rfl_pack_inspect`.
 pub fn read_manifest(path: &Path) -> Result<PackManifest> {
     let f = File::open(path).with_context(|| format!("open {}", path.display()))?;

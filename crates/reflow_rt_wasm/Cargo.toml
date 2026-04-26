@@ -25,6 +25,10 @@ reflow_network = { version = "0.2.0", path = "../reflow_network" }
 # `default-features = false` drops unrelated features (av-core,
 # window-events) that aren't browser-relevant in this bundle.
 reflow_components = { version = "0.2.0", path = "../reflow_components", default-features = false, features = ["gpu"] }
+# Pack loader for the in-memory wasm-extraction helpers used by
+# `loadPack(url)`. libloading is auto-gated to native, so on wasm
+# this is just the manifest types + zip parser.
+reflow_pack_loader = { version = "0.2.0", path = "../reflow_pack_loader" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }

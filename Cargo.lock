@@ -6424,6 +6424,7 @@ dependencies = [
  "reflow_components",
  "reflow_graph",
  "reflow_network",
+ "reflow_pack_loader",
  "serde",
  "serde-wasm-bindgen 0.6.5",
  "serde_json",

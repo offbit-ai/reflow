@@ -184,5 +184,45 @@ if (bundle) {
     assert.equal(shim.default.bindInputEvents, shim.bindInputEvents);
     assert.equal(typeof shim.default.version, "function");
     assert.equal(typeof shim.default.ready, "function");
+    assert.equal(typeof shim.default.loadPack, "function");
+    assert.equal(typeof shim.default.packAbiVersion, "function");
+    assert.equal(typeof shim.default.initGpuContext, "function");
+  });
+
+  test("packAbiVersion returns a non-zero u32", () => {
+    const v = shim.packAbiVersion();
+    assert.equal(typeof v, "number");
+    assert.ok(v > 0, "ABI version should be populated by build.rs");
+  });
+
+  test("loadPack rejects unfetchable URLs", async () => {
+    // file:// URLs aren't fetchable from Node fetch in a portable
+    // way, and a non-existent http URL would race against network
+    // conditions. Use a clearly-invalid scheme so fetch fails fast.
+    await assert.rejects(
+      () => shim.loadPack("not-a-real-scheme://nope"),
+      /loadPack|fetch|TypeError/i,
+    );
+  });
+
+  test("loadPack rejects non-zip payloads with a clear error", async () => {
+    // Stand up a minimal HTTP server that serves invalid bytes —
+    // exercises the fetch → extract path without depending on a
+    // real .rflpack being available.
+    const { createServer } = await import("node:http");
+    const server = createServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/octet-stream" });
+      res.end(Buffer.from("not a zip archive"));
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const { port } = server.address();
+    try {
+      await assert.rejects(
+        () => shim.loadPack(`http://127.0.0.1:${port}/x.rflpack`),
+        /zip|parse|.rflpack/i,
+      );
+    } finally {
+      server.close();
+    }
   });
 }

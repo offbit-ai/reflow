@@ -44,6 +44,44 @@ export function bindInputEvents(network: Network, target: EventTarget): () => vo
  */
 export function initGpuContext(canvasSelector?: string | null): Promise<void>;
 
+/** Manifest payload of a `.rflpack`. Mirrors the on-disk JSON shape. */
+export interface PackManifest {
+  manifest_version: number;
+  name: string;
+  version: string;
+  authors?: string[];
+  description?: string;
+  license?: string;
+  reflow_pack_abi_version: number;
+  entrypoint: string;
+  targets: Record<string, { file: string }>;
+  templates?: string[];
+}
+
+/** A loaded `.rflpack` ready to be wired into the runtime. */
+export interface LoadedPack {
+  manifest: PackManifest;
+  name: string;
+  version: string;
+  templates: string[];
+  wasm: Uint8Array;
+  module: WebAssembly.Module;
+}
+
+/**
+ * Fetch a `.rflpack` from a URL (typically a GitHub release asset),
+ * verify its manifest, and compile its wasm32 entry into a
+ * `WebAssembly.Module`. Native loaders ignore the wasm entry; this
+ * is the browser-side equivalent.
+ *
+ * @param url Anything `fetch` accepts. GitHub release assets serve
+ *   permissive CORS so cross-origin browser fetches work.
+ */
+export function loadPack(url: string | URL | Request): Promise<LoadedPack>;
+
+/** Pack ABI version this runtime was built against. */
+export function packAbiVersion(): number;
+
 /**
  * `Message` payload constructors. The browser side serializes
  * messages as plain `{ type, data? }` JSON because the wasm runtime
@@ -235,5 +273,7 @@ declare const _default: {
   version: typeof version;
   ready: typeof ready;
   initGpuContext: typeof initGpuContext;
+  loadPack: typeof loadPack;
+  packAbiVersion: typeof packAbiVersion;
 };
 export default _default;
