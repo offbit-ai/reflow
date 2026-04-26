@@ -52,11 +52,25 @@ Currently exposes:
   (keyboard, mouse, touch, wheel, resize) into input actors
 
 The bundled component catalog (`reflow_components`) is **not** part
-of this crate — its native deps (rquickjs C lib, openh264, wgpu
-native backends, …) don't compile to `wasm32-unknown-unknown` without
-significant feature-gating. Author actors as JS classes and load
-them via `register_actor_js`, or load WASM-compiled actor packs via
-the browser pack loader (see [`docs/pack-format.md`](../../docs/pack-format.md)).
+of this crate yet. Two unrelated reasons:
+
+1. **`rquickjs` C library** — embedded QuickJS doesn't compile to
+   `wasm32-unknown-unknown`. Gated to native; the wasm side uses a
+   `js_sys::Function` shim that calls into the host browser engine
+   instead.
+2. **Actor framework `Send` bounds** — the `#[actor(...)]` macro
+   wraps each actor's future as `Pin<Box<dyn Future + Send>>`.
+   Browser-only types are typically `!Send`: `wgpu::WebQueue`,
+   `reqwest`'s `AbortGuard`, and `web_sys::WebSocket` all hold raw
+   JS handles (`*mut u8`). On wasm the runtime is single-threaded
+   and `Send` is moot, but the macro doesn't yet drop the bound on
+   `target_arch = "wasm32"`. Once that lands, wgpu (which **does**
+   have a WebGPU backend), browser fetch via reqwest, and
+   websockets all become available to wasm-side actors.
+
+Author actors as JS classes and load them via `register_actor_js`
+in the meantime, or load WASM-compiled actor packs via the browser
+pack loader (see [`docs/pack-format.md`](../../docs/pack-format.md)).
 
 ## Versioning
 
