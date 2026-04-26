@@ -35,5 +35,9 @@ getrandom = { version = "0.3", default-features = false, features = ["wasm_js"] 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(getrandom_backend, values("wasm_js"))'] }
 
+# wasm-opt: leave disabled here. CI runners ship an older wasm-opt
+# that rejects modern features (bulk-memory, i64.trunc_sat). Enable
+# locally via the wasm-pack invocation if you have a recent
+# binaryen build.
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ['-Os']
+wasm-opt = false

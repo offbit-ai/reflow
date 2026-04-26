@@ -17,5 +17,8 @@ examples/skeleton_animation/animation.mp4
 # mdBook build output
 /book/
 
+# wasm-pack output (built by CI on tag)
+/sdk/wasm/pkg/
+
 # claude-code planning + scratch
 /.claude/
