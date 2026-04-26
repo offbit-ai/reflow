@@ -59,10 +59,12 @@ use crate::input::{
 use crate::integration::BrowserScreencastActor;
 use crate::integration::HttpRequestActor;
 use crate::io::{
-    FbxImportActor, FileLoadActor, FileSaveActor, GltfExportActor, GltfImportActor,
-    MeshImportActor, ObjExportActor, ObjImportActor, SceneImportActor, StlExportActor,
-    StlImportActor,
+    FbxImportActor, GltfExportActor, GltfImportActor, MeshImportActor, ObjExportActor,
+    ObjImportActor, SceneImportActor, StlExportActor, StlImportActor,
 };
+// File load/save actors are native-only (require tokio::fs).
+#[cfg(not(target_arch = "wasm32"))]
+use crate::io::{FileLoadActor, FileSaveActor};
 use crate::logic::RulesEngineActor;
 use crate::math::{
     Mat4IdentityActor,
@@ -321,8 +323,10 @@ pub fn get_actor_for_template(template_id: &str) -> Option<Arc<dyn Actor>> {
         "tpl_image_decode" => Some(Arc::new(ImageDecodeActor::new())),
         "tpl_image_encode" => Some(Arc::new(ImageEncodeActor::new())),
 
-        // File I/O
+        // File I/O — native-only (no filesystem in browser).
+        #[cfg(not(target_arch = "wasm32"))]
         "tpl_file_load" => Some(Arc::new(FileLoadActor::new())),
+        #[cfg(not(target_arch = "wasm32"))]
         "tpl_file_save" => Some(Arc::new(FileSaveActor::new())),
 
         // Stream Display

@@ -47,6 +47,12 @@ pub use reflow_api_services::api;
 pub mod assets;
 mod display;
 pub mod flow_control;
+// `gpu/` exposes both pure-Rust modules (path/sdf-IR consumers,
+// font atlas math) and wgpu-backed renderers. Wasm-incompatible
+// pieces are gated inside `gpu/mod.rs` behind `feature = "gpu"`,
+// which is native-only — see Cargo.toml. The browser-friendly
+// subset (sdf path utilities, font atlas data) stays available so
+// `procedural::tube_mesh` and friends still link.
 pub mod gpu;
 #[cfg(feature = "window-events")]
 pub mod input;

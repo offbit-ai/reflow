@@ -29,7 +29,52 @@ use crate::{
     types::GraphNode,
 };
 
-// #[cfg(not(target_arch = "wasm32"))]
+/// Cross-target `Send`/`Sync` markers.
+///
+/// On native, `MaybeSend` ≡ `Send`, `MaybeSync` ≡ `Sync` — the actor
+/// runtime uses tokio's multi-threaded executor and needs both.
+///
+/// On `wasm32-unknown-unknown` the executor is single-threaded
+/// (`spawn_local`), so we drop both bounds. That unblocks browser-only
+/// types that hold raw JS handles (`*mut u8`) under the hood —
+/// `wgpu::WebQueue`, `reqwest`'s `AbortGuard`, `web_sys::WebSocket`,
+/// `web_sys::GpuDevice`, … — none of which can satisfy `Send`.
+///
+/// This is the same pattern tokio, gloo, and async-std use.
+#[cfg(not(target_arch = "wasm32"))]
+pub trait MaybeSend: Send {}
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: Send + ?Sized> MaybeSend for T {}
+
+#[cfg(target_arch = "wasm32")]
+pub trait MaybeSend {}
+#[cfg(target_arch = "wasm32")]
+impl<T: ?Sized> MaybeSend for T {}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub trait MaybeSync: Sync {}
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: Sync + ?Sized> MaybeSync for T {}
+
+#[cfg(target_arch = "wasm32")]
+pub trait MaybeSync {}
+#[cfg(target_arch = "wasm32")]
+impl<T: ?Sized> MaybeSync for T {}
+
+/// Type-erased actor body. The closure produces a future that resolves
+/// to the actor's port outputs.
+///
+/// On native, the future + closure are `Send + Sync` so the network can
+/// drive them via tokio's multi-threaded executor. On
+/// `wasm32-unknown-unknown` the executor is single-threaded
+/// (`spawn_local`), so we drop the auto-trait bounds — that unblocks
+/// browser-only types (`wgpu::WebQueue`, `reqwest::AbortGuard`,
+/// `web_sys::WebSocket`, …) which hold raw JS handles and are `!Send`.
+///
+/// Two cfg-split type aliases is the only way: trait objects can't
+/// combine a custom marker trait with a non-auto trait like `Future`,
+/// so a `MaybeSend` shim doesn't apply to `dyn Future + Send`.
+#[cfg(not(target_arch = "wasm32"))]
 pub type ActorBehavior = Box<
     dyn Fn(
             ActorContext,
@@ -42,6 +87,18 @@ pub type ActorBehavior = Box<
         > + Send
         + Sync
         + 'static,
+>;
+
+#[cfg(target_arch = "wasm32")]
+pub type ActorBehavior = Box<
+    dyn Fn(
+            ActorContext,
+        ) -> std::pin::Pin<
+            Box<
+                dyn std::future::Future<Output = Result<HashMap<String, Message>, anyhow::Error>>
+                    + 'static,
+            >,
+        > + 'static,
 >;
 
 pub type ActorPayload = HashMap<String, Message>;
@@ -223,8 +280,10 @@ impl ActorConfig {
     }
 }
 
-// #[cfg(not(target_arch = "wasm32"))]
-pub trait Actor: Send + Sync + 'static {
+// `MaybeSend` + `MaybeSync` collapse to `Send + Sync` on native and to
+// nothing on wasm32. See the marker definitions near the top of this
+// module.
+pub trait Actor: MaybeSend + MaybeSync + 'static {
     /// The actor's reaction to incoming data. This is the only thing an actor
     /// *must* define beyond port declarations.
     fn get_behavior(&self) -> ActorBehavior;
@@ -302,11 +361,34 @@ pub trait Actor: Send + Sync + 'static {
     ///
     /// Override only when you need a fundamentally different execution
     /// model (e.g. SubgraphActor's inner-network routing).
+    #[cfg(not(target_arch = "wasm32"))]
     fn create_process(
         &self,
         config: ActorConfig,
         tracing_integration: Option<TracingIntegration>,
     ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
+        crate::process::ActorProcess::new(
+            config.get_node_id().to_string(),
+            self.get_behavior(),
+            self.inport_names(),
+            self.await_all_inports(),
+            self.required_inports(),
+            self.get_inports().1,
+            self.get_outports(),
+            self.create_state(),
+            self.load_count(),
+            config,
+            tracing_integration,
+        )
+        .into_future()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn create_process(
+        &self,
+        config: ActorConfig,
+        tracing_integration: Option<TracingIntegration>,
+    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static>> {
         crate::process::ActorProcess::new(
             config.get_node_id().to_string(),
             self.get_behavior(),
@@ -734,7 +816,7 @@ impl BrowserActorContext {
     }
 }
 
-pub trait ActorState: Send + Sync + 'static {
+pub trait ActorState: MaybeSend + MaybeSync + 'static {
     fn as_any(&self) -> &dyn Any;
     fn as_mut_any(&mut self) -> &mut dyn Any;
 }
@@ -1321,7 +1403,7 @@ impl Actor for JsBrowserActor {
         &self,
         config: ActorConfig,
         tracing_integration: Option<TracingIntegration>,
-    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
+    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static>> {
         self.actor.create_process(config, tracing_integration)
     }
 }
@@ -1446,7 +1528,7 @@ impl Actor for BrowserActor {
         &self,
         actor_config: ActorConfig,
         _tracing_integration: Option<TracingIntegration>,
-    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>> {
+    ) -> std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static>> {
         use futures::StreamExt;
         use serde_json::json;
 

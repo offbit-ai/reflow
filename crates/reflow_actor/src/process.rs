@@ -179,9 +179,19 @@ impl ActorProcess {
 
     /// Consume self and return a boxed, pinned future suitable for
     /// `tokio::spawn` or the Actor trait's `create_process` return type.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn into_future(
         self,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>> {
+        Box::pin(self.run())
+    }
+
+    /// wasm32 variant — no `Send` because the runtime is single-threaded
+    /// (`spawn_local`) and browser-only types are typically `!Send`.
+    #[cfg(target_arch = "wasm32")]
+    pub fn into_future(
+        self,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + 'static>> {
         Box::pin(self.run())
     }
 }

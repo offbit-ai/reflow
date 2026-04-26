@@ -660,7 +660,7 @@ impl Network {
     }
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn init_process(
-        actor_process: std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static + Send>>,
+        actor_process: std::pin::Pin<Box<dyn futures::Future<Output = ()> + 'static>>,
     ) {
         spawn_local(actor_process);
     }
