@@ -16,3 +16,6 @@ examples/skeleton_animation/animation.mp4
 
 # mdBook build output
 /book/
+
+# claude-code planning + scratch
+/.claude/
