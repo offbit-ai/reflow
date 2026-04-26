@@ -98,7 +98,7 @@ go get github.com/offbit-ai/reflow/sdk/go@v0.2.1
 ```kotlin
 // Gradle (Kotlin DSL) — JVM SDK is the fat jar; native libs are
 // bundled as classpath resources.
-dependencies { implementation("ai.offbit:reflow:0.2.1") }
+dependencies { implementation("ai.offbit:reflow:0.2.2") }
 ```
 
 | SDK | Package | Docs |
