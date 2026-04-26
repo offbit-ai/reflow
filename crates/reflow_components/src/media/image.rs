@@ -65,9 +65,10 @@ pub async fn image_input_actor(context: ActorContext) -> Result<HashMap<String, 
         })
         .ok_or_else(|| anyhow::anyhow!("No image URL configured"))?;
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
-        .build()?;
+    let builder = reqwest::Client::builder();
+    #[cfg(not(target_arch = "wasm32"))]
+    let builder = builder.timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS));
+    let client = builder.build()?;
 
     let response = client
         .get(url)

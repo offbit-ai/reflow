@@ -36,10 +36,12 @@ pub async fn http_request_actor(context: ActorContext) -> Result<HashMap<String,
         .and_then(|v| v.as_u64())
         .unwrap_or(30000);
 
-    // Build the request
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_millis(timeout_ms))
-        .build()?;
+    // Build the request. reqwest's wasm32 backend (Fetch API) ignores
+    // the timeout — keep the call native-only to compile cross-target.
+    let builder = reqwest::Client::builder();
+    #[cfg(not(target_arch = "wasm32"))]
+    let builder = builder.timeout(Duration::from_millis(timeout_ms));
+    let client = builder.build()?;
 
     let mut request_builder = match method.to_uppercase().as_str() {
         "GET" => client.get(url),

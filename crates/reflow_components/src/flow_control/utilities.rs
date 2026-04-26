@@ -328,13 +328,13 @@ pub async fn collect_actor(ctx: ActorContext) -> Result<HashMap<String, Message>
         .ok_or_else(|| anyhow::anyhow!("Invalid state"))?;
 
     // Initialize buffer if needed
-    if memory.get("buffer").is_none() {
+    if memory.value("buffer").is_none() {
         memory.insert("buffer", serde_json::Value::Array(Vec::new()));
     }
 
     if let Some(msg) = payload.get("input") {
         let val = serde_json::to_value(msg).unwrap_or(serde_json::Value::Null);
-        if let Some(serde_json::Value::Array(arr)) = memory.get_mut("buffer") {
+        if let Some(serde_json::Value::Array(arr)) = memory.value_mut("buffer") {
             arr.push(val);
 
             if arr.len() >= target {

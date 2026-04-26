@@ -289,6 +289,41 @@ impl StorageBackend for MemoryBackend {
 // IndexedDbBackend (wasm — persistent browser storage)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Wrap an IDB request as a Promise-backed `JsFuture`.
+///
+/// `wasm-bindgen-futures` only converts `Promise` → `JsFuture` directly.
+/// IDB requests use `onsuccess`/`onerror` instead of being thenable, so
+/// we have to bridge them through a manually constructed Promise.
+#[cfg(target_arch = "wasm32")]
+async fn idb_request_to_future(
+    req: web_sys::IdbRequest,
+) -> std::result::Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+    use wasm_bindgen::prelude::*;
+    use wasm_bindgen_futures::JsFuture;
+
+    let promise = js_sys::Promise::new(&mut |resolve, reject| {
+        let success_target = req.clone();
+        let success = Closure::once(Box::new(move |_event: web_sys::Event| {
+            let value = success_target.result().unwrap_or(JsValue::NULL);
+            let _ = resolve.call1(&JsValue::NULL, &value);
+        }) as Box<dyn FnOnce(web_sys::Event)>);
+
+        // We don't surface the IDB error object — wasm-bindgen-futures
+        // signals failure via the rejected JsValue, callers only treat it
+        // as Result<_, JsValue>::Err. A NULL placeholder is enough.
+        let error = Closure::once(Box::new(move |_event: web_sys::Event| {
+            let _ = reject.call1(&JsValue::NULL, &JsValue::NULL);
+        }) as Box<dyn FnOnce(web_sys::Event)>);
+
+        req.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        req.set_onerror(Some(error.as_ref().unchecked_ref()));
+        success.forget();
+        error.forget();
+    });
+
+    JsFuture::from(promise).await
+}
+
 /// IndexedDB-backed storage for wasm. Uses in-memory cache for sync trait
 /// methods and flushes writes to IndexedDB asynchronously.
 ///
@@ -333,17 +368,17 @@ impl IndexedDbBackend {
                 .dyn_into()
                 .unwrap();
 
-            if !db.object_store_names().contains(&"manifest".into()) {
+            if !db.object_store_names().contains("manifest") {
                 db.create_object_store("manifest").unwrap();
             }
-            if !db.object_store_names().contains(&"blobs".into()) {
+            if !db.object_store_names().contains("blobs") {
                 db.create_object_store("blobs").unwrap();
             }
         });
         open_req.set_onupgradeneeded(Some(on_upgrade.as_ref().unchecked_ref()));
         on_upgrade.forget();
 
-        let db: web_sys::IdbDatabase = JsFuture::from(open_req)
+        let db: web_sys::IdbDatabase = idb_request_to_future((*open_req).clone())
             .await
             .map_err(|_| anyhow::anyhow!("IndexedDB open failed"))?
             .dyn_into()
@@ -359,7 +394,7 @@ impl IndexedDbBackend {
         let get_req = store
             .get(&"entries".into())
             .map_err(|_| anyhow::anyhow!("get failed"))?;
-        let result = JsFuture::from(get_req).await;
+        let result = idb_request_to_future(get_req).await;
 
         let memory = MemoryBackend::new();
 
@@ -387,7 +422,7 @@ impl IndexedDbBackend {
         let keys_req = store
             .get_all_keys()
             .map_err(|_| anyhow::anyhow!("getAllKeys failed"))?;
-        let keys_result = JsFuture::from(keys_req).await;
+        let keys_result = idb_request_to_future(keys_req).await;
 
         if let Ok(keys_val) = keys_result {
             let keys: Array = keys_val.dyn_into().unwrap_or_else(|_| Array::new());
@@ -396,7 +431,7 @@ impl IndexedDbBackend {
                 if let Some(hash) = key.as_string() {
                     let get_req = store.get(&key).ok();
                     if let Some(req) = get_req {
-                        if let Ok(blob_val) = JsFuture::from(req).await {
+                        if let Ok(blob_val) = idb_request_to_future(req).await {
                             if let Ok(arr) = blob_val.dyn_into::<Uint8Array>() {
                                 let data = arr.to_vec();
                                 let _ = memory.write_blob(&hash, &data);
@@ -449,7 +484,7 @@ impl IndexedDbBackend {
         let open_req = factory
             .open(db_name)
             .map_err(|_| anyhow::anyhow!("open failed"))?;
-        let db: web_sys::IdbDatabase = JsFuture::from(open_req)
+        let db: web_sys::IdbDatabase = idb_request_to_future((*open_req).clone())
             .await
             .map_err(|_| anyhow::anyhow!("open await failed"))?
             .dyn_into()
@@ -484,7 +519,7 @@ impl IndexedDbBackend {
         let open_req = factory
             .open(db_name)
             .map_err(|_| anyhow::anyhow!("open failed"))?;
-        let db: web_sys::IdbDatabase = JsFuture::from(open_req)
+        let db: web_sys::IdbDatabase = idb_request_to_future((*open_req).clone())
             .await
             .map_err(|_| anyhow::anyhow!("open await failed"))?
             .dyn_into()

@@ -89,9 +89,10 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
         "url" => {
             let url = get_url(&config, inputs)?;
 
-            let client = reqwest::Client::builder()
-                .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
-                .build()?;
+            let builder = reqwest::Client::builder();
+            #[cfg(not(target_arch = "wasm32"))]
+            let builder = builder.timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS));
+            let client = builder.build()?;
 
             // HEAD request first to check content-type and size without downloading
             let head_response = client
@@ -172,9 +173,10 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
             };
 
             // Validate that the manifest is reachable
-            let client = reqwest::Client::builder()
-                .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
-                .build()?;
+            let builder = reqwest::Client::builder();
+            #[cfg(not(target_arch = "wasm32"))]
+            let builder = builder.timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS));
+            let client = builder.build()?;
 
             let head_response = client.head(url).send().await;
             let reachable = head_response
@@ -269,9 +271,10 @@ pub async fn video_input_actor(context: ActorContext) -> Result<HashMap<String, 
         // uploads are already URLs. Treat the same as "url".
         "upload" => {
             let url = get_url(&config, inputs)?;
-            let client = reqwest::Client::builder()
-                .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
-                .build()?;
+            let builder = reqwest::Client::builder();
+            #[cfg(not(target_arch = "wasm32"))]
+            let builder = builder.timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS));
+            let client = builder.build()?;
 
             let head_response = client
                 .head(url)

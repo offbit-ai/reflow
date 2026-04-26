@@ -31,18 +31,20 @@ futures = { workspace = true }
 # HTTP/Network
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 
-# File operations and async stream source tasks
-tokio = { version = "1", features = ["fs", "io-util", "macros", "rt", "time"] }
+# Async runtime — feature set deliberately split per target.
+#
+# wasm32-unknown-unknown rejects `fs` (no filesystem API) so file
+# actors are gated to native via cfg. The browser equivalent is fetch,
+# wired through reqwest's wasm backend.
+tokio = { version = "1", default-features = false, features = ["io-util", "macros", "rt", "time", "sync"] }
 
 # Data processing
 chrono = { version = "0.4", features = ["serde"] }
 
-# JavaScript runtime.
-#
-# Deliberately no `bindgen` feature: it invokes libclang at build time,
-# which the manylinux / napi / jni cross-compile containers don't
-# ship. Pre-generated bindings cover every triple we target.
-rquickjs = { version = "0.6", features = ["array-buffer", "classes", "futures", "loader", "macro", "parallel", "properties"] }
+# (rquickjs is declared in the native-only [target.'cfg(not(target_arch
+# = "wasm32"))'.dependencies] block at the bottom of the file. wasm32
+# uses js_sys to call into the host JS engine instead — see
+# transform/js_eval.rs.)
 
 # AV processing (pure-Rust, Wasm-safe)
 reflow_dsp = { version = "0.2.0", path = "../reflow_dsp", optional = true }
@@ -99,10 +101,14 @@ tiny-skia = "0.11"
 reflow_vector = { version = "0.2.0", path = "../reflow_vector" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window"] }
 nokhwa = { version = "0.10.10", features = ["js-sys"], optional = true }
+# Browser RNG. Pinned alongside the .cargo/config.toml rustflag
+# `--cfg getrandom_backend="wasm_js"` so transitive callers compile.
+getrandom = { version = "0.3", default-features = false, features = ["wasm_js"] }
 
 [features]
 default = ["av-core", "gpu", "window-events"]
@@ -119,6 +125,16 @@ camera-native = ["dep:nokhwa"]
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Native camera capture (optional; Linux V4L2, macOS AVFoundation, Windows MSMF via nokhwa)
 nokhwa = { version = "0.10.10", features = ["input-native"], optional = true }
+
+# tokio::fs is native-only — file actors gate themselves on this.
+tokio = { version = "1", features = ["fs"] }
+
+# JavaScript runtime — native only.
+#
+# Deliberately no `bindgen` feature: it invokes libclang at build time,
+# which the manylinux / napi / jni cross-compile containers don't
+# ship. Pre-generated bindings cover every triple we target.
+rquickjs = { version = "0.6", features = ["array-buffer", "classes", "futures", "loader", "macro", "parallel", "properties"] }
 
 
 

@@ -75,9 +75,10 @@ pub async fn audio_input_actor(context: ActorContext) -> Result<HashMap<String, 
         })
         .ok_or_else(|| anyhow::anyhow!("No audio URL configured"))?;
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
-        .build()?;
+    let builder = reqwest::Client::builder();
+    #[cfg(not(target_arch = "wasm32"))]
+    let builder = builder.timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS));
+    let client = builder.build()?;
 
     // HEAD request to validate without downloading the full file
     let head_response = client
