@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 #[cfg(target_arch = "wasm32")]
+use std::sync::{Arc, Mutex};
+#[cfg(target_arch = "wasm32")]
 use tsify::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;

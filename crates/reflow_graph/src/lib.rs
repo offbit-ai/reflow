@@ -1,6 +1,7 @@
 pub mod history;
 pub mod journal;
-pub mod tests;
+#[cfg(test)]
+mod tests;
 pub mod types;
 
 use std::collections::{HashMap, HashSet, VecDeque};
