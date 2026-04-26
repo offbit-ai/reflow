@@ -494,6 +494,8 @@ fn build_vertex_buffer(
     all_vertices
 }
 
+use crate::gpu::wasm_sync::{GpuMutex, GpuOnceLock};
+
 /// Cached render pipeline + bind group layout. Created once, reused every frame.
 #[allow(dead_code)]
 struct CachedScenePipeline {
@@ -539,11 +541,14 @@ struct CachedGpuDiffuse {
     sampler: wgpu::Sampler,
     _texture: wgpu::Texture, // prevent drop
 }
-static GPU_DIFFUSE_CACHE: std::sync::OnceLock<CachedGpuDiffuse> = std::sync::OnceLock::new();
+// wgpu types are `!Sync` on wasm32 (raw JS handles). GpuOnceLock is
+// std::sync::OnceLock on native and a single-thread-safe Sync wrapper
+// on wasm — see gpu/wasm_sync.rs.
+static GPU_DIFFUSE_CACHE: GpuOnceLock<CachedGpuDiffuse> = GpuOnceLock::new();
 
 use std::sync::OnceLock;
-static SCENE_PIPELINE_4X: OnceLock<CachedScenePipeline> = OnceLock::new();
-static SCENE_PIPELINE_1X: OnceLock<CachedScenePipeline> = OnceLock::new();
+static SCENE_PIPELINE_4X: GpuOnceLock<CachedScenePipeline> = GpuOnceLock::new();
+static SCENE_PIPELINE_1X: GpuOnceLock<CachedScenePipeline> = GpuOnceLock::new();
 
 /// Compiled material from shader graph (cached across frames).
 static COMPILED_MATERIAL: OnceLock<parking_lot::Mutex<Option<serde_json::Value>>> = OnceLock::new();
@@ -565,13 +570,18 @@ struct CachedDynamicPipeline {
     pipeline: wgpu::RenderPipeline,
     bgl: wgpu::BindGroupLayout,
 }
-static DYNAMIC_PIPELINE_CACHE: OnceLock<
-    parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>>,
-> = OnceLock::new();
+// `parking_lot::Mutex` requires its content to be `Send` to be
+// `Sync` — wgpu RenderPipeline is `!Send` on wasm32. Switch to
+// our wasm-safe GpuMutex, paired with a Lazy<> for the empty-map
+// initial value (HashMap::new isn't const).
+use once_cell::sync::Lazy;
+static DYNAMIC_PIPELINE_CACHE: Lazy<
+    GpuMutex<std::collections::HashMap<u64, CachedDynamicPipeline>>,
+> = Lazy::new(|| GpuMutex::new(std::collections::HashMap::new()));
 
 fn get_dynamic_cache(
-) -> &'static parking_lot::Mutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
-    DYNAMIC_PIPELINE_CACHE.get_or_init(|| parking_lot::Mutex::new(std::collections::HashMap::new()))
+) -> &'static GpuMutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
+    &DYNAMIC_PIPELINE_CACHE
 }
 
 fn get_or_create_pipeline(
@@ -676,8 +686,8 @@ fn get_or_create_pipeline(
 
 // ─── Textured pipeline (32-byte stride: pos3+normal3+uv2, with diffuse texture) ───
 
-static TEXTURED_PIPELINE_1X: OnceLock<CachedScenePipeline> = OnceLock::new();
-static TEXTURED_PIPELINE_4X: OnceLock<CachedScenePipeline> = OnceLock::new();
+static TEXTURED_PIPELINE_1X: GpuOnceLock<CachedScenePipeline> = GpuOnceLock::new();
+static TEXTURED_PIPELINE_4X: GpuOnceLock<CachedScenePipeline> = GpuOnceLock::new();
 
 fn get_or_create_textured_pipeline(
     device: &wgpu::Device,
@@ -861,7 +871,7 @@ fn render_scene(
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
-    let ctx = &*crate::gpu::context::GPU_CONTEXT;
+    let ctx = crate::gpu::context::try_gpu_context()?;
     let device = ctx.device();
     let queue = ctx.queue();
 
@@ -1108,7 +1118,9 @@ fn render_scene(
         let has_uv = mat_stride >= 32;
 
         // Get or create pipeline from dynamic cache
-        let mut dyn_cache = get_dynamic_cache().lock();
+        let mut dyn_cache = get_dynamic_cache()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if !dyn_cache.contains_key(&pipeline_hash) {
             let vs_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("PBR Vertex"),

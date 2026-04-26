@@ -104,7 +104,14 @@ reflow_vector = { version = "0.2.0", path = "../reflow_vector" }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["Window"] }
+web-sys = { version = "0.3", features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlCanvasElement",
+    # Console for the wgpu init log so adapter info surfaces in DevTools.
+    "console",
+] }
 nokhwa = { version = "0.10.10", features = ["js-sys"], optional = true }
 # Browser RNG. Pinned alongside the .cargo/config.toml rustflag
 # `--cfg getrandom_backend="wasm_js"` so transitive callers compile.

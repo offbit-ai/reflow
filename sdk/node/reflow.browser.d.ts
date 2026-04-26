@@ -33,6 +33,18 @@ export function version(): string;
 export function bindInputEvents(network: Network, target: EventTarget): () => void;
 
 /**
+ * Initialize the shared wgpu (WebGPU) context against an HTML
+ * `<canvas>`. Must be awaited once before any GPU-backed actor runs
+ * — see [sdk/node#gpu-on-wasm](../README.md). On native runtimes the
+ * argument is ignored and the GPU context is initialized lazily on
+ * first use.
+ *
+ * @param canvasSelector CSS selector for the target `HTMLCanvasElement`,
+ *   e.g. `"#viewport"`. Pass `null` for off-screen-only workloads.
+ */
+export function initGpuContext(canvasSelector?: string | null): Promise<void>;
+
+/**
  * `Message` payload constructors. The browser side serializes
  * messages as plain `{ type, data? }` JSON because the wasm runtime
  * round-trips through serde — there is no `ReflowMessage` class to
@@ -222,5 +234,6 @@ declare const _default: {
   bindInputEvents: typeof bindInputEvents;
   version: typeof version;
   ready: typeof ready;
+  initGpuContext: typeof initGpuContext;
 };
 export default _default;

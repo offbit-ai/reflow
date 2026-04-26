@@ -111,7 +111,7 @@ fn run_mesh_to_sdf_gpu(
 ) -> Result<Vec<u8>, String> {
     use wgpu::util::DeviceExt;
 
-    let ctx = &*crate::gpu::context::GPU_CONTEXT;
+    let ctx = crate::gpu::context::try_gpu_context()?;
     let device = ctx.device();
     let queue = ctx.queue();
 

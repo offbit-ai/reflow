@@ -641,6 +641,26 @@ export class EventStream {
 export const bindInputEvents = wasm.bindInputEvents;
 export const version = wasm.version;
 
+/**
+ * Initialize the shared wgpu context against an HTML `<canvas>`.
+ *
+ * Must be awaited once during workflow startup before any GPU-backed
+ * actor runs. Browser-side wgpu uses the WebGPU backend (with WebGL2
+ * fallback in older browsers); the canvas registration matters because
+ * Chromium's WebGPU implementation refuses to hand out a
+ * presentation-capable adapter without a target surface.
+ *
+ *     await ready();
+ *     await initGpuContext("#viewport");
+ *     // ...build network and start
+ *
+ * Pass `null` (or omit) for off-screen workloads (mesh ops, SDF
+ * readback) where the result is read back to CPU and displayed
+ * outside the wgpu pipeline. On native runtimes the argument is
+ * ignored and the GPU context is initialized lazily on first use.
+ */
+export const initGpuContext = wasm.initGpuContext;
+
 // ─── Default export ────────────────────────────────────────────────────────
 
 export default {
@@ -652,4 +672,5 @@ export default {
   bindInputEvents,
   version,
   ready,
+  initGpuContext,
 };

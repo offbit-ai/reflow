@@ -30,7 +30,9 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 #[cfg(feature = "gpu")]
-use super::context::GPU_CONTEXT;
+use super::context::try_gpu_context;
+#[cfg(feature = "gpu")]
+use super::wasm_sync::{GpuMutex, GpuOnceLock};
 use super::font_atlas::GlyphAtlasGpu;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -423,9 +425,9 @@ struct CachedPipeline {
 }
 
 #[cfg(feature = "gpu")]
-static PIPELINE_2D_1X: OnceLock<CachedPipeline> = OnceLock::new();
+static PIPELINE_2D_1X: GpuOnceLock<CachedPipeline> = GpuOnceLock::new();
 #[cfg(feature = "gpu")]
-static PIPELINE_2D_4X: OnceLock<CachedPipeline> = OnceLock::new();
+static PIPELINE_2D_4X: GpuOnceLock<CachedPipeline> = GpuOnceLock::new();
 
 /// Cached glyph atlas GPU resources — rebuilt only when atlas dimensions/content change.
 #[cfg(feature = "gpu")]
@@ -478,16 +480,16 @@ struct CachedBuffers {
 }
 
 #[cfg(feature = "gpu")]
-static CACHED_BUFFERS: std::sync::Mutex<Option<CachedBuffers>> = std::sync::Mutex::new(None);
+static CACHED_BUFFERS: GpuMutex<Option<CachedBuffers>> = GpuMutex::new(None);
 
 #[cfg(feature = "gpu")]
-static CACHED_LAYER: std::sync::Mutex<Option<CachedLayer>> = std::sync::Mutex::new(None);
+static CACHED_LAYER: GpuMutex<Option<CachedLayer>> = GpuMutex::new(None);
 
 #[cfg(feature = "gpu")]
-static CACHED_ATLAS: std::sync::Mutex<Option<CachedAtlas>> = std::sync::Mutex::new(None);
+static CACHED_ATLAS: GpuMutex<Option<CachedAtlas>> = GpuMutex::new(None);
 #[cfg(feature = "gpu")]
-static CACHED_RENDER_TARGETS: std::sync::Mutex<Option<CachedRenderTargets>> =
-    std::sync::Mutex::new(None);
+static CACHED_RENDER_TARGETS: GpuMutex<Option<CachedRenderTargets>> =
+    GpuMutex::new(None);
 
 #[cfg(feature = "gpu")]
 fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
@@ -497,7 +499,9 @@ fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
         (&PIPELINE_2D_1X, 1u32)
     };
     lock.get_or_init(|| {
-        let device = GPU_CONTEXT.device();
+        let device = try_gpu_context()
+            .expect("GPU context not initialized — call init_gpu_context() first")
+            .device();
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("SDF 2D Shader"),
             source: wgpu::ShaderSource::Wgsl(SDF_2D_SHADER.into()),
@@ -666,8 +670,10 @@ pub fn render_2d_with_layer(
 ) -> Vec<u8> {
     use wgpu::util::DeviceExt;
 
-    let device = GPU_CONTEXT.device();
-    let queue = GPU_CONTEXT.queue();
+    let ctx = try_gpu_context()
+        .expect("GPU context not initialized — call init_gpu_context() first");
+    let device = ctx.device();
+    let queue = ctx.queue();
     let cached = get_pipeline(msaa);
     let sample_count = cached.sample_count;
 
@@ -1014,7 +1020,7 @@ pub fn render_2d_with_layer(
         },
     );
 
-    GPU_CONTEXT.submit_and_poll(encoder.finish());
+    ctx.submit_and_poll(encoder.finish());
     let slice = rt.readback_buf.slice(..);
     slice.map_async(wgpu::MapMode::Read, |_| {});
     device.poll(wgpu::Maintain::Wait);

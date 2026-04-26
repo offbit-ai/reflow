@@ -54,3 +54,21 @@ pub use reflow_network::network::GraphNetwork;
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
+
+/// Initialize the shared GPU context from a `<canvas>` element.
+///
+/// Must be awaited once during workflow startup before any GPU-backed
+/// actor runs (SDF renderer, scene renderer, marching cubes, …).
+/// `canvasSelector` is a CSS selector pointing at the `HTMLCanvasElement`
+/// Reflow should render to. Pass `null`/`undefined` for off-screen-only
+/// workloads where the result is read back to CPU and displayed
+/// outside the wgpu pipeline.
+///
+/// On success, `wgpu::Adapter`, `Device`, and `Queue` are cached for
+/// the life of the runtime; subsequent calls are no-ops.
+#[wasm_bindgen(js_name = initGpuContext)]
+pub async fn init_gpu_context(canvas_selector: Option<String>) -> Result<(), JsValue> {
+    reflow_components::gpu::context::init_gpu_context(canvas_selector.as_deref())
+        .await
+        .map_err(|e| JsValue::from_str(&e))
+}

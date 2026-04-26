@@ -20,11 +20,13 @@ use reflow_actor_macro::actor;
 use reflow_sdf::ir::{SceneSettings, SdfNode};
 use serde_json::json;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+
+use crate::gpu::wasm_sync::GpuMutex;
 
 /// Cached SDF compute pipeline — keyed by WGSL hash.
 struct CachedSdfPipeline {
@@ -33,8 +35,13 @@ struct CachedSdfPipeline {
 }
 
 /// Process-global SDF pipeline cache.
-static SDF_PIPELINE_CACHE: Lazy<RwLock<HashMap<u64, Arc<CachedSdfPipeline>>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
+///
+/// `GpuMutex` replaces the RwLock — wgpu types are `!Sync` on wasm
+/// so the standard primitive doesn't typecheck. The mutex variant
+/// is fine for this cache: pipeline lookups are infrequent and a
+/// single-thread runtime can't deadlock anyway.
+static SDF_PIPELINE_CACHE: Lazy<GpuMutex<HashMap<u64, Arc<CachedSdfPipeline>>>> =
+    Lazy::new(|| GpuMutex::new(HashMap::new()));
 
 /// Cached render targets for a specific resolution.
 #[allow(dead_code)]
@@ -48,8 +55,8 @@ struct CachedTargets {
 }
 
 /// Process-global render target cache keyed by (width, height).
-static TARGET_CACHE: Lazy<RwLock<HashMap<(u32, u32), Arc<CachedTargets>>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
+static TARGET_CACHE: Lazy<GpuMutex<HashMap<(u32, u32), Arc<CachedTargets>>>> =
+    Lazy::new(|| GpuMutex::new(HashMap::new()));
 
 fn hash_wgsl(wgsl: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -61,7 +68,11 @@ fn get_or_create_pipeline(device: &wgpu::Device, wgsl: &str) -> Arc<CachedSdfPip
     let hash = hash_wgsl(wgsl);
 
     // Check cache
-    if let Some(cached) = SDF_PIPELINE_CACHE.read().unwrap().get(&hash) {
+    if let Some(cached) = SDF_PIPELINE_CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&hash)
+    {
         return cached.clone();
     }
 
@@ -114,8 +125,8 @@ fn get_or_create_pipeline(device: &wgpu::Device, wgsl: &str) -> Arc<CachedSdfPip
 
     let cached = Arc::new(CachedSdfPipeline { pipeline, bgl });
     SDF_PIPELINE_CACHE
-        .write()
-        .unwrap()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
         .insert(hash, cached.clone());
     cached
 }
@@ -123,7 +134,11 @@ fn get_or_create_pipeline(device: &wgpu::Device, wgsl: &str) -> Arc<CachedSdfPip
 fn get_or_create_targets(device: &wgpu::Device, width: u32, height: u32) -> Arc<CachedTargets> {
     let key = (width, height);
 
-    if let Some(cached) = TARGET_CACHE.read().unwrap().get(&key) {
+    if let Some(cached) = TARGET_CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&key)
+    {
         return cached.clone();
     }
 
@@ -166,7 +181,10 @@ fn get_or_create_targets(device: &wgpu::Device, width: u32, height: u32) -> Arc<
         readback_buffer,
         uniform_buffer,
     });
-    TARGET_CACHE.write().unwrap().insert(key, cached.clone());
+    TARGET_CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(key, cached.clone());
     cached
 }
 
@@ -380,7 +398,7 @@ fn render_frame(
     camera_target: [f32; 3],
     fov: f32,
 ) -> Result<Vec<u8>, String> {
-    let ctx = &*crate::gpu::context::GPU_CONTEXT;
+    let ctx = crate::gpu::context::try_gpu_context()?;
     let device = ctx.device();
     let queue = ctx.queue();
 

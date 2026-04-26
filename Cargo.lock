@@ -6421,6 +6421,7 @@ dependencies = [
  "getrandom 0.3.3",
  "js-sys",
  "reflow_actor",
+ "reflow_components",
  "reflow_graph",
  "reflow_network",
  "serde",

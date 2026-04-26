@@ -323,12 +323,43 @@ Browser-side scope:
 - `EventStream` — Promise-based `.recv()` over network events
 - `bindInputEvents(network, target)` — routes DOM events to input actors
 - `version()` — runtime version string
+- `initGpuContext(canvasSelector)` — initialize the shared wgpu
+  context against an HTML canvas (see GPU section below)
 
-Native-only stacks (file I/O, GPU, video encode, headless browser
+Native-only stacks (file I/O, video encode, headless browser
 automation, ML/CV taskpacks) are not in the wasm bundle — those
 remain in the Node-side reflow_components catalog. Browser code
 that calls a native-only template will fail at registration time
 with a clear "template not found" error.
+
+### GPU on wasm
+
+Reflow's GPU actors are built on **wgpu**, which compiles to the
+WebGPU backend on `wasm32-unknown-unknown`. SDF rendering, scene
+rasterization, marching cubes, mesh ops — all of it runs in the
+browser as long as you initialize the GPU context against a target
+canvas first:
+
+```js
+import { ready, initGpuContext, Network, Graph } from "@offbit-ai/reflow";
+
+await ready();
+await initGpuContext("#viewport");   // CSS selector for the <canvas>
+
+const g = new Graph("scene");
+g.addNode("renderer", "tpl_sdf_live_render");
+// ...wire and run
+```
+
+Pass `null` instead of a selector for off-screen workloads (mesh
+operations, SDF readback) where the result is consumed as raw
+bytes rather than displayed via the wgpu pipeline.
+
+The init step is required because Chromium's WebGPU implementation
+refuses to hand out a presentation-capable adapter without a target
+surface. Subsequent calls are no-ops; on native runtimes the
+argument is ignored and the GPU context is initialized lazily on
+first actor use.
 
 ## License
 
