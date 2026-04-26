@@ -126,12 +126,13 @@ const net = Network.fromGraph(graph);
 
 ## Standard component catalog
 
-The SDK ships the pure-Rust + `av-core` slice of `reflow_components` —
-roughly 270 templates covering animation, flow control, math, vector,
-2D graphics, asset DB, scene graph, HTTP integration, stream ops, DSP,
-and procedural generation. Heavy optional palettes (GPU, ML, browser
-automation, video encoding, window events, ~6,700 API-service wrappers)
-are **not bundled** and install as [actor packs](#actor-packs).
+The SDK ships the lightweight slice of the standard component
+catalog — roughly 270 templates covering animation, flow control,
+math, vector, 2D graphics, asset DB, scene graph, HTTP integration,
+stream ops, DSP, and procedural generation. Heavy optional palettes
+(GPU, ML, browser automation, video encoding, window events, ~6,700
+API-service wrappers) are **not bundled** and install as
+[actor packs](#actor-packs).
 
 ```ts
 import { templateActor, templateList } from "@offbit-ai/reflow";
@@ -195,11 +196,11 @@ Third-party packs are distributed however their author chooses (npm
 tarball, GitHub Releases, internal registry) — any local file path
 works with `loadPack()`.
 
-**ABI lockstep.** A pack is pinned to the rustc version of the SDK it
-was built against. Pick the `pack-v*` release whose version matches
-your `@offbit-ai/reflow`; rebuild from source
-([`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md))
-if you need a pack for a different SDK version.
+**ABI lockstep.** A pack is pinned to the SDK release it was built
+against. Pick the `pack-v*` release whose version matches your
+`@offbit-ai/reflow`; if you need a pack for a different SDK version,
+rebuild from source — see
+[`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md).
 
 ## Subgraphs
 
@@ -266,22 +267,21 @@ npm test                   # runs test/*.mjs against the built addon
 ## Package entry points
 
 - `import { ... } from "@offbit-ai/reflow"` → high-level API with the `Actor` class.
-- `import { ... } from "@offbit-ai/reflow/native"` → raw napi-rs bindings (`ReflowActor`, `ReflowNetwork`, ...) if you want to skip the class layer.
+- `import { ... } from "@offbit-ai/reflow/native"` → raw native bindings (`ReflowActor`, `ReflowNetwork`, ...) if you want to skip the class layer. Escape hatch — most code wants the default import.
 - `import { ... } from "@offbit-ai/reflow/browser"` → explicit browser-WASM build (rarely needed; bundlers route the default import here automatically).
 
 ## Browser target
 
-The same package ships a wasm-bindgen build of the runtime under
+The same package ships a WebAssembly build of the runtime under
 [`wasm/`](./wasm) for browser use. The `"browser"` conditional
-export in `package.json` makes Vite/webpack/esbuild resolve
+export in `package.json` makes Vite, webpack, and esbuild resolve
 `import { Graph, Network } from "@offbit-ai/reflow"` to the wasm
 bundle when bundling for the browser; Node continues to load the
-napi `.node` addon.
+native addon.
 
 The browser surface uses the same class names, method names, and
-argument order as Node — the entry file (`reflow.browser.mjs`)
-wraps the wasm-bindgen build behind a thin shim. Isomorphic code
-reads the same in both targets:
+argument order as Node, so isomorphic code reads the same in both
+targets:
 
 ```js
 import { Graph, Network, Actor, Message, ready } from "@offbit-ai/reflow";
@@ -323,22 +323,21 @@ Browser-side scope:
 - `EventStream` — Promise-based `.recv()` over network events
 - `bindInputEvents(network, target)` — routes DOM events to input actors
 - `version()` — runtime version string
-- `initGpuContext(canvasSelector)` — initialize the shared wgpu
+- `initGpuContext(canvasSelector)` — initialize the shared GPU
   context against an HTML canvas (see GPU section below)
 
 Native-only stacks (file I/O, video encode, headless browser
 automation, ML/CV taskpacks) are not in the wasm bundle — those
-remain in the Node-side reflow_components catalog. Browser code
-that calls a native-only template will fail at registration time
-with a clear "template not found" error.
+remain in the Node component catalog. Browser code that calls a
+native-only template will fail at registration time with a clear
+"template not found" error.
 
 ### GPU on wasm
 
-Reflow's GPU actors are built on **wgpu**, which compiles to the
-WebGPU backend on `wasm32-unknown-unknown`. SDF rendering, scene
-rasterization, marching cubes, mesh ops — all of it runs in the
-browser as long as you initialize the GPU context against a target
-canvas first:
+Reflow's GPU actors target **WebGPU** in the browser. SDF
+rendering, scene rasterization, marching cubes, mesh ops — all
+of it runs once you initialize the GPU context against a target
+canvas:
 
 ```js
 import { ready, initGpuContext, Network, Graph } from "@offbit-ai/reflow";
@@ -353,21 +352,21 @@ g.addNode("renderer", "tpl_sdf_live_render");
 
 Pass `null` instead of a selector for off-screen workloads (mesh
 operations, SDF readback) where the result is consumed as raw
-bytes rather than displayed via the wgpu pipeline.
+bytes rather than displayed.
 
-The init step is required because Chromium's WebGPU implementation
-refuses to hand out a presentation-capable adapter without a target
-surface. Subsequent calls are no-ops; on native runtimes the
-argument is ignored and the GPU context is initialized lazily on
-first actor use.
+The canvas argument is required because Chromium's WebGPU
+implementation refuses to hand out a presentation-capable adapter
+without a target surface. Subsequent calls are no-ops; on Node
+the argument is ignored and the GPU context is initialized lazily
+on first actor use.
 
 ### Loading actor packs in the browser
 
-`.rflpack` bundles ship the wasm32 binary alongside the native
-cdylibs (see [pack format](../packs/README.md)). Browser code
-loads them straight from a GitHub release URL — `loadPack(url)`
-fetches the bundle, validates the manifest, and compiles the
-wasm32 entry into a `WebAssembly.Module`.
+`.rflpack` bundles ship a browser build alongside the native
+binaries (see [pack format](../packs/README.md)). Browser code
+loads them straight from a URL — `loadPack(url)` fetches the
+bundle, validates the manifest, and compiles the browser build
+into a usable WebAssembly module.
 
 ```js
 import { ready, loadPack, Network } from "@offbit-ai/reflow";
@@ -388,43 +387,27 @@ console.log(pack.registered); // [{ name: "tpl_sdf_render", factoryId: 0 }, ...]
 console.log(network.getActorNames()); // includes "tpl_sdf_render"
 ```
 
-Pass `{ network }` to immediately wire the pack into a `Network`,
-or call `pack.attachTo(network)` later. The handshake:
+Pass `{ network }` to wire the pack into a `Network` immediately,
+or call `pack.attachTo(network)` later. Either way, every template
+the pack publishes is registered on the network and visible to
+`network.getActorNames()` before the call resolves.
 
-1. Compile the pack's wasm32 entry into a `WebAssembly.Module`.
-2. Instantiate it with an `env.__reflow_pack_register_template`
-   import that captures `(name, factoryId)` pairs as the pack
-   walks its `#[reflow_pack]` register function.
-3. Call the pack's exported `__reflow_pack_register()`. Each
-   `host.register("name", factory)` inside the pack fires our
-   import callback once.
-4. For every registered template, register a JS adapter actor on
-   `network` whose `run(ctx)` calls back into
-   `instance.exports.__reflow_pack_create_actor(factoryId)`.
+Returned object: `{ manifest, name, version, templates,
+registered, attachTo, ... }`. The `registered` array carries
+`{ name, factoryId, inports, outports }` for each template the
+pack wired up.
 
-Returned object: `{ manifest, name, version, templates, wasm,
-module, instance, registered, attachTo }`. `instance` is `null`
-until `attachTo` succeeds.
+Each registered template appears in `network.getActorNames()`
+once `attachTo()` resolves; running the network ticks them as
+normal. Synchronous pack actors (compute, transforms, sync GPU
+work) run end-to-end today. Asynchronous pack actors — anything
+that awaits `fetch` or other browser Promises — are not yet
+runnable in the browser; they'll be enabled in a follow-up
+release.
 
-**Sync actor execution wired.** Each tick, the JS adapter
-JSON-encodes the input port map, allocates space in the pack's
-linear memory via `__reflow_pack_alloc`, calls
-`__reflow_pack_actor_run(instance_id, ...)`, decodes the JSON
-result, and forwards it through `ctx.send` / `ctx.done`. The
-pack-side implementation drives the actor's behavior future
-synchronously via `pollster::block_on` — works for actors whose
-futures don't await JS Promises (math, transforms, sync GPU
-work). Actors that `.await` `fetch` or `wgpu::map_async` will
-hang the call site; the next milestone integrates
-`wasm-bindgen-futures` so async pack actors can yield to the JS
-event loop. See [pack ABI](../packs/README.md#pack-abi) for the
-full wire format.
-
-**ABI handshake.** `loadPack` rejects packs whose
-`reflow_pack_abi_version` doesn't match the runtime's. The match
-is enforced by hashing the rustc toolchain version + a manually
-bumped revision constant, so a pack built against an older Reflow
-release won't silently load against a newer one.
+**ABI handshake.** `loadPack` rejects packs that weren't built
+against this runtime's release. A mismatch surfaces immediately
+as a load-time error rather than a silent runtime corruption.
 
 **CORS.** GitHub release assets serve permissive CORS headers, so
 cross-origin browser fetches "just work". For other hosts you
