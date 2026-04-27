@@ -629,6 +629,18 @@ char *rfl_message_as_string(const struct rfl_message *m);
 char *rfl_message_as_json(const struct rfl_message *m);
 
 /**
+ * Inner data payload as JSON, with `EncodableValue` wrappers
+ * transparently decoded. For `Object` returns the bare object;
+ * for `Array` returns a bare array of decoded values; for primitive
+ * variants returns the bare scalar.
+ *
+ * Returns NULL for variants without a portable payload (Flow, Bytes,
+ * StreamHandle, Encoded, RemoteReference, NetworkEvent). Caller frees
+ * via `rfl_string_free`.
+ */
+char *rfl_message_data_json(const struct rfl_message *m);
+
+/**
  * Zero-copy borrow of a `Bytes` payload. Writes a pointer into the
  * Arc'd buffer and its length. The pointer is valid until the message
  * handle is freed (or ownership transferred). Returns 1 on success, 0

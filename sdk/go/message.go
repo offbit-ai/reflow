@@ -245,7 +245,9 @@ func (m *Message) AsBytes() ([]byte, bool) {
 	return C.GoBytes(unsafe.Pointer(data), C.int(n)), true
 }
 
-// AsJSON serializes the message to JSON.
+// AsJSON serializes the full tagged message to JSON
+// (`{"type":"Array","data":[...]}` form). Round-trips with
+// MessageFromJSON. For most actor code you want Data instead.
 func (m *Message) AsJSON() ([]byte, error) {
 	if m == nil || m.ptr == nil {
 		return nil, fmt.Errorf("reflow.Message.AsJSON: nil message")
@@ -256,6 +258,26 @@ func (m *Message) AsJSON() ([]byte, error) {
 	}
 	defer C.rfl_string_free(p)
 	return []byte(C.GoString(p)), nil
+}
+
+// Data returns the inner payload as JSON, with the runtime's
+// EncodableValue wrappers transparently decoded. For Array messages
+// it's a bare JSON array; for Object, a bare object; for primitives,
+// the bare scalar. Pass straight to json.Unmarshal.
+//
+// Returns ok=false for variants without a portable payload (Flow,
+// Bytes — use AsBytes — StreamHandle, Encoded, RemoteReference,
+// NetworkEvent).
+func (m *Message) Data() ([]byte, bool) {
+	if m == nil || m.ptr == nil {
+		return nil, false
+	}
+	p := C.rfl_message_data_json(m.ptr)
+	if p == nil {
+		return nil, false
+	}
+	defer C.rfl_string_free(p)
+	return []byte(C.GoString(p)), true
 }
 
 // Free releases the handle early. The finalizer will call this
