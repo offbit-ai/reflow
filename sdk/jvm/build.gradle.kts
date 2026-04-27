@@ -18,7 +18,7 @@ plugins {
 }
 
 group = "ai.offbit"
-version = "0.2.4"
+version = "0.2.5"
 
 java {
     toolchain {

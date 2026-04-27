@@ -17,11 +17,7 @@ fun main() = runBlocking {
         inports = listOf("in")
         outports = listOf("out")
         onRun { ctx ->
-            val raw = ctx.inputsJson()
-            val dataStart = raw.indexOf("\"data\"") + 7
-            val n = raw.substring(dataStart)
-                .takeWhile { it.isDigit() || it == '-' }
-                .toLong()
+            val n = ctx.inputDataJson("in")?.toLong() ?: 0L
             ctx.emit("out", Message.integer(n * 2))
             ctx.done()
         }
@@ -31,7 +27,7 @@ fun main() = runBlocking {
         component = "log"
         inports = listOf("in")
         onRun { ctx ->
-            println("got: ${ctx.inputsJson()}")
+            println("got: ${ctx.inputDataJson("in")}")
             ctx.done()
         }
     }

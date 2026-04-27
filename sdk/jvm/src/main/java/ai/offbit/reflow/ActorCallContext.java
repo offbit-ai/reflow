@@ -21,6 +21,18 @@ public final class ActorCallContext {
         return nativeInputs(nativePtr);
     }
 
+    /**
+     * Bare JSON payload for a single input port — the {@code data} field of
+     * the message on {@code port}, with the runtime's EncodableValue
+     * wrappers transparently decoded. Returns {@code null} if the port had
+     * no message this tick or the variant has no portable JSON form (Flow,
+     * Bytes). Lets actor code parse a single port without scanning the full
+     * inputs envelope.
+     */
+    public String inputDataJson(String port) {
+        return nativeInputDataJson(nativePtr, port);
+    }
+
     /** Per-node config JSON. */
     public String configJson() {
         return nativeConfig(nativePtr);
@@ -55,6 +67,7 @@ public final class ActorCallContext {
     }
 
     private static native String nativeInputs(long ptr);
+    private static native String nativeInputDataJson(long ptr, String port);
     private static native String nativeConfig(long ptr);
     private static native void nativeEmit(long ptr, String port, long messagePtr);
     private static native void nativeDone(long ptr);

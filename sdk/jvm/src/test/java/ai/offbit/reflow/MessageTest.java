@@ -32,4 +32,25 @@ public class MessageTest {
             }
         }
     }
+
+    @Test
+    void dataJsonUnwrapsEnvelope() {
+        // Bare scalars
+        try (var m = Message.integer(7)) {
+            assertEquals("7", m.dataJson());
+        }
+        try (var m = Message.string("hi")) {
+            assertEquals("\"hi\"", m.dataJson());
+        }
+        try (var m = Message.booleanOf(true)) {
+            assertEquals("true", m.dataJson());
+        }
+        // Variants without a portable JSON payload
+        try (var m = Message.flow()) {
+            assertNull(m.dataJson());
+        }
+        try (var m = Message.bytes(new byte[]{1, 2, 3})) {
+            assertNull(m.dataJson());
+        }
+    }
 }

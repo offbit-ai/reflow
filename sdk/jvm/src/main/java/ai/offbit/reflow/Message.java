@@ -39,6 +39,24 @@ public final class Message implements AutoCloseable {
         return nativeAsJson(nativePtr);
     }
 
+    /**
+     * Inner data payload as JSON, with the runtime's EncodableValue
+     * wrappers transparently decoded. Covers every variant whose
+     * payload has a useful JSON form: primitives, Object, Array,
+     * Optional, Event, Any, Error; StreamHandle and RemoteReference
+     * return their serializable locator metadata; NetworkEvent returns
+     * its {@code {event_type, data}} shape; Encoded is decoded back to
+     * its inner Message.
+     *
+     * Returns {@code null} for Flow (control signal, no data) and
+     * Bytes (use {@link #asBytes()} — exposing the buffer as a JSON
+     * array would just bloat the wire).
+     */
+    public String dataJson() {
+        if (nativePtr == 0) return null;
+        return nativeDataJson(nativePtr);
+    }
+
     public String asString() {
         if (nativePtr == 0) return null;
         return nativeAsString(nativePtr);
@@ -105,6 +123,7 @@ public final class Message implements AutoCloseable {
     private static native long nativeFromJson(String json);
     private static native String nativeKind(long ptr);
     private static native String nativeAsJson(long ptr);
+    private static native String nativeDataJson(long ptr);
     private static native String nativeAsString(long ptr);
     private static native long nativeAsInteger(long ptr);
     private static native double nativeAsFloat(long ptr);

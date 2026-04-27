@@ -287,6 +287,32 @@ pub extern "system" fn Java_ai_offbit_reflow_Message_nativeAsJson<'local>(
 }
 
 #[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Message_nativeDataJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+) -> jobject {
+    let h = match unsafe { as_ref::<MessageHandle>(ptr) } {
+        Some(h) => h,
+        None => return std::ptr::null_mut(),
+    };
+    let value = match h.inner.data_value() {
+        Some(v) => v,
+        None => return std::ptr::null_mut(),
+    };
+    match serde_json::to_string(&value) {
+        Ok(s) => env
+            .new_string(&s)
+            .map(|j| j.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
+        Err(e) => {
+            throw_runtime(&mut env, format!("data serialize: {e}"));
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn Java_ai_offbit_reflow_Message_nativeAsString<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
@@ -826,6 +852,52 @@ pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativeInputs<'loca
     match serde_json::to_string(&h.inputs) {
         Ok(s) => env.new_string(&s).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut()),
         Err(e) => { throw_runtime(&mut env, format!("{e}")); std::ptr::null_mut() }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativeInputDataJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port: JString<'local>,
+) -> jobject {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return std::ptr::null_mut(),
+    };
+    let port = match jstring_to_string(&mut env, &port) {
+        Ok(s) => s,
+        Err(e) => {
+            throw_runtime(&mut env, &e);
+            return std::ptr::null_mut();
+        }
+    };
+    let entry = match h.inputs.get(&port) {
+        Some(v) => v,
+        None => return std::ptr::null_mut(),
+    };
+    // Round-trip through Message so Encoded / Optional etc. unwrap consistently.
+    let msg: Message = match serde_json::from_value(entry.clone()) {
+        Ok(m) => m,
+        Err(e) => {
+            throw_runtime(&mut env, format!("input deserialize: {e}"));
+            return std::ptr::null_mut();
+        }
+    };
+    let value = match msg.data_value() {
+        Some(v) => v,
+        None => return std::ptr::null_mut(),
+    };
+    match serde_json::to_string(&value) {
+        Ok(s) => env
+            .new_string(&s)
+            .map(|j| j.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
+        Err(e) => {
+            throw_runtime(&mut env, format!("input data serialize: {e}"));
+            std::ptr::null_mut()
+        }
     }
 }
 

@@ -14,7 +14,7 @@ package ai.offbit.reflow
  *     inports = listOf("in")
  *     outports = listOf("out")
  *     onRun { ctx ->
- *         val n = parseIntegerInput(ctx.inputsJson(), "in")
+ *         val n = ctx.inputDataJson("in")?.toLong() ?: 0L
  *         ctx.emit("out", Message.integer(n * 2))
  *         ctx.done()
  *     }
@@ -27,6 +27,11 @@ package ai.offbit.reflow
  *     start()
  * }
  * ```
+ *
+ * `ctx.inputDataJson(port)` returns the bare JSON payload for that
+ * port — a primitive scalar in JSON form, an object literal, or an
+ * array literal — so primitive ports parse with one `toLong` /
+ * `toDouble` / `removeSurrounding("\"")` call.
  */
 
 @DslMarker
