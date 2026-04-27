@@ -57,6 +57,55 @@ fn enter_runtime<R>(f: impl FnOnce() -> R) -> R {
     f()
 }
 
+/// Live network registry — populated by `Network.start()`, drained by
+/// the `atexit` hook installed at module init. Without this, the
+/// process can begin Python finalization while the Tokio worker is
+/// still scheduling actor callbacks; the trampoline then tries to
+/// acquire the GIL on a half-dead interpreter and panics inside pyo3.
+static LIVE_NETWORKS: Lazy<PlMutex<Vec<std::sync::Weak<Mutex<RtNetwork>>>>> =
+    Lazy::new(|| PlMutex::new(Vec::new()));
+
+fn register_live_network(net: &Arc<Mutex<RtNetwork>>) {
+    let mut g = LIVE_NETWORKS.lock();
+    // Sweep dead weakrefs while we're here.
+    g.retain(|w| w.strong_count() > 0);
+    g.push(Arc::downgrade(net));
+}
+
+fn shutdown_all_live_networks() {
+    let nets: Vec<Arc<Mutex<RtNetwork>>> = {
+        let mut g = LIVE_NETWORKS.lock();
+        let upgraded: Vec<_> = g.iter().filter_map(|w| w.upgrade()).collect();
+        g.clear();
+        upgraded
+    };
+    if nets.is_empty() {
+        return;
+    }
+    let _g = RUNTIME.enter();
+    for net in &nets {
+        if let Ok(mut n) = net.lock() {
+            n.shutdown();
+        }
+    }
+    // shutdown() aborts spawned tasks but doesn't wait for them — the
+    // task may already be inside `with_gil` when abort fires. Give the
+    // runtime a brief moment for abort signals to actually unwind those
+    // tasks before atexit returns and Python finalizes. 50 ms is well
+    // below human-perceptible exit lag and dwarfs the per-tick budget.
+    std::thread::sleep(std::time::Duration::from_millis(50));
+}
+
+/// Cheap finalize check — returns true while the Python interpreter is
+/// still alive and safe to call into.
+fn python_alive() -> bool {
+    // SAFETY: Py_IsInitialized is documented as safe to call at any
+    // time, including before init / after finalize. Returns 0 when
+    // the interpreter has been finalized; the actor trampoline uses
+    // this to short-circuit GIL acquisition rather than panic.
+    unsafe { pyo3::ffi::Py_IsInitialized() != 0 }
+}
+
 fn map_err(e: impl std::fmt::Display) -> PyErr {
     PyRuntimeError::new_err(format!("{e}"))
 }
@@ -496,7 +545,30 @@ impl RtActor for PyActorImpl {
     fn get_behavior(&self) -> ActorBehavior {
         let callable = Python::with_gil(|py| self.callable.clone_ref(py));
         Box::new(move |ctx: ActorContext| -> Pin<Box<dyn Future<Output = anyhow::Result<HashMap<String, Message>>> + Send + 'static>> {
-            let callable = Python::with_gil(|py| callable.clone_ref(py));
+            // Per-tick clone of the Python callable. This runs on the
+            // network's scheduler thread BEFORE any async work. We
+            // need to acquire the GIL here, but Python may be
+            // finalizing concurrently — `with_gil` panics inside pyo3
+            // (gil.rs check) when that happens. `Py_IsInitialized` is
+            // a fast pre-filter; `catch_unwind` is the backstop for
+            // the racy case where Python is alive at the check and
+            // dead at the actual ffi call. Either way we surface an
+            // anyhow::Error and let the actor task wind down quietly.
+            if !python_alive() {
+                return Box::pin(async {
+                    Err(anyhow::anyhow!("python interpreter finalized"))
+                });
+            }
+            let callable = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Python::with_gil(|py| callable.clone_ref(py))
+            })) {
+                Ok(c) => c,
+                Err(_) => {
+                    return Box::pin(async {
+                        Err(anyhow::anyhow!("python interpreter finalized"))
+                    });
+                }
+            };
             Box::pin(async move {
                 let payload = ctx.get_payload();
                 let cfg = ctx.get_config().as_hashmap();
@@ -514,17 +586,31 @@ impl RtActor for PyActorImpl {
                     outport_tx: ctx.outports.0.clone(),
                 };
 
-                // Call the Python function with the GIL held.
-                Python::with_gil(|py| {
-                    let ctx_obj = Py::new(py, call_ctx)
-                        .map_err(|e| anyhow::anyhow!("wrap ctx: {e}"))?;
-                    match callable.call1(py, (ctx_obj,)) {
-                        Ok(_) => Ok::<(), anyhow::Error>(()),
-                        Err(e) => {
-                            Err(anyhow::anyhow!("python actor callback raised: {e}"))
+                // Call the Python function with the GIL held. Skip if
+                // the interpreter is already finalizing — touching pyo3
+                // here would panic in `gil.rs:check_gil`. catch_unwind
+                // covers the race window where the interpreter is
+                // alive at the pre-check and dead at the ffi call.
+                if !python_alive() {
+                    return Err(anyhow::anyhow!("python interpreter finalized"));
+                }
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    Python::with_gil(|py| {
+                        let ctx_obj = Py::new(py, call_ctx)
+                            .map_err(|e| anyhow::anyhow!("wrap ctx: {e}"))?;
+                        match callable.call1(py, (ctx_obj,)) {
+                            Ok(_) => Ok::<(), anyhow::Error>(()),
+                            Err(e) => Err(anyhow::anyhow!("python actor callback raised: {e}")),
                         }
+                    })
+                }));
+                match result {
+                    Ok(Ok(())) => {}
+                    Ok(Err(e)) => return Err(e),
+                    Err(_) => {
+                        return Err(anyhow::anyhow!("python interpreter finalized"));
                     }
-                })?;
+                }
 
                 match reply_rx.recv_async().await {
                     Ok(CallbackReply::Ok(out)) => Ok(out),
@@ -1352,7 +1438,9 @@ impl PyNetwork {
     fn start(&self) -> PyResult<()> {
         enter_runtime(|| {
             self.inner.lock().unwrap().start().map_err(map_err)
-        })
+        })?;
+        register_live_network(&self.inner);
+        Ok(())
     }
 
     fn shutdown(&self) {
@@ -1403,8 +1491,17 @@ impl PyEventStream {
 
 // ─── Module init ───────────────────────────────────────────────────────────
 
+/// Drains every live Network. Wired into Python's `atexit` so the
+/// Tokio worker stops scheduling actor callbacks before the
+/// interpreter finalizes — otherwise the trampoline races finalize
+/// and panics inside pyo3's GIL check (gil.rs:198).
+#[pyfunction]
+fn _shutdown_all_networks() {
+    shutdown_all_live_networks();
+}
+
 #[pymodule]
-fn _native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyMessage>()?;
     m.add_class::<PyStream>()?;
     m.add_class::<PyStreamReader>()?;
@@ -1421,6 +1518,17 @@ fn _native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(list_packs, m)?)?;
     m.add_function(wrap_pyfunction!(pack_abi_version, m)?)?;
     m.add_function(wrap_pyfunction!(compose_graphs, m)?)?;
+    m.add_function(wrap_pyfunction!(_shutdown_all_networks, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+
+    // Register an atexit handler so live networks drain before the
+    // interpreter starts finalizing. atexit fires while the GIL and
+    // module state are still valid, so calling shutdown() on each
+    // RtNetwork is safe; once it returns the Tokio worker no longer
+    // touches Python.
+    let atexit = py.import_bound("atexit")?;
+    let cb = m.getattr("_shutdown_all_networks")?;
+    atexit.call_method1("register", (cb,))?;
+
     Ok(())
 }

@@ -2521,7 +2521,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt_py"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "anyhow",
  "flume",

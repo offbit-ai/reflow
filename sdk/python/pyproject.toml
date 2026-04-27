@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "offbit-reflow"
-version = "0.2.6"
+version = "0.2.7"
 description = "Reflow is a modular flow-based programming runtime that executes actor-model DAGs for data pipelines, real-time media, visual tooling, and optional ML/CV workloads. This package is the official Python SDK."
 authors = [{ name = "Offbit AI" }]
 readme = "README.md"
