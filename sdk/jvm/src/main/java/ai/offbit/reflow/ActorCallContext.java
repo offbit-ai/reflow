@@ -52,6 +52,31 @@ public final class ActorCallContext {
         nativeEmit(nativePtr, port, p);
     }
 
+    /**
+     * Mid-tick flush: push a packet straight to the outport channel
+     * without waiting for {@link #done()}. Useful for long-running
+     * source actors whose {@code run} doesn't return per record —
+     * a Kafka consumer that wants to publish each polled record, an
+     * SSE reader, etc.
+     *
+     * <p>Unlike {@link #emit}, this does not resolve the tick;
+     * {@link #done()} or {@link #fail(String)} still has to be called
+     * eventually for the runtime to release the actor. For an
+     * indefinitely-running source the run loop usually never returns
+     * and {@code done()} is never called — that's fine, the actor
+     * task just stays parked on the next pollUntil-stop iteration.
+     *
+     * <p>Ownership of the message transfers to the runtime.
+     */
+    public void send(String port, Message msg) {
+        if (msg == null || msg.nativePtr == 0) {
+            throw new IllegalArgumentException("send: message is null");
+        }
+        long p = msg.nativePtr;
+        msg.nativePtr = 0;
+        nativeSend(nativePtr, port, p);
+    }
+
     /** Resolve the tick. Any packets queued via {@link #emit} are flushed. */
     public void done() {
         if (resolved) return;
@@ -70,6 +95,7 @@ public final class ActorCallContext {
     private static native String nativeInputDataJson(long ptr, String port);
     private static native String nativeConfig(long ptr);
     private static native void nativeEmit(long ptr, String port, long messagePtr);
+    private static native void nativeSend(long ptr, String port, long messagePtr);
     private static native void nativeDone(long ptr);
     private static native void nativeFail(long ptr, String reason);
 }

@@ -757,11 +757,13 @@ impl RtActor for JvmActor {
                     serde_json::to_value(cfg).unwrap_or(serde_json::Value::Null);
 
                 let (reply_tx, reply_rx) = flume::bounded::<CallbackReply>(1);
+                let outport_tx = ctx.outports.0.clone();
                 let ctx_box = Box::new(ActorCallContextHandle {
                     inputs: inputs_value,
                     config: config_value,
                     outputs: PlMutex::new(HashMap::new()),
                     reply: PlMutex::new(Some(reply_tx)),
+                    outport_tx,
                 });
                 let ctx_ptr = Box::into_raw(ctx_box) as jlong;
 
@@ -832,6 +834,12 @@ pub struct ActorCallContextHandle {
     config: serde_json::Value,
     outputs: PlMutex<HashMap<String, Message>>,
     reply: PlMutex<Option<flume::Sender<CallbackReply>>>,
+    /// Direct outport sender for `ctx.send()`. `nativeEmit` accumulates
+    /// outputs in the HashMap that drains only when `nativeDone` fires;
+    /// for long-running source actors that need to publish packets
+    /// continuously without resolving the tick, `nativeSend` writes
+    /// straight to this channel, bypassing the done() drain.
+    outport_tx: flume::Sender<HashMap<String, Message>>,
 }
 
 enum CallbackReply {
@@ -938,6 +946,31 @@ pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativeEmit<'local>
         None => { throw_runtime(&mut env, "emit: null message pointer"); return; }
     };
     h.outputs.lock().insert(port, msg_box.inner);
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativeSend<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    port: JString<'local>,
+    message_ptr: jlong,
+) {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return,
+    };
+    let port = match jstring_to_string(&mut env, &port) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let msg_box = match unsafe { box_from_ptr::<MessageHandle>(message_ptr) } {
+        Some(b) => b,
+        None => { throw_runtime(&mut env, "send: null message pointer"); return; }
+    };
+    let mut payload = HashMap::new();
+    payload.insert(port, msg_box.inner);
+    let _ = h.outport_tx.send(payload);
 }
 
 #[no_mangle]
