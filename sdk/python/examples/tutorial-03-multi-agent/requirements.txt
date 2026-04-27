@@ -1,2 +1,2 @@
-offbit-reflow>=0.2.4
+offbit-reflow>=0.2.5
 openai>=1.0
