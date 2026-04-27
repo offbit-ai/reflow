@@ -51,6 +51,11 @@ jobs:
           # surface, so this is mostly cosmetic.
           mdbook-version: '0.4.40'
 
+      - name: Install mdbook-mermaid
+        # Pin to 0.14.0 — newer versions are built against mdbook
+        # 0.4.50+ and reject input from the 0.4.40 we use here.
+        run: cargo install --version 0.14.0 mdbook-mermaid
+
       - name: Build site
         run: mdbook build
 

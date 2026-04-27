@@ -11,6 +11,7 @@ default-theme = "navy"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/offbit-ai/reflow"
 edit-url-template = "https://github.com/offbit-ai/reflow/edit/main/docs/{path}"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.search]
 enable = true
@@ -29,3 +30,6 @@ level = 1
 [preprocessor.links]
 
 [preprocessor.index]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"

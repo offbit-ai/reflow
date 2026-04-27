@@ -29,6 +29,13 @@ Three concepts cover most of what you write.
 When messages arrive on its inputs, its `run` function is called. It returns
 messages on its outputs.
 
+```mermaid
+flowchart LR
+    in([in])-->Doubler-->out([out])
+    classDef port fill:#e8eef7,stroke:#5a6f96,color:#23314f
+    class in,out port
+```
+
 ```js
 class Doubler extends Actor {
   static inports = ["in"];
@@ -42,6 +49,11 @@ class Doubler extends Actor {
 
 **Graph.** A description of which actors exist and which ports connect to
 which. Just data. The same JSON runs from any SDK.
+
+```mermaid
+flowchart LR
+    A[a: doubler] -- out → in --> B[b: collector]
+```
 
 ```js
 const g = new Graph("demo");
@@ -75,9 +87,20 @@ setCount(5); // logs 10
 
 Three ideas: a value (`count`), a derived value (`doubled`), and a side
 effect that consumes the derived value. Solid figures out the dependency
-graph by watching which signals each function reads.
+graph by watching which signals each function reads:
+
+```mermaid
+flowchart LR
+    count((count signal)) -.tracked.-> doubled[doubled memo]
+    doubled -.tracked.-> effect[log effect]
+```
 
 The same pipeline in Reflow:
+
+```mermaid
+flowchart LR
+    source[source: input] --> doubler[doubler] --> logger[logger]
+```
 
 ```js
 g.addNode("source", "tpl_input");
@@ -90,9 +113,11 @@ g.addConnection("doubler", "out", "logger", "in");
 Three nodes, two edges. The graph is the dependency graph. Solid infers it
 from your code; Reflow asks you to write it down.
 
-That trade looks like a loss for small examples. It pays back when the
-graph gets big enough that you want to read it as a diagram instead of
-chasing function calls.
+That trade looks like extra work for small examples. It pays back at the
+scale where most real graphs are anyway authored visually, in a graph
+editor like [Zeal](https://github.com/offbit-ai/zeal-ide), and exported as
+JSON. The handwritten code above is the long form of one tiny corner of a
+flow you would normally see laid out on a canvas.
 
 ## What changes when reactivity is async
 
@@ -103,6 +128,22 @@ Reflow reactivity is asynchronous. An actor returns a `Future`, not a
 value. Messages travel over channels, which can be in-memory, in another
 process, or across the network. The runtime decides when to schedule each
 actor.
+
+```mermaid
+flowchart LR
+    A[ingest] --> B[validate]
+    B --> C[enrich]
+    B --> D[score]
+    C --> E[merge]
+    D --> E
+    E --> F[persist]
+    classDef parallel fill:#fef3c7,stroke:#a16207,color:#3a2c08
+    class C,D parallel
+```
+
+The two highlighted nodes have no dependency between them, so the
+runtime runs them concurrently. You did not write `Promise.all`; the
+shape of the graph implied it.
 
 That single difference unlocks a lot:
 
