@@ -46,7 +46,7 @@ static RUNTIME: Lazy<Arc<tokio::runtime::Runtime>> = Lazy::new(|| {
     Arc::new(
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
-            .thread_name("reflow-py")
+            .thread_name("reflow-rt-worker")
             .build()
             .expect("failed to build tokio runtime"),
     )
