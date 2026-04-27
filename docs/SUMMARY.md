@@ -103,6 +103,7 @@
 # Tutorials
 
 - [Real-world Reflow](tutorials/real-world/README.md)
+  - [Reactive particle field in the browser](tutorials/real-world/01-particle-field.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)
