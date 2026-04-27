@@ -1,29 +1,21 @@
 # Reactive particle field in the browser
 
-We are building a reactive particle field. Two hundred coloured
-points spread across the canvas, each leaning toward the cursor with
-its own spring physics. The cluster never collapses to a single dot
-because every particle has a fixed home — the cursor only deforms a
-local patch of the field. One HTML file, runs in any modern browser.
+A reactive particle field rendered to a `<canvas>`. 200 coloured
+points spread across the screen and lean toward the cursor with
+their own spring physics. Every particle has a fixed home, so the
+field stays distributed; the cursor only deforms a local patch.
+One HTML file, no install, runs in any modern browser.
 
 The animation has four jobs: pacing to the screen's frame rate,
-reading the cursor, advancing each particle's physics one step, and
-painting to the canvas. A vanilla implementation tangles them
-together inside one `requestAnimationFrame` callback, with shared
-mutable state for the particle array, the latest mouse position, and
-the canvas context. Each new feature — record-and-replay, a second
-renderer, a force field — has to thread through that callback.
-
-Reflow gives each of those four jobs its own actor with declared
-inports and outports, and the runtime calls each actor's `run(ctx)`
-whenever a new packet lands on one of its inports. Swap the
-canvas2d renderer for a WebGL one? Write a new actor with the same
-inport, change one line in the wiring. Add recording? Insert a node
-between simulator and renderer. The other actors never notice. The
-data flow is explicit data, not buried inside a callback.
-
-By the end of this tutorial you will have built the demo above and
-understood the pattern well enough to read any other Reflow program.
+reading the cursor, advancing per-particle physics, painting. A
+vanilla implementation packs all four into one
+`requestAnimationFrame` callback with shared mutable state. Reflow
+splits them into four actors with declared inports and outports.
+The runtime calls each actor's `run(ctx)` when a new packet lands
+on one of its inports. Replace the canvas2D renderer with WebGL by
+writing a new `Draw` actor and changing one line in the wiring.
+Insert a recording node between simulator and renderer without
+touching the other actors.
 
 <iframe src="../../embeds/tutorial-01-particle-field/" loading="lazy"
         style="width:100%;height:420px;border:1px solid #2a3045;border-radius:6px;background:#0b1020;"
@@ -38,18 +30,14 @@ flowchart LR
     sim -->|particles| draw[draw on canvas]
 ```
 
-Three actors and one DOM event source. The `clock` actor fires once per
-animation frame. `simulate` advances each particle one step. `draw`
-paints them. The mouse position is read off `mousemove` events that we
-inject straight into the graph.
-
-If you have written a simulation before, this is the same loop you
-always write. The shape is just declared instead of nested in
-`requestAnimationFrame`.
+Three actors and one DOM event source. `clock` fires once per
+animation frame; `simulate` advances each particle one step; `draw`
+paints. The mouse position comes from `mousemove` events injected
+into the graph by `bindInputEvents`.
 
 ## Setup
 
-Pick any directory and put one file in it.
+One file in any directory:
 
 ```html
 <!doctype html>
@@ -72,19 +60,15 @@ await ready();
 </script>
 ```
 
-The `esm.sh` URL fetches the browser build of `@offbit-ai/reflow` as an
-ES module. `ready()` initialises the wasm runtime exactly once. Anything
-below that line can use `Network`, `Actor`, `Message`.
+`esm.sh` fetches the browser build of `@offbit-ai/reflow` as an ES
+module. `ready()` initialises the wasm runtime once. After that
+line, `Network`, `Actor`, and `Message` are available.
 
 ## The actors
 
-Three small classes. Read them top to bottom; the runtime calls
-`run(ctx)` on each one whenever its inputs are ready.
-
 ### Clock
 
-Fires every animation frame and emits the elapsed time since the
-previous tick.
+Fires once per animation frame, emits `dt` and `time` on each tick.
 
 ```js
 class Clock extends Actor {
@@ -112,21 +96,20 @@ class Clock extends Actor {
 }
 ```
 
-The runtime fires `run` whenever a packet arrives on an inport. Since
-the clock has no upstream, we wire its own `tick` outport back to its
-`tick` inport (a self-loop, set up below) and seed the loop with one
-initial packet. From then on the actor paces itself: each `run`
-schedules one `requestAnimationFrame` callback, the callback emits a
-fresh tick on the outport, the loop delivers it back, the runtime
-calls `run` again. One pass per browser frame, no drift.
+The clock has no upstream actor, so we wire its own `tick` outport
+back to its `tick` inport (a self-loop, set up below) and seed the
+loop with one initial packet. Each `run` schedules one
+`requestAnimationFrame` callback; the callback emits a fresh tick
+on the outport, the loop delivers it back, the runtime calls `run`
+again. One pass per browser frame, no drift.
 
 ### Simulate
 
-Holds the particle array. Each particle gets a fixed `home` position
-across the canvas plus its own spring constants, so the field stays
-distributed and every particle has a slightly different response. Each
-tick the particle's effective target is its home pulled partway toward
-the cursor — close particles bend hard, far particles barely move.
+Holds the particle array. Each particle has a fixed `home` position
+plus its own spring constants and colour. The effective target each
+tick is `home + (cursor − home) · lean`, where `lean` falls off
+with distance from the cursor — close particles bend hard, far
+particles barely move.
 
 ```js
 const N = 200;
@@ -174,17 +157,16 @@ class Simulate extends Actor {
 }
 ```
 
-`ctx.input.dt` is the `Message` we sent from Clock — its `data` field
-is the float. `ctx.input.mouse` may be absent on ticks the cursor
-hasn't moved, which is why we keep `this.target` from the previous
-one. Clamping `dt` to 0.05 stops a tab-switch hitch from blowing up
-the integrator. The physics is plain underdamped spring + viscous
-drag, units in seconds — frame-rate independent, so the demo behaves
-the same on a 60Hz laptop as on a 240Hz desktop.
+`ctx.input.dt` is the `Message` Clock sent; its `.data` is the
+float. `ctx.input.mouse` is absent on ticks where the cursor
+didn't move, so we cache `this.target`. Clamping `dt` to 0.05
+stops a tab-switch hitch from blowing up the integrator. The
+physics is underdamped spring + viscous drag in seconds — same
+behaviour at 60Hz and 240Hz.
 
 ### Draw
 
-Paints the particles onto the canvas.
+Paints particles to the canvas.
 
 ```js
 class Draw extends Actor {
@@ -212,16 +194,13 @@ class Draw extends Actor {
 }
 ```
 
-Two notes. The semi-transparent fill on every frame is what gives the
-trails. And `static portDelivery = { particles: "latest" }` is a hint
-to the runtime: the simulator can outpace the painter, so on the
-`particles` inport keep only the freshest packet — drop older ones.
-Without it, a slow `Draw` would build an inbox of stale particle
-arrays.
+The semi-transparent fill each frame produces the motion-blur
+trails. `static portDelivery = { particles: "latest" }` tells the
+runtime that the simulator can outpace the painter — keep only the
+freshest packet on `particles`, drop stale ones. Without it, a slow
+`Draw` builds an inbox of unused particle arrays.
 
 ## Wiring
-
-Now we declare the graph and start it.
 
 ```js
 const canvas = document.getElementById("stage");
@@ -249,17 +228,15 @@ await net.start();
 bindInputEvents(net, document.body);
 ```
 
-The `addInitial` line is what gets the clock running. It drops one
-`Flow` packet onto the clock's `tick` inport; the runtime sees an
-input ready, calls `run(ctx)` once, and the self-loop carries it from
-there. No initial packet, no first tick, nothing moves.
+`addInitial` drops one `Flow` packet on the clock's `tick` inport.
+The runtime calls `run(ctx)` once, the self-loop carries it from
+there. Without this line nothing fires.
 
-`bindInputEvents` is called *after* `start()` because the runtime's
-`GraphNetwork` is created lazily during start, and binding listeners
-is what routes browser events into the matching input actor — here
-`tpl_mouse_input`. It listens for `mousemove` (and a few other DOM
-events; we only care about mousemove for this demo) and routes each
-Reflow ships that template by default so we just connect it.
+`bindInputEvents` is called after `start()` — the wasm
+`GraphNetwork` is created lazily during start. It attaches DOM
+listeners (mousemove, keydown, etc.) and routes events into the
+matching built-in input actor. `tpl_mouse_input` ships with the
+catalog, so the wiring is just `mouse.position → sim.mouse`.
 
 ## Run it
 
@@ -271,29 +248,20 @@ npx serve .
 
 Open the page. Move the mouse. The particles follow.
 
-## What Reflow gave us
+## Notes on the design
 
-A vanilla version of the same demo would be one big function with a
-particle array, an event listener, a `requestAnimationFrame` callback,
-and the drawing code intermingled. Three concerns in one place.
-
-In the Reflow version each actor has one job and one set of inputs and
-outputs. Swapping the renderer for a WebGL one means writing a new
-`Draw` actor and changing one line in the graph. Adding a second
-target, or a force field, or a record-and-replay layer, means adding a
-node to the graph. Nothing that already works has to change.
-
-That separation is why graphs are usually authored visually for
-anything bigger than this. A 12-actor scene is hard to picture from
-code, easy to read on a canvas.
+- Each actor has one job and a single set of inports and outports.
+  Replace the renderer (canvas2D → WebGL) by writing a new `Draw`
+  actor and changing one line in the wiring.
+- Add a recording layer or a force field by inserting a node
+  between simulator and renderer. The other actors don't need to
+  change.
+- Larger graphs (12+ actors) are typically authored in
+  [Zeal](https://github.com/offbit-ai/zeal) and loaded from JSON
+  rather than wired in code.
 
 ## What is next
 
-The next post takes the same ideas to Python. We will build a LangGraph
-agent whose video-summary tool is a Reflow flow, and watch the actor
-graph swallow the deterministic data work that does not belong inside
-a prompt.
-
-If you want to keep going on the browser side first, swap the `Draw`
-actor in this tutorial for one that calls `tpl_sdf_render` from the
-GPU pack. The same network, the same wiring, a different visual.
+The next tutorial moves to Python and uses Reflow as a multi-agent
+orchestrator: three LLM agents run in parallel against a local
+Ollama model and a synthesizer combines their findings.
