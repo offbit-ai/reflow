@@ -177,6 +177,24 @@ impl PyMessage {
         pythonize(py, &v).map_err(map_err)
     }
 
+    /// Inner data payload as a native Python value, with the runtime's
+    /// EncodableValue wrappers transparently decoded. Covers every
+    /// variant whose payload has a useful JSON form: primitives,
+    /// Object, Array, Optional, Event, Any, Error; StreamHandle and
+    /// RemoteReference return their serializable locator metadata;
+    /// NetworkEvent returns its `{event_type, data}` shape; Encoded
+    /// is decoded back to its inner Message.
+    ///
+    /// Returns None for Flow (control signal, no data) and Bytes
+    /// (use as_bytes — exposing the buffer as a JSON array would
+    /// just bloat the wire).
+    fn data<'py>(&self, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
+        match self.inner.data_value() {
+            Some(v) => Ok(Some(pythonize(py, &v).map_err(map_err)?)),
+            None => Ok(None),
+        }
+    }
+
     /// StreamHandle: take the consumer side.
     fn take_stream(&self) -> PyResult<PyStreamReader> {
         match &self.inner {

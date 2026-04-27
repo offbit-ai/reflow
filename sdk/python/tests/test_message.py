@@ -28,3 +28,16 @@ def test_as_json_round_trip():
     m = Message.integer(11)
     back = Message.from_json(m.as_json())
     assert back.as_integer() == 11
+
+
+def test_data_unwraps_envelope():
+    # Bare scalars
+    assert Message.integer(7).data() == 7
+    assert Message.boolean(True).data() is True
+    assert Message.string("hi").data() == "hi"
+    # Object / array come through as native dict / list
+    assert Message.object({"a": 1, "b": [2, 3]}).data() == {"a": 1, "b": [2, 3]}
+    assert Message.array(["x", "y", "z"]).data() == ["x", "y", "z"]
+    # Variants without a portable JSON payload
+    assert Message.flow().data() is None
+    assert Message.bytes(b"abc").data() is None
