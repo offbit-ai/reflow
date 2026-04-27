@@ -2311,11 +2311,13 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
  "tsify",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
  "web-sys",
+ "web-time",
  "zstd",
 ]
 
@@ -2476,6 +2478,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
  "web-sys",
+ "web-time",
  "zstd",
 ]
 
@@ -2518,7 +2521,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt_py"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "anyhow",
  "flume",
@@ -2575,6 +2578,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
  "web-sys",
+ "web-time",
 ]
 
 [[package]]

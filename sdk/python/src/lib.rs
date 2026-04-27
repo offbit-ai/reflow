@@ -350,8 +350,15 @@ impl PyStreamReader {
 pub struct PyActorCallContext {
     inputs_value: serde_json::Value,
     config_value: serde_json::Value,
+    /// Pending outputs queued via `emit`. Flushed to the outport
+    /// channel on `done`.
     outputs: PlMutex<HashMap<String, Message>>,
     reply: PlMutex<Option<flume::Sender<CallbackReply>>>,
+    /// Direct handle to the outport sender, for `ctx.send` —
+    /// flush-immediately semantics that match the JS / browser shim.
+    /// Streaming actors push per-chunk packets through this without
+    /// waiting for the tick to complete.
+    outport_tx: flume::Sender<HashMap<String, Message>>,
 }
 
 enum CallbackReply {
@@ -383,6 +390,36 @@ impl PyActorCallContext {
             serde_json::from_value(v).map_err(map_err)?
         };
         self.outputs.lock().insert(port, msg);
+        Ok(())
+    }
+
+    /// Flush a packet to the outport **immediately**. `messages` is a
+    /// dict keyed by port; each value is a `Message` handle or a
+    /// tagged JSON dict. Use this for streaming actors that emit
+    /// many packets per tick (LLM chunks, timer pulses, sensor
+    /// readings) and want each packet to reach the consumer before
+    /// the tick completes. Mirrors the JS / browser SDK's
+    /// `ctx.send(...)`.
+    fn send(&self, py: Python<'_>, messages: &Bound<'_, PyAny>) -> PyResult<()> {
+        let dict = messages.downcast::<PyDict>().map_err(|_| {
+            PyValueError::new_err("ctx.send(messages) expects a dict keyed by port")
+        })?;
+        let mut packet: HashMap<String, Message> = HashMap::new();
+        for (k, v) in dict.iter() {
+            let port: String = k.extract()?;
+            let msg: Message = if let Ok(m) = v.extract::<PyRef<PyMessage>>() {
+                m.inner.clone()
+            } else {
+                let j = py_to_json(py, &v)?;
+                serde_json::from_value(j).map_err(map_err)?
+            };
+            packet.insert(port, msg);
+        }
+        if !packet.is_empty() {
+            self.outport_tx
+                .send(packet)
+                .map_err(|e| PyRuntimeError::new_err(format!("outport closed: {e}")))?;
+        }
         Ok(())
     }
 
@@ -456,6 +493,7 @@ impl RtActor for PyActorImpl {
                     config_value,
                     outputs: PlMutex::new(HashMap::new()),
                     reply: PlMutex::new(Some(reply_tx)),
+                    outport_tx: ctx.outports.0.clone(),
                 };
 
                 // Call the Python function with the GIL held.
