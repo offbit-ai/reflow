@@ -680,19 +680,20 @@ export class EventStream {
  *      `network` whose `run(ctx)` calls back into
  *      `instance.exports.__reflow_pack_create_actor(factoryId)`.
  *
- * **Status of the actor adapter (TBD).** The pack-side
- * `__reflow_pack_create_actor(id)` returns a `*mut PackActorHandle`
- * — a pointer into the pack's wasm linear memory. The runtime
- * lives in a separate wasm module with a separate memory, so a raw
- * pointer can't cross the boundary. Wiring full message-passing
- * across pack ↔ runtime needs a serialization protocol over the
- * pack's exported memory; that's the next milestone. For now the
- * adapter calls `__reflow_pack_create_actor`, leaks the returned
- * pointer (the pack tracks it internally), and `ctx.fail`s with a
- * clear "wasm pack actor execution not yet wired" message. The
- * registration plumbing is still useful: it proves the
- * import/export handshake works and `network.getActorNames()`
- * reflects the loaded templates.
+ * **Pack actor execution.** Each tick crosses the runtime ↔ pack
+ * memory boundary via a JSON wire protocol over the pack's
+ * exported allocator (`__reflow_pack_alloc` / `__reflow_pack_free`)
+ * and an `__reflow_pack_actor_run(instance_id, in_ptr, in_len,
+ * out_ptr_slot, out_len_slot)` entry. The JS adapter encodes the
+ * input port map, copies it into pack memory, calls run, reads the
+ * result ptr/len pair the pack writes back, and decodes. See
+ * `invokePackActor` below.
+ *
+ * Sync actors (the GPU pack's renderers, the std actors) work
+ * end-to-end. Async actors that `.await` JS Promises (fetch in the
+ * browser, `wgpu::map_async`) hang the pack-side `pollster::block_on`
+ * today; the follow-up milestone integrates `wasm-bindgen-futures`
+ * so they can yield to the JS event loop.
  *
  * Returns `{ manifest, name, version, templates, wasm, module,
  * instance, registered }`. `instance` is `null` if no network was
