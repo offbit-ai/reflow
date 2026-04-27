@@ -11,13 +11,13 @@
 
 <script type="module">
 import { ready, Network, Actor, Message, bindInputEvents }
-  from "https://esm.sh/@offbit-ai/reflow";
+  from "../../reflow.browser.mjs";
 
 await ready();
 
 class Clock extends Actor {
-  static inports = ["_trigger"];
-  static outports = ["dt", "time"];
+  static inports = ["tick"];
+  static outports = ["tick", "dt", "time"];
 
   constructor() {
     super();
@@ -32,7 +32,10 @@ class Clock extends Actor {
       dt:   Message.float(dt),
       time: Message.float(now / 1000),
     });
-    requestAnimationFrame(() => ctx.done());
+    requestAnimationFrame(() => {
+      ctx.send({ tick: Message.flow() });
+      ctx.done();
+    });
   }
 }
 
@@ -43,27 +46,48 @@ class Simulate extends Actor {
 
   constructor(width, height) {
     super();
-    this.w = width;
-    this.h = height;
     this.target = { x: width / 2, y: height / 2 };
-    this.particles = Array.from({ length: N }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: 0,
-      vy: 0,
-    }));
+    // Particles are distributed across the canvas with a fixed
+    // *home*. Each one has its own spring + damping for a little
+    // visual asynchrony. Each tick the particle's effective target
+    // is `home + (cursor − home) · lean`, where `lean` falls off
+    // with distance from the cursor — close particles bend hard
+    // toward it, far particles barely move. The field stays
+    // distributed; the cursor only deforms it locally.
+    this.particles = Array.from({ length: N }, () => {
+      const hx = Math.random() * width;
+      const hy = Math.random() * height;
+      return {
+        x: hx,
+        y: hy,
+        vx: 0,
+        vy: 0,
+        hx,
+        hy,
+        k: 6 + Math.random() * 4,        // 6–10 (1/sec²)
+        c: 2.5 + Math.random() * 1.5,    // 2.5–4 (1/sec)
+        color: `hsl(${Math.random() * 360}, 80%, 70%)`,
+      };
+    });
+    this.influence = Math.min(width, height) * 0.4;
   }
 
   run(ctx) {
-    const dt = ctx.input.dt?.data ?? 0;
-    if (ctx.input.mouse) {
-      this.target = ctx.input.mouse.data;
-    }
+    const dt = Math.min(ctx.input.dt?.data ?? 0, 0.05);
+    if (ctx.input.mouse) this.target = ctx.input.mouse.data;
+    const r2 = this.influence * this.influence;
     for (const p of this.particles) {
-      const fx = (this.target.x - p.x) * 0.6;
-      const fy = (this.target.y - p.y) * 0.6;
-      p.vx = (p.vx + fx * dt) * 0.96;
-      p.vy = (p.vy + fy * dt) * 0.96;
+      const dx = this.target.x - p.hx;
+      const dy = this.target.y - p.hy;
+      // Lean factor: 1 when cursor is at the home, fades to 0
+      // far away. Quadratic falloff for a soft field.
+      const lean = r2 / (r2 + dx * dx + dy * dy);
+      const tx = p.hx + dx * lean;
+      const ty = p.hy + dy * lean;
+      const ax = (tx - p.x) * p.k - p.vx * p.c;
+      const ay = (ty - p.y) * p.k - p.vy * p.c;
+      p.vx += ax * dt;
+      p.vy += ay * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     }
@@ -75,6 +99,7 @@ class Simulate extends Actor {
 class Draw extends Actor {
   static inports = ["particles"];
   static outports = [];
+  static portDelivery = { particles: "latest" };
 
   constructor(canvas) {
     super();
@@ -87,8 +112,8 @@ class Draw extends Actor {
     const c = this.ctx2d;
     c.fillStyle = "rgba(11, 16, 32, 0.35)";
     c.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    c.fillStyle = "#79c0ff";
     for (const p of ps) {
+      c.fillStyle = p.color;
       c.fillRect(p.x | 0, p.y | 0, 2, 2);
     }
     ctx.done();
@@ -101,20 +126,23 @@ canvas.height = innerHeight;
 
 const net = new Network();
 
-net.addNode("clock",  "tpl_clock");
-net.addNode("sim",    "tpl_simulate");
-net.addNode("draw",   "tpl_draw");
-net.addNode("mouse",  "tpl_mouse_input");
+net.addNode("clock", "tpl_clock");
+net.addNode("mouse", "tpl_mouse_input");
+net.addNode("sim",   "tpl_simulate");
+net.addNode("draw",  "tpl_draw");
 
-net.addConnection("clock", "dt",        "sim",  "dt");
-net.addConnection("mouse", "position",  "sim",  "mouse");
-net.addConnection("sim",   "particles", "draw", "particles");
+net.addConnection("clock", "tick",       "clock", "tick");
+net.addConnection("clock", "dt",         "sim",   "dt");
+net.addConnection("mouse", "position",   "sim",   "mouse");
+net.addConnection("sim",   "particles",  "draw",  "particles");
 
-net.registerActor("tpl_clock",    new Clock());
-net.registerActor("tpl_simulate", new Simulate(canvas.width, canvas.height));
-net.registerActor("tpl_draw",     new Draw(canvas));
+net.registerActor("tpl_clock",       new Clock());
+net.registerActor("tpl_simulate",    new Simulate(canvas.width, canvas.height));
+net.registerActor("tpl_draw",        new Draw(canvas));
+// tpl_mouse_input is a built-in: bindInputEvents below routes
+// browser mousemove events into actors of that template.
 
-bindInputEvents(net, document.body);
-net.addInitial("clock", "_trigger", Message.flow());
+net.addInitial("clock", "tick", Message.flow());
 await net.start();
+bindInputEvents(net, document.body);
 </script>

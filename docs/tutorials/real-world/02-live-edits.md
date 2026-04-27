@@ -2,17 +2,23 @@
 
 Tutorial 01 drove a graph at the browser's animation-frame rate. The
 clock said "go" 60 times a second, every actor woke up, the canvas
-got painted. That is one shape of reactive work.
+got painted. That is one **trigger pattern** — a regular pulse from
+inside the program.
 
-The other shape is **data arriving when it arrives**. A WebSocket
+The other pattern is **inbound data, when it arrives**. A WebSocket
 push, a Server-Sent Events feed, a `fetch` whose body keeps streaming
 after the response headers land. The graph still runs only when its
-inputs change, but the trigger is the network instead of the clock.
+inputs change, but the trigger comes from the network rather than a
+local clock.
 
 This tutorial wires a Reflow graph to Wikimedia's public stream of
 Wikipedia edits. As people edit articles, the graph filters and
 displays them. No animation frame, no polling, no `setInterval`. The
 network drives the graph.
+
+<iframe src="../../embeds/tutorial-02-live-edits/" loading="lazy"
+        style="width:100%;height:480px;border:1px solid #2a3045;border-radius:6px;background:#0b1020;"
+        title="Live Wikipedia edits demo"></iframe>
 
 ## What we are building
 
@@ -71,8 +77,8 @@ runtime calls `run(ctx)`.
 
 ```js
 class Source extends Actor {
-  static inports = ["_trigger"];
-  static outports = ["event"];
+  static inports = ["tick"];
+  static outports = ["tick", "event"];
 
   constructor(url) {
     super();
@@ -90,7 +96,10 @@ class Source extends Actor {
 
   run(ctx) {
     const send = () => {
-      ctx.send({ event: Message.object(this.queue.shift()) });
+      ctx.send({
+        event: Message.object(this.queue.shift()),
+        tick:  Message.flow(),
+      });
       ctx.done();
     };
     if (this.queue.length) send();
@@ -99,19 +108,24 @@ class Source extends Actor {
 }
 ```
 
-The `_trigger` inport is the same kick we used in tutorial 01 for the
-clock — actors with no upstream data dependency declare it so the
-runtime has a port to deliver the first `Flow` packet to.
+Same self-loop pattern as the clock in tutorial 01. The `tick`
+outport is wired back to the `tick` inport (set up below), so each
+successful run kicks the next one. We seed the loop with one initial
+`Flow` on `tick` at startup; from then on the source paces itself.
 
-Two run states. If the queue has events, fire one and move on. If the
-queue is empty, park the run by stashing the continuation in
-`this.resume`; the next inbound EventSource message resumes it.
+Two run states. If the queue has events, drain one and emit a fresh
+`tick` so the runtime fires us again. If the queue is empty, park
+the run by stashing the continuation in `this.resume`; the next
+inbound EventSource message resumes it (which calls `ctx.done()`,
+which lets the runtime move on, and the `tick` packet inside the
+same `send` keeps the loop going).
 
-That pattern — actor-as-source-with-queue — is the canonical way to
-plug any push-based input (sockets, EventSource, observers, native
-events) into a Reflow graph. The runtime decides how fast to drain
-the queue based on what is downstream. If `display` is slow, the
-queue grows; the rest of the graph does not stall.
+That pattern — actor-as-source-with-queue plus a self-loop — is the
+canonical way to plug any push-based input (sockets, EventSource,
+observers, native events) into a Reflow graph. The runtime decides
+how fast to drain the queue based on what is downstream. If
+`display` is slow, the queue grows; the rest of the graph does not
+stall.
 
 ### Filter
 

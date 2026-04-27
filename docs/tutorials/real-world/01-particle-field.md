@@ -1,12 +1,33 @@
 # Reactive particle field in the browser
 
-A page where 200 particles drift across a canvas and lean toward your
-cursor. Pure browser, no server, no packs. The whole app is one HTML
-file plus a small Reflow graph.
+We are building a reactive particle field. Two hundred coloured
+points spread across the canvas, each leaning toward the cursor with
+its own spring physics. The cluster never collapses to a single dot
+because every particle has a fixed home — the cursor only deforms a
+local patch of the field. One HTML file, runs in any modern browser.
 
-The point of this first tutorial is to make the runtime feel concrete.
-You will see what an actor looks like in JavaScript, how a graph wires
-them together, and what the runtime does each frame.
+The animation has four jobs: pacing to the screen's frame rate,
+reading the cursor, advancing each particle's physics one step, and
+painting to the canvas. A vanilla implementation tangles them
+together inside one `requestAnimationFrame` callback, with shared
+mutable state for the particle array, the latest mouse position, and
+the canvas context. Each new feature — record-and-replay, a second
+renderer, a force field — has to thread through that callback.
+
+Reflow gives each of those four jobs its own actor with declared
+inports and outports, and the runtime calls each actor's `run(ctx)`
+whenever a new packet lands on one of its inports. Swap the
+canvas2d renderer for a WebGL one? Write a new actor with the same
+inport, change one line in the wiring. Add recording? Insert a node
+between simulator and renderer. The other actors never notice. The
+data flow is explicit data, not buried inside a callback.
+
+By the end of this tutorial you will have built the demo above and
+understood the pattern well enough to read any other Reflow program.
+
+<iframe src="../../embeds/tutorial-01-particle-field/" loading="lazy"
+        style="width:100%;height:420px;border:1px solid #2a3045;border-radius:6px;background:#0b1020;"
+        title="Live particle field demo"></iframe>
 
 ## What we are building
 
@@ -67,8 +88,8 @@ previous tick.
 
 ```js
 class Clock extends Actor {
-  static inports = ["_trigger"];      // first kick comes in here
-  static outports = ["dt", "time"];
+  static inports = ["tick"];
+  static outports = ["tick", "dt", "time"];
 
   constructor() {
     super();
@@ -83,24 +104,29 @@ class Clock extends Actor {
       dt:   Message.float(dt),
       time: Message.float(now / 1000),
     });
-    requestAnimationFrame(() => ctx.done());  // schedules the next tick
+    requestAnimationFrame(() => {
+      ctx.send({ tick: Message.flow() });   // self-loop: re-fire next frame
+      ctx.done();
+    });
   }
 }
 ```
 
-Two details. The `_trigger` inport is the convention for actors that
-need an external kick to fire their first run. We will hand it a
-`Flow` message during wiring; from then on the actor self-paces.
-
-The last line of `run` is the trick that ties it to the browser:
-`ctx.done()` tells the runtime "this tick is over." Calling it inside
-`requestAnimationFrame` paces the actor at the screen's refresh rate.
-No timers, no `setInterval`, no drift.
+The runtime fires `run` whenever a packet arrives on an inport. Since
+the clock has no upstream, we wire its own `tick` outport back to its
+`tick` inport (a self-loop, set up below) and seed the loop with one
+initial packet. From then on the actor paces itself: each `run`
+schedules one `requestAnimationFrame` callback, the callback emits a
+fresh tick on the outport, the loop delivers it back, the runtime
+calls `run` again. One pass per browser frame, no drift.
 
 ### Simulate
 
-Holds the particle array. Each tick it nudges every particle toward the
-mouse, applies a tiny amount of friction, and emits the array.
+Holds the particle array. Each particle gets a fixed `home` position
+across the canvas plus its own spring constants, so the field stays
+distributed and every particle has a slightly different response. Each
+tick the particle's effective target is its home pulled partway toward
+the cursor — close particles bend hard, far particles barely move.
 
 ```js
 const N = 200;
@@ -110,27 +136,35 @@ class Simulate extends Actor {
 
   constructor(width, height) {
     super();
-    this.w = width;
-    this.h = height;
     this.target = { x: width / 2, y: height / 2 };
-    this.particles = Array.from({ length: N }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: 0,
-      vy: 0,
-    }));
+    this.particles = Array.from({ length: N }, () => {
+      const hx = Math.random() * width;
+      const hy = Math.random() * height;
+      return {
+        x: hx, y: hy, vx: 0, vy: 0,
+        hx, hy,
+        k: 6 + Math.random() * 4,        // stiffness 6–10 (1/sec²)
+        c: 2.5 + Math.random() * 1.5,    // damping  2.5–4 (1/sec)
+        color: `hsl(${Math.random() * 360}, 80%, 70%)`,
+      };
+    });
+    this.influence = Math.min(width, height) * 0.4;
   }
 
   run(ctx) {
-    const dt = ctx.input.dt?.data ?? 0;
-    if (ctx.input.mouse) {
-      this.target = ctx.input.mouse.data;
-    }
+    const dt = Math.min(ctx.input.dt?.data ?? 0, 0.05);
+    if (ctx.input.mouse) this.target = ctx.input.mouse.data;
+    const r2 = this.influence * this.influence;
     for (const p of this.particles) {
-      const fx = (this.target.x - p.x) * 0.6;
-      const fy = (this.target.y - p.y) * 0.6;
-      p.vx = (p.vx + fx * dt) * 0.96;
-      p.vy = (p.vy + fy * dt) * 0.96;
+      const dx = this.target.x - p.hx;
+      const dy = this.target.y - p.hy;
+      const lean = r2 / (r2 + dx * dx + dy * dy);
+      const tx = p.hx + dx * lean;
+      const ty = p.hy + dy * lean;
+      const ax = (tx - p.x) * p.k - p.vx * p.c;
+      const ay = (ty - p.y) * p.k - p.vy * p.c;
+      p.vx += ax * dt;
+      p.vy += ay * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     }
@@ -140,9 +174,13 @@ class Simulate extends Actor {
 }
 ```
 
-`ctx.input.dt` is a `Message` whose `data` field is the float we sent
-from `Clock`. `ctx.input.mouse` may be absent on ticks where the user
-hasn't moved, which is why we keep `this.target` from the previous one.
+`ctx.input.dt` is the `Message` we sent from Clock — its `data` field
+is the float. `ctx.input.mouse` may be absent on ticks the cursor
+hasn't moved, which is why we keep `this.target` from the previous
+one. Clamping `dt` to 0.05 stops a tab-switch hitch from blowing up
+the integrator. The physics is plain underdamped spring + viscous
+drag, units in seconds — frame-rate independent, so the demo behaves
+the same on a 60Hz laptop as on a 240Hz desktop.
 
 ### Draw
 
@@ -152,6 +190,7 @@ Paints the particles onto the canvas.
 class Draw extends Actor {
   static inports = ["particles"];
   static outports = [];
+  static portDelivery = { particles: "latest" };
 
   constructor(canvas) {
     super();
@@ -164,8 +203,8 @@ class Draw extends Actor {
     const c = this.ctx2d;
     c.fillStyle = "rgba(11, 16, 32, 0.35)";        // motion-blur trail
     c.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    c.fillStyle = "#79c0ff";
     for (const p of ps) {
+      c.fillStyle = p.color;
       c.fillRect(p.x | 0, p.y | 0, 2, 2);
     }
     ctx.done();
@@ -173,7 +212,12 @@ class Draw extends Actor {
 }
 ```
 
-That semi-transparent fill on every frame is what gives the trails.
+Two notes. The semi-transparent fill on every frame is what gives the
+trails. And `static portDelivery = { particles: "latest" }` is a hint
+to the runtime: the simulator can outpace the painter, so on the
+`particles` inport keep only the freshest packet — drop older ones.
+Without it, a slow `Draw` would build an inbox of stale particle
+arrays.
 
 ## Wiring
 
@@ -186,33 +230,35 @@ canvas.height = innerHeight;
 
 const net = new Network();
 
-net.addNode("clock",  "tpl_clock");
-net.addNode("sim",    "tpl_simulate");
-net.addNode("draw",   "tpl_draw");
-net.addNode("mouse",  "tpl_mouse_input");      // built-in DOM source
+net.addNode("clock", "tpl_clock");
+net.addNode("mouse", "tpl_mouse_input");       // built-in DOM source
+net.addNode("sim",   "tpl_simulate");
+net.addNode("draw",  "tpl_draw");
 
-net.addConnection("clock", "dt",       "sim",  "dt");
-net.addConnection("mouse", "position", "sim",  "mouse");
-net.addConnection("sim",   "particles","draw", "particles");
+net.addConnection("clock", "tick",       "clock", "tick");        // self-loop
+net.addConnection("clock", "dt",         "sim",   "dt");
+net.addConnection("mouse", "position",   "sim",   "mouse");
+net.addConnection("sim",   "particles",  "draw",  "particles");
 
 net.registerActor("tpl_clock",    new Clock());
 net.registerActor("tpl_simulate", new Simulate(canvas.width, canvas.height));
 net.registerActor("tpl_draw",     new Draw(canvas));
 
-bindInputEvents(net, document.body);
-net.addInitial("clock", "_trigger", Message.flow());
+net.addInitial("clock", "tick", Message.flow());
 await net.start();
+bindInputEvents(net, document.body);
 ```
 
-The `addInitial` line is what gets the clock running. It places one
-`Flow` packet on the clock's `_trigger` port; the runtime sees an
-input ready, calls `run(ctx)` once, and from there
-`requestAnimationFrame → ctx.done()` keeps the loop alive. No initial
-packet, no first tick, nothing moves.
+The `addInitial` line is what gets the clock running. It drops one
+`Flow` packet onto the clock's `tick` inport; the runtime sees an
+input ready, calls `run(ctx)` once, and the self-loop carries it from
+there. No initial packet, no first tick, nothing moves.
 
-`bindInputEvents` is the bridge between the DOM and the graph. It
-listens for `mousemove` (and a few others; we only care about that one
-here) and routes each event through actors of type `tpl_mouse_input`.
+`bindInputEvents` is called *after* `start()` because the runtime's
+`GraphNetwork` is created lazily during start, and binding listeners
+is what routes browser events into the matching input actor — here
+`tpl_mouse_input`. It listens for `mousemove` (and a few other DOM
+events; we only care about mousemove for this demo) and routes each
 Reflow ships that template by default so we just connect it.
 
 ## Run it

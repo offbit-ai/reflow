@@ -19,13 +19,13 @@
 <ol id="feed"></ol>
 
 <script type="module">
-import { ready, Network, Actor, Message } from "https://esm.sh/@offbit-ai/reflow";
+import { ready, Network, Actor, Message } from "../../reflow.browser.mjs";
 
 await ready();
 
 class Source extends Actor {
-  static inports = ["_trigger"];
-  static outports = ["event"];
+  static inports = ["tick"];
+  static outports = ["tick", "event"];
 
   constructor(url) {
     super();
@@ -43,8 +43,10 @@ class Source extends Actor {
 
   run(ctx) {
     const send = () => {
-      const event = this.queue.shift();
-      ctx.send({ event: Message.object(event) });
+      ctx.send({
+        event: Message.object(this.queue.shift()),
+        tick:  Message.flow(),
+      });
       ctx.done();
     };
     if (this.queue.length) send();
@@ -108,6 +110,7 @@ net.addNode("source",  "tpl_wikipedia_source");
 net.addNode("filter",  "tpl_substantive");
 net.addNode("display", "tpl_display");
 
+net.addConnection("source", "tick",  "source",  "tick");    // self-loop
 net.addConnection("source", "event", "filter",  "event");
 net.addConnection("filter", "event", "display", "event");
 
@@ -115,6 +118,6 @@ net.registerActor("tpl_wikipedia_source", new Source(STREAM));
 net.registerActor("tpl_substantive",      new Filter(substantive));
 net.registerActor("tpl_display",          new Display(document.getElementById("feed")));
 
-net.addInitial("source", "_trigger", Message.flow());
+net.addInitial("source", "tick", Message.flow());
 await net.start();
 </script>
