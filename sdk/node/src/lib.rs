@@ -223,6 +223,22 @@ impl ReflowMessage {
             .map_err(|e| Error::from_reason(format!("serialize: {e}")))
     }
 
+    /// Inner data payload as a plain JS value, with the runtime's
+    /// EncodableValue wrappers transparently decoded. Covers every
+    /// variant whose payload has a useful JSON form: primitives,
+    /// Object, Array, Optional, Event, Any, Error; StreamHandle and
+    /// RemoteReference return their serializable locator metadata;
+    /// NetworkEvent returns its `{event_type, data}` shape; Encoded
+    /// is decoded back to its inner Message.
+    ///
+    /// Returns null for Flow (control signal, no data) and Bytes
+    /// (use asBytes — exposing the buffer as a JSON array would just
+    /// bloat the wire).
+    #[napi(js_name = "data")]
+    pub fn data(&self) -> Option<serde_json::Value> {
+        self.inner.data_value()
+    }
+
     /// For `StreamHandle` messages, take the receiver. Throws if the
     /// message is not a stream, or if the receiver has already been taken.
     #[napi(js_name = "takeStream")]

@@ -37,3 +37,18 @@ test("asJson round-trips through fromJson", () => {
   const back = Message.fromJson(j);
   assert.equal(back.asInteger(), 11);
 });
+
+test("data() unwraps the EncodableValue envelope", () => {
+  // Bare scalars
+  assert.equal(Message.integer(7).data(), 7);
+  assert.equal(Message.boolean(true).data(), true);
+  assert.equal(Message.string("hi").data(), "hi");
+
+  // Object / array land as plain JS shapes, no {type, data} envelope
+  assert.deepEqual(Message.object({ a: 1, b: [2, 3] }).data(), { a: 1, b: [2, 3] });
+  assert.deepEqual(Message.array(["x", "y", "z"]).data(), ["x", "y", "z"]);
+
+  // No portable JSON form for these
+  assert.equal(Message.flow().data(), null);
+  assert.equal(Message.bytes(Buffer.from("abc")).data(), null);
+});
