@@ -735,7 +735,7 @@ impl Message {
         const CLEANUP_THRESHOLD: usize = 10000;
 
         // Get compression history for this message type
-        static HISTORY: Lazy<RwLock<HashMap<String, (CompressionStats, std::time::Instant)>>> =
+        static HISTORY: Lazy<RwLock<HashMap<String, (CompressionStats, web_time::Instant)>>> =
             Lazy::new(|| RwLock::new(HashMap::new()));
 
         let type_name = self.type_name();
@@ -751,9 +751,9 @@ impl Message {
         // Get or create stats for this type
         let (stats, last_access) = history
             .entry(type_name.to_string())
-            .or_insert_with(|| (CompressionStats::default(), std::time::Instant::now()));
+            .or_insert_with(|| (CompressionStats::default(), web_time::Instant::now()));
 
-        *last_access = std::time::Instant::now();
+        *last_access = web_time::Instant::now();
 
         // Apply type-specific adjustments
         let threshold_multiplier = match self {
@@ -1036,10 +1036,33 @@ impl Into<JsValue> for Message {
     }
 }
 
-/// Wrapper for any bitcode encodable value
-#[derive(Clone, Debug, Serialize, Deserialize, Encode, Decode, PartialEq, Eq)]
+/// Wrapper for any bitcode encodable value.
+///
+/// `data` holds JSON-encoded bytes for `Value` payloads (see
+/// `From<Value> for EncodableValue`). The serde impls below
+/// transparently round-trip through `serde_json::Value` so that
+/// `serde_json::to_value(Message::Object(...))` produces the bare
+/// inner JSON, not `{data: [bytes]}`. This keeps the wasm bridge
+/// symmetric with JS-side `Message.object(v)` which emits
+/// `{type: "Object", data: v}` — the receiver gets the JSON value
+/// at `.data` directly.
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq)]
 pub struct EncodableValue {
     pub(crate) data: Vec<u8>,
+}
+
+impl Serialize for EncodableValue {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        let v: Value = serde_json::from_slice(&self.data).unwrap_or(Value::Null);
+        v.serialize(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for EncodableValue {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let v = Value::deserialize(d)?;
+        Ok(EncodableValue::from(v))
+    }
 }
 
 impl EncodableValue {

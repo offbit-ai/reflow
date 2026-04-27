@@ -388,51 +388,76 @@ export class Actor {
     const self = this;
     const inports = Array.from(cls.inports ?? []);
     const outports = Array.from(cls.outports ?? []);
+    // Optional: `static portDelivery = { particles: "latest" }` on
+    // the subclass. Forwards to the runtime's port_delivery() trait
+    // method, which the wasm fan-out forwarder consults to pick
+    // between try_send (latest) and send_async (reliable).
+    const portDelivery = cls.portDelivery ?? undefined;
 
     return {
       inports,
       outports,
+      portDelivery,
       // wasm `Actor.state` getter/setter — wired by the runtime
       // when it constructs the per-instance ActorRunContext, so we
       // leave them unset on the prototype object.
+      // The JS run returns a Promise that resolves on ctx.done()
+      // (or rejects on ctx.fail / thrown error). The wasm runtime
+      // awaits this Promise via wasm-bindgen-futures, matching how
+      // native Rust actors return a Future the dispatcher awaits.
+      // Without this gating, async patterns inside run() (rAF,
+      // fetch, setTimeout, …) fire-and-forget and the runtime
+      // re-fires the actor before the previous tick completes.
       run(context) {
-        let finished = false;
-        const ctx = {
-          get input() {
-            return context.input;
-          },
-          get state() {
-            return context.state;
-          },
-          get config() {
-            return context.config;
-          },
-          send(messages) {
-            context.send(normalizeOutputs(messages));
-          },
-          done(outputs) {
-            if (finished) return;
-            finished = true;
-            if (outputs != null) {
-              context.send(normalizeOutputs(outputs));
-            }
-          },
-          fail(message) {
-            if (finished) return;
-            finished = true;
-            // The wasm runtime treats throws inside run() as failures.
-            throw new Error(String(message ?? "actor failed"));
-          },
-        };
+        return new Promise((resolve, reject) => {
+          let finished = false;
+          const ctx = {
+            get input() {
+              return context.input;
+            },
+            get state() {
+              return context.state;
+            },
+            get config() {
+              return context.config;
+            },
+            send(messages) {
+              context.send(normalizeOutputs(messages));
+            },
+            done(outputs) {
+              if (finished) return;
+              finished = true;
+              if (outputs != null) {
+                context.send(normalizeOutputs(outputs));
+              }
+              resolve();
+            },
+            fail(message) {
+              if (finished) return;
+              finished = true;
+              reject(new Error(String(message ?? "actor failed")));
+            },
+          };
 
-        try {
-          const result = self.run(ctx);
-          if (result && typeof result.then === "function") {
-            return result.catch((err) => ctx.fail(err?.stack || err?.message || String(err)));
+          try {
+            const result = self.run(ctx);
+            if (result && typeof result.then === "function") {
+              // If the user's run is itself async, propagate its
+              // resolution to ctx.done() so the user can ignore the
+              // explicit done() call when convenient.
+              result.then(
+                () => {
+                  if (!finished) ctx.done();
+                },
+                (err) => {
+                  if (!finished) ctx.fail(err?.stack || err?.message || String(err));
+                },
+              );
+            }
+          } catch (err) {
+            if (!finished) ctx.fail(err?.stack || err?.message || String(err));
           }
-        } catch (err) {
-          ctx.fail(err?.stack || err?.message || String(err));
-        }
+        });
       },
     };
   }
@@ -533,6 +558,11 @@ export class Network {
   start() {
     if (!this._started) {
       this._inner = new wasm.GraphNetwork(this._graph.raw);
+      // Auto-register the bundled `reflow_components` catalog so
+      // built-in templates (`tpl_mouse_input`, `tpl_keyboard_input`,
+      // …) are available without an explicit JS-side registration.
+      // User-registered actors win on duplicate names.
+      wasm.registerBuiltins(this._inner);
       for (const [templateId, actor] of this._pendingActors ?? []) {
         this._inner.registerActor(templateId, actor);
       }
@@ -953,7 +983,30 @@ function invokePackActor(instance, instanceId, inputMap) {
 
 // ─── Pass-through wasm exports ─────────────────────────────────────────────
 
-export const bindInputEvents = wasm.bindInputEvents;
+/**
+ * Bind browser input events (mouse, keyboard, touch, resize, …) to a
+ * Reflow `Network`. Routes each DOM event into the matching built-in
+ * input actor template (`tpl_mouse_input`, `tpl_keyboard_input`, …).
+ *
+ * The underlying wasm function takes a `GraphNetwork` reference, but
+ * the shim's `Network` is a wrapper that lazily creates the
+ * `GraphNetwork` inside `start()`. Two consequences:
+ *
+ *   1. Call `bindInputEvents` AFTER `await net.start()` — earlier
+ *      and there is nothing to bind to.
+ *   2. Pass the shim Network; we unwrap `_inner` for you.
+ *
+ * Returns the wasm cleanup closure that detaches every listener.
+ */
+export function bindInputEvents(network, target) {
+  const inner = network?._inner ?? network;
+  if (!inner) {
+    throw new Error(
+      "bindInputEvents: network is not started yet — call await net.start() first",
+    );
+  }
+  return wasm.bindInputEvents(inner, target);
+}
 export const version = wasm.version;
 
 /** Pack ABI version this runtime was built against. Diagnostic only. */

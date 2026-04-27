@@ -47,7 +47,8 @@ futures = { version = "0.3" }
 bitcode = { version = "0.6.4", features = ["serde"] }
 ordered-float = "5.0.0"
 
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde", "wasmbind"] }
+web-time = "1.1"
 serde_with = { version = "2.1" , default-features = false, features = ["alloc", "std"]}
 tracing ={ workspace = true}
 async-trait = "0.1.88"

@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::{HashMap as StdHashMap, VecDeque};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 use tracing::{debug, error, info, warn};
 
 #[cfg(not(target_arch = "wasm32"))]

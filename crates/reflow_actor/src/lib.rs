@@ -1219,14 +1219,15 @@ impl ActorRunContext {
 
     #[wasm_bindgen(js_name = send)]
     pub fn send(&self, messages: JsValue) -> Result<(), JsValue> {
-        let messages_map = messages
-            .into_serde::<HashMap<String, serde_json::Value>>()
+        // Deserialize directly into `HashMap<String, Message>` via
+        // serde so JS's `Message.object(v)` form (`{type, data}`)
+        // round-trips through the tagged enum representation. Going
+        // via `Value → From<Value> for Message` would re-wrap the
+        // whole `{type, data}` object as a generic `Message::Object`,
+        // losing the type tag and breaking the receive side.
+        let messages = messages
+            .into_serde::<HashMap<String, Message>>()
             .map_err(|e| JsValue::from_str(&format!("Failed to parse messages: {}", e)))?;
-
-        let messages = messages_map
-            .iter()
-            .map(|(port, val)| (port.to_owned(), Message::from(val.clone())))
-            .collect::<HashMap<String, Message>>();
 
         self.outports
             .0
@@ -1258,8 +1259,20 @@ extern "C" {
     #[wasm_bindgen(method, getter, structural)]
     pub fn config(this: &ExternActor) -> JsValue;
 
+    /// Optional per-port delivery override. JS shape:
+    /// `static portDelivery = { particles: "latest", frame: "pool:rgba" }`.
+    /// Returns `JsValue::UNDEFINED` if the static is missing — the
+    /// adapter falls back to default reliable delivery on every port.
+    #[wasm_bindgen(method, getter, structural, js_name = portDelivery)]
+    pub fn port_delivery(this: &ExternActor) -> JsValue;
+
+    /// JS-side `run(context)` returns a Promise that resolves on
+    /// `ctx.done()`. The Rust behavior awaits that Promise via
+    /// `wasm_bindgen_futures::JsFuture`, gating the runtime tick on
+    /// the actor's explicit completion — same semantics as a native
+    /// Rust actor's `Future<Output = ()>`.
     #[wasm_bindgen(method, structural)]
-    pub fn run(this: &ExternActor, context: ActorRunContext);
+    pub fn run(this: &ExternActor, context: ActorRunContext) -> JsValue;
 
 }
 
@@ -1399,6 +1412,27 @@ impl Actor for JsBrowserActor {
         self.actor.inports.clone()
     }
 
+    /// Build a fresh `JsBrowserActor` for this node. `BrowserActor::new`
+    /// allocates new `flume::unbounded()` channels and a fresh
+    /// `LiveMemoryState`, so two nodes that share the same registered
+    /// JS actor each get independent inboxes / outboxes.
+    fn create_instance(&self) -> Arc<dyn Actor> {
+        Arc::new(JsBrowserActor::new(self.actor.extern_actor.clone()))
+    }
+
+    /// Mirror the JS `static portDelivery = { … }` static onto the
+    /// runtime trait method. The wasm fan-out forwarder consults this
+    /// to decide between `try_send` (latest) and `send_async`
+    /// (reliable) per connector — same surface as native.
+    fn port_delivery(&self) -> HashMap<String, String> {
+        let raw = self.actor.extern_actor.port_delivery();
+        if raw.is_undefined() || raw.is_null() {
+            return HashMap::new();
+        }
+        raw.into_serde::<HashMap<String, String>>()
+            .unwrap_or_default()
+    }
+
     fn create_process(
         &self,
         config: ActorConfig,
@@ -1456,12 +1490,13 @@ impl BrowserActor {
                     let payload = context.payload.clone();
                     let outport_channels = context.outports.clone();
 
-                    // Convert payload to JsValue for input
-                    let inputs = match JsValue::from_serde(&HashMap::<String, Value>::from_iter(
-                        payload
-                            .iter()
-                            .map(|(k, v)| (k.to_string(), v.clone().into())),
-                    )) {
+                    // Serialize the payload via serde so the tagged
+                    // Message enum (`{type, data}`) reaches JS intact.
+                    // Going through `Value::from(Message)` would strip
+                    // the tag for Object/Array/Optional, breaking the
+                    // symmetric `Message.object(v)` ↔ `ctx.input.x.data`
+                    // contract on the receive side.
+                    let inputs = match JsValue::from_serde(&payload) {
                         Ok(val) => val,
                         Err(_) => return Err(anyhow::Error::msg("Failed to serialize payload")),
                     };
@@ -1477,14 +1512,15 @@ impl BrowserActor {
                         outport_channels,
                     );
 
-                    // Call the JavaScript actor with the unified context
-                    actor_clone.run(run_context);
-
-                    // State is automatically synchronized through the shared Arc<Mutex<LiveMemoryState>>
-                    // No manual synchronization needed!
-
-                    // Decrement load counter when done
-                    // context.done();
+                    // Call the JS actor. The shim returns a Promise
+                    // that resolves on `ctx.done()`. Await it so the
+                    // dispatcher only re-fires the actor after the
+                    // previous tick has completed — matches the
+                    // native runtime contract.
+                    let result = actor_clone.run(run_context);
+                    if let Some(promise) = result.dyn_ref::<js_sys::Promise>() {
+                        let _ = wasm_bindgen_futures::JsFuture::from(promise.clone()).await;
+                    }
 
                     Ok(HashMap::new())
                 })

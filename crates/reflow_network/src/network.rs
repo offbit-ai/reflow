@@ -625,11 +625,135 @@ impl Network {
             }
         }
 
-        // On WASM, fall back to direct flume receiver (no broadcast available)
+        // On WASM, implement fan-out manually: per-source forwarder
+        // reads packets from the source actor's outport channel and
+        // dispatches each port's payload to every connector that
+        // sources from that port. Each connector has its own
+        // dedicated channel feeding the target actor's inport.
+        //
+        // Without this, multiple cloned receivers on the source's
+        // outport channel race for each packet — only one connector
+        // gets each tick, so any graph that fans out from a single
+        // source silently drops messages.
         #[cfg(target_arch = "wasm32")]
         {
+            use parking_lot::Mutex as PlMutex;
+            use std::collections::HashMap as StdHashMap;
+            use std::sync::Arc;
+
+            // Per-route delivery sink. Reliable uses an unbounded
+            // flume channel. Latest writes to a single slot; the
+            // worker drains the slot on each wake and forwards.
+            enum Sink {
+                Reliable(flume::Sender<HashMap<String, Message>>),
+                Latest {
+                    slot: Arc<PlMutex<Option<HashMap<String, Message>>>>,
+                    wake: flume::Sender<()>,
+                },
+            }
+
+            // Group connectors by source actor.
+            let mut by_source: StdHashMap<String, Vec<&Connector>> = StdHashMap::new();
             for connector in &self.connectors {
-                connector.init(self);
+                by_source
+                    .entry(connector.from.actor.clone())
+                    .or_default()
+                    .push(connector);
+            }
+
+            for (source_id, conns) in by_source {
+                let from_actor = self
+                    .initialized_actors
+                    .get(&source_id)
+                    .unwrap_or_else(|| panic!("Expected initialized actor {}", source_id));
+                let out_ports = from_actor.get_outports();
+
+                // Per-connector sink + a worker that forwards into the
+                // target inport. Delivery hint is read from the
+                // target actor's `port_delivery()` map, keyed by the
+                // target port name.
+                let mut routes: Vec<(String, String, Sink)> = Vec::with_capacity(conns.len());
+
+                for conn in conns {
+                    let to_actor = self
+                        .initialized_actors
+                        .get(&conn.to.actor)
+                        .unwrap_or_else(|| panic!("Expected initialized actor {}", conn.to.actor));
+                    let in_ports = to_actor.get_inports();
+                    let to_port = conn.to.port.clone();
+
+                    let target_delivery = to_actor.port_delivery();
+                    let is_latest = matches!(
+                        target_delivery.get(&to_port).map(|s| s.as_str()),
+                        Some("latest")
+                    );
+                    // `pool:*` falls back to reliable on the wasm path
+                    // until SharedFramePool gains a wasm impl; the
+                    // semantics stay correct (lossless), only the
+                    // zero-copy benefit is missed.
+
+                    let sink = if is_latest {
+                        let slot: Arc<PlMutex<Option<HashMap<String, Message>>>> =
+                            Arc::new(PlMutex::new(None));
+                        let (wake_tx, wake_rx) = flume::bounded::<()>(1);
+
+                        let slot_worker = slot.clone();
+                        spawn_local(async move {
+                            use futures::StreamExt;
+                            while wake_rx.clone().stream().next().await.is_some() {
+                                let pkt = slot_worker.lock().take();
+                                if let Some(payload) = pkt {
+                                    let _ = in_ports.0.send_async(payload).await;
+                                }
+                            }
+                        });
+
+                        Sink::Latest {
+                            slot,
+                            wake: wake_tx,
+                        }
+                    } else {
+                        let (tx, rx) = flume::unbounded::<HashMap<String, Message>>();
+                        spawn_local(async move {
+                            use futures::StreamExt;
+                            while let Some(packet) = rx.clone().stream().next().await {
+                                let _ = in_ports.0.send_async(packet).await;
+                            }
+                        });
+                        Sink::Reliable(tx)
+                    };
+
+                    routes.push((conn.from.port.clone(), to_port, sink));
+                }
+
+                // Forwarder reads the source actor's outport and
+                // dispatches per-port to each route's sink. Latest
+                // sinks atomically replace the slot; reliable sinks
+                // queue.
+                let routes = Arc::new(routes);
+                spawn_local(async move {
+                    use futures::StreamExt;
+                    while let Some(packet) = out_ports.1.clone().stream().next().await {
+                        for (from_port, to_port, sink) in routes.iter() {
+                            if let Some(msg) = packet.get(from_port) {
+                                let payload =
+                                    HashMap::from_iter([(to_port.clone(), msg.clone())]);
+                                match sink {
+                                    Sink::Reliable(tx) => {
+                                        let _ = tx.send_async(payload).await;
+                                    }
+                                    Sink::Latest { slot, wake } => {
+                                        *slot.lock() = Some(payload);
+                                        // bounded(1) wake; if a wake is
+                                        // already pending the worker
+                                        // will see the newer slot value.
+                                        let _ = wake.try_send(());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
         }
 
@@ -1559,5 +1683,23 @@ impl GraphNetwork {
             return network.get_node(actor_id);
         }
         JsValue::null()
+    }
+}
+
+// Rust-only bridge: lets `reflow_rt_wasm::register_builtins` push the
+// bundled component catalog into a fresh `GraphNetwork` without
+// crossing the JS boundary (wasm-bindgen can't carry `Arc<dyn Actor>`).
+#[cfg(target_arch = "wasm32")]
+impl GraphNetwork {
+    pub fn register_builtin(
+        &self,
+        name: &str,
+        actor: std::sync::Arc<dyn crate::actor::Actor>,
+    ) -> Result<(), anyhow::Error> {
+        let mut net = self
+            .network
+            .lock()
+            .map_err(|e| anyhow::anyhow!("lock failed: {e}"))?;
+        net.register_actor_arc(name, actor)
     }
 }

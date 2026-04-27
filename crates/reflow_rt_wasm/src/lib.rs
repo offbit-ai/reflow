@@ -73,6 +73,31 @@ pub async fn init_gpu_context(canvas_selector: Option<String>) -> Result<(), JsV
         .map_err(|e| JsValue::from_str(&e))
 }
 
+// ─── Built-in catalog registration ────────────────────────────────────────
+
+/// Walk the bundled `reflow_components` catalog and register every
+/// available built-in template (`tpl_mouse_input`, `tpl_keyboard_input`,
+/// `tpl_passthrough`, …) onto `net`. The shim calls this from
+/// `Network.start()` so JS authors don't have to round-trip every
+/// catalog actor through `registerActor` themselves.
+///
+/// Idempotent per-name: a template that's already been registered
+/// (e.g. by the user via `registerActor`) is skipped.
+#[wasm_bindgen(js_name = registerBuiltins)]
+pub fn register_builtins(net: &GraphNetwork) -> Result<(), JsValue> {
+    let mapping = reflow_components::get_template_mapping();
+    for tpl_id in mapping.keys() {
+        let Some(actor) = reflow_components::get_actor_for_template(tpl_id) else {
+            continue;
+        };
+        // Best-effort: skip names that are already registered (the
+        // catalog has the same template id with multiple implementations
+        // sometimes, and users may pre-register their own override).
+        let _ = net.register_builtin(tpl_id, actor);
+    }
+    Ok(())
+}
+
 // ─── .rflpack loading ──────────────────────────────────────────────────────
 
 /// Extract the wasm32 binary from a `.rflpack` byte buffer.

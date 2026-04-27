@@ -21,10 +21,11 @@ reflow_graph = { version = "0.2.1", path = "../reflow_graph" }
 reflow_actor = { version = "0.2.1", path = "../reflow_actor" }
 reflow_network = { version = "0.2.1", path = "../reflow_network" }
 # reflow_components carries the GPU context init so JS can call
-# `initGpuContext(canvasSelector)` before any wgpu actor runs.
-# `default-features = false` drops unrelated features (av-core,
-# window-events) that aren't browser-relevant in this bundle.
-reflow_components = { version = "0.2.1", path = "../reflow_components", default-features = false, features = ["gpu"] }
+# `initGpuContext(canvasSelector)` before any wgpu actor runs, plus
+# the window-events templates (`tpl_mouse_input`, `tpl_keyboard_input`,
+# …) that `bindInputEvents` routes browser events into. `av-core`,
+# `ml`, and the rest stay off — they pull native-only dependencies.
+reflow_components = { version = "0.2.1", path = "../reflow_components", default-features = false, features = ["gpu", "window-events"] }
 # Pack loader for the in-memory wasm-extraction helpers used by
 # `loadPack(url)`. libloading is auto-gated to native, so on wasm
 # this is just the manifest types + zip parser.
