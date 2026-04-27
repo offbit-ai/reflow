@@ -98,6 +98,13 @@ export interface LoadPackOptions {
    * `pack.attachTo(network)` afterwards.
    */
   network?: Network;
+  /**
+   * Skip the automatic wasm-slim URL rewrite. By default,
+   * `loadPack` derives a `<name>-<version>-wasm32-unknown-unknown.rflpack`
+   * URL from a full-bundle URL and tries it first (~1.8 MiB vs
+   * ~22 MiB). Set this to `true` to fetch the URL as-given.
+   */
+  preferFullBundle?: boolean;
 }
 
 /**

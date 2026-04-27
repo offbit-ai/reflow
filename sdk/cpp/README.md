@@ -89,6 +89,14 @@ with C++ ergonomics:
 | `rfl_compose_graphs`                     | `reflow::compose_graphs(json)`   |
 | `rfl_pack_load` / `rfl_pack_*`           | `reflow::pack::load(...)` etc.   |
 
+`reflow::pack::load("./reflow.pack.gpu-0.2.0.rflpack")` accepts
+either the full multi-triple bundle or a per-triple slim
+(`<name>-<version>-<triple>.rflpack`) — the loader picks the
+binary that matches the runtime triple at load time, so for a
+known target you can ship the ~3 MiB slim instead of the ~22 MiB
+full bundle. See [`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md)
+for download links.
+
 ### Error handling
 
 Every C call that returns `rfl_status` is checked; non-OK throws

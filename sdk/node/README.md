@@ -180,17 +180,39 @@ First-party packs live under [`sdk/packs/`](https://github.com/offbit-ai/reflow/
 ### Where to get `.rflpack` files
 
 First-party bundles ship as assets on every [GitHub Release](https://github.com/offbit-ai/reflow/releases)
-whose tag starts with `pack-v`. Grab the one you want and hand its
-path to `loadPack()`:
+whose tag starts with `pack-v`. Each release ships two flavours of
+every pack:
+
+| Flavour | Filename | When to use |
+|---|---|---|
+| Full multi-triple | `<name>-<version>.rflpack` (~22 MiB) | Distributing to mixed-platform consumers |
+| Per-triple slim | `<name>-<version>-<triple>.rflpack` (~3 MiB) | Shipping to a known platform — much smaller download |
 
 ```sh
 VER=0.2.0
+# Slim variant for the host you're running on (Apple Silicon shown).
+curl -LO https://github.com/offbit-ai/reflow/releases/download/pack-v$VER/reflow.pack.ml-$VER-aarch64-apple-darwin.rflpack
+
+# Or the full bundle if you don't know the deployment target ahead of time.
 curl -LO https://github.com/offbit-ai/reflow/releases/download/pack-v$VER/reflow.pack.ml-$VER.rflpack
 ```
 
-Each `.rflpack` bundles every supported triple in one file — the
-loader picks the right dylib at runtime. Catalog + per-pack contents:
-[`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md).
+Triples published per pack are listed in
+[`sdk/packs/README.md`](https://github.com/offbit-ai/reflow/blob/main/sdk/packs/README.md);
+every pack except `browser` ships a `wasm32-unknown-unknown`
+slim that's the smallest of all.
+
+`loadPack()` accepts either flavour identically — it picks the
+binary that matches the runtime triple at load time.
+
+If you've already downloaded a full bundle and want to ship a
+slim copy with your own application, the bundled `reflow-pack`
+CLI strips it in one shot:
+
+```sh
+reflow-pack strip reflow.pack.ml-0.2.0.rflpack
+# → reflow.pack.ml-0.2.0-<host-triple>.rflpack
+```
 
 Third-party packs are distributed however their author chooses (npm
 tarball, GitHub Releases, internal registry) — any local file path

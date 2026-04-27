@@ -658,6 +658,16 @@ export class EventStream {
  * a pre-built `Request`. GitHub release assets serve permissive
  * CORS headers so cross-origin browser fetches just work.
  *
+ * **Smart URL rewriting.** First-party releases ship two flavours
+ * of every pack: a full multi-triple `.rflpack` (~22 MiB) and a
+ * `<name>-<version>-wasm32-unknown-unknown.rflpack` slim (~1.8 MiB)
+ * that contains only the browser binary. Browsers never need
+ * anything but the wasm entry, so when the URL points at the full
+ * bundle we transparently try the wasm slim first and fall back
+ * to the URL the user passed if it 404s. Pass
+ * `options.preferFullBundle: true` to opt out — useful when you've
+ * republished a custom slim under a non-standard filename.
+ *
  * The optional `options.network` triggers the pack-ABI handshake:
  *   1. Compile + instantiate the wasm with the
  *      `env.__reflow_pack_register_template` import wired to a
@@ -694,11 +704,35 @@ export class EventStream {
  * the pack-side register function returns non-zero.
  */
 export async function loadPack(url, options = {}) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `loadPack: fetch ${url} → ${response.status} ${response.statusText}`,
-    );
+  // The browser only ever runs the wasm32 entry. If the URL points
+  // at a full multi-triple `.rflpack` (~22 MiB), we transparently
+  // try the wasm-only slim variant first
+  // (`<name>-<version>-wasm32-unknown-unknown.rflpack`, ~1.8 MiB)
+  // and fall back to the URL the user gave if that 404s. Set
+  // `options.preferFullBundle` to skip the optimization.
+  const candidates = [];
+  if (!options.preferFullBundle) {
+    const slim = wasmSlimUrl(url);
+    if (slim) candidates.push(slim);
+  }
+  candidates.push(url);
+
+  let response;
+  let lastError;
+  for (const candidate of candidates) {
+    try {
+      const r = await fetch(candidate);
+      if (r.ok) {
+        response = r;
+        break;
+      }
+      lastError = `${r.status} ${r.statusText}`;
+    } catch (err) {
+      lastError = String(err);
+    }
+  }
+  if (!response) {
+    throw new Error(`loadPack: fetch ${url} → ${lastError ?? "unreachable"}`);
   }
   const bytes = new Uint8Array(await response.arrayBuffer());
 
@@ -737,6 +771,28 @@ export async function loadPack(url, options = {}) {
     await pack.attachTo(options.network);
   }
   return pack;
+}
+
+// Internal: derive the wasm-only slim URL from a full bundle URL.
+// Returns null if `url` doesn't end in `.rflpack` or already names a
+// triple slim (we don't double-rewrite).
+const KNOWN_TRIPLES = [
+  "wasm32-unknown-unknown",
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+];
+function wasmSlimUrl(url) {
+  const s = String(url);
+  if (!s.endsWith(".rflpack")) return null;
+  // Already a slim variant for some triple — leave it alone. The
+  // user is being explicit; respect that.
+  for (const triple of KNOWN_TRIPLES) {
+    if (s.endsWith(`-${triple}.rflpack`)) return null;
+  }
+  return s.slice(0, -".rflpack".length) + "-wasm32-unknown-unknown.rflpack";
 }
 
 // Internal: walk the pack's register fn and wire it to the network.

@@ -226,6 +226,89 @@ if (bundle) {
     }
   });
 
+  test("loadPack rewrites a full-bundle URL to wasm-slim by default", async () => {
+    // Spin up an HTTP server that:
+    //   - 404s the full-bundle URL
+    //   - 200s the wasm slim, returning a non-zip payload (the
+    //     extract step will reject it, but that error tells us the
+    //     slim URL is what got fetched)
+    const { createServer } = await import("node:http");
+    const requested = [];
+    const server = createServer((req, res) => {
+      requested.push(req.url);
+      if (req.url.endsWith("-wasm32-unknown-unknown.rflpack")) {
+        res.writeHead(200, { "content-type": "application/octet-stream" });
+        res.end(Buffer.from("wasm-slim-but-not-a-zip"));
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const { port } = server.address();
+    try {
+      const url = `http://127.0.0.1:${port}/reflow.pack.gpu-0.2.0.rflpack`;
+      // The fetch will succeed (server returns 200 for the slim
+      // URL), but the body isn't a zip, so extract throws.
+      await assert.rejects(() => shim.loadPack(url), /zip|parse|.rflpack/i);
+      assert.ok(
+        requested.some((u) => u.endsWith("-wasm32-unknown-unknown.rflpack")),
+        `expected slim URL to be tried; got: ${JSON.stringify(requested)}`,
+      );
+    } finally {
+      server.close();
+    }
+  });
+
+  test("loadPack(preferFullBundle: true) skips the slim rewrite", async () => {
+    const { createServer } = await import("node:http");
+    const requested = [];
+    const server = createServer((req, res) => {
+      requested.push(req.url);
+      res.writeHead(200, { "content-type": "application/octet-stream" });
+      res.end(Buffer.from("not a zip"));
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const { port } = server.address();
+    try {
+      const url = `http://127.0.0.1:${port}/foo.rflpack`;
+      await assert.rejects(
+        () => shim.loadPack(url, { preferFullBundle: true }),
+        /zip|parse|.rflpack/i,
+      );
+      assert.deepEqual(requested, ["/foo.rflpack"]);
+    } finally {
+      server.close();
+    }
+  });
+
+  test("loadPack falls back to the full URL when the slim 404s", async () => {
+    const { createServer } = await import("node:http");
+    const requested = [];
+    const server = createServer((req, res) => {
+      requested.push(req.url);
+      if (req.url.endsWith("-wasm32-unknown-unknown.rflpack")) {
+        res.writeHead(404);
+        res.end();
+      } else {
+        res.writeHead(200, { "content-type": "application/octet-stream" });
+        res.end(Buffer.from("full-bundle-not-a-zip"));
+      }
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const { port } = server.address();
+    try {
+      const url = `http://127.0.0.1:${port}/foo-0.1.0.rflpack`;
+      await assert.rejects(() => shim.loadPack(url), /zip|parse|.rflpack/i);
+      // Both URLs should have been tried, slim first.
+      assert.equal(requested.length, 2);
+      assert.ok(requested[0].endsWith("-wasm32-unknown-unknown.rflpack"));
+      assert.equal(requested[1], "/foo-0.1.0.rflpack");
+    } finally {
+      server.close();
+    }
+  });
+
   test("LoadedPack shape includes attachTo + instance + registered", async () => {
     // Without a real pack we can't drive the full handshake here —
     // the surface check confirms the new fields are wired and the
