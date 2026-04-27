@@ -381,9 +381,23 @@ async fn test_fanout_broadcast() -> Result<(), anyhow::Error> {
     network.start()?;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    // Both forward actors should have received all 3 messages on their outports
-    let forward_a_outport = network.actors.get("forward_a").unwrap().get_outports().1;
-    let forward_b_outport = network.actors.get("forward_b").unwrap().get_outports().1;
+    // Both forward actors should have received all 3 messages on
+    // their outports. Read from `initialized_actors` keyed by *node
+    // id* (sink_a / sink_b), not from `actors` keyed by template
+    // name — the runtime calls `create_instance` per node, so the
+    // template's channels are unrelated to the running node's.
+    let forward_a_outport = network
+        .initialized_actors
+        .get("sink_a")
+        .unwrap()
+        .get_outports()
+        .1;
+    let forward_b_outport = network
+        .initialized_actors
+        .get("sink_b")
+        .unwrap()
+        .get_outports()
+        .1;
 
     let mut a_messages = Vec::new();
     while let Ok(pkt) = forward_a_outport.try_recv() {
@@ -557,10 +571,12 @@ async fn test_network_actor_streaming() -> Result<(), anyhow::Error> {
     network.start()?;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    // Read the consumer's outport to verify
+    // Read the consumer's outport to verify. Keyed by node id
+    // ("consumer"), not template name — the runtime gives every node
+    // its own channels via `create_instance`.
     let consumer_outport = network
-        .actors
-        .get("stream_consumer")
+        .initialized_actors
+        .get("consumer")
         .unwrap()
         .get_outports()
         .1;
@@ -666,10 +682,17 @@ async fn test_network_stream_fanout_single_consumer() -> Result<(), anyhow::Erro
     network.start()?;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    // Collect results from both consumers
+    // Collect results from both consumers. Keys are *node ids*
+    // (sink_a / sink_b), not template names — `create_instance`
+    // gives each running node its own channels.
     let mut results: Vec<i64> = Vec::new();
-    for name in ["consumer_a", "consumer_b"] {
-        let outport = network.actors.get(name).unwrap().get_outports().1;
+    for name in ["sink_a", "sink_b"] {
+        let outport = network
+            .initialized_actors
+            .get(name)
+            .unwrap()
+            .get_outports()
+            .1;
         while let Ok(pkt) = outport.try_recv() {
             if let Some(Message::Integer(n)) = pkt.get("ByteCount") {
                 results.push(*n);

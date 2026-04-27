@@ -216,10 +216,16 @@ impl Connector {
 
         tokio::spawn(async move {
             while let Ok(outport_packet) = fanout_rx.recv_async().await {
-                let msg = outport_packet
-                    .get(&from_port)
-                    .cloned()
-                    .unwrap_or(Message::Optional(None));
+                // Only forward packets that actually carry our source
+                // port. The fan-out broadcaster delivers every packet
+                // from the source actor; without this filter we would
+                // synthesize an `Optional(None)` and send it downstream
+                // every time some other outport on the same source
+                // fires — which silently fills `await_all_inports`
+                // counts with garbage.
+                let Some(msg) = outport_packet.get(&from_port).cloned() else {
+                    continue;
+                };
 
                 let message_size = std::mem::size_of_val(&msg);
                 let msg_discriminant = format!("{:?}", std::mem::discriminant(&msg));
@@ -315,11 +321,17 @@ impl Connector {
             loop {
                 match broadcast_rx.recv().await {
                     Ok(outport_packet) => {
-                        // Arc<HashMap> — only clone the single Message we need
-                        let msg = outport_packet
-                            .get(&from_port)
-                            .cloned()
-                            .unwrap_or(Message::Optional(None));
+                        // Only forward packets that actually carry our
+                        // source port. The broadcaster delivers every
+                        // packet from the source actor; without this
+                        // filter we would synthesize an `Optional(None)`
+                        // and send it downstream every time some other
+                        // outport on the same source fires — which
+                        // silently fills `await_all_inports` counts
+                        // with garbage.
+                        let Some(msg) = outport_packet.get(&from_port).cloned() else {
+                            continue;
+                        };
 
                         // Capture tracing info from &msg before moving
                         let message_size = std::mem::size_of_val(&msg);
@@ -387,9 +399,11 @@ impl Connector {
                         }
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                        eprintln!(
-                            "[LAGGED] missed {} messages ({}:{} → {}:{})",
-                            n, from_actor_id, from_port, to_actor_id, to_port
+                        tracing::warn!(
+                            missed = n,
+                            from = %format!("{}:{}", from_actor_id, from_port),
+                            to = %format!("{}:{}", to_actor_id, to_port),
+                            "broadcast receiver lagged"
                         );
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => {

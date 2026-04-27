@@ -77,9 +77,7 @@ impl ActorProcess {
         use futures::StreamExt;
 
         let mut accumulated: HashMap<String, Message> = HashMap::new();
-        let inports_count = self.inport_names.len();
         let actor_id = self.config.get_node_id();
-        let total_connections: usize = self.config.inport_connection_counts.values().sum();
         let mut tick_message_count: usize = 0;
         // Per-port message counter for connection-count-aware synchronization
         let mut port_counts: HashMap<String, usize> = HashMap::new();
@@ -87,7 +85,7 @@ impl ActorProcess {
             let packet = match self.inport_rx.clone().stream().next().await {
                 Some(p) => p,
                 None => {
-                    eprintln!("[INPORT CLOSED] {}", self.node_id);
+                    tracing::debug!(node = %self.node_id, "inport channel closed");
                     break;
                 }
             };
@@ -96,20 +94,24 @@ impl ActorProcess {
 
             // ── Accumulate if awaiting inports ──────────────────────
             let payload = if self.await_all_inports {
-                // Wait for ALL connected inports (uses graph topology).
-                // Fan-in: merge Object messages on the same port instead
-                // of overwriting, so multiple sources are preserved.
+                // Wait until every *declared* inport has received at
+                // least one packet, then fire. Earlier this counted
+                // total packets against the sum of inport connection
+                // counts, which mis-fires when an inport is fed only
+                // via `add_initial` (zero topology connections — the
+                // count would never include it, and the actor would
+                // fire after fewer packets than declared inports).
+                // Fan-in: `merge_accumulate` merges Object messages
+                // on the same port instead of overwriting, so multiple
+                // sources are preserved.
                 merge_accumulate(&mut accumulated, packet);
-                tick_message_count += 1;
-                let needed = if total_connections > 0 {
-                    total_connections
-                } else {
-                    inports_count
-                };
-                if tick_message_count < needed {
+                let all_inports_ready = self
+                    .inport_names
+                    .iter()
+                    .all(|name| accumulated.contains_key(name));
+                if !all_inports_ready {
                     continue;
                 }
-                tick_message_count = 0;
                 std::mem::take(&mut accumulated)
             } else if !self.required_inports.is_empty() {
                 // Wait for SPECIFIC required inports.
@@ -168,7 +170,7 @@ impl ActorProcess {
                 }
                 Err(e) => {
                     self.load.reset();
-                    eprintln!("[{}] behavior error: {:?}", self.node_id, e);
+                    tracing::warn!(node = %self.node_id, error = ?e, "actor behavior failed");
                     if let Some(ref tracing) = self.tracing {
                         let _ = tracing.trace_actor_failed(actor_id, e.to_string()).await;
                     }

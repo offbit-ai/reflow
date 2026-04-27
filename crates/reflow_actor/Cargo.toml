@@ -24,6 +24,7 @@ reflow_tracing_protocol = { version = "0.2.1", path = "../reflow_tracing_protoco
 parking_lot = {workspace = true}
 flate2 = "1.0.35"
 flume = {workspace = true}
+tracing = { workspace = true }
 futures = { version = "0.3" }
 chrono = { version = "0.4", features = ["serde", "wasmbind"] }
 bitcode = { version = "0.6.4", features = ["serde"] }
