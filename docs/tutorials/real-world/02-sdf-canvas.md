@@ -28,34 +28,6 @@ turns mouse coordinates into spherical camera coordinates, and
 `sdf_render`, which owns a WebGPU pipeline and ray-marches an SDF
 scene every frame.
 
-## Why a custom GPU actor
-
-Wasm packs do load and register in a browser tab — `loadPack(url)`
-fetches the pack, the JSON-over-memory bridge wires its templates
-into the network, and `network.getActorNames()` lists them. What is
-gated today is **pack-actor execution that awaits JS-scheduled
-futures**. The pack SDK drives each tick with `pollster::block_on`,
-which never yields to the browser event loop. Any actor that
-internally calls `wgpu::map_async`, `fetch`, or other Promise-backed
-APIs deadlocks at that boundary.
-
-The GPU pack's six templates all read pixels back to the CPU as their
-last step, so all six fall into that bucket. The fix is wiring
-`wasm-bindgen-futures` into the pack runner so it can resume on a
-JS Promise; that milestone is on the roadmap.
-
-What does work today, in any browser tab, is **a custom JS actor
-that owns a WebGPU pipeline and targets the canvas swap chain
-directly**. No readback. No async hang. The actor model does not
-mind which language wrote the actor or which GPU API it talks to.
-For browser-side GPU work that draws on screen and stays on screen,
-this is the path.
-
-(The same logic applies to any pack actor whose work fits inside
-sync CPU code: math, transforms, controlled flow, JSON shaping. Those
-all run from a browser pack today. It is only the JS-scheduled async
-boundary that bites.)
-
 ## Setup
 
 One file again. Pick any directory.
