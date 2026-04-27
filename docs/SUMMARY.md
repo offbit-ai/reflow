@@ -102,6 +102,7 @@
 
 # Tutorials
 
+- [Real-world Reflow](tutorials/real-world/README.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)
