@@ -79,10 +79,77 @@ Inside `run(ctx)`:
 |--------|---------|
 | `ctx.inputs` | `Record<string, Message-JSON>` — one entry per port that received a packet this tick. |
 | `ctx.config` | Node-level config passed at graph time. |
-| `ctx.done(outputs?)` | Emit outputs keyed by output port. Each value is a `Message` or a JSON-shaped Message. |
+| `ctx.send(outputs)` | Emit outputs keyed by output port. Safe to call multiple times during a tick. |
+| `ctx.done(outputs?)` | Resolve the tick. The optional outputs are sent the same way as `ctx.send`. |
 | `ctx.fail(reason)` | Abort this tick with an error. |
 
-Exactly one of `done` / `fail` must be called per tick. If `run` returns a Promise and it rejects, the SDK calls `fail` for you.
+The runtime treats every `run` as an async tick that completes when
+you call `ctx.done()` (or `ctx.fail`). Internally `run` returns a
+`Promise` that the runtime awaits via `wasm-bindgen-futures` (browser)
+or the `Future` directly (Node). Until the promise resolves, the
+dispatcher will not re-fire the actor on a new packet — your tick
+has the runtime's full attention.
+
+That means async code inside `run` is first-class:
+
+```ts
+class Fetcher extends Actor {
+  static component = "fetcher";
+  static inports  = ["url"];
+  static outports = ["body"];
+
+  async run(ctx) {
+    const url = ctx.inputs.url.data;
+    const body = await fetch(url).then((r) => r.text());
+    ctx.done({ body: Message.string(body) });
+  }
+}
+```
+
+…and so are deferred-completion patterns where the actor parks the
+tick on a callback (`requestAnimationFrame`, an event listener, a
+DOM observer):
+
+```ts
+class FrameClock extends Actor {
+  static component = "clock";
+  static inports  = ["tick"];
+  static outports = ["tick", "dt"];
+  last = performance.now();
+
+  run(ctx) {
+    const now = performance.now();
+    const dt  = (now - this.last) / 1000;
+    this.last = now;
+    ctx.send({ dt: Message.float(dt) });
+    requestAnimationFrame(() => {
+      ctx.send({ tick: Message.flow() });   // self-loop: re-fire next frame
+      ctx.done();
+    });
+    // run() returns now; the runtime awaits ctx.done() inside rAF.
+  }
+}
+```
+
+Exactly one of `done` / `fail` must be called per tick. If `run`
+returns a rejected promise, the SDK calls `fail` for you.
+
+### Per-port delivery hints
+
+Declare `static portDelivery` on the subclass to tell the runtime how
+each inport should be backed:
+
+```ts
+class Renderer extends Actor {
+  static inports  = ["frame"];
+  static outports = [];
+  static portDelivery = { frame: "latest" };  // drop stale frames
+  run(ctx) { /* … */ }
+}
+```
+
+`"latest"` keeps only the freshest packet — older ones are dropped if
+the actor falls behind. Default is reliable, in-order delivery.
 
 Instance state is just instance state — the class itself holds it:
 
