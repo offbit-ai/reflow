@@ -6254,7 +6254,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_cli"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -6285,7 +6285,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_loader"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "hex",
@@ -10875,6 +10875,7 @@ dependencies = [
  "memchr",
  "thiserror 2.0.12",
  "zopfli",
+ "zstd 0.13.3",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_loader"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 authors = ["Damilare Akinlaja"]
 description = "Runtime loader for .rflpack actor bundles — dlopens pack cdylibs and publishes their templates to the runtime registry."
@@ -19,7 +19,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 parking_lot = { workspace = true }
 once_cell = "1"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "2", default-features = false, features = ["deflate", "zstd"] }
 sha2 = "0.10"
 hex = "0.4"
 
@@ -35,4 +35,4 @@ anyhow = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "2", default-features = false, features = ["deflate", "zstd"] }

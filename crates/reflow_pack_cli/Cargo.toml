@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_cli"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "`reflow-pack` — command-line tool to build, inspect, and unpack .rflpack actor bundles."
@@ -16,10 +16,13 @@ name = "reflow-pack"
 path = "src/main.rs"
 
 [dependencies]
-reflow_pack_loader = { version = "0.2.1", path = "../reflow_pack_loader" }
+reflow_pack_loader = { version = "0.2.2", path = "../reflow_pack_loader" }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 toml = "0.8"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+# Zstd is the canonical compression method for `.rflpack` v1.
+# Deflate stays enabled so the CLI can still read legacy bundles
+# produced before the switch (loader-side support is symmetric).
+zip = { version = "2", default-features = false, features = ["deflate", "zstd"] }
 clap = { version = "4", features = ["derive"] }
