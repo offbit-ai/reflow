@@ -585,7 +585,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1643,7 +1643,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2238,7 +2238,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_actor"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "bitcode",
@@ -2273,7 +2273,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_actor_macro"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2282,7 +2282,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_assets"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2297,7 +2297,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_components"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2307,6 +2307,7 @@ dependencies = [
  "flume",
  "fontdue",
  "futures",
+ "getrandom 0.3.4",
  "gltf",
  "image",
  "js-sys",
@@ -2330,13 +2331,14 @@ dependencies = [
  "tiny-skia",
  "tobj",
  "tokio",
+ "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
 ]
 
 [[package]]
 name = "reflow_dsp"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "realfft",
  "rustfft",
@@ -2344,7 +2346,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_graph"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2369,7 +2371,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_network"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2431,7 +2433,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_pack_loader"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "hex",
@@ -2447,11 +2449,11 @@ dependencies = [
 
 [[package]]
 name = "reflow_pixel"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "reflow_rt"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "reflow_actor",
  "reflow_actor_macro",
@@ -2484,7 +2486,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_sdf"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -2492,7 +2494,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_shader"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -2500,7 +2502,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_tracing_protocol"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2528,7 +2530,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_vector"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -2705,7 +2707,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3118,7 +3120,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3869,7 +3871,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4364,6 +4366,7 @@ dependencies = [
  "memchr",
  "thiserror 2.0.18",
  "zopfli",
+ "zstd",
 ]
 
 [[package]]

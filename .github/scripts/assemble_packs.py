@@ -7,7 +7,12 @@ For each pack listed in PACKS:
      directory that references the cdylibs downloaded into
      `$GITHUB_WORKSPACE/artifacts/pack-cdylibs-<triple>/`.
   2. Invoke `target/release/reflow-pack build` against that TOML to
-     produce `packs/<name>-<version>.rflpack`.
+     produce the full multi-triple `packs/<name>-<version>.rflpack`.
+  3. For every triple that ended up in the bundle, run
+     `reflow-pack strip --triple <t>` to also produce a
+     single-triple `packs/<name>-<version>-<triple>.rflpack`.
+     Most users only need one platform's binary; the slim bundles
+     are ~1/6th the size of the full one.
 
 Missing triples are silently skipped — the pack author's static
 `Reflow.pack.toml` may advertise templates for triples we don't yet
@@ -97,10 +102,38 @@ for crate, pack_name, rel_dir in PACKS:
         print(f"       {triple:30s} <- {path}", flush=True)
 
     write_generated_toml(src_toml, out_toml, targets)
-    subprocess.run(
+    # Capture stdout so we can pick up the filename `reflow-pack`
+    # picked, rather than guessing it from the toml.
+    build_proc = subprocess.run(
         [str(reflow_pack), "build", "--manifest", str(out_toml), "--out-dir", str(OUT)],
         check=True,
+        capture_output=True,
+        text=True,
     )
+    sys.stdout.write(build_proc.stdout)
+    full_bundle: Path | None = None
+    for line in build_proc.stdout.splitlines():
+        if line.startswith("wrote "):
+            full_bundle = Path(line[len("wrote "):].strip())
+            break
+    if full_bundle is None or not full_bundle.exists():
+        print(f"[warn] {pack_name}: couldn't locate the bundle reflow-pack just wrote", flush=True)
+        continue
+
+    # Per-triple slim bundles. `strip --triple X` doesn't need the
+    # runner to be X — it just rewrites the manifest and re-emits
+    # the matching binary.
+    for triple, _src in targets:
+        slim_path = OUT / f"{full_bundle.stem}-{triple}.rflpack"
+        subprocess.run(
+            [
+                str(reflow_pack), "strip",
+                str(full_bundle),
+                "--triple", triple,
+                "--out", str(slim_path),
+            ],
+            check=True,
+        )
 
 # Final listing for CI logs.
 for p in sorted(OUT.glob("*.rflpack")):
