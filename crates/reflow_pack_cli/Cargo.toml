@@ -1,6 +1,6 @@
 [package]
 name = "reflow_pack_cli"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "`reflow-pack` — command-line tool to build, inspect, and unpack .rflpack actor bundles."

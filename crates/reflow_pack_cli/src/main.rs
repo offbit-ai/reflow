@@ -48,6 +48,35 @@ enum Command {
         /// Destination directory.
         out_dir: PathBuf,
     },
+    /// Strip a `.rflpack` down to one or more triples.
+    ///
+    /// Produces a new `.rflpack` containing only the requested
+    /// triples' binaries plus a manifest with `targets` reduced to
+    /// match. Useful when distributing to a known platform — strip
+    /// a 22 MiB six-triple bundle down to ~3-4 MiB before shipping.
+    ///
+    /// **Default**: if neither `--triple` nor `--current` is given,
+    /// the host triple this CLI was built for is used automatically.
+    /// Pass `--triple X --current` to keep both X and the host.
+    Strip {
+        /// Path to the input `.rflpack`.
+        path: PathBuf,
+        /// Triple to keep. Repeat for multiple.
+        ///
+        /// Examples: `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`,
+        /// `wasm32-unknown-unknown`.
+        #[arg(long = "triple", value_name = "TRIPLE")]
+        triples: Vec<String>,
+        /// Keep the binary for the host this CLI was built for.
+        /// Implied when no `--triple` is given; pass explicitly to
+        /// add the host alongside other explicit triples.
+        #[arg(long)]
+        current: bool,
+        /// Output path. Defaults to
+        /// `<name>-<version>-<joined-triples>.rflpack` next to the input.
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
     /// Print the pack ABI version of the host this binary was built for.
     /// Use this value as `REFLOW_PACK_ABI_VERSION` when cross-compiling a
     /// pack — build the CLI on the same toolchain as your runtime.
@@ -60,6 +89,12 @@ fn main() -> Result<()> {
         Command::Build { manifest, out_dir } => cmd_build(&manifest, &out_dir),
         Command::Inspect { path } => cmd_inspect(&path),
         Command::Unpack { path, out_dir } => cmd_unpack(&path, &out_dir),
+        Command::Strip {
+            path,
+            triples,
+            current,
+            out,
+        } => cmd_strip(&path, &triples, current, out.as_deref()),
         Command::Abi => {
             println!(
                 "abi_version = {}",
@@ -277,5 +312,148 @@ fn cmd_unpack(path: &Path, out_dir: &Path) -> Result<()> {
         }
     }
     println!("unpacked to {}", out_dir.display());
+    Ok(())
+}
+
+// ─── strip ─────────────────────────────────────────────────────────────────
+
+fn cmd_strip(
+    path: &Path,
+    triples_arg: &[String],
+    current: bool,
+    out_path: Option<&Path>,
+) -> Result<()> {
+    // Resolve which triples to keep:
+    //   - `--triple X --triple Y`: keep X and Y
+    //   - `--current`: keep the host triple
+    //   - neither: implicit `--current` (the common case — strip a
+    //     downloaded multi-triple bundle to whatever this machine runs)
+    //   - both: keep host + all explicit triples
+    //
+    // Dedup but preserve insertion order so the output filename is
+    // deterministic.
+    let want_host = current || triples_arg.is_empty();
+    let mut keep: Vec<String> = Vec::new();
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    if want_host {
+        let host = reflow_pack_loader::REFLOW_PACK_HOST_TRIPLE.to_string();
+        if host == "unknown" {
+            bail!(
+                "REFLOW_PACK_HOST_TRIPLE is `unknown` — this CLI was built without \
+                 a host triple stamp. Pass `--triple <triple>` explicitly."
+            );
+        }
+        if seen.insert(host.clone()) {
+            keep.push(host);
+        }
+    }
+    for t in triples_arg {
+        if seen.insert(t.clone()) {
+            keep.push(t.clone());
+        }
+    }
+
+    // Load the existing pack.
+    let bundle_bytes = fs::read(path).with_context(|| format!("read {}", path.display()))?;
+    let reader = std::io::Cursor::new(&bundle_bytes);
+    let mut archive = zip::ZipArchive::new(reader).context("parse .rflpack zip")?;
+
+    let manifest: PackManifest = {
+        let mut m = archive
+            .by_name("manifest.json")
+            .context("manifest.json missing from .rflpack")?;
+        let mut buf = String::new();
+        m.read_to_string(&mut buf)?;
+        serde_json::from_str(&buf).context("parse manifest.json")?
+    };
+
+    // Validate that every requested triple is actually present.
+    for t in &keep {
+        if !manifest.targets.contains_key(t) {
+            let have: Vec<&str> = manifest.targets.keys().map(String::as_str).collect();
+            bail!(
+                "pack `{}` has no build for triple `{}` (available: {})",
+                manifest.name,
+                t,
+                have.join(", ")
+            );
+        }
+    }
+
+    // Build a slimmed manifest: same name/version/abi/etc, but
+    // `targets` reduced to the intersection.
+    let mut new_targets: std::collections::BTreeMap<String, PackTarget> =
+        std::collections::BTreeMap::new();
+    for t in &keep {
+        if let Some(pt) = manifest.targets.get(t) {
+            new_targets.insert(t.clone(), pt.clone());
+        }
+    }
+    let new_manifest = PackManifest {
+        targets: new_targets.clone(),
+        ..manifest.clone()
+    };
+
+    // Compute the output path. Default sits next to the input.
+    let suffix = if keep.len() == 1 {
+        keep[0].clone()
+    } else {
+        format!("{}-triples", keep.len())
+    };
+    let default_out = path.with_file_name(format!(
+        "{}-{}-{}.rflpack",
+        manifest.name, manifest.version, suffix
+    ));
+    let out = out_path.map(Path::to_path_buf).unwrap_or(default_out);
+
+    let out_file = File::create(&out).with_context(|| format!("create {}", out.display()))?;
+    let mut zip = ZipWriter::new(out_file);
+    let options: SimpleFileOptions = SimpleFileOptions::default()
+        .compression_method(CompressionMethod::Zstd)
+        .compression_level(Some(19))
+        .unix_permissions(0o755);
+
+    // Write the slimmed manifest.
+    zip.start_file("manifest.json", options)?;
+    zip.write_all(&serde_json::to_vec_pretty(&new_manifest)?)?;
+
+    // Stream every kept binary through to the output. We re-read
+    // each via `by_name` rather than copying raw zip entries
+    // because the source archive may be DEFLATE-compressed
+    // (legacy bundles) and we always emit Zstd.
+    let mut total_in: u64 = 0;
+    for (_triple, pt) in new_targets.iter() {
+        let mut entry = archive
+            .by_name(&pt.file)
+            .with_context(|| format!("entry `{}` missing from .rflpack", pt.file))?;
+        let mut buf = Vec::with_capacity(entry.size() as usize);
+        std::io::copy(&mut entry, &mut buf)?;
+        total_in += buf.len() as u64;
+        zip.start_file(&pt.file, options)?;
+        zip.write_all(&buf)?;
+    }
+    zip.finish()?;
+
+    let out_size = fs::metadata(&out)?.len();
+    println!("wrote {}", out.display());
+    println!(
+        "  {} triple(s): {}",
+        keep.len(),
+        keep.iter().cloned().collect::<Vec<_>>().join(", ")
+    );
+    println!(
+        "  input  {:.2} MiB ({} bytes)",
+        bundle_bytes.len() as f64 / 1024.0 / 1024.0,
+        bundle_bytes.len()
+    );
+    println!(
+        "  payload {:.2} MiB (uncompressed across kept triples)",
+        total_in as f64 / 1024.0 / 1024.0
+    );
+    println!(
+        "  output {:.2} MiB ({:.0}% of input)",
+        out_size as f64 / 1024.0 / 1024.0,
+        (out_size as f64 / bundle_bytes.len() as f64) * 100.0
+    );
     Ok(())
 }

@@ -20,6 +20,33 @@ manifest:
 | `x86_64-pc-windows-msvc` | every pack |
 | `wasm32-unknown-unknown` | every pack except `browser` (which drives a real Chrome instance over TCP via CDP — impossible from inside a browser tab). Native rendering uses `wgpu`'s WebGPU backend; HTTP uses Fetch via `reqwest`'s wasm support; H.264 video encoding falls back to the [WebCodecs `VideoEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder) API (Chromium / Edge / Safari ship it; Firefox-on-Android does not). Native loaders ignore the `.wasm` entry; the browser-side pack loader in `@offbit-ai/reflow` picks it up via `WebAssembly.instantiate`. |
 
+## Slimming a downloaded pack
+
+A six-triple `.rflpack` is ~22 MiB. Most users only run on one
+platform, so `reflow-pack strip` produces a slimmed bundle
+containing just the binaries you care about:
+
+```sh
+# Auto-detect: keep only the triple this CLI was built for.
+reflow-pack strip reflow.pack.gpu-0.2.0.rflpack
+# → reflow.pack.gpu-0.2.0-aarch64-apple-darwin.rflpack (~3.6 MiB)
+
+# Specific triple — useful when shipping a wasm-only build.
+reflow-pack strip reflow.pack.gpu-0.2.0.rflpack \
+  --triple wasm32-unknown-unknown
+# → ~1.8 MiB
+
+# Multiple triples (e.g. a darwin+linux release tarball).
+reflow-pack strip reflow.pack.gpu-0.2.0.rflpack \
+  --triple aarch64-apple-darwin \
+  --triple x86_64-unknown-linux-gnu
+# → ~8 MiB
+```
+
+The slimmed bundle has the same manifest schema as a full one
+— `targets` is just reduced to the kept triples — so SDK
+loaders treat it identically.
+
 ## Pack ABI
 
 A pack `cdylib`'s exported symbols depend on the target — the
