@@ -67,8 +67,8 @@ previous tick.
 
 ```js
 class Clock extends Actor {
-  static inports = [];                // nothing comes in
-  static outports = ["dt", "time"];   // two outputs
+  static inports = ["_trigger"];      // first kick comes in here
+  static outports = ["dt", "time"];
 
   constructor() {
     super();
@@ -88,9 +88,14 @@ class Clock extends Actor {
 }
 ```
 
-The trick on the last line: `ctx.done()` tells the runtime "this tick
-is over." Calling it inside `requestAnimationFrame` paces the actor at
-the browser's refresh rate. No timers, no setInterval, no drift.
+Two details. The `_trigger` inport is the convention for actors that
+need an external kick to fire their first run. We will hand it a
+`Flow` message during wiring; from then on the actor self-paces.
+
+The last line of `run` is the trick that ties it to the browser:
+`ctx.done()` tells the runtime "this tick is over." Calling it inside
+`requestAnimationFrame` paces the actor at the screen's refresh rate.
+No timers, no `setInterval`, no drift.
 
 ### Simulate
 
@@ -195,8 +200,15 @@ net.registerActor("tpl_simulate", new Simulate(canvas.width, canvas.height));
 net.registerActor("tpl_draw",     new Draw(canvas));
 
 bindInputEvents(net, document.body);
+net.addInitial("clock", "_trigger", Message.flow());
 await net.start();
 ```
+
+The `addInitial` line is what gets the clock running. It places one
+`Flow` packet on the clock's `_trigger` port; the runtime sees an
+input ready, calls `run(ctx)` once, and from there
+`requestAnimationFrame → ctx.done()` keeps the loop alive. No initial
+packet, no first tick, nothing moves.
 
 `bindInputEvents` is the bridge between the DOM and the graph. It
 listens for `mousemove` (and a few others; we only care about that one

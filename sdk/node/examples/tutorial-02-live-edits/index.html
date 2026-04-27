@@ -24,7 +24,7 @@ import { ready, Network, Actor, Message } from "https://esm.sh/@offbit-ai/reflow
 await ready();
 
 class Source extends Actor {
-  static inports = [];
+  static inports = ["_trigger"];
   static outports = ["event"];
 
   constructor(url) {
@@ -115,5 +115,6 @@ net.registerActor("tpl_wikipedia_source", new Source(STREAM));
 net.registerActor("tpl_substantive",      new Filter(substantive));
 net.registerActor("tpl_display",          new Display(document.getElementById("feed")));
 
+net.addInitial("source", "_trigger", Message.flow());
 await net.start();
 </script>

@@ -16,7 +16,7 @@ import { ready, Network, Actor, Message, bindInputEvents }
 await ready();
 
 class Clock extends Actor {
-  static inports = [];
+  static inports = ["_trigger"];
   static outports = ["dt", "time"];
 
   constructor() {
@@ -115,5 +115,6 @@ net.registerActor("tpl_simulate", new Simulate(canvas.width, canvas.height));
 net.registerActor("tpl_draw",     new Draw(canvas));
 
 bindInputEvents(net, document.body);
+net.addInitial("clock", "_trigger", Message.flow());
 await net.start();
 </script>

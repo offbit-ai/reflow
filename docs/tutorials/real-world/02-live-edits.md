@@ -71,7 +71,7 @@ runtime calls `run(ctx)`.
 
 ```js
 class Source extends Actor {
-  static inports = [];
+  static inports = ["_trigger"];
   static outports = ["event"];
 
   constructor(url) {
@@ -99,7 +99,11 @@ class Source extends Actor {
 }
 ```
 
-Two states. If the queue has events, fire one and move on. If the
+The `_trigger` inport is the same kick we used in tutorial 01 for the
+clock — actors with no upstream data dependency declare it so the
+runtime has a port to deliver the first `Flow` packet to.
+
+Two run states. If the queue has events, fire one and move on. If the
 queue is empty, park the run by stashing the continuation in
 `this.resume`; the next inbound EventSource message resumes it.
 
@@ -191,11 +195,14 @@ net.registerActor("tpl_wikipedia_source", new Source(STREAM));
 net.registerActor("tpl_substantive",      new Filter(substantive));
 net.registerActor("tpl_display",          new Display(document.getElementById("feed")));
 
+net.addInitial("source", "_trigger", Message.flow());
 await net.start();
 ```
 
-Two connections. No clock, no mouse, no `requestAnimationFrame`. The
-graph is dormant until the source has an event to push.
+The `addInitial` line wakes the source so it can do its first run and
+park on `this.resume`. After that the EventSource drives every
+subsequent tick. No clock, no mouse, no `requestAnimationFrame`. The
+graph is dormant until the network pushes another event.
 
 ## Run it
 
