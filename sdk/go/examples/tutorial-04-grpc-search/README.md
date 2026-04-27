@@ -23,9 +23,9 @@ graph.
 ## Get the runtime library
 
 ```sh
-go get github.com/offbit-ai/reflow/sdk/go@v0.2.3
-cd "$(go env GOMODCACHE)/github.com/offbit-ai/reflow/sdk/go@v0.2.3"
-./scripts/install_lib.sh v0.2.3
+go get github.com/offbit-ai/reflow/sdk/go@v0.2.4
+cd "$(go env GOMODCACHE)/github.com/offbit-ai/reflow/sdk/go@v0.2.4"
+./scripts/install_lib.sh v0.2.4
 ```
 
 This pulls a prebuilt `libreflow_rt_capi` from the matching

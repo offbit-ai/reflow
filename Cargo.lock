@@ -6405,7 +6405,7 @@ dependencies = [
 
 [[package]]
 name = "reflow_rt_capi"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "cbindgen 0.27.0",
