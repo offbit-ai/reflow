@@ -291,5 +291,7 @@ until the sink puts the synthesizer's answer on the queue.
 
 ## What is next
 
-The next post takes the same graph shape into a long-running service:
-a Go gRPC backend with a per-request network and streamed responses.
+The [next post](04-grpc-service.md) takes the same graph shape into
+a long-running service: a Go gRPC backend that spins up a per-request
+worker pool — Dispatcher → N Fetchers → Sink — and streams pages
+back over server-streaming RPC.

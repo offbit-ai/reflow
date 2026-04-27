@@ -162,17 +162,22 @@ Skip Reflow when the work is shaped like a request:
 
 ## Series outline
 
-1. **Reactive particle field (Browser, Node SDK).** Animation-frame
-   driven graph rendering 200 spring-physics particles to canvas2D.
-   Introduces actors, the graph, and the runtime contract.
-2. **Live edits over a stream (Browser, Node SDK).** Wikipedia's
-   public SSE feed driving a Reflow graph. Same actor primitives,
-   network-paced source.
-3. **Multi-agent orchestration (Python).** Three LLM agents run
-   in parallel against a local Ollama model; a synthesizer
-   combines their findings; per-token streaming through the graph.
-4. **gRPC service (Go).** Per-request network on a long-running
-   backend with streamed responses.
+1. [**Reactive particle field**](01-particle-field.md) (Browser, Node
+   SDK). Animation-frame driven graph rendering 200 spring-physics
+   particles to canvas2D. Introduces actors, the graph, and the
+   runtime contract.
+2. [**Live edits over a stream**](02-live-edits.md) (Browser, Node
+   SDK). Wikipedia's public SSE feed driving a Reflow graph. Same
+   actor primitives, network-paced source.
+3. [**Multi-agent orchestration**](03-multi-agent.md) (Python). Three
+   LLM agents run in parallel against a local Ollama model; a
+   synthesizer combines their findings; per-token streaming through
+   the graph.
+4. [**A concurrent worker pool over gRPC**](04-grpc-service.md) (Go).
+   The canonical `goroutines + channels` fan-out fetcher pool
+   expressed as a graph: a long-running gRPC server where each call
+   spins up a fresh per-request network — Dispatcher → N Fetchers
+   → Sink — and streams pages back over server-streaming RPC.
 
 Later posts cover Airflow integration, Micronaut integration, audio
 plugins in C++, Kafka stream routing on the JVM, and a cross-SDK

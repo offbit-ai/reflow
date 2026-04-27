@@ -106,6 +106,7 @@
   - [Reactive particle field in the browser](tutorials/real-world/01-particle-field.md)
   - [Live edits over a stream](tutorials/real-world/02-live-edits.md)
   - [Orchestrating multiple LLM agents](tutorials/real-world/03-multi-agent.md)
+  - [Concurrent worker pool over gRPC](tutorials/real-world/04-grpc-service.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)
