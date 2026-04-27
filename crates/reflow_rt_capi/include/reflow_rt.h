@@ -630,13 +630,14 @@ char *rfl_message_as_json(const struct rfl_message *m);
 
 /**
  * Inner data payload as JSON, with `EncodableValue` wrappers
- * transparently decoded. For `Object` returns the bare object;
- * for `Array` returns a bare array of decoded values; for primitive
- * variants returns the bare scalar.
+ * transparently decoded. Covers every variant whose payload has a
+ * useful JSON form: primitives, Object, Array, Optional, Event, Any,
+ * Error; StreamHandle and RemoteReference return their serializable
+ * locator metadata; NetworkEvent returns its `{event_type, data}`
+ * shape; Encoded is decoded back to its inner Message and recursed.
  *
- * Returns NULL for variants without a portable payload (Flow, Bytes,
- * StreamHandle, Encoded, RemoteReference, NetworkEvent). Caller frees
- * via `rfl_string_free`.
+ * Returns NULL for Flow (control signal, no data) and Bytes (use the
+ * bytes accessor). Caller frees via `rfl_string_free`.
  */
 char *rfl_message_data_json(const struct rfl_message *m);
 

@@ -1143,4 +1143,62 @@ impl Message {
     pub fn optional(msg: Option<EncodableValue>) -> Self {
         Message::Optional(msg.map(Arc::new))
     }
+
+    /// Inner data payload as a `serde_json::Value`, with `EncodableValue`
+    /// wrappers transparently decoded. For `Object` returns the bare
+    /// object; for `Array` returns a bare array of decoded values; for
+    /// primitive variants the bare scalar (`Bool`, `Number`, `String`).
+    /// `StreamHandle` and `RemoteReference` return their serializable
+    /// locator metadata; `NetworkEvent` returns its `{event_type, data}`
+    /// shape; `Encoded` is decoded back to its inner Message and
+    /// recursed.
+    ///
+    /// Returns `None` for variants whose payload doesn't have a useful
+    /// JSON form: `Flow` (control signal, no data) and `Bytes` (use the
+    /// bytes accessor — exposing the buffer as a JSON integer array
+    /// would just bloat the wire).
+    pub fn data_value(&self) -> Option<Value> {
+        match self {
+            Message::Flow | Message::Bytes(_) => None,
+            Message::Boolean(b) => Some(Value::Bool(*b)),
+            Message::Integer(i) => Some(Value::from(*i)),
+            Message::Float(f) => Some(
+                serde_json::Number::from_f64(*f)
+                    .map(Value::Number)
+                    .unwrap_or(Value::Null),
+            ),
+            Message::String(s) => Some(Value::String(s.as_str().to_owned())),
+            Message::Error(s) => Some(Value::String(s.as_str().to_owned())),
+            Message::Object(v) => Some(serde_json::to_value(&**v).unwrap_or(Value::Null)),
+            Message::Any(v) => Some(serde_json::to_value(&**v).unwrap_or(Value::Null)),
+            Message::Event(v) => Some(serde_json::to_value(v).unwrap_or(Value::Null)),
+            Message::StreamHandle(h) => Some(serde_json::to_value(&**h).unwrap_or(Value::Null)),
+            Message::Array(items) => Some(Value::Array(
+                items
+                    .iter()
+                    .map(|ev| serde_json::to_value(ev).unwrap_or(Value::Null))
+                    .collect(),
+            )),
+            Message::Optional(opt) => Some(match opt {
+                Some(v) => serde_json::to_value(&**v).unwrap_or(Value::Null),
+                None => Value::Null,
+            }),
+            Message::RemoteReference {
+                network_id,
+                actor_id,
+                port,
+            } => Some(json!({
+                "network_id": network_id,
+                "actor_id": actor_id,
+                "port": port,
+            })),
+            Message::NetworkEvent { event_type, data } => Some(json!({
+                "event_type": event_type,
+                "data": serde_json::to_value(data).unwrap_or(Value::Null),
+            })),
+            Message::Encoded(encoded) => bitcode::decode::<Message>(encoded)
+                .ok()
+                .and_then(|m| m.data_value()),
+        }
+    }
 }

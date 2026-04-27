@@ -261,13 +261,16 @@ func (m *Message) AsJSON() ([]byte, error) {
 }
 
 // Data returns the inner payload as JSON, with the runtime's
-// EncodableValue wrappers transparently decoded. For Array messages
-// it's a bare JSON array; for Object, a bare object; for primitives,
-// the bare scalar. Pass straight to json.Unmarshal.
+// EncodableValue wrappers transparently decoded. Covers every variant
+// whose payload has a useful JSON form: primitives, Object, Array,
+// Optional, Event, Any, Error; StreamHandle and RemoteReference
+// return their serializable locator metadata; NetworkEvent returns
+// its {event_type, data} shape; Encoded is decoded back to its inner
+// Message. Pass straight to json.Unmarshal.
 //
-// Returns ok=false for variants without a portable payload (Flow,
-// Bytes — use AsBytes — StreamHandle, Encoded, RemoteReference,
-// NetworkEvent).
+// Returns ok=false for Flow (control signal, no data) and Bytes
+// (use AsBytes — exposing the buffer as a JSON array would just bloat
+// the wire).
 func (m *Message) Data() ([]byte, bool) {
 	if m == nil || m.ptr == nil {
 		return nil, false

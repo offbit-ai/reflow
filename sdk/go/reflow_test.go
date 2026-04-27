@@ -2,6 +2,7 @@ package reflow
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -43,6 +44,36 @@ func TestMessageJSONRoundTrip(t *testing.T) {
 	}
 	if v, ok := back.AsInteger(); !ok || v != 7 {
 		t.Errorf("round-trip integer = (%d,%v)", v, ok)
+	}
+}
+
+func TestMessageDataUnwrapsEnvelope(t *testing.T) {
+	// Bare scalars
+	if d, ok := MessageInteger(42).Data(); !ok || string(d) != "42" {
+		t.Errorf("integer data: got %q ok=%v", d, ok)
+	}
+	if d, ok := MessageString("hi").Data(); !ok || string(d) != `"hi"` {
+		t.Errorf("string data: got %q ok=%v", d, ok)
+	}
+	// Array → bare JSON array
+	arr, _ := MessageArray([]string{"a", "b", "c"})
+	d, ok := arr.Data()
+	if !ok {
+		t.Fatalf("array Data: ok=false")
+	}
+	var got []string
+	if err := json.Unmarshal(d, &got); err != nil {
+		t.Fatalf("unmarshal array data: %v (raw=%s)", err, d)
+	}
+	if len(got) != 3 || got[0] != "a" || got[2] != "c" {
+		t.Errorf("array round-trip: %v", got)
+	}
+	// Variants without a portable JSON payload
+	if _, ok := MessageFlow().Data(); ok {
+		t.Errorf("Flow.Data() should be ok=false")
+	}
+	if _, ok := MessageBytes([]byte{1, 2, 3}).Data(); ok {
+		t.Errorf("Bytes.Data() should be ok=false (use AsBytes)")
 	}
 }
 

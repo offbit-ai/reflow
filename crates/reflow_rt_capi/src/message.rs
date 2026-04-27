@@ -312,47 +312,26 @@ pub unsafe extern "C" fn rfl_message_as_json(m: *const rfl_message) -> *mut c_ch
 }
 
 /// Inner data payload as JSON, with `EncodableValue` wrappers
-/// transparently decoded. For `Object` returns the bare object;
-/// for `Array` returns a bare array of decoded values; for primitive
-/// variants returns the bare scalar (e.g. `"hello"` for String,
-/// `42` for Integer). Callers can `json.Unmarshal` straight into a
-/// typed Go struct / Python dict / JS object without dealing with
-/// the `{type, data}` envelope or the EncodableValue bitcode shape.
+/// transparently decoded. Covers every variant whose payload has a
+/// useful JSON form: primitives, Object, Array, Optional, Event, Any,
+/// Error; StreamHandle and RemoteReference return their serializable
+/// locator metadata; NetworkEvent returns its `{event_type, data}`
+/// shape; Encoded is decoded back to its inner Message and recursed.
+/// Callers can `json.Unmarshal` straight into a typed Go struct /
+/// Python dict / JS object without dealing with the `{type, data}`
+/// envelope or the EncodableValue bitcode shape.
 ///
-/// Returns NULL for variants without a portable payload (Flow, Bytes,
-/// StreamHandle, Encoded, RemoteReference, NetworkEvent). Caller frees
-/// via `rfl_string_free`.
+/// Returns NULL for Flow (control signal, no data) and Bytes (use the
+/// bytes accessor). Caller frees via `rfl_string_free`.
 #[no_mangle]
 pub unsafe extern "C" fn rfl_message_data_json(m: *const rfl_message) -> *mut c_char {
     crate::clear_last_error();
     if m.is_null() {
         return std::ptr::null_mut();
     }
-    let inner = &unsafe { &*m }.inner;
-    let value: serde_json::Value = match inner {
-        Message::Flow | Message::Bytes(_) | Message::StreamHandle(_) | Message::Encoded(_)
-        | Message::RemoteReference { .. } | Message::NetworkEvent { .. } => return std::ptr::null_mut(),
-        Message::Boolean(b) => serde_json::Value::Bool(*b),
-        Message::Integer(i) => serde_json::Value::from(*i),
-        Message::Float(f) => serde_json::Number::from_f64(*f)
-            .map(serde_json::Value::Number)
-            .unwrap_or(serde_json::Value::Null),
-        Message::String(s) => serde_json::Value::String(s.as_str().to_owned()),
-        Message::Error(s) => serde_json::Value::String(s.as_str().to_owned()),
-        Message::Object(v) => serde_json::to_value(&**v).unwrap_or(serde_json::Value::Null),
-        Message::Any(v) => serde_json::to_value(&**v).unwrap_or(serde_json::Value::Null),
-        Message::Event(v) => serde_json::to_value(v).unwrap_or(serde_json::Value::Null),
-        Message::Array(items) => {
-            let arr: Vec<serde_json::Value> = items
-                .iter()
-                .map(|ev| serde_json::to_value(ev).unwrap_or(serde_json::Value::Null))
-                .collect();
-            serde_json::Value::Array(arr)
-        }
-        Message::Optional(opt) => match opt {
-            Some(v) => serde_json::to_value(&**v).unwrap_or(serde_json::Value::Null),
-            None => serde_json::Value::Null,
-        },
+    let value = match unsafe { &*m }.inner.data_value() {
+        Some(v) => v,
+        None => return std::ptr::null_mut(),
     };
     match serde_json::to_string(&value) {
         Ok(s) => CString::new(s)
