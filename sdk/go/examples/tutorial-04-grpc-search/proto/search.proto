@@ -1,0 +1,34 @@
+// Tutorial 04 service definition: concurrent URL fetcher.
+//
+// The server fans out a list of seed URLs across N worker actors, each
+// fetching its share in parallel. Pages stream back as they're ready.
+//
+// Regenerate stubs after edits:
+//   protoc --go_out=. --go_opt=paths=source_relative \
+//          --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+//          proto/search.proto
+
+syntax = "proto3";
+
+package tutorial04;
+
+option go_package = "github.com/offbit-ai/reflow/sdk/go/examples/tutorial-04-grpc-search/proto;searchpb";
+
+service Crawler {
+  // Server-streaming RPC. Each call spins up a fresh Reflow network
+  // with a worker pool; pages come back as workers finish them.
+  rpc Crawl (CrawlRequest) returns (stream Page);
+}
+
+message CrawlRequest {
+  repeated string urls = 1;
+  uint32 workers = 2;   // 0 = server default (4)
+}
+
+message Page {
+  string url     = 1;
+  uint32 status  = 2;
+  string title   = 3;
+  uint64 bytes   = 4;
+  uint64 took_ms = 5;
+}
