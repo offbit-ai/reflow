@@ -104,7 +104,7 @@
 
 - [Real-world Reflow](tutorials/real-world/README.md)
   - [Reactive particle field in the browser](tutorials/real-world/01-particle-field.md)
-  - [WebGPU SDF in the browser](tutorials/real-world/02-sdf-canvas.md)
+  - [Live edits over a stream](tutorials/real-world/02-live-edits.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)

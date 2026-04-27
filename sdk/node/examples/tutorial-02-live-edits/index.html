@@ -1,0 +1,119 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Live Wikipedia edits — Reflow tutorial 02</title>
+<style>
+  body { margin: 0; background: #0b1020; color: #c9d2e6;
+         font: 14px/1.5 system-ui, sans-serif; padding: 24px 32px; }
+  h1 { font-size: 16px; font-weight: 500; opacity: .7; margin: 0 0 16px; }
+  ol { list-style: none; padding: 0; margin: 0; max-width: 720px; }
+  li { padding: 8px 12px; margin: 6px 0; background: #131a30; border-radius: 4px;
+       transition: opacity 1.2s ease; display: flex; gap: 12px; align-items: baseline; }
+  li.fade { opacity: 0.35; }
+  .delta { font-variant-numeric: tabular-nums; min-width: 56px; }
+  .pos { color: #79c0ff; } .neg { color: #ff7b72; }
+  .title { flex: 1; font-weight: 500; }
+  .user { opacity: .6; font-size: 12px; }
+  a { color: inherit; text-decoration: none; border-bottom: 1px dotted #4a557a; }
+</style>
+<h1>Live Wikipedia edits — substantive changes only</h1>
+<ol id="feed"></ol>
+
+<script type="module">
+import { ready, Network, Actor, Message } from "https://esm.sh/@offbit-ai/reflow";
+
+await ready();
+
+class Source extends Actor {
+  static inports = [];
+  static outports = ["event"];
+
+  constructor(url) {
+    super();
+    this.queue = [];
+    this.resume = null;
+    const es = new EventSource(url);
+    es.addEventListener("message", (e) => {
+      try {
+        this.queue.push(JSON.parse(e.data));
+        this.resume?.();
+        this.resume = null;
+      } catch { /* drop malformed lines */ }
+    });
+  }
+
+  run(ctx) {
+    const send = () => {
+      const event = this.queue.shift();
+      ctx.send({ event: Message.object(event) });
+      ctx.done();
+    };
+    if (this.queue.length) send();
+    else this.resume = send;
+  }
+}
+
+class Filter extends Actor {
+  static inports = ["event"];
+  static outports = ["event"];
+
+  constructor(predicate) { super(); this.predicate = predicate; }
+
+  run(ctx) {
+    const event = ctx.input.event?.data;
+    if (event && this.predicate(event)) {
+      ctx.send({ event: Message.object(event) });
+    }
+    ctx.done();
+  }
+}
+
+class Display extends Actor {
+  static inports = ["event"];
+  static outports = [];
+
+  constructor(list, max = 50) {
+    super();
+    this.list = list;
+    this.max = max;
+  }
+
+  run(ctx) {
+    const e = ctx.input.event?.data;
+    if (e) {
+      const li = document.createElement("li");
+      const delta = (e.length?.new ?? 0) - (e.length?.old ?? 0);
+      const sign = delta >= 0 ? "+" : "";
+      li.innerHTML = `
+        <span class="delta ${delta >= 0 ? "pos" : "neg"}">${sign}${delta}</span>
+        <span class="title">
+          <a href="${e.meta?.uri ?? "#"}" target="_blank" rel="noopener">${e.title}</a>
+        </span>
+        <span class="user">${e.user}</span>`;
+      this.list.prepend(li);
+      while (this.list.children.length > this.max) this.list.lastChild.remove();
+      Array.from(this.list.children).slice(20).forEach((c) => c.classList.add("fade"));
+    }
+    ctx.done();
+  }
+}
+
+const STREAM = "https://stream.wikimedia.org/v2/stream/recentchange";
+const substantive = (e) =>
+  e.wiki === "enwiki" && e.namespace === 0 && !e.bot &&
+  Math.abs((e.length?.new ?? 0) - (e.length?.old ?? 0)) >= 200;
+
+const net = new Network();
+
+net.addNode("source",  "tpl_wikipedia_source");
+net.addNode("filter",  "tpl_substantive");
+net.addNode("display", "tpl_display");
+
+net.addConnection("source", "event", "filter",  "event");
+net.addConnection("filter", "event", "display", "event");
+
+net.registerActor("tpl_wikipedia_source", new Source(STREAM));
+net.registerActor("tpl_substantive",      new Filter(substantive));
+net.registerActor("tpl_display",          new Display(document.getElementById("feed")));
+
+await net.start();
+</script>
