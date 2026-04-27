@@ -14,13 +14,13 @@ flowchart LR
     topic --> stat[statistician]
     topic --> quote[quoter]
     factual -->|chunk| logger[logger]
-    stat    -->|chunk| logger
-    quote   -->|chunk| logger
+    stat -->|chunk| logger
+    quote -->|chunk| logger
     factual -->|finding| synth[synthesizer]
-    stat    -->|finding| synth
-    quote   -->|finding| synth
-    synth   -->|chunk|  logger
-    synth   -->|answer| sink[sink]
+    stat -->|finding| synth
+    quote -->|finding| synth
+    synth -->|chunk| logger
+    synth -->|answer| sink[sink]
 ```
 
 Two properties of the graph matter. The three specialists run
