@@ -107,6 +107,8 @@
   - [Live edits over a stream](tutorials/real-world/02-live-edits.md)
   - [Orchestrating multiple LLM agents](tutorials/real-world/03-multi-agent.md)
   - [Concurrent worker pool over gRPC](tutorials/real-world/04-grpc-service.md)
+  - [Parallel data enrichment behind Spring Boot](tutorials/real-world/05-spring-enrich.md)
+  - [A long-running Kafka stream router](tutorials/real-world/06-kafka-router.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)

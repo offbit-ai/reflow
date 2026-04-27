@@ -178,10 +178,20 @@ Skip Reflow when the work is shaped like a request:
    expressed as a graph: a long-running gRPC server where each call
    spins up a fresh per-request network — Dispatcher → N Fetchers
    → Sink — and streams pages back over server-streaming RPC.
+5. [**Parallel data enrichment behind Spring Boot**](05-spring-enrich.md)
+   (Java). Per-request graph behind a REST endpoint: Splitter fans
+   the SKU out to three slow downstream services, the Merger
+   awaits all three (`awaitAllInports`) and returns a merged JSON
+   payload — Reflow's `CompletableFuture.allOf().join()`.
+6. [**A long-running Kafka stream router**](06-kafka-router.md)
+   (Java). Daemon graph driven by the Kafka poll loop: `OrderSource`
+   publishes records via `ctx.send`, `Router` picks one of four
+   outports based on status, sinks fan in parallel with loggers
+   for operational visibility.
 
-Later posts cover Airflow integration, Micronaut integration, audio
-plugins in C++, Kafka stream routing on the JVM, and a cross-SDK
-piece that runs the same graph from three languages.
+Later posts cover Airflow integration, audio plugins in C++
+(showcasing `ctx.pool` for variable-fan-in aggregation), and a
+cross-SDK piece that runs the same graph from three languages.
 
 After tutorial 01 you will know enough Reflow to read the others
 in any order.
