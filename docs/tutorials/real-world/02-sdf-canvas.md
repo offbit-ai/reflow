@@ -30,22 +30,31 @@ scene every frame.
 
 ## Why a custom GPU actor
 
-Reflow ships a GPU pack with templates like `tpl_sdf_render` and
-`tpl_scene_render`. They work end-to-end on the native side. They do
-not yet run from a browser tab because their final step reads the
-rendered pixels back to the CPU through `wgpu::map_async`, and the
-pack-side `pollster::block_on` can't yield to the JS event loop
-today. The fix (wasm-bindgen-futures inside the pack) is on the
-roadmap.
+Wasm packs do load and register in a browser tab — `loadPack(url)`
+fetches the pack, the JSON-over-memory bridge wires its templates
+into the network, and `network.getActorNames()` lists them. What is
+gated today is **pack-actor execution that awaits JS-scheduled
+futures**. The pack SDK drives each tick with `pollster::block_on`,
+which never yields to the browser event loop. Any actor that
+internally calls `wgpu::map_async`, `fetch`, or other Promise-backed
+APIs deadlocks at that boundary.
 
-Until then, the natural path in a browser is to write the GPU work
-as a custom JS actor that targets the canvas swap chain directly. No
-readback. No async hang. Same actor model, same graph wiring.
+The GPU pack's six templates all read pixels back to the CPU as their
+last step, so all six fall into that bucket. The fix is wiring
+`wasm-bindgen-futures` into the pack runner so it can resume on a
+JS Promise; that milestone is on the roadmap.
 
-This is also what you would do for any GPU work that does not need to
-return to the CPU at all — particles, post effects, physics, anything
-that draws and moves on. The pack is for the cross-language case.
-Browser-only GPU work is fine as a regular custom actor.
+What does work today, in any browser tab, is **a custom JS actor
+that owns a WebGPU pipeline and targets the canvas swap chain
+directly**. No readback. No async hang. The actor model does not
+mind which language wrote the actor or which GPU API it talks to.
+For browser-side GPU work that draws on screen and stays on screen,
+this is the path.
+
+(The same logic applies to any pack actor whose work fits inside
+sync CPU code: math, transforms, controlled flow, JSON shaping. Those
+all run from a browser pack today. It is only the JS-scheduled async
+boundary that bites.)
 
 ## Setup
 
