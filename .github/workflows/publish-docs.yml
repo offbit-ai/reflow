@@ -2,9 +2,20 @@
 #
 # Triggers
 # --------
-# - Push to `main` that touches docs sources (docs/**, book.toml, or
-#   this workflow file).
+# - Push to `main` that touches docs, the example HTMLs, the wasm
+#   runtime crate, the browser shim, or this workflow.
 # - Manual workflow_dispatch — useful for ad-hoc rebuilds.
+#
+# Live demo embeds
+# ----------------
+# Each browser tutorial in `docs/tutorials/real-world/` ships a
+# runnable HTML at `sdk/node/examples/tutorial-XX-name/`. The build:
+#   1. compiles `crates/reflow_rt_wasm` to wasm32 via wasm-pack
+#   2. runs `mdbook build`
+#   3. copies every example folder + the browser shim + the freshly
+#      built wasm into `book/embeds/`, so iframe `src` paths resolve
+#      and the demos run end-to-end on Pages without any external
+#      CDN dependency
 #
 # One-time setup on github.com
 # ----------------------------
@@ -19,6 +30,15 @@ on:
     paths:
       - 'docs/**'
       - 'book.toml'
+      - 'sdk/node/examples/tutorial-*-*/**'
+      - 'sdk/node/reflow.browser.mjs'
+      - 'crates/reflow_rt_wasm/**'
+      - 'crates/reflow_actor/**'
+      - 'crates/reflow_network/**'
+      - 'crates/reflow_components/**'
+      - 'crates/reflow_pack_loader/**'
+      - 'crates/reflow_graph/**'
+      - 'crates/reflow_tracing_protocol/**'
       - '.github/workflows/publish-docs.yml'
   workflow_dispatch:
 
@@ -38,10 +58,36 @@ concurrency:
 
 jobs:
   build:
-    name: build mdbook
+    name: build mdbook + tutorial embeds
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (with wasm32 target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo + wasm build
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: docs-wasm
+          # Constrain to the wasm artifacts the docs build needs.
+          # Native targets are noise here.
+          workspaces: |
+            . -> target
+
+      - name: Install wasm-pack
+        run: |
+          curl -sSfL https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+
+      - name: Build reflow_rt_wasm bundle
+        # Output lands at sdk/node/wasm/, same place the local dev
+        # server uses. The embeds copy step picks it up from there.
+        run: |
+          wasm-pack build crates/reflow_rt_wasm \
+            --target web \
+            --out-dir ../../sdk/node/wasm
 
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v2
@@ -58,6 +104,33 @@ jobs:
 
       - name: Build site
         run: mdbook build
+
+      - name: Bundle live demo embeds
+        # Layout under book/embeds/:
+        #   reflow.browser.mjs               — the shim
+        #   wasm/                            — wasm bundle + JS glue
+        #   tutorial-XX-name/                — example HTML + README
+        #
+        # Each example HTML imports the shim via `../../reflow.browser.mjs`,
+        # so we need the shim two levels up from the example folder.
+        # Mirroring sdk/node's layout makes that resolve naturally:
+        # book/embeds/tutorial-XX/ → ../ = book/embeds/ → ../ = book/.
+        # We re-anchor by placing the shim and wasm/ sibling to the
+        # tutorial folders, and patching the import path to `../reflow.browser.mjs`.
+        run: |
+          set -eux
+          mkdir -p book/embeds
+          cp sdk/node/reflow.browser.mjs book/embeds/reflow.browser.mjs
+          cp -R sdk/node/wasm book/embeds/wasm
+          for src in sdk/node/examples/tutorial-*-*/; do
+            name=$(basename "$src")
+            cp -R "$src" "book/embeds/$name"
+            # Rewrite `../../reflow.browser.mjs` (from the
+            # sdk/node/examples/<name>/ layout) to `../reflow.browser.mjs`
+            # for the book/embeds/<name>/ layout.
+            sed -i 's|"\.\./\.\./reflow\.browser\.mjs"|"../reflow.browser.mjs"|g' \
+              "book/embeds/$name/index.html"
+          done
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
