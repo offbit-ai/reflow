@@ -105,13 +105,22 @@ impl Actor for RecorderActor {
 // ─── helpers ───────────────────────────────────────────────────────────────
 
 fn make_config(network_id: &str, instance_id: &str, port: u16) -> DistributedConfig {
+    make_config_with_auth(network_id, instance_id, port, None)
+}
+
+fn make_config_with_auth(
+    network_id: &str,
+    instance_id: &str,
+    port: u16,
+    auth_token: Option<&str>,
+) -> DistributedConfig {
     DistributedConfig {
         network_id: network_id.to_string(),
         instance_id: instance_id.to_string(),
         bind_address: "127.0.0.1".to_string(),
         bind_port: port,
         discovery_endpoints: vec![],
-        auth_token: None,
+        auth_token: auth_token.map(String::from),
         max_connections: 10,
         heartbeat_interval_ms: 1000,
         local_network_config: NetworkConfig::default(),
@@ -222,6 +231,116 @@ async fn message_via_remote_actor_proxy() {
         .recv_timeout(Duration::from_secs(3))
         .expect("proxy should forward the message");
     assert_eq!(received.get("in"), Some(&payload));
+
+    server.shutdown().await.ok();
+    client.shutdown().await.ok();
+}
+
+/// When server and client share the same auth_token, federation
+/// works exactly as without auth.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn auth_matching_tokens_succeed() {
+    let (sink_tx, sink_rx) = flume::unbounded::<HashMap<String, Message>>();
+
+    let server = DistributedNetwork::new(make_config_with_auth(
+        "server-net", "server-3", 9104, Some("shared-secret"),
+    ))
+    .await
+    .expect("server::new");
+    server
+        .register_local_actor("recorder", RecorderActor::new(sink_tx), None)
+        .expect("register recorder");
+    let mut server = server;
+    server.start().await.expect("server::start");
+
+    let mut client = DistributedNetwork::new(make_config_with_auth(
+        "client-net", "client-3", 9105, Some("shared-secret"),
+    ))
+    .await
+    .expect("client::new");
+    client.start().await.expect("client::start");
+
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    client
+        .connect_to_network("127.0.0.1:9104")
+        .await
+        .expect("connect should succeed with matching tokens");
+    tokio::time::sleep(Duration::from_millis(150)).await;
+
+    let payload = Message::String(Arc::new("authed".to_string()));
+    client
+        .send_to_remote_actor("server-net", "recorder", "in", payload.clone(), None)
+        .await
+        .expect("send_to_remote_actor");
+
+    let received = sink_rx
+        .recv_timeout(Duration::from_secs(3))
+        .expect("authed message should arrive");
+    assert_eq!(received.get("in"), Some(&payload));
+
+    server.shutdown().await.ok();
+    client.shutdown().await.ok();
+}
+
+/// Server has an auth_token; client presents a different one.
+/// connect_to_network must fail loudly; no message round-trip
+/// possible because no connection was registered.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn auth_mismatch_rejects_handshake() {
+    let server = DistributedNetwork::new(make_config_with_auth(
+        "server-net", "server-4", 9106, Some("server-secret"),
+    ))
+    .await
+    .expect("server::new");
+    let mut server = server;
+    server.start().await.expect("server::start");
+
+    let mut client = DistributedNetwork::new(make_config_with_auth(
+        "client-net", "client-4", 9107, Some("wrong-secret"),
+    ))
+    .await
+    .expect("client::new");
+    client.start().await.expect("client::start");
+
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    let connect = client.connect_to_network("127.0.0.1:9106").await;
+    assert!(
+        connect.is_err(),
+        "client.connect_to_network should fail when tokens don't match"
+    );
+    let err = connect.unwrap_err().to_string();
+    assert!(
+        err.contains("auth_token") || err.contains("refused"),
+        "error should mention auth refusal, got: {err}"
+    );
+
+    server.shutdown().await.ok();
+    client.shutdown().await.ok();
+}
+
+/// Server demands auth; client presents no token at all. Same
+/// rejection.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn auth_missing_token_rejected() {
+    let server = DistributedNetwork::new(make_config_with_auth(
+        "server-net", "server-5", 9108, Some("required"),
+    ))
+    .await
+    .expect("server::new");
+    let mut server = server;
+    server.start().await.expect("server::start");
+
+    let mut client = DistributedNetwork::new(make_config("client-net", "client-5", 9109))
+        .await
+        .expect("client::new");
+    client.start().await.expect("client::start");
+
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    let connect = client.connect_to_network("127.0.0.1:9108").await;
+    assert!(
+        connect.is_err(),
+        "anonymous client should be refused when server requires auth"
+    );
 
     server.shutdown().await.ok();
     client.shutdown().await.ok();

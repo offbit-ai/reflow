@@ -375,7 +375,30 @@ impl NetworkBridge {
         {
             tracing::info!("Received handshake from network: {}", handshake.network_id);
 
-            // Validate protocol version and auth (simplified for now)
+            // Auth check: if our config has an auth_token set, the
+            // peer's token must match exactly. Local config without a
+            // token (None) accepts anyone — backward compatible with
+            // local-loopback dev setups that don't bother with auth.
+            if let Some(local_token) = config.auth_token.as_deref() {
+                let peer_token = handshake.auth_token.as_deref().unwrap_or("");
+                if peer_token != local_token {
+                    tracing::warn!(
+                        "Rejecting handshake from network '{}': auth_token mismatch",
+                        handshake.network_id
+                    );
+                    let response = HandshakeResponse {
+                        success: false,
+                        network_id: config.network_id.clone(),
+                        instance_id: config.instance_id.clone(),
+                        error: Some("auth_token mismatch".to_string()),
+                    };
+                    if let Ok(response_text) = serde_json::to_string(&response) {
+                        let _ = websocket.send(WsMessage::Text(response_text.into())).await;
+                    }
+                    return None;
+                }
+            }
+
             let response = HandshakeResponse {
                 success: true,
                 network_id: config.network_id.clone(),
@@ -639,11 +662,28 @@ impl NetworkBridge {
                         .send(WsMessage::Text(handshake_text.into()))
                         .await?;
 
-                    // Wait for response
-                    if let Some(Ok(WsMessage::Text(response_text))) = websocket.next().await
-                        && let Ok(response) =
+                    // Wait for response. A successful handshake unwraps to
+                    // the next block; a refused one (auth mismatch,
+                    // protocol incompatibility, etc.) returns Err with
+                    // the server's reason so callers know connect_to_network
+                    // failed and why.
+                    let response = match websocket.next().await {
+                        Some(Ok(WsMessage::Text(response_text))) => {
                             serde_json::from_str::<HandshakeResponse>(&response_text)
-                        && response.success
+                                .map_err(|e| anyhow::anyhow!("malformed handshake response: {e}"))?
+                        }
+                        other => {
+                            return Err(anyhow::anyhow!(
+                                "no handshake response from {endpoint}: {other:?}"
+                            ));
+                        }
+                    };
+                    if !response.success {
+                        return Err(anyhow::anyhow!(
+                            "handshake refused by {endpoint}: {}",
+                            response.error.as_deref().unwrap_or("(no reason)")
+                        ));
+                    }
                     {
                         let connection = RemoteConnection {
                             network_id: response.network_id.clone(),
