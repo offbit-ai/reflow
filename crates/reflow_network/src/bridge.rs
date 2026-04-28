@@ -833,6 +833,9 @@ impl NetworkBridge {
             self.config.network_id
         );
 
+        // Stop the discovery refresh loop so its tokio task exits.
+        self.discovery.stop();
+
         // Close all connections
         let connections_snapshot = {
             let connections_read = self.connections.read();
@@ -851,6 +854,13 @@ impl NetworkBridge {
 
         tracing::info!("Network bridge shutdown complete");
         Ok(())
+    }
+
+    /// Read-only access to the underlying discovery service. Lets
+    /// callers subscribe to topology change events or snapshot the
+    /// list of currently visible networks.
+    pub fn discovery(&self) -> Arc<DiscoveryService> {
+        self.discovery.clone()
     }
 }
 

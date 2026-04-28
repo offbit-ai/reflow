@@ -215,6 +215,13 @@ impl DistributedNetwork {
         &self.config
     }
 
+    /// Handle to the discovery service. Use it to snapshot the
+    /// current network roster (`known_networks()`) or subscribe to
+    /// topology change events (`subscribe()`).
+    pub fn discovery(&self) -> Arc<crate::discovery::DiscoveryService> {
+        self.bridge.discovery()
+    }
+
     /// Shutdown the distributed network
     pub async fn shutdown(&mut self) -> Result<(), anyhow::Error> {
         tracing::info!(
