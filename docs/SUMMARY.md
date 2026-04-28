@@ -109,6 +109,7 @@
   - [Concurrent worker pool over gRPC](tutorials/real-world/04-grpc-service.md)
   - [Parallel data enrichment behind Spring Boot](tutorials/real-world/05-spring-enrich.md)
   - [A long-running Kafka stream router](tutorials/real-world/06-kafka-router.md)
+  - [Composing a workflow from the catalog](tutorials/real-world/07-issue-triage.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)

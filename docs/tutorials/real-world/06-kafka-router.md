@@ -368,6 +368,8 @@ Verify each output topic received its match:
 
 ## What is next
 
-Subsequent posts cover Airflow integration, audio plugins in C++
-(showcasing `ctx.pool` for variable-fan-in aggregation), and a
-cross-SDK piece running the same graph from three languages.
+The [next post](07-issue-triage.md) takes the SDK in a different
+direction — back to Python, but with a triggered-batch lifecycle
+and a workflow assembled almost entirely from catalog templates
+(`api_github_*`, `tpl_loop`, `tpl_switch`, `api_slack_send_message`).
+Reads, decides, takes action.

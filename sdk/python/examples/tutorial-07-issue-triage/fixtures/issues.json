@@ -1,0 +1,44 @@
+[
+  {
+    "number": 412,
+    "title": "Crashes on startup with Python 3.13",
+    "state": "open",
+    "labels": [{"name": "bug"}, {"name": "priority:high"}],
+    "comments": 0,
+    "user": {"login": "alice"},
+    "created_at": "2026-04-26T08:00:00Z",
+    "html_url": "https://github.com/example/repo/issues/412"
+  },
+  {
+    "number": 388,
+    "title": "Document new ctx.send mid-tick API",
+    "state": "open",
+    "labels": [{"name": "docs"}],
+    "comments": 1,
+    "user": {"login": "bob"},
+    "assignee": null,
+    "created_at": "2026-04-21T08:00:00Z",
+    "html_url": "https://github.com/example/repo/issues/388"
+  },
+  {
+    "number": 366,
+    "title": "Add ARM64 wheel for Python 3.14",
+    "state": "open",
+    "labels": [{"name": "build"}],
+    "comments": 4,
+    "user": {"login": "carol"},
+    "assignee": {"login": "carol"},
+    "created_at": "2026-04-18T08:00:00Z",
+    "html_url": "https://github.com/example/repo/issues/366"
+  },
+  {
+    "number": 350,
+    "title": "Memory leak when streaming huge files",
+    "state": "open",
+    "labels": [{"name": "bug"}, {"name": "priority:high"}],
+    "comments": 0,
+    "user": {"login": "dave"},
+    "created_at": "2026-04-15T08:00:00Z",
+    "html_url": "https://github.com/example/repo/issues/350"
+  }
+]

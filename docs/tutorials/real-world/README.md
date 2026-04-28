@@ -188,6 +188,14 @@ Skip Reflow when the work is shaped like a request:
    publishes records via `ctx.send`, `Router` picks one of four
    outports based on status, sinks fan in parallel with loggers
    for operational visibility.
+7. [**Composing a workflow from the catalog**](07-issue-triage.md)
+   (Python). Issue triage that reads, decides, and acts. Almost
+   every node is a catalog template instantiated by id —
+   `api_github_list_issues`, `tpl_loop`, `tpl_switch`,
+   `api_slack_send_message`. Three small custom actors fill the
+   gaps. Demonstrates the third lifecycle (triggered batch),
+   conditional routing as configuration, and the api_services
+   pack model.
 
 Later posts cover Airflow integration, audio plugins in C++
 (showcasing `ctx.pool` for variable-fan-in aggregation), and a
