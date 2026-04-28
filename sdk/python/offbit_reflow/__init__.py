@@ -45,6 +45,13 @@ template_actor = _n.template_actor
 template_list = _n.template_list
 compose_graphs = _n.compose_graphs
 
+# ─── Pack loader — for installing API services / GPU / ML / browser packs ──
+
+load_pack = _n.load_pack
+inspect_pack = _n.inspect_pack
+list_packs = _n.list_packs
+pack_abi_version = _n.pack_abi_version
+
 
 class Actor:
     """Base class for Python-authored Reflow actors.
