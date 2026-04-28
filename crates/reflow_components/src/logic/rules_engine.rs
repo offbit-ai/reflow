@@ -42,7 +42,14 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
             .and_then(|v| v.as_array())
             .unwrap_or(&empty_vec);
 
-        let mut all_match = true;
+        // Initial state depends on the combinator. IF needs every
+        // group to match (start optimistic, falsify on first miss).
+        // OR fires when any group matches (start pessimistic, lift
+        // on first hit). The previous `let mut all_match = true;`
+        // initialiser was wrong for OR — an OR rule with zero
+        // matching groups would silently fire because the loop
+        // body never set `all_match = false` in that branch.
+        let mut all_match = rule_type != "OR";
 
         for group in groups {
             let connector = group
@@ -74,7 +81,24 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
         }
 
         if all_match {
-            let mut output_data = serde_json::to_value(data)?;
+            // Extract the *inner* JSON value for property modification.
+            // Previously this serialized via `serde_json::to_value(data)`
+            // which uses Message's tagged form (`{"type":"Object",
+            // "data": …}`), so `setProperty` writes leaked into the
+            // envelope — every consumer had to unwrap. Pull the raw
+            // inner instead so the resulting matched packet is a clean
+            // Message::Object holding only the data + new properties.
+            let mut output_data = match data {
+                Message::Object(obj) => serde_json::to_value(obj.as_ref())
+                    .unwrap_or(Value::Null),
+                Message::Array(arr) => serde_json::to_value(arr.as_ref())
+                    .unwrap_or(Value::Null),
+                Message::Any(v) => serde_json::to_value(v.as_ref())
+                    .unwrap_or(Value::Null),
+                Message::Event(v) => serde_json::to_value(v).unwrap_or(Value::Null),
+                // Primitives have no fields to modify; pass through as-is.
+                other => serde_json::to_value(other).unwrap_or(Value::Null),
+            };
 
             if let Some(set_props) = rules_obj
                 .get("actions")
