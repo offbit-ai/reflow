@@ -59,6 +59,9 @@ endif()
 if(REFLOW_CPP_BUILD_EXAMPLES)
     add_executable(reflow_cpp_quickstart examples/quickstart.cpp)
     target_link_libraries(reflow_cpp_quickstart PRIVATE reflow::cpp)
+
+    add_executable(reflow_cpp_tutorial08 examples/tutorial-08-poly-synth/main.cpp)
+    target_link_libraries(reflow_cpp_tutorial08 PRIVATE reflow::cpp)
 endif()
 
 # install rules — `cmake --install` copies headers + a CMake config so

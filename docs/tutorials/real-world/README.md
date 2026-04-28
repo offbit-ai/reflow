@@ -196,10 +196,15 @@ Skip Reflow when the work is shaped like a request:
    gaps. Demonstrates the third lifecycle (triggered batch),
    conditional routing as configuration, and the api_services
    pack model.
+8. [**A polyphonic synthesizer with `ctx.pool`**](08-cpp-poly-synth.md)
+   (C++). Three voices, a mixer, a WAV file. The mixer holds a
+   `voices` pool — one inport, variable-N upstreams, no port-per-
+   voice explosion. Also showcases `StreamProducer` for
+   high-throughput producer messaging and `ctx.send` for mid-tick
+   flush.
 
-Later posts cover Airflow integration, audio plugins in C++
-(showcasing `ctx.pool` for variable-fan-in aggregation), and a
-cross-SDK piece that runs the same graph from three languages.
+Later posts cover Airflow integration on Python and a cross-SDK
+piece that runs the same graph from three languages.
 
 After tutorial 01 you will know enough Reflow to read the others
 in any order.

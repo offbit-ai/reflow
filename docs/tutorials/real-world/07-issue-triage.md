@@ -303,7 +303,8 @@ example's `README.md`.)
 
 ## What is next
 
-The next tutorial covers a C++ audio plugin pipeline that
-showcases `ctx.pool` for variable fan-in aggregation — multiple
-upstream sources writing to a shared per-actor pool, the consumer
-reading the whole pool on each tick.
+The [next post](08-cpp-poly-synth.md) is a small C++ audio
+synthesizer that puts `ctx.pool` to work — three voices, a mixer
+with one inport (not three), a WAV file. Same idea, different
+domain: per-upstream stable-id state in a shared pool the consumer
+reads atomically.
