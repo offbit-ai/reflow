@@ -293,9 +293,6 @@ python3 pipeline.py
 
 ## What's next
 
-This is the closing post in the in-process series. The next body of
-work is on Reflow's **distributed transport** — bundled discovery,
-end-to-end integration tests, standalone peer flow, auth verification
-— after which a tutorial covering a graph that genuinely spans
-multiple machines becomes writable. Until that lands, distributed
-flows are a roadmap item rather than a runnable post.
+This is the closing post in the series. A follow-up covering a
+graph that spans multiple machines lands once Reflow's distributed
+transport matures.
