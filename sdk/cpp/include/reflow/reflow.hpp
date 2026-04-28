@@ -128,8 +128,24 @@ public:
     static Message boolean(bool v)                           { return Message(rfl_message_boolean(v ? 1 : 0)); }
     static Message integer(int64_t v)                        { return Message(rfl_message_integer(v)); }
     static Message floating(double v)                        { return Message(rfl_message_float(v)); }
-    static Message string(std::string_view v)                { return Message(rfl_message_string(v.data())); }
+    static Message string(std::string_view v)                { return Message(rfl_message_string(std::string(v).c_str())); }
     static Message bytes(const uint8_t* data, size_t n)      { return Message(rfl_message_bytes(data, n)); }
+
+    /// Build a Message::Object from a bare JSON object value
+    /// (`{"a":1,"b":2}` — *not* the tagged `{"type":"Object","data":...}`
+    /// envelope). Throws on parse failure.
+    static Message object_from_json(std::string_view json) {
+        rfl_message* m = rfl_message_object_from_json(std::string(json).c_str());
+        if (m == nullptr) detail::throw_status(rfl_status_InvalidJson, "Message::object_from_json");
+        return Message(m);
+    }
+
+    /// Build a Message::Array from a bare JSON array value (`[1,2,3]`).
+    static Message array_from_json(std::string_view json) {
+        rfl_message* m = rfl_message_array_from_json(std::string(json).c_str());
+        if (m == nullptr) detail::throw_status(rfl_status_InvalidJson, "Message::array_from_json");
+        return Message(m);
+    }
 
     rfl_message_kind kind() const noexcept { return rfl_message_get_kind(ptr_.get()); }
 
@@ -137,11 +153,147 @@ public:
         return detail::take_or_throw(rfl_message_as_json(ptr_.get()), "Message::as_json");
     }
 
+    /// The bare inner JSON value — like `as_json` but strips the
+    /// runtime's `{"type":...,"data":...}` envelope. Returns
+    /// `std::nullopt` for variants without a portable JSON form
+    /// (Flow, Bytes — use `as_bytes`). For Object/Array/primitive
+    /// scalars, the bare JSON value is returned directly.
+    std::optional<std::string> data_json() const {
+        char* p = rfl_message_data_json(ptr_.get());
+        if (p == nullptr) return std::nullopt;
+        return detail::take_c_string(p);
+    }
+
     rfl_message* raw() const noexcept { return ptr_.get(); }
     rfl_message* release() noexcept { return ptr_.release(); }
 
 private:
     UniqueHandle<rfl_message, rfl_message_free> ptr_;
+};
+
+// ─── Streams ───────────────────────────────────────────────────────────────
+//
+// Streams are the right tool for producers that emit large volumes of
+// data from inside a single callback. Each stream carries its own
+// (configurable) channel — independent of the actor's bounded outport
+// queue — so a producer pushing thousands of frames doesn't dead-lock
+// against the outport's tiny default capacity.
+
+class StreamProducer {
+public:
+    /// Create a producer-side handle. `buffer_size == 0` means
+    /// unbounded; any positive value is the channel capacity.
+    /// `origin_actor` and `origin_port` are metadata attached to the
+    /// resulting StreamHandle.
+    static StreamProducer create(std::size_t buffer_size,
+                                 std::string_view origin_actor,
+                                 std::string_view origin_port,
+                                 std::optional<std::string> content_type = std::nullopt) {
+        const char* ct = content_type ? content_type->c_str() : nullptr;
+        rfl_stream* s = rfl_stream_new(buffer_size,
+                                       std::string(origin_actor).c_str(),
+                                       std::string(origin_port).c_str(),
+                                       ct);
+        if (!s) detail::throw_status(rfl_status_Runtime, "StreamProducer::create");
+        return StreamProducer(s);
+    }
+
+    /// Push a Data frame (copies the buffer).
+    void send_bytes(const std::uint8_t* data, std::size_t len) {
+        detail::check(rfl_stream_send_bytes(ptr_, data, len),
+                      "StreamProducer::send_bytes");
+    }
+
+    /// Signal end-of-stream to all consumers.
+    void end() {
+        detail::check(rfl_stream_end(ptr_), "StreamProducer::end");
+        // After end(), the producer is consumed by the runtime.
+        ptr_ = nullptr;
+    }
+
+    /// Convert this producer into a Message::StreamHandle suitable for
+    /// emitting on an outport. Consumes self — the caller no longer
+    /// owns the producer after this. Pending frames remain queued for
+    /// the consumer.
+    Message into_message() && {
+        rfl_message* m = rfl_stream_into_message(ptr_);
+        ptr_ = nullptr;
+        if (!m) detail::throw_status(rfl_status_Runtime, "StreamProducer::into_message");
+        return Message(m);
+    }
+
+    ~StreamProducer() { if (ptr_) rfl_stream_free(ptr_); }
+
+    StreamProducer(StreamProducer&& o) noexcept : ptr_(o.ptr_) { o.ptr_ = nullptr; }
+    StreamProducer& operator=(StreamProducer&& o) noexcept {
+        if (this != &o) {
+            if (ptr_) rfl_stream_free(ptr_);
+            ptr_ = o.ptr_;
+            o.ptr_ = nullptr;
+        }
+        return *this;
+    }
+    StreamProducer(const StreamProducer&) = delete;
+    StreamProducer& operator=(const StreamProducer&) = delete;
+
+private:
+    explicit StreamProducer(rfl_stream* s) : ptr_(s) {}
+    rfl_stream* ptr_;
+};
+
+class StreamReader {
+public:
+    struct Frame {
+        rfl_stream_frame_kind kind = rfl_stream_frame_kind_Closed;
+        std::vector<std::uint8_t> data;
+        std::string error;
+    };
+
+    /// Take the receiver out of an inbound StreamHandle message.
+    /// Returns std::nullopt if the message isn't a stream or its
+    /// receiver has already been taken.
+    static std::optional<StreamReader> from_message(Message& m) {
+        rfl_stream_recv* r = rfl_message_stream_take(m.raw());
+        if (!r) return std::nullopt;
+        return StreamReader(r);
+    }
+
+    /// Block up to `timeout_ms` for the next frame.
+    Frame recv(std::uint32_t timeout_ms) {
+        rfl_stream_frame_kind kind = rfl_stream_frame_kind_Closed;
+        const std::uint8_t* data = nullptr;
+        std::size_t len = 0;
+        char* err = nullptr;
+        detail::check(rfl_stream_recv_next(ptr_, timeout_ms, &kind, &data, &len, &err),
+                      "StreamReader::recv");
+        Frame f{};
+        f.kind = kind;
+        if (kind == rfl_stream_frame_kind_Data && data && len > 0) {
+            f.data.assign(data, data + len);
+        } else if (kind == rfl_stream_frame_kind_Error && err) {
+            f.error = err;
+            rfl_string_free(err);
+        }
+        return f;
+    }
+
+    ~StreamReader() { if (ptr_) rfl_stream_recv_free(ptr_); }
+
+    StreamReader(StreamReader&& o) noexcept : ptr_(o.ptr_) { o.ptr_ = nullptr; }
+    StreamReader& operator=(StreamReader&& o) noexcept {
+        if (this != &o) {
+            if (ptr_) rfl_stream_recv_free(ptr_);
+            ptr_ = o.ptr_;
+            o.ptr_ = nullptr;
+        }
+        return *this;
+    }
+    StreamReader(const StreamReader&) = delete;
+    StreamReader& operator=(const StreamReader&) = delete;
+
+private:
+    explicit StreamReader(rfl_stream_recv* r) : ptr_(r) {}
+    rfl_stream_recv* ptr_;
 };
 
 // ─── Graph ─────────────────────────────────────────────────────────────────
@@ -523,11 +675,73 @@ public:
                       "Context::state_set");
     }
 
+    // ── Pools ──────────────────────────────────────────────────────────
+    //
+    // A pool is a named `{id: value}` map living in the actor's state.
+    // Use it when the same actor has many logical upstreams whose
+    // identities are stable (per-voice in a synth, per-sensor in a
+    // fusion node, per-source in an aggregator) but whose count isn't
+    // known at design time. Each upstream upserts under its id; the
+    // consumer reads the whole pool on each tick. Everything below
+    // requires the default `MemoryState` backend.
+
+    /// Upsert `value_json` into `pool_name` under `id`.
+    void pool_upsert(std::string_view pool_name,
+                     std::string_view id,
+                     std::string_view value_json) {
+        detail::check(rfl_ctx_pool_upsert(ctx_,
+                                          std::string(pool_name).c_str(),
+                                          std::string(id).c_str(),
+                                          std::string(value_json).c_str()),
+                      "Context::pool_upsert");
+    }
+
+    /// Remove the entry under `id`. Idempotent.
+    void pool_remove(std::string_view pool_name, std::string_view id) {
+        detail::check(rfl_ctx_pool_remove(ctx_,
+                                          std::string(pool_name).c_str(),
+                                          std::string(id).c_str()),
+                      "Context::pool_remove");
+    }
+
+    /// Read the entire pool as a JSON object `{id: value, ...}`.
+    /// Returns `"{}"` for an empty/absent pool.
+    std::string pool_get_json(std::string_view pool_name) const {
+        char* p = rfl_ctx_pool_get_json(ctx_, std::string(pool_name).c_str());
+        return p == nullptr ? std::string{"{}"} : detail::take_c_string(p);
+    }
+
+    /// Number of entries in `pool_name`.
+    std::size_t pool_count(std::string_view pool_name) const noexcept {
+        return rfl_ctx_pool_count(ctx_, std::string(pool_name).c_str());
+    }
+
+    /// Drop the entire pool. Idempotent.
+    void pool_clear(std::string_view pool_name) {
+        detail::check(rfl_ctx_pool_clear(ctx_, std::string(pool_name).c_str()),
+                      "Context::pool_clear");
+    }
+
     /// Emit a message on `port`. Consumes the Message handle.
+    ///
+    /// Per-tick semantics: multiple `emit`s to the same port within
+    /// one callback collapse to the last write. For source actors
+    /// publishing a stream from inside a single `run`, use `send`.
     void emit(std::string_view port, Message&& msg) {
         detail::check(
             rfl_ctx_emit_message(ctx_, std::string(port).c_str(), msg.release()),
             "Context::emit");
+    }
+
+    /// Mid-tick flush: send straight to the outport channel,
+    /// bypassing the per-callback drain. Use this when the same
+    /// callback publishes multiple values on the same port (a Kafka
+    /// reader, a MIDI clock, a per-block driver). Consumes the
+    /// Message handle.
+    void send(std::string_view port, Message&& msg) {
+        detail::check(
+            rfl_ctx_send_message(ctx_, std::string(port).c_str(), msg.release()),
+            "Context::send");
     }
 
     /// Emit a JSON-serialized message — convenience for tests where you
