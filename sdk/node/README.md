@@ -79,9 +79,11 @@ Inside `run(ctx)`:
 |--------|---------|
 | `ctx.inputs` | `Record<string, Message-JSON>` — one entry per port that received a packet this tick. |
 | `ctx.config` | Node-level config passed at graph time. |
-| `ctx.send(outputs)` | Emit outputs keyed by output port. Safe to call multiple times during a tick. |
-| `ctx.done(outputs?)` | Resolve the tick. The optional outputs are sent the same way as `ctx.send`. |
+| `ctx.send(outputs)` | Mid-tick flush. Outputs keyed by output port; safe to call multiple times during a tick. |
+| `ctx.done(outputs?)` | Resolve the tick. Optional outputs merge on top of anything already sent. |
 | `ctx.fail(reason)` | Abort this tick with an error. |
+| `ctx.poolUpsert(name, id, value)` | Per-actor `{id: value}` map that persists across ticks. The right tool for variable fan-in: N upstreams write under stable ids, the consumer reads the whole map. |
+| `ctx.poolRemove(name, id)` / `ctx.pool(name)` / `ctx.poolCount(name)` / `ctx.poolClear(name)` | Drop / read (returns object) / size / wipe a pool. |
 
 The runtime treats every `run` as an async tick that completes when
 you call `ctx.done()` (or `ctx.fail`). Internally `run` returns a

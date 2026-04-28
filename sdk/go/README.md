@@ -120,7 +120,10 @@ Inside `Run`:
 | `ctx.HasInput(port)` | Peek without taking. |
 | `ctx.ConfigJSON()` / `ctx.Config()` | Read node-level config. |
 | `ctx.StateGet(key)` / `ctx.StateSet(key, v)` | Per-actor `MemoryState`. |
-| `ctx.Emit(port, msg)` | Emit an output packet (transfers message ownership). |
+| `ctx.Emit(port, msg)` | Emit an output packet (transfers message ownership). Per-tick HashMap drain — multiple emits to the same port collapse to the last write. |
+| `ctx.Send(port, msg)` | Mid-tick flush. Same shape as `Emit` but bypasses the per-tick drain — use when one `Run` publishes several values on the same port. |
+| `ctx.PoolUpsert(name, id, v)` | Per-actor `{id: value}` map under reserved `_pool:<name>` state key. The right tool for variable fan-in: N upstreams write under stable ids, the consumer reads the whole map. |
+| `ctx.PoolRemove(name, id)` / `ctx.PoolGetJSON(name)` / `ctx.PoolCount(name)` / `ctx.PoolClear(name)` | Drop / read / size / wipe a pool. `PoolGetJSON` returns `{}` if absent. |
 
 Return `nil` on success, or an error to fail this tick.
 

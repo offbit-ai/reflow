@@ -77,6 +77,45 @@ public final class ActorCallContext {
         nativeSend(nativePtr, port, p);
     }
 
+    // ── Pools ──────────────────────────────────────────────────────────
+    //
+    // Per-actor `{id: value}` maps that persist across ticks. The
+    // canonical pattern for variable fan-in: N upstream sources write
+    // under stable ids, the consumer reads the whole map atomically
+    // each tick. All pool methods require the default {@code MemoryState}
+    // backend.
+
+    /**
+     * Upsert {@code valueJson} into pool {@code poolName} under {@code id}.
+     * Creates the pool entry if it doesn't exist yet.
+     */
+    public void poolUpsert(String poolName, String id, String valueJson) {
+        nativePoolUpsert(nativePtr, poolName, id, valueJson);
+    }
+
+    /** Remove the entry under {@code id}. Idempotent. */
+    public void poolRemove(String poolName, String id) {
+        nativePoolRemove(nativePtr, poolName, id);
+    }
+
+    /**
+     * Read the entire pool as a JSON object string {@code {id: value, …}}.
+     * Returns {@code "{}"} for an empty/absent pool.
+     */
+    public String poolGetJson(String poolName) {
+        return nativePoolGetJson(nativePtr, poolName);
+    }
+
+    /** Number of entries in the named pool. Zero for empty/absent. */
+    public long poolCount(String poolName) {
+        return nativePoolCount(nativePtr, poolName);
+    }
+
+    /** Drop the entire pool. Idempotent. */
+    public void poolClear(String poolName) {
+        nativePoolClear(nativePtr, poolName);
+    }
+
     /** Resolve the tick. Any packets queued via {@link #emit} are flushed. */
     public void done() {
         if (resolved) return;
@@ -96,6 +135,11 @@ public final class ActorCallContext {
     private static native String nativeConfig(long ptr);
     private static native void nativeEmit(long ptr, String port, long messagePtr);
     private static native void nativeSend(long ptr, String port, long messagePtr);
+    private static native void nativePoolUpsert(long ptr, String poolName, String id, String valueJson);
+    private static native void nativePoolRemove(long ptr, String poolName, String id);
+    private static native String nativePoolGetJson(long ptr, String poolName);
+    private static native long nativePoolCount(long ptr, String poolName);
+    private static native void nativePoolClear(long ptr, String poolName);
     private static native void nativeDone(long ptr);
     private static native void nativeFail(long ptr, String reason);
 }

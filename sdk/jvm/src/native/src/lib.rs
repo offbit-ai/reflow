@@ -758,12 +758,14 @@ impl RtActor for JvmActor {
 
                 let (reply_tx, reply_rx) = flume::bounded::<CallbackReply>(1);
                 let outport_tx = ctx.outports.0.clone();
+                let state = ctx.get_state();
                 let ctx_box = Box::new(ActorCallContextHandle {
                     inputs: inputs_value,
                     config: config_value,
                     outputs: PlMutex::new(HashMap::new()),
                     reply: PlMutex::new(Some(reply_tx)),
                     outport_tx,
+                    state,
                 });
                 let ctx_ptr = Box::into_raw(ctx_box) as jlong;
 
@@ -840,6 +842,8 @@ pub struct ActorCallContextHandle {
     /// continuously without resolving the tick, `nativeSend` writes
     /// straight to this channel, bypassing the done() drain.
     outport_tx: flume::Sender<HashMap<String, Message>>,
+    /// Actor state — required for `pool_*` accessors. MemoryState only.
+    state: Arc<parking_lot::Mutex<dyn reflow_rt::actor_runtime::ActorState>>,
 }
 
 enum CallbackReply {
@@ -1004,6 +1008,179 @@ pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativeFail<'local>
     if let Some(tx) = h.reply.lock().take() {
         let _ = tx.send(CallbackReply::Err(msg));
     }
+}
+
+// ── Pool ────────────────────────────────────────────────────────
+//
+// Per-actor `{id: value}` maps that persist across ticks. The
+// canonical pattern for variable fan-in: N upstreams write under
+// stable ids, the consumer reads the whole map atomically. All
+// pool methods require the default `MemoryState` backend.
+
+fn pool_state_key(name: &str) -> String {
+    format!("_pool:{}", name)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativePoolUpsert<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    pool_name: JString<'local>,
+    id: JString<'local>,
+    value_json: JString<'local>,
+) {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return,
+    };
+    let pool_name = match jstring_to_string(&mut env, &pool_name) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let id = match jstring_to_string(&mut env, &id) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let value_s = match jstring_to_string(&mut env, &value_json) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let value: serde_json::Value = match serde_json::from_str(&value_s) {
+        Ok(v) => v,
+        Err(e) => { throw_runtime(&mut env, format!("value_json parse: {e}")); return; }
+    };
+    let mut guard = h.state.lock();
+    let any_ref = guard.as_mut_any();
+    let mem = match any_ref.downcast_mut::<reflow_rt::actor_runtime::MemoryState>() {
+        Some(m) => m,
+        None => { throw_runtime(&mut env, "actor state is not MemoryState"); return; }
+    };
+    let key = pool_state_key(&pool_name);
+    let mut map = match mem.0.get(&key) {
+        Some(serde_json::Value::Object(m)) => m.clone(),
+        _ => serde_json::Map::new(),
+    };
+    map.insert(id, value);
+    mem.0.insert(key, serde_json::Value::Object(map));
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativePoolRemove<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    pool_name: JString<'local>,
+    id: JString<'local>,
+) {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return,
+    };
+    let pool_name = match jstring_to_string(&mut env, &pool_name) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let id = match jstring_to_string(&mut env, &id) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let mut guard = h.state.lock();
+    let any_ref = guard.as_mut_any();
+    let mem = match any_ref.downcast_mut::<reflow_rt::actor_runtime::MemoryState>() {
+        Some(m) => m,
+        None => { throw_runtime(&mut env, "actor state is not MemoryState"); return; }
+    };
+    let key = pool_state_key(&pool_name);
+    if let Some(serde_json::Value::Object(m)) = mem.0.get(&key) {
+        let mut clone = m.clone();
+        clone.remove(&id);
+        mem.0.insert(key, serde_json::Value::Object(clone));
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativePoolGetJson<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    pool_name: JString<'local>,
+) -> jobject {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return std::ptr::null_mut(),
+    };
+    let pool_name = match jstring_to_string(&mut env, &pool_name) {
+        Ok(s) => s,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let guard = h.state.lock();
+    let any_ref = guard.as_any();
+    let mem = match any_ref.downcast_ref::<reflow_rt::actor_runtime::MemoryState>() {
+        Some(m) => m,
+        None => return std::ptr::null_mut(),
+    };
+    let key = pool_state_key(&pool_name);
+    let value = match mem.0.get(&key) {
+        Some(v @ serde_json::Value::Object(_)) => v.clone(),
+        _ => serde_json::Value::Object(serde_json::Map::new()),
+    };
+    match serde_json::to_string(&value) {
+        Ok(s) => env.new_string(&s).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut()),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativePoolCount<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    pool_name: JString<'local>,
+) -> jlong {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return 0,
+    };
+    let pool_name = match jstring_to_string(&mut env, &pool_name) {
+        Ok(s) => s,
+        Err(_) => return 0,
+    };
+    let guard = h.state.lock();
+    let any_ref = guard.as_any();
+    let mem = match any_ref.downcast_ref::<reflow_rt::actor_runtime::MemoryState>() {
+        Some(m) => m,
+        None => return 0,
+    };
+    let key = pool_state_key(&pool_name);
+    match mem.0.get(&key) {
+        Some(serde_json::Value::Object(m)) => m.len() as jlong,
+        _ => 0,
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_ActorCallContext_nativePoolClear<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    pool_name: JString<'local>,
+) {
+    let h = match unsafe { as_ref::<ActorCallContextHandle>(ptr) } {
+        Some(h) => h,
+        None => return,
+    };
+    let pool_name = match jstring_to_string(&mut env, &pool_name) {
+        Ok(s) => s,
+        Err(e) => { throw_runtime(&mut env, &e); return; }
+    };
+    let mut guard = h.state.lock();
+    let any_ref = guard.as_mut_any();
+    let mem = match any_ref.downcast_mut::<reflow_rt::actor_runtime::MemoryState>() {
+        Some(m) => m,
+        None => { throw_runtime(&mut env, "actor state is not MemoryState"); return; }
+    };
+    mem.0.remove(&pool_state_key(&pool_name));
 }
 
 // ─── Template catalog ──────────────────────────────────────────────────────

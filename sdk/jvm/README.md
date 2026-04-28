@@ -99,10 +99,14 @@ Inside `run(ctx)`:
 | Method | Purpose |
 |--------|---------|
 | `ctx.inputsJson()` | JSON object keyed by port name; values are tagged Messages. |
+| `ctx.inputDataJson(port)` | Bare inner JSON for a single port (no `{type, data}` envelope). |
 | `ctx.configJson()` | Per-node config JSON. |
-| `ctx.emit(port, Message)` | Queue one output packet (transfers message ownership). |
+| `ctx.emit(port, Message)` | Queue one output packet (transfers message ownership). Per-tick HashMap drain — multiple emits to the same port collapse to the last write. |
+| `ctx.send(port, Message)` | Mid-tick flush — push straight to the outport channel. Use for streaming actors that emit many packets per tick. |
 | `ctx.done()` | Resolve the tick; any emitted packets are flushed. |
 | `ctx.fail(reason)` | Abort the tick with an error. |
+| `ctx.poolUpsert(name, id, valueJson)` | Per-actor `{id: value}` map that persists across ticks. The right tool for variable fan-in: N upstreams write under stable ids, the consumer reads the whole map. |
+| `ctx.poolRemove(name, id)` / `ctx.poolGetJson(name)` / `ctx.poolCount(name)` / `ctx.poolClear(name)` | Drop / read (JSON string) / size / wipe a pool. |
 
 Exactly one of `done` / `fail` must be called per tick. Exceptions thrown
 from `run` are automatically converted to `fail(...)` by the SDK.

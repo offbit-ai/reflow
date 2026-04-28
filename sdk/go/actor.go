@@ -233,6 +233,81 @@ func (c *ActorContext) StateSet(key string, value any) error {
 	return statusToError(int32(st), "StateSet")
 }
 
+// Send is the mid-tick flush variant of Emit — writes the message
+// straight to the outport channel instead of buffering until the
+// callback returns. Use this when one Run publishes several values
+// on the same port (a Kafka reader, a per-block driver, an event
+// stream) — Emit's per-tick HashMap collapses repeated writes to
+// the same port to the last one. Consumes the Message handle.
+func (c *ActorContext) Send(port string, m *Message) error {
+	if m == nil {
+		return fmt.Errorf("reflow.Send: nil message")
+	}
+	cs := cstr(port)
+	defer freeCStr(cs)
+	st := C.rfl_ctx_send_message(c.ctx, cs, m.release())
+	return statusToError(int32(st), "Send")
+}
+
+// PoolUpsert stores `value` under `id` in the named pool. Pools are
+// per-actor `{id: value}` maps that persist across ticks — the right
+// tool for variable fan-in where N upstreams write under stable ids
+// and the consumer reads the whole map. `value` is JSON-encoded.
+func (c *ActorContext) PoolUpsert(poolName, id string, value any) error {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("reflow.PoolUpsert marshal: %w", err)
+	}
+	cp := cstr(poolName)
+	defer freeCStr(cp)
+	ci := cstr(id)
+	defer freeCStr(ci)
+	cv := cstr(string(raw))
+	defer freeCStr(cv)
+	st := C.rfl_ctx_pool_upsert(c.ctx, cp, ci, cv)
+	return statusToError(int32(st), "PoolUpsert")
+}
+
+// PoolRemove drops the entry under `id` from the named pool.
+// Idempotent — a missing entry is not an error.
+func (c *ActorContext) PoolRemove(poolName, id string) error {
+	cp := cstr(poolName)
+	defer freeCStr(cp)
+	ci := cstr(id)
+	defer freeCStr(ci)
+	st := C.rfl_ctx_pool_remove(c.ctx, cp, ci)
+	return statusToError(int32(st), "PoolRemove")
+}
+
+// PoolGetJSON returns the entire pool as a JSON object
+// `{id: value, …}`. Empty/absent pools come back as `{}`.
+func (c *ActorContext) PoolGetJSON(poolName string) []byte {
+	cp := cstr(poolName)
+	defer freeCStr(cp)
+	p := C.rfl_ctx_pool_get_json(c.ctx, cp)
+	if p == nil {
+		return []byte("{}")
+	}
+	defer C.rfl_string_free(p)
+	return []byte(C.GoString(p))
+}
+
+// PoolCount returns the number of entries in the named pool. Zero
+// for empty or absent pools.
+func (c *ActorContext) PoolCount(poolName string) int {
+	cp := cstr(poolName)
+	defer freeCStr(cp)
+	return int(C.rfl_ctx_pool_count(c.ctx, cp))
+}
+
+// PoolClear drops the entire pool. Idempotent.
+func (c *ActorContext) PoolClear(poolName string) error {
+	cp := cstr(poolName)
+	defer freeCStr(cp)
+	st := C.rfl_ctx_pool_clear(c.ctx, cp)
+	return statusToError(int32(st), "PoolClear")
+}
+
 // The exports below must not be methods — cgo requires free functions.
 //
 // reflow_go_actor_trampoline dispatches into the registered Go Actor's

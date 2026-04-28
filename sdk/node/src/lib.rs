@@ -497,6 +497,10 @@ pub struct ActorCallContext {
     inputs_value: serde_json::Value,
     config_value: serde_json::Value,
     reply: PlMutex<Option<flume::Sender<CallbackReply>>>,
+    /// Direct outport sender for `ctx.send()` mid-tick flush.
+    outport_tx: flume::Sender<HashMap<String, Message>>,
+    /// Actor state — required for `pool_*` accessors. MemoryState only.
+    state: Arc<parking_lot::Mutex<dyn reflow_rt::actor_runtime::ActorState>>,
 }
 
 enum CallbackReply {
@@ -549,6 +553,117 @@ impl ActorCallContext {
         let _ = tx.send(CallbackReply::Err(message));
         Ok(())
     }
+
+    /// Mid-tick flush: push one or more output packets straight to
+    /// the outport channel without waiting for `done`. `outputs` is
+    /// an object keyed by port; values may be `Message` handles or
+    /// JSON-shaped Messages. Use this for streaming actors that
+    /// emit many packets per tick.
+    #[napi]
+    pub fn send(&self, outputs: serde_json::Value) -> Result<()> {
+        let mut packet: HashMap<String, Message> = HashMap::new();
+        if let serde_json::Value::Object(m) = outputs {
+            for (port, val) in m {
+                let msg: Message = serde_json::from_value(val).map_err(|e| {
+                    Error::from_reason(format!("output '{port}' not a Message: {e}"))
+                })?;
+                packet.insert(port, msg);
+            }
+        }
+        if !packet.is_empty() {
+            self.outport_tx
+                .send(packet)
+                .map_err(|e| Error::from_reason(format!("outport closed: {e}")))?;
+        }
+        Ok(())
+    }
+
+    // ── Pool ─────────────────────────────────────────────────────
+    //
+    // Per-actor `{id: value}` maps that persist across ticks. The
+    // canonical pattern for variable fan-in: N upstreams write under
+    // stable ids, the consumer reads the whole map atomically. All
+    // pool methods require the default `MemoryState` backend.
+
+    /// Upsert `value` into the named pool under `id`.
+    #[napi(js_name = "poolUpsert")]
+    pub fn pool_upsert(&self, pool_name: String, id: String, value: serde_json::Value) -> Result<()> {
+        let mut guard = self.state.lock();
+        let any_ref = guard.as_mut_any();
+        let mem = any_ref
+            .downcast_mut::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| Error::from_reason("actor state is not MemoryState; cannot poolUpsert"))?;
+        let key = format!("_pool:{pool_name}");
+        let mut map = match mem.0.get(&key) {
+            Some(serde_json::Value::Object(m)) => m.clone(),
+            _ => serde_json::Map::new(),
+        };
+        map.insert(id, value);
+        mem.0.insert(key, serde_json::Value::Object(map));
+        Ok(())
+    }
+
+    /// Remove the entry under `id`. Idempotent.
+    #[napi(js_name = "poolRemove")]
+    pub fn pool_remove(&self, pool_name: String, id: String) -> Result<()> {
+        let mut guard = self.state.lock();
+        let any_ref = guard.as_mut_any();
+        let mem = any_ref
+            .downcast_mut::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| Error::from_reason("actor state is not MemoryState; cannot poolRemove"))?;
+        let key = format!("_pool:{pool_name}");
+        if let Some(serde_json::Value::Object(m)) = mem.0.get(&key) {
+            let mut clone = m.clone();
+            clone.remove(&id);
+            mem.0.insert(key, serde_json::Value::Object(clone));
+        }
+        Ok(())
+    }
+
+    /// Read the whole pool as a JS object `{id: value, …}`. Empty
+    /// or absent pools return `{}`.
+    #[napi(js_name = "pool")]
+    pub fn pool(&self, pool_name: String) -> serde_json::Value {
+        let guard = self.state.lock();
+        let any_ref = guard.as_any();
+        let mem = match any_ref.downcast_ref::<reflow_rt::actor_runtime::MemoryState>() {
+            Some(m) => m,
+            None => return serde_json::Value::Object(serde_json::Map::new()),
+        };
+        let key = format!("_pool:{pool_name}");
+        match mem.0.get(&key) {
+            Some(v @ serde_json::Value::Object(_)) => v.clone(),
+            _ => serde_json::Value::Object(serde_json::Map::new()),
+        }
+    }
+
+    /// Number of entries in the named pool.
+    #[napi(js_name = "poolCount")]
+    pub fn pool_count(&self, pool_name: String) -> u32 {
+        let guard = self.state.lock();
+        let any_ref = guard.as_any();
+        let mem = match any_ref.downcast_ref::<reflow_rt::actor_runtime::MemoryState>() {
+            Some(m) => m,
+            None => return 0,
+        };
+        let key = format!("_pool:{pool_name}");
+        match mem.0.get(&key) {
+            Some(serde_json::Value::Object(m)) => m.len() as u32,
+            _ => 0,
+        }
+    }
+
+    /// Drop the entire pool. Idempotent.
+    #[napi(js_name = "poolClear")]
+    pub fn pool_clear(&self, pool_name: String) -> Result<()> {
+        let mut guard = self.state.lock();
+        let any_ref = guard.as_mut_any();
+        let mem = any_ref
+            .downcast_mut::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| Error::from_reason("actor state is not MemoryState; cannot poolClear"))?;
+        mem.0.remove(&format!("_pool:{pool_name}"));
+        Ok(())
+    }
 }
 
 // ─── Actor bridging — JS callback as an Actor ──────────────────────────────
@@ -584,6 +699,8 @@ impl RtActor for JsActor {
                     inputs_value,
                     config_value,
                     reply: PlMutex::new(Some(reply_tx)),
+                    outport_tx: ctx.outports.0.clone(),
+                    state: ctx.get_state(),
                 };
                 callback.call(call_ctx, ThreadsafeFunctionCallMode::NonBlocking);
 

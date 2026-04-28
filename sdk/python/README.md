@@ -72,8 +72,12 @@ Inside `run(ctx)`:
 |--------|---------|
 | `ctx.inputs` | `dict` keyed by port — each entry is a JSON-shaped Message. |
 | `ctx.config` | Per-node config passed at graph time. |
+| `ctx.emit(port, message)` | Queue an output packet. Per-tick drain on `done` — multiple emits to the same port collapse to the last write. |
+| `ctx.send({port: message, ...})` | Mid-tick flush — push straight to the outport channel. Use for streaming actors that emit many packets per tick. |
 | `ctx.done(outputs=None)` | Emit outputs keyed by output port. Values are `Message` instances or JSON-shaped Messages. |
 | `ctx.fail(message)` | Abort this tick with an error. |
+| `ctx.pool_upsert(name, id, value)` | Per-actor `{id: value}` map that persists across ticks. The right tool for variable fan-in: N upstreams write under stable ids, the consumer reads the whole map. |
+| `ctx.pool_remove(name, id)` / `ctx.pool(name)` / `ctx.pool_count(name)` / `ctx.pool_clear(name)` | Drop / read (returns dict) / size / wipe a pool. |
 
 Exactly one of `done` / `fail` must be called per tick. If `run` raises, the SDK calls `fail` with the exception's message.
 

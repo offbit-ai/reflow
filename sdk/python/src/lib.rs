@@ -426,6 +426,9 @@ pub struct PyActorCallContext {
     /// Streaming actors push per-chunk packets through this without
     /// waiting for the tick to complete.
     outport_tx: flume::Sender<HashMap<String, Message>>,
+    /// Actor state — needed for `pool_*` and `state_*` accessors.
+    /// MemoryState only; custom backends raise on pool calls.
+    state: Arc<parking_lot::Mutex<dyn reflow_rt::actor_runtime::ActorState>>,
 }
 
 enum CallbackReply {
@@ -487,6 +490,103 @@ impl PyActorCallContext {
                 .send(packet)
                 .map_err(|e| PyRuntimeError::new_err(format!("outport closed: {e}")))?;
         }
+        Ok(())
+    }
+
+    // ── Pool ─────────────────────────────────────────────────────────
+    //
+    // Per-actor `{id: value}` maps that persist across ticks. The
+    // canonical pattern for variable fan-in: N upstreams write under
+    // stable ids, the consumer reads the whole map atomically. All
+    // pool methods require the default `MemoryState` backend.
+
+    /// Upsert `value` into the named pool under `id`.
+    fn pool_upsert(
+        &self,
+        py: Python<'_>,
+        pool_name: String,
+        id: String,
+        value: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
+        let v = py_to_json(py, value)?;
+        let mut guard = self.state.lock();
+        let any_ref = guard.as_mut_any();
+        let mem = any_ref
+            .downcast_mut::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| {
+                PyRuntimeError::new_err("actor state is not MemoryState; cannot pool_upsert")
+            })?;
+        let key = format!("_pool:{pool_name}");
+        let mut map = match mem.0.get(&key) {
+            Some(serde_json::Value::Object(m)) => m.clone(),
+            _ => serde_json::Map::new(),
+        };
+        map.insert(id, v);
+        mem.0.insert(key, serde_json::Value::Object(map));
+        Ok(())
+    }
+
+    /// Remove the entry under `id`. Idempotent.
+    fn pool_remove(&self, pool_name: String, id: String) -> PyResult<()> {
+        let mut guard = self.state.lock();
+        let any_ref = guard.as_mut_any();
+        let mem = any_ref
+            .downcast_mut::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| {
+                PyRuntimeError::new_err("actor state is not MemoryState; cannot pool_remove")
+            })?;
+        let key = format!("_pool:{pool_name}");
+        if let Some(serde_json::Value::Object(m)) = mem.0.get(&key) {
+            let mut clone = m.clone();
+            clone.remove(&id);
+            mem.0.insert(key, serde_json::Value::Object(clone));
+        }
+        Ok(())
+    }
+
+    /// Read the whole pool as a Python dict `{id: value, …}`. Empty
+    /// or absent pools return `{}`.
+    fn pool<'py>(&self, py: Python<'py>, pool_name: String) -> PyResult<Bound<'py, PyAny>> {
+        let guard = self.state.lock();
+        let any_ref = guard.as_any();
+        let mem = any_ref
+            .downcast_ref::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| {
+                PyRuntimeError::new_err("actor state is not MemoryState; cannot read pool")
+            })?;
+        let key = format!("_pool:{pool_name}");
+        let value = match mem.0.get(&key) {
+            Some(v @ serde_json::Value::Object(_)) => v.clone(),
+            _ => serde_json::Value::Object(serde_json::Map::new()),
+        };
+        pythonize(py, &value).map_err(map_err)
+    }
+
+    /// Number of entries in the named pool.
+    fn pool_count(&self, pool_name: String) -> usize {
+        let guard = self.state.lock();
+        let any_ref = guard.as_any();
+        let mem = match any_ref.downcast_ref::<reflow_rt::actor_runtime::MemoryState>() {
+            Some(m) => m,
+            None => return 0,
+        };
+        let key = format!("_pool:{pool_name}");
+        match mem.0.get(&key) {
+            Some(serde_json::Value::Object(m)) => m.len(),
+            _ => 0,
+        }
+    }
+
+    /// Drop the entire pool. Idempotent.
+    fn pool_clear(&self, pool_name: String) -> PyResult<()> {
+        let mut guard = self.state.lock();
+        let any_ref = guard.as_mut_any();
+        let mem = any_ref
+            .downcast_mut::<reflow_rt::actor_runtime::MemoryState>()
+            .ok_or_else(|| {
+                PyRuntimeError::new_err("actor state is not MemoryState; cannot pool_clear")
+            })?;
+        mem.0.remove(&format!("_pool:{pool_name}"));
         Ok(())
     }
 
@@ -584,6 +684,7 @@ impl RtActor for PyActorImpl {
                     outputs: PlMutex::new(HashMap::new()),
                     reply: PlMutex::new(Some(reply_tx)),
                     outport_tx: ctx.outports.0.clone(),
+                    state: ctx.get_state(),
                 };
 
                 // Call the Python function with the GIL held. Skip if
