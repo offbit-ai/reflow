@@ -207,10 +207,12 @@ Skip Reflow when the work is shaped like a request:
    (schedule, backfill, retry, UI, credentials store) and Reflow
    owning the actor graph. The integration boundary is one
    `python_callable` whose body is a regular Reflow Network.
-
-The series ends here. A follow-up covering a graph that spans
-multiple machines lands once Reflow's distributed transport
-matures.
+10. [**A graph that spans two processes**](10-distributed-bridge.md)
+    (Rust + CLI). Two peers federated through the bundled
+    `reflow-discovery` server. Same shape works for two machines.
+    Auto-reconnect with backoff, auth-token gating on the accept
+    path, periodic discovery refresh — everything the in-process
+    series didn't need.
 
 After tutorial 01 you will know enough Reflow to read the others
 in any order.

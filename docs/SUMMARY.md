@@ -112,6 +112,7 @@
   - [Composing a workflow from the catalog](tutorials/real-world/07-issue-triage.md)
   - [A polyphonic synthesizer with ctx.pool](tutorials/real-world/08-cpp-poly-synth.md)
   - [Reflow inside an Airflow PythonOperator](tutorials/real-world/09-airflow-triage.md)
+  - [A graph that spans two processes](tutorials/real-world/10-distributed-bridge.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)

@@ -293,6 +293,7 @@ python3 pipeline.py
 
 ## What's next
 
-This is the closing post in the series. A follow-up covering a
-graph that spans multiple machines lands once Reflow's distributed
-transport matures.
+The [next post](10-distributed-bridge.md) takes Reflow across the
+process boundary: two peers federated through the bundled
+`reflow-discovery` server, the same shape that works for two
+machines.
