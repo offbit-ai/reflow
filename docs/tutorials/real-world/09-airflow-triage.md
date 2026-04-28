@@ -293,9 +293,9 @@ python3 pipeline.py
 
 ## What's next
 
-This is the last tutorial in the in-process series. Subsequent posts
-will cover Reflow's distributed transport once it's fleshed out
-beyond its current state — bundled discovery server, end-to-end
-integration tests, standalone peer flow without Zeal, auth
-verification — and a cross-SDK piece running the same graph from
-three languages.
+This is the closing post in the in-process series. The next body of
+work is on Reflow's **distributed transport** — bundled discovery,
+end-to-end integration tests, standalone peer flow, auth verification
+— after which a tutorial covering a graph that genuinely spans
+multiple machines becomes writable. Until that lands, distributed
+flows are a roadmap item rather than a runnable post.

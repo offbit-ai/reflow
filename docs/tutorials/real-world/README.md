@@ -208,9 +208,13 @@ Skip Reflow when the work is shaped like a request:
    owning the actor graph. The integration boundary is one
    `python_callable` whose body is a regular Reflow Network.
 
-Later posts will cover Reflow's distributed transport once it's
-fleshed out beyond its current state, plus a cross-SDK piece
-running the same graph from three languages.
+The in-process series ends here. The next body of work is on
+Reflow's **distributed transport** — bundled discovery, end-to-end
+integration tests, standalone peer flow, auth verification — at
+which point a tutorial covering a graph that genuinely spans
+multiple machines will be writable. Until then, anything
+cross-machine in the catalog story is a roadmap item rather than
+a runnable post.
 
 After tutorial 01 you will know enough Reflow to read the others
 in any order.
