@@ -78,7 +78,7 @@ impl ActorProcess {
 
         let mut accumulated: HashMap<String, Message> = HashMap::new();
         let actor_id = self.config.get_node_id();
-        let mut tick_message_count: usize = 0;
+        // let mut tick_message_count: usize = 0;
         // Per-port message counter for connection-count-aware synchronization
         let mut port_counts: HashMap<String, usize> = HashMap::new();
         loop {
@@ -118,7 +118,7 @@ impl ActorProcess {
                 // Connection-count-aware: for each required port, wait
                 // until ALL upstream connections on that port have sent.
                 merge_accumulate(&mut accumulated, packet.clone());
-                tick_message_count += 1;
+                // tick_message_count += 1;
                 for port in packet.keys() {
                     *port_counts.entry(port.clone()).or_insert(0) += 1;
                 }
@@ -137,7 +137,7 @@ impl ActorProcess {
                     continue;
                 }
                 // Keep cached values, only clear required ports and counts
-                tick_message_count = 0;
+                // tick_message_count = 0;
                 let payload = accumulated.clone();
                 for req in &self.required_inports {
                     accumulated.remove(req);

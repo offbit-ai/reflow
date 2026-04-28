@@ -439,7 +439,7 @@ fn cmd_strip(
     println!(
         "  {} triple(s): {}",
         keep.len(),
-        keep.iter().cloned().collect::<Vec<_>>().join(", ")
+        keep.to_vec().join(", ")
     );
     println!(
         "  input  {:.2} MiB ({} bytes)",

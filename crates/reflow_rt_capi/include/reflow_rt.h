@@ -635,6 +635,9 @@ char *rfl_message_as_json(const struct rfl_message *m);
  * Error; StreamHandle and RemoteReference return their serializable
  * locator metadata; NetworkEvent returns its `{event_type, data}`
  * shape; Encoded is decoded back to its inner Message and recursed.
+ * Callers can `json.Unmarshal` straight into a typed Go struct /
+ * Python dict / JS object without dealing with the `{type, data}`
+ * envelope or the EncodableValue bitcode shape.
  *
  * Returns NULL for Flow (control signal, no data) and Bytes (use the
  * bytes accessor). Caller frees via `rfl_string_free`.
