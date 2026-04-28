@@ -35,6 +35,15 @@ pub struct rfl_actor_ctx {
     config: ActorConfig,
     state: Arc<Mutex<dyn ActorState>>,
     outputs: Mutex<HashMap<String, Message>>,
+    /// Direct outport sender for `rfl_ctx_send_message` (mid-tick
+    /// flush). `rfl_ctx_emit_message` accumulates into `outputs`,
+    /// which gets drained when the callback returns; multiple emits
+    /// to the same port in one callback collapse to the last write.
+    /// `rfl_ctx_send_message` writes straight to this channel and
+    /// publishes one packet per call — the right tool for source
+    /// actors that emit a stream of values from inside a single
+    /// `run`.
+    outport_tx: flume::Sender<HashMap<String, Message>>,
 }
 
 /// Function pointer: the body of a callback actor.
@@ -111,12 +120,14 @@ impl Actor for CapiActor {
                     let payload = ctx.get_payload().clone();
                     let config = ctx.get_config().clone();
                     let state = ctx.get_state();
+                    let outport_tx = ctx.get_outports().0.clone();
 
                     let mut capi_ctx = Box::new(rfl_actor_ctx {
                         payload,
                         config,
                         state,
                         outputs: Mutex::new(HashMap::new()),
+                        outport_tx,
                     });
                     let ctx_ptr: *mut rfl_actor_ctx = capi_ctx.as_mut();
 
@@ -491,9 +502,223 @@ pub unsafe extern "C" fn rfl_ctx_state_set(
     }
 }
 
+// ─── Per-actor pools ──────────────────────────────────────────────────────
+//
+// `state_set` is a flat key-value scratchpad. `pool_*` adds a level
+// of structure: each pool is a named `{id: value}` map living under a
+// reserved `_pool:<name>` state key. Multiple upstream connections can
+// upsert into the same pool with stable per-upstream ids; the consumer
+// reads the whole pool on each tick. This is the canonical pattern
+// for variable fan-in — the alternative (one inport + one connection
+// per upstream) doesn't scale when N is unknown at design time.
+//
+// All five operations require `MemoryState` (the default backend) and
+// return `InvalidState` on custom states.
+
+fn pool_state_key(name: &str) -> String {
+    format!("_pool:{}", name)
+}
+
+/// Upsert `value_json` into pool `pool_name` under `id`. Creates the
+/// pool entry if it doesn't exist yet.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_pool_upsert(
+    ctx: *mut rfl_actor_ctx,
+    pool_name: *const c_char,
+    id: *const c_char,
+    value_json: *const c_char,
+) -> rfl_status {
+    crate::clear_last_error();
+    if ctx.is_null() || pool_name.is_null() || id.is_null() || value_json.is_null() {
+        return rfl_status::NullArg;
+    }
+    let pool_name = match unsafe { CStr::from_ptr(pool_name) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return rfl_status::InvalidUtf8,
+    };
+    let id_s = match unsafe { CStr::from_ptr(id) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return rfl_status::InvalidUtf8,
+    };
+    let value_s = match unsafe { CStr::from_ptr(value_json) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return rfl_status::InvalidUtf8,
+    };
+    let value: serde_json::Value = match serde_json::from_str(value_s) {
+        Ok(v) => v,
+        Err(e) => {
+            set_last_error(format!("value_json parse: {e}"));
+            return rfl_status::InvalidJson;
+        }
+    };
+
+    let state = Arc::clone(&unsafe { &*ctx }.state);
+    let mut guard = state.lock();
+    let any_ref = guard.as_mut_any();
+    match any_ref.downcast_mut::<MemoryState>() {
+        Some(mem) => {
+            let key = pool_state_key(pool_name);
+            // Read-modify-write the pool object as serde_json::Value.
+            let mut pool_obj = match mem.0.get(&key) {
+                Some(serde_json::Value::Object(m)) => m.clone(),
+                _ => serde_json::Map::new(),
+            };
+            pool_obj.insert(id_s.to_string(), value);
+            mem.0.insert(key, serde_json::Value::Object(pool_obj));
+            rfl_status::Ok
+        }
+        None => {
+            set_last_error("actor state is not a MemoryState; cannot pool_upsert from C");
+            rfl_status::InvalidState
+        }
+    }
+}
+
+/// Remove the entry under `id` from pool `pool_name`. Idempotent —
+/// a missing entry returns Ok.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_pool_remove(
+    ctx: *mut rfl_actor_ctx,
+    pool_name: *const c_char,
+    id: *const c_char,
+) -> rfl_status {
+    crate::clear_last_error();
+    if ctx.is_null() || pool_name.is_null() || id.is_null() {
+        return rfl_status::NullArg;
+    }
+    let pool_name = match unsafe { CStr::from_ptr(pool_name) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return rfl_status::InvalidUtf8,
+    };
+    let id_s = match unsafe { CStr::from_ptr(id) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return rfl_status::InvalidUtf8,
+    };
+    let state = Arc::clone(&unsafe { &*ctx }.state);
+    let mut guard = state.lock();
+    let any_ref = guard.as_mut_any();
+    match any_ref.downcast_mut::<MemoryState>() {
+        Some(mem) => {
+            let key = pool_state_key(pool_name);
+            if let Some(serde_json::Value::Object(m)) = mem.0.get(&key) {
+                let mut clone = m.clone();
+                clone.remove(id_s);
+                mem.0.insert(key, serde_json::Value::Object(clone));
+            }
+            rfl_status::Ok
+        }
+        None => {
+            set_last_error("actor state is not a MemoryState; cannot pool_remove from C");
+            rfl_status::InvalidState
+        }
+    }
+}
+
+/// Read the entire pool as a JSON object `{id: value, ...}`. Returns
+/// `"{}"` if the pool is empty or absent. Caller frees via
+/// `rfl_string_free`. Returns NULL only on argument errors; absence
+/// of the pool is encoded as the empty object.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_pool_get_json(
+    ctx: *mut rfl_actor_ctx,
+    pool_name: *const c_char,
+) -> *mut c_char {
+    crate::clear_last_error();
+    if ctx.is_null() || pool_name.is_null() {
+        return std::ptr::null_mut();
+    }
+    let pool_name = match unsafe { CStr::from_ptr(pool_name) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let state = Arc::clone(&unsafe { &*ctx }.state);
+    let guard = state.lock();
+    let any_ref = guard.as_any();
+    let mem = match any_ref.downcast_ref::<MemoryState>() {
+        Some(m) => m,
+        None => return std::ptr::null_mut(),
+    };
+    let key = pool_state_key(pool_name);
+    let value = match mem.0.get(&key) {
+        Some(v @ serde_json::Value::Object(_)) => v.clone(),
+        _ => serde_json::Value::Object(serde_json::Map::new()),
+    };
+    match serde_json::to_string(&value) {
+        Ok(s) => CString::new(s)
+            .map(|c| c.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// Number of entries in pool `pool_name`. 0 if the pool is absent.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_pool_count(
+    ctx: *mut rfl_actor_ctx,
+    pool_name: *const c_char,
+) -> usize {
+    crate::clear_last_error();
+    if ctx.is_null() || pool_name.is_null() {
+        return 0;
+    }
+    let pool_name = match unsafe { CStr::from_ptr(pool_name) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return 0,
+    };
+    let state = Arc::clone(&unsafe { &*ctx }.state);
+    let guard = state.lock();
+    let any_ref = guard.as_any();
+    let mem = match any_ref.downcast_ref::<MemoryState>() {
+        Some(m) => m,
+        None => return 0,
+    };
+    let key = pool_state_key(pool_name);
+    match mem.0.get(&key) {
+        Some(serde_json::Value::Object(m)) => m.len(),
+        _ => 0,
+    }
+}
+
+/// Drop the entire pool. Idempotent.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_pool_clear(
+    ctx: *mut rfl_actor_ctx,
+    pool_name: *const c_char,
+) -> rfl_status {
+    crate::clear_last_error();
+    if ctx.is_null() || pool_name.is_null() {
+        return rfl_status::NullArg;
+    }
+    let pool_name = match unsafe { CStr::from_ptr(pool_name) }.to_str() {
+        Ok(s) => s,
+        Err(_) => return rfl_status::InvalidUtf8,
+    };
+    let state = Arc::clone(&unsafe { &*ctx }.state);
+    let mut guard = state.lock();
+    let any_ref = guard.as_mut_any();
+    match any_ref.downcast_mut::<MemoryState>() {
+        Some(mem) => {
+            mem.0.remove(&pool_state_key(pool_name));
+            rfl_status::Ok
+        }
+        None => {
+            set_last_error("actor state is not a MemoryState; cannot pool_clear from C");
+            rfl_status::InvalidState
+        }
+    }
+}
+
 /// Emit a typed message on `port`. Transfers ownership of the message —
 /// do **not** call `rfl_message_free` afterwards. Prefer this over the
 /// JSON variant for hot-path emits.
+///
+/// **Per-tick semantics**: `rfl_ctx_emit_message` accumulates outputs
+/// in a HashMap that drains when the callback returns. Multiple emits
+/// to the *same* port within one callback collapse to the last
+/// write. For source actors that need to publish a *stream* of
+/// values from inside a single `run`, use `rfl_ctx_send_message`,
+/// which writes straight to the outport channel and publishes one
+/// packet per call.
 #[no_mangle]
 pub unsafe extern "C" fn rfl_ctx_emit_message(
     ctx: *mut rfl_actor_ctx,
@@ -517,6 +742,46 @@ pub unsafe extern "C" fn rfl_ctx_emit_message(
         .lock()
         .insert(port.to_string(), msg);
     rfl_status::Ok
+}
+
+/// Mid-tick flush: send a typed message straight to the outport
+/// channel, bypassing the per-callback `outputs` HashMap. Use this
+/// when the same callback needs to publish multiple values on the
+/// same port — `rfl_ctx_emit_message` would overwrite. Transfers
+/// ownership of the message; do **not** free it afterwards.
+///
+/// Mirrors Python's `ctx.send` and JVM's `ctx.send`. The message is
+/// queued on the source actor's outport channel and reaches every
+/// connected downstream actor through the normal connector
+/// mechanics — consumers don't need to know whether the producer
+/// used `emit` or `send`.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_ctx_send_message(
+    ctx: *mut rfl_actor_ctx,
+    port: *const c_char,
+    msg: *mut crate::message::rfl_message,
+) -> rfl_status {
+    crate::clear_last_error();
+    if ctx.is_null() || port.is_null() || msg.is_null() {
+        return rfl_status::NullArg;
+    }
+    let port = match unsafe { CStr::from_ptr(port) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            set_last_error("port is not valid UTF-8");
+            return rfl_status::InvalidUtf8;
+        }
+    };
+    let msg = unsafe { Box::from_raw(msg) }.into_message();
+    let mut payload = HashMap::new();
+    payload.insert(port.to_string(), msg);
+    match unsafe { &*ctx }.outport_tx.send(payload) {
+        Ok(()) => rfl_status::Ok,
+        Err(_) => {
+            set_last_error("outport channel is closed");
+            rfl_status::Runtime
+        }
+    }
 }
 
 /// Emit a packet on `port`. `message_json` must parse as a Reflow
