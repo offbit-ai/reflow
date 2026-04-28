@@ -282,6 +282,8 @@ voices, soft fade in/out). Open it in any audio player.
 
 ## What is next
 
-Subsequent posts cover Airflow integration on Python, audio plugins
-that bridge Reflow to a real DAW host, and a cross-SDK piece running
-the same graph from three languages.
+The [next post](09-airflow-triage.md) takes Reflow back to
+production-shaped Python: a daily triage pipeline where Airflow
+owns the calendar (schedule, backfill, retry, UI, credentials)
+and Reflow owns the actor graph. Same shape as tutorial 07,
+wrapped in the integration pattern Airflow shops actually deploy.

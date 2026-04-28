@@ -202,9 +202,15 @@ Skip Reflow when the work is shaped like a request:
    voice explosion. Also showcases `StreamProducer` for
    high-throughput producer messaging and `ctx.send` for mid-tick
    flush.
+9. [**Reflow inside an Airflow PythonOperator**](09-airflow-triage.md)
+   (Python). Daily triage with Airflow owning the calendar
+   (schedule, backfill, retry, UI, credentials store) and Reflow
+   owning the actor graph. The integration boundary is one
+   `python_callable` whose body is a regular Reflow Network.
 
-Later posts cover Airflow integration on Python and a cross-SDK
-piece that runs the same graph from three languages.
+Later posts will cover Reflow's distributed transport once it's
+fleshed out beyond its current state, plus a cross-SDK piece
+running the same graph from three languages.
 
 After tutorial 01 you will know enough Reflow to read the others
 in any order.

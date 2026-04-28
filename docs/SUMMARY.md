@@ -111,6 +111,7 @@
   - [A long-running Kafka stream router](tutorials/real-world/06-kafka-router.md)
   - [Composing a workflow from the catalog](tutorials/real-world/07-issue-triage.md)
   - [A polyphonic synthesizer with ctx.pool](tutorials/real-world/08-cpp-poly-synth.md)
+  - [Reflow inside an Airflow PythonOperator](tutorials/real-world/09-airflow-triage.md)
 - [Building a Visual Editor](tutorials/building-visual-editor.md)
 - [ReactFlow Integration](tutorials/reactflow-reflow-integration.md)
 - [Performance Optimization](tutorials/performance-optimization.md)
