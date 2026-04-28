@@ -22,7 +22,8 @@ a row is safe; mixing across rows is not.
 
 | Wave | Date | pack | Go | JVM | Node | Python |
 |---|---|---|---|---|---|---|
-| **3** (current) | 2026-04-28 | `pack-v0.2.4` | `sdk/go/v0.2.5` | `sdk/jvm/v0.2.7` | `node-v0.2.9` | `python-v0.2.8` |
+| **4** (current) | 2026-04-28 | `pack-v0.2.5` | `sdk/go/v0.2.6` | `sdk/jvm/v0.2.8` | `node-v0.2.10` | `python-v0.2.9` |
+| 3 | 2026-04-28 | `pack-v0.2.4` | `sdk/go/v0.2.5` | `sdk/jvm/v0.2.7` | `node-v0.2.9` | `python-v0.2.8` |
 | 2 | 2026-04-27 | `pack-v0.2.3` | `sdk/go/v0.2.3` | `sdk/jvm/v0.2.4` | `node-v0.2.6` | `python-v0.2.4` |
 | 1 | 2026-04-26 | `pack-v0.2.1` | `sdk/go/v0.2.2` | `sdk/jvm/v0.2.3` | `node-v0.2.5` | `python-v0.2.3` |
 
@@ -44,10 +45,10 @@ unreleased SDK fixes).
 
 | SDK | Out-of-wave releases | Compatible with pack |
 |---|---|---|
-| Go | `sdk/go/v0.2.4` | none — use `sdk/go/v0.2.5` for `pack-v0.2.4` |
-| JVM | `sdk/jvm/v0.2.5`, `sdk/jvm/v0.2.6` | none — use `sdk/jvm/v0.2.7` for `pack-v0.2.4` |
-| Node | `node-v0.2.7`, `node-v0.2.8` | none — use `node-v0.2.9` for `pack-v0.2.4` |
-| Python | `python-v0.2.5`, `python-v0.2.6`, `python-v0.2.7` | none — use `python-v0.2.8` for `pack-v0.2.4` |
+| Go | `sdk/go/v0.2.4` | none — use the wave 3+ Go release |
+| JVM | `sdk/jvm/v0.2.5`, `sdk/jvm/v0.2.6` | none — use the wave 3+ JVM release |
+| Node | `node-v0.2.7`, `node-v0.2.8` | none — use the wave 3+ Node release |
+| Python | `python-v0.2.5`, `python-v0.2.6`, `python-v0.2.7` | none — use the wave 3+ Python release |
 
 ## Verifying compatibility from code
 
