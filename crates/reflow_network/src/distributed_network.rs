@@ -222,6 +222,18 @@ impl DistributedNetwork {
         self.bridge.discovery()
     }
 
+    /// Number of currently-connected remote networks. Mainly used by
+    /// tests to assert heartbeat eviction and reconnect behavior.
+    pub fn connection_count(&self) -> usize {
+        self.bridge.connection_count()
+    }
+
+    /// Whether the bridge currently holds a connection to the named
+    /// remote network.
+    pub fn is_connected_to(&self, network_id: &str) -> bool {
+        self.bridge.is_connected_to(network_id)
+    }
+
     /// Shutdown the distributed network
     pub async fn shutdown(&mut self) -> Result<(), anyhow::Error> {
         tracing::info!(

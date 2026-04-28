@@ -32,6 +32,15 @@ pub struct NetworkBridge {
     /// Pending discovery requests awaiting responses, keyed by request_id
     pending_discovery:
         Arc<RwLock<HashMap<String, tokio::sync::oneshot::Sender<ActorDiscoveryResponse>>>>,
+    /// Producer side of the reconnect-request channel. The
+    /// message-loop task sends `(network_id, endpoint)` here when a
+    /// client connection drops; a dedicated dispatcher (spawned in
+    /// `start()`) consumes the channel and runs the backoff loop.
+    /// Decoupling the dispatcher from `connect_to_network_owned`
+    /// breaks the recursive future type — the dialer no longer
+    /// transitively awaits itself.
+    reconnect_tx: flume::Sender<(String, String)>,
+    reconnect_rx: flume::Receiver<(String, String)>,
 }
 
 unsafe impl Sync for NetworkBridge {}
@@ -48,6 +57,8 @@ impl Clone for NetworkBridge {
             local_network: self.local_network.clone(),
             shutdown_signal: self.shutdown_signal.clone(),
             pending_discovery: self.pending_discovery.clone(),
+            reconnect_tx: self.reconnect_tx.clone(),
+            reconnect_rx: self.reconnect_rx.clone(),
         }
     }
 }
@@ -60,6 +71,11 @@ pub struct RemoteConnection {
     pub websocket: ConnectionWebSocket,
     pub last_heartbeat: Instant,
     pub status: ConnectionStatus,
+    /// Origin endpoint for client-initiated connections. Stored so
+    /// the bridge can attempt a reconnect when the WebSocket dies.
+    /// `None` for server-accepted connections (we don't know how to
+    /// dial back; the peer is responsible for reconnecting).
+    pub endpoint: Option<String>,
 }
 
 impl Clone for RemoteConnection {
@@ -71,6 +87,7 @@ impl Clone for RemoteConnection {
             websocket: self.websocket.clone(),
             last_heartbeat: self.last_heartbeat,
             status: self.status.clone(),
+            endpoint: self.endpoint.clone(),
         }
     }
 }
@@ -222,6 +239,7 @@ impl NetworkBridge {
         let discovery = Arc::new(DiscoveryService::new(config.clone()));
         let router = Arc::new(MessageRouter::with_connection_pool(connections.clone()));
         let transport = Arc::new(TransportLayer::new(config.clone()));
+        let (reconnect_tx, reconnect_rx) = flume::unbounded();
 
         Ok(NetworkBridge {
             config,
@@ -232,6 +250,8 @@ impl NetworkBridge {
             local_network: Arc::new(RwLock::new(None)),
             shutdown_signal: Arc::new(tokio::sync::Notify::new()),
             pending_discovery: Arc::new(RwLock::new(HashMap::new())),
+            reconnect_tx,
+            reconnect_rx,
         })
     }
 
@@ -251,6 +271,92 @@ impl NetworkBridge {
         // Start heartbeat monitoring
         self.start_heartbeat_monitor().await?;
 
+        // Start the reconnect dispatcher
+        self.start_reconnect_dispatcher().await?;
+
+        Ok(())
+    }
+
+    async fn start_reconnect_dispatcher(&self) -> Result<()> {
+        let rx = self.reconnect_rx.clone();
+        let shutdown = self.shutdown_signal.clone();
+        let config = self.config.clone();
+        let connections = self.connections.clone();
+        let router = self.router.clone();
+        let pending = self.pending_discovery.clone();
+        let reconnect_tx = self.reconnect_tx.clone();
+
+        tokio::spawn(async move {
+            loop {
+                let request = tokio::select! {
+                    biased;
+                    _ = shutdown.notified() => {
+                        tracing::debug!("Reconnect dispatcher: shutdown received, exiting");
+                        return;
+                    }
+                    req = rx.recv_async() => req,
+                };
+                let (network_id, endpoint) = match request {
+                    Ok(pair) => pair,
+                    Err(_) => return,
+                };
+
+                // Capped exponential backoff: 200ms → 400ms → 800ms →
+                // 1.6s → 3.2s, then give up and surface the failure
+                // in tracing.
+                let mut delay = Duration::from_millis(200);
+                let max_attempts = 5u32;
+                let max_delay = Duration::from_secs(5);
+
+                for attempt in 1..=max_attempts {
+                    tokio::select! {
+                        _ = tokio::time::sleep(delay) => {}
+                        _ = shutdown.notified() => return,
+                    }
+
+                    let result = Self::connect_to_network_owned(
+                        endpoint.clone(),
+                        config.clone(),
+                        connections.clone(),
+                        router.clone(),
+                        pending.clone(),
+                        reconnect_tx.clone(),
+                    )
+                    .await;
+
+                    match result {
+                        Ok(()) => {
+                            tracing::info!(
+                                "Reconnected to {} (endpoint {}) on attempt {}",
+                                network_id,
+                                endpoint,
+                                attempt
+                            );
+                            break;
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                "Reconnect attempt {}/{} for {} failed: {}",
+                                attempt,
+                                max_attempts,
+                                network_id,
+                                e
+                            );
+                            if attempt == max_attempts {
+                                tracing::error!(
+                                    "Reconnect to {} (endpoint {}) gave up after {} attempts",
+                                    network_id,
+                                    endpoint,
+                                    max_attempts
+                                );
+                            }
+                        }
+                    }
+                    delay = (delay * 2).min(max_delay);
+                }
+            }
+        });
+
         Ok(())
     }
 
@@ -265,28 +371,50 @@ impl NetworkBridge {
         let router = self.router.clone();
         let config = self.config.clone();
         let pending_discovery = self.pending_discovery.clone();
+        let shutdown = self.shutdown_signal.clone();
 
         tokio::spawn(async move {
-            while let Ok((stream, addr)) = listener.accept().await {
-                let websocket = accept_async(stream).await.unwrap();
+            loop {
+                tokio::select! {
+                    biased;
+                    _ = shutdown.notified() => {
+                        tracing::debug!("Server accept loop: shutdown received, dropping listener");
+                        return;
+                    }
+                    accept = listener.accept() => {
+                        let (stream, addr) = match accept {
+                            Ok(pair) => pair,
+                            Err(e) => {
+                                tracing::warn!("listener accept failed: {e}");
+                                continue;
+                            }
+                        };
+                        let websocket = match accept_async(stream).await {
+                            Ok(ws) => ws,
+                            Err(e) => {
+                                tracing::warn!("websocket upgrade failed: {e}");
+                                continue;
+                            }
+                        };
 
-                // Handle new connection in separate task
-                let connections = connections.clone();
-                let router = router.clone();
-                let config = config.clone();
-                let pending_discovery = pending_discovery.clone();
+                        let connections = connections.clone();
+                        let router = router.clone();
+                        let config = config.clone();
+                        let pending_discovery = pending_discovery.clone();
 
-                tokio::spawn(async move {
-                    Self::handle_connection(
-                        websocket,
-                        addr,
-                        connections,
-                        router,
-                        config,
-                        pending_discovery,
-                    )
-                    .await;
-                });
+                        tokio::spawn(async move {
+                            Self::handle_connection(
+                                websocket,
+                                addr,
+                                connections,
+                                router,
+                                config,
+                                pending_discovery,
+                            )
+                            .await;
+                        });
+                    }
+                }
             }
         });
 
@@ -314,6 +442,7 @@ impl NetworkBridge {
                 websocket: ConnectionWebSocket::from_server_websocket(websocket),
                 last_heartbeat: Instant::now(),
                 status: ConnectionStatus::Connected,
+                endpoint: None,
             };
 
             // Store connection
@@ -582,12 +711,19 @@ impl NetworkBridge {
         let heartbeat_interval = Duration::from_millis(self.config.heartbeat_interval_ms);
         let timeout_threshold = heartbeat_interval * 3; // 3 missed heartbeats = timeout
         let local_network_id = self.config.network_id.clone();
+        let shutdown = self.shutdown_signal.clone();
 
         tokio::spawn(async move {
             let mut interval = interval(heartbeat_interval);
 
             loop {
-                interval.tick().await;
+                tokio::select! {
+                    _ = interval.tick() => {}
+                    _ = shutdown.notified() => {
+                        tracing::debug!("Heartbeat monitor: shutdown received, exiting");
+                        break;
+                    }
+                }
 
                 let now = Instant::now();
                 let mut networks_to_remove = Vec::new();
@@ -644,96 +780,132 @@ impl NetworkBridge {
 
     /// Connect to a remote network
     pub async fn connect_to_network(&self, endpoint: &str) -> Result<()> {
+        Self::connect_to_network_owned(
+            endpoint.to_string(),
+            self.config.clone(),
+            self.connections.clone(),
+            self.router.clone(),
+            self.pending_discovery.clone(),
+            self.reconnect_tx.clone(),
+        )
+        .await
+    }
+
+    /// Owned-Arc version of `connect_to_network`. Exists for two
+    /// reasons:
+    /// 1. The reconnect dispatcher (spawned task) needs to call into
+    ///    the dial path without holding `&self` across `.await`.
+    /// 2. The dispatcher decoupling means this fn must NOT
+    ///    transitively await the dispatcher itself — otherwise the
+    ///    auto-generated future would have an infinite recursive
+    ///    type and the compiler couldn't auto-impl Send. So instead
+    ///    of awaiting reconnect inline, the spawned message-loop
+    ///    task just sends `(network_id, endpoint)` to the
+    ///    `reconnect_tx` channel on disconnect and returns.
+    async fn connect_to_network_owned(
+        endpoint: String,
+        config: DistributedConfig,
+        connections: Arc<RwLock<HashMap<String, RemoteConnection>>>,
+        router: Arc<MessageRouter>,
+        pending_discovery: Arc<
+            RwLock<HashMap<String, tokio::sync::oneshot::Sender<ActorDiscoveryResponse>>>,
+        >,
+        reconnect_tx: flume::Sender<(String, String)>,
+    ) -> Result<()> {
         let url = format!("ws://{}", endpoint);
 
-        match connect_async(&url).await {
-            Ok((mut websocket, _)) => {
-                // Send handshake
-                let handshake = NetworkHandshake {
-                    network_id: self.config.network_id.clone(),
-                    instance_id: self.config.instance_id.clone(),
-                    protocol_version: "1.0".to_string(),
-                    auth_token: self.config.auth_token.clone(),
-                    capabilities: vec!["actor_messaging".to_string()],
-                };
-
-                if let Ok(handshake_text) = serde_json::to_string(&handshake) {
-                    websocket
-                        .send(WsMessage::Text(handshake_text.into()))
-                        .await?;
-
-                    // Wait for response. A successful handshake unwraps to
-                    // the next block; a refused one (auth mismatch,
-                    // protocol incompatibility, etc.) returns Err with
-                    // the server's reason so callers know connect_to_network
-                    // failed and why.
-                    let response = match websocket.next().await {
-                        Some(Ok(WsMessage::Text(response_text))) => {
-                            serde_json::from_str::<HandshakeResponse>(&response_text)
-                                .map_err(|e| anyhow::anyhow!("malformed handshake response: {e}"))?
-                        }
-                        other => {
-                            return Err(anyhow::anyhow!(
-                                "no handshake response from {endpoint}: {other:?}"
-                            ));
-                        }
-                    };
-                    if !response.success {
-                        return Err(anyhow::anyhow!(
-                            "handshake refused by {endpoint}: {}",
-                            response.error.as_deref().unwrap_or("(no reason)")
-                        ));
-                    }
-                    {
-                        let connection = RemoteConnection {
-                            network_id: response.network_id.clone(),
-                            instance_id: response.instance_id.clone(),
-                            connection_type: ConnectionType::Client,
-                            websocket: ConnectionWebSocket::from_client_websocket(websocket),
-                            last_heartbeat: Instant::now(),
-                            status: ConnectionStatus::Connected,
-                        };
-
-                        self.connections
-                            .write()
-                            .insert(response.network_id.clone(), connection);
-
-                        // Handle incoming messages
-                        let connections = self.connections.clone();
-                        let router = self.router.clone();
-                        let network_id = response.network_id.clone();
-                        let config = self.config.clone();
-                        let pending_discovery = self.pending_discovery.clone();
-
-                        tokio::spawn(async move {
-                            Self::handle_incoming_messages(
-                                network_id,
-                                connections,
-                                router,
-                                config,
-                                pending_discovery,
-                            )
-                            .await;
-                        });
-
-                        tracing::info!(
-                            "Successfully connected to network: {}",
-                            response.network_id
-                        );
-                        return Ok(());
-                    }
+        // Dial + handshake in a tight scope so the unsplit
+        // `WebSocketStream` (which is not Send across .await with
+        // tokio-tungstenite 0.27) doesn't escape into the outer
+        // future's state machine.
+        let response = {
+            let (mut websocket, _) = match connect_async(&url).await {
+                Ok(pair) => pair,
+                Err(e) => {
+                    tracing::error!("Failed to connect to {}: {}", endpoint, e);
+                    return Err(e.into());
                 }
-            }
-            Err(e) => {
-                tracing::error!("Failed to connect to {}: {}", endpoint, e);
-                return Err(e.into());
-            }
-        }
+            };
 
-        Err(anyhow::anyhow!(
-            "Failed to establish connection to {}",
-            endpoint
-        ))
+            let handshake = NetworkHandshake {
+                network_id: config.network_id.clone(),
+                instance_id: config.instance_id.clone(),
+                protocol_version: "1.0".to_string(),
+                auth_token: config.auth_token.clone(),
+                capabilities: vec!["actor_messaging".to_string()],
+            };
+            let handshake_text = serde_json::to_string(&handshake)
+                .map_err(|e| anyhow::anyhow!("failed to serialize handshake: {e}"))?;
+            websocket
+                .send(WsMessage::Text(handshake_text.into()))
+                .await?;
+
+            // Wait for response. A successful handshake unwraps to the
+            // next block; a refused one (auth mismatch, protocol
+            // incompatibility, etc.) returns Err with the server's reason
+            // so callers know connect_to_network failed and why.
+            let response = match websocket.next().await {
+                Some(Ok(WsMessage::Text(response_text))) => {
+                    serde_json::from_str::<HandshakeResponse>(&response_text)
+                        .map_err(|e| anyhow::anyhow!("malformed handshake response: {e}"))?
+                }
+                other => {
+                    return Err(anyhow::anyhow!(
+                        "no handshake response from {endpoint}: {other:?}"
+                    ));
+                }
+            };
+            if !response.success {
+                return Err(anyhow::anyhow!(
+                    "handshake refused by {endpoint}: {}",
+                    response.error.as_deref().unwrap_or("(no reason)")
+                ));
+            }
+
+            let connection = RemoteConnection {
+                network_id: response.network_id.clone(),
+                instance_id: response.instance_id.clone(),
+                connection_type: ConnectionType::Client,
+                websocket: ConnectionWebSocket::from_client_websocket(websocket),
+                last_heartbeat: Instant::now(),
+                status: ConnectionStatus::Connected,
+                endpoint: Some(endpoint.clone()),
+            };
+
+            connections
+                .write()
+                .insert(response.network_id.clone(), connection);
+            response
+        };
+
+        // Spawn the message-loop task. When it exits (peer drop /
+        // stream error), nudge the reconnect dispatcher with the
+        // (network_id, endpoint) tuple — backoff lives there, not
+        // here, so this future stays a finite type.
+        let nid = response.network_id.clone();
+        let nid_for_signal = response.network_id.clone();
+        let endpoint_for_signal = endpoint.clone();
+
+        tokio::spawn(async move {
+            Self::handle_incoming_messages(
+                nid,
+                connections,
+                router,
+                config,
+                pending_discovery,
+            )
+            .await;
+
+            let _ = reconnect_tx
+                .send_async((nid_for_signal, endpoint_for_signal))
+                .await;
+        });
+
+        tracing::info!(
+            "Successfully connected to network: {}",
+            response.network_id
+        );
+        Ok(())
     }
 
     /// Handle incoming actor discovery request
@@ -833,6 +1005,10 @@ impl NetworkBridge {
             self.config.network_id
         );
 
+        // Notify all spawned tasks (heartbeat monitor, sleeping
+        // reconnect loops) so they exit instead of leaking.
+        self.shutdown_signal.notify_waiters();
+
         // Stop the discovery refresh loop so its tokio task exits.
         self.discovery.stop();
 
@@ -861,6 +1037,17 @@ impl NetworkBridge {
     /// list of currently visible networks.
     pub fn discovery(&self) -> Arc<DiscoveryService> {
         self.discovery.clone()
+    }
+
+    /// Number of currently-tracked remote connections.
+    pub fn connection_count(&self) -> usize {
+        self.connections.read().len()
+    }
+
+    /// Whether the bridge currently holds a connection to the named
+    /// remote network.
+    pub fn is_connected_to(&self, network_id: &str) -> bool {
+        self.connections.read().contains_key(network_id)
     }
 }
 

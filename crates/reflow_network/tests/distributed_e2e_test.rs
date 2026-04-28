@@ -318,6 +318,192 @@ async fn auth_mismatch_rejects_handshake() {
     client.shutdown().await.ok();
 }
 
+/// Helper: same as `make_config` but lets the test pick a custom
+/// heartbeat interval so timeout-driven tests can run in seconds
+/// rather than the default 1s.
+fn make_config_fast_heartbeat(
+    network_id: &str,
+    instance_id: &str,
+    port: u16,
+    heartbeat_ms: u64,
+) -> DistributedConfig {
+    let mut cfg = make_config(network_id, instance_id, port);
+    cfg.heartbeat_interval_ms = heartbeat_ms;
+    cfg
+}
+
+/// When the server vanishes, the client's heartbeat monitor must
+/// notice the dead connection within `3 * heartbeat_interval_ms`
+/// (the timeout threshold) and evict it from the connections map.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn heartbeat_timeout_evicts_dead_peer() {
+    let server = DistributedNetwork::new(make_config_fast_heartbeat(
+        "server-net",
+        "server-6",
+        9110,
+        100,
+    ))
+    .await
+    .expect("server::new");
+    let mut server = server;
+    server.start().await.expect("server::start");
+
+    let mut client = DistributedNetwork::new(make_config_fast_heartbeat(
+        "client-net",
+        "client-6",
+        9111,
+        100,
+    ))
+    .await
+    .expect("client::new");
+    client.start().await.expect("client::start");
+
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    client
+        .connect_to_network("127.0.0.1:9110")
+        .await
+        .expect("connect_to_network");
+
+    // Connection should be in the map now.
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    assert!(
+        client.is_connected_to("server-net"),
+        "expected client to track the server connection right after handshake"
+    );
+
+    // Tear the server down. The TCP close propagates to the client's
+    // message-loop task, which marks the connection failed and
+    // removes it. The heartbeat monitor would catch a silent peer
+    // even without the close, but the close path is the fast one.
+    server.shutdown().await.ok();
+
+    // Within ~3 heartbeat intervals (300ms) the client should have
+    // dropped the entry. Give a generous margin to absorb scheduler
+    // jitter on slower CI hosts.
+    let deadline = std::time::Instant::now() + Duration::from_millis(1500);
+    while client.is_connected_to("server-net") && std::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert!(
+        !client.is_connected_to("server-net"),
+        "server-net entry should have been evicted after the peer died"
+    );
+
+    client.shutdown().await.ok();
+}
+
+/// After a peer drops and comes back on the same endpoint, the
+/// client's reconnect dispatcher should re-establish the connection
+/// without any explicit user action.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn client_reconnects_after_server_restart() {
+    let (sink_tx_initial, _sink_rx_initial) =
+        flume::unbounded::<HashMap<String, Message>>();
+
+    // ── Round 1: bring up server #1 + client; verify federation ──
+    let server1 = DistributedNetwork::new(make_config_fast_heartbeat(
+        "server-net",
+        "server-7",
+        9112,
+        150,
+    ))
+    .await
+    .expect("server1::new");
+    server1
+        .register_local_actor("recorder", RecorderActor::new(sink_tx_initial), None)
+        .expect("register recorder");
+    let mut server1 = server1;
+    server1.start().await.expect("server1::start");
+
+    let mut client = DistributedNetwork::new(make_config_fast_heartbeat(
+        "client-net",
+        "client-7",
+        9113,
+        150,
+    ))
+    .await
+    .expect("client::new");
+    client.start().await.expect("client::start");
+
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    client
+        .connect_to_network("127.0.0.1:9112")
+        .await
+        .expect("initial connect_to_network");
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert!(
+        client.is_connected_to("server-net"),
+        "client should track the server-net connection after the initial handshake"
+    );
+
+    // ── Drop server #1 ──────────────────────────────────────────────
+    server1.shutdown().await.ok();
+    drop(server1);
+
+    // Wait for the client to notice the close and remove its
+    // tracking entry. Give a generous margin — the cleanup chain is
+    // async (Close frame → handle_incoming_messages breaks →
+    // `connections.write().remove`).
+    let drop_deadline = std::time::Instant::now() + Duration::from_millis(2000);
+    while client.is_connected_to("server-net") && std::time::Instant::now() < drop_deadline {
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert!(
+        !client.is_connected_to("server-net"),
+        "client should drop the entry after server #1 closes"
+    );
+
+    // ── Bring up server #2 on the same port ────────────────────────
+    let (sink_tx, sink_rx) = flume::unbounded::<HashMap<String, Message>>();
+    let server2 = loop {
+        match DistributedNetwork::new(make_config_fast_heartbeat(
+            "server-net",
+            "server-7-restart",
+            9112,
+            150,
+        ))
+        .await
+        {
+            Ok(s) => break s,
+            Err(_) => {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                continue;
+            }
+        }
+    };
+    server2
+        .register_local_actor("recorder", RecorderActor::new(sink_tx), None)
+        .expect("register recorder #2");
+    let mut server2 = server2;
+    server2.start().await.expect("server2::start");
+
+    // Client's reconnect loop sleeps with backoff (200, 400, 800,
+    // 1600, 3200 ms). Total budget for reconnect ≈ 6.5s.
+    let deadline = std::time::Instant::now() + Duration::from_secs(8);
+    while !client.is_connected_to("server-net") && std::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert!(
+        client.is_connected_to("server-net"),
+        "client should auto-reconnect to server-net after server #2 is up"
+    );
+
+    // Verify the link works end-to-end after reconnect.
+    let payload = Message::String(Arc::new("hello-after-reconnect".to_string()));
+    client
+        .send_to_remote_actor("server-net", "recorder", "in", payload.clone(), None)
+        .await
+        .expect("send_to_remote_actor after reconnect");
+
+    let received = sink_rx
+        .recv_timeout(Duration::from_secs(3))
+        .expect("recorder on server #2 should receive the post-reconnect message");
+    assert_eq!(received.get("in"), Some(&payload));
+
+    server2.shutdown().await.ok();
+    client.shutdown().await.ok();
+}
+
 /// Server demands auth; client presents no token at all. Same
 /// rejection.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
