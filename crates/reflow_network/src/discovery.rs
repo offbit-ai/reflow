@@ -163,7 +163,7 @@ impl DiscoveryService {
         let client = self
             .registration_client
             .clone()
-            .unwrap_or_else(reqwest::Client::new);
+            .unwrap_or_default();
 
         tokio::spawn(async move {
             // First tick fires immediately so the table is populated
