@@ -131,7 +131,8 @@ impl DistributedNetwork {
         let proxy_name = format!("{}@{}", actor_id, remote_network_id);
         {
             let mut network = self.local_network.write();
-            network.register_actor(&proxy_name, proxy)?;
+            let proxy_arc: Arc<dyn crate::actor::Actor> = Arc::new(proxy);
+            network.register_actor_arc(&proxy_name, Arc::clone(&proxy_arc))?;
 
             // Add as a node and start the proxy actor process
             network.add_node(
@@ -143,14 +144,22 @@ impl DistributedNetwork {
                 )])),
             )?;
 
+            // Track in `initialized_actors` so `send_to_actor` and the
+            // connector machinery can find the proxy. Without this the
+            // proxy is reachable via direct `bridge.send_remote_message`
+            // but not via the local-network paths that callers expect
+            // (a proxy is meant to be wired into the graph just like
+            // any other node).
+            network
+                .initialized_actors
+                .insert(proxy_name.clone(), Arc::clone(&proxy_arc));
+
             // Start the proxy actor process
-            if let Some(actor_impl) = network.actors.get(&proxy_name) {
-                let actor_config =
-                    ActorConfig::from_node(network.nodes.get(&proxy_name).cloned().unwrap())?;
-                let process =
-                    actor_impl.create_process(actor_config, network.tracing_integration.clone());
-                tokio::spawn(process);
-            }
+            let actor_config =
+                ActorConfig::from_node(network.nodes.get(&proxy_name).cloned().unwrap())?;
+            let process =
+                proxy_arc.create_process(actor_config, network.tracing_integration.clone());
+            tokio::spawn(process);
         }
 
         tracing::info!(
