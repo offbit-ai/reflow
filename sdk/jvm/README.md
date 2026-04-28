@@ -186,7 +186,10 @@ First-party packs live under [`sdk/packs/`](https://github.com/offbit-ai/reflow/
 ### Where to get `.rflpack` files
 
 First-party bundles ship as assets on every [GitHub Release](https://github.com/offbit-ai/reflow/releases)
-whose tag starts with `pack-v`. Each release ships two flavours of
+whose tag starts with `pack-v`. **Pack and SDK builds must come
+from the same release wave** (matching `REFLOW_PACK_ABI_VERSION`)
+— see [the pack ↔ SDK compatibility matrix](https://github.com/offbit-ai/reflow/blob/main/docs/pack-compatibility.md)
+for the supported pairings. Each release ships two flavours of
 every pack:
 
 | Flavour | Filename | When to use |
