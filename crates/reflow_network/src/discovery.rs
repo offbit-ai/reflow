@@ -150,6 +150,12 @@ impl DiscoveryService {
         }
 
         let endpoints = self.config.discovery_endpoints.clone();
+        let registration = RegistrationRequest {
+            network_id: self.config.network_id.clone(),
+            instance_id: self.config.instance_id.clone(),
+            endpoint: format!("{}:{}", self.config.bind_address, self.config.bind_port),
+            capabilities: vec!["actor_messaging".to_string()],
+        };
         let known = self.known_networks.clone();
         let events_tx = self.events_tx.clone();
         let shutdown = self.shutdown.clone();
@@ -167,7 +173,7 @@ impl DiscoveryService {
             loop {
                 tokio::select! {
                     _ = tick.tick() => {
-                        Self::refresh_once(&endpoints, &client, &known, &events_tx).await;
+                        Self::refresh_once(&endpoints, &registration, &client, &known, &events_tx).await;
                     }
                     _ = shutdown.notified() => {
                         tracing::debug!("Discovery refresh: shutdown received, exiting");
@@ -182,10 +188,25 @@ impl DiscoveryService {
 
     async fn refresh_once(
         endpoints: &[String],
+        registration: &RegistrationRequest,
         client: &reqwest::Client,
         known: &Arc<RwLock<HashMap<String, NetworkInfo>>>,
         events_tx: &tokio::sync::broadcast::Sender<DiscoveryEvent>,
     ) {
+        // Renew our registration on every tick. Without this the
+        // discovery server's TTL would eventually drop us, and other
+        // peers would stop seeing this network.
+        for endpoint in endpoints {
+            if let Err(e) = client
+                .post(format!("{}/register", endpoint))
+                .json(registration)
+                .send()
+                .await
+            {
+                tracing::warn!("Discovery re-register failed for {}: {}", endpoint, e);
+            }
+        }
+
         // Aggregate every endpoint's response into a single
         // `network_id -> info` map so duplicates collapse.
         let mut latest: HashMap<String, NetworkInfo> = HashMap::new();
