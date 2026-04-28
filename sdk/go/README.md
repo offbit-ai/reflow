@@ -17,9 +17,9 @@ import reflow "github.com/offbit-ai/reflow/sdk/go"
 ### Install (published)
 
 ```sh
-go get github.com/offbit-ai/reflow/sdk/go@v0.2.4
-cd "$(go env GOMODCACHE)/github.com/offbit-ai/reflow/sdk/go@v0.2.4"
-./scripts/install_lib.sh v0.2.4
+go get github.com/offbit-ai/reflow/sdk/go@v0.2.5
+cd "$(go env GOMODCACHE)/github.com/offbit-ai/reflow/sdk/go@v0.2.5"
+./scripts/install_lib.sh v0.2.5
 ```
 
 `install_lib.sh` downloads the matching tarball from the

@@ -1,6 +1,6 @@
 [package]
 name = "reflow_rt_capi"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Damilare Akinlaja"]
 description = "C ABI bindings for the Reflow runtime — the shared native surface consumed by Go (cgo), Kotlin/Java (JNI), and other non-Rust callers."

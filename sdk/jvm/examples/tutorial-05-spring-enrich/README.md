@@ -63,7 +63,7 @@ JAR — no manual `cargo build`, no path overrides. Just declare the
 dependency:
 
 ```kotlin
-implementation("ai.offbit:reflow:0.2.5")
+implementation("ai.offbit:reflow:0.2.7")
 ```
 
 `Network` is `AutoCloseable`, so the controller wraps each request

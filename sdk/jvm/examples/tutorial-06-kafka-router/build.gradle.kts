@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation("ai.offbit:reflow:0.2.6")
+    implementation("ai.offbit:reflow:0.2.7")
     implementation("org.apache.kafka:kafka-clients:3.7.1")
     implementation("org.slf4j:slf4j-simple:2.0.13")
 

@@ -66,7 +66,7 @@ plugins {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("ai.offbit:reflow:0.2.5")
+    implementation("ai.offbit:reflow:0.2.7")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
