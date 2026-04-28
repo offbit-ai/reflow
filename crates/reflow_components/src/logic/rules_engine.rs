@@ -89,12 +89,9 @@ pub async fn rules_engine_actor(context: ActorContext) -> Result<HashMap<String,
             // inner instead so the resulting matched packet is a clean
             // Message::Object holding only the data + new properties.
             let mut output_data = match data {
-                Message::Object(obj) => serde_json::to_value(obj.as_ref())
-                    .unwrap_or(Value::Null),
-                Message::Array(arr) => serde_json::to_value(arr.as_ref())
-                    .unwrap_or(Value::Null),
-                Message::Any(v) => serde_json::to_value(v.as_ref())
-                    .unwrap_or(Value::Null),
+                Message::Object(obj) => serde_json::to_value(obj.as_ref()).unwrap_or(Value::Null),
+                Message::Array(arr) => serde_json::to_value(arr.as_ref()).unwrap_or(Value::Null),
+                Message::Any(v) => serde_json::to_value(v.as_ref()).unwrap_or(Value::Null),
                 Message::Event(v) => serde_json::to_value(v).unwrap_or(Value::Null),
                 // Primitives have no fields to modify; pass through as-is.
                 other => serde_json::to_value(other).unwrap_or(Value::Null),

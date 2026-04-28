@@ -27,8 +27,9 @@ fn register_all(host: &mut PackHost) {
     for info in infos {
         let tid = info.template_id.to_string();
         host.register(info.template_id, move || {
-            reflow_components::get_api_actor_for_template(&tid)
-                .unwrap_or_else(|| panic!("api-services pack: template '{tid}' missing from registry"))
+            reflow_components::get_api_actor_for_template(&tid).unwrap_or_else(|| {
+                panic!("api-services pack: template '{tid}' missing from registry")
+            })
         });
     }
 }

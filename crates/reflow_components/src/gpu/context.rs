@@ -139,7 +139,12 @@ impl GpuContext {
                 .map_err(|e| format!("query_selector failed: {:?}", e))?
                 .ok_or_else(|| format!("no element matched canvas selector `{}`", selector))?
                 .dyn_into::<web_sys::HtmlCanvasElement>()
-                .map_err(|_| format!("element matching `{}` is not an HTMLCanvasElement", selector))?;
+                .map_err(|_| {
+                    format!(
+                        "element matching `{}` is not an HTMLCanvasElement",
+                        selector
+                    )
+                })?;
             let target = wgpu::SurfaceTarget::Canvas(canvas);
             Some(
                 instance
@@ -301,14 +306,11 @@ pub fn try_gpu_context() -> Result<&'static GpuContext, String> {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        GPU_CONTEXT_CELL
-            .get()
-            .map(|cell| &**cell)
-            .ok_or_else(|| {
-                "GPU context not initialized — call `initGpuContext()` (or \
+        GPU_CONTEXT_CELL.get().map(|cell| &**cell).ok_or_else(|| {
+            "GPU context not initialized — call `initGpuContext()` (or \
                  reflow_components::gpu::init_gpu_context().await) before \
                  constructing GPU actors"
-                    .to_string()
-            })
+                .to_string()
+        })
     }
 }

@@ -736,8 +736,7 @@ impl Network {
                     while let Some(packet) = out_ports.1.clone().stream().next().await {
                         for (from_port, to_port, sink) in routes.iter() {
                             if let Some(msg) = packet.get(from_port) {
-                                let payload =
-                                    HashMap::from_iter([(to_port.clone(), msg.clone())]);
+                                let payload = HashMap::from_iter([(to_port.clone(), msg.clone())]);
                                 match sink {
                                     Sink::Reliable(tx) => {
                                         let _ = tx.send_async(payload).await;

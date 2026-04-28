@@ -164,9 +164,9 @@ pub use reflow_actor::{ActorBehavior, ActorLoad, ActorPayload, ActorState, Memor
 #[cfg(target_arch = "wasm32")]
 mod wasm_abi {
     use super::*;
+    use reflow_actor::message::Message;
     use std::collections::HashMap;
     use std::sync::Mutex;
-    use reflow_actor::message::Message;
 
     type Factory = Box<dyn Fn() -> std::sync::Arc<dyn Actor> + Send + Sync>;
 
@@ -213,14 +213,15 @@ mod wasm_abi {
         std::sync::OnceLock::new();
     static INSTANCES: std::sync::OnceLock<WasmSync<Mutex<HashMap<u32, InstanceEntry>>>> =
         std::sync::OnceLock::new();
-    static NEXT_INSTANCE_ID: std::sync::atomic::AtomicU32 =
-        std::sync::atomic::AtomicU32::new(1);
+    static NEXT_INSTANCE_ID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
 
     fn templates() -> &'static Mutex<Vec<TemplateEntry>> {
         &TEMPLATES.get_or_init(|| WasmSync(Mutex::new(Vec::new()))).0
     }
     fn instances() -> &'static Mutex<HashMap<u32, InstanceEntry>> {
-        &INSTANCES.get_or_init(|| WasmSync(Mutex::new(HashMap::new()))).0
+        &INSTANCES
+            .get_or_init(|| WasmSync(Mutex::new(HashMap::new())))
+            .0
     }
 
     // The browser pack loader provides this import under the `env`
@@ -302,11 +303,7 @@ mod wasm_abi {
             .to_string();
             let bytes = metadata.as_bytes();
             unsafe {
-                __reflow_pack_register_template(
-                    bytes.as_ptr(),
-                    bytes.len() as u32,
-                    factory_id,
-                );
+                __reflow_pack_register_template(bytes.as_ptr(), bytes.len() as u32, factory_id);
             }
         }
     }
@@ -568,8 +565,8 @@ mod wasm_abi {
 
 #[cfg(target_arch = "wasm32")]
 pub use wasm_abi::{
-    WasmPackHost, __reflow_pack_actor_run, __reflow_pack_alloc, __reflow_pack_create_actor,
-    __reflow_pack_destroy_actor, __reflow_pack_free,
+    __reflow_pack_actor_run, __reflow_pack_alloc, __reflow_pack_create_actor,
+    __reflow_pack_destroy_actor, __reflow_pack_free, WasmPackHost,
 };
 
 /// Cross-target alias: pack authors always write

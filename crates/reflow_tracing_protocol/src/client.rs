@@ -9,8 +9,8 @@ use serde_json;
 use std::collections::{HashMap as StdHashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use web_time::Instant;
 use tracing::{debug, error, info, warn};
+use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use futures_util::{SinkExt, StreamExt};

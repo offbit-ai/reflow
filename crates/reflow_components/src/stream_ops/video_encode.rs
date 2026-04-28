@@ -218,7 +218,11 @@ async fn stream_encode_wasm(
     let error_cb = Closure::<dyn FnMut(JsValue)>::new(move |err: JsValue| {
         let msg = err
             .dyn_ref::<js_sys::Error>()
-            .map(|e| e.message().as_string().unwrap_or_else(|| format!("{:?}", err)))
+            .map(|e| {
+                e.message()
+                    .as_string()
+                    .unwrap_or_else(|| format!("{:?}", err))
+            })
             .unwrap_or_else(|| format!("{:?}", err));
         *err_cell.borrow_mut() = Some(msg);
     });
@@ -276,8 +280,12 @@ async fn stream_encode_wasm(
                 if configured {
                     // web-sys signature: (coded_height, coded_width,
                     // format, timestamp_microseconds).
-                    let buffer_init =
-                        VideoFrameBufferInit::new(height, width, VideoPixelFormat::Rgba, timestamp_us);
+                    let buffer_init = VideoFrameBufferInit::new(
+                        height,
+                        width,
+                        VideoPixelFormat::Rgba,
+                        timestamp_us,
+                    );
                     // SAFETY: `as_slice()` returns a `&[u8]` view of
                     // the Rc<Vec<u8>>; the JS side copies into its
                     // own buffer before returning, so the lifetime

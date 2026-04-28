@@ -113,7 +113,7 @@ mod wasm {
     //! JSON-encoded result. We round-trip through JSON to keep the
     //! Rust↔JS boundary string-only — same shape as the native side.
 
-    use anyhow::{Result, anyhow};
+    use anyhow::{anyhow, Result};
     use js_sys::Function;
     use reflow_actor::message::Message;
     use serde_json::Value;

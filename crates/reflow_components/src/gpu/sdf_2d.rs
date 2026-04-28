@@ -31,9 +31,9 @@ use std::sync::OnceLock;
 
 #[cfg(feature = "gpu")]
 use super::context::try_gpu_context;
+use super::font_atlas::GlyphAtlasGpu;
 #[cfg(feature = "gpu")]
 use super::wasm_sync::{GpuMutex, GpuOnceLock};
-use super::font_atlas::GlyphAtlasGpu;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Layer image registry — zero-copy shared buffer for PRIM_IMAGE textures
@@ -488,8 +488,7 @@ static CACHED_LAYER: GpuMutex<Option<CachedLayer>> = GpuMutex::new(None);
 #[cfg(feature = "gpu")]
 static CACHED_ATLAS: GpuMutex<Option<CachedAtlas>> = GpuMutex::new(None);
 #[cfg(feature = "gpu")]
-static CACHED_RENDER_TARGETS: GpuMutex<Option<CachedRenderTargets>> =
-    GpuMutex::new(None);
+static CACHED_RENDER_TARGETS: GpuMutex<Option<CachedRenderTargets>> = GpuMutex::new(None);
 
 #[cfg(feature = "gpu")]
 fn get_pipeline(msaa: u32) -> &'static CachedPipeline {
@@ -670,8 +669,8 @@ pub fn render_2d_with_layer(
 ) -> Vec<u8> {
     use wgpu::util::DeviceExt;
 
-    let ctx = try_gpu_context()
-        .expect("GPU context not initialized — call init_gpu_context() first");
+    let ctx =
+        try_gpu_context().expect("GPU context not initialized — call init_gpu_context() first");
     let device = ctx.device();
     let queue = ctx.queue();
     let cached = get_pipeline(msaa);

@@ -191,9 +191,7 @@ impl ActorProcess {
     /// wasm32 variant — no `Send` because the runtime is single-threaded
     /// (`spawn_local`) and browser-only types are typically `!Send`.
     #[cfg(target_arch = "wasm32")]
-    pub fn into_future(
-        self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + 'static>> {
+    pub fn into_future(self) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + 'static>> {
         Box::pin(self.run())
     }
 }

@@ -1085,7 +1085,9 @@ pub unsafe extern "C" fn rfl_graph_add_group(
         Ok(v) => v,
         Err(s) => return s,
     };
-    unsafe { &mut *g }.inner.add_group(group_id, nodes, metadata);
+    unsafe { &mut *g }
+        .inner
+        .add_group(group_id, nodes, metadata);
     rfl_status::Ok
 }
 
@@ -1146,7 +1148,9 @@ pub unsafe extern "C" fn rfl_graph_remove_from_group(
         Ok(v) => v,
         Err(s) => return s,
     };
-    unsafe { &mut *g }.inner.remove_from_group(group_id, node_id);
+    unsafe { &mut *g }
+        .inner
+        .remove_from_group(group_id, node_id);
     rfl_status::Ok
 }
 
@@ -1210,7 +1214,9 @@ pub unsafe extern "C" fn rfl_graph_set_inport_metadata(
         Ok(v) => v,
         Err(s) => return s,
     };
-    unsafe { &mut *g }.inner.set_inport_metadata(port_id, metadata);
+    unsafe { &mut *g }
+        .inner
+        .set_inport_metadata(port_id, metadata);
     rfl_status::Ok
 }
 

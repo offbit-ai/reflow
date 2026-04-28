@@ -506,10 +506,7 @@ fn generate_operation_actor(
 
     // Build HTTP client + request
     writeln!(out, "    let client = reqwest::Client::builder()")?;
-    writeln!(
-        out,
-        "        .timeout_compat(Duration::from_secs(30))"
-    )?;
+    writeln!(out, "        .timeout_compat(Duration::from_secs(30))")?;
     writeln!(out, "        .build()?;")?;
     writeln!(out)?;
 

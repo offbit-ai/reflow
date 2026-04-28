@@ -869,9 +869,15 @@ impl MemoryState {
 
     // Aliases for cross-target use — match the wasm-side accessor names
     // so the shared pool helpers (above) compile on both targets.
-    pub fn value(&self, key: &str) -> Option<&Value> { self.get(key) }
-    pub fn value_mut(&mut self, key: &str) -> Option<&mut Value> { self.get_mut(key) }
-    pub fn remove_value(&mut self, key: &str) -> Option<Value> { self.0.remove(key) }
+    pub fn value(&self, key: &str) -> Option<&Value> {
+        self.get(key)
+    }
+    pub fn value_mut(&mut self, key: &str) -> Option<&mut Value> {
+        self.get_mut(key)
+    }
+    pub fn remove_value(&mut self, key: &str) -> Option<Value> {
+        self.0.remove(key)
+    }
 }
 
 // WASM-specific MemoryState using HashMap (Send + Sync safe)
@@ -898,7 +904,6 @@ impl ActorState for MemoryState {
 unsafe impl Send for MemoryState {}
 #[cfg(target_arch = "wasm32")]
 unsafe impl Sync for MemoryState {}
-
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]

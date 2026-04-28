@@ -579,8 +579,7 @@ static DYNAMIC_PIPELINE_CACHE: Lazy<
     GpuMutex<std::collections::HashMap<u64, CachedDynamicPipeline>>,
 > = Lazy::new(|| GpuMutex::new(std::collections::HashMap::new()));
 
-fn get_dynamic_cache(
-) -> &'static GpuMutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
+fn get_dynamic_cache() -> &'static GpuMutex<std::collections::HashMap<u64, CachedDynamicPipeline>> {
     &DYNAMIC_PIPELINE_CACHE
 }
 
