@@ -3,7 +3,7 @@
 A workflow that reads issues from GitHub, **decides via JSON
 rules**, and takes action — Slack alert, follow-up ping, or local
 archive. Almost every node in the graph is a catalog template
-instantiated by id; the only Python code is small data-shape
+instantiated by id; the only Python code is small format-conversion
 adapters and a per-row JSONL appender.
 
 The routing logic itself is **rules in config**, evaluated by the

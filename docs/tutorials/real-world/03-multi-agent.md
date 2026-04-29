@@ -160,7 +160,7 @@ it has received any packet — from a connection or from
 or `quotes` were missing data.
 
 The synthesizer also streams its tokens on `chunk`, using the same
-shape the specialists emit. The same logger handles them all.
+message format the specialists emit. The same logger handles them all.
 
 ## The logger
 
@@ -291,7 +291,7 @@ until the sink puts the synthesizer's answer on the queue.
 
 ## What is next
 
-The [next post](04-grpc-service.md) takes the same graph shape into
-a long-running service: a Go gRPC backend that spins up a per-request
-worker pool — Dispatcher → N Fetchers → Sink — and streams pages
-back over server-streaming RPC.
+The [next post](04-grpc-service.md) takes the same fan-out
+topology into a long-running service: a Go gRPC backend that spins
+up a per-request worker pool — Dispatcher → N Fetchers → Sink —
+and streams pages back over server-streaming RPC.

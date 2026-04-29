@@ -3,9 +3,10 @@
 A REST service that enriches a product SKU by fanning out to three
 slow downstream services in parallel, joining the results, and
 returning a merged JSON payload. Per-request Reflow network — same
-shape as [tutorial 04](04-grpc-service.md), different convergence
-point: where the Go gRPC tutorial fans *out* into a streaming
-response, this one fans *out and back in* into a single response.
+fan-out topology as [tutorial 04](04-grpc-service.md), different
+convergence point: where the Go gRPC tutorial fans *out* into a
+streaming response, this one fans *out and back in* into a single
+response.
 
 ## What this replaces
 
@@ -125,8 +126,8 @@ public class InventoryActor extends Actor {
 }
 ```
 
-`PriceActor` and `ReviewsActor` follow the same shape with different
-sleeps and payload fields.
+`PriceActor` and `ReviewsActor` follow the same template with
+different sleeps and payload fields.
 
 ## Merger
 
@@ -242,8 +243,8 @@ Output:
 ```
 
 The repo includes an `EnrichTest` that boots the full Spring context
-via `@SpringBootTest` and asserts the merged response shape — covers
-the full per-request lifecycle:
+via `@SpringBootTest` and asserts the merged response structure —
+covers the full per-request lifecycle:
 
 ```sh
 gradle test
@@ -264,7 +265,7 @@ gradle test
   up faster than the network, the runtime throttles upstream
   automatically.
 - **Adding a service.** One `AddNode`, two `AddConnection`s, one
-  inport on the merger. The handler shape doesn't change.
+  inport on the merger. The handler signature doesn't change.
 - **Routing topology lives in the wiring.** The splitter is a
   template; you can change "fan to all three" to "hash by SKU
   prefix" by editing one method, no controller changes.
@@ -272,6 +273,6 @@ gradle test
 ## What is next
 
 The [next post](06-kafka-router.md) takes the same SDK to a
-long-running shape: a Kafka stream router where the graph stays up
+long-running graph: a Kafka stream router where the graph stays up
 indefinitely, consuming from one topic and routing events into
 N output topics by content.

@@ -214,7 +214,7 @@ The full runnable example is at
 
 - The graph topology is identical to a clock-driven graph; only
   the source actor changes. A user-driven source (click handler
-  feeding a queue) follows the same shape.
+  feeding a queue) wires up the same way.
 - Swapping the predicate changes what surfaces. Drop `enwiki` to
   see every language; drop `namespace === 0` to include talk pages;
   add `e.user.includes("bot")` to watch bots. No other code changes.

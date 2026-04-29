@@ -1,11 +1,10 @@
 # A concurrent worker pool over gRPC (Go)
 
 A long-running gRPC server with one server-streaming RPC. Each call
-spins up a fresh Reflow network shaped like a worker pool — a
+spins up a fresh Reflow network laid out as a worker pool — a
 dispatcher fans URLs across N fetcher actors, results fan back into
-a single sink, the sink writes to the gRPC stream. Same shape as the
-canonical `goroutines + channels` fetcher pool, expressed as a
-graph.
+a single sink, the sink writes to the gRPC stream. The canonical
+`goroutines + channels` fetcher pool, expressed as a graph.
 
 ## What this replaces
 

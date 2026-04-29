@@ -99,7 +99,7 @@ auto driver = reflow::Actor::from_callback(
 ### `emit` vs `send` vs streams
 
 Three ways to publish from inside a callback, each for a different
-shape of work:
+kind of work:
 
 | When | Tool | Why |
 |---|---|---|
@@ -283,7 +283,7 @@ voices, soft fade in/out). Open it in any audio player.
 ## What is next
 
 The [next post](09-airflow-triage.md) takes Reflow back to
-production-shaped Python: a daily triage pipeline where Airflow
-owns the calendar (schedule, backfill, retry, UI, credentials)
-and Reflow owns the actor graph. Same shape as tutorial 07,
-wrapped in the integration pattern Airflow shops actually deploy.
+production Python: a daily triage pipeline where Airflow owns the
+calendar (schedule, backfill, retry, UI, credentials) and Reflow
+owns the actor graph. Same graph as tutorial 07, wrapped in the
+integration pattern Airflow shops actually deploy.

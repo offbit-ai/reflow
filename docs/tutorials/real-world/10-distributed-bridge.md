@@ -2,7 +2,7 @@
 
 Tutorial 09 closed the in-process series. This is the follow-up:
 two Reflow networks running as separate processes — the same
-shape works for two machines, two pods, two regions — federated
+approach works for two machines, two pods, two regions — federated
 through the `reflow-discovery` server. Messages sent on one peer
 land in an actor running on the other.
 
@@ -146,7 +146,7 @@ same way it would for an in-process message.
 ## Crossing the bridge from your own code
 
 The CLI is fine for ops scripts and integration tests, but a real
-service writes its own binary. The shape:
+service writes its own binary. The skeleton:
 
 ```rust
 use reflow_distributed::peer_config::PeerConfig;
@@ -252,7 +252,7 @@ Use this if you want to auto-register remote-actor proxies the
 moment a peer comes online — saves a round-trip vs. the
 configuration approach.
 
-## Production shape
+## Production deployment
 
 - **Run discovery as its own service.** Behind a TLS-terminating
   proxy if it crosses an untrusted boundary. The library

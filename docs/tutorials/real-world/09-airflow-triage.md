@@ -6,7 +6,7 @@ store, the duration UI. Reflow handles the actor graph: catalog
 templates for the I/O, custom actors for the bits the catalog can't
 anticipate. The integration point is one `PythonOperator` whose
 body is a regular Reflow `Network` — same lifecycle, same actors,
-same `start()` → drain → `shutdown()` shape as a stand-alone script.
+same `start()` → drain → `shutdown()` flow as a stand-alone script.
 
 | Concern | Owned by |
 |---|---|
@@ -47,7 +47,7 @@ serialization, each gets its own row in the task-instance table.
 Fine for handful-of-items workflows. Painful at scale and
 overkill for "fan three API lookups out and join them."
 
-The Reflow-inside-Airflow shape collapses that:
+The Reflow-inside-Airflow pattern collapses that:
 
 ```python
 @dag(schedule="@daily")
@@ -97,7 +97,7 @@ inside the task body.
 
 ## The Reflow Network (`pipeline.py`)
 
-This file is identical in shape to tutorial 07 — read GitHub →
+This file is identical in topology to tutorial 07 — read GitHub →
 loop → rules engine → split outputs to Slack vs JSONL archive — but
 it's wrapped in one function the operator calls.
 
@@ -145,7 +145,7 @@ def run_triage(
     }
 ```
 
-The graph itself uses the same shape as tutorial 07:
+The graph itself matches tutorial 07's wiring:
 
 ```mermaid
 flowchart LR
@@ -295,5 +295,5 @@ python3 pipeline.py
 
 The [next post](10-distributed-bridge.md) takes Reflow across the
 process boundary: two peers federated through the bundled
-`reflow-discovery` server, the same shape that works for two
+`reflow-discovery` server, the same approach that works for two
 machines.

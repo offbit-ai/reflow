@@ -18,7 +18,7 @@ inputs changes.
 The actor model, multi-language SDKs, pack format, and wasm runtime
 all serve those two ideas.
 
-## The shape
+## The primitives
 
 Three concepts cover most of what you write.
 
@@ -127,7 +127,7 @@ flowchart LR
 ```
 
 The two highlighted nodes have no dependency between them, so the
-runtime runs them concurrently. The shape of the graph implies the
+runtime runs them concurrently. The graph topology implies the
 parallelism — no `Promise.all`.
 
 What this gives you:
@@ -146,7 +146,7 @@ What this gives you:
 
 ## When Reflow fits
 
-Use Reflow when the work is shaped like a pipeline:
+Use Reflow when the work is a pipeline:
 
 - Stream of inputs to stream of outputs.
 - Mixed I/O and CPU work that benefits from concurrent stages.
@@ -154,7 +154,7 @@ Use Reflow when the work is shaped like a pipeline:
   code.
 - You want the same logic to run in the browser and on a server.
 
-Skip Reflow when the work is shaped like a request:
+Skip Reflow when the work is a single request:
 
 - One input, one output, no fan-out.
 - A page of imperative code with no reusable stages.
@@ -209,7 +209,7 @@ Skip Reflow when the work is shaped like a request:
    `python_callable` whose body is a regular Reflow Network.
 10. [**A graph that spans two processes**](10-distributed-bridge.md)
     (Rust + CLI). Two peers federated through the bundled
-    `reflow-discovery` server. Same shape works for two machines.
+    `reflow-discovery` server. The same approach works for two machines.
     Auto-reconnect with backoff, auth-token gating on the accept
     path, periodic discovery refresh — everything the in-process
     series didn't need.

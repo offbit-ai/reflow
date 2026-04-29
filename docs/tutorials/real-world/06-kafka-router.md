@@ -2,10 +2,10 @@
 
 A daemon that consumes events from one Kafka topic, routes each one
 to a different output topic based on content, and stays up
-indefinitely. Same SDK as [tutorial 05](05-spring-enrich.md), opposite
-shape: where 05 spins up a fresh per-request graph and tears it
-down, this one boots a single long-running graph at startup and
-lets the Kafka poll loop drive ticks through it.
+indefinitely. Same SDK as [tutorial 05](05-spring-enrich.md),
+opposite lifecycle: where 05 spins up a fresh per-request graph and
+tears it down, this one boots a single long-running graph at startup
+and lets the Kafka poll loop drive ticks through it.
 
 ```mermaid
 flowchart LR
@@ -36,7 +36,7 @@ Plain Kafka Streams would express this as a topology defined inside
 a single `KafkaStreams` builder; routing is `KStream#branch` with
 predicates compiled into the topology object. That works, but the
 topology and the producers/consumers are coupled — the same
-"split into N topics by content" shape on RabbitMQ, NATS, or in
+"split into N topics by content" pattern on RabbitMQ, NATS, or in
 front of a SQS-like service requires a different framework.
 
 Reflow's wiring is independent of the transport. Swap `KafkaSink`
@@ -360,7 +360,7 @@ Verify each output topic received its match:
   geo-by-region, schema-version split — all one-method changes.
   None of them touch the wiring or the sinks.
 - **Transport-independence.** `KafkaSink` could be `RabbitSink`,
-  `HttpSink`, an in-memory test sink — same graph shape. The Reflow
+  `HttpSink`, an in-memory test sink — same graph wiring. The Reflow
   contract is "messages on ports", not "Kafka records."
 - **Shutdown.** `source.stop()` exits the poll loop on next iteration
   (`while (!stopped)`); `producer.close()` flushes the outbound
