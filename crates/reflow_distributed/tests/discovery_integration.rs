@@ -56,6 +56,8 @@ async fn spawn_server() -> (String, tokio::task::JoinHandle<()>) {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[allow(clippy::single_match)]
+#[allow(clippy::collapsible_match)]
 async fn two_clients_see_each_other_via_discovery() {
     let (server_addr, server_task) = spawn_server().await;
 
@@ -93,28 +95,27 @@ async fn two_clients_see_each_other_via_discovery() {
     // Both clients should have emitted at least one Added event.
     let mut a_saw_added = false;
     for _ in 0..5 {
-        if let Ok(Ok(ev)) = tokio::time::timeout(Duration::from_millis(200), events_a.recv()).await
+        if let Ok(Ok(ev)) = tokio::time::timeout(Duration::from_millis(200), events_a.recv()).await && (matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "beta")
+                || matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "alpha"))
         {
-            if matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "beta")
-                || matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "alpha")
-            {
-                a_saw_added = true;
-                break;
-            }
+            a_saw_added = true;
+            break;
         }
     }
     assert!(a_saw_added, "client A should have received an Added event");
 
     let mut b_saw_added = false;
     for _ in 0..5 {
-        if let Ok(Ok(ev)) = tokio::time::timeout(Duration::from_millis(200), events_b.recv()).await
-        {
-            if matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "alpha")
-                || matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "beta")
-            {
-                b_saw_added = true;
-                break;
+        match tokio::time::timeout(Duration::from_millis(200), events_b.recv()).await {
+            Ok(Ok(ev)) => {
+                if matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "alpha")
+                    || matches!(ev, DiscoveryEvent::Added(ref info) if info.network_id == "beta")
+                {
+                    b_saw_added = true;
+                    break;
+                }
             }
+            _ => (),
         }
     }
     assert!(b_saw_added, "client B should have received an Added event");

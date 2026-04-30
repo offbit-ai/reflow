@@ -551,13 +551,8 @@ enum rfl_status rfl_ctx_state_set(struct rfl_actor_ctx *ctx,
                                   const char *value_json);
 
 /**
- * Per-actor pools — named `{id: value}` maps living under reserved
- * `_pool:<name>` state keys. The canonical pattern for variable
- * fan-in: multiple upstream connections upsert with stable per-upstream
- * ids, the consumer reads the whole pool on each tick.
- *
- * All five operations require `MemoryState` (the default backend);
- * custom states yield `InvalidState`.
+ * Upsert `value_json` into pool `pool_name` under `id`. Creates the
+ * pool entry if it doesn't exist yet.
  */
 enum rfl_status rfl_ctx_pool_upsert(struct rfl_actor_ctx *ctx,
                                     const char *pool_name,
@@ -575,7 +570,8 @@ enum rfl_status rfl_ctx_pool_remove(struct rfl_actor_ctx *ctx,
 /**
  * Read the entire pool as a JSON object `{id: value, ...}`. Returns
  * `"{}"` if the pool is empty or absent. Caller frees via
- * `rfl_string_free`. Returns NULL only on argument errors.
+ * `rfl_string_free`. Returns NULL only on argument errors; absence
+ * of the pool is encoded as the empty object.
  */
 char *rfl_ctx_pool_get_json(struct rfl_actor_ctx *ctx, const char *pool_name);
 
@@ -587,18 +583,20 @@ uintptr_t rfl_ctx_pool_count(struct rfl_actor_ctx *ctx, const char *pool_name);
 /**
  * Drop the entire pool. Idempotent.
  */
-enum rfl_status rfl_ctx_pool_clear(struct rfl_actor_ctx *ctx,
-                                   const char *pool_name);
+enum rfl_status rfl_ctx_pool_clear(struct rfl_actor_ctx *ctx, const char *pool_name);
 
 /**
  * Emit a typed message on `port`. Transfers ownership of the message —
  * do **not** call `rfl_message_free` afterwards. Prefer this over the
  * JSON variant for hot-path emits.
  *
- * Per-tick semantics: emits accumulate in a HashMap that drains when
- * the callback returns. Multiple emits to the *same* port collapse
- * to the last write. For sources that publish a stream of values
- * from inside a single `run`, use `rfl_ctx_send_message`.
+ * **Per-tick semantics**: `rfl_ctx_emit_message` accumulates outputs
+ * in a HashMap that drains when the callback returns. Multiple emits
+ * to the *same* port within one callback collapse to the last
+ * write. For source actors that need to publish a *stream* of
+ * values from inside a single `run`, use `rfl_ctx_send_message`,
+ * which writes straight to the outport channel and publishes one
+ * packet per call.
  */
 enum rfl_status rfl_ctx_emit_message(struct rfl_actor_ctx *ctx,
                                      const char *port,
@@ -607,9 +605,15 @@ enum rfl_status rfl_ctx_emit_message(struct rfl_actor_ctx *ctx,
 /**
  * Mid-tick flush: send a typed message straight to the outport
  * channel, bypassing the per-callback `outputs` HashMap. Use this
- * when the same callback publishes multiple values on the same port
- * — `rfl_ctx_emit_message` would overwrite. Transfers ownership of
- * the message; do **not** free it afterwards.
+ * when the same callback needs to publish multiple values on the
+ * same port — `rfl_ctx_emit_message` would overwrite. Transfers
+ * ownership of the message; do **not** free it afterwards.
+ *
+ * Mirrors Python's `ctx.send` and JVM's `ctx.send`. The message is
+ * queued on the source actor's outport channel and reaches every
+ * connected downstream actor through the normal connector
+ * mechanics — consumers don't need to know whether the producer
+ * used `emit` or `send`.
  */
 enum rfl_status rfl_ctx_send_message(struct rfl_actor_ctx *ctx,
                                      const char *port,
