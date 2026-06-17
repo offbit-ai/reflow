@@ -13,6 +13,7 @@ Reflow's observability framework supports multiple storage backends to accommoda
 > | `memory` | available | default |
 > | `sqlite` | available | default (the `storage` feature) |
 > | `postgres` / `postgresql` | available | `--features postgres` |
+> | `timescale` / `timescaledb` | available | `--features postgres` |
 > | `mongodb` / `mongo` | available | `--features mongodb` |
 > | `clickhouse` | planned | — |
 >
@@ -29,6 +30,7 @@ row/document keyed by `trace_id`, with denormalized `flow_id`/`execution_id`/
 - **Memory Storage** _(available)_: Fast, ephemeral storage for development and testing
 - **SQLite Storage** _(available)_: Lightweight, embedded database for small to medium deployments; writes are synchronous (write-through)
 - **PostgreSQL Storage** _(available, `--features postgres`)_: Robust, scalable database for production environments
+- **TimescaleDB Storage** _(available, `--features postgres`)_: PostgreSQL + a time-series hypertable on `start_time` — a natural fit for traces
 - **MongoDB Storage** _(available, `--features mongodb`)_: Document store; the JSON-shaped trace maps naturally to a document
 - **ClickHouse Storage** _(planned)_: High-performance analytical database for massive scale
 - **Custom Storage**: Implement the `TraceStorage` trait yourself
@@ -275,6 +277,40 @@ ALTER SYSTEM SET wal_buffers = '16MB';
 ALTER SYSTEM SET default_statistics_target = 100;
 SELECT pg_reload_conf();
 ```
+
+## TimescaleDB Storage _(available — build with `--features postgres`)_
+
+TimescaleDB is PostgreSQL with a time-series extension — same wire protocol, same
+driver. So the `postgres` backend already connects to a TimescaleDB instance
+unchanged. The dedicated `timescale` backend additionally converts the `traces`
+table into a **hypertable** partitioned on `start_time`, which is a natural fit
+for inherently time-series trace data: time-chunked storage, fast time-range
+queries, and (operator-configured) native compression and retention policies.
+
+It reuses the **`[storage.postgres]`** connection config — just set the backend:
+
+```toml
+[storage]
+backend = "timescale"      # or "timescaledb"
+
+[storage.postgres]
+connection_url = "postgresql://user:pass@localhost/traces"
+max_connections = 20
+min_connections = 5
+acquire_timeout_secs = 5
+```
+
+On startup the server runs `CREATE EXTENSION IF NOT EXISTS timescaledb` and
+`create_hypertable('traces', 'start_time', …)` (7-day chunks by default,
+`if_not_exists`/`migrate_data` so it's idempotent). If the extension isn't
+installed it logs a warning and continues with a plain table — still correct,
+just not time-partitioned. The schema keys on `(trace_id, start_time)` (a
+hypertable's unique key must include the partition column).
+
+> Native compression and retention are left to the operator as policies, e.g.
+> `SELECT add_retention_policy('traces', INTERVAL '30 days')` and
+> `ALTER TABLE traces SET (timescaledb.compress)` +
+> `add_compression_policy('traces', INTERVAL '7 days')`.
 
 ## MongoDB Storage _(available — build with `--features mongodb`)_
 

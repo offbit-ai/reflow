@@ -41,15 +41,35 @@ fn maybe_decompress(data: Vec<u8>, compressed: bool) -> Result<Vec<u8>> {
     }
 }
 
+/// Chunk width for the TimescaleDB hypertable, in seconds (start_time is unix
+/// seconds). 7 days is a reasonable default for trace volumes.
+#[cfg(feature = "postgres")]
+const TIMESCALE_CHUNK_SECONDS: i64 = 7 * 24 * 60 * 60;
+
 #[cfg(feature = "postgres")]
 pub struct PostgresStorage {
     pool: PgPool,
     compress_threshold: usize,
+    /// When true, the trace table is a TimescaleDB hypertable partitioned on
+    /// `start_time` and upserts key on `(trace_id, start_time)`.
+    timescale: bool,
 }
 
 #[cfg(feature = "postgres")]
 impl PostgresStorage {
+    /// Plain PostgreSQL.
     pub async fn new(config: PostgresConfig) -> Result<Self> {
+        Self::connect(config, false).await
+    }
+
+    /// TimescaleDB: same as Postgres, but converts `traces` into a hypertable
+    /// partitioned on `start_time`. Degrades gracefully to a plain table if the
+    /// `timescaledb` extension isn't available.
+    pub async fn new_timescale(config: PostgresConfig) -> Result<Self> {
+        Self::connect(config, true).await
+    }
+
+    async fn connect(config: PostgresConfig, timescale: bool) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .max_connections(config.max_connections.max(1))
             .min_connections(config.min_connections)
@@ -58,15 +78,35 @@ impl PostgresStorage {
             .await
             .map_err(|e| anyhow!("Failed to connect to PostgreSQL: {e}"))?;
 
-        Self::create_tables(&pool).await?;
+        Self::create_tables(&pool, timescale).await?;
         Ok(Self {
             pool,
             compress_threshold: 1024,
+            timescale,
         })
     }
 
-    async fn create_tables(pool: &PgPool) -> Result<()> {
-        sqlx::query(
+    async fn create_tables(pool: &PgPool, timescale: bool) -> Result<()> {
+        // A hypertable's unique/primary key must include the partitioning column
+        // (`start_time`), so the timescale schema keys on `(trace_id, start_time)`.
+        let create = if timescale {
+            r#"
+            CREATE TABLE IF NOT EXISTS traces (
+                trace_id     TEXT NOT NULL,
+                flow_id      TEXT NOT NULL,
+                execution_id TEXT NOT NULL,
+                status       TEXT NOT NULL,
+                start_time   BIGINT NOT NULL,
+                end_time     BIGINT,
+                event_count  BIGINT NOT NULL DEFAULT 0,
+                data         BYTEA NOT NULL,
+                compressed   BOOLEAN NOT NULL DEFAULT FALSE,
+                size_bytes   BIGINT NOT NULL,
+                created_at   BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+                PRIMARY KEY (trace_id, start_time)
+            )
+            "#
+        } else {
             r#"
             CREATE TABLE IF NOT EXISTS traces (
                 trace_id     TEXT PRIMARY KEY,
@@ -81,11 +121,12 @@ impl PostgresStorage {
                 size_bytes   BIGINT NOT NULL,
                 created_at   BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
             )
-            "#,
-        )
-        .execute(pool)
-        .await
-        .map_err(|e| anyhow!("Failed to create traces table: {e}"))?;
+            "#
+        };
+        sqlx::query(create)
+            .execute(pool)
+            .await
+            .map_err(|e| anyhow!("Failed to create traces table: {e}"))?;
 
         for idx in [
             "CREATE INDEX IF NOT EXISTS idx_traces_flow_id ON traces(flow_id)",
@@ -97,6 +138,30 @@ impl PostgresStorage {
                 .execute(pool)
                 .await
                 .map_err(|e| anyhow!("Failed to create index: {e}"))?;
+        }
+
+        if timescale {
+            // Best-effort: enable the extension and convert to a hypertable. If
+            // the extension isn't installed these fail and we keep the plain
+            // (composite-key) table — still correct, just not time-partitioned.
+            let _ = sqlx::query("CREATE EXTENSION IF NOT EXISTS timescaledb")
+                .execute(pool)
+                .await;
+            // Point lookups by trace_id alone (get/delete) need a non-unique
+            // index since the PK now leads with both columns.
+            let _ = sqlx::query("CREATE INDEX IF NOT EXISTS idx_traces_trace_id ON traces(trace_id)")
+                .execute(pool)
+                .await;
+            let hyper = format!(
+                "SELECT create_hypertable('traces', 'start_time', \
+                 chunk_time_interval => {TIMESCALE_CHUNK_SECONDS}, \
+                 if_not_exists => TRUE, migrate_data => TRUE)"
+            );
+            if let Err(e) = sqlx::query(&hyper).execute(pool).await {
+                tracing::warn!(
+                    "TimescaleDB hypertable not created (continuing with a plain table): {e}"
+                );
+            }
         }
         Ok(())
     }
@@ -111,7 +176,26 @@ impl TraceStorage for PostgresStorage {
             serde_json::to_vec(&trace).map_err(|e| anyhow!("serialize trace: {e}"))?;
         let (data, compressed) = maybe_compress(serialized, self.compress_threshold)?;
 
-        sqlx::query(
+        // The hypertable keys on (trace_id, start_time) and can't UPDATE the
+        // partition column; plain Postgres keys on trace_id alone. `start_time`
+        // is set once at trace creation, so the composite key is stable.
+        let sql = if self.timescale {
+            r#"
+            INSERT INTO traces
+                (trace_id, flow_id, execution_id, status, start_time, end_time,
+                 event_count, data, compressed, size_bytes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (trace_id, start_time) DO UPDATE SET
+                flow_id      = EXCLUDED.flow_id,
+                execution_id = EXCLUDED.execution_id,
+                status       = EXCLUDED.status,
+                end_time     = EXCLUDED.end_time,
+                event_count  = EXCLUDED.event_count,
+                data         = EXCLUDED.data,
+                compressed   = EXCLUDED.compressed,
+                size_bytes   = EXCLUDED.size_bytes
+            "#
+        } else {
             r#"
             INSERT INTO traces
                 (trace_id, flow_id, execution_id, status, start_time, end_time,
@@ -127,8 +211,10 @@ impl TraceStorage for PostgresStorage {
                 data         = EXCLUDED.data,
                 compressed   = EXCLUDED.compressed,
                 size_bytes   = EXCLUDED.size_bytes
-            "#,
-        )
+            "#
+        };
+
+        sqlx::query(sql)
         .bind(trace.trace_id.0.to_string())
         .bind(&trace.flow_id.0)
         .bind(trace.execution_id.0.to_string())
@@ -293,6 +379,12 @@ impl PostgresStorage {
     pub async fn new(_config: PostgresConfig) -> Result<Self> {
         Err(anyhow!(
             "PostgreSQL backend not compiled in — build reflow_tracing with --features postgres"
+        ))
+    }
+
+    pub async fn new_timescale(_config: PostgresConfig) -> Result<Self> {
+        Err(anyhow!(
+            "TimescaleDB backend not compiled in — build reflow_tracing with --features postgres"
         ))
     }
 }

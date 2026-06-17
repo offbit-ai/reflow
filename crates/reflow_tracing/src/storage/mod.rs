@@ -58,6 +58,16 @@ impl StorageBackend {
                 let storage = postgres::PostgresStorage::new(pg_config.clone()).await?;
                 Ok(Box::new(storage))
             }
+            "timescale" | "timescaledb" => {
+                // TimescaleDB speaks the Postgres protocol; it reuses the
+                // `storage.postgres` connection config and adds a hypertable.
+                let pg_config = config
+                    .postgres
+                    .as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("TimescaleDB uses the [storage.postgres] config; it is missing"))?;
+                let storage = postgres::PostgresStorage::new_timescale(pg_config.clone()).await?;
+                Ok(Box::new(storage))
+            }
             "mongodb" | "mongo" => {
                 let mongo_config = config
                     .mongodb
@@ -68,7 +78,7 @@ impl StorageBackend {
             }
             other => Err(anyhow::anyhow!(
                 "Unsupported storage backend: '{other}'. Available: memory, sqlite, \
-                 postgres (--features postgres), mongodb (--features mongodb)."
+                 postgres / timescale (--features postgres), mongodb (--features mongodb)."
             )),
         }
     }

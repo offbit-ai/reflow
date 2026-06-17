@@ -187,3 +187,47 @@ async fn postgres_store_query_delete_roundtrip() {
     assert!(storage.delete_trace(id.clone()).await.expect("delete"));
     assert!(storage.get_trace(id).await.expect("get after delete").is_none());
 }
+
+#[tokio::test]
+async fn timescaledb_store_query_delete_roundtrip() {
+    let url = match std::env::var("REFLOW_TEST_TIMESCALE_URL") {
+        Ok(u) if !u.is_empty() => u,
+        _ => {
+            eprintln!("skipping timescaledb test — set REFLOW_TEST_TIMESCALE_URL to run");
+            return;
+        }
+    };
+
+    use reflow_tracing::config::PostgresConfig;
+    use reflow_tracing::storage::postgres::PostgresStorage;
+
+    // TimescaleDB reuses the Postgres connection config; the hypertable is set
+    // up on connect (degrades to a plain table if the extension is absent).
+    let storage = PostgresStorage::new_timescale(PostgresConfig {
+        connection_url: url,
+        max_connections: 4,
+        min_connections: 1,
+        acquire_timeout_secs: 5,
+    })
+    .await
+    .expect("connect timescaledb");
+
+    let trace = sample_trace("timescale_flow");
+    let id = storage.store_trace(trace.clone()).await.expect("store");
+
+    let got = storage
+        .get_trace(id.clone())
+        .await
+        .expect("get")
+        .expect("trace present");
+    assert_eq!(got.trace_id, id);
+
+    let results = storage
+        .query_traces(empty_query(Some("timescale_flow")))
+        .await
+        .expect("query");
+    assert!(results.iter().any(|t| t.trace_id == id));
+
+    assert!(storage.delete_trace(id.clone()).await.expect("delete"));
+    assert!(storage.get_trace(id).await.expect("get after delete").is_none());
+}
