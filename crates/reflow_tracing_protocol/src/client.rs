@@ -77,6 +77,22 @@ pub struct TracingConfig {
     pub retry_config: RetryConfig,
     /// Whether tracing is enabled
     pub enabled: bool,
+    /// Compute a content checksum for each traced message. Cheap; default on.
+    /// See [`crate::checksum`].
+    #[serde(default = "default_true")]
+    pub capture_checksum: bool,
+    /// Retain full message content in `serialized_data`. Heavy and potentially
+    /// sensitive; default off. Independent of `capture_checksum`.
+    #[serde(default)]
+    pub capture_content: bool,
+    /// Sample the heavy `PerformanceMetrics` fields (memory/cpu/throughput).
+    /// Default off — cheap timing/queue-depth are always measured.
+    #[serde(default)]
+    pub enable_perf_sampling: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -164,6 +180,9 @@ impl Default for TracingConfig {
                 backoff_multiplier: 2.0,
             },
             enabled: true,
+            capture_checksum: true,
+            capture_content: false,
+            enable_perf_sampling: false,
         }
     }
 }
@@ -629,6 +648,21 @@ impl TracingClient {
         state.connection_status == ConnectionStatus::Connected
     }
 
+    /// Whether to compute a content checksum for each traced message (cheap).
+    pub fn capture_checksum(&self) -> bool {
+        self.config.capture_checksum
+    }
+
+    /// Whether to retain full message content in snapshots (heavy, opt-in).
+    pub fn capture_content(&self) -> bool {
+        self.config.capture_content
+    }
+
+    /// Whether the heavy `PerformanceMetrics` fields should be sampled.
+    pub fn enable_perf_sampling(&self) -> bool {
+        self.config.enable_perf_sampling
+    }
+
     /// Get the current connection status
     pub fn connection_status(&self) -> String {
         let state = self.state.lock().unwrap();
@@ -806,27 +840,19 @@ impl TracingIntegration {
         }
     }
 
-    /// Record a message sent event
-    pub async fn trace_message_sent(
+    /// Record a message-sent event, capturing a snapshot of `content` per the
+    /// configured `capture_checksum` / `capture_content` knobs.
+    pub async fn trace_message_sent<T: Serialize>(
         &self,
         actor_id: impl Into<String>,
         port: impl Into<String>,
         message_type: impl Into<String>,
-        size_bytes: usize,
+        content: &T,
+        metrics: PerformanceMetrics,
     ) -> Result<()> {
-        let event = TraceEvent::message_sent(
-            actor_id.into(),
-            port.into(),
-            message_type.into(),
-            size_bytes,
-        );
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        let snapshot = self.snapshot(message_type, content);
+        let event = TraceEvent::message_sent(actor_id.into(), port.into(), snapshot, metrics);
+        self.record(event).await
     }
 
     /// Record an actor failure event
@@ -845,31 +871,50 @@ impl TracingIntegration {
         }
     }
 
-    /// Record a data flow event between two actors
-    pub async fn trace_data_flow(
+    /// Record a data-flow event between two actors, capturing a snapshot of
+    /// `content` per the configured capture knobs.
+    pub async fn trace_data_flow<T: Serialize>(
         &self,
         from_actor: impl Into<String>,
         from_port: impl Into<String>,
         to_actor: impl Into<String>,
         to_port: impl Into<String>,
         message_type: impl Into<String>,
-        size_bytes: usize,
+        content: &T,
+        metrics: PerformanceMetrics,
     ) -> Result<()> {
+        let snapshot = self.snapshot(message_type, content);
         let event = TraceEvent::data_flow(
             from_actor.into(),
             from_port.into(),
             to_actor.into(),
             to_port.into(),
-            message_type.into(),
-            size_bytes,
+            snapshot,
+            metrics,
         );
+        self.record(event).await
+    }
 
+    /// Build a message snapshot honoring the client's capture configuration.
+    fn snapshot<T: Serialize>(
+        &self,
+        message_type: impl Into<String>,
+        content: &T,
+    ) -> MessageSnapshot {
+        MessageSnapshot::capture(
+            message_type,
+            content,
+            self.client.capture_checksum(),
+            self.client.capture_content(),
+        )
+    }
+
+    /// Record an event under the active flow trace (or a fresh id if none).
+    async fn record(&self, event: TraceEvent) -> Result<()> {
         let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
+        match trace_id {
+            Some(trace_id) => self.client.record_event(trace_id, event).await,
+            None => self.client.record_event(TraceId::new(), event).await,
         }
     }
 
@@ -974,7 +1019,13 @@ mod tests {
         assert!(actor_result.is_ok());
 
         let message_result = integration
-            .trace_message_sent("test_actor", "output", "TestMessage", 128)
+            .trace_message_sent(
+                "test_actor",
+                "output",
+                "TestMessage",
+                &serde_json::json!({ "k": 1 }),
+                PerformanceMetrics::default(),
+            )
             .await;
         assert!(message_result.is_ok());
     }

@@ -810,18 +810,25 @@ impl Network {
                     timestamp,
                 });
 
-            // Trace the message being sent
+            // Trace the message being sent. The message is the content; the
+            // integration computes checksum/size per the configured knobs.
             if let Some(ref tracing) = self.tracing_integration {
-                let message_type = format!("{:?}", std::mem::discriminant(&data));
-                let size_bytes = serde_json::to_string(&data).unwrap_or_default().len();
+                use reflow_tracing_protocol::PerformanceMetrics;
                 let tracing_clone = tracing.clone();
                 let id_clone = id.to_string();
                 let port_clone = port.to_string();
+                let content = data.clone();
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     tokio::runtime::Handle::current().spawn(async move {
                         let _ = tracing_clone
-                            .trace_message_sent(&id_clone, &port_clone, &message_type, size_bytes)
+                            .trace_message_sent(
+                                &id_clone,
+                                &port_clone,
+                                content.type_name(),
+                                &content,
+                                PerformanceMetrics::default(),
+                            )
                             .await;
                     });
                 }
@@ -829,7 +836,13 @@ impl Network {
                 {
                     spawn_local(async move {
                         let _ = tracing_clone
-                            .trace_message_sent(&id_clone, &port_clone, &message_type, size_bytes)
+                            .trace_message_sent(
+                                &id_clone,
+                                &port_clone,
+                                content.type_name(),
+                                &content,
+                                PerformanceMetrics::default(),
+                            )
                             .await;
                     });
                 }

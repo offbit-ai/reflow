@@ -9,7 +9,8 @@ use reflow_tracing::config::Config;
 use reflow_tracing::server::TraceServer;
 use reflow_tracing_protocol::client::{TracingClient, TracingConfig};
 use reflow_tracing_protocol::{
-    ExecutionStatus, FlowId, FlowTrace, FlowVersion, TraceEvent, TraceId, TraceQuery,
+    ExecutionStatus, FlowId, FlowTrace, FlowVersion, MessageSnapshot, PerformanceMetrics,
+    TraceEvent, TraceId, TraceQuery,
 };
 use tokio::net::TcpListener;
 
@@ -76,8 +77,8 @@ async fn records_and_queries_a_correlated_trace() {
                 "out".into(),
                 "writer".into(),
                 "in".into(),
-                "String".into(),
-                12,
+                MessageSnapshot::capture("String", &serde_json::json!("hello"), true, false),
+                PerformanceMetrics::default(),
             ),
         )
         .await
@@ -109,6 +110,24 @@ async fn records_and_queries_a_correlated_trace() {
         trace.events.iter().map(|e| &e.event_type).collect::<Vec<_>>()
     );
     assert!(matches!(trace.status, ExecutionStatus::Completed));
+
+    // The data-flow event carries a populated content checksum, and by default
+    // (capture_content off) retains no content bytes.
+    let df = trace
+        .events
+        .iter()
+        .find(|e| matches!(e.event_type, reflow_tracing_protocol::TraceEventType::DataFlow { .. }))
+        .expect("data flow event present");
+    let snap = df.data.message.as_ref().expect("data flow has a message snapshot");
+    assert!(
+        snap.checksum.starts_with("sha256:") && snap.checksum.len() == "sha256:".len() + 64,
+        "content checksum populated: {:?}",
+        snap.checksum
+    );
+    assert!(
+        snap.serialized_data.is_empty(),
+        "content must not be captured by default"
+    );
 
     // query_traces by flow_id also returns it.
     let results = client

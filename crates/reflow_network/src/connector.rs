@@ -139,15 +139,19 @@ impl Connector {
                     });
                 from_actor_load_count.dec();
 
-                // Send tracing event if tracing is enabled
+                // Send tracing event if tracing is enabled. The message itself
+                // is the content; the integration computes the checksum/size
+                // (and optionally captures content) per the configured knobs.
                 if let Some(ref tracing) = tracing_integration {
-                    let message_size = std::mem::size_of_val(&msg);
+                    use reflow_tracing_protocol::PerformanceMetrics;
+                    let message_type = msg.type_name();
                     let _ = tracing
                         .trace_message_sent(
                             from_actor_id.clone(),
                             _from_port.clone(),
-                            format!("{:?}", std::mem::discriminant(&msg)),
-                            message_size,
+                            message_type,
+                            &msg,
+                            PerformanceMetrics::default(),
                         )
                         .await;
 
@@ -158,8 +162,9 @@ impl Connector {
                             _from_port.clone(),
                             to_actor_id.clone(),
                             to_port.clone(),
-                            format!("{:?}", std::mem::discriminant(&msg)),
-                            message_size,
+                            message_type,
+                            &msg,
+                            PerformanceMetrics::default(),
                         )
                         .await;
                 }
@@ -227,8 +232,9 @@ impl Connector {
                     continue;
                 };
 
-                let message_size = std::mem::size_of_val(&msg);
-                let msg_discriminant = format!("{:?}", std::mem::discriminant(&msg));
+                // Capture the message for tracing before it is moved into the
+                // downstream channel (only when tracing is active).
+                let traced_msg = tracing_integration.as_ref().map(|_| msg.clone());
 
                 let encodable = if let Message::Bytes(_) = &msg {
                     crate::message::EncodableValue::from(serde_json::Value::String(
@@ -259,13 +265,16 @@ impl Connector {
                         )
                     });
 
-                if let Some(ref tracing) = tracing_integration {
+                if let (Some(tracing), Some(content)) = (&tracing_integration, &traced_msg) {
+                    use reflow_tracing_protocol::PerformanceMetrics;
+                    let message_type = content.type_name();
                     let _ = tracing
                         .trace_message_sent(
                             from_actor_id.clone(),
                             from_port.clone(),
-                            msg_discriminant.clone(),
-                            message_size,
+                            message_type,
+                            content,
+                            PerformanceMetrics::default(),
                         )
                         .await;
                     let _ = tracing
@@ -274,8 +283,9 @@ impl Connector {
                             from_port.clone(),
                             to_actor_id.clone(),
                             to_port.clone(),
-                            msg_discriminant,
-                            message_size,
+                            message_type,
+                            content,
+                            PerformanceMetrics::default(),
                         )
                         .await;
                 }
@@ -333,9 +343,9 @@ impl Connector {
                             continue;
                         };
 
-                        // Capture tracing info from &msg before moving
-                        let message_size = std::mem::size_of_val(&msg);
-                        let msg_discriminant = format!("{:?}", std::mem::discriminant(&msg));
+                        // Capture the message for tracing before it is moved
+                        // into the downstream channel (only when tracing is active).
+                        let traced_msg = tracing_integration.as_ref().map(|_| msg.clone());
 
                         // Emit MessageSent event — skip expensive serialization for binary blobs
                         let encodable = if let Message::Bytes(_) = &msg {
@@ -376,13 +386,18 @@ impl Connector {
                             });
 
                         // Send tracing event if tracing is enabled
-                        if let Some(ref tracing) = tracing_integration {
+                        if let (Some(tracing), Some(content)) =
+                            (&tracing_integration, &traced_msg)
+                        {
+                            use reflow_tracing_protocol::PerformanceMetrics;
+                            let message_type = content.type_name();
                             let _ = tracing
                                 .trace_message_sent(
                                     from_actor_id.clone(),
                                     from_port.clone(),
-                                    msg_discriminant.clone(),
-                                    message_size,
+                                    message_type,
+                                    content,
+                                    PerformanceMetrics::default(),
                                 )
                                 .await;
 
@@ -392,8 +407,9 @@ impl Connector {
                                     from_port.clone(),
                                     to_actor_id.clone(),
                                     to_port.clone(),
-                                    msg_discriminant,
-                                    message_size,
+                                    message_type,
+                                    content,
+                                    PerformanceMetrics::default(),
                                 )
                                 .await;
                         }
