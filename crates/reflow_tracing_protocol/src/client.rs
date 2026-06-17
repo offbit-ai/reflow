@@ -783,6 +783,9 @@ impl TracingClient {
 pub struct TracingIntegration {
     client: Arc<TracingClient>,
     current_trace_id: Arc<Mutex<Option<TraceId>>>,
+    /// Optional local tap: every recorded event is also fanned here, so an SDK
+    /// can consume live trace events without standing up a collector.
+    local_tap: Arc<Mutex<Option<flume::Sender<TraceEvent>>>>,
 }
 
 unsafe impl Send for TracingIntegration {}
@@ -794,7 +797,16 @@ impl TracingIntegration {
         Self {
             client: Arc::new(client),
             current_trace_id: Arc::new(Mutex::new(None)),
+            local_tap: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Install a local tap. Every subsequently recorded `TraceEvent` is cloned
+    /// into `sender` in addition to being shipped to the collector, so an SDK
+    /// can observe live traces without a server. A disconnected receiver simply
+    /// drops events (the send is best-effort and never blocks tracing).
+    pub fn set_local_tap(&self, sender: flume::Sender<TraceEvent>) {
+        *self.local_tap.lock().unwrap() = Some(sender);
     }
 
     /// Start tracing for a flow
@@ -818,26 +830,13 @@ impl TracingIntegration {
 
     /// Record an actor creation event
     pub async fn trace_actor_created(&self, actor_id: impl Into<String>) -> Result<()> {
-        let event = TraceEvent::actor_created(actor_id.into());
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        self.record(TraceEvent::actor_created(actor_id.into())).await
     }
 
     /// Record an actor process completion event
     pub async fn trace_actor_completed(&self, actor_id: impl Into<String>) -> Result<()> {
-        let event = TraceEvent::actor_completed(actor_id.into());
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        self.record(TraceEvent::actor_completed(actor_id.into()))
+            .await
     }
 
     /// Record a message-sent event, capturing a snapshot of `content` per the
@@ -861,14 +860,8 @@ impl TracingIntegration {
         actor_id: impl Into<String>,
         error: impl Into<String>,
     ) -> Result<()> {
-        let event = TraceEvent::actor_failed(actor_id.into(), error.into());
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        self.record(TraceEvent::actor_failed(actor_id.into(), error.into()))
+            .await
     }
 
     /// Record a data-flow event between two actors, capturing a snapshot of
@@ -909,8 +902,13 @@ impl TracingIntegration {
         )
     }
 
-    /// Record an event under the active flow trace (or a fresh id if none).
+    /// Record an event under the active flow trace (or a fresh id if none),
+    /// fanning a copy to the local tap first (best-effort, never blocks).
     async fn record(&self, event: TraceEvent) -> Result<()> {
+        let tap = self.local_tap.lock().unwrap().clone();
+        if let Some(sender) = tap {
+            let _ = sender.try_send(event.clone());
+        }
         let trace_id = self.current_trace_id.lock().unwrap().clone();
         match trace_id {
             Some(trace_id) => self.client.record_event(trace_id, event).await,
@@ -968,10 +966,10 @@ macro_rules! trace_actor_event {
             let _ = tracing.trace_actor_created($actor_id).await;
         }
     };
-    (message_sent, $actor_id:expr, $port:expr, $msg_type:expr, $size:expr) => {
+    (message_sent, $actor_id:expr, $port:expr, $msg_type:expr, $content:expr, $metrics:expr) => {
         if let Some(tracing) = $crate::tracing::global_tracing() {
             let _ = tracing
-                .trace_message_sent($actor_id, $port, $msg_type, $size)
+                .trace_message_sent($actor_id, $port, $msg_type, $content, $metrics)
                 .await;
         }
     };
@@ -1028,5 +1026,43 @@ mod tests {
             )
             .await;
         assert!(message_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn local_tap_receives_recorded_events() {
+        // Tracing disabled (no server), but a local tap still observes events.
+        let client = TracingClient::new(TracingConfig {
+            enabled: false,
+            ..Default::default()
+        });
+        let integration = TracingIntegration::new(client);
+        let (tx, rx) = flume::unbounded();
+        integration.set_local_tap(tx);
+
+        integration.trace_actor_created("actor-1").await.unwrap();
+        integration
+            .trace_message_sent(
+                "actor-1",
+                "out",
+                "String",
+                &serde_json::json!("hi"),
+                PerformanceMetrics::default(),
+            )
+            .await
+            .unwrap();
+
+        let e1 = rx.try_recv().expect("actor_created reaches the tap");
+        assert!(matches!(e1.event_type, TraceEventType::ActorCreated));
+        let e2 = rx.try_recv().expect("message_sent reaches the tap");
+        assert!(matches!(e2.event_type, TraceEventType::MessageSent));
+        // The snapshot built on the tapped event carries a content checksum.
+        assert!(
+            e2.data
+                .message
+                .as_ref()
+                .unwrap()
+                .checksum
+                .starts_with("sha256:")
+        );
     }
 }

@@ -6635,6 +6635,7 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "derive_more 0.99.20",
+ "flume",
  "futures-util",
  "gloo-events",
  "gloo-utils 0.2.0",

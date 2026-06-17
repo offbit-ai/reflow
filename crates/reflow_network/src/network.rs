@@ -156,6 +156,12 @@ pub struct Network {
     event_handle: Vec<JsValue>,
     compression_config: CompressionConfig,
     pub(crate) tracing_integration: Option<TracingIntegration>,
+    /// Local tap for trace events, so SDKs can consume traces without a
+    /// collector. Fed by `tracing_integration` when tracing is enabled.
+    trace_event_emitter: (
+        flume::Sender<reflow_tracing_protocol::TraceEvent>,
+        flume::Receiver<reflow_tracing_protocol::TraceEvent>,
+    ),
 }
 
 unsafe impl Send for Network {}
@@ -368,10 +374,16 @@ impl Network {
 
 impl Network {
     pub fn new(config: NetworkConfig) -> Self {
-        // Initialize tracing if enabled
+        // Local trace-event tap (always present; only fed when tracing is on).
+        let trace_event_emitter = flume::unbounded();
+
+        // Initialize tracing if enabled, wiring its events into the local tap
+        // so consumers can observe traces without a collector.
         let tracing_integration = if config.tracing.enabled {
             let client = TracingClient::new(config.tracing.clone());
-            Some(TracingIntegration::new(client))
+            let integration = TracingIntegration::new(client);
+            integration.set_local_tap(trace_event_emitter.0.clone());
+            Some(integration)
         } else {
             None
         };
@@ -390,6 +402,7 @@ impl Network {
             event_handle: Vec::new(),
             compression_config: config.compression,
             tracing_integration,
+            trace_event_emitter,
         }
     }
 
@@ -1514,6 +1527,14 @@ impl Network {
     /// Get the network event receiver for subscribing to network events
     pub fn get_event_receiver(&self) -> flume::Receiver<NetworkEvent> {
         self.network_event_emitter.1.clone()
+    }
+
+    /// Subscribe to this network's live trace events locally — no tracing
+    /// collector required. Each `TraceEvent` recorded while tracing is enabled
+    /// is delivered here in addition to being shipped to the configured server.
+    /// Returns an empty (never-fed) receiver when tracing is disabled.
+    pub fn get_trace_receiver(&self) -> flume::Receiver<reflow_tracing_protocol::TraceEvent> {
+        self.trace_event_emitter.1.clone()
     }
 }
 

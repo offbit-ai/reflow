@@ -22,6 +22,8 @@ hex = "0.4"
 
 chrono = { version = "0.4", features = ["serde", "wasmbind"] }
 web-time = "1.1"
+# Local trace-event tap so SDKs can consume traces without a collector.
+flume = "0.11"
 derive_more = "0.99"
 tracing = { workspace = true }
 futures-util = "0.3.31"
