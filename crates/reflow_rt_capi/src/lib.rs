@@ -605,7 +605,9 @@ pub unsafe extern "C" fn rfl_trace_client_subscribe(
             }
         }
     };
-    let (tx, rx) = flume::unbounded();
+    // Bounded so a consumer that stops polling can't grow this without bound;
+    // the notification tap drops on a full buffer (best-effort).
+    let (tx, rx) = flume::bounded(4096);
     handle.client.set_notification_tap(tx);
     *handle.sub_rx.lock().unwrap() = Some(rx);
     let rt = runtime();

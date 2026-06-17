@@ -376,17 +376,25 @@ impl Network {
     }
 }
 
+/// Capacity of the per-network local trace-event tap. Bounds memory when a
+/// consumer lags or never drains; excess events are dropped best-effort.
+const TRACE_TAP_CAPACITY: usize = 4096;
+
 impl Network {
     pub fn new(config: NetworkConfig) -> Self {
-        // Local trace-event tap (always present; only fed when tracing is on).
-        let trace_event_emitter = flume::unbounded();
+        // Local trace-event tap. Bounded so it can never grow without bound if
+        // nothing drains it; the tap is installed lazily (see
+        // `get_trace_receiver`) so when no local consumer exists, no events are
+        // buffered at all. `try_send` drops on a full buffer — best-effort,
+        // never blocks the data plane.
+        let trace_event_emitter = flume::bounded(TRACE_TAP_CAPACITY);
 
-        // Initialize tracing if enabled, wiring its events into the local tap
-        // so consumers can observe traces without a collector.
+        // Initialize tracing if enabled. The local tap is NOT wired here — it is
+        // attached on first `get_trace_receiver()` call so that enabling tracing
+        // purely for a remote collector costs no local buffering.
         let tracing_integration = if config.tracing.enabled {
             let client = TracingClient::new(config.tracing.clone());
             let integration = TracingIntegration::new(client);
-            integration.set_local_tap(trace_event_emitter.0.clone());
             Some(integration)
         } else {
             None
@@ -1537,7 +1545,15 @@ impl Network {
     /// collector required. Each `TraceEvent` recorded while tracing is enabled
     /// is delivered here in addition to being shipped to the configured server.
     /// Returns an empty (never-fed) receiver when tracing is disabled.
+    ///
+    /// Installs the local tap on first call (idempotent), so enabling tracing
+    /// solely for a collector buffers nothing locally. Call before `start()`
+    /// for full coverage. The tap is bounded ([`TRACE_TAP_CAPACITY`]); if a
+    /// consumer stops draining, new events are dropped rather than retained.
     pub fn get_trace_receiver(&self) -> flume::Receiver<reflow_tracing_protocol::TraceEvent> {
+        if let Some(ref tracing) = self.tracing_integration {
+            tracing.set_local_tap(self.trace_event_emitter.0.clone());
+        }
         self.trace_event_emitter.1.clone()
     }
 }
