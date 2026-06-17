@@ -32,9 +32,24 @@ use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 /// Replies without a correlation id (notifications, acks) are ignored here.
 #[cfg(not(target_arch = "wasm32"))]
 fn route_tracing_response(state: &Arc<Mutex<ClientState>>, text: &str) {
-    match serde_json::from_str::<TracingResponse>(text) {
-        Ok(response) => {
-            let request_id = match &response {
+    let response = match serde_json::from_str::<TracingResponse>(text) {
+        Ok(r) => r,
+        Err(_) => {
+            debug!("Ignoring unparseable tracing response");
+            return;
+        }
+    };
+    match response {
+        // Real-time subscription push → forward to the notification tap.
+        TracingResponse::EventNotification { event, .. } => {
+            let tap = { state.lock().unwrap().notification_tap.clone() };
+            if let Some(sender) = tap {
+                let _ = sender.try_send(event);
+            }
+        }
+        // Correlated reply → wake the waiting caller.
+        other => {
+            let request_id = match &other {
                 TracingResponse::QueryResults { request_id, .. } => Some(request_id.to_string()),
                 TracingResponse::TraceData { request_id, .. } => Some(request_id.to_string()),
                 _ => None,
@@ -42,11 +57,10 @@ fn route_tracing_response(state: &Arc<Mutex<ClientState>>, text: &str) {
             if let Some(key) = request_id {
                 let mut guard = state.lock().unwrap();
                 if let Some(sender) = guard.pending_requests.remove(&key) {
-                    let _ = sender.send(response);
+                    let _ = sender.send(other);
                 }
             }
         }
-        Err(_) => debug!("Ignoring unparseable tracing response"),
     }
 }
 
@@ -132,6 +146,9 @@ struct ClientState {
     last_batch_time: Instant,
     reconnect_attempts: usize,
     current_trace_id: Option<TraceId>,
+    /// When subscribed, real-time `EventNotification`s from the server are
+    /// forwarded here so a consumer (e.g. an SDK monitor) can poll them.
+    notification_tap: Option<flume::Sender<TraceEvent>>,
     #[cfg(not(target_arch = "wasm32"))]
     message_sender: Option<tokio::sync::mpsc::UnboundedSender<String>>,
     #[cfg(target_arch = "wasm32")]
@@ -198,6 +215,7 @@ impl TracingClient {
             last_batch_time: Instant::now(),
             reconnect_attempts: 0,
             current_trace_id: None,
+            notification_tap: None,
             #[cfg(not(target_arch = "wasm32"))]
             message_sender: None,
             #[cfg(target_arch = "wasm32")]
@@ -661,6 +679,12 @@ impl TracingClient {
     /// Whether the heavy `PerformanceMetrics` fields should be sampled.
     pub fn enable_perf_sampling(&self) -> bool {
         self.config.enable_perf_sampling
+    }
+
+    /// Forward real-time `EventNotification`s (from a `subscribe`) to `sender`,
+    /// so a consumer can poll live trace events from the collector.
+    pub fn set_notification_tap(&self, sender: flume::Sender<TraceEvent>) {
+        self.state.lock().unwrap().notification_tap = Some(sender);
     }
 
     /// Get the current connection status

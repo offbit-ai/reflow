@@ -6501,6 +6501,7 @@ dependencies = [
  "reflow_components",
  "reflow_pack_loader",
  "reflow_rt",
+ "reflow_tracing_protocol",
  "serde",
  "serde_json",
  "tokio",
