@@ -6274,6 +6274,7 @@ dependencies = [
  "reflow_actor",
  "reflow_actor_macro",
  "reflow_graph",
+ "reflow_tracing",
  "reflow_tracing_protocol",
  "reqwest 0.12.22",
  "rusty_pool",

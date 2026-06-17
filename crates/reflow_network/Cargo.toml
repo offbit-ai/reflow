@@ -135,6 +135,9 @@ wasm = []
 [dev-dependencies]
 wasm-bindgen-test = "0.3.50"
 tracing-subscriber = "0.3"
+# Embed the tracing collector in distributed e2e tests to assert that a flow
+# spanning two processes is stitched into one trace on a shared collector.
+reflow_tracing = { path = "../reflow_tracing" }
 
 [[example]]
 name = "distributed_example"

@@ -108,6 +108,38 @@ fn make_config(network_id: &str, instance_id: &str, port: u16) -> DistributedCon
     make_config_with_auth(network_id, instance_id, port, None)
 }
 
+/// Like [`make_config`] but with the local network's tracing pointed at a
+/// shared collector, so cross-process trace stitching can be asserted.
+fn make_config_with_tracing(
+    network_id: &str,
+    instance_id: &str,
+    port: u16,
+    server_url: &str,
+) -> DistributedConfig {
+    use reflow_tracing_protocol::client::TracingConfig;
+    let mut cfg = make_config(network_id, instance_id, port);
+    cfg.local_network_config.tracing = TracingConfig {
+        server_url: server_url.to_string(),
+        enabled: true,
+        ..TracingConfig::default()
+    };
+    cfg
+}
+
+/// Boot an in-process tracing collector on an ephemeral port; return its ws URL.
+async fn start_collector() -> String {
+    use tokio::net::TcpListener;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = reflow_tracing::server::TraceServer::new(reflow_tracing::config::Config::default())
+        .await
+        .unwrap();
+    tokio::spawn(async move {
+        let _ = server.run(listener).await;
+    });
+    format!("ws://{}", addr)
+}
+
 fn make_config_with_auth(
     network_id: &str,
     instance_id: &str,
@@ -231,6 +263,113 @@ async fn message_via_remote_actor_proxy() {
         .recv_timeout(Duration::from_secs(3))
         .expect("proxy should forward the message");
     assert_eq!(received.get("in"), Some(&payload));
+
+    server.shutdown().await.ok();
+    client.shutdown().await.ok();
+}
+
+/// A flow that crosses the process boundary is stitched into one trace on a
+/// shared collector: the client's session `trace_id` propagates on the wire,
+/// and the server process records the cross-process hop under that same id.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn cross_process_flow_is_one_unified_trace() {
+    use reflow_tracing_protocol::client::{TracingClient, TracingConfig};
+    use reflow_tracing_protocol::{TraceEventType, TraceQuery};
+
+    let collector = start_collector().await;
+    let (sink_tx, _sink_rx) = flume::unbounded::<HashMap<String, Message>>();
+
+    let server = DistributedNetwork::new(make_config_with_tracing(
+        "server-net",
+        "server-tr",
+        9120,
+        &collector,
+    ))
+    .await
+    .expect("server::new");
+    server
+        .register_local_actor("recorder", RecorderActor::new(sink_tx), None)
+        .expect("register recorder");
+    let mut server = server;
+    server.start().await.expect("server::start");
+
+    let mut client = DistributedNetwork::new(make_config_with_tracing(
+        "client-net",
+        "client-tr",
+        9121,
+        &collector,
+    ))
+    .await
+    .expect("client::new");
+    client.start().await.expect("client::start");
+
+    client
+        .connect_to_network("127.0.0.1:9120")
+        .await
+        .expect("connect_to_network");
+    tokio::time::sleep(Duration::from_millis(200)).await;
+
+    client
+        .register_remote_actor("recorder", "server-net")
+        .await
+        .expect("register_remote_actor");
+
+    // A querying client against the same collector.
+    let q = TracingClient::new(TracingConfig {
+        server_url: collector.clone(),
+        ..TracingConfig::default()
+    });
+    q.connect().await.expect("query client connect");
+    tokio::time::sleep(Duration::from_millis(150)).await;
+
+    let query_all = || TraceQuery {
+        flow_id: None,
+        execution_id: None,
+        time_range: None,
+        status: None,
+        actor_filter: None,
+        limit: Some(200),
+        offset: None,
+    };
+
+    // Wait until both networks' session traces are live on the collector, so the
+    // source side has a trace id to propagate when we route the message.
+    for _ in 0..40 {
+        if q.query_traces(query_all()).await.unwrap_or_default().len() >= 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+
+    // Push through the proxy so the message crosses the bridge carrying context.
+    let payload = Message::String(Arc::new("trace-me".to_string()));
+    {
+        let local = client.get_local_network();
+        let net = local.read();
+        net.send_to_actor("recorder@server-net", "in", payload.clone())
+            .expect("send_to_actor via proxy");
+    }
+
+    // Query the shared collector for a trace containing the cross-process hop:
+    // a DataFlow whose destination is the remote `recorder`, recorded by the
+    // server process under the client's propagated trace id.
+    let mut found = false;
+    for _ in 0..40 {
+        let traces = q.query_traces(query_all()).await.unwrap_or_default();
+        found = traces.iter().any(|t| {
+            t.events.iter().any(|e| {
+                matches!(&e.event_type, TraceEventType::DataFlow { to_actor, .. } if to_actor == "recorder")
+            })
+        });
+        if found {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert!(
+        found,
+        "expected a unified trace containing the cross-process hop to `recorder`"
+    );
 
     server.shutdown().await.ok();
     client.shutdown().await.ok();

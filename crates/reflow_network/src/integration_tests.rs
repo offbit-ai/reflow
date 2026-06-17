@@ -120,6 +120,7 @@ mod tests {
                 target_port: "input".to_string(),
                 payload: crate::message::Message::String(std::sync::Arc::new("hello".to_string())),
                 timestamp: chrono::Utc::now(),
+                trace_context: None,
             };
             let result = router.handle_incoming_message(msg).await;
             assert!(result.is_err());
@@ -136,6 +137,45 @@ mod tests {
             let router = MessageRouter::new();
             let actors = router.get_local_actor_list();
             assert!(actors.is_empty());
+        }
+
+        #[test]
+        fn remote_message_trace_context_is_wire_backward_compatible() {
+            use crate::router::{RemoteMessage, TraceContext};
+            use reflow_tracing_protocol::TraceId;
+
+            // An older peer sends no `trace_context`; it must deserialize to None
+            // rather than failing.
+            let legacy = r#"{
+                "message_id":"m1","source_network":"a","source_actor":"s",
+                "target_network":"b","target_actor":"t","target_port":"in",
+                "payload":{"type":"Flow"},"timestamp":"2020-01-01T00:00:00Z"
+            }"#;
+            let msg: RemoteMessage =
+                serde_json::from_str(legacy).expect("deserialize without trace_context");
+            assert!(msg.trace_context.is_none());
+
+            // A context round-trips and preserves the propagated trace id.
+            let trace_id = TraceId::new();
+            let with_ctx = RemoteMessage {
+                message_id: "m2".into(),
+                source_network: "a".into(),
+                source_actor: "s".into(),
+                target_network: "b".into(),
+                target_actor: "t".into(),
+                target_port: "in".into(),
+                payload: crate::message::Message::Flow,
+                timestamp: chrono::Utc::now(),
+                trace_context: Some(TraceContext {
+                    trace_id: trace_id.clone(),
+                    flow_id: None,
+                    parent_span_id: "span-1".into(),
+                    parent_event_id: None,
+                }),
+            };
+            let encoded = serde_json::to_string(&with_ctx).unwrap();
+            let decoded: RemoteMessage = serde_json::from_str(&encoded).unwrap();
+            assert_eq!(decoded.trace_context.unwrap().trace_id, trace_id);
         }
     }
 
