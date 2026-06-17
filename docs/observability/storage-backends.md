@@ -4,13 +4,20 @@ Reflow's observability framework supports multiple storage backends to accommoda
 
 ## Overview
 
-The tracing system provides a pluggable storage architecture that allows you to choose the most appropriate backend for your needs:
+> **Implementation status:** the server currently ships **two** backends —
+> `memory` and `sqlite` (selected by `storage.backend` in the server config).
+> The **PostgreSQL** and **ClickHouse** sections below describe the intended
+> design and the `TraceStorage` trait they would implement; they are **not yet
+> available**. `StorageBackend::create` only matches `"memory"` and `"sqlite"`.
 
-- **Memory Storage**: Fast, ephemeral storage for development and testing
-- **SQLite Storage**: Lightweight, embedded database for small to medium deployments
-- **PostgreSQL Storage**: Robust, scalable database for production environments
-- **ClickHouse Storage**: High-performance analytical database for massive scale
-- **Custom Storage**: Implement your own storage adapter
+The tracing system provides a pluggable storage architecture (the `TraceStorage`
+trait) so additional backends can be added:
+
+- **Memory Storage** _(available)_: Fast, ephemeral storage for development and testing
+- **SQLite Storage** _(available)_: Lightweight, embedded database for small to medium deployments
+- **PostgreSQL Storage** _(planned)_: Robust, scalable database for production environments
+- **ClickHouse Storage** _(planned)_: High-performance analytical database for massive scale
+- **Custom Storage**: Implement the `TraceStorage` trait yourself
 
 ## Memory Storage
 
@@ -123,7 +130,7 @@ let read_config = SqliteConfig {
 - **File size**: Large databases can become unwieldy
 - **Network access**: No remote access without additional tools
 
-## PostgreSQL Storage
+## PostgreSQL Storage _(planned — not yet implemented)_
 
 ### When to Use
 
@@ -234,7 +241,7 @@ ALTER SYSTEM SET default_statistics_target = 100;
 SELECT pg_reload_conf();
 ```
 
-## ClickHouse Storage
+## ClickHouse Storage _(planned — not yet implemented)_
 
 ### When to Use
 

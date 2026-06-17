@@ -6,22 +6,16 @@ Reflow's observability framework provides flexible configuration options to suit
 
 ### TracingConfig Structure
 
+`TracingConfig` derives `Default` and is `#[serde(default)]`, so you only need to
+set the fields you care about — the rest fall back to their defaults:
+
 ```rust
 use reflow_network::tracing::TracingConfig;
-use std::time::Duration;
 
 let config = TracingConfig {
     server_url: "ws://localhost:8080".to_string(),
-    batch_size: 50,
-    batch_timeout: Duration::from_millis(1000),
-    enable_compression: true,
     enabled: true,
-    retry_config: RetryConfig {
-        max_retries: 3,
-        initial_delay: Duration::from_millis(500),
-        max_delay: Duration::from_secs(5),
-        backoff_multiplier: 2.0,
-    },
+    ..TracingConfig::default()
 };
 ```
 
@@ -30,11 +24,36 @@ let config = TracingConfig {
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `server_url` | String | `"ws://localhost:8080"` | WebSocket URL of the tracing server |
-| `batch_size` | usize | `50` | Number of events to batch before sending |
-| `batch_timeout` | Duration | `1000ms` | Maximum time to wait before sending incomplete batch |
-| `enable_compression` | bool | `true` | Enable gzip compression for network transmission |
 | `enabled` | bool | `true` | Global enable/disable switch for tracing |
+| `batch_size` | usize | `1` | Events to batch before sending (1 = send immediately) |
+| `batch_timeout` | Duration | `100ms` | Maximum time to wait before sending an incomplete batch |
+| `enable_compression` | bool | `true` | Enable compression for large payloads |
+| `capture_checksum` | bool | `true` | Compute a SHA-256 content checksum for each traced message (cheap) |
+| `capture_content` | bool | `false` | Retain full message content in `serialized_data` (heavy, opt-in) |
+| `enable_perf_sampling` | bool | `false` | Sample the heavy `PerformanceMetrics` fields (memory/cpu/throughput) |
 | `retry_config` | RetryConfig | See below | Configuration for retry logic |
+
+### Capture controls
+
+Content fidelity is governed by two independent toggles (see
+[Data Flow Tracing](data-flow-tracing.md)):
+
+- **`capture_checksum`** (default **on**) — a cheap, content-only
+  `"sha256:<hex>"` digest of each message, for content identity, dedup, and
+  integrity. Computed over a canonical form, so it's identical across processes,
+  hosts, and SDK languages.
+- **`capture_content`** (default **off**) — additionally retains the message
+  bytes in `serialized_data`. Heavier, and may contain sensitive payloads — opt
+  in deliberately.
+
+`enable_perf_sampling` (default off) gates the expensive `PerformanceMetrics`
+fields; cheap timing/queue-depth are always recorded, the rest report
+*unmeasured* (`None`) when off.
+
+> **Note:** `TracingConfig` is a plain serde struct. There is no built-in
+> `from_env`/`from_file` loader — load it yourself with `serde_json`/`toml` (or
+> set `NetworkConfig.tracing` directly). The environment-variable and TOML
+> examples below are illustrative patterns, not built-in functions.
 
 ### Retry Configuration
 
@@ -67,10 +86,18 @@ export REFLOW_TRACING_MAX_DELAY_MS=30000
 
 ### Configuration from Environment
 
+`TracingConfig` has no built-in env loader; read the variables yourself and
+build the struct (defaults fill the rest):
+
 ```rust
 use reflow_network::tracing::TracingConfig;
 
-let config = TracingConfig::from_env().unwrap_or_default();
+let config = TracingConfig {
+    enabled: std::env::var("REFLOW_TRACING_ENABLED").map(|v| v == "true").unwrap_or(true),
+    server_url: std::env::var("REFLOW_TRACING_SERVER_URL")
+        .unwrap_or_else(|_| "ws://localhost:8080".to_string()),
+    ..TracingConfig::default()
+};
 ```
 
 ## File-Based Configuration
@@ -101,10 +128,14 @@ event_types = ["ActorCreated", "DataFlow", "ActorFailed"]
 
 ### Loading from File
 
+Deserialize with any serde format — `TracingConfig` is `Deserialize` and
+`#[serde(default)]`, so partial files work:
+
 ```rust
 use reflow_network::tracing::TracingConfig;
 
-let config = TracingConfig::from_file("tracing.toml")?;
+let text = std::fs::read_to_string("tracing.toml")?;
+let config: TracingConfig = toml::from_str(&text)?;
 ```
 
 ## Performance Tuning

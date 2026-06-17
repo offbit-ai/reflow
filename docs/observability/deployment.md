@@ -2,6 +2,15 @@
 
 This guide covers deploying Reflow's observability framework in production environments, including scalability considerations, security best practices, and operational procedures.
 
+> **Status:** this is a **target** architecture. It assumes a PostgreSQL storage
+> backend, which is **not yet implemented** — the `reflow_tracing` server today
+> ships the `sqlite` and `memory` backends (see
+> [Storage Backends](storage-backends.md)). Treat the PostgreSQL/replica pieces
+> below as the intended design; for current deployments use the SQLite backend
+> on a single collector. The distributed model is a **shared collector**: point
+> every network's `TracingConfig.server_url` at one `reflow_tracing` server and a
+> cross-process flow is stitched into one trace.
+
 ## Architecture Overview
 
 ### Production Architecture

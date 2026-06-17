@@ -106,19 +106,12 @@ async fn main() -> Result<()> {
     
     println!("🚀 Starting traced actor network");
     
-    // Step 1: Configure tracing
+    // Step 1: Configure tracing. TracingConfig is #[serde(default)] and derives
+    // Default, so set only what you need.
     let tracing_config = TracingConfig {
         server_url: "ws://127.0.0.1:8080".to_string(),
-        batch_size: 10,
-        batch_timeout: Duration::from_millis(500),
-        enable_compression: false,
         enabled: true,
-        retry_config: reflow_network::tracing::RetryConfig {
-            max_retries: 3,
-            initial_delay: Duration::from_millis(100),
-            max_delay: Duration::from_secs(5),
-            backoff_multiplier: 2.0,
-        },
+        ..TracingConfig::default()
     };
     
     // Step 2: Initialize global tracing
@@ -179,10 +172,11 @@ async fn main() -> Result<()> {
         
         tracing.trace_actor_created("manual_actor").await?;
         tracing.trace_message_sent(
-            "manual_actor", 
-            "output", 
-            "ManualMessage", 
-            256
+            "manual_actor",
+            "output",
+            "ManualMessage",
+            &"hello",                                  // content (anything Serialize)
+            reflow_tracing_protocol::PerformanceMetrics::default(),
         ).await?;
         
         println!("✅ Manual events recorded");
@@ -243,6 +237,27 @@ You'll see real-time trace events:
 [2025-01-07T06:00:01Z] ActorCompleted: processor1
 ...
 ```
+
+## Consuming Traces in Your App (no separate client needed)
+
+You don't have to run the monitoring client — every SDK can subscribe to the
+network's **local trace tap** directly. Enable tracing in the config and call
+`traces()`:
+
+```python
+# Python — same for Node (net.traces()), Go (net.Traces()), C++/JVM (traces())
+net = Network({"tracing": {"server_url": "ws://127.0.0.1:8080", "enabled": True}})
+stream = net.traces()
+net.start()
+while True:
+    evt = stream.recv(timeout_ms=500)
+    if evt: print(evt["event_type"], evt.get("actor_id"))
+```
+
+The local tap delivers events even if the collector at `server_url` is
+unreachable. To query historical traces or subscribe to a shared collector
+across processes, use the collector client (e.g. C ABI
+`rfl_trace_client_connect` / `_query` / `_subscribe`).
 
 ## What Just Happened?
 
@@ -319,6 +334,7 @@ telnet 127.0.0.1 8080
 For production systems, consider:
 - Increasing `batch_size` to reduce network overhead
 - Enabling compression with `enable_compression: true`
-- Using PostgreSQL backend for better concurrent performance
+- Leaving `capture_content` off (default) so only the cheap checksum is computed
+- Using the SQLite backend for durable storage (the `memory` backend is for tests)
 
 Get help in our [troubleshooting guide](../reference/troubleshooting-guide.md) or check the [architecture documentation](architecture.md) for deeper understanding.
