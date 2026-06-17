@@ -220,3 +220,63 @@ func (e *EventStream) Close() {
 	e.ptr = nil
 	runtime.SetFinalizer(e, nil)
 }
+
+// Traces subscribes to the network's local trace-event stream. Requires
+// tracing to be enabled in the config (e.g. NewNetworkWithConfig with
+// {"tracing": {"server_url": "ws://...", "enabled": true}}). Events stream
+// locally with no collector required.
+func (n *Network) Traces() *TraceStream {
+	p := C.rfl_network_traces(n.ptr)
+	if p == nil {
+		return nil
+	}
+	t := &TraceStream{ptr: p}
+	runtime.SetFinalizer(t, (*TraceStream).Close)
+	return t
+}
+
+// TraceStream delivers TraceEvent objects as JSON.
+type TraceStream struct {
+	ptr *C.rfl_traces
+}
+
+// Recv blocks up to `timeout` for the next trace event. On timeout returns
+// (nil, nil). On channel close, returns an error.
+func (t *TraceStream) Recv(timeout time.Duration) (map[string]any, error) {
+	if t == nil || t.ptr == nil {
+		return nil, fmt.Errorf("reflow.TraceStream.Recv: reader is closed")
+	}
+	ms := timeout.Milliseconds()
+	if ms < 0 {
+		ms = 0
+	}
+	var out *C.char
+	st := C.rfl_traces_recv(t.ptr, C.uint32_t(ms), &out)
+	switch st {
+	case C.rfl_status_Ok:
+		if out == nil {
+			return nil, nil
+		}
+		defer C.rfl_string_free(out)
+		raw := []byte(C.GoString(out))
+		m := map[string]any{}
+		if err := json.Unmarshal(raw, &m); err != nil {
+			return nil, fmt.Errorf("decode trace event: %w", err)
+		}
+		return m, nil
+	case C.rfl_status_InvalidState:
+		return nil, nil // timeout
+	default:
+		return nil, statusToError(int32(st), "TraceStream.Recv")
+	}
+}
+
+// Close releases the subscription.
+func (t *TraceStream) Close() {
+	if t == nil || t.ptr == nil {
+		return
+	}
+	C.rfl_traces_free(t.ptr)
+	t.ptr = nil
+	runtime.SetFinalizer(t, nil)
+}
