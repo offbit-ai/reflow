@@ -53,6 +53,15 @@ public final class Network implements AutoCloseable {
         return new EventStream(nativeEvents(nativePtr));
     }
 
+    /**
+     * Subscribe to this network's live trace events (JSON). Requires tracing to
+     * be enabled in the config, e.g. {@code new Network("{\"tracing\":{\"server_url\":\"ws://localhost:8080\",\"enabled\":true}}")}.
+     * Events stream locally with no collector required.
+     */
+    public TraceStream traces() {
+        return new TraceStream(nativeTraces(nativePtr));
+    }
+
     @Override
     public void close() {
         if (nativePtr != 0) {
@@ -76,5 +85,6 @@ public final class Network implements AutoCloseable {
     private static native void nativeStart(long ptr);
     private static native void nativeShutdown(long ptr);
     private static native long nativeEvents(long ptr);
+    private static native long nativeTraces(long ptr);
     private static native void nativeFree(long ptr);
 }
