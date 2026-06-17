@@ -18,6 +18,7 @@ crate-type = ["cdylib"]
 [dependencies]
 reflow_rt = { version = "0.2.0", path = "../../crates/reflow_rt", default-features = false, features = ["components-core"] }
 reflow_components = { version = "0.2.0", path = "../../crates/reflow_components", default-features = false, features = ["av-core"] }
+reflow_tracing_protocol = { version = "0.2.1", path = "../../crates/reflow_tracing_protocol" }
 # abi3-py39 produces a single wheel per platform that works on any
 # CPython 3.9+ rather than needing a separate build per interpreter.
 # Forward-compatibility lets us build against newer Pythons (e.g. 3.14

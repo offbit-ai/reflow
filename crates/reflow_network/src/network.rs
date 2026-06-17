@@ -46,6 +46,10 @@ use std::sync::{Arc, Mutex};
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+// Container-level default so callers can supply a partial config (e.g. just
+// `tracing`) and have the rest fall back to defaults — important for SDKs that
+// enable tracing through a config object.
+#[serde(default)]
 pub struct NetworkConfig {
     pub compression: CompressionConfig,
     pub tracing: TracingConfig,

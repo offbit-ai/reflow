@@ -1554,6 +1554,51 @@ impl PyNetwork {
         let rx = self.inner.lock().unwrap().get_event_receiver();
         PyEventStream { rx }
     }
+
+    /// Subscribe to this network's live trace events. Requires tracing to be
+    /// enabled in the config, e.g.
+    /// `Network({"tracing": {"server_url": "ws://localhost:8080", "enabled": True}})`.
+    /// Events stream locally with no collector required.
+    fn traces(&self) -> PyTraceStream {
+        let rx = self.inner.lock().unwrap().get_trace_receiver();
+        PyTraceStream { rx }
+    }
+}
+
+// ─── Trace stream ──────────────────────────────────────────────────────────
+
+#[pyclass(module = "reflow._native", name = "TraceStream")]
+pub struct PyTraceStream {
+    rx: flume::Receiver<reflow_tracing_protocol::TraceEvent>,
+}
+
+#[pymethods]
+impl PyTraceStream {
+    /// Block up to `timeout_ms` for the next trace event (as a dict). Returns
+    /// `None` on timeout; raises on channel close. `timeout_ms=0` blocks.
+    #[pyo3(signature = (timeout_ms=0))]
+    fn recv<'py>(&self, py: Python<'py>, timeout_ms: u32) -> PyResult<Option<Bound<'py, PyAny>>> {
+        let outcome = py.allow_threads(|| {
+            if timeout_ms == 0 {
+                self.rx
+                    .recv()
+                    .map_err(|_| flume::RecvTimeoutError::Disconnected)
+            } else {
+                self.rx
+                    .recv_timeout(std::time::Duration::from_millis(timeout_ms as u64))
+            }
+        });
+        match outcome {
+            Ok(evt) => {
+                let v = serde_json::to_value(&evt).map_err(map_err)?;
+                Ok(Some(pythonize(py, &v).map_err(map_err)?))
+            }
+            Err(flume::RecvTimeoutError::Timeout) => Ok(None),
+            Err(flume::RecvTimeoutError::Disconnected) => {
+                Err(PyRuntimeError::new_err("trace channel closed"))
+            }
+        }
+    }
 }
 
 // ─── Event stream ──────────────────────────────────────────────────────────
@@ -1612,6 +1657,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySubgraphBuilder>()?;
     m.add_class::<PyNetwork>()?;
     m.add_class::<PyEventStream>()?;
+    m.add_class::<PyTraceStream>()?;
     m.add_function(wrap_pyfunction!(template_actor, m)?)?;
     m.add_function(wrap_pyfunction!(template_list, m)?)?;
     m.add_function(wrap_pyfunction!(load_pack, m)?)?;

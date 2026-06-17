@@ -76,8 +76,13 @@ fn decode_frame(data: &[u8]) -> Option<String> {
     String::from_utf8(data.to_vec()).ok()
 }
 
-/// Configuration for the tracing client
+/// Configuration for the tracing client.
+///
+/// `#[serde(default)]` lets callers (and every SDK) enable tracing with just
+/// the fields they care about, e.g. `{ "server_url": "...", "enabled": true }`;
+/// all other fields fall back to [`TracingConfig::default`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct TracingConfig {
     /// WebSocket server URL (e.g., "ws://localhost:8080")
     pub server_url: String,
