@@ -34,8 +34,13 @@ derive_more = { version = "1.0.0", features = ["display"] }
 tokio-tungstenite = "0.27.0"
 tungstenite = "0.27.0"
 
-# Database (SQLite) - required for persistent tracing storage
+# Database (SQLite always; PostgreSQL via the `postgres` feature) for persistent
+# tracing storage. The Postgres driver is added by the feature, below.
 sqlx = { version = "0.8.2", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"] }
+
+# MongoDB backend (via the `mongodb` feature), optional.
+mongodb = { version = "3.1", optional = true }
+bson = { version = "2.13", optional = true }
 
 # Compression
 zstd = "0.13.2"
@@ -58,6 +63,13 @@ tokio-test = "0.4"
 tempfile = "3.8"
 
 [features]
-default = ["server", "client"]
+default = ["server", "client", "storage"]
 server = []
 client = []
+# Durable storage backends. `storage` enables the SQLite backend (always
+# available). `postgres` and `mongodb` add the respective drivers.
+storage = []
+postgres = ["storage", "sqlx/postgres"]
+mongodb = ["storage", "dep:mongodb", "dep:bson"]
+# Convenience: every durable backend at once.
+all-backends = ["postgres", "mongodb"]

@@ -5,6 +5,8 @@ use crate::config::StorageConfig;
 use reflow_tracing_protocol::{FlowTrace, TraceId, TraceQuery};
 
 pub mod memory;
+pub mod mongo;
+pub mod postgres;
 #[allow(dead_code)]
 pub mod sqlite;
 
@@ -48,9 +50,25 @@ impl StorageBackend {
                 let storage = sqlite::SqliteStorage::new(sqlite_config.clone()).await?;
                 Ok(Box::new(storage))
             }
-            _ => Err(anyhow::anyhow!(
-                "Unsupported storage backend: {}",
-                config.backend
+            "postgres" | "postgresql" => {
+                let pg_config = config
+                    .postgres
+                    .as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("PostgreSQL storage config missing"))?;
+                let storage = postgres::PostgresStorage::new(pg_config.clone()).await?;
+                Ok(Box::new(storage))
+            }
+            "mongodb" | "mongo" => {
+                let mongo_config = config
+                    .mongodb
+                    .as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("MongoDB storage config missing"))?;
+                let storage = mongo::MongoStorage::new(mongo_config.clone()).await?;
+                Ok(Box::new(storage))
+            }
+            other => Err(anyhow::anyhow!(
+                "Unsupported storage backend: '{other}'. Available: memory, sqlite, \
+                 postgres (--features postgres), mongodb (--features mongodb)."
             )),
         }
     }

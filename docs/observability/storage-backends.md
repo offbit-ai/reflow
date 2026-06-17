@@ -4,18 +4,32 @@ Reflow's observability framework supports multiple storage backends to accommoda
 
 ## Overview
 
-> **Implementation status:** the server currently ships **two** backends —
-> `memory` and `sqlite` (selected by `storage.backend` in the server config).
-> The **PostgreSQL** and **ClickHouse** sections below describe the intended
-> design and the `TraceStorage` trait they would implement; they are **not yet
-> available**. `StorageBackend::create` only matches `"memory"` and `"sqlite"`.
+> **Implementation status & build features.** The backend is selected by
+> `storage.backend` in the server config. `memory` and `sqlite` are always
+> available; `postgres` and `mongodb` are compiled in via cargo features:
+>
+> | `storage.backend` | Status | Build |
+> |---|---|---|
+> | `memory` | available | default |
+> | `sqlite` | available | default (the `storage` feature) |
+> | `postgres` / `postgresql` | available | `--features postgres` |
+> | `mongodb` / `mongo` | available | `--features mongodb` |
+> | `clickhouse` | planned | — |
+>
+> `--features all-backends` enables Postgres + MongoDB together. Selecting a
+> backend that wasn't compiled in returns a clear error. The **ClickHouse**
+> section below is still design-only.
 
 The tracing system provides a pluggable storage architecture (the `TraceStorage`
-trait) so additional backends can be added:
+trait — `store_trace`/`get_trace`/`query_traces`/`delete_trace`/`get_stats`) so
+backends are interchangeable. Postgres and MongoDB store each `FlowTrace` as one
+row/document keyed by `trace_id`, with denormalized `flow_id`/`execution_id`/
+`status`/`start_time` columns/fields for indexed querying.
 
 - **Memory Storage** _(available)_: Fast, ephemeral storage for development and testing
-- **SQLite Storage** _(available)_: Lightweight, embedded database for small to medium deployments
-- **PostgreSQL Storage** _(planned)_: Robust, scalable database for production environments
+- **SQLite Storage** _(available)_: Lightweight, embedded database for small to medium deployments; writes are synchronous (write-through)
+- **PostgreSQL Storage** _(available, `--features postgres`)_: Robust, scalable database for production environments
+- **MongoDB Storage** _(available, `--features mongodb`)_: Document store; the JSON-shaped trace maps naturally to a document
 - **ClickHouse Storage** _(planned)_: High-performance analytical database for massive scale
 - **Custom Storage**: Implement the `TraceStorage` trait yourself
 
@@ -130,7 +144,28 @@ let read_config = SqliteConfig {
 - **File size**: Large databases can become unwieldy
 - **Network access**: No remote access without additional tools
 
-## PostgreSQL Storage _(planned — not yet implemented)_
+## PostgreSQL Storage _(available — build with `--features postgres`)_
+
+Selected via the server config (`storage.backend = "postgres"` + a `storage.postgres`
+section). The schema (`traces` table + indexes) is created automatically on
+startup; you do **not** need to run the DDL by hand. Configured fields:
+`connection_url`, `max_connections`, `min_connections`, `acquire_timeout_secs`.
+
+```toml
+[storage]
+backend = "postgres"
+
+[storage.postgres]
+connection_url = "postgresql://user:pass@localhost/traces"
+max_connections = 20
+min_connections = 5
+acquire_timeout_secs = 5
+```
+
+> The `PostgresStorage::*` / `PostgresConfig { schema_name, enable_partitioning, … }`
+> and manual schema/partitioning snippets below are **design notes** for advanced
+> tuning, not the current API — the implemented config is the four fields above
+> and the schema is auto-managed.
 
 ### When to Use
 
@@ -240,6 +275,29 @@ ALTER SYSTEM SET wal_buffers = '16MB';
 ALTER SYSTEM SET default_statistics_target = 100;
 SELECT pg_reload_conf();
 ```
+
+## MongoDB Storage _(available — build with `--features mongodb`)_
+
+A document store: each `FlowTrace` is one document keyed by `trace_id` (`_id`),
+with denormalized `flow_id` / `execution_id` / `status` / `start_time` fields
+(indexed on startup) and the full trace nested under `trace`. Selected via the
+server config:
+
+```toml
+[storage]
+backend = "mongodb"
+
+[storage.mongodb]
+connection_url = "mongodb://localhost:27017"
+database_name = "reflow_tracing"
+collection_name = "traces"
+```
+
+### When to Use
+
+- You already run MongoDB and want traces alongside other documents
+- Flexible, schema-less retention of the evolving trace shape
+- Horizontal scale via sharding on `flow_id` / `_id`
 
 ## ClickHouse Storage _(planned — not yet implemented)_
 
