@@ -74,7 +74,9 @@ type Result<T> = std::result::Result<T, TracingError>;
 #[derive(Debug)]
 struct ClientState {
     connection_status: ConnectionStatus,
-    event_buffer: VecDeque<TraceEvent>,
+    /// Buffered events paired with the trace they belong to, so the trace id
+    /// survives the batch path instead of being replaced by a fresh random id.
+    event_buffer: VecDeque<(TraceId, TraceEvent)>,
     #[cfg(not(target_arch = "wasm32"))]
     pending_requests: StdHashMap<String, tokio::sync::oneshot::Sender<TracingResponse>>,
     last_batch_time: Instant,
@@ -257,36 +259,30 @@ impl TracingClient {
                 match msg {
                     Ok(WsMessage::Text(text)) => {
                         debug!("Received WebSocket message: {}", text);
-                        // Handle different response types
-                        if let Ok(response) = serde_json::from_str::<TraceResponse>(&text) {
-                            let mut state_guard = state_for_receiver.lock().unwrap();
+                        // The server replies with `TracingResponse`. Route replies
+                        // that carry a `request_id` to their waiting caller.
+                        if let Ok(response) = serde_json::from_str::<TracingResponse>(&text) {
+                            #[cfg(not(target_arch = "wasm32"))]
+                            {
+                                let request_id = match &response {
+                                    TracingResponse::QueryResults { request_id, .. } => {
+                                        Some(request_id.to_string())
+                                    }
+                                    TracingResponse::TraceData { request_id, .. } => {
+                                        Some(request_id.to_string())
+                                    }
+                                    _ => None,
+                                };
 
-                            // Convert TraceResponse to TracingResponse for compatibility
-                            let converted_response = match response {
-                                TraceResponse::TraceStored { trace_id } => {
-                                    TracingResponse::TraceStarted { trace_id }
-                                }
-                                TraceResponse::TracesFound { traces } => {
-                                    TracingResponse::QueryResults {
-                                        traces,
-                                        total_count: 0,
+                                if let Some(key) = request_id {
+                                    let mut state_guard = state_for_receiver.lock().unwrap();
+                                    if let Some(sender) = state_guard.pending_requests.remove(&key) {
+                                        let _ = sender.send(response);
                                     }
                                 }
-                                TraceResponse::TraceData { trace } => {
-                                    TracingResponse::TraceData { trace: Some(trace) }
-                                }
-                                TraceResponse::Error { message } => TracingResponse::Error {
-                                    message,
-                                    code: ErrorCode::InternalError,
-                                },
-                                TraceResponse::Metrics { data: _ } => TracingResponse::Pong,
-                            };
-
-                            // Notify any pending requests
-                            #[cfg(not(target_arch = "wasm32"))]
-                            if let Some((_, sender)) = state_guard.pending_requests.drain().next() {
-                                let _ = sender.send(converted_response);
-                            };
+                            }
+                        } else {
+                            debug!("Ignoring unparseable tracing response: {}", text);
                         }
                     }
                     Ok(WsMessage::Close(_)) => {
@@ -339,12 +335,10 @@ impl TracingClient {
                     info!("Sending batch of {} trace events", events_to_send.len());
 
                     if let Some(sender) = sender_ref {
-                        for event in events_to_send {
-                            // Send individual events as TracingRequest::RecordEvent
-                            let request = TracingRequest::RecordEvent {
-                                trace_id: TraceId::new(),
-                                event,
-                            };
+                        for (trace_id, event) in events_to_send {
+                            // Send individual events as TracingRequest::RecordEvent,
+                            // preserving the trace id the event was recorded under.
+                            let request = TracingRequest::RecordEvent { trace_id, event };
 
                             if let Ok(message) = serde_json::to_string(&request) {
                                 if let Err(e) = sender.send(message) {
@@ -420,8 +414,13 @@ impl TracingClient {
 
         let trace_id = TraceId::new();
 
-        // Send StartTrace request
-        let request = TracingRequest::StartTrace { flow_id, version };
+        // Send StartTrace request. The client owns the trace id; the server
+        // creates/stores the trace under this exact id.
+        let request = TracingRequest::StartTrace {
+            trace_id: trace_id.clone(),
+            flow_id,
+            version,
+        };
         let message = serde_json::to_string(&request)?;
 
         // Send the message immediately
@@ -436,8 +435,8 @@ impl TracingClient {
         Ok(trace_id)
     }
 
-    /// Record a trace event
-    pub async fn record_event(&self, _trace_id: TraceId, event: TraceEvent) -> Result<()> {
+    /// Record a trace event under the given trace.
+    pub async fn record_event(&self, trace_id: TraceId, event: TraceEvent) -> Result<()> {
         if !self.config.enabled {
             return Ok(());
         }
@@ -447,7 +446,9 @@ impl TracingClient {
         // Check if we should send immediately
         let should_send_immediately = {
             let mut state = self.state.lock().unwrap();
-            state.event_buffer.push_back(event.clone());
+            state
+                .event_buffer
+                .push_back((trace_id.clone(), event.clone()));
 
             // Check if we should send immediately
             if self.config.batch_size == 1 {
@@ -463,16 +464,25 @@ impl TracingClient {
 
         // Send immediately if needed (lock is already dropped)
         if should_send_immediately {
-            let request = TracingRequest::RecordEvent {
-                trace_id: TraceId::new(),
-                event,
-            };
+            let request = TracingRequest::RecordEvent { trace_id, event };
 
             if let Ok(message) = serde_json::to_string(&request) {
                 self.send_message(message).await?;
             }
         }
 
+        Ok(())
+    }
+
+    /// Finalize a trace, marking its terminal status on the server.
+    pub async fn end_trace(&self, trace_id: TraceId, status: ExecutionStatus) -> Result<()> {
+        if !self.config.enabled {
+            return Ok(());
+        }
+
+        let request = TracingRequest::EndTrace { trace_id, status };
+        let message = serde_json::to_string(&request)?;
+        self.send_message(message).await?;
         Ok(())
     }
 
@@ -488,32 +498,100 @@ impl TracingClient {
         Ok(())
     }
 
-    /// Query traces from the server
+    /// Query traces from the server.
     pub async fn query_traces(&self, query: TraceQuery) -> Result<Vec<FlowTrace>> {
         if !self.config.enabled {
             return Ok(Vec::new());
         }
 
-        let request = TracingRequest::QueryTraces { query };
-        let message = serde_json::to_string(&request)?;
-        self.send_message(message).await?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let request_id = RequestId::new();
+            let rx = self.register_request(&request_id);
 
-        // For now, return empty - would need proper response handling
-        Ok(Vec::new())
+            let request = TracingRequest::QueryTraces {
+                request_id: request_id.clone(),
+                query,
+            };
+            self.send_message(serde_json::to_string(&request)?).await?;
+
+            match self.await_response(&request_id, rx).await? {
+                TracingResponse::QueryResults { traces, .. } => Ok(traces),
+                TracingResponse::Error { message, .. } => {
+                    Err(TracingError::WebSocketError(message))
+                }
+                _ => Ok(Vec::new()),
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = query;
+            Ok(Vec::new())
+        }
     }
 
-    /// Get a specific trace by ID
+    /// Get a specific trace by ID.
     pub async fn get_trace(&self, trace_id: TraceId) -> Result<Option<FlowTrace>> {
         if !self.config.enabled {
             return Ok(None);
         }
 
-        let request = TracingRequest::GetTrace { trace_id };
-        let message = serde_json::to_string(&request)?;
-        self.send_message(message).await?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let request_id = RequestId::new();
+            let rx = self.register_request(&request_id);
 
-        // For now, return None - would need proper response handling
-        Ok(None)
+            let request = TracingRequest::GetTrace {
+                request_id: request_id.clone(),
+                trace_id,
+            };
+            self.send_message(serde_json::to_string(&request)?).await?;
+
+            match self.await_response(&request_id, rx).await? {
+                TracingResponse::TraceData { trace, .. } => Ok(trace),
+                TracingResponse::Error { message, .. } => {
+                    Err(TracingError::WebSocketError(message))
+                }
+                _ => Ok(None),
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = trace_id;
+            Ok(None)
+        }
+    }
+
+    /// Register a pending request and return the receiver to await its reply.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn register_request(
+        &self,
+        request_id: &RequestId,
+    ) -> tokio::sync::oneshot::Receiver<TracingResponse> {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let mut state = self.state.lock().unwrap();
+        state.pending_requests.insert(request_id.to_string(), tx);
+        rx
+    }
+
+    /// Await a correlated reply, cleaning up the pending entry on timeout.
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn await_response(
+        &self,
+        request_id: &RequestId,
+        rx: tokio::sync::oneshot::Receiver<TracingResponse>,
+    ) -> Result<TracingResponse> {
+        match tokio::time::timeout(Duration::from_secs(10), rx).await {
+            Ok(Ok(response)) => Ok(response),
+            Ok(Err(_)) => Err(TracingError::Disconnected),
+            Err(_) => {
+                let mut state = self.state.lock().unwrap();
+                state.pending_requests.remove(&request_id.to_string());
+                Err(TracingError::Timeout)
+            }
+        }
     }
 
     /// Subscribe to real-time trace events
@@ -558,11 +636,8 @@ impl TracingClient {
         if !events_to_send.is_empty() {
             info!("Flushing {} pending trace events", events_to_send.len());
 
-            for event in events_to_send {
-                let request = TracingRequest::RecordEvent {
-                    trace_id: TraceId::new(),
-                    event,
-                };
+            for (trace_id, event) in events_to_send {
+                let request = TracingRequest::RecordEvent { trace_id, event };
 
                 if let Ok(message) = serde_json::to_string(&request) {
                     let _ = self.send_message(message).await;
@@ -593,11 +668,8 @@ impl TracingClient {
 
         info!("Flushing {} trace events", events_to_send.len());
 
-        for event in events_to_send {
-            let request = TracingRequest::RecordEvent {
-                trace_id: TraceId::new(),
-                event,
-            };
+        for (trace_id, event) in events_to_send {
+            let request = TracingRequest::RecordEvent { trace_id, event };
 
             if let Ok(message) = serde_json::to_string(&request) {
                 self.send_message(message).await?;
@@ -782,6 +854,22 @@ impl TracingIntegration {
             // Use a default trace ID if none is set
             self.client.record_event(TraceId::new(), event).await
         }
+    }
+
+    /// Finalize the current flow trace with a terminal status.
+    pub async fn end_flow_trace(&self, status: ExecutionStatus) -> Result<()> {
+        let trace_id = self.current_trace_id.lock().unwrap().clone();
+        if let Some(trace_id) = trace_id {
+            self.client.end_trace(trace_id, status).await
+        } else {
+            Ok(())
+        }
+    }
+
+    /// The trace id of the active flow, if one has been started. Used by the
+    /// distributed router to propagate trace context across process boundaries.
+    pub fn current_trace_id(&self) -> Option<TraceId> {
+        self.current_trace_id.lock().unwrap().clone()
     }
 
     /// Get access to the underlying client

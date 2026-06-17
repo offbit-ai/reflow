@@ -1367,11 +1367,15 @@ impl Network {
         {
             let tracing_integration = self.tracing_integration.clone();
             tokio::runtime::Handle::current().spawn(async move {
-                // Shutdown tracing first to flush any pending events
-                if let Some(ref tracing) = tracing_integration
-                    && let Err(e) = tracing.client().shutdown().await
-                {
-                    tracing::warn!("Failed to shutdown tracing client: {}", e);
+                if let Some(ref tracing) = tracing_integration {
+                    // Finalize the session trace so it's persisted as Completed,
+                    // then flush and close the client.
+                    let _ = tracing
+                        .end_flow_trace(reflow_tracing_protocol::ExecutionStatus::Completed)
+                        .await;
+                    if let Err(e) = tracing.client().shutdown().await {
+                        tracing::warn!("Failed to shutdown tracing client: {}", e);
+                    }
                 }
             });
         }

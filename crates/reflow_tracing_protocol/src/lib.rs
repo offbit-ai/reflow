@@ -27,6 +27,11 @@ pub struct ExecutionId(pub Uuid);
 #[derive(Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EventId(pub Uuid);
 
+/// Correlation identifier for matching a request/response pair over the
+/// (otherwise fire-and-forget) WebSocket channel.
+#[derive(Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct RequestId(pub Uuid);
+
 /// Flow version for versioning support
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowVersion {
@@ -41,8 +46,12 @@ pub struct FlowVersion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(clippy::large_enum_variant)]
 pub enum TracingRequest {
-    /// Start a new flow trace
+    /// Start a new flow trace. The client owns the `trace_id` so that the
+    /// same id can be propagated peer-to-peer in distributed flows before any
+    /// server round-trip; the server creates/stores the trace under this id.
     StartTrace {
+        #[serde(default)]
+        trace_id: TraceId,
         flow_id: FlowId,
         version: FlowVersion,
     },
@@ -51,10 +60,23 @@ pub enum TracingRequest {
         trace_id: TraceId,
         event: TraceEvent,
     },
+    /// Finalize a trace, marking its terminal status.
+    EndTrace {
+        trace_id: TraceId,
+        status: ExecutionStatus,
+    },
     /// Get a specific trace by ID
-    GetTrace { trace_id: TraceId },
+    GetTrace {
+        #[serde(default)]
+        request_id: RequestId,
+        trace_id: TraceId,
+    },
     /// Query traces with filters
-    QueryTraces { query: TraceQuery },
+    QueryTraces {
+        #[serde(default)]
+        request_id: RequestId,
+        query: TraceQuery,
+    },
     /// Get all versions of a flow
     GetFlowVersions { flow_id: FlowId },
     /// Health check
@@ -75,9 +97,15 @@ pub enum TracingResponse {
         error: Option<String>,
     },
     /// Response to GetTrace
-    TraceData { trace: Option<FlowTrace> },
+    TraceData {
+        #[serde(default)]
+        request_id: RequestId,
+        trace: Option<FlowTrace>,
+    },
     /// Response to QueryTraces
     QueryResults {
+        #[serde(default)]
+        request_id: RequestId,
         traces: Vec<FlowTrace>,
         total_count: usize,
     },
@@ -312,6 +340,18 @@ impl FlowId {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl RequestId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for RequestId {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
