@@ -28,6 +28,40 @@ use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 
+/// Route a server reply to the caller waiting on its `request_id`.
+/// Replies without a correlation id (notifications, acks) are ignored here.
+#[cfg(not(target_arch = "wasm32"))]
+fn route_tracing_response(state: &Arc<Mutex<ClientState>>, text: &str) {
+    match serde_json::from_str::<TracingResponse>(text) {
+        Ok(response) => {
+            let request_id = match &response {
+                TracingResponse::QueryResults { request_id, .. } => Some(request_id.to_string()),
+                TracingResponse::TraceData { request_id, .. } => Some(request_id.to_string()),
+                _ => None,
+            };
+            if let Some(key) = request_id {
+                let mut guard = state.lock().unwrap();
+                if let Some(sender) = guard.pending_requests.remove(&key) {
+                    let _ = sender.send(response);
+                }
+            }
+        }
+        Err(_) => debug!("Ignoring unparseable tracing response"),
+    }
+}
+
+/// Decode a binary WebSocket frame to its JSON text. Frames may be
+/// zstd-compressed (the server's default) or raw UTF-8 JSON.
+#[cfg(not(target_arch = "wasm32"))]
+fn decode_frame(data: &[u8]) -> Option<String> {
+    if let Ok(decompressed) = zstd::decode_all(data) {
+        if let Ok(text) = String::from_utf8(decompressed) {
+            return Some(text);
+        }
+    }
+    String::from_utf8(data.to_vec()).ok()
+}
+
 /// Configuration for the tracing client
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TracingConfig {
@@ -258,31 +292,14 @@ impl TracingClient {
             while let Some(msg) = ws_receiver.next().await {
                 match msg {
                     Ok(WsMessage::Text(text)) => {
-                        debug!("Received WebSocket message: {}", text);
                         // The server replies with `TracingResponse`. Route replies
                         // that carry a `request_id` to their waiting caller.
-                        if let Ok(response) = serde_json::from_str::<TracingResponse>(&text) {
-                            #[cfg(not(target_arch = "wasm32"))]
-                            {
-                                let request_id = match &response {
-                                    TracingResponse::QueryResults { request_id, .. } => {
-                                        Some(request_id.to_string())
-                                    }
-                                    TracingResponse::TraceData { request_id, .. } => {
-                                        Some(request_id.to_string())
-                                    }
-                                    _ => None,
-                                };
-
-                                if let Some(key) = request_id {
-                                    let mut state_guard = state_for_receiver.lock().unwrap();
-                                    if let Some(sender) = state_guard.pending_requests.remove(&key) {
-                                        let _ = sender.send(response);
-                                    }
-                                }
-                            }
-                        } else {
-                            debug!("Ignoring unparseable tracing response: {}", text);
+                        route_tracing_response(&state_for_receiver, &text);
+                    }
+                    Ok(WsMessage::Binary(data)) => {
+                        // Large responses are compressed (zstd by default).
+                        if let Some(text) = decode_frame(&data) {
+                            route_tracing_response(&state_for_receiver, &text);
                         }
                     }
                     Ok(WsMessage::Close(_)) => {

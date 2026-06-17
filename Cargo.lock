@@ -6653,6 +6653,7 @@ dependencies = [
  "wasm-bindgen-test",
  "web-sys",
  "web-time",
+ "zstd 0.13.3",
 ]
 
 [[package]]
