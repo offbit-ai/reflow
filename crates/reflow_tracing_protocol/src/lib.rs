@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+pub mod checksum;
 pub mod client;
 
 /// Unique identifier for a trace
@@ -27,6 +28,11 @@ pub struct ExecutionId(pub Uuid);
 #[derive(Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EventId(pub Uuid);
 
+/// Correlation identifier for matching a request/response pair over the
+/// (otherwise fire-and-forget) WebSocket channel.
+#[derive(Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct RequestId(pub Uuid);
+
 /// Flow version for versioning support
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowVersion {
@@ -41,8 +47,12 @@ pub struct FlowVersion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(clippy::large_enum_variant)]
 pub enum TracingRequest {
-    /// Start a new flow trace
+    /// Start a new flow trace. The client owns the `trace_id` so that the
+    /// same id can be propagated peer-to-peer in distributed flows before any
+    /// server round-trip; the server creates/stores the trace under this id.
     StartTrace {
+        #[serde(default)]
+        trace_id: TraceId,
         flow_id: FlowId,
         version: FlowVersion,
     },
@@ -51,10 +61,23 @@ pub enum TracingRequest {
         trace_id: TraceId,
         event: TraceEvent,
     },
+    /// Finalize a trace, marking its terminal status.
+    EndTrace {
+        trace_id: TraceId,
+        status: ExecutionStatus,
+    },
     /// Get a specific trace by ID
-    GetTrace { trace_id: TraceId },
+    GetTrace {
+        #[serde(default)]
+        request_id: RequestId,
+        trace_id: TraceId,
+    },
     /// Query traces with filters
-    QueryTraces { query: TraceQuery },
+    QueryTraces {
+        #[serde(default)]
+        request_id: RequestId,
+        query: TraceQuery,
+    },
     /// Get all versions of a flow
     GetFlowVersions { flow_id: FlowId },
     /// Health check
@@ -75,9 +98,15 @@ pub enum TracingResponse {
         error: Option<String>,
     },
     /// Response to GetTrace
-    TraceData { trace: Option<FlowTrace> },
+    TraceData {
+        #[serde(default)]
+        request_id: RequestId,
+        trace: Option<FlowTrace>,
+    },
     /// Response to QueryTraces
     QueryResults {
+        #[serde(default)]
+        request_id: RequestId,
         traces: Vec<FlowTrace>,
         total_count: usize,
     },
@@ -175,13 +204,96 @@ pub struct TraceEventData {
     pub custom_attributes: HashMap<String, serde_json::Value>,
 }
 
-/// Snapshot of message data for replay
+/// Current version of the `serialized_data` content format. Bump when the
+/// canonical content encoding or codec semantics change.
+pub const CONTENT_FORMAT_VERSION: u32 = 1;
+
+/// Snapshot of a single traced message.
+///
+/// Two independent capture decisions populate this (see [`MessageSnapshot::capture`]):
+/// - `checksum` — cheap, content-only identity (default on). See [`crate::checksum`].
+/// - `serialized_data` — heavy, opt-in full content (default off).
+///
+/// Invariant when content is captured: `checksum == sha256(canonical(decompress(serialized_data)))`,
+/// and `serialized_data` round-trips to a message equal to the original.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageSnapshot {
+    /// Discriminant/type name of the message (e.g. `"Integer"`).
     pub message_type: String,
+    /// Pre-compression content size in bytes — the same bytes the `checksum`
+    /// covers (length of the canonical JSON form). Stays meaningful whether or
+    /// not content was captured and regardless of compression.
     pub size_bytes: usize,
+    /// `"sha256:<64 lowercase hex>"`, or `""` if not computed. Never chained.
     pub checksum: String,
-    pub serialized_data: Vec<u8>, // Compressed message data
+    /// Optional captured content (default empty). Decoded per `content_codec`.
+    /// Empty strictly means "not captured", distinct from a captured typed-empty.
+    #[serde(default)]
+    pub serialized_data: Vec<u8>,
+    /// Codec for `serialized_data`. `"none"` = uncompressed canonical JSON.
+    #[serde(default = "default_content_codec")]
+    pub content_codec: String,
+    /// Format/version tag so a reader in another SDK can decode safely.
+    #[serde(default)]
+    pub content_format_version: u32,
+    /// Compressed/stored footprint of `serialized_data`, when captured.
+    /// `None` when content is not captured. Do not overload `size_bytes` for this.
+    #[serde(default)]
+    pub stored_bytes: Option<usize>,
+}
+
+fn default_content_codec() -> String {
+    "none".to_string()
+}
+
+impl MessageSnapshot {
+    /// Capture a snapshot of `content` honoring the two orthogonal toggles.
+    ///
+    /// `capture_checksum` (cheap, recommended default-on) computes the
+    /// content-only SHA-256. `capture_content` (heavy, default-off) additionally
+    /// retains the canonical content bytes in `serialized_data` (codec `"none"`,
+    /// i.e. uncompressed canonical JSON), preserving the checksum invariant.
+    pub fn capture<T: Serialize>(
+        message_type: impl Into<String>,
+        content: &T,
+        capture_checksum: bool,
+        capture_content: bool,
+    ) -> Self {
+        // Canonicalize once if either toggle needs it.
+        let canonical = if capture_checksum || capture_content {
+            crate::checksum::canonical_json(content).ok()
+        } else {
+            None
+        };
+        let size_bytes = canonical.as_ref().map(|c| c.len()).unwrap_or(0);
+        let checksum = if capture_checksum {
+            canonical
+                .as_ref()
+                .map(|c| crate::checksum::checksum_of_canonical(c))
+                .unwrap_or_default()
+        } else {
+            String::new()
+        };
+        let (serialized_data, stored_bytes) = if capture_content {
+            let bytes = canonical
+                .as_ref()
+                .map(|c| c.as_bytes().to_vec())
+                .unwrap_or_default();
+            let len = bytes.len();
+            (bytes, Some(len))
+        } else {
+            (Vec::new(), None)
+        };
+        Self {
+            message_type: message_type.into(),
+            size_bytes,
+            checksum,
+            serialized_data,
+            content_codec: default_content_codec(),
+            content_format_version: CONTENT_FORMAT_VERSION,
+            stored_bytes,
+        }
+    }
 }
 
 /// State differences for time travel debugging
@@ -199,14 +311,50 @@ pub enum StateDiffType {
     MemoryOnly,
 }
 
-/// Performance metrics for observability
+/// Per-event performance metrics.
+///
+/// Each field is `Option`: `None` means **unmeasured**, `Some(0)` means
+/// **measured and zero**. The distinction is load-bearing — downstream
+/// aggregation (averages, percentiles, alerts) must exclude unmeasured samples
+/// rather than averaging zeros into them. Units are pinned in each field's doc
+/// and must not drift across SDKs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceMetrics {
-    pub execution_time_ns: u64,
-    pub memory_usage_bytes: usize,
-    pub cpu_usage_percent: f32,
-    pub queue_depth: usize,
-    pub throughput_msgs_per_sec: f64,
+    /// Wall-clock duration of the traced operation, in **nanoseconds**
+    /// (monotonic clock). Cheap — measured on the always-on path.
+    #[serde(default)]
+    pub execution_time_ns: Option<u64>,
+    /// Memory attributable to the operation as a **delta** (allocation
+    /// high-water during the tick), in **bytes** — not process RSS. Heavy:
+    /// gated behind `enable_perf_sampling`; `None` when off.
+    #[serde(default)]
+    pub memory_usage_bytes: Option<usize>,
+    /// CPU usage averaged over the operation window, **0–100 percent**. Heavy
+    /// and interval-shaped: gated; `None` when off.
+    #[serde(default)]
+    pub cpu_usage_percent: Option<f32>,
+    /// Instantaneous inbound mailbox depth at capture time, a **count**. Cheap —
+    /// measured on the always-on path.
+    #[serde(default)]
+    pub queue_depth: Option<usize>,
+    /// Throughput over a documented rolling window, in **messages per second**.
+    /// Needs a window denominator: gated; `None` when off.
+    #[serde(default)]
+    pub throughput_msgs_per_sec: Option<f64>,
+}
+
+impl PerformanceMetrics {
+    /// Cheap-path metrics: the always-affordable fields measured (or `None` if
+    /// not available here), the heavy/gated fields left unmeasured.
+    pub fn cheap(execution_time_ns: Option<u64>, queue_depth: Option<usize>) -> Self {
+        Self {
+            execution_time_ns,
+            memory_usage_bytes: None,
+            cpu_usage_percent: None,
+            queue_depth,
+            throughput_msgs_per_sec: None,
+        }
+    }
 }
 
 /// Causality information for dependency tracking
@@ -315,6 +463,18 @@ impl FlowId {
     }
 }
 
+impl RequestId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for RequestId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Default for TraceId {
     fn default() -> Self {
         Self::new()
@@ -334,13 +494,14 @@ impl Default for EventId {
 }
 
 impl Default for PerformanceMetrics {
+    /// All fields unmeasured.
     fn default() -> Self {
         Self {
-            execution_time_ns: 0,
-            memory_usage_bytes: 0,
-            cpu_usage_percent: 0.0,
-            queue_depth: 0,
-            throughput_msgs_per_sec: 0.0,
+            execution_time_ns: None,
+            memory_usage_bytes: None,
+            cpu_usage_percent: None,
+            queue_depth: None,
+            throughput_msgs_per_sec: None,
         }
     }
 }
@@ -375,8 +536,8 @@ impl TraceEvent {
         from_port: String,
         to_actor: String,
         to_port: String,
-        message_type: String,
-        size_bytes: usize,
+        snapshot: MessageSnapshot,
+        metrics: PerformanceMetrics,
     ) -> Self {
         Self {
             event_id: EventId::new(),
@@ -385,15 +546,10 @@ impl TraceEvent {
             actor_id: from_actor,
             data: TraceEventData {
                 port: Some(from_port),
-                message: Some(MessageSnapshot {
-                    message_type,
-                    size_bytes,
-                    checksum: String::new(), // TODO: Calculate actual checksum
-                    serialized_data: Vec::new(), // TODO: Add optional data capture
-                }),
+                message: Some(snapshot),
                 state_diff: None,
                 error: None,
-                performance_metrics: PerformanceMetrics::default(),
+                performance_metrics: metrics,
                 custom_attributes: HashMap::new(),
             },
             causality: CausalityInfo {
@@ -408,8 +564,8 @@ impl TraceEvent {
     pub fn message_sent(
         actor_id: String,
         port: String,
-        message_type: String,
-        size_bytes: usize,
+        snapshot: MessageSnapshot,
+        metrics: PerformanceMetrics,
     ) -> Self {
         Self {
             event_id: EventId::new(),
@@ -418,15 +574,10 @@ impl TraceEvent {
             actor_id,
             data: TraceEventData {
                 port: Some(port),
-                message: Some(MessageSnapshot {
-                    message_type,
-                    size_bytes,
-                    checksum: String::new(), // TODO: Calculate actual checksum
-                    serialized_data: Vec::new(), // TODO: Add optional data capture
-                }),
+                message: Some(snapshot),
                 state_diff: None,
                 error: None,
-                performance_metrics: PerformanceMetrics::default(),
+                performance_metrics: metrics,
                 custom_attributes: HashMap::new(),
             },
             causality: CausalityInfo {

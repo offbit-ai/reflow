@@ -163,10 +163,12 @@ pub struct StorageMetrics {
 #[cfg(feature = "storage")]
 impl SqliteStorage {
     pub async fn new(config: SqliteConfig) -> Result<Self> {
+        // `mode=rwc` = read-write-create, so a fresh database file is created
+        // if it doesn't exist yet (plain `sqlite:<path>` errors on a missing file).
         let database_url = if config.database_path == ":memory:" {
             "sqlite::memory:".to_string()
         } else {
-            format!("sqlite:{}", config.database_path)
+            format!("sqlite:{}?mode=rwc", config.database_path)
         };
 
         let storage_config = SqliteStorageConfig::from(config);
@@ -464,17 +466,16 @@ impl TraceStorage for SqliteStorage {
     async fn store_trace(&self, trace: FlowTrace) -> Result<TraceId> {
         let trace_id = trace.trace_id.clone();
 
-        // Add to write buffer for batch processing
-        let mut buffer = self.write_buffer.write().await;
-        buffer.traces.push_back(trace);
-        buffer.pending_size += 1;
-
-        // Force flush if buffer is full
-        if buffer.pending_size >= self.config.write_buffer_size {
-            drop(buffer); // Release lock before flush
-            Self::flush_write_buffer(&self.write_buffer, &self.pool, &self.compression_engine)
-                .await?;
-        }
+        // Write through directly to the database. A tracing collector stores
+        // one trace per finalized flow — modest enough that write-batching isn't
+        // worth the read-after-write and delete races a buffer introduces. This
+        // matches the Postgres backend's synchronous semantics.
+        Self::batch_store_traces(
+            &self.pool,
+            std::slice::from_ref(&trace),
+            &self.compression_engine,
+        )
+        .await?;
 
         Ok(trace_id)
     }
@@ -488,6 +489,16 @@ impl TraceStorage for SqliteStorage {
 
         if let Some(trace) = cache_result {
             return Ok(Some(trace));
+        }
+
+        // Read-after-write: the trace may still be in the write buffer, not yet
+        // flushed to the database. Serve the buffered copy so a store immediately
+        // followed by a get/query is consistent.
+        {
+            let buffer = self.write_buffer.read().await;
+            if let Some(trace) = buffer.traces.iter().rev().find(|t| t.trace_id == trace_id) {
+                return Ok(Some(trace.clone()));
+            }
         }
 
         // Load from database
@@ -596,12 +607,33 @@ impl TraceStorage for SqliteStorage {
             .collect();
 
         let results = futures::future::join_all(futures).await;
-        let traces: Result<Vec<_>, _> = results
+        // A trace id can vanish between the SELECT and the load (concurrent
+        // delete); skip rather than fail the whole query.
+        let mut traces: Vec<FlowTrace> = results
             .into_iter()
-            .map(|result| result?.ok_or_else(|| anyhow::anyhow!("Trace not found")))
+            .filter_map(|result| result.ok().flatten())
             .collect();
 
-        Ok(traces?)
+        // Merge in not-yet-flushed buffered traces that match the query, so a
+        // store immediately followed by a query is consistent.
+        {
+            let buffer = self.write_buffer.read().await;
+            for t in buffer.traces.iter() {
+                if trace_matches_query(&query, t)
+                    && !traces.iter().any(|x| x.trace_id == t.trace_id)
+                {
+                    traces.push(t.clone());
+                }
+            }
+        }
+
+        // Newest first, then apply the limit across the merged set.
+        traces.sort_by(|a, b| b.start_time.cmp(&a.start_time));
+        if let Some(limit) = query.limit {
+            traces.truncate(limit);
+        }
+
+        Ok(traces)
     }
 
     async fn delete_trace(&self, trace_id: TraceId) -> Result<bool> {
@@ -612,7 +644,21 @@ impl TraceStorage for SqliteStorage {
             .map_err(|e| anyhow::anyhow!("Failed to delete trace: {}", e))?
             .rows_affected();
 
-        Ok(rows_affected > 0)
+        // Purge every other copy: the not-yet-flushed write buffer and the read
+        // cache. Otherwise a delete could be undone by a later flush, or a stale
+        // copy served from cache/buffer.
+        let removed_from_buffer = {
+            let mut buffer = self.write_buffer.write().await;
+            let before = buffer.traces.len();
+            buffer.traces.retain(|t| t.trace_id != trace_id);
+            buffer.traces.len() != before
+        };
+        {
+            let mut cache = self.cache.write().await;
+            cache.remove(&trace_id);
+        }
+
+        Ok(rows_affected > 0 || removed_from_buffer)
     }
 
     async fn get_stats(&self) -> Result<StorageStats> {
@@ -813,6 +859,13 @@ impl LruCache {
         }
     }
 
+    fn remove(&mut self, trace_id: &TraceId) {
+        if let Some(entry) = self.cache.remove(trace_id) {
+            self.size_bytes = self.size_bytes.saturating_sub(entry.size_bytes);
+            self.usage_order.retain(|id| id != trace_id);
+        }
+    }
+
     fn insert(&mut self, trace_id: TraceId, trace: FlowTrace) {
         let entry_size = estimate_trace_size(&trace);
 
@@ -963,6 +1016,32 @@ impl Default for StorageMetrics {
             storage_size_bytes: 0,
         }
     }
+}
+
+/// Does a trace satisfy a query's column filters? Used to merge not-yet-flushed
+/// buffered traces into query results (matches the SQL WHERE clause).
+fn trace_matches_query(query: &TraceQuery, trace: &FlowTrace) -> bool {
+    if let Some(ref f) = query.flow_id
+        && &trace.flow_id != f
+    {
+        return false;
+    }
+    if let Some(ref e) = query.execution_id
+        && &trace.execution_id != e
+    {
+        return false;
+    }
+    if let Some(ref s) = query.status
+        && &trace.status != s
+    {
+        return false;
+    }
+    if let Some((start, end)) = &query.time_range
+        && (trace.start_time < *start || trace.start_time > *end)
+    {
+        return false;
+    }
+    true
 }
 
 fn estimate_trace_size(trace: &FlowTrace) -> usize {

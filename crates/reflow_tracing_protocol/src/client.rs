@@ -28,8 +28,61 @@ use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 
-/// Configuration for the tracing client
+/// Route a server reply to the caller waiting on its `request_id`.
+/// Replies without a correlation id (notifications, acks) are ignored here.
+#[cfg(not(target_arch = "wasm32"))]
+fn route_tracing_response(state: &Arc<Mutex<ClientState>>, text: &str) {
+    let response = match serde_json::from_str::<TracingResponse>(text) {
+        Ok(r) => r,
+        Err(_) => {
+            debug!("Ignoring unparseable tracing response");
+            return;
+        }
+    };
+    match response {
+        // Real-time subscription push → forward to the notification tap.
+        TracingResponse::EventNotification { event, .. } => {
+            let tap = { state.lock().unwrap().notification_tap.clone() };
+            if let Some(sender) = tap {
+                let _ = sender.try_send(event);
+            }
+        }
+        // Correlated reply → wake the waiting caller.
+        other => {
+            let request_id = match &other {
+                TracingResponse::QueryResults { request_id, .. } => Some(request_id.to_string()),
+                TracingResponse::TraceData { request_id, .. } => Some(request_id.to_string()),
+                _ => None,
+            };
+            if let Some(key) = request_id {
+                let mut guard = state.lock().unwrap();
+                if let Some(sender) = guard.pending_requests.remove(&key) {
+                    let _ = sender.send(other);
+                }
+            }
+        }
+    }
+}
+
+/// Decode a binary WebSocket frame to its JSON text. Frames may be
+/// zstd-compressed (the server's default) or raw UTF-8 JSON.
+#[cfg(not(target_arch = "wasm32"))]
+fn decode_frame(data: &[u8]) -> Option<String> {
+    if let Ok(decompressed) = zstd::decode_all(data) {
+        if let Ok(text) = String::from_utf8(decompressed) {
+            return Some(text);
+        }
+    }
+    String::from_utf8(data.to_vec()).ok()
+}
+
+/// Configuration for the tracing client.
+///
+/// `#[serde(default)]` lets callers (and every SDK) enable tracing with just
+/// the fields they care about, e.g. `{ "server_url": "...", "enabled": true }`;
+/// all other fields fall back to [`TracingConfig::default`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct TracingConfig {
     /// WebSocket server URL (e.g., "ws://localhost:8080")
     pub server_url: String,
@@ -43,6 +96,22 @@ pub struct TracingConfig {
     pub retry_config: RetryConfig,
     /// Whether tracing is enabled
     pub enabled: bool,
+    /// Compute a content checksum for each traced message. Cheap; default on.
+    /// See [`crate::checksum`].
+    #[serde(default = "default_true")]
+    pub capture_checksum: bool,
+    /// Retain full message content in `serialized_data`. Heavy and potentially
+    /// sensitive; default off. Independent of `capture_checksum`.
+    #[serde(default)]
+    pub capture_content: bool,
+    /// Sample the heavy `PerformanceMetrics` fields (memory/cpu/throughput).
+    /// Default off — cheap timing/queue-depth are always measured.
+    #[serde(default)]
+    pub enable_perf_sampling: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,12 +143,17 @@ type Result<T> = std::result::Result<T, TracingError>;
 #[derive(Debug)]
 struct ClientState {
     connection_status: ConnectionStatus,
-    event_buffer: VecDeque<TraceEvent>,
+    /// Buffered events paired with the trace they belong to, so the trace id
+    /// survives the batch path instead of being replaced by a fresh random id.
+    event_buffer: VecDeque<(TraceId, TraceEvent)>,
     #[cfg(not(target_arch = "wasm32"))]
     pending_requests: StdHashMap<String, tokio::sync::oneshot::Sender<TracingResponse>>,
     last_batch_time: Instant,
     reconnect_attempts: usize,
     current_trace_id: Option<TraceId>,
+    /// When subscribed, real-time `EventNotification`s from the server are
+    /// forwarded here so a consumer (e.g. an SDK monitor) can poll them.
+    notification_tap: Option<flume::Sender<TraceEvent>>,
     #[cfg(not(target_arch = "wasm32"))]
     message_sender: Option<tokio::sync::mpsc::UnboundedSender<String>>,
     #[cfg(target_arch = "wasm32")]
@@ -128,6 +202,9 @@ impl Default for TracingConfig {
                 backoff_multiplier: 2.0,
             },
             enabled: true,
+            capture_checksum: true,
+            capture_content: false,
+            enable_perf_sampling: false,
         }
     }
 }
@@ -143,6 +220,7 @@ impl TracingClient {
             last_batch_time: Instant::now(),
             reconnect_attempts: 0,
             current_trace_id: None,
+            notification_tap: None,
             #[cfg(not(target_arch = "wasm32"))]
             message_sender: None,
             #[cfg(target_arch = "wasm32")]
@@ -256,37 +334,14 @@ impl TracingClient {
             while let Some(msg) = ws_receiver.next().await {
                 match msg {
                     Ok(WsMessage::Text(text)) => {
-                        debug!("Received WebSocket message: {}", text);
-                        // Handle different response types
-                        if let Ok(response) = serde_json::from_str::<TraceResponse>(&text) {
-                            let mut state_guard = state_for_receiver.lock().unwrap();
-
-                            // Convert TraceResponse to TracingResponse for compatibility
-                            let converted_response = match response {
-                                TraceResponse::TraceStored { trace_id } => {
-                                    TracingResponse::TraceStarted { trace_id }
-                                }
-                                TraceResponse::TracesFound { traces } => {
-                                    TracingResponse::QueryResults {
-                                        traces,
-                                        total_count: 0,
-                                    }
-                                }
-                                TraceResponse::TraceData { trace } => {
-                                    TracingResponse::TraceData { trace: Some(trace) }
-                                }
-                                TraceResponse::Error { message } => TracingResponse::Error {
-                                    message,
-                                    code: ErrorCode::InternalError,
-                                },
-                                TraceResponse::Metrics { data: _ } => TracingResponse::Pong,
-                            };
-
-                            // Notify any pending requests
-                            #[cfg(not(target_arch = "wasm32"))]
-                            if let Some((_, sender)) = state_guard.pending_requests.drain().next() {
-                                let _ = sender.send(converted_response);
-                            };
+                        // The server replies with `TracingResponse`. Route replies
+                        // that carry a `request_id` to their waiting caller.
+                        route_tracing_response(&state_for_receiver, &text);
+                    }
+                    Ok(WsMessage::Binary(data)) => {
+                        // Large responses are compressed (zstd by default).
+                        if let Some(text) = decode_frame(&data) {
+                            route_tracing_response(&state_for_receiver, &text);
                         }
                     }
                     Ok(WsMessage::Close(_)) => {
@@ -339,12 +394,10 @@ impl TracingClient {
                     info!("Sending batch of {} trace events", events_to_send.len());
 
                     if let Some(sender) = sender_ref {
-                        for event in events_to_send {
-                            // Send individual events as TracingRequest::RecordEvent
-                            let request = TracingRequest::RecordEvent {
-                                trace_id: TraceId::new(),
-                                event,
-                            };
+                        for (trace_id, event) in events_to_send {
+                            // Send individual events as TracingRequest::RecordEvent,
+                            // preserving the trace id the event was recorded under.
+                            let request = TracingRequest::RecordEvent { trace_id, event };
 
                             if let Ok(message) = serde_json::to_string(&request) {
                                 if let Err(e) = sender.send(message) {
@@ -420,8 +473,13 @@ impl TracingClient {
 
         let trace_id = TraceId::new();
 
-        // Send StartTrace request
-        let request = TracingRequest::StartTrace { flow_id, version };
+        // Send StartTrace request. The client owns the trace id; the server
+        // creates/stores the trace under this exact id.
+        let request = TracingRequest::StartTrace {
+            trace_id: trace_id.clone(),
+            flow_id,
+            version,
+        };
         let message = serde_json::to_string(&request)?;
 
         // Send the message immediately
@@ -436,8 +494,8 @@ impl TracingClient {
         Ok(trace_id)
     }
 
-    /// Record a trace event
-    pub async fn record_event(&self, _trace_id: TraceId, event: TraceEvent) -> Result<()> {
+    /// Record a trace event under the given trace.
+    pub async fn record_event(&self, trace_id: TraceId, event: TraceEvent) -> Result<()> {
         if !self.config.enabled {
             return Ok(());
         }
@@ -447,7 +505,9 @@ impl TracingClient {
         // Check if we should send immediately
         let should_send_immediately = {
             let mut state = self.state.lock().unwrap();
-            state.event_buffer.push_back(event.clone());
+            state
+                .event_buffer
+                .push_back((trace_id.clone(), event.clone()));
 
             // Check if we should send immediately
             if self.config.batch_size == 1 {
@@ -463,16 +523,25 @@ impl TracingClient {
 
         // Send immediately if needed (lock is already dropped)
         if should_send_immediately {
-            let request = TracingRequest::RecordEvent {
-                trace_id: TraceId::new(),
-                event,
-            };
+            let request = TracingRequest::RecordEvent { trace_id, event };
 
             if let Ok(message) = serde_json::to_string(&request) {
                 self.send_message(message).await?;
             }
         }
 
+        Ok(())
+    }
+
+    /// Finalize a trace, marking its terminal status on the server.
+    pub async fn end_trace(&self, trace_id: TraceId, status: ExecutionStatus) -> Result<()> {
+        if !self.config.enabled {
+            return Ok(());
+        }
+
+        let request = TracingRequest::EndTrace { trace_id, status };
+        let message = serde_json::to_string(&request)?;
+        self.send_message(message).await?;
         Ok(())
     }
 
@@ -488,32 +557,100 @@ impl TracingClient {
         Ok(())
     }
 
-    /// Query traces from the server
+    /// Query traces from the server.
     pub async fn query_traces(&self, query: TraceQuery) -> Result<Vec<FlowTrace>> {
         if !self.config.enabled {
             return Ok(Vec::new());
         }
 
-        let request = TracingRequest::QueryTraces { query };
-        let message = serde_json::to_string(&request)?;
-        self.send_message(message).await?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let request_id = RequestId::new();
+            let rx = self.register_request(&request_id);
 
-        // For now, return empty - would need proper response handling
-        Ok(Vec::new())
+            let request = TracingRequest::QueryTraces {
+                request_id: request_id.clone(),
+                query,
+            };
+            self.send_message(serde_json::to_string(&request)?).await?;
+
+            match self.await_response(&request_id, rx).await? {
+                TracingResponse::QueryResults { traces, .. } => Ok(traces),
+                TracingResponse::Error { message, .. } => {
+                    Err(TracingError::WebSocketError(message))
+                }
+                _ => Ok(Vec::new()),
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = query;
+            Ok(Vec::new())
+        }
     }
 
-    /// Get a specific trace by ID
+    /// Get a specific trace by ID.
     pub async fn get_trace(&self, trace_id: TraceId) -> Result<Option<FlowTrace>> {
         if !self.config.enabled {
             return Ok(None);
         }
 
-        let request = TracingRequest::GetTrace { trace_id };
-        let message = serde_json::to_string(&request)?;
-        self.send_message(message).await?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let request_id = RequestId::new();
+            let rx = self.register_request(&request_id);
 
-        // For now, return None - would need proper response handling
-        Ok(None)
+            let request = TracingRequest::GetTrace {
+                request_id: request_id.clone(),
+                trace_id,
+            };
+            self.send_message(serde_json::to_string(&request)?).await?;
+
+            match self.await_response(&request_id, rx).await? {
+                TracingResponse::TraceData { trace, .. } => Ok(trace),
+                TracingResponse::Error { message, .. } => {
+                    Err(TracingError::WebSocketError(message))
+                }
+                _ => Ok(None),
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = trace_id;
+            Ok(None)
+        }
+    }
+
+    /// Register a pending request and return the receiver to await its reply.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn register_request(
+        &self,
+        request_id: &RequestId,
+    ) -> tokio::sync::oneshot::Receiver<TracingResponse> {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let mut state = self.state.lock().unwrap();
+        state.pending_requests.insert(request_id.to_string(), tx);
+        rx
+    }
+
+    /// Await a correlated reply, cleaning up the pending entry on timeout.
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn await_response(
+        &self,
+        request_id: &RequestId,
+        rx: tokio::sync::oneshot::Receiver<TracingResponse>,
+    ) -> Result<TracingResponse> {
+        match tokio::time::timeout(Duration::from_secs(10), rx).await {
+            Ok(Ok(response)) => Ok(response),
+            Ok(Err(_)) => Err(TracingError::Disconnected),
+            Err(_) => {
+                let mut state = self.state.lock().unwrap();
+                state.pending_requests.remove(&request_id.to_string());
+                Err(TracingError::Timeout)
+            }
+        }
     }
 
     /// Subscribe to real-time trace events
@@ -532,6 +669,27 @@ impl TracingClient {
     pub fn is_connected(&self) -> bool {
         let state = self.state.lock().unwrap();
         state.connection_status == ConnectionStatus::Connected
+    }
+
+    /// Whether to compute a content checksum for each traced message (cheap).
+    pub fn capture_checksum(&self) -> bool {
+        self.config.capture_checksum
+    }
+
+    /// Whether to retain full message content in snapshots (heavy, opt-in).
+    pub fn capture_content(&self) -> bool {
+        self.config.capture_content
+    }
+
+    /// Whether the heavy `PerformanceMetrics` fields should be sampled.
+    pub fn enable_perf_sampling(&self) -> bool {
+        self.config.enable_perf_sampling
+    }
+
+    /// Forward real-time `EventNotification`s (from a `subscribe`) to `sender`,
+    /// so a consumer can poll live trace events from the collector.
+    pub fn set_notification_tap(&self, sender: flume::Sender<TraceEvent>) {
+        self.state.lock().unwrap().notification_tap = Some(sender);
     }
 
     /// Get the current connection status
@@ -558,11 +716,8 @@ impl TracingClient {
         if !events_to_send.is_empty() {
             info!("Flushing {} pending trace events", events_to_send.len());
 
-            for event in events_to_send {
-                let request = TracingRequest::RecordEvent {
-                    trace_id: TraceId::new(),
-                    event,
-                };
+            for (trace_id, event) in events_to_send {
+                let request = TracingRequest::RecordEvent { trace_id, event };
 
                 if let Ok(message) = serde_json::to_string(&request) {
                     let _ = self.send_message(message).await;
@@ -593,11 +748,8 @@ impl TracingClient {
 
         info!("Flushing {} trace events", events_to_send.len());
 
-        for event in events_to_send {
-            let request = TracingRequest::RecordEvent {
-                trace_id: TraceId::new(),
-                event,
-            };
+        for (trace_id, event) in events_to_send {
+            let request = TracingRequest::RecordEvent { trace_id, event };
 
             if let Ok(message) = serde_json::to_string(&request) {
                 self.send_message(message).await?;
@@ -660,6 +812,9 @@ impl TracingClient {
 pub struct TracingIntegration {
     client: Arc<TracingClient>,
     current_trace_id: Arc<Mutex<Option<TraceId>>>,
+    /// Optional local tap: every recorded event is also fanned here, so an SDK
+    /// can consume live trace events without standing up a collector.
+    local_tap: Arc<Mutex<Option<flume::Sender<TraceEvent>>>>,
 }
 
 unsafe impl Send for TracingIntegration {}
@@ -671,7 +826,16 @@ impl TracingIntegration {
         Self {
             client: Arc::new(client),
             current_trace_id: Arc::new(Mutex::new(None)),
+            local_tap: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Install a local tap. Every subsequently recorded `TraceEvent` is cloned
+    /// into `sender` in addition to being shipped to the collector, so an SDK
+    /// can observe live traces without a server. A disconnected receiver simply
+    /// drops events (the send is best-effort and never blocks tracing).
+    pub fn set_local_tap(&self, sender: flume::Sender<TraceEvent>) {
+        *self.local_tap.lock().unwrap() = Some(sender);
     }
 
     /// Start tracing for a flow
@@ -695,49 +859,28 @@ impl TracingIntegration {
 
     /// Record an actor creation event
     pub async fn trace_actor_created(&self, actor_id: impl Into<String>) -> Result<()> {
-        let event = TraceEvent::actor_created(actor_id.into());
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        self.record(TraceEvent::actor_created(actor_id.into())).await
     }
 
     /// Record an actor process completion event
     pub async fn trace_actor_completed(&self, actor_id: impl Into<String>) -> Result<()> {
-        let event = TraceEvent::actor_completed(actor_id.into());
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        self.record(TraceEvent::actor_completed(actor_id.into()))
+            .await
     }
 
-    /// Record a message sent event
-    pub async fn trace_message_sent(
+    /// Record a message-sent event, capturing a snapshot of `content` per the
+    /// configured `capture_checksum` / `capture_content` knobs.
+    pub async fn trace_message_sent<T: Serialize>(
         &self,
         actor_id: impl Into<String>,
         port: impl Into<String>,
         message_type: impl Into<String>,
-        size_bytes: usize,
+        content: &T,
+        metrics: PerformanceMetrics,
     ) -> Result<()> {
-        let event = TraceEvent::message_sent(
-            actor_id.into(),
-            port.into(),
-            message_type.into(),
-            size_bytes,
-        );
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        let snapshot = self.snapshot(message_type, content);
+        let event = TraceEvent::message_sent(actor_id.into(), port.into(), snapshot, metrics);
+        self.record(event).await
     }
 
     /// Record an actor failure event
@@ -746,42 +889,76 @@ impl TracingIntegration {
         actor_id: impl Into<String>,
         error: impl Into<String>,
     ) -> Result<()> {
-        let event = TraceEvent::actor_failed(actor_id.into(), error.into());
-        let trace_id = self.current_trace_id.lock().unwrap().clone();
-        if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
-        } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
-        }
+        self.record(TraceEvent::actor_failed(actor_id.into(), error.into()))
+            .await
     }
 
-    /// Record a data flow event between two actors
-    pub async fn trace_data_flow(
+    /// Record a data-flow event between two actors, capturing a snapshot of
+    /// `content` per the configured capture knobs.
+    pub async fn trace_data_flow<T: Serialize>(
         &self,
         from_actor: impl Into<String>,
         from_port: impl Into<String>,
         to_actor: impl Into<String>,
         to_port: impl Into<String>,
         message_type: impl Into<String>,
-        size_bytes: usize,
+        content: &T,
+        metrics: PerformanceMetrics,
     ) -> Result<()> {
+        let snapshot = self.snapshot(message_type, content);
         let event = TraceEvent::data_flow(
             from_actor.into(),
             from_port.into(),
             to_actor.into(),
             to_port.into(),
-            message_type.into(),
-            size_bytes,
+            snapshot,
+            metrics,
         );
+        self.record(event).await
+    }
 
+    /// Build a message snapshot honoring the client's capture configuration.
+    fn snapshot<T: Serialize>(
+        &self,
+        message_type: impl Into<String>,
+        content: &T,
+    ) -> MessageSnapshot {
+        MessageSnapshot::capture(
+            message_type,
+            content,
+            self.client.capture_checksum(),
+            self.client.capture_content(),
+        )
+    }
+
+    /// Record an event under the active flow trace (or a fresh id if none),
+    /// fanning a copy to the local tap first (best-effort, never blocks).
+    async fn record(&self, event: TraceEvent) -> Result<()> {
+        let tap = self.local_tap.lock().unwrap().clone();
+        if let Some(sender) = tap {
+            let _ = sender.try_send(event.clone());
+        }
+        let trace_id = self.current_trace_id.lock().unwrap().clone();
+        match trace_id {
+            Some(trace_id) => self.client.record_event(trace_id, event).await,
+            None => self.client.record_event(TraceId::new(), event).await,
+        }
+    }
+
+    /// Finalize the current flow trace with a terminal status.
+    pub async fn end_flow_trace(&self, status: ExecutionStatus) -> Result<()> {
         let trace_id = self.current_trace_id.lock().unwrap().clone();
         if let Some(trace_id) = trace_id {
-            self.client.record_event(trace_id, event).await
+            self.client.end_trace(trace_id, status).await
         } else {
-            // Use a default trace ID if none is set
-            self.client.record_event(TraceId::new(), event).await
+            Ok(())
         }
+    }
+
+    /// The trace id of the active flow, if one has been started. Used by the
+    /// distributed router to propagate trace context across process boundaries.
+    pub fn current_trace_id(&self) -> Option<TraceId> {
+        self.current_trace_id.lock().unwrap().clone()
     }
 
     /// Get access to the underlying client
@@ -818,10 +995,10 @@ macro_rules! trace_actor_event {
             let _ = tracing.trace_actor_created($actor_id).await;
         }
     };
-    (message_sent, $actor_id:expr, $port:expr, $msg_type:expr, $size:expr) => {
+    (message_sent, $actor_id:expr, $port:expr, $msg_type:expr, $content:expr, $metrics:expr) => {
         if let Some(tracing) = $crate::tracing::global_tracing() {
             let _ = tracing
-                .trace_message_sent($actor_id, $port, $msg_type, $size)
+                .trace_message_sent($actor_id, $port, $msg_type, $content, $metrics)
                 .await;
         }
     };
@@ -869,8 +1046,52 @@ mod tests {
         assert!(actor_result.is_ok());
 
         let message_result = integration
-            .trace_message_sent("test_actor", "output", "TestMessage", 128)
+            .trace_message_sent(
+                "test_actor",
+                "output",
+                "TestMessage",
+                &serde_json::json!({ "k": 1 }),
+                PerformanceMetrics::default(),
+            )
             .await;
         assert!(message_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn local_tap_receives_recorded_events() {
+        // Tracing disabled (no server), but a local tap still observes events.
+        let client = TracingClient::new(TracingConfig {
+            enabled: false,
+            ..Default::default()
+        });
+        let integration = TracingIntegration::new(client);
+        let (tx, rx) = flume::unbounded();
+        integration.set_local_tap(tx);
+
+        integration.trace_actor_created("actor-1").await.unwrap();
+        integration
+            .trace_message_sent(
+                "actor-1",
+                "out",
+                "String",
+                &serde_json::json!("hi"),
+                PerformanceMetrics::default(),
+            )
+            .await
+            .unwrap();
+
+        let e1 = rx.try_recv().expect("actor_created reaches the tap");
+        assert!(matches!(e1.event_type, TraceEventType::ActorCreated));
+        let e2 = rx.try_recv().expect("message_sent reaches the tap");
+        assert!(matches!(e2.event_type, TraceEventType::MessageSent));
+        // The snapshot built on the tapped event carries a content checksum.
+        assert!(
+            e2.data
+                .message
+                .as_ref()
+                .unwrap()
+                .checksum
+                .starts_with("sha256:")
+        );
     }
 }

@@ -123,6 +123,17 @@ typedef struct rfl_stream_recv rfl_stream_recv;
 typedef struct rfl_subgraph_builder rfl_subgraph_builder;
 
 /**
+ * Opaque handle to a tracing-collector client.
+ */
+typedef struct rfl_trace_client rfl_trace_client;
+
+/**
+ * Opaque handle to a subscriber on a network's local trace-event stream.
+ * One subscriber per handle.
+ */
+typedef struct rfl_traces rfl_traces;
+
+/**
  * Function pointer: the body of a callback actor.
  *
  * The callback is invoked every time the runtime has inputs for the actor.
@@ -242,6 +253,61 @@ void rfl_events_free(struct rfl_events *e);
  * Runtime version string (newly allocated; free with `rfl_string_free`).
  */
 char *rfl_version(void);
+
+/**
+ * Subscribe to a network's live trace events locally — no collector required.
+ * Call **before** `rfl_network_start` for full coverage. Returns NULL on a
+ * null argument.
+ */
+struct rfl_traces *rfl_network_traces(struct rfl_network *n);
+
+/**
+ * Poll for the next trace event, blocking up to `timeout_ms` milliseconds.
+ * On success writes a newly allocated JSON `TraceEvent` to `*out_json` (free
+ * with `rfl_string_free`). Returns `Ok`, `InvalidState` on timeout, or
+ * `Runtime` if the channel is closed.
+ */
+enum rfl_status rfl_traces_recv(struct rfl_traces *t, uint32_t timeout_ms, char **out_json);
+
+/**
+ * Free a traces handle. Safe on NULL.
+ */
+void rfl_traces_free(struct rfl_traces *t);
+
+/**
+ * Connect to a tracing collector at `server_url` (e.g. "ws://127.0.0.1:8080").
+ * Returns NULL on failure (see `rfl_last_error_message`).
+ */
+struct rfl_trace_client *rfl_trace_client_connect(const char *server_url);
+
+/**
+ * Query historical traces. `query_json` is a JSON `TraceQuery`, or NULL for
+ * "all". Writes a JSON array of `FlowTrace` to `*out_json` (free with
+ * `rfl_string_free`).
+ */
+enum rfl_status rfl_trace_client_query(struct rfl_trace_client *c,
+                                       const char *query_json,
+                                       char **out_json);
+
+/**
+ * Subscribe to live trace events from the collector. `filters_json` is a JSON
+ * `SubscriptionFilters`, or NULL for no filtering. After this returns `Ok`,
+ * poll events with `rfl_trace_client_recv`.
+ */
+enum rfl_status rfl_trace_client_subscribe(struct rfl_trace_client *c, const char *filters_json);
+
+/**
+ * Poll for the next live trace event after `rfl_trace_client_subscribe`,
+ * blocking up to `timeout_ms`. Writes a JSON `TraceEvent` to `*out_json`.
+ */
+enum rfl_status rfl_trace_client_recv(struct rfl_trace_client *c,
+                                      uint32_t timeout_ms,
+                                      char **out_json);
+
+/**
+ * Free a trace-client handle. Safe on NULL.
+ */
+void rfl_trace_client_free(struct rfl_trace_client *c);
 
 /**
  * Add a node.

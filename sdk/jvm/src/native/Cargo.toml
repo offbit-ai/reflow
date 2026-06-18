@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 [dependencies]
 reflow_rt = { version = "0.2.0", path = "../../../../crates/reflow_rt", default-features = false, features = ["components-core"] }
 reflow_components = { version = "0.2.0", path = "../../../../crates/reflow_components", default-features = false, features = ["av-core"] }
+reflow_tracing_protocol = { version = "0.2.1", path = "../../../../crates/reflow_tracing_protocol" }
 jni = "0.21"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

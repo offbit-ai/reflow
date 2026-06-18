@@ -1,6 +1,7 @@
 use crate::{bridge::RemoteConnection, message::Message, network::Network};
 use anyhow::Result;
 use parking_lot::RwLock;
+use reflow_tracing_protocol::{EventId, FlowId, TraceId};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 
@@ -32,6 +33,32 @@ pub struct RemoteMessage {
     pub target_port: String,
     pub payload: Message,
     pub timestamp: chrono::DateTime<chrono::Utc>,
+    /// Trace context propagated across the process boundary. `Option` +
+    /// `serde(default)` keeps the wire backward-compatible: older peers that
+    /// don't send this field simply deserialize to `None`.
+    #[serde(default)]
+    pub trace_context: Option<TraceContext>,
+}
+
+/// Trace context carried on a [`RemoteMessage`] so a flow that spans multiple
+/// processes aggregates into one end-to-end trace on a shared collector.
+///
+/// The originating network's session `trace_id` propagates unchanged; the
+/// receiving network records the cross-process hop under that same id, so —
+/// with every network pointed at one tracing server — both processes' events
+/// land in the same `FlowTrace`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TraceContext {
+    /// The shared trace id the whole flow is recorded under.
+    pub trace_id: TraceId,
+    /// The originating flow id, when available.
+    #[serde(default)]
+    pub flow_id: Option<FlowId>,
+    /// Span id of the sending hop, for linking the inbound event to its parent.
+    pub parent_span_id: String,
+    /// Event id that caused this hop, when available.
+    #[serde(default)]
+    pub parent_event_id: Option<EventId>,
 }
 
 impl Default for MessageRouter {
@@ -86,7 +113,9 @@ impl MessageRouter {
             port
         );
 
-        // Create remote message
+        // Create remote message, attaching the local network's session trace
+        // context so the receiving process can record this hop under the same
+        // trace id (unified, shared-collector tracing).
         let remote_message = RemoteMessage {
             message_id: uuid::Uuid::new_v4().to_string(),
             source_network,
@@ -96,6 +125,7 @@ impl MessageRouter {
             target_port: port.to_string(),
             payload: message,
             timestamp: chrono::Utc::now(),
+            trace_context: self.local_trace_context(),
         };
 
         // Find connection for target network
@@ -130,6 +160,65 @@ impl MessageRouter {
         }
     }
 
+    /// Build the trace context to attach to outbound remote messages from the
+    /// local network's current session trace. `None` when tracing is disabled
+    /// or no flow trace has been started.
+    fn local_trace_context(&self) -> Option<TraceContext> {
+        let guard = self.local_network.read();
+        let network = guard.as_ref()?.read();
+        let tracing = network.tracing_integration.as_ref()?;
+        let trace_id = tracing.current_trace_id()?;
+        Some(TraceContext {
+            trace_id,
+            flow_id: None,
+            parent_span_id: uuid::Uuid::new_v4().to_string(),
+            parent_event_id: None,
+        })
+    }
+
+    /// Prepare the cross-process hop event for an inbound message, attributed to
+    /// the propagated trace id so it aggregates with the origin's events on a
+    /// shared collector. Returns the client + trace id + event to record, or
+    /// `None` if the message carries no context or tracing is disabled.
+    fn build_inbound_hop(
+        &self,
+        message: &RemoteMessage,
+    ) -> Option<(
+        Arc<reflow_tracing_protocol::client::TracingClient>,
+        TraceId,
+        reflow_tracing_protocol::TraceEvent,
+    )> {
+        use reflow_tracing_protocol::{MessageSnapshot, PerformanceMetrics, TraceEvent};
+
+        let ctx = message.trace_context.as_ref()?;
+        let guard = self.local_network.read();
+        let network = guard.as_ref()?.read();
+        let tracing = network.tracing_integration.as_ref()?;
+        let client = tracing.client();
+
+        let snapshot = MessageSnapshot::capture(
+            message.payload.type_name(),
+            &message.payload,
+            client.capture_checksum(),
+            client.capture_content(),
+        );
+        // The cross-process delivery, modeled as a data-flow from the remote
+        // source actor into the local target actor.
+        let mut event = TraceEvent::data_flow(
+            message.source_actor.clone(),
+            message.target_port.clone(),
+            message.target_actor.clone(),
+            message.target_port.clone(),
+            snapshot,
+            PerformanceMetrics::default(),
+        );
+        // Link this hop to the sending span from the originating process.
+        event.causality.span_id = ctx.parent_span_id.clone();
+        event.causality.parent_event_id = ctx.parent_event_id.clone();
+
+        Some((client, ctx.trace_id.clone(), event))
+    }
+
     pub async fn handle_incoming_message(
         &self,
         message: RemoteMessage,
@@ -142,43 +231,55 @@ impl MessageRouter {
             message.target_port
         );
 
-        // Send message to local network
-        let local_network_guard = self.local_network.read();
-        if let Some(ref local_network_arc) = *local_network_guard {
-            let network = local_network_arc.read();
+        // Build the cross-process hop event (and grab the tracing client) before
+        // the payload is delivered, so we can attribute it to the propagated
+        // trace id once delivery succeeds.
+        let hop = self.build_inbound_hop(&message);
 
-            tracing::info!(
-                "🔍 ROUTER: Sending to local network, available actors: {:?}",
-                network.actors.keys().collect::<Vec<_>>()
-            );
-            tracing::info!(
-                "🔍 ROUTER: Available nodes: {:?}",
-                network.nodes.keys().collect::<Vec<_>>()
-            );
-
-            match network.send_to_actor(
-                &message.target_actor,
-                &message.target_port,
-                message.payload,
-            ) {
-                Ok(_) => {
-                    tracing::info!(
-                        "✅ ROUTER: Successfully routed message to local actor {}",
-                        message.target_actor
-                    );
-                }
-                Err(e) => {
-                    tracing::error!(
-                        "❌ ROUTER: Failed to route message to local actor {}: {}",
-                        message.target_actor,
-                        e
-                    );
-                    return Err(e);
-                }
+        // Send message to local network. Scope the (non-async) network guard so
+        // it is never held across the await below.
+        let deliver = {
+            let local_network_guard = self.local_network.read();
+            if let Some(ref local_network_arc) = *local_network_guard {
+                let network = local_network_arc.read();
+                tracing::info!(
+                    "🔍 ROUTER: Sending to local network, available actors: {:?}",
+                    network.actors.keys().collect::<Vec<_>>()
+                );
+                network.send_to_actor(
+                    &message.target_actor,
+                    &message.target_port,
+                    message.payload,
+                )
+            } else {
+                tracing::error!("❌ ROUTER: No local network configured");
+                return Err(anyhow::anyhow!("No local network configured"));
             }
-        } else {
-            tracing::error!("❌ ROUTER: No local network configured");
-            return Err(anyhow::anyhow!("No local network configured"));
+        };
+
+        match deliver {
+            Ok(_) => {
+                tracing::info!(
+                    "✅ ROUTER: Successfully routed message to local actor {}",
+                    message.target_actor
+                );
+            }
+            Err(e) => {
+                tracing::error!(
+                    "❌ ROUTER: Failed to route message to local actor {}: {}",
+                    message.target_actor,
+                    e
+                );
+                return Err(e);
+            }
+        }
+
+        // Attribute the inbound hop to the propagated trace (fire-and-forget so
+        // tracing never blocks the data plane).
+        if let Some((client, trace_id, event)) = hop {
+            tokio::spawn(async move {
+                let _ = client.record_event(trace_id, event).await;
+            });
         }
 
         Ok(())

@@ -46,6 +46,10 @@ use std::sync::{Arc, Mutex};
 #[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(into_wasm_abi))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
+// Container-level default so callers can supply a partial config (e.g. just
+// `tracing`) and have the rest fall back to defaults — important for SDKs that
+// enable tracing through a config object.
+#[serde(default)]
 pub struct NetworkConfig {
     pub compression: CompressionConfig,
     pub tracing: TracingConfig,
@@ -156,6 +160,12 @@ pub struct Network {
     event_handle: Vec<JsValue>,
     compression_config: CompressionConfig,
     pub(crate) tracing_integration: Option<TracingIntegration>,
+    /// Local tap for trace events, so SDKs can consume traces without a
+    /// collector. Fed by `tracing_integration` when tracing is enabled.
+    trace_event_emitter: (
+        flume::Sender<reflow_tracing_protocol::TraceEvent>,
+        flume::Receiver<reflow_tracing_protocol::TraceEvent>,
+    ),
 }
 
 unsafe impl Send for Network {}
@@ -366,12 +376,26 @@ impl Network {
     }
 }
 
+/// Capacity of the per-network local trace-event tap. Bounds memory when a
+/// consumer lags or never drains; excess events are dropped best-effort.
+const TRACE_TAP_CAPACITY: usize = 4096;
+
 impl Network {
     pub fn new(config: NetworkConfig) -> Self {
-        // Initialize tracing if enabled
+        // Local trace-event tap. Bounded so it can never grow without bound if
+        // nothing drains it; the tap is installed lazily (see
+        // `get_trace_receiver`) so when no local consumer exists, no events are
+        // buffered at all. `try_send` drops on a full buffer — best-effort,
+        // never blocks the data plane.
+        let trace_event_emitter = flume::bounded(TRACE_TAP_CAPACITY);
+
+        // Initialize tracing if enabled. The local tap is NOT wired here — it is
+        // attached on first `get_trace_receiver()` call so that enabling tracing
+        // purely for a remote collector costs no local buffering.
         let tracing_integration = if config.tracing.enabled {
             let client = TracingClient::new(config.tracing.clone());
-            Some(TracingIntegration::new(client))
+            let integration = TracingIntegration::new(client);
+            Some(integration)
         } else {
             None
         };
@@ -390,6 +414,7 @@ impl Network {
             event_handle: Vec::new(),
             compression_config: config.compression,
             tracing_integration,
+            trace_event_emitter,
         }
     }
 
@@ -810,18 +835,25 @@ impl Network {
                     timestamp,
                 });
 
-            // Trace the message being sent
+            // Trace the message being sent. The message is the content; the
+            // integration computes checksum/size per the configured knobs.
             if let Some(ref tracing) = self.tracing_integration {
-                let message_type = format!("{:?}", std::mem::discriminant(&data));
-                let size_bytes = serde_json::to_string(&data).unwrap_or_default().len();
+                use reflow_tracing_protocol::PerformanceMetrics;
                 let tracing_clone = tracing.clone();
                 let id_clone = id.to_string();
                 let port_clone = port.to_string();
+                let content = data.clone();
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     tokio::runtime::Handle::current().spawn(async move {
                         let _ = tracing_clone
-                            .trace_message_sent(&id_clone, &port_clone, &message_type, size_bytes)
+                            .trace_message_sent(
+                                &id_clone,
+                                &port_clone,
+                                content.type_name(),
+                                &content,
+                                PerformanceMetrics::default(),
+                            )
                             .await;
                     });
                 }
@@ -829,7 +861,13 @@ impl Network {
                 {
                     spawn_local(async move {
                         let _ = tracing_clone
-                            .trace_message_sent(&id_clone, &port_clone, &message_type, size_bytes)
+                            .trace_message_sent(
+                                &id_clone,
+                                &port_clone,
+                                content.type_name(),
+                                &content,
+                                PerformanceMetrics::default(),
+                            )
                             .await;
                     });
                 }
@@ -1367,11 +1405,15 @@ impl Network {
         {
             let tracing_integration = self.tracing_integration.clone();
             tokio::runtime::Handle::current().spawn(async move {
-                // Shutdown tracing first to flush any pending events
-                if let Some(ref tracing) = tracing_integration
-                    && let Err(e) = tracing.client().shutdown().await
-                {
-                    tracing::warn!("Failed to shutdown tracing client: {}", e);
+                if let Some(ref tracing) = tracing_integration {
+                    // Finalize the session trace so it's persisted as Completed,
+                    // then flush and close the client.
+                    let _ = tracing
+                        .end_flow_trace(reflow_tracing_protocol::ExecutionStatus::Completed)
+                        .await;
+                    if let Err(e) = tracing.client().shutdown().await {
+                        tracing::warn!("Failed to shutdown tracing client: {}", e);
+                    }
                 }
             });
         }
@@ -1497,6 +1539,22 @@ impl Network {
     /// Get the network event receiver for subscribing to network events
     pub fn get_event_receiver(&self) -> flume::Receiver<NetworkEvent> {
         self.network_event_emitter.1.clone()
+    }
+
+    /// Subscribe to this network's live trace events locally — no tracing
+    /// collector required. Each `TraceEvent` recorded while tracing is enabled
+    /// is delivered here in addition to being shipped to the configured server.
+    /// Returns an empty (never-fed) receiver when tracing is disabled.
+    ///
+    /// Installs the local tap on first call (idempotent), so enabling tracing
+    /// solely for a collector buffers nothing locally. Call before `start()`
+    /// for full coverage. The tap is bounded ([`TRACE_TAP_CAPACITY`]); if a
+    /// consumer stops draining, new events are dropped rather than retained.
+    pub fn get_trace_receiver(&self) -> flume::Receiver<reflow_tracing_protocol::TraceEvent> {
+        if let Some(ref tracing) = self.tracing_integration {
+            tracing.set_local_tap(self.trace_event_emitter.0.clone());
+        }
+        self.trace_event_emitter.1.clone()
     }
 }
 

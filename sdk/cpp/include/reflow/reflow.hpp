@@ -859,6 +859,35 @@ private:
     UniqueHandle<rfl_events, rfl_events_free> ptr_;
 };
 
+// ─── TraceStream ───────────────────────────────────────────────────────────
+
+/// A network's local trace-event stream — no collector required. Requires
+/// tracing to be enabled in the network config
+/// (`{"tracing":{"server_url":"ws://...","enabled":true}}`).
+class TraceStream {
+public:
+    explicit TraceStream(rfl_traces* t) : ptr_(t) {
+        if (!ptr_) detail::throw_status(rfl_status_Runtime, "TraceStream");
+    }
+
+    /// Block for up to `timeout_ms` for the next trace-event JSON. Returns
+    /// nullopt on timeout or when the channel has closed.
+    std::optional<std::string> recv(uint32_t timeout_ms) {
+        char* out = nullptr;
+        rfl_status s = rfl_traces_recv(ptr_.get(), timeout_ms, &out);
+        if (s == rfl_status_Ok) {
+            if (out == nullptr) return std::nullopt;
+            return detail::take_c_string(out);
+        }
+        if (s == rfl_status_InvalidState) return std::nullopt;  // timeout
+        if (s == rfl_status_Runtime) return std::nullopt;       // channel closed
+        detail::throw_status(s, "TraceStream::recv");
+    }
+
+private:
+    UniqueHandle<rfl_traces, rfl_traces_free> ptr_;
+};
+
 // ─── Network ───────────────────────────────────────────────────────────────
 
 class Network {
@@ -903,6 +932,14 @@ public:
         rfl_events* e = rfl_network_events(ptr_.get());
         if (e == nullptr) detail::throw_status(rfl_status_Runtime, "Network::events");
         return EventStream(e);
+    }
+
+    /// Subscribe to this network's local trace events (tracing must be enabled
+    /// in the config). The returned stream owns the underlying `rfl_traces*`.
+    TraceStream traces() {
+        rfl_traces* t = rfl_network_traces(ptr_.get());
+        if (t == nullptr) detail::throw_status(rfl_status_Runtime, "Network::traces");
+        return TraceStream(t);
     }
 
     /// Register an actor under a template id. Consumes the actor handle.

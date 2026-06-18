@@ -1557,6 +1557,17 @@ impl ReflowNetwork {
         let rx = self.inner.lock().unwrap().get_event_receiver();
         EventStream { rx }
     }
+
+    /// Subscribe to this network's live trace events. Returns a `TraceStream`
+    /// whose `recv` awaits the next event. Requires tracing to be enabled in
+    /// the config, e.g.
+    /// `new Network({ tracing: { server_url: "ws://localhost:8080", enabled: true } })`.
+    /// Events stream locally with no collector required.
+    #[napi]
+    pub fn traces(&self) -> TraceStream {
+        let rx = self.inner.lock().unwrap().get_trace_receiver();
+        TraceStream { rx }
+    }
 }
 
 // ─── Event stream ──────────────────────────────────────────────────────────
@@ -1575,6 +1586,28 @@ impl EventStream {
             Ok(evt) => serde_json::to_value(&evt)
                 .map(Some)
                 .map_err(|e| Error::from_reason(format!("serialize event: {e}"))),
+            Err(_) => Ok(None),
+        }
+    }
+}
+
+// ─── Trace stream ──────────────────────────────────────────────────────────
+
+#[napi]
+pub struct TraceStream {
+    rx: flume::Receiver<reflow_tracing_protocol::TraceEvent>,
+}
+
+#[napi]
+impl TraceStream {
+    /// Await the next trace event (as a plain object). Resolves `null` if the
+    /// stream is closed.
+    #[napi]
+    pub async fn recv(&self) -> Result<Option<serde_json::Value>> {
+        match self.rx.recv_async().await {
+            Ok(evt) => serde_json::to_value(&evt)
+                .map(Some)
+                .map_err(|e| Error::from_reason(format!("serialize trace event: {e}"))),
             Err(_) => Ok(None),
         }
     }

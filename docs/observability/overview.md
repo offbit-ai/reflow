@@ -7,8 +7,8 @@ Reflow provides a comprehensive observability framework that enables deep intros
 ### 🔍 **Comprehensive Event Tracing**
 - **Actor Lifecycle**: Track creation, startup, execution, completion, and failures
 - **Message Flow**: Monitor all message passing between actors with detailed metadata
-- **Data Flow Tracing**: NEW - Automatic tracing of data flow between connected actors
-- **State Changes**: Capture state transitions with diff support for time-travel debugging
+- **Data Flow Tracing**: Automatic tracing of data flow between connected actors, with content checksums
+- **State Changes**: _Planned_ — the `StateChanged` event and `StateDiff` type exist, but state diffs are not yet captured automatically (time-travel debugging is a follow-up)
 - **Network Events**: Monitor distributed network operations and health
 
 ### 📊 **Real-time Monitoring**
@@ -22,10 +22,20 @@ Reflow provides a comprehensive observability framework that enables deep intros
 - **PostgreSQL**: Production-ready backend with ACID guarantees and concurrent access
 - **Memory**: High-performance in-memory storage for testing and temporary analysis
 
-### 🌐 **Distributed Tracing**
-- **Cross-Network Visibility**: Trace execution across multiple network instances
-- **Causality Tracking**: Maintain event dependency chains across distributed components
-- **Span Integration**: Compatible with OpenTelemetry and Jaeger for unified observability
+### 🌐 **Distributed Tracing (shared collector)**
+- **Cross-Process Visibility**: A flow that spans multiple network instances is
+  stitched into **one** end-to-end `FlowTrace`. The originating network's
+  `trace_id` propagates across the bridge (on `RemoteMessage`), and each
+  receiving network records its cross-process hop under that same id.
+- **Unified, Jaeger-style model**: point every participating network's
+  `TracingConfig.server_url` at one shared `reflow_tracing` server; it aggregates
+  every process's events into the same trace.
+- **Content checksums**: each traced message carries a deterministic
+  `"sha256:<hex>"` content digest, identical across processes and SDK languages.
+
+> The stack is bespoke (WebSocket protocol + server + SQLite/memory storage +
+> replay), not OpenTelemetry/OTLP. An OTLP export adapter is a possible future
+> addition, not a current feature.
 
 ## Architecture Overview
 
@@ -113,10 +123,12 @@ let network = Network::new(network_config);
 ```
 
 ### Manual Event Recording
-For custom events and detailed control:
+For custom events and detailed control. `trace_data_flow`/`trace_message_sent`
+take the **message itself** as content — the integration computes the snapshot
+(checksum, size, optional content) per the configured capture knobs:
 
 ```rust
-use reflow_tracing_protocol::{TraceEvent, TracingIntegration};
+use reflow_tracing_protocol::PerformanceMetrics;
 
 // Record custom events
 if let Some(tracing) = global_tracing() {
@@ -124,10 +136,37 @@ if let Some(tracing) = global_tracing() {
     tracing.trace_data_flow(
         "source_actor", "output",
         "target_actor", "input",
-        "CustomMessage", 1024
+        "CustomMessage",          // message type label
+        &message,                  // the content (anything Serialize)
+        PerformanceMetrics::default(),
     ).await?;
 }
 ```
+
+### Consuming traces from an SDK (no collector required)
+Tracing is first-class in every SDK. Enable it in the network config and
+subscribe to the **local tap** — live trace events with no server needed:
+
+```python
+# Python
+net = Network({"tracing": {"server_url": "ws://localhost:8080", "enabled": True}})
+traces = net.traces()
+net.start()
+evt = traces.recv(timeout_ms=500)   # dict: event_type, actor_id, data.message.checksum, …
+```
+
+```javascript
+// Node
+const net = new Network({ tracing: { server_url: "ws://localhost:8080", enabled: true } });
+const traces = net.traces();
+net.start();
+const evt = await traces.recv();    // { event_type, actor_id, data: { message: { checksum } } }
+```
+
+Equivalent surfaces exist in Go (`net.Traces()`), C++ (`net.traces()`), and the
+JVM (`network.traces()`), plus a C ABI (`rfl_network_traces`) and a
+collector-client (`rfl_trace_client_connect/_query/_subscribe`) for historical
+and distributed monitoring.
 
 ## Data Flow Tracing
 
@@ -186,5 +225,6 @@ DataFlow {
 
 - Learn about [event types and their uses](event-types.md)
 - Explore [storage backend options](storage-backends.md)
+- Ship traces to a dashboard via [OTLP export (Monoscope, Jaeger, Tempo, …)](otlp-export.md)
 - Set up [production monitoring](deployment.md)
 - Integrate with [existing monitoring systems](../tutorials/advanced-tracing-setup.md)

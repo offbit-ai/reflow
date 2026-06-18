@@ -418,6 +418,254 @@ pub extern "C" fn rfl_version() -> *mut c_char {
     CString::new(env!("CARGO_PKG_VERSION")).unwrap().into_raw()
 }
 
+// ─── tracing ───────────────────────────────────────────────────────────────
+//
+// Two consumer surfaces, mirroring the `rfl_events` poll pattern:
+//   • Local tap — `rfl_network_traces` polls a network's own trace events with
+//     no collector required (the ergonomic default for local monitoring).
+//   • Collector client — `rfl_trace_client_*` connect/query/subscribe against a
+//     shared tracing server for historical and distributed monitoring.
+//
+// Enabling tracing is done via `NetworkConfig.tracing` in the config JSON passed
+// to `rfl_network_new_with_config` (server_url + enabled + capture knobs).
+
+use reflow_tracing_protocol::client::{TracingClient, TracingConfig};
+use reflow_tracing_protocol::{SubscriptionFilters, TraceEvent, TraceQuery};
+
+/// Serialize a value to a newly allocated JSON C string in `*out`.
+unsafe fn write_json<T: serde::Serialize>(v: &T, out: *mut *mut c_char) -> rfl_status {
+    match serde_json::to_string(v) {
+        Ok(json) => match CString::new(json) {
+            Ok(cstr) => {
+                unsafe { *out = cstr.into_raw() };
+                rfl_status::Ok
+            }
+            Err(_) => {
+                set_last_error("json contains a NUL byte");
+                rfl_status::InvalidJson
+            }
+        },
+        Err(e) => to_status_runtime(e),
+    }
+}
+
+/// Opaque handle to a subscriber on a network's local trace-event stream.
+/// One subscriber per handle.
+pub struct rfl_traces {
+    rx: flume::Receiver<TraceEvent>,
+}
+
+/// Subscribe to a network's live trace events locally — no collector required.
+/// Call **before** `rfl_network_start` for full coverage. Returns NULL on a
+/// null argument.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_network_traces(n: *mut rfl_network) -> *mut rfl_traces {
+    clear_last_error();
+    if n.is_null() {
+        set_last_error("network pointer is null");
+        return std::ptr::null_mut();
+    }
+    let handle = unsafe { &*n };
+    let rx = handle.net.lock().unwrap().get_trace_receiver();
+    Box::into_raw(Box::new(rfl_traces { rx }))
+}
+
+/// Poll for the next trace event, blocking up to `timeout_ms` milliseconds.
+/// On success writes a newly allocated JSON `TraceEvent` to `*out_json` (free
+/// with `rfl_string_free`). Returns `Ok`, `InvalidState` on timeout, or
+/// `Runtime` if the channel is closed.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_traces_recv(
+    t: *mut rfl_traces,
+    timeout_ms: u32,
+    out_json: *mut *mut c_char,
+) -> rfl_status {
+    clear_last_error();
+    if t.is_null() || out_json.is_null() {
+        return rfl_status::NullArg;
+    }
+    let handle = unsafe { &*t };
+    let deadline = std::time::Duration::from_millis(timeout_ms as u64);
+    match handle.rx.recv_timeout(deadline) {
+        Ok(evt) => unsafe { write_json(&evt, out_json) },
+        Err(flume::RecvTimeoutError::Timeout) => rfl_status::InvalidState,
+        Err(flume::RecvTimeoutError::Disconnected) => {
+            set_last_error("trace channel disconnected");
+            rfl_status::Runtime
+        }
+    }
+}
+
+/// Free a traces handle. Safe on NULL.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_traces_free(t: *mut rfl_traces) {
+    if !t.is_null() {
+        drop(unsafe { Box::from_raw(t) });
+    }
+}
+
+/// Opaque handle to a tracing-collector client.
+pub struct rfl_trace_client {
+    client: TracingClient,
+    sub_rx: Mutex<Option<flume::Receiver<TraceEvent>>>,
+}
+
+/// Connect to a tracing collector at `server_url` (e.g. "ws://127.0.0.1:8080").
+/// Returns NULL on failure (see `rfl_last_error_message`).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_trace_client_connect(
+    server_url: *const c_char,
+) -> *mut rfl_trace_client {
+    clear_last_error();
+    let url = match unsafe { cstr_to_str(server_url, "server_url") } {
+        Ok(s) => s.to_string(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let client = TracingClient::new(TracingConfig {
+        server_url: url,
+        ..TracingConfig::default()
+    });
+    let rt = runtime();
+    if let Err(e) = rt.block_on(client.connect()) {
+        set_last_error(format!("trace client connect: {e}"));
+        return std::ptr::null_mut();
+    }
+    Box::into_raw(Box::new(rfl_trace_client {
+        client,
+        sub_rx: Mutex::new(None),
+    }))
+}
+
+/// Query historical traces. `query_json` is a JSON `TraceQuery`, or NULL for
+/// "all". Writes a JSON array of `FlowTrace` to `*out_json` (free with
+/// `rfl_string_free`).
+#[no_mangle]
+pub unsafe extern "C" fn rfl_trace_client_query(
+    c: *mut rfl_trace_client,
+    query_json: *const c_char,
+    out_json: *mut *mut c_char,
+) -> rfl_status {
+    clear_last_error();
+    if c.is_null() || out_json.is_null() {
+        return rfl_status::NullArg;
+    }
+    let handle = unsafe { &*c };
+    let query = if query_json.is_null() {
+        empty_trace_query()
+    } else {
+        let s = match unsafe { cstr_to_str(query_json, "query_json") } {
+            Ok(s) => s,
+            Err(e) => return e,
+        };
+        match serde_json::from_str::<TraceQuery>(s) {
+            Ok(q) => q,
+            Err(e) => {
+                set_last_error(format!("query_json: {e}"));
+                return rfl_status::InvalidJson;
+            }
+        }
+    };
+    let rt = runtime();
+    match rt.block_on(handle.client.query_traces(query)) {
+        Ok(traces) => unsafe { write_json(&traces, out_json) },
+        Err(e) => to_status_runtime(e),
+    }
+}
+
+/// Subscribe to live trace events from the collector. `filters_json` is a JSON
+/// `SubscriptionFilters`, or NULL for no filtering. After this returns `Ok`,
+/// poll events with `rfl_trace_client_recv`.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_trace_client_subscribe(
+    c: *mut rfl_trace_client,
+    filters_json: *const c_char,
+) -> rfl_status {
+    clear_last_error();
+    if c.is_null() {
+        return rfl_status::NullArg;
+    }
+    let handle = unsafe { &*c };
+    let filters = if filters_json.is_null() {
+        SubscriptionFilters {
+            flow_ids: None,
+            actor_ids: None,
+            event_types: None,
+            status_filter: None,
+        }
+    } else {
+        let s = match unsafe { cstr_to_str(filters_json, "filters_json") } {
+            Ok(s) => s,
+            Err(e) => return e,
+        };
+        match serde_json::from_str::<SubscriptionFilters>(s) {
+            Ok(f) => f,
+            Err(e) => {
+                set_last_error(format!("filters_json: {e}"));
+                return rfl_status::InvalidJson;
+            }
+        }
+    };
+    // Bounded so a consumer that stops polling can't grow this without bound;
+    // the notification tap drops on a full buffer (best-effort).
+    let (tx, rx) = flume::bounded(4096);
+    handle.client.set_notification_tap(tx);
+    *handle.sub_rx.lock().unwrap() = Some(rx);
+    let rt = runtime();
+    match rt.block_on(handle.client.subscribe(filters)) {
+        Ok(_) => rfl_status::Ok,
+        Err(e) => to_status_runtime(e),
+    }
+}
+
+/// Poll for the next live trace event after `rfl_trace_client_subscribe`,
+/// blocking up to `timeout_ms`. Writes a JSON `TraceEvent` to `*out_json`.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_trace_client_recv(
+    c: *mut rfl_trace_client,
+    timeout_ms: u32,
+    out_json: *mut *mut c_char,
+) -> rfl_status {
+    clear_last_error();
+    if c.is_null() || out_json.is_null() {
+        return rfl_status::NullArg;
+    }
+    let handle = unsafe { &*c };
+    let rx = { handle.sub_rx.lock().unwrap().clone() };
+    let Some(rx) = rx else {
+        set_last_error("not subscribed; call rfl_trace_client_subscribe first");
+        return rfl_status::InvalidState;
+    };
+    let deadline = std::time::Duration::from_millis(timeout_ms as u64);
+    match rx.recv_timeout(deadline) {
+        Ok(evt) => unsafe { write_json(&evt, out_json) },
+        Err(flume::RecvTimeoutError::Timeout) => rfl_status::InvalidState,
+        Err(flume::RecvTimeoutError::Disconnected) => {
+            set_last_error("subscription channel disconnected");
+            rfl_status::Runtime
+        }
+    }
+}
+
+/// Free a trace-client handle. Safe on NULL.
+#[no_mangle]
+pub unsafe extern "C" fn rfl_trace_client_free(c: *mut rfl_trace_client) {
+    if !c.is_null() {
+        drop(unsafe { Box::from_raw(c) });
+    }
+}
+
+fn empty_trace_query() -> TraceQuery {
+    TraceQuery {
+        flow_id: None,
+        execution_id: None,
+        time_range: None,
+        status: None,
+        actor_filter: None,
+        limit: None,
+        offset: None,
+    }
+}
+
 // ─── shared helpers ────────────────────────────────────────────────────────
 
 unsafe fn cstr_to_str<'a>(p: *const c_char, name: &str) -> Result<&'a str, rfl_status> {

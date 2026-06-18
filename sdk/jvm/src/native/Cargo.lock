@@ -2482,6 +2482,7 @@ dependencies = [
  "parking_lot",
  "reflow_components",
  "reflow_rt",
+ "reflow_tracing_protocol",
  "serde",
  "serde_json",
  "tokio",
@@ -2511,14 +2512,17 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "derive_more",
+ "flume",
  "futures-util",
  "gloo-events",
  "gloo-utils 0.2.0",
+ "hex",
  "js-sys",
  "lz4_flex",
  "serde",
  "serde-wasm-bindgen 0.6.5",
  "serde_json",
+ "sha2",
  "thiserror 2.0.18",
  "tokio",
  "tokio-tungstenite",
@@ -2530,6 +2534,7 @@ dependencies = [
  "wasm-bindgen-test",
  "web-sys",
  "web-time",
+ "zstd",
 ]
 
 [[package]]

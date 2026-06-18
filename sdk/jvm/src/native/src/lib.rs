@@ -2361,6 +2361,57 @@ pub extern "system" fn Java_ai_offbit_reflow_EventStream_nativeFree(
     unsafe { let _ = box_from_ptr::<EventStreamHandle>(ptr); }
 }
 
+// ─── Trace stream ──────────────────────────────────────────────────────────
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_Network_nativeTraces(
+    _env: JNIEnv,
+    _class: JClass,
+    ptr: jlong,
+) -> jlong {
+    let h = match unsafe { as_ref::<NetworkHandle>(ptr) } {
+        Some(h) => h,
+        None => return 0,
+    };
+    let rx = h.inner.lock().unwrap().get_trace_receiver();
+    Box::into_raw(Box::new(TraceStreamHandle { rx })) as jlong
+}
+
+pub struct TraceStreamHandle {
+    rx: flume::Receiver<reflow_tracing_protocol::TraceEvent>,
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_TraceStream_nativeRecv<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ptr: jlong,
+    timeout_ms: jint,
+) -> jobject {
+    let h = match unsafe { as_ref::<TraceStreamHandle>(ptr) } {
+        Some(h) => h,
+        None => return std::ptr::null_mut(),
+    };
+    let d = std::time::Duration::from_millis(timeout_ms.max(0) as u64);
+    match h.rx.recv_timeout(d) {
+        Ok(evt) => {
+            let s = serde_json::to_string(&evt).unwrap_or_default();
+            env.new_string(&s).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut())
+        }
+        Err(flume::RecvTimeoutError::Timeout) => std::ptr::null_mut(),
+        Err(flume::RecvTimeoutError::Disconnected) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_ai_offbit_reflow_TraceStream_nativeFree(
+    _env: JNIEnv,
+    _class: JClass,
+    ptr: jlong,
+) {
+    unsafe { let _ = box_from_ptr::<TraceStreamHandle>(ptr); }
+}
+
 // ─── Subgraph builder ──────────────────────────────────────────────────────
 
 pub struct SubgraphBuilderHandle {

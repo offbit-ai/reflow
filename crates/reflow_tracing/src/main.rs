@@ -8,13 +8,8 @@ use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::{info, warn};
 
-mod config;
-mod protocol;
-mod server;
-mod storage;
-
-use config::Config;
-use server::TraceServer;
+use reflow_tracing::config::Config;
+use reflow_tracing::server::TraceServer;
 
 #[tokio::main]
 async fn main() -> Result<()> {

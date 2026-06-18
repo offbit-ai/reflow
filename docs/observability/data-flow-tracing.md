@@ -18,23 +18,17 @@ Traditional actor monitoring focuses on individual actor behavior - creation, co
 Data Flow Tracing operates at the **connector level**, intercepting messages as they flow between actors:
 
 ```rust
-// Automatic tracing in connector implementation
-impl Connector {
-    pub async fn send_message(&self, message: Message) -> Result<()> {
-        // Send the actual message
-        self.channel.send(message.clone()).await?;
-        
-        // Automatically record data flow event
-        if let Some(tracing) = global_tracing() {
-            tracing.trace_data_flow(
-                &self.from_actor, &self.from_port,
-                &self.to_actor, &self.to_port,
-                message.type_name(), message.size_bytes()
-            ).await?;
-        }
-        
-        Ok(())
-    }
+// Automatic tracing at the connector level (simplified). The message itself is
+// passed as content; the integration computes the snapshot (checksum, size, and
+// — if capture_content is on — the bytes) per the configured capture knobs.
+if let Some(tracing) = &network.tracing_integration {
+    tracing.trace_data_flow(
+        from_actor_id, from_port,
+        to_actor_id, to_port,
+        msg.type_name(),                       // message type label
+        &msg,                                   // content (Message: Serialize)
+        reflow_tracing_protocol::PerformanceMetrics::default(),
+    ).await?;
 }
 ```
 
@@ -107,37 +101,59 @@ graph LR
     style E fill:#f3e5f5
 ```
 
-Query for complete data lineage:
+Query for complete data lineage. `TraceQuery` has these fields: `flow_id`,
+`execution_id`, `time_range`, `status`, `actor_filter`, `limit`, `offset`.
+There is no `event_types`/`custom_filter` field — filter the returned events
+client-side (e.g. by `event_type` or `data.message.checksum`):
 
 ```rust
-// Find all data flow for a specific message
+use reflow_tracing_protocol::{TraceEventType, TraceQuery};
+
 let query = TraceQuery {
-    event_types: Some(vec![TraceEventType::DataFlow { 
-        to_actor: "*".to_string(), 
-        to_port: "*".to_string() 
-    }]),
-    custom_filter: Some("message_id = 'msg_12345'"),
-    ..Default::default()
+    flow_id: None,
+    execution_id: None,
+    time_range: None,
+    status: None,
+    actor_filter: Some("data_processor".to_string()),
+    limit: Some(200),
+    offset: None,
 };
 
-let lineage = tracing_client.query_traces(query).await?;
+let traces = tracing_client.query_traces(query).await?;
+// Narrow to data-flow events for a specific payload by its content checksum:
+let lineage: Vec<_> = traces.iter()
+    .flat_map(|t| &t.events)
+    .filter(|e| matches!(e.event_type, TraceEventType::DataFlow { .. }))
+    .filter(|e| e.data.message.as_ref()
+        .map(|m| m.checksum == "sha256:9f86d081…")
+        .unwrap_or(false))
+    .collect();
 ```
 
 ### 2. Performance Analysis
 
-Identify bottlenecks in your data processing pipeline:
+Identify bottlenecks. Query by time range, then filter on the (optional)
+performance metrics client-side. Note `execution_time_ns` is `Option<u64>`
+(`None` = unmeasured), and the heavy fields require `enable_perf_sampling`:
 
 ```rust
-// Query for slow data transfers
-let slow_transfers = TraceQuery {
-    event_types: Some(vec![TraceEventType::DataFlow { 
-        to_actor: "*".to_string(), 
-        to_port: "*".to_string() 
-    }]),
-    performance_filter: Some("execution_time_ns > 10000000"), // > 10ms
+let recent = TraceQuery {
+    flow_id: None,
+    execution_id: None,
     time_range: Some((Utc::now() - Duration::hours(1), Utc::now())),
-    ..Default::default()
+    status: None,
+    actor_filter: None,
+    limit: Some(500),
+    offset: None,
 };
+let traces = tracing_client.query_traces(recent).await?;
+let slow: Vec<_> = traces.iter()
+    .flat_map(|t| &t.events)
+    .filter(|e| matches!(e.event_type, TraceEventType::DataFlow { .. }))
+    .filter(|e| e.data.performance_metrics.execution_time_ns
+        .map(|ns| ns > 10_000_000)   // > 10ms; ignores unmeasured (None)
+        .unwrap_or(false))
+    .collect();
 ```
 
 ### 3. System Dependency Mapping
@@ -194,6 +210,12 @@ let tracing_config = TracingConfig {
 ```
 
 ### Selective Tracing
+
+> The built-in controls are the `capture_checksum` / `capture_content` config
+> toggles (cheap identity always on; heavy content opt-in). The
+> `SelectiveConnector` / `DataFlowSampler` / `should_trace_message` code below is
+> **illustrative user-authored** sampling — there is no such built-in type. Note
+> the real `trace_data_flow` signature takes `(…, message_type, &content, metrics)`.
 
 For high-throughput systems, you might want to selectively trace certain data flows:
 
@@ -257,84 +279,56 @@ impl DataFlowSampler {
 }
 ```
 
-## Advanced Features
+## Content fidelity (checksums & capture)
 
-### Message Content Capture
-
-For debugging purposes, you can optionally capture message content:
+Every data-flow event carries a `MessageSnapshot`. Fidelity is governed by two
+config toggles, not hand-rolled helpers:
 
 ```rust
-let event = TraceEvent::data_flow_with_content(
-    from_actor, from_port,
-    to_actor, to_port,
-    message_type, size_bytes,
-    Some(message.serialize()?) // Optional content capture
-);
+let tracing_config = TracingConfig {
+    server_url: "ws://localhost:8080".to_string(),
+    enabled: true,
+    capture_checksum: true,   // default ON  — cheap content digest
+    capture_content: false,   // default OFF — retain raw bytes (heavy/sensitive)
+    ..TracingConfig::default()
+};
 ```
 
-⚠️ **Security Warning**: Be careful when capturing message content in production. Ensure no sensitive data is included.
+### Checksum (always-on, cheap)
 
-### Custom Metadata
-
-Add custom metadata to data flow events:
+With `capture_checksum` on (the default), each snapshot gets a content-only
+`"sha256:<64 lowercase hex>"` digest over a canonical form of the message —
+identical across processes, hosts, CPU architectures, and SDK languages. Use it
+for content identity, dedup, and integrity:
 
 ```rust
-// Enhanced data flow tracing with custom metadata
-pub async fn trace_enhanced_data_flow(
-    tracing: &TracingIntegration,
-    from_actor: &str, from_port: &str,
-    to_actor: &str, to_port: &str,
-    message: &Message,
-    custom_metadata: HashMap<String, serde_json::Value>
-) -> Result<()> {
-    let mut event = TraceEvent::data_flow(
-        from_actor.to_string(), from_port.to_string(),
-        to_actor.to_string(), to_port.to_string(),
-        message.type_name(), message.size_bytes()
-    );
-    
-    // Add custom metadata
-    event.data.custom_attributes.extend(custom_metadata);
-    
-    // Add message-specific metadata
-    event.data.custom_attributes.insert(
-        "message_priority".to_string(), 
-        json!(message.priority())
-    );
-    event.data.custom_attributes.insert(
-        "message_correlation_id".to_string(), 
-        json!(message.correlation_id())
-    );
-    
-    tracing.record_event(event).await
+if let Some(msg) = &event.data.message {
+    println!("type={} size={}B checksum={}", msg.message_type, msg.size_bytes, msg.checksum);
 }
 ```
 
-### Causality Tracking
+`size_bytes` is the pre-compression content size (the same bytes the checksum
+covers). The digest is computed over the *decompressed* content, so toggling
+compression never changes it.
 
-Link data flow events to their triggering events:
+### Content capture (opt-in, heavy)
 
-```rust
-pub async fn trace_causally_linked_data_flow(
-    tracing: &TracingIntegration,
-    triggering_event_id: EventId,
-    from_actor: &str, from_port: &str,
-    to_actor: &str, to_port: &str,
-    message: &Message
-) -> Result<()> {
-    let mut event = TraceEvent::data_flow(
-        from_actor.to_string(), from_port.to_string(),
-        to_actor.to_string(), to_port.to_string(),
-        message.type_name(), message.size_bytes()
-    );
-    
-    // Link to triggering event
-    event.causality.parent_event_id = Some(triggering_event_id);
-    event.causality.dependency_chain.push(triggering_event_id);
-    
-    tracing.record_event(event).await
-}
-```
+`capture_content` additionally retains the message bytes in
+`serialized_data` (self-describing via `content_codec` + `content_format_version`,
+with `stored_bytes` for the stored footprint). Invariant:
+`checksum == sha256(canonical(decompress(serialized_data)))`.
+
+⚠️ **Security**: captured content may contain sensitive payloads. Keep
+`capture_content` off unless you need full replay, and scope it narrowly.
+
+### Causality fields
+
+Each event has a `causality` block (`parent_event_id`, `root_cause_event_id`,
+`dependency_chain`, `span_id`). Across process boundaries the inbound hop is
+linked to the sending span (see the distributed-tracing section in the
+[overview](overview.md)).
+Fine-grained per-message causal chaining within a process is a documented
+follow-up — the fields exist but are not yet auto-populated for in-process hops.
 
 ## Performance Considerations
 
@@ -357,37 +351,34 @@ Data Flow Tracing introduces minimal overhead:
 
 ### Monitoring Performance Impact
 
-Monitor the tracing system's own performance:
-
-```rust
-// Monitor tracing overhead
-let tracing_metrics = global_tracing()
-    .unwrap()
-    .get_performance_metrics()
-    .await?;
-
-println!("Events per second: {}", tracing_metrics.events_per_second);
-println!("Average latency: {}ms", tracing_metrics.avg_latency_ms);
-println!("Memory usage: {}MB", tracing_metrics.memory_usage_mb);
-```
+The server tracks basic counters (connections, messages, traces stored/queried),
+queryable via the legacy `TraceMessage::GetMetrics` request. There is no
+`global_tracing().get_performance_metrics()` API. The cheap path
+(`capture_checksum` on, `capture_content` off, `enable_perf_sampling` off) keeps
+per-event overhead to a checksum; turn `capture_content` / `enable_perf_sampling`
+on only when you need the extra data.
 
 ## Visualization and Analysis
 
 ### Data Flow Diagrams
 
-Generate visual representations of your data flow:
+There is no built-in `DataFlowGraph`/renderer. Query the data-flow events and
+build a graph from them in your tool of choice — each `DataFlow` event gives you
+the `actor_id` (source), `event_type.DataFlow { to_actor, to_port }`
+(destination), and `data.message` (type/size/checksum):
 
 ```rust
-// Generate data flow graph for the last hour
-let flow_data = tracing_client.query_data_flows(
-    TraceQuery {
-        time_range: Some((Utc::now() - Duration::hours(1), Utc::now())),
-        ..Default::default()
-    }
-).await?;
+let traces = tracing_client.query_traces(TraceQuery {
+    flow_id: None, execution_id: None,
+    time_range: Some((Utc::now() - Duration::hours(1), Utc::now())),
+    status: None, actor_filter: None, limit: Some(1000), offset: None,
+}).await?;
 
-let graph = DataFlowGraph::from_events(&flow_data);
-graph.render_to_file("data_flow_diagram.svg")?;
+for e in traces.iter().flat_map(|t| &t.events) {
+    if let TraceEventType::DataFlow { to_actor, to_port } = &e.event_type {
+        // edge: e.actor_id -> to_actor (port to_port), size e.data.message…
+    }
+}
 ```
 
 ### Real-time Dashboard

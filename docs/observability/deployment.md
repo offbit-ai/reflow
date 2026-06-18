@@ -2,6 +2,15 @@
 
 This guide covers deploying Reflow's observability framework in production environments, including scalability considerations, security best practices, and operational procedures.
 
+> **Status:** the storage backends shown here are real — build the
+> `reflow_tracing` server with `--features postgres` (or `mongodb`, or
+> `all-backends`) and set `storage.backend` accordingly; `memory`/`sqlite` ship
+> by default (see [Storage Backends](storage-backends.md)). The PostgreSQL
+> **replication/partitioning** tuning below is an operational target, not
+> auto-configured by the server. The distributed model is a **shared
+> collector**: point every network's `TracingConfig.server_url` at one
+> `reflow_tracing` server and a cross-process flow is stitched into one trace.
+
 ## Architecture Overview
 
 ### Production Architecture

@@ -56,6 +56,11 @@
 - [Data Flow Tracing](observability/data-flow-tracing.md)
 - [Configuration](observability/configuration.md)
 - [Storage Backends](observability/storage-backends.md)
+  - [SQLite](observability/storage/sqlite.md)
+  - [PostgreSQL](observability/storage/postgres.md)
+  - [TimescaleDB](observability/storage/timescaledb.md)
+  - [MongoDB](observability/storage/mongodb.md)
+- [OTLP Export (Monoscope)](observability/otlp-export.md)
 - [Production Deployment](observability/deployment.md)
 
 ---

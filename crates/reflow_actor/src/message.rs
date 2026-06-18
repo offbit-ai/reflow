@@ -690,7 +690,8 @@ impl Message {
             .map_err(|e| MessageError::Compression(e.to_string()))
     }
 
-    fn type_name(&self) -> &'static str {
+    /// Stable variant name (e.g. `"Integer"`), used for trace message types.
+    pub fn type_name(&self) -> &'static str {
         match self {
             Message::Flow => "Flow",
             Message::Event(_) => "Event",
