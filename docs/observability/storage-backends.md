@@ -15,11 +15,9 @@ Reflow's observability framework supports multiple storage backends to accommoda
 > | `postgres` / `postgresql` | available | `--features postgres` |
 > | `timescale` / `timescaledb` | available | `--features postgres` |
 > | `mongodb` / `mongo` | available | `--features mongodb` |
-> | `clickhouse` | planned | — |
 >
 > `--features all-backends` enables Postgres + MongoDB together. Selecting a
-> backend that wasn't compiled in returns a clear error. The **ClickHouse**
-> section below is still design-only.
+> backend that wasn't compiled in returns a clear error.
 
 The tracing system provides a pluggable storage architecture (the `TraceStorage`
 trait — `store_trace`/`get_trace`/`query_traces`/`delete_trace`/`get_stats`) so
@@ -32,7 +30,6 @@ row/document keyed by `trace_id`, with denormalized `flow_id`/`execution_id`/
 - **PostgreSQL Storage** _(available, `--features postgres`)_: Robust, scalable database for production environments
 - **TimescaleDB Storage** _(available, `--features postgres`)_: PostgreSQL + a time-series hypertable on `start_time` — a natural fit for traces
 - **MongoDB Storage** _(available, `--features mongodb`)_: Document store; the JSON-shaped trace maps naturally to a document
-- **ClickHouse Storage** _(planned)_: High-performance analytical database for massive scale
 - **Custom Storage**: Implement the `TraceStorage` trait yourself
 
 ## Memory Storage
@@ -335,120 +332,6 @@ collection_name = "traces"
 - Flexible, schema-less retention of the evolving trace shape
 - Horizontal scale via sharding on `flow_id` / `_id`
 
-## ClickHouse Storage _(planned — not yet implemented)_
-
-### When to Use
-
-- Very high-volume trace data (millions of events per second)
-- Analytical workloads and reporting
-- Time-series analysis
-- Long-term data retention with compression
-- Real-time dashboards and monitoring
-
-### Configuration
-
-```rust
-use reflow_tracing::storage::ClickHouseStorage;
-
-let storage = ClickHouseStorage::new("http://localhost:8123").await?;
-```
-
-### Features
-
-- **Columnar storage**: Excellent compression and analytical performance
-- **Distributed architecture**: Horizontal scaling
-- **Real-time ingestion**: Handle massive write loads
-- **Advanced analytics**: Built-in analytical functions
-- **Time-series optimized**: Purpose-built for time-ordered data
-
-```rust
-use reflow_tracing::storage::{ClickHouseStorage, ClickHouseConfig};
-
-let config = ClickHouseConfig {
-    url: "http://clickhouse:8123".to_string(),
-    database: "tracing".to_string(),
-    cluster: Some("cluster".to_string()),
-    username: Some("default".to_string()),
-    password: None,
-    compression: CompressionMethod::LZ4,
-    batch_size: 10000,
-    flush_interval_ms: 5000,
-    max_memory_usage: 1_000_000_000, // 1GB
-    max_execution_time_ms: 300_000,   // 5 minutes
-};
-
-let storage = ClickHouseStorage::with_config(config).await?;
-```
-
-### Schema Design
-
-```sql
--- Optimized ClickHouse schema
-CREATE TABLE tracing.events_local ON CLUSTER cluster (
-    timestamp DateTime64(3),
-    trace_id UUID,
-    event_id UUID,
-    flow_id String,
-    execution_id UUID,
-    event_type LowCardinality(String),
-    actor_id String,
-    port String,
-    message_type String,
-    message_size UInt32,
-    execution_time_ns UInt64,
-    memory_usage UInt64,
-    cpu_usage Float32,
-    data String -- JSON as string for flexibility
-) ENGINE = ReplicatedMergeTree('/clickhouse/tables/{cluster}/{shard}/events', '{replica}')
-PARTITION BY toYYYYMM(timestamp)
-ORDER BY (timestamp, trace_id, event_id)
-SETTINGS index_granularity = 8192;
-
--- Distributed table
-CREATE TABLE tracing.events ON CLUSTER cluster AS tracing.events_local
-ENGINE = Distributed(cluster, tracing, events_local, rand());
-
--- Materialized views for aggregations
-CREATE MATERIALIZED VIEW tracing.event_metrics
-ENGINE = SummingMergeTree()
-PARTITION BY toYYYYMM(timestamp)
-ORDER BY (timestamp, actor_id, event_type)
-AS SELECT
-    toStartOfMinute(timestamp) as timestamp,
-    actor_id,
-    event_type,
-    count() as event_count,
-    avg(execution_time_ns) as avg_execution_time,
-    max(execution_time_ns) as max_execution_time,
-    sum(message_size) as total_bytes
-FROM tracing.events_local
-GROUP BY timestamp, actor_id, event_type;
-```
-
-### Performance Tuning
-
-```xml
-<!-- ClickHouse configuration -->
-<yandex>
-    <profiles>
-        <default>
-            <max_memory_usage>10000000000</max_memory_usage>
-            <use_uncompressed_cache>1</use_uncompressed_cache>
-            <load_balancing>random</load_balancing>
-        </default>
-    </profiles>
-    
-    <users>
-        <default>
-            <profile>default</profile>
-            <networks incl="networks" replace="replace">
-                <ip>::/0</ip>
-            </networks>
-        </default>
-    </users>
-</yandex>
-```
-
 ## Custom Storage Implementation
 
 ### Storage Trait
@@ -524,15 +407,15 @@ impl StorageBackend for RedisStorage {
 
 ### Decision Matrix
 
-| Feature | Memory | SQLite | PostgreSQL | ClickHouse | Custom |
-|---------|--------|---------|------------|------------|---------|
-| **Persistence** | ❌ | ✅ | ✅ | ✅ | Depends |
-| **Concurrency** | Medium | Low | High | Very High | Depends |
-| **Scale** | Small | Medium | Large | Massive | Depends |
-| **Setup Complexity** | None | Low | Medium | High | Varies |
-| **Query Flexibility** | Limited | High | Very High | High | Depends |
-| **Analytics** | Basic | Good | Excellent | Outstanding | Depends |
-| **Operational Overhead** | None | Low | Medium | High | Varies |
+| Feature | Memory | SQLite | PostgreSQL | TimescaleDB | MongoDB | Custom |
+|---------|--------|---------|------------|-------------|---------|---------|
+| **Persistence** | ❌ | ✅ | ✅ | ✅ | ✅ | Depends |
+| **Concurrency** | Medium | Low | High | High | High | Depends |
+| **Scale** | Small | Medium | Large | Large | Large | Depends |
+| **Setup Complexity** | None | Low | Medium | Medium | Medium | Varies |
+| **Query Flexibility** | Limited | High | Very High | Very High | High (document) | Depends |
+| **Time-series / retention** | ❌ | ❌ | manual | ✅ hypertable + TTL | manual | Depends |
+| **Operational Overhead** | None | Low | Medium | Medium | Medium | Varies |
 
 ### Recommendations
 
@@ -554,10 +437,13 @@ let storage = SqliteStorage::new("traces.db").await?;
 let storage = PostgresStorage::new("postgresql://...").await?;
 ```
 
-**Large Scale/Analytics**:
-```rust
-// ClickHouse for high-volume scenarios
-let storage = ClickHouseStorage::new("http://clickhouse:8123").await?;
+**Time-series / retention at scale**:
+```toml
+# TimescaleDB: PostgreSQL + a hypertable on start_time, with native retention
+[storage]
+backend = "timescale"
+[storage.postgres]
+connection_url = "postgresql://user:pass@localhost/traces"
 ```
 
 ## Migration Between Backends
