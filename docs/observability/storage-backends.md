@@ -32,6 +32,19 @@ row/document keyed by `trace_id`, with denormalized `flow_id`/`execution_id`/
 - **MongoDB Storage** _(available, `--features mongodb`)_: Document store; the JSON-shaped trace maps naturally to a document
 - **Custom Storage**: Implement the `TraceStorage` trait yourself
 
+### Integration guides
+
+Step-by-step setup for each database — build feature, run the DB, the exact
+config block, the auto-created schema, verification, and operations:
+
+- **[SQLite](storage/sqlite.md)** — embedded, default, zero-ops
+- **[PostgreSQL](storage/postgres.md)** — production, multi-instance, high-concurrency
+- **[TimescaleDB](storage/timescaledb.md)** — Postgres + time-series hypertable (retention/compression)
+- **[MongoDB](storage/mongodb.md)** — document store
+
+This page below is the conceptual overview (model, comparison, selection); the
+guides above are the practical walkthroughs.
+
 ## Memory Storage
 
 ### When to Use
