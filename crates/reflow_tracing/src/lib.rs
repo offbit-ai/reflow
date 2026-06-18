@@ -5,6 +5,7 @@
 //! run as the `reflow_tracing` binary.
 
 pub mod config;
+pub mod otlp;
 pub mod protocol;
 pub mod server;
 pub mod storage;

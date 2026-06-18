@@ -7135,6 +7135,7 @@ dependencies = [
  "parking_lot 0.12.4",
  "prometheus",
  "reflow_tracing_protocol",
+ "reqwest 0.12.22",
  "semver 1.0.26",
  "serde",
  "serde_json",

@@ -10,6 +10,27 @@ pub struct Config {
     pub storage: StorageConfig,
     pub compression: CompressionConfig,
     pub metrics: MetricsConfig,
+    /// Optional OpenTelemetry export. When enabled, each finalized trace is also
+    /// shipped to an OTLP collector (Monoscope, Jaeger, Tempo, …).
+    #[serde(default)]
+    pub otlp: Option<OtlpConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OtlpConfig {
+    /// Turn export on. Defaults off even when a config block is present.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Base OTLP/HTTP endpoint, e.g. "http://localhost:4318" (Monoscope, or any
+    /// OpenTelemetry collector). `/v1/traces` is appended automatically.
+    pub endpoint: String,
+    /// `service.name` resource attribute reported to the backend.
+    #[serde(default = "default_service_name")]
+    pub service_name: String,
+}
+
+fn default_service_name() -> String {
+    "reflow".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,6 +129,7 @@ impl Default for Config {
                 port: 9090,
                 endpoint: "/metrics".to_string(),
             },
+            otlp: None,
         }
     }
 }

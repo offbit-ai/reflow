@@ -225,5 +225,6 @@ DataFlow {
 
 - Learn about [event types and their uses](event-types.md)
 - Explore [storage backend options](storage-backends.md)
+- Ship traces to a dashboard via [OTLP export (Monoscope, Jaeger, Tempo, …)](otlp-export.md)
 - Set up [production monitoring](deployment.md)
 - Integrate with [existing monitoring systems](../tutorials/advanced-tracing-setup.md)

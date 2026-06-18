@@ -193,6 +193,9 @@ pub struct TraceServer {
     /// Trace ids started by each connection, so a disconnect can finalize any
     /// traces the client left open.
     connection_traces: Arc<DashMap<String, Vec<TraceId>>>,
+    /// Optional OTLP export bridge: finalized traces are also shipped to an
+    /// OpenTelemetry collector (Monoscope, Jaeger, …).
+    otlp: Option<Arc<crate::otlp::OtlpExporter>>,
 }
 
 #[derive(Debug, Default)]
@@ -213,6 +216,21 @@ impl TraceServer {
         let storage = StorageBackend::create(&config.storage).await?;
         info!("Initialized storage backend: {}", config.storage.backend);
 
+        // Build the OTLP exporter if configured and enabled.
+        let otlp = match config.otlp.as_ref() {
+            Some(otlp_cfg) if otlp_cfg.enabled => match crate::otlp::OtlpExporter::new(otlp_cfg.clone()) {
+                Ok(exp) => {
+                    info!("OTLP export enabled → {}", otlp_cfg.endpoint);
+                    Some(Arc::new(exp))
+                }
+                Err(e) => {
+                    warn!("OTLP export disabled: {}", e);
+                    None
+                }
+            },
+            _ => None,
+        };
+
         Ok(Self {
             config,
             storage,
@@ -220,6 +238,7 @@ impl TraceServer {
             subscription_manager: SubscriptionManager::new(),
             active_traces: Arc::new(DashMap::new()),
             connection_traces: Arc::new(DashMap::new()),
+            otlp,
         })
     }
 
@@ -468,6 +487,20 @@ impl TraceServer {
         if let Some((_, mut trace)) = self.active_traces.remove(trace_id) {
             trace.status = status;
             trace.end_time = Some(Utc::now());
+
+            // Best-effort OTLP export of the finalized trace (fire-and-forget so
+            // it never blocks finalize or the data plane). Clone only when an
+            // exporter is configured.
+            if let Some(otlp) = &self.otlp {
+                let otlp = Arc::clone(otlp);
+                let trace_for_otlp = trace.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = otlp.export_trace(&trace_for_otlp).await {
+                        tracing::debug!("OTLP export failed: {}", e);
+                    }
+                });
+            }
+
             self.storage.store_trace(trace).await?;
             let mut metrics = self.metrics.lock().await;
             metrics.traces_stored += 1;

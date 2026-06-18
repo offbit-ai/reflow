@@ -56,6 +56,7 @@
 - [Data Flow Tracing](observability/data-flow-tracing.md)
 - [Configuration](observability/configuration.md)
 - [Storage Backends](observability/storage-backends.md)
+- [OTLP Export (Monoscope)](observability/otlp-export.md)
 - [Production Deployment](observability/deployment.md)
 
 ---
