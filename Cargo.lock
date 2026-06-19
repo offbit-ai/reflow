@@ -6523,6 +6523,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflow_cli"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "flume",
+ "reflow_distributed",
+ "reflow_rt",
+ "reflow_tracing",
+ "reflow_tracing_protocol",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "reflow_components"
 version = "0.2.1"
 dependencies = [

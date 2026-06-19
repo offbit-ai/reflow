@@ -1,0 +1,21 @@
+{
+  "caseSensitive": false,
+  "properties": {
+    "name": "cli-smoke"
+  },
+  "processes": {
+    "s": {
+      "id": "s",
+      "component": "tpl_signal",
+      "metadata": null
+    }
+  },
+  "connections": [],
+  "inports": {},
+  "outports": {},
+  "groups": [],
+  "graph_dependencies": [],
+  "external_connections": [],
+  "provided_interfaces": {},
+  "required_interfaces": {}
+}
