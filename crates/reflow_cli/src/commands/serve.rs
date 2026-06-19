@@ -1,57 +1,44 @@
-//! `reflow serve` — run the Reflow HTTP server daemon.
+//! `reflow serve` — run the Reflow HTTP server in-process.
 //!
-//! The `reflow_server` crate currently carries an out-of-tree `zeal-sdk` path
-//! dependency, so the CLI doesn't link it. Instead `serve` execs the
-//! `reflow_server` binary (built separately) with Zeal disabled — a thin
-//! convenience wrapper.
+//! Links `reflow_server` directly (with `default-features = false`, so the
+//! out-of-tree Zeal SDK is omitted) and calls `start_server`. No separate
+//! binary, no subprocess — one self-contained `reflow` tool.
 
-use anyhow::{bail, Context, Result};
+use anyhow::Result;
 use clap::Args;
-use std::path::PathBuf;
+use reflow_server::{ServerConfig, start_server};
 
 #[derive(Args)]
 pub struct ServeArgs {
     /// Port to listen on.
     #[arg(long, default_value_t = 8080)]
     pub port: u16,
+    /// Address to bind.
+    #[arg(long, default_value = "0.0.0.0")]
+    pub bind: String,
+    /// Optional Redis URL for workflow persistence (survives restarts).
+    #[arg(long)]
+    pub redis: Option<String>,
 }
 
 pub async fn run(args: ServeArgs) -> Result<()> {
-    let bin = locate_reflow_server();
-    tracing::info!("starting {} on port {} (Zeal disabled)", bin.display(), args.port);
-    let status = tokio::process::Command::new(&bin)
-        .arg("--port")
-        .arg(args.port.to_string())
-        .status()
-        .await
-        .with_context(|| {
-            format!(
-                "could not run `{}`. Build it first (cargo build -p reflow_server) \
-                 or put it on PATH.",
-                bin.display()
-            )
-        })?;
-    if !status.success() {
-        bail!("reflow_server exited unsuccessfully ({status})");
-    }
-    Ok(())
-}
-
-/// Prefer a `reflow_server` next to the current `reflow` executable; otherwise
-/// fall back to the name on `PATH`.
-fn locate_reflow_server() -> PathBuf {
-    let name = if cfg!(windows) {
-        "reflow_server.exe"
-    } else {
-        "reflow_server"
+    let config = ServerConfig {
+        port: args.port,
+        bind_address: args.bind,
+        redis_url: args.redis,
+        // Zeal is omitted in the CLI build; leave the session unconfigured.
+        zeal_url: None,
+        ..ServerConfig::default()
     };
-    if let Ok(exe) = std::env::current_exe()
-        && let Some(dir) = exe.parent()
-    {
-        let candidate = dir.join(name);
-        if candidate.exists() {
-            return candidate;
+    tracing::info!(
+        "starting reflow server on {}:{} (Zeal disabled){}",
+        config.bind_address,
+        config.port,
+        if config.redis_url.is_some() {
+            ", Redis persistence on"
+        } else {
+            ""
         }
-    }
-    PathBuf::from(name)
+    );
+    start_server(Some(config)).await
 }
