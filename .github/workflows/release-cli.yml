@@ -24,6 +24,12 @@ on:
 permissions:
   contents: write
 
+# Tolerate transient registry/network hiccups (e.g. a crates.io index fetch
+# returning "Connection reset by peer") instead of failing the release.
+env:
+  CARGO_NET_RETRY: "10"
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
     name: build / ${{ matrix.target }}
