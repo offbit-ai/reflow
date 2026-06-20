@@ -23,7 +23,9 @@ reflow_graph = { path = "../reflow_graph" }
 reflow_components = { path = "../reflow_components", default-features = false }
 reflow_api_services = { path = "../reflow_api_services", optional = true }
 reflow_actor_macro = { path = "../reflow_actor_macro" }
-zeal-sdk = { path = "../../../zeal/packages/zeal-rust-sdk", optional = true }
+# Git dep (not a local path) so building doesn't require a sibling Zeal checkout.
+# Pinned to a rev for reproducibility; bump deliberately or switch to branch = "main".
+zeal-sdk = { git = "https://github.com/offbit-ai/zeal.git", rev = "5aa5cd0f5626264351e7a110cc87c005eb92290a", optional = true }
 # Concrete versions (not `workspace = true`): reflow_server is excluded from the
 # workspace, so it must resolve standalone when linked as a path dep (e.g. by the
 # `reflow` CLI). Keep these in step with the workspace root's versions.
