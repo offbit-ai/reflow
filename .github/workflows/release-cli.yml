@@ -24,10 +24,6 @@ on:
 permissions:
   contents: write
 
-env:
-  SCCACHE_GHA_ENABLED: "true"
-  RUSTC_WRAPPER: "sccache"
-
 jobs:
   build:
     name: build / ${{ matrix.target }}
@@ -51,7 +47,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - uses: mozilla-actions/sccache-action@v0.0.5
+      # Cache cargo registry + build dir. Unlike an sccache RUSTC_WRAPPER, a
+      # cache-service outage degrades to a cold build instead of failing it.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Build reflow CLI (release)
         shell: bash
