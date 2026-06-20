@@ -1,0 +1,115 @@
+# Build the unified `reflow` CLI for every supported triple and attach a
+# per-triple archive to a GitHub Release.
+#
+# Each target is built on its NATIVE runner (including an arm64 Linux runner)
+# rather than cross-compiled: the CLI links `reflow_server`, which pulls
+# `native-tls` (OpenSSL on Linux, SChannel on Windows, Secure Transport on
+# macOS). Native runners sidestep cross-compiling OpenSSL for aarch64.
+#
+# Triggers
+# --------
+# - Tag push matching `cli-v*` (e.g. `cli-v0.2.0`) — builds every target and
+#   publishes a Release.
+# - Manual `workflow_dispatch` — builds every target for verification, no
+#   Release.
+
+name: release-cli
+
+on:
+  push:
+    tags:
+      - 'cli-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+
+jobs:
+  build:
+    name: build / ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos-14
+            target: aarch64-apple-darwin
+          - host: macos-14
+            target: x86_64-apple-darwin
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Build reflow CLI (release)
+        shell: bash
+        run: cargo build --release --locked --target "${{ matrix.target }}" -p reflow_cli
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -eux
+          stage="reflow-${{ matrix.target }}"
+          mkdir -p "dist/$stage"
+          cp "target/${{ matrix.target }}/release/reflow" "dist/$stage/"
+          cp LICENSE* README* "dist/$stage/" 2>/dev/null || true
+          tar -C dist -czf "dist/$stage.tar.gz" "$stage"
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -eux
+          stage="reflow-${{ matrix.target }}"
+          mkdir -p "dist/$stage"
+          cp "target/${{ matrix.target }}/release/reflow.exe" "dist/$stage/"
+          cp LICENSE* README* "dist/$stage/" 2>/dev/null || true
+          7z a "dist/$stage.zip" "./dist/$stage"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reflow-cli-${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          if-no-files-found: error
+
+  release:
+    name: release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/cli-v')
+    steps:
+      - name: Download per-target archives
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: reflow-cli-*
+          merge-multiple: true
+
+      - name: List archives
+        run: ls -laR artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: reflow CLI ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/*.tar.gz
+            artifacts/*.zip
+          fail_on_unmatched_files: true
