@@ -19,6 +19,7 @@ use tower_http::cors::CorsLayer;
 
 use crate::engine::{ExecutionEngine, ExecutionState};
 use crate::event_bridge::EventBridge;
+#[cfg(feature = "zeal")]
 use crate::zeal_converter::{ZealWorkflow, convert_zeal_to_graph_export};
 
 // ============================================================================
@@ -155,6 +156,7 @@ async fn cancel_workflow(
     }
 }
 
+#[cfg(feature = "zeal")]
 async fn execute_zeal_workflow(
     State(state): State<AppState>,
     Json(request): Json<serde_json::Value>,
@@ -198,6 +200,7 @@ async fn execute_zeal_workflow(
     }
 }
 
+#[cfg(feature = "zeal")]
 async fn convert_zeal_workflow(
     Json(zeal_workflow): Json<ZealWorkflow>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
@@ -229,6 +232,24 @@ async fn convert_zeal_workflow(
     }
 }
 
+/// Convert a `{ "workflow": ZealWorkflow }` payload into a graph JSON value.
+/// Without the `zeal` feature there's no converter, so it rejects the request.
+fn graph_json_from_zeal_workflow(workflow: &serde_json::Value) -> Result<serde_json::Value, StatusCode> {
+    #[cfg(feature = "zeal")]
+    {
+        let zeal_workflow: ZealWorkflow =
+            serde_json::from_value(workflow.clone()).map_err(|_| StatusCode::BAD_REQUEST)?;
+        let graph_export =
+            convert_zeal_to_graph_export(&zeal_workflow).map_err(|_| StatusCode::BAD_REQUEST)?;
+        serde_json::to_value(graph_export).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    }
+    #[cfg(not(feature = "zeal"))]
+    {
+        let _ = workflow;
+        Err(StatusCode::BAD_REQUEST)
+    }
+}
+
 /// Publish a workflow graph to Reflow.
 ///
 /// Zeal pushes a workflow graph here. Reflow stores it and returns
@@ -241,13 +262,9 @@ async fn publish_workflow(
     Path(workflow_id): Path<String>,
     Json(request): Json<serde_json::Value>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
-    // Accept either a Zeal workflow or a raw graph
+    // Accept either a Zeal workflow (only with the `zeal` feature) or a raw graph.
     let graph_json = if let Some(workflow) = request.get("workflow") {
-        let zeal_workflow: ZealWorkflow =
-            serde_json::from_value(workflow.clone()).map_err(|_| StatusCode::BAD_REQUEST)?;
-        let graph_export =
-            convert_zeal_to_graph_export(&zeal_workflow).map_err(|_| StatusCode::BAD_REQUEST)?;
-        serde_json::to_value(graph_export).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        graph_json_from_zeal_workflow(workflow)?
     } else if let Some(graph) = request.get("graph") {
         graph.clone()
     } else {
@@ -288,6 +305,7 @@ async fn handle_webhook(
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
+    let request_path = format!("/webhook/{}", workflow_id);
     // Parse body as JSON (fall back to string)
     let body_json = serde_json::from_slice::<serde_json::Value>(&body)
         .unwrap_or_else(|_| serde_json::json!(String::from_utf8_lossy(&body).to_string()));
@@ -307,7 +325,7 @@ async fn handle_webhook(
         "body": body_json,
         "headers": headers_json,
         "method": "POST",
-        "path": format!("/webhook/{}", workflow_id),
+        "path": request_path,
     });
 
     // Execute the workflow with the request data as input.
@@ -560,17 +578,23 @@ pub fn build_router(
         event_bridge,
     };
 
-    Router::new()
+    #[cfg_attr(not(feature = "zeal"), allow(unused_mut))]
+    let mut router = Router::new()
         .route("/health", get(health_check))
         .route("/workflows", post(start_workflow))
         .route("/workflows/{execution_id}", get(get_execution_status))
         .route("/workflows/{execution_id}/cancel", post(cancel_workflow))
-        .route("/zeal/workflows", post(execute_zeal_workflow))
-        .route("/zeal/convert", post(convert_zeal_workflow))
         .route("/workflows/{workflow_id}/publish", post(publish_workflow))
         .route("/webhook/{workflow_id}", post(handle_webhook))
-        .route("/webhook/{workflow_id}/{path:.*}", post(handle_webhook))
-        .route("/ws", get(websocket_handler))
-        .layer(CorsLayer::permissive())
-        .with_state(state)
+        .route("/ws", get(websocket_handler));
+
+    // Zeal-specific conversion + execution routes — only with the `zeal` feature.
+    #[cfg(feature = "zeal")]
+    {
+        router = router
+            .route("/zeal/workflows", post(execute_zeal_workflow))
+            .route("/zeal/convert", post(convert_zeal_workflow));
+    }
+
+    router.layer(CorsLayer::permissive()).with_state(state)
 }

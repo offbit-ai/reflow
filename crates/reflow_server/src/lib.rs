@@ -29,10 +29,16 @@ pub mod engine;
 pub mod event_bridge;
 pub mod peer_mesh;
 pub mod rest_api;
-pub mod template_adapter;
-pub mod trace_collector;
 pub mod workflow_store;
+
+// Zeal IDE integration — only built with the `zeal` feature.
+#[cfg(feature = "zeal")]
+pub mod template_adapter;
+#[cfg(feature = "zeal")]
+pub mod trace_collector;
+#[cfg(feature = "zeal")]
 pub mod zeal_converter;
+#[cfg(feature = "zeal")]
 pub mod zip_session;
 
 use std::sync::Arc;
@@ -109,7 +115,17 @@ pub async fn start_server(config: Option<ServerConfig>) -> Result<()> {
     // 1. Create the shared execution engine (with Redis persistence if configured)
     let engine = Arc::new(ExecutionEngine::new_with_redis(config.redis_url.clone()));
 
-    // 2. Optionally create the observability pipeline (TraceCollector + ZipSession + EventBridge)
+    // 2. Optionally create the observability pipeline (TraceCollector + ZipSession + EventBridge).
+    // Built only with the `zeal` feature; without it the server runs core execution + REST only.
+    #[cfg(not(feature = "zeal"))]
+    let event_bridge: Option<Arc<EventBridge>> = {
+        if config.zeal_url.is_some() {
+            info!("zeal_url is set but the server was built without the `zeal` feature — ignoring");
+        }
+        None
+    };
+
+    #[cfg(feature = "zeal")]
     let event_bridge = if let Some(zeal_url) = &config.zeal_url {
         // Trace collector submits per-node data via HTTP
         let trace_collector = Arc::new(trace_collector::TraceCollector::new(zeal_url));

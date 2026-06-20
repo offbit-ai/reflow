@@ -30,6 +30,7 @@ use axum::{
 use parking_lot::RwLock;
 use reflow_network::discovery::{NetworkInfo, RegistrationRequest};
 
+pub mod peer;
 pub mod peer_config;
 
 /// In-memory registry. Entries decay if the peer hasn't pinged in

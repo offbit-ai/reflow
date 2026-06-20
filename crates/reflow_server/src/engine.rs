@@ -19,6 +19,7 @@ use reflow_network::graph::types::GraphExport;
 use reflow_network::network::{Network, NetworkConfig, NetworkEvent};
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "zeal")]
 use crate::zeal_converter::{ZealWorkflow, convert_zeal_to_graph_export};
 
 /// Extracted StreamHandle metadata from actor outputs.
@@ -263,6 +264,7 @@ impl ExecutionEngine {
     }
 
     /// Start a Zeal workflow — converts from Zeal format then executes.
+    #[cfg(feature = "zeal")]
     pub async fn start_zeal_execution(
         &self,
         zeal_workflow: ZealWorkflow,

@@ -7,17 +7,24 @@
 //! One bridge is spawned per execution. It runs until the channel closes
 //! (execution finishes) or the bridge is explicitly dropped.
 
+use crate::engine::EngineEvent;
+
+#[cfg(feature = "zeal")]
 use std::sync::Arc;
-
+#[cfg(feature = "zeal")]
 use log::{debug, error, info, warn};
+#[cfg(feature = "zeal")]
 use reflow_network::stream::STREAM_REGISTRY;
-
-use crate::engine::{EngineEvent, EngineEventType};
+#[cfg(feature = "zeal")]
+use crate::engine::EngineEventType;
+#[cfg(feature = "zeal")]
 use crate::trace_collector::TraceCollector;
+#[cfg(feature = "zeal")]
 use crate::zip_session::ZipSession;
 
 /// Buffer size for observer taps attached to display-forwarded streams.
 /// Uses `try_send` so dropping frames is acceptable for display.
+#[cfg(feature = "zeal")]
 const OBSERVER_BUFFER_SIZE: usize = 32;
 
 // ============================================================================
@@ -26,12 +33,19 @@ const OBSERVER_BUFFER_SIZE: usize = 32;
 
 /// Shared observability consumers that live for the lifetime of the server.
 /// Cloned into each per-execution bridge task.
+///
+/// Without the `zeal` feature there are no consumers: [`EventBridge::attach`]
+/// just drains the event channel so the engine's sender never blocks.
+#[derive(Default)]
 pub struct EventBridge {
+    #[cfg(feature = "zeal")]
     trace_collector: Option<Arc<TraceCollector>>,
+    #[cfg(feature = "zeal")]
     zip_session: Option<Arc<ZipSession>>,
 }
 
 impl EventBridge {
+    #[cfg(feature = "zeal")]
     pub fn new(
         trace_collector: Option<Arc<TraceCollector>>,
         zip_session: Option<Arc<ZipSession>>,
@@ -42,10 +56,24 @@ impl EventBridge {
         }
     }
 
+    /// Drain `event_rx` for a single execution without forwarding anywhere.
+    /// Present only without the `zeal` feature; keeps the engine's sender from
+    /// blocking when no observability consumers are wired in.
+    #[cfg(not(feature = "zeal"))]
+    pub fn attach(
+        &self,
+        _workflow_id: String,
+        _execution_id: String,
+        event_rx: flume::Receiver<EngineEvent>,
+    ) {
+        tokio::spawn(async move { while event_rx.recv_async().await.is_ok() {} });
+    }
+
     /// Spawn a background task that drains `event_rx` for a single execution,
     /// forwarding events to the TraceCollector and ZipSession.
     ///
     /// The task exits when the channel closes (sender dropped).
+    #[cfg(feature = "zeal")]
     pub fn attach(
         &self,
         workflow_id: String,
@@ -182,6 +210,7 @@ impl EventBridge {
     /// Drain an observer receiver and forward each frame to Zeal as binary
     /// WebSocket messages. Emits `StreamClosed` / `StreamError` engine events
     /// when the stream terminates.
+    #[cfg(feature = "zeal")]
     async fn forward_stream_to_zeal(
         obs_rx: flume::Receiver<reflow_network::stream::StreamFrame>,
         stream_id: u64,
