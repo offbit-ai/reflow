@@ -5,7 +5,7 @@
 # Reflow
 
 
-**A graph-driven actor runtime for workflows, media pipelines, and visual systems**
+**A graph-driven actor runtime for workflows, media pipelines, Agentic AI and visual systems**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust Version](https://img.shields.io/badge/rust-1.85+-blue.svg)](https://www.rust-lang.org)
